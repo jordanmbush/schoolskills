@@ -81,7 +81,7 @@ export default function PlayerHub() {
                 navigate(`/p/${profile.id}/race`, {
                   state: {
                     config: buildDrill(
-                      trouble.map((fact) => fact.facts),
+                      trouble.map((fact) => fact.factId),
                       {
                         operation: "multiply",
                         inputMode: profile.age <= 6 ? "choose" : "type",

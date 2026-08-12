@@ -123,7 +123,7 @@ export default function Progress() {
                 navigate(`/p/${profile.id}/race`, {
                   state: {
                     config: buildDrill(
-                      trouble.map((fact) => fact.facts),
+                      trouble.map((fact) => fact.factId),
                       {
                         operation,
                         inputMode: profile.age <= 6 ? "choose" : "type",
@@ -152,9 +152,9 @@ export default function Progress() {
             </p>
             <ul className="trouble">
               {trouble.map((fact) => (
-                <li key={fact.key} className="trouble__item">
+                <li key={fact.factId} className="trouble__item">
                   <span className="trouble__fact u-mono">
-                    {fact.facts[0]} {spec.symbol} {fact.facts[1]}
+                    {spec.factLabel(fact.factId)}
                   </span>
                   <span className="trouble__why">
                     {fact.timeouts > 0 && (

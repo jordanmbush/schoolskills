@@ -72,8 +72,24 @@ OIDC — there are no long-lived AWS keys anywhere.
 
 ## Adding a game
 
-The card loop, XP, ghost racing and stats work off a generic `Card`, not off
-arithmetic. A new game is an entry in the operation/deck registry plus, if it
-needs one, an input control. It gets a route under `src/pages/<game>/` — a
-**path, not a subdomain**, because separate origins would partition browser
-storage and a player's profile could no longer follow them between games.
+The card loop, XP, ghost racing and stats work off `Card` and `CardResult`,
+which are text in and text out — `answer` is `"56"`, not `56`, and `factId` is
+`"7:8"` or `"because"`. Nothing in the loop knows about arithmetic.
+
+The three judgements a loop can't make generically live on a **`DeckSpec`**
+(`src/engine/decks/spec.ts`): fold two cards onto one fact (`masteryKey`,
+`drillKey`), name a fact on screen (`factLabel`), and decide whether what was
+typed matches (`normalise`). A new deck family implements that and registers in
+`src/engine/decks/registry.ts`; `deckSpec(mode)` never throws, because sessions
+outlive the decks they were played on.
+
+So a new game is a `DeckSpec`, an input control if the kit lacks one, and a
+route under `src/pages/<game>/` — a **path, not a subdomain**, because separate
+origins would partition browser storage and a player's profile could no longer
+follow them between games.
+
+**Saved runs are the constraint, not the code.** `configKey` decides which runs
+may race each other as ghosts, so changing its format orphans every personal
+best already saved. Cards written before a shape change are widened on read by
+`src/engine/migrate.ts` — never by rewriting storage, because IndexedDB holds
+the only copy there is.

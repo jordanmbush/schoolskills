@@ -6,18 +6,48 @@ import type {
 } from "@/engine/types";
 
 import { mulberry32, shuffled } from "@/engine/random";
+import type { DeckSpec } from "./spec";
 
 const RANGE_1_TO_12 = Array.from({ length: 12 }, (_, i) => i + 1);
 
+/* ── Fact ids ────────────────────────────────────────────────────────────
+   An arithmetic fact is its two numbers, as the deck chose them: the focus
+   (the table you picked) then the other operand. Not as the prompt shows
+   them — "7 × 8" and "8 × 7" are built from the same pair and must land on
+   the same square.                                                         */
+
+export const arithmeticFactId = (focus: number, other: number) =>
+  `${focus}:${other}`;
+
+export const factPair = (factId: string): [number, number] => {
+  const [a, b] = factId.split(":");
+  return [Number(a) || 0, Number(b) || 0];
+};
+
+const foldPair = (factId: string) => {
+  const [a, b] = factPair(factId);
+  return arithmeticFactId(Math.min(a, b), Math.max(a, b));
+};
+
 /**
- * A deck is described by an operation spec plus a config. Adding spelling
- * words or parent-authored decks later means adding another spec here (and a
- * matching input control) — the play loop, ghost racing, XP and stats all work
- * off `Card`, not off arithmetic.
+ * "07" is a correct answer to 7 × 1, and so is " 7 ". The keypad lets a kid
+ * lead with a zero and the number row lets them fat-finger a space, and
+ * neither is a wrong answer to an arithmetic question.
  */
-export type OperationSpec = {
+const normaliseNumber = (input: string) => {
+  const trimmed = input.trim();
+  if (trimmed === "") return "";
+  const value = Number(trimmed);
+  return Number.isFinite(value) ? String(value) : trimmed;
+};
+
+/**
+ * A deck is described by an operation spec plus a config. A spelling list or
+ * a parent-authored deck is another `DeckSpec` elsewhere — the play loop,
+ * ghost racing, XP and stats all work off `Card`, not off arithmetic.
+ */
+export type OperationSpec = DeckSpec & {
   id: Operation;
-  label: string;
   symbol: string;
   /** What the "focus numbers" selector is called for this operation. */
   focusLabel: string;
@@ -33,9 +63,27 @@ export type OperationSpec = {
   ): Omit<Card, "choices">;
 };
 
-const flip = (rand: () => number) => rand() < 0.5;
+/**
+ * Everything about an operation that isn't shared. `ask` is the question a
+ * pair poses and its answer, and both the card and the fact label are built
+ * from it — so a fact can never be named on screen as something other than
+ * the question it was asked as.
+ */
+type OperationDef = Omit<
+  OperationSpec,
+  "masteryKey" | "drillKey" | "factLabel" | "normalise" | "build"
+> & {
+  /**
+   * Whether the two numbers can swap without changing the question. Decides
+   * both whether the prompt is shown either way round and whether the pair
+   * folds — 7 × 8 and 8 × 7 are one fact to practise, 21 ÷ 3 and 21 ÷ 7 are
+   * two.
+   */
+  commutative: boolean;
+  ask(focus: number, other: number): { prompt: string; answer: number };
+};
 
-export const OPERATIONS: Record<Operation, OperationSpec> = {
+const DEFS: Record<Operation, OperationDef> = {
   multiply: {
     id: "multiply",
     label: "Multiplication",
@@ -44,10 +92,8 @@ export const OPERATIONS: Record<Operation, OperationSpec> = {
     pairLabel: "Multiplied by",
     blurb: "The classic. Pick your tables and go.",
     minOther: 0,
-    build(focus, other, rand) {
-      const [a, b] = flip(rand) ? [focus, other] : [other, focus];
-      return { prompt: `${a} × ${b}`, answer: a * b, facts: [focus, other] };
-    },
+    commutative: true,
+    ask: (a, b) => ({ prompt: `${a} × ${b}`, answer: a * b }),
   },
   divide: {
     id: "divide",
@@ -57,13 +103,11 @@ export const OPERATIONS: Record<Operation, OperationSpec> = {
     pairLabel: "Answers between",
     blurb: "Times tables in reverse.",
     minOther: 1,
-    build(focus, other) {
-      return {
-        prompt: `${focus * other} ÷ ${focus}`,
-        answer: other,
-        facts: [focus, other],
-      };
-    },
+    commutative: false,
+    ask: (focus, other) => ({
+      prompt: `${focus * other} ÷ ${focus}`,
+      answer: other,
+    }),
   },
   add: {
     id: "add",
@@ -73,10 +117,8 @@ export const OPERATIONS: Record<Operation, OperationSpec> = {
     pairLabel: "Added to",
     blurb: "Warm up the engine.",
     minOther: 0,
-    build(focus, other, rand) {
-      const [a, b] = flip(rand) ? [focus, other] : [other, focus];
-      return { prompt: `${a} + ${b}`, answer: a + b, facts: [focus, other] };
-    },
+    commutative: true,
+    ask: (a, b) => ({ prompt: `${a} + ${b}`, answer: a + b }),
   },
   subtract: {
     id: "subtract",
@@ -86,15 +128,49 @@ export const OPERATIONS: Record<Operation, OperationSpec> = {
     pairLabel: "Answers between",
     blurb: "Never dips below zero.",
     minOther: 0,
-    build(focus, other) {
-      const total = focus + other;
+    commutative: false,
+    ask: (focus, other) => ({
+      prompt: `${focus + other} − ${focus}`,
+      answer: other,
+    }),
+  },
+};
+
+const flip = (rand: () => number) => rand() < 0.5;
+
+function toSpec(def: OperationDef): OperationSpec {
+  return {
+    ...def,
+    // The map is a symmetric 12×12 for every operation, so it always folds.
+    // Division's two questions therefore share a square on purpose; the drill
+    // key below is what keeps them apart where it matters.
+    masteryKey: foldPair,
+    drillKey: def.commutative ? foldPair : (factId) => factId,
+    factLabel: (factId) => def.ask(...factPair(factId)).prompt,
+    normalise: normaliseNumber,
+    build(focus, other, rand) {
+      // Which way round the prompt reads. Only a commutative operation both
+      // flips and draws from `rand` — and the short-circuit matters as much as
+      // the flip: spending a coin here for division would shift every
+      // subsequent card and rebuild a saved run's deck as a different one.
+      const swap = def.commutative && !flip(rand);
+      const { prompt, answer } = swap
+        ? def.ask(other, focus)
+        : def.ask(focus, other);
       return {
-        prompt: `${total} − ${focus}`,
-        answer: other,
-        facts: [focus, other],
+        prompt,
+        answer: String(answer),
+        factId: arithmeticFactId(focus, other),
       };
     },
-  },
+  };
+}
+
+export const OPERATIONS: Record<Operation, OperationSpec> = {
+  multiply: toSpec(DEFS.multiply),
+  divide: toSpec(DEFS.divide),
+  add: toSpec(DEFS.add),
+  subtract: toSpec(DEFS.subtract),
 };
 
 export const OPERATION_ORDER: Operation[] = [
@@ -133,7 +209,7 @@ function distractors(
     if (filler !== answer && !picked.includes(filler)) picked.push(filler);
     filler += 1;
   }
-  return picked;
+  return picked.map(String);
 }
 
 /**
@@ -178,7 +254,10 @@ export function buildDeck(config: LegacyFlashConfig, seed: number): Card[] {
     return {
       ...base,
       choices: shuffled(
-        [base.answer, ...distractors(base.answer, base.facts, rand)],
+        [
+          base.answer,
+          ...distractors(Number(base.answer), [focus, other], rand),
+        ],
         rand,
       ),
     };
@@ -268,14 +347,15 @@ export function timeLimitForAge(age: number) {
  * from the facts so the run still describes and files itself normally.
  */
 export function buildDrill(
-  facts: Array<[number, number]>,
+  factIds: string[],
   base: Pick<FlashConfig, "operation" | "inputMode"> & {
     timeLimitMs?: number | null;
   },
 ): FlashConfig {
-  const unique = [
-    ...new Map(facts.map((f) => [`${f[0]}:${f[1]}`, f])).values(),
-  ];
+  // Back to pairs on the way in: `FlashConfig.facts` is the persisted shape
+  // and `configKey` is built from it, so changing it would orphan every drill
+  // ghost already saved.
+  const unique = [...new Set(factIds)].map(factPair);
   const axis = (pick: 0 | 1) =>
     [...new Set(unique.map((f) => f[pick]))].sort((a, b) => a - b);
   return {

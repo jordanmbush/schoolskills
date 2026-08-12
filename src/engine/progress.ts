@@ -1,4 +1,5 @@
-import type { Operation, Session } from "@/engine/types";
+import { OPERATION_ORDER } from "@/engine/decks/flashcards";
+import type { Session } from "@/engine/types";
 
 /* ── Levels ──────────────────────────────────────────────────────────────
    Cumulative XP to reach level n is 125·n·(n−1), so early levels come fast
@@ -218,9 +219,10 @@ export function evaluateBadges({
     earned.add("beat-the-clock");
   if (session.config.facts?.length && perfect) earned.add("nemesis");
 
-  const operations = new Set<Operation>(history.map((s) => s.mode));
-  operations.add(session.mode);
-  if (operations.size >= 4) earned.add("all-rounder");
+  // Named outright rather than counted to four: `mode` also holds word-list
+  // ids now, and four spelling decks are not "all four operations".
+  const raced = new Set([session.mode, ...history.map((s) => s.mode)]);
+  if (OPERATION_ORDER.every((op) => raced.has(op))) earned.add("all-rounder");
 
   return [...earned];
 }

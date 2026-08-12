@@ -1,6 +1,7 @@
 import { openDB, type DBSchema, type IDBPDatabase } from "idb";
 
-import type { Profile, Session } from "@/engine/types";
+import { readSession, readSessions } from "@/engine/migrate";
+import type { LegacySession, Profile, Session } from "@/engine/types";
 
 /**
  * The only module in the codebase allowed to touch browser storage.
@@ -27,7 +28,12 @@ interface HubDB extends DBSchema {
   profiles: { key: string; value: Profile };
   sessions: {
     key: string;
-    value: Session;
+    /**
+     * Typed as the wider shape because that is honestly what's in there: runs
+     * saved before the card widened are still on disk in their original form.
+     * Reads go through `readSession`, which is where they become `Session`.
+     */
+    value: LegacySession;
     indexes: { byProfile: string };
   };
 }
@@ -72,7 +78,7 @@ export async function allProfiles(): Promise<Profile[]> {
 }
 
 export async function allSessions(): Promise<Session[]> {
-  return (await db()).getAll("sessions");
+  return readSessions(await (await db()).getAll("sessions"));
 }
 
 export async function putProfile(profile: Profile): Promise<void> {
@@ -142,7 +148,12 @@ export type Backup = {
   version: 1;
   exportedAt: string;
   profiles: Profile[];
-  sessions: Session[];
+  /**
+   * Written current, read wide. A file exported today holds widened cards, but
+   * one exported last week — or produced by `scripts/convert-legacy-hub.mjs`
+   * — does not, and restoring an old backup is the whole point of having one.
+   */
+  sessions: Array<LegacySession | Session>;
 };
 
 export async function exportAll(): Promise<Backup> {
@@ -180,7 +191,12 @@ export async function importAll(
   }
   await Promise.all([
     ...backup.profiles.map((p) => tx.objectStore("profiles").put(p)),
-    ...backup.sessions.map((s) => tx.objectStore("sessions").put(s)),
+    // Widened on the way in, so a restored run is stored in the shape a fresh
+    // one would be. Reads migrate anyway; this just stops the file's age from
+    // outliving the import.
+    ...backup.sessions.map((s) =>
+      tx.objectStore("sessions").put(readSession(s)),
+    ),
   ]);
   await tx.done;
   return {
