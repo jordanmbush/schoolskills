@@ -3,6 +3,7 @@ import { HashRouter, Navigate, Route, Routes } from "react-router-dom";
 import { ToastRail } from "@/components/ToastRail";
 import { HubProvider, useHub } from "@/components/state/HubContext";
 import { RaceProvider } from "@/components/state/RaceContext";
+import { Button } from "@/components/ui/kit";
 import PlayerSelect from "@/components/screens/PlayerSelect";
 import PlayerHub from "@/components/screens/PlayerHub";
 import Progress from "@/components/screens/Progress";
@@ -59,9 +60,9 @@ function Shell() {
           can do that. Progress is only ever saved on this device, so there's
           nothing to recover from elsewhere.
         </p>
-        <button className="btn btn--go" onClick={() => void reload()}>
+        <Button variant="go" onClick={() => void reload()}>
           Try again
-        </button>
+        </Button>
       </div>
     );
   }
