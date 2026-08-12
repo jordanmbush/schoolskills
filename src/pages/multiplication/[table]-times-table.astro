@@ -1,0 +1,166 @@
+---
+import Base from "@/layouts/Base.astro";
+import "@/styles/content.css";
+
+/**
+ * One prerendered page per times table — the site's main organic-search
+ * surface. "7 times table" is a real, high-volume query with clear intent, and
+ * a static HTML page answering it directly is something a crawler can rank on
+ * day one; the game behind it is not.
+ *
+ * Each page carries the full table as a real <table>, a tip that is specific to
+ * that number rather than generic filler, and a link into the game preloaded
+ * with that table. They cross-link to each other so the set is reachable from
+ * any entry point.
+ */
+
+export function getStaticPaths() {
+  return Array.from({ length: 12 }, (_, i) => ({
+    params: { table: String(i + 1) },
+  }));
+}
+
+/** Something true and useful about each specific table, not filler. */
+const TIPS: Record<number, string[]> = {
+  1: ["Every answer is the number you started with — 1 × 8 is just 8."],
+  2: [
+    "Doubling. 2 × 7 is 7 + 7.",
+    "Every answer is even, so an odd answer means a slip somewhere.",
+  ],
+  3: [
+    "Double it, then add one more group: 3 × 6 is 12 + 6.",
+    "The digits of every answer add up to 3, 6 or 9.",
+  ],
+  4: ["Double twice. 4 × 7 is 7 → 14 → 28."],
+  5: [
+    "Answers end in 5 or 0, alternating.",
+    "Halve the number and multiply by 10: 5 × 8 is half of 8 (4), then 40.",
+  ],
+  6: [
+    "For even numbers the answer ends in the same digit: 6 × 4 = 24, 6 × 6 = 36.",
+    "Or take 5 × the number and add one more: 6 × 7 is 35 + 7.",
+  ],
+  7: [
+    "The hardest one for most kids — nothing about it is regular, so it comes down to recall.",
+    "Anchor on 7 × 7 = 49 and 7 × 5 = 35, then step out from there.",
+  ],
+  8: ["Double three times. 8 × 6 is 6 → 12 → 24 → 48."],
+  9: [
+    "The digits of every answer add to 9: 9 × 6 = 54, and 5 + 4 = 9.",
+    "Ten times the number, minus the number: 9 × 7 is 70 − 7.",
+    "The finger trick: hold up ten fingers, fold down the nth, and read the two groups.",
+  ],
+  10: ["Add a zero. 10 × 6 = 60."],
+  11: [
+    "Up to 9, just repeat the digit: 11 × 4 = 44.",
+    "From 10 it changes — 11 × 12 = 132 — which is where it starts needing recall.",
+  ],
+  12: [
+    "Ten times plus two times: 12 × 7 is 70 + 14.",
+    "Worth knowing beyond school — clocks, months, inches and dozens all run on 12.",
+  ],
+};
+
+const { table } = Astro.params;
+const n = Number(table);
+const rows = Array.from({ length: 12 }, (_, i) => i + 1);
+const tips = TIPS[n] ?? [];
+
+const title = `${n} times table — free practice, flash cards and tips | School Skills`;
+const description = `The full ${n} times table from ${n} × 1 to ${n} × 12, with tips for remembering it and a free flash-card game to practise. No sign-up.`;
+
+// Neighbouring tables, so every page links onward to the rest of the set.
+const others = rows.filter((r) => r !== n);
+---
+
+<Base
+  title={title}
+  description={description}
+  jsonLd={{
+    "@context": "https://schema.org",
+    "@type": "LearningResource",
+    name: `${n} times table`,
+    description,
+    url: `https://schoolskills.app/multiplication/${n}-times-table`,
+    learningResourceType: "Reference",
+    educationalLevel: "Elementary School",
+    teaches: `Multiplication by ${n}`,
+    typicalAgeRange: "5-12",
+    isAccessibleForFree: true,
+    inLanguage: "en",
+  }}
+>
+  <main class="page">
+    <p class="page__eyebrow">Multiplication</p>
+    <h1>The {n} times table</h1>
+    <p class="page__lead">
+      Every fact from {n} × 1 to {n} × 12, what to notice about them, and a game for
+      drilling the ones that don't stick.
+    </p>
+
+    <a class="cta" href="/flash-cards">Practise the {n}s →</a>
+
+    <h2>The full table</h2>
+    <table class="facts">
+      <caption>The {n} times table, 1 to 12</caption>
+      <tbody>
+        {
+          rows.map((r) => (
+            <tr>
+              <th scope="row">
+                {n} × {r}
+              </th>
+              <td>{n * r}</td>
+            </tr>
+          ))
+        }
+      </tbody>
+    </table>
+
+    {
+      tips.length > 0 && (
+        <>
+          <h2>How to remember it</h2>
+          <ul class="tips">
+            {tips.map((tip) => (
+              <li set:html={tip} />
+            ))}
+          </ul>
+        </>
+      )
+    }
+
+    <h2>Practising it properly</h2>
+    <p>
+      Recall and calculation are different skills. A child who works out 7 × 8
+      by counting up from 7 × 4 knows the maths, but they'll still stall on it
+      in a longer problem. The goal is answering without working it out — which
+      is why the game times every card and treats a slow correct answer as
+      something still worth practising.
+    </p>
+    <p>
+      Short and frequent beats long and rare. Five minutes a day moves a fact
+      from "worked out" to "known" faster than half an hour on a Sunday.
+    </p>
+
+    <a class="cta" href="/flash-cards">Start a race →</a>
+
+    <h2>The other tables</h2>
+    <ul class="siblings">
+      {
+        others.map((r) => (
+          <li>
+            <a href={`/multiplication/${r}-times-table`}>{r}×</a>
+          </li>
+        ))
+      }
+    </ul>
+
+    <footer class="page__foot">
+      <a href="/">School Skills</a>
+      <a href="/flash-cards">Flash cards</a>
+      <a href="/privacy">Privacy</a>
+      <p>Free to use. No account, and progress never leaves your device.</p>
+    </footer>
+  </main>
+</Base>

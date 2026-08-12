@@ -433,6 +433,8 @@ export default defineConfig([
       // violations; the samples are strings, but the file itself is Node.
       "*.config.test.mjs",
       "scripts/**/*.{js,mjs,ts}",
+      // The orchestrator driver — a Node CLI, not app code.
+      ".claude/**/*.{js,mjs}",
       "e2e/**/*.{ts,mjs}",
       "sst.config.ts",
     ],
@@ -456,6 +458,30 @@ export default defineConfig([
     // no import form, so the rule has nothing to suggest here.
     files: ["sst.config.ts"],
     rules: { "@typescript-eslint/triple-slash-reference": "off" },
+  },
+
+  {
+    // The service worker runs in ServiceWorkerGlobalScope — not a window, not
+    // Node — so it has its own globals and no `window` at all. Worth linting
+    // rather than ignoring: a stray reference to `window` or `document` in here
+    // is a runtime error that only shows up offline, which is the one place
+    // nobody is watching the console.
+    files: ["public/sw.js"],
+    languageOptions: {
+      globals: {
+        self: "readonly",
+        caches: "readonly",
+        clients: "readonly",
+        fetch: "readonly",
+        Response: "readonly",
+        Request: "readonly",
+        URL: "readonly",
+      },
+    },
+    rules: {
+      "no-restricted-globals": "off",
+      "no-restricted-syntax": "off",
+    },
   },
 
   {

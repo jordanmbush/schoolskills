@@ -40,7 +40,25 @@ const ogImage = new URL(image, Astro.site).href;
     <meta name="twitter:card" content="summary_large_image" />
 
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#0b0f1a" />
     <meta name="generator" content={Astro.generator} />
+
+    <!--
+      Registered on `load` rather than immediately: service-worker registration
+      competes with the page's own resources for bandwidth, and nothing here
+      needs it during first paint. Failure is silent on purpose — the site works
+      perfectly without one, so a registration error is not worth a console
+      error on every visit.
+    -->
+    <script is:inline>
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+          navigator.serviceWorker.register("/sw.js").catch(() => {});
+        });
+      }
+    </script>
 
     {
       jsonLd && (
