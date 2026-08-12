@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
 import { useHub, usePlayer } from "@/components/state/HubContext";
 import TopBar from "@/components/TopBar";
-import { Avatar } from "@/components/ui/kit";
+import { Avatar, Button } from "@/components/ui/kit";
 import { BADGES } from "@/engine/progress";
 import {
   bestRun,
@@ -120,14 +120,15 @@ export default function Progress() {
           <h2 className="panel__title">Fact map</h2>
           <div className="segmented segmented--slim">
             {OPERATION_ORDER.map((op) => (
-              <button
+              <Button
                 key={op}
+                variant="bare"
                 className={`segmented__btn${operation === op ? " is-on" : ""}`}
                 onClick={() => setOperation(op)}
-                aria-pressed={operation === op}
+                pressed={operation === op}
               >
                 {OPERATIONS[op].symbol}
-              </button>
+              </Button>
             ))}
           </div>
         </div>
@@ -203,8 +204,9 @@ export default function Progress() {
         <div className="panel__head">
           <h2 className="panel__title">Trouble spots</h2>
           {trouble.length > 0 && (
-            <button
-              className="btn btn--accent btn--sm"
+            <Button
+              variant="accent"
+              size="sm"
               onClick={() => {
                 sfx.select();
                 navigate(`/p/${profile.id}/race`, {
@@ -222,7 +224,7 @@ export default function Progress() {
               }}
             >
               Drill these
-            </button>
+            </Button>
           )}
         </div>
         {trouble.length === 0 ? (

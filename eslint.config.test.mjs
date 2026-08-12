@@ -80,6 +80,28 @@ describe("view layer (src/components/, src/games/, src/pages/)", () => {
     expect(fired).toContain(SYNTAX);
   });
 
+  // The test above uses a made-up path, so it passed for the whole time an
+  // allowlist exempted eight real files from the same rule. These are those
+  // files. If an allowlist ever comes back, this is what fails.
+  it.each([
+    "src/components/PlayerEditor.tsx",
+    "src/components/TopBar.tsx",
+    "src/components/BackupPanel.tsx",
+    "src/components/screens/PlayerHub.tsx",
+    "src/components/screens/PlayerSelect.tsx",
+    "src/components/screens/Progress.tsx",
+    "src/games/flashcards/App.tsx",
+    "src/games/flashcards/RaceSetup.tsx",
+    "src/games/flashcards/RaceTrack.tsx",
+    "src/games/flashcards/RaceResults.tsx",
+  ])("rejects native controls at %s, which used to be exempt", async (path) => {
+    const fired = await rulesFiredFor(
+      path,
+      `export const X = () => <button type="button">go</button>;\n`,
+    );
+    expect(fired).toContain(SYNTAX);
+  });
+
   it('rejects role="button" on a non-button', async () => {
     const fired = await rulesFiredFor(
       "src/components/Hub.tsx",
