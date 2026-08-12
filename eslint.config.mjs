@@ -91,8 +91,6 @@ const rawControlsAllowlist = [
   "src/components/screens/Progress.tsx", // 3
   "src/components/screens/PlayerHub.tsx", // 2
   "src/components/TopBar.tsx", // 1
-  "src/games/flashcards/App.tsx", // 1
-  "src/components/BackupPanel.tsx", // 1
 ];
 
 // Storage is an implementation detail of the service layer — the direct

@@ -1,6 +1,22 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import type { Profile } from "@/engine/types";
 
+/**
+ * `@/components/ui/kit` is the kit's single import path — every feature file
+ * already imports from here, so the form primitives are re-exported rather
+ * than given their own paths. They live in their own modules because each one
+ * carries a real doc block and this file has a 300-line cap to respect.
+ */
+export {
+  Button,
+  type ButtonProps,
+  type ButtonSize,
+  type ButtonVariant,
+} from "./Button";
+export { Input, type InputProps } from "./Input";
+export { Field, FieldSet } from "./Field";
+export { Select, type SelectOption, type SelectProps } from "./Select";
+
 export function Avatar({
   profile,
   size = "3.5rem",
