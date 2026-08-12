@@ -1,0 +1,142 @@
+---
+import Base from "@/layouts/Base.astro";
+import { WORD_LISTS } from "@/engine/decks/wordlists";
+import "@/styles/content.css";
+
+/**
+ * The organic-search surface for the word decks, in the same shape as the
+ * times-table pages: real prerendered HTML that answers the query itself, with
+ * the game one link away.
+ *
+ * It is a content page rather than a second mount of the island. The game is
+ * one origin and one storage bucket by design — a profile has to follow a
+ * child between subjects — so spelling lives inside `/flash-cards` alongside
+ * the sums. What this page earns is the search intent, which is a different
+ * query from "times tables" and would only be diluted by being folded into
+ * that page's description.
+ */
+
+const title =
+  "Sight words and spelling practice — free Dolch word lists | School Skills";
+const description =
+  "The Dolch sight words, graded by age, as a free spelling game. Each word is read aloud and typed from memory — no sign-up, works offline, progress stays on your device.";
+---
+
+<Base
+  title={title}
+  description={description}
+  jsonLd={{
+    "@context": "https://schema.org",
+    "@type": "LearningResource",
+    name: "Sight words and spelling practice",
+    description,
+    url: "https://schoolskills.app/spelling",
+    learningResourceType: "Game",
+    educationalLevel: "Elementary School",
+    teaches: "Sight word recognition and spelling, Dolch word lists",
+    typicalAgeRange: "4-9",
+    isAccessibleForFree: true,
+    inLanguage: "en",
+  }}
+>
+  <main class="page">
+    <p class="page__eyebrow">Reading and spelling</p>
+    <h1>Sight words and spelling</h1>
+    <p class="page__lead">
+      The words that don&rsquo;t play fair &mdash; <em>said</em>, <em
+        >because</em
+      >, <em>one</em> &mdash; graded by age and drilled by ear, the way a spelling
+      test actually works.
+    </p>
+
+    <a class="cta" href="/flash-cards">Start a spelling race &rarr;</a>
+
+    <h2>What sight words are</h2>
+    <p>
+      Most words can be sounded out. These can&rsquo;t, or not reliably: a child
+      who attacks <em>said</em> phonetically arrives at &ldquo;say-id&rdquo;. Edward
+      Dolch collected the worst offenders in 1936 and the list has barely moved since,
+      because the words that break the rules are the common ones. Between them they
+      account for something like half the words in a typical children&rsquo;s book,
+      which is why they get memorised rather than decoded.
+    </p>
+
+    <h2>The lists</h2>
+    <p>
+      Graded by age rather than by school year, because Dolch&rsquo;s own grades
+      are American and the mapping to other systems is approximate. Pick the one
+      that matches the reader, not the one that matches the label.
+    </p>
+    <table class="facts">
+      <caption>The Dolch sight words, by age</caption>
+      <thead>
+        <tr>
+          <th scope="col">List</th>
+          <th scope="col">Age</th>
+          <th scope="col">Words</th>
+          <th scope="col">Starts with</th>
+        </tr>
+      </thead>
+      <tbody>
+        {
+          WORD_LISTS.map((list) => (
+            <tr>
+              <th scope="row">{list.name}</th>
+              <td>{list.group}</td>
+              <td>{list.words.length}</td>
+              <td>{list.words.slice(0, 4).join(", ")}&hellip;</td>
+            </tr>
+          ))
+        }
+      </tbody>
+    </table>
+
+    <h2>Heard, not copied</h2>
+    <p>
+      A spelling card that shows you the word is a handwriting exercise. So the
+      word is read out and the screen stays blank until you&rsquo;ve typed it
+      &mdash; the same thing a teacher does, using the voice already installed
+      on the device. Nothing is recorded and nothing is sent anywhere. On a
+      device with no voice available, the word flashes up briefly and then
+      hides, which is weaker but still recall rather than transcription.
+    </p>
+    <p>
+      Younger readers can switch to <em>spot it</em>: hear the word, pick it out
+      of four. Recognition first, spelling second.
+    </p>
+
+    <h2>Practising it properly</h2>
+    <p>
+      Words that come out wrong, or come out slowly, collect in a trouble list
+      you can drill on their own. A word only counts as known once it&rsquo;s
+      right three times running and under four seconds &mdash; which is the same
+      bar the times tables are held to, and for the same reason: recall, not
+      working it out.
+    </p>
+    <p>
+      Short and frequent beats long and rare. Ten words a day will move a list
+      faster than a whole list once a week.
+    </p>
+
+    <a class="cta" href="/flash-cards">Start a spelling race &rarr;</a>
+
+    <h2>Also worth practising</h2>
+    <ul class="siblings">
+      <li><a href="/flash-cards">Flash cards</a></li>
+      {
+        [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((r) => (
+          <li>
+            <a href={`/multiplication/${r}-times-table`}>{r}&times;</a>
+          </li>
+        ))
+      }
+    </ul>
+
+    <footer class="page__foot">
+      <a href="/">School Skills</a>
+      <a href="/flash-cards">Flash cards</a>
+      <a href="/privacy">Privacy</a>
+      <p>Free to use. No account, and progress never leaves your device.</p>
+    </footer>
+  </main>
+</Base>

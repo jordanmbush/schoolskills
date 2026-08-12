@@ -1,5 +1,5 @@
 import { Avatar } from "@/components/ui/kit";
-import { describeConfig } from "@/engine/decks/flashcards";
+import { describeConfig } from "@/engine/decks";
 import { raceTimeMs } from "@/engine/records";
 import { clock, percent, shortDate } from "@/engine/format";
 import type { Profile, Session } from "@/engine/types";

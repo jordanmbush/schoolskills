@@ -224,7 +224,10 @@ export function readConfig(config: LegacyFlashConfig): FlashConfig {
   return { ...config, others };
 }
 
-export function buildDeck(config: LegacyFlashConfig, seed: number): Card[] {
+export function buildFlashDeck(
+  config: LegacyFlashConfig,
+  seed: number,
+): Card[] {
   const resolved = readConfig(config);
   const spec = OPERATIONS[resolved.operation];
   const rand = mulberry32(seed);
@@ -278,7 +281,7 @@ const sortedFacts = (facts: Array<[number, number]>) =>
  * play, so every run saved before they existed keeps the key it was filed
  * under and still lines up as a ghost.
  */
-export function configKey(input: LegacyFlashConfig) {
+export function flashConfigKey(input: LegacyFlashConfig) {
   const config = readConfig(input);
   const sorted = (list: number[]) => [...list].sort((a, b) => a - b).join(".");
   const parts = [
@@ -293,7 +296,7 @@ export function configKey(input: LegacyFlashConfig) {
   return parts.join("|");
 }
 
-export function describeConfig(input: LegacyFlashConfig) {
+export function describeFlashConfig(input: LegacyFlashConfig) {
   const config = readConfig(input);
   const spec = OPERATIONS[config.operation];
   const tables = [...config.tables].sort((a, b) => a - b);
@@ -346,7 +349,7 @@ export function timeLimitForAge(age: number) {
  * loop for problems a player keeps missing. Tables and others are filled in
  * from the facts so the run still describes and files itself normally.
  */
-export function buildDrill(
+export function buildFlashDrill(
   factIds: string[],
   base: Pick<FlashConfig, "operation" | "inputMode"> & {
     timeLimitMs?: number | null;

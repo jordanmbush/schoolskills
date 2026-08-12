@@ -1,12 +1,12 @@
 import type {
   CardResult,
-  FlashConfig,
+  RaceConfig,
   Ghost,
   Profile,
   Session,
 } from "@/engine/types";
 
-import { deckSpec } from "@/engine/decks/registry";
+import { deckSpec } from "@/engine/decks";
 
 export const accuracyOf = (session: Pick<Session, "correct" | "incorrect">) => {
   const total = session.correct + session.incorrect;
@@ -14,7 +14,7 @@ export const accuracyOf = (session: Pick<Session, "correct" | "incorrect">) => {
 };
 
 /** The per-card clock this run was played under, or null if it was untimed. */
-export const timeLimitOf = (session: { config: FlashConfig }) =>
+export const timeLimitOf = (session: { config: RaceConfig }) =>
   session.config?.timeLimitMs ?? null;
 
 export const timedOutCount = (session: { cards: CardResult[] }) =>

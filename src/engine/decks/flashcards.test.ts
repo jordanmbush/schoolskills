@@ -2,9 +2,9 @@ import { describe, expect, it } from "vitest";
 
 import {
   OPERATIONS,
-  buildDeck,
-  buildDrill,
-  configKey,
+  buildFlashDeck,
+  buildFlashDrill,
+  flashConfigKey,
   readConfig,
 } from "./flashcards";
 import type { FlashConfig } from "@/engine/types";
@@ -23,14 +23,14 @@ describe("buildDeck", () => {
     // Ghost racing depends on this outright: a rival's run is replayed from a
     // seed, so the same seed producing a different deck would race two people
     // on different questions and call it a record.
-    const a = buildDeck(config(), 12345);
-    const b = buildDeck(config(), 12345);
+    const a = buildFlashDeck(config(), 12345);
+    const b = buildFlashDeck(config(), 12345);
     expect(a).toEqual(b);
-    expect(buildDeck(config(), 12346)).not.toEqual(a);
+    expect(buildFlashDeck(config(), 12346)).not.toEqual(a);
   });
 
   it("answers with text, not numbers", () => {
-    for (const card of buildDeck(config(), 7)) {
+    for (const card of buildFlashDeck(config(), 7)) {
       expect(typeof card.answer).toBe("string");
     }
   });
@@ -41,7 +41,7 @@ describe("buildDeck", () => {
       add: (a, b) => a + b,
     };
     for (const operation of ["multiply", "add"] as const) {
-      for (const card of buildDeck(config({ operation }), 99)) {
+      for (const card of buildFlashDeck(config({ operation }), 99)) {
         const [left, , right] = card.prompt.split(" ");
         expect(card.answer).toBe(
           String(check[operation](Number(left), Number(right))),
@@ -51,7 +51,7 @@ describe("buildDeck", () => {
   });
 
   it("never asks division to divide by zero", () => {
-    const deck = buildDeck(
+    const deck = buildFlashDeck(
       config({ operation: "divide", others: [0, 1, 2, 3] }),
       5,
     );
@@ -61,7 +61,7 @@ describe("buildDeck", () => {
   });
 
   it("keeps subtraction above zero", () => {
-    for (const card of buildDeck(config({ operation: "subtract" }), 5)) {
+    for (const card of buildFlashDeck(config({ operation: "subtract" }), 5)) {
       expect(Number(card.answer)).toBeGreaterThanOrEqual(0);
     }
   });
@@ -69,12 +69,14 @@ describe("buildDeck", () => {
   it("exhausts the pool before repeating a fact", () => {
     // Three facts over six cards should be two full passes, not the same card
     // four times while another never appears.
-    const seen = buildDeck(config({ cardCount: 6 }), 3).map((c) => c.factId);
+    const seen = buildFlashDeck(config({ cardCount: 6 }), 3).map(
+      (c) => c.factId,
+    );
     expect(new Set(seen).size).toBe(3);
   });
 
   it("offers four distinct choices including the answer", () => {
-    for (const card of buildDeck(config({ inputMode: "choose" }), 8)) {
+    for (const card of buildFlashDeck(config({ inputMode: "choose" }), 8)) {
       expect(card.choices).toHaveLength(4);
       expect(new Set(card.choices).size).toBe(4);
       expect(card.choices).toContain(card.answer);
@@ -83,7 +85,7 @@ describe("buildDeck", () => {
   });
 
   it("builds no choices when the answer is typed", () => {
-    for (const card of buildDeck(config(), 8)) {
+    for (const card of buildFlashDeck(config(), 8)) {
       expect(card.choices).toBeUndefined();
     }
   });
@@ -131,20 +133,22 @@ describe("configKey", () => {
   // change to its format doesn't break a test — it silently orphans every run
   // already saved, and nobody's personal best lines up again.
   it("is stable for a plain config", () => {
-    expect(configKey(config())).toBe("multiply|7|1.2.3|6|type");
+    expect(flashConfigKey(config())).toBe("multiply|7|1.2.3|6|type");
   });
 
   it("appends the clock only when there is one", () => {
-    expect(configKey(config({ timeLimitMs: 8000 }))).toBe(
+    expect(flashConfigKey(config({ timeLimitMs: 8000 }))).toBe(
       "multiply|7|1.2.3|6|type|t8000",
     );
-    expect(configKey(config({ timeLimitMs: null }))).toBe(
+    expect(flashConfigKey(config({ timeLimitMs: null }))).toBe(
       "multiply|7|1.2.3|6|type",
     );
   });
 
   it("sorts numerically, so 10 doesn't file itself before 2", () => {
-    expect(configKey(config({ tables: [10, 2, 1] }))).toContain("|1.2.10|");
+    expect(flashConfigKey(config({ tables: [10, 2, 1] }))).toContain(
+      "|1.2.10|",
+    );
   });
 
   it("reads a pre-`others` config through its old min/max range", () => {
@@ -163,7 +167,7 @@ describe("configKey", () => {
 
 describe("buildDrill", () => {
   it("takes fact ids and files them as the persisted pair shape", () => {
-    const drill = buildDrill(["7:8", "6:9"], {
+    const drill = buildFlashDrill(["7:8", "6:9"], {
       operation: "multiply",
       inputMode: "type",
     });
@@ -175,13 +179,15 @@ describe("buildDrill", () => {
 
   it("de-duplicates", () => {
     expect(
-      buildDrill(["7:8", "7:8"], { operation: "multiply", inputMode: "type" })
-        .facts,
+      buildFlashDrill(["7:8", "7:8"], {
+        operation: "multiply",
+        inputMode: "type",
+      }).facts,
     ).toHaveLength(1);
   });
 
   it("fills the axes in from the facts so the run still describes itself", () => {
-    const drill = buildDrill(["7:8", "6:9"], {
+    const drill = buildFlashDrill(["7:8", "6:9"], {
       operation: "multiply",
       inputMode: "type",
     });
@@ -191,21 +197,22 @@ describe("buildDrill", () => {
 
   it("asks each fact twice, within bounds", () => {
     expect(
-      buildDrill(["7:8"], { operation: "multiply", inputMode: "type" })
+      buildFlashDrill(["7:8"], { operation: "multiply", inputMode: "type" })
         .cardCount,
     ).toBe(6);
     const many = Array.from({ length: 40 }, (_, i) => `1:${i}`);
     expect(
-      buildDrill(many, { operation: "multiply", inputMode: "type" }).cardCount,
+      buildFlashDrill(many, { operation: "multiply", inputMode: "type" })
+        .cardCount,
     ).toBe(30);
   });
 
   it("builds a deck of only those facts", () => {
-    const drill = buildDrill(["7:8", "6:9"], {
+    const drill = buildFlashDrill(["7:8", "6:9"], {
       operation: "multiply",
       inputMode: "type",
     });
-    const ids = new Set(buildDeck(drill, 4).map((c) => c.factId));
+    const ids = new Set(buildFlashDeck(drill, 4).map((c) => c.factId));
     expect([...ids].sort()).toEqual(["6:9", "7:8"]);
   });
 });

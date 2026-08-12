@@ -9,11 +9,8 @@ import {
   sessionsFor,
   troubleFacts,
 } from "@/engine/records";
-import {
-  buildDrill,
-  describeConfig,
-  timeLimitForAge,
-} from "@/engine/decks/flashcards";
+import { timeLimitForAge } from "@/engine/decks/flashcards";
+import { buildDrill, describeConfig } from "@/engine/decks";
 import { clock, percent, plural, shortDate } from "@/engine/format";
 import { BADGES_BY_ID } from "@/engine/progress";
 import { sfx } from "@/services/sound";
@@ -82,8 +79,8 @@ export default function PlayerHub() {
                   state: {
                     config: buildDrill(
                       trouble.map((fact) => fact.factId),
+                      "multiply",
                       {
-                        operation: "multiply",
                         inputMode: profile.age <= 6 ? "choose" : "type",
                         timeLimitMs: timeLimitForAge(profile.age),
                       },

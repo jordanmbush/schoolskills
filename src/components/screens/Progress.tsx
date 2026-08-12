@@ -16,32 +16,56 @@ import {
 } from "@/engine/records";
 import {
   OPERATIONS,
-  buildDrill,
+  OPERATION_ORDER,
   timeLimitForAge,
 } from "@/engine/decks/flashcards";
+import { buildDrill, deckSpec } from "@/engine/decks";
+import { WORD_MODE_PREFIX, listIdOf } from "@/engine/decks/words";
+import { WORD_LISTS_BY_ID } from "@/engine/decks/wordlists";
 import { sfx } from "@/services/sound";
+import { DeckSwitch, type DeckChoice } from "./progress/DeckSwitch";
 import { FactMap } from "./progress/FactMap";
+import { WordMap } from "./progress/WordMap";
 import { RecordBook, RunList } from "./progress/RecordBook";
 import { duration, percent } from "@/engine/format";
-import type { Operation } from "@/engine/types";
 
 export default function Progress() {
   const { profileId } = useParams();
   const { profiles, sessions } = useHub();
   const profile = usePlayer(profileId);
   const navigate = useNavigate();
-  const [operation, setOperation] = useState<Operation>("multiply");
+  const [mode, setMode] = useState<string>("multiply");
 
   const mine = useMemo(
     () => (profile ? sessionsFor(sessions, profile.id) : []),
     [sessions, profile],
   );
-  const grid = useMemo(() => factStats(mine, operation), [mine, operation]);
+  const grid = useMemo(() => factStats(mine, mode), [mine, mode]);
   const tables = useMemo(() => tableProgress(grid), [grid]);
-  const trouble = useMemo(
-    () => troubleFacts(mine, operation),
-    [mine, operation],
-  );
+  const trouble = useMemo(() => troubleFacts(mine, mode), [mine, mode]);
+
+  /**
+   * The four operations always, plus any word list this player has actually
+   * raced. An untouched list is an empty panel, and a switcher that offers
+   * every list ever shipped would bury the four that matter.
+   */
+  const decks = useMemo<DeckChoice[]>(() => {
+    const words = [...new Set(mine.map((s) => s.mode))]
+      .filter((m) => m.startsWith(WORD_MODE_PREFIX))
+      .sort();
+    return [
+      ...OPERATION_ORDER.map((op) => ({
+        mode: op as string,
+        short: OPERATIONS[op].symbol,
+        title: OPERATIONS[op].label,
+      })),
+      ...words.map((m) => ({
+        mode: m,
+        short: deckSpec(m).label,
+        title: `${deckSpec(m).label} — spelling`,
+      })),
+    ];
+  }, [mine]);
 
   /** Best time per configuration, with whoever in the house holds it. */
   const records = useMemo(() => {
@@ -63,7 +87,18 @@ export default function Progress() {
   const masteredCount = [...grid.keys()].filter(
     (k) => masteryOf(grid.get(k)) === "mastered",
   ).length;
-  const spec = OPERATIONS[operation];
+  const isWords = mode.startsWith(WORD_MODE_PREFIX);
+  const spec = deckSpec(mode);
+  const switcher = (
+    <DeckSwitch
+      choices={decks}
+      current={mode}
+      onChoose={(next) => {
+        sfx.tap();
+        setMode(next);
+      }}
+    />
+  );
 
   return (
     <main className="progress">
@@ -104,12 +139,25 @@ export default function Progress() {
         </div>
       </section>
 
-      <FactMap
-        operation={operation}
-        onOperationChange={setOperation}
-        spec={spec}
-        grid={grid}
-      />
+      {isWords ? (
+        <WordMap
+          label={spec.label}
+          // The shipped list when it's still shipped; otherwise whatever of it
+          // survives in this player's own history.
+          words={
+            WORD_LISTS_BY_ID.get(listIdOf(mode))?.words ??
+            [...grid.keys()].sort()
+          }
+          grid={grid}
+          switcher={switcher}
+        />
+      ) : (
+        <FactMap
+          spec={OPERATIONS[mode as keyof typeof OPERATIONS]}
+          grid={grid}
+          switcher={switcher}
+        />
+      )}
 
       <section className="panel anim-rise">
         <div className="panel__head">
@@ -124,8 +172,8 @@ export default function Progress() {
                   state: {
                     config: buildDrill(
                       trouble.map((fact) => fact.factId),
+                      mode,
                       {
-                        operation,
                         inputMode: profile.age <= 6 ? "choose" : "type",
                         timeLimitMs: timeLimitForAge(profile.age),
                       },
@@ -182,33 +230,36 @@ export default function Progress() {
       </section>
 
       <div className="progress__columns">
-        <section className="panel anim-rise">
-          <div className="panel__head">
-            <h2 className="panel__title">Table trophies</h2>
-            <span className="chip">
-              {tables.filter((t) => t.complete).length} / 12
-            </span>
-          </div>
-          <ul className="trophies">
-            {tables.map((table) => (
-              <li
-                key={table.table}
-                className={`trophy${table.complete ? " is-complete" : ""}`}
-                title={`${table.mastered} of ${table.total} facts mastered`}
-              >
-                <span className="trophy__num u-display">{table.table}</span>
-                <span className="trophy__bar">
-                  <span
-                    className="trophy__fill"
-                    style={{
-                      width: `${(table.mastered / table.total) * 100}%`,
-                    }}
-                  />
-                </span>
-              </li>
-            ))}
-          </ul>
-        </section>
+        {/* Times tables only — a spelling list has no twelve of anything. */}
+        {!isWords && (
+          <section className="panel anim-rise">
+            <div className="panel__head">
+              <h2 className="panel__title">Table trophies</h2>
+              <span className="chip">
+                {tables.filter((t) => t.complete).length} / 12
+              </span>
+            </div>
+            <ul className="trophies">
+              {tables.map((table) => (
+                <li
+                  key={table.table}
+                  className={`trophy${table.complete ? " is-complete" : ""}`}
+                  title={`${table.mastered} of ${table.total} facts mastered`}
+                >
+                  <span className="trophy__num u-display">{table.table}</span>
+                  <span className="trophy__bar">
+                    <span
+                      className="trophy__fill"
+                      style={{
+                        width: `${(table.mastered / table.total) * 100}%`,
+                      }}
+                    />
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
 
         <section className="panel anim-rise">
           <div className="panel__head">
