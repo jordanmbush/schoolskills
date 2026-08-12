@@ -8,26 +8,24 @@ import {
 import { useHub, usePlayer } from "@/components/state/HubContext";
 import { useRace } from "@/components/state/RaceContext";
 import TopBar from "@/components/TopBar";
-import { Avatar, Button, Input } from "@/components/ui/kit";
+import { Button } from "@/components/ui/kit";
 import {
   OPERATIONS,
   OPERATION_ORDER,
-  PRESETS,
-  TIME_LIMITS,
-  TIME_MAX_MS,
-  TIME_MIN_MS,
-  TIME_STEP_MS,
   buildDeck,
   configKey,
   presetForAge,
   snapTimeLimit,
   timeLimitForAge,
 } from "@/engine/decks/flashcards";
-import { accuracyOf, ghostsFor, raceTimeMs } from "@/engine/records";
-import { clock, percent, shortDate } from "@/engine/format";
+import { ghostsFor } from "@/engine/records";
 import { randomSeed } from "@/engine/random";
 import { sfx } from "@/services/sound";
-import type { FlashConfig, Ghost, InputMode, Operation } from "@/engine/types";
+import { ClockPicker } from "./setup/ClockPicker";
+import { DeckPicker } from "./setup/DeckPicker";
+import { PresetRow } from "./setup/PresetRow";
+import { RivalList } from "./setup/RivalList";
+import type { FlashConfig, InputMode, Operation } from "@/engine/types";
 
 const CARD_COUNTS = [10, 15, 20, 30, 50];
 const TABLE_NUMBERS = Array.from({ length: 12 }, (_, i) => i + 1);
@@ -73,7 +71,6 @@ export default function RaceSetup() {
     { length: 13 - spec.minOther },
     (_, i) => i + spec.minOther,
   );
-  const drill = config.facts?.length ? config.facts : null;
   // A drill sizes its own deck, so make room for whatever length it picked.
   const cardCounts = CARD_COUNTS.includes(config.cardCount)
     ? CARD_COUNTS
@@ -160,34 +157,13 @@ export default function RaceSetup() {
       />
 
       <div className="setup__grid">
-        <section className="panel anim-rise">
-          <div className="panel__head">
-            <h2 className="panel__title">Pick a race</h2>
-          </div>
-          <div className="preset-row">
-            {PRESETS.map((preset) => {
-              const chosen = configKey(preset.config) === key;
-              return (
-                <Button
-                  key={preset.id}
-                  variant="bare"
-                  className={`preset${chosen ? " is-chosen" : ""}`}
-                  onClick={() => {
-                    sfx.tap();
-                    setConfig(preset.config);
-                  }}
-                  pressed={chosen}
-                >
-                  <span className="preset__emoji" aria-hidden="true">
-                    {preset.emoji}
-                  </span>
-                  <span className="preset__name u-display">{preset.name}</span>
-                  <span className="preset__tag">{preset.tagline}</span>
-                </Button>
-              );
-            })}
-          </div>
-        </section>
+        <PresetRow
+          currentKey={key}
+          onChoose={(next) => {
+            sfx.tap();
+            setConfig(next);
+          }}
+        />
 
         <section className="panel anim-rise">
           <div className="panel__head">
@@ -225,118 +201,17 @@ export default function RaceSetup() {
             </div>
           </div>
 
-          {drill ? (
-            <div className="control">
-              <span className="control__label">Practice set</span>
-              <p className="drill__lead">
-                The {drill.length} facts you&apos;ve been missing most. Answer
-                each one twice.
-              </p>
-              <ul className="factchips">
-                {drill.map(([a, b]) => (
-                  <li key={`${a}:${b}`} className="factchip u-mono">
-                    {a} {spec.symbol} {b}
-                  </li>
-                ))}
-              </ul>
-              <div className="control__row">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    sfx.tap();
-                    patch({ facts: undefined });
-                  }}
-                >
-                  Pick numbers instead
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <div className="control">
-              <div className="numbers">
-                <div className="numbers__side">
-                  <span className="control__label">{spec.focusLabel}</span>
-                  <div className="tablegrid">
-                    {TABLE_NUMBERS.map((n) => (
-                      <Button
-                        key={n}
-                        variant="bare"
-                        className={`tablegrid__cell u-mono${config.tables.includes(n) ? " is-on" : ""}`}
-                        onClick={() => toggleTable(n)}
-                        pressed={config.tables.includes(n)}
-                      >
-                        {n}
-                      </Button>
-                    ))}
-                  </div>
-                  <div className="control__row">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => patch({ tables: TABLE_NUMBERS })}
-                    >
-                      All
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => patch({ tables: [2, 5, 10] })}
-                    >
-                      Easy three
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => patch({ tables: [6, 7, 8, 9] })}
-                    >
-                      Tricky four
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="numbers__side">
-                  <span className="control__label">{spec.pairLabel}</span>
-                  <div className="tablegrid">
-                    {otherNumbers.map((n) => (
-                      <Button
-                        key={n}
-                        variant="bare"
-                        className={`tablegrid__cell u-mono${config.others.includes(n) ? " is-on" : ""}`}
-                        onClick={() => toggleOther(n)}
-                        pressed={config.others.includes(n)}
-                      >
-                        {n}
-                      </Button>
-                    ))}
-                  </div>
-                  <div className="control__row">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => patch({ others: otherNumbers })}
-                    >
-                      All
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => patch({ others: [...config.tables] })}
-                    >
-                      Match tables
-                    </Button>
-                  </div>
-                </div>
-              </div>
-              <p className="numbers__note">
-                Cards only ever use numbers lit up on both sides. Unticking a
-                number on the left removes it from the right too.
-              </p>
-              <p className="numbers__preview u-mono">
-                e.g. {sample.join(" · ")}
-              </p>
-            </div>
-          )}
+          <DeckPicker
+            config={config}
+            spec={spec}
+            focusNumbers={TABLE_NUMBERS}
+            pairNumbers={otherNumbers}
+            sample={sample}
+            onToggleFocus={toggleTable}
+            onTogglePair={toggleOther}
+            patch={patch}
+            tap={sfx.tap}
+          />
 
           <div className="control">
             <span className="control__label">How many cards</span>
@@ -358,83 +233,26 @@ export default function RaceSetup() {
             </div>
           </div>
 
-          <div className="control">
-            <span className="control__label">Time per card</span>
-            <div className="segmented">
-              {TIME_LIMITS.map(({ ms, label }) => {
-                const on = (config.timeLimitMs ?? null) === ms;
-                return (
-                  <Button
-                    key={label}
-                    variant="bare"
-                    className={`segmented__btn u-mono${on ? " is-on" : ""}`}
-                    onClick={() => {
-                      sfx.tap();
-                      setLimit(ms);
-                    }}
-                    pressed={on}
-                  >
-                    {label}
-                  </Button>
-                );
-              })}
-            </div>
-
-            <div className="timelimit">
-              <Button
-                variant="bare"
-                className="timelimit__step u-mono"
-                onClick={() => bumpLimit(-TIME_STEP_MS)}
-                aria-label="Quarter of a second less"
-              >
-                −
-              </Button>
-              <span className="timelimit__field">
-                <Input
-                  className="timelimit__input u-mono"
-                  type="number"
-                  inputMode="decimal"
-                  step={TIME_STEP_MS / 1000}
-                  min={TIME_MIN_MS / 1000}
-                  max={TIME_MAX_MS / 1000}
-                  value={limitShown}
-                  placeholder="off"
-                  aria-label="Seconds per card"
-                  blurOnEnter
-                  onChange={(text) => {
-                    setLimitDraft(text);
-                    if (text.trim() === "") {
-                      patch({ timeLimitMs: null });
-                      return;
-                    }
-                    const typed = Number(text);
-                    if (Number.isFinite(typed))
-                      patch({ timeLimitMs: snapTimeLimit(typed * 1000) });
-                  }}
-                  onBlur={() => setLimitDraft(null)}
-                />
-                <span className="timelimit__unit u-mono">s</span>
-              </span>
-              <Button
-                variant="bare"
-                className="timelimit__step u-mono"
-                onClick={() => bumpLimit(TIME_STEP_MS)}
-                aria-label="Quarter of a second more"
-              >
-                +
-              </Button>
-              <span className="timelimit__hint">
-                Or set it exactly — quarter-second steps, down to{" "}
-                {TIME_MIN_MS / 1000}s. Clear the box for no clock.
-              </span>
-            </div>
-
-            <p className="numbers__note">
-              {config.timeLimitMs
-                ? "Run out of time and the answer is shown, then the next card comes up. Anything you miss lands on your practice list."
-                : "No card clock. The whole race is timed instead — take as long as you need on any one card."}
-            </p>
-          </div>
+          <ClockPicker
+            limitMs={config.timeLimitMs ?? null}
+            shownSeconds={limitShown}
+            onPreset={(ms) => {
+              sfx.tap();
+              setLimit(ms);
+            }}
+            onStep={bumpLimit}
+            onType={(text) => {
+              setLimitDraft(text);
+              if (text.trim() === "") {
+                patch({ timeLimitMs: null });
+                return;
+              }
+              const typed = Number(text);
+              if (Number.isFinite(typed))
+                patch({ timeLimitMs: snapTimeLimit(typed * 1000) });
+            }}
+            onDraftEnd={() => setLimitDraft(null)}
+          />
 
           <div className="control">
             <span className="control__label">Answering</span>
@@ -463,71 +281,15 @@ export default function RaceSetup() {
           </div>
         </section>
 
-        <section className="panel anim-rise setup__rivals">
-          <div className="panel__head">
-            <h2 className="panel__title">Who are you racing?</h2>
-          </div>
-          <p className="muted setup__rival-note">
-            Only runs with these exact settings show up here — same cards, same
-            order, fair race.
-          </p>
-
-          <ul className="rivals">
-            <li>
-              <Button
-                variant="bare"
-                className={`rival${rivalId === null ? " is-chosen" : ""}`}
-                onClick={() => {
-                  sfx.tap();
-                  setRivalId(null);
-                }}
-                pressed={rivalId === null}
-              >
-                <span className="rival__icon" aria-hidden="true">
-                  🕐
-                </span>
-                <span className="rival__body">
-                  <span className="rival__name u-display">Just the clock</span>
-                  <span className="rival__meta">
-                    No ghost — set a time to beat
-                  </span>
-                </span>
-              </Button>
-            </li>
-            {rivals.map((ghost: Ghost) => (
-              <li key={ghost.session.id}>
-                <Button
-                  variant="bare"
-                  className={`rival${rivalId === ghost.session.id ? " is-chosen" : ""}`}
-                  style={
-                    { "--tint": ghost.profile.color } as React.CSSProperties
-                  }
-                  onClick={() => {
-                    sfx.tap();
-                    setRivalId(ghost.session.id);
-                  }}
-                  pressed={rivalId === ghost.session.id}
-                >
-                  <Avatar profile={ghost.profile} size="2.4rem" />
-                  <span className="rival__body">
-                    <span className="rival__name u-display">
-                      {ghost.isSelf ? "Your best" : ghost.profile.name}
-                    </span>
-                    <span className="rival__meta u-mono">
-                      {clock(raceTimeMs(ghost.session))} ·{" "}
-                      {percent(accuracyOf(ghost.session))} ·{" "}
-                      {shortDate(ghost.session.finishedAt)}
-                    </span>
-                  </span>
-                </Button>
-              </li>
-            ))}
-          </ul>
-
-          <Button variant="go" className="setup__go" onClick={launch}>
-            Start race
-          </Button>
-        </section>
+        <RivalList
+          rivals={rivals}
+          chosenId={rivalId}
+          onChoose={(id) => {
+            sfx.tap();
+            setRivalId(id);
+          }}
+          onStart={launch}
+        />
       </div>
     </main>
   );

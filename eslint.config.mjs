@@ -59,39 +59,6 @@ import prettier from "eslint-config-prettier/flat";
 // module it now describes.
 const MAX_COMPONENT_LINES = 300;
 
-// Files over the cap, each against the story that retires it. The list SHRINKS:
-// delete the entry in the same PR that splits the file. Counts are non-comment,
-// non-blank lines measured when the game was ported from the local-only app,
-// where nothing enforced a cap.
-const maxLinesAllowlist = [
-  // Retired by the flash-cards decomposition stories (PORT epic). RaceTrack is
-  // the race loop, the rAF ticker, the per-card clock and the keypad in one
-  // module; the split follows those seams, not arbitrary line counts.
-  "src/games/flashcards/RaceTrack.tsx", // 655
-  "src/games/flashcards/RaceSetup.tsx", // 473
-  "src/games/flashcards/RaceResults.tsx", // 351
-  "src/components/screens/Progress.tsx", // 392
-];
-
-// Files that still hand-roll native controls, inherited wholesale from the
-// local-only app where no kit boundary existed. 55 call sites across 8 files;
-// converting them blind during the port would have been a large untested
-// rewrite of every interactive surface at once, so the debt is recorded here
-// instead of hidden.
-//
-// Retired by the kit-conversion stories: each file's controls move to <Button>,
-// <Input>, <Select> and <Field> primitives, and its entry is deleted in the
-// same PR. The list only shrinks.
-const rawControlsAllowlist = [
-  "src/components/PlayerEditor.tsx", // 13
-  "src/games/flashcards/RaceTrack.tsx", // 12
-  "src/games/flashcards/RaceResults.tsx", // 5
-  "src/components/screens/PlayerSelect.tsx", // 4
-  "src/components/screens/Progress.tsx", // 3
-  "src/components/screens/PlayerHub.tsx", // 2
-  "src/components/TopBar.tsx", // 1
-];
-
 // Storage is an implementation detail of the service layer — the direct
 // analogue of monilibrium's "Prisma client only in services/" boundary. A React
 // component that reaches for `localStorage` bypasses the profile/session
@@ -386,7 +353,12 @@ export default defineConfig([
   // tone — and hit targets are not cosmetic here, the youngest player is five.
   {
     files: ["**/*.tsx"],
-    ignores: ["src/components/ui/**", ...rawControlsAllowlist],
+    // No exceptions. There WAS an allowlist here — 55 hand-rolled controls
+    // across 8 files, inherited from the local-only app where no kit existed.
+    // It was drained to zero by the KIT01–KIT04 stories and then deleted, so
+    // adding a file back means editing this rule rather than appending to a
+    // list, which is the point.
+    ignores: ["src/components/ui/**"],
     rules: {
       "no-restricted-syntax": [
         "error",
@@ -394,7 +366,7 @@ export default defineConfig([
           selector:
             "JSXOpeningElement[name.name=/^(button|input|select|textarea|label)$/]",
           message:
-            "Don't hand-roll native controls outside src/components/ui/. Use the kit: <button>→<Button>, <input>→<Input>/<NumberPad>, <select>→<Select>, <label>→<Field>. If the kit is missing a primitive, add it there.",
+            "Don't hand-roll native controls outside src/components/ui/. Use the kit: <button>→<Button>, <input>→<Input>, <select>→<Select>, <label>/<fieldset>→<Field>/<FieldSet>. If the kit is missing a primitive, add it there.",
         },
       ],
     },
@@ -413,7 +385,11 @@ export default defineConfig([
   // is coverage, not scannability.
   {
     files: ["src/components/**/*.{ts,tsx}", "src/games/**/*.{ts,tsx}"],
-    ignores: ["**/*.test.{ts,tsx}", ...maxLinesAllowlist],
+    // Tests only. There WAS an allowlist here too — RaceTrack (655), RaceSetup
+    // (473), Progress (392) and RaceResults (351), inherited from the
+    // local-only app where nothing enforced a cap. All four were split along
+    // their seams by the KIT03/KIT04 stories and the list was deleted.
+    ignores: ["**/*.test.{ts,tsx}"],
     rules: {
       "max-lines": [
         "error",

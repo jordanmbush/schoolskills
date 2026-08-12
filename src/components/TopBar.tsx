@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Avatar } from "@/components/ui/kit";
+import { Avatar, Button } from "@/components/ui/kit";
 import { levelFromXp } from "@/engine/progress";
 import { useHub } from "@/components/state/HubContext";
 import { setSoundEnabled } from "@/services/sound";
@@ -61,15 +61,16 @@ export default function TopBar({
 
       <div className="topbar__actions">
         {children}
-        <button
+        <Button
+          variant="bare"
           className="topbar__icon"
           onClick={() => void toggleSound()}
-          aria-pressed={soundOn}
+          pressed={soundOn}
           title={soundOn ? "Turn sound off" : "Turn sound on"}
         >
           <span aria-hidden="true">{soundOn ? "🔊" : "🔇"}</span>
           <span className="u-sr">Sound {soundOn ? "on" : "off"}</span>
-        </button>
+        </Button>
       </div>
     </header>
   );

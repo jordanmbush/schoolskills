@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useHub } from "@/components/state/HubContext";
 import { sfx } from "@/services/sound";
 import type { Profile } from "@/engine/types";
-import { Scrim } from "@/components/ui/kit";
+import { Button, Field, FieldSet, Input, Scrim } from "@/components/ui/kit";
 
 export const AVATARS = [
   "🦊",
@@ -135,132 +135,123 @@ export default function PlayerEditor({ profile, onClose, onDeleted }: Props) {
           <h2 className="panel__title">
             {isNew ? "New player" : "Edit player"}
           </h2>
-          <button
-            type="button"
-            className="btn btn--ghost btn--sm"
-            onClick={onClose}
-          >
+          <Button variant="ghost" size="sm" onClick={onClose}>
             Close
-          </button>
+          </Button>
         </div>
 
-        <label className="field">
-          <span className="field__label">Name</span>
-          <input
+        <Field label="Name">
+          <Input
             ref={nameField}
-            className="field__input"
             value={name}
             maxLength={24}
-            onChange={(e) => setName(e.target.value)}
+            onChange={setName}
             placeholder="Type a name"
             autoComplete="off"
           />
-        </label>
+        </Field>
 
-        <fieldset className="field">
-          <legend className="field__label">Avatar</legend>
+        <FieldSet legend="Avatar">
           <div className="picker picker--emoji">
             {AVATARS.map((option) => (
-              <button
+              <Button
                 key={option}
-                type="button"
+                variant="bare"
                 className={`picker__cell${option === emoji ? " is-chosen" : ""}`}
                 onClick={() => {
                   setEmoji(option);
                   sfx.tap();
                 }}
-                aria-pressed={option === emoji}
+                pressed={option === emoji}
                 aria-label={`Avatar ${option}`}
               >
                 {option}
-              </button>
+              </Button>
             ))}
           </div>
-        </fieldset>
+        </FieldSet>
 
-        <fieldset className="field">
-          <legend className="field__label">Colour</legend>
+        <FieldSet legend="Colour">
           <div className="picker picker--color">
             {COLORS.map((option) => (
-              <button
+              <Button
                 key={option}
-                type="button"
+                variant="bare"
                 className={`swatch${option === color ? " is-chosen" : ""}`}
                 style={{ background: option }}
                 onClick={() => {
                   setColor(option);
                   sfx.tap();
                 }}
-                aria-pressed={option === color}
+                pressed={option === color}
                 aria-label={`Colour ${option}`}
               />
             ))}
           </div>
-        </fieldset>
+        </FieldSet>
 
-        <fieldset className="field">
-          <legend className="field__label">Age</legend>
+        <FieldSet
+          legend="Age"
+          hint="Sets the default difficulty and how big everything looks."
+        >
           <div className="stepper">
-            <button
-              type="button"
+            <Button
+              variant="bare"
               className="stepper__btn"
               onClick={() => setAge((a) => Math.max(3, a - 1))}
               aria-label="Younger"
             >
               −
-            </button>
+            </Button>
             <span className="stepper__value u-mono">{age}</span>
-            <button
-              type="button"
+            <Button
+              variant="bare"
               className="stepper__btn"
               onClick={() => setAge((a) => Math.min(18, a + 1))}
               aria-label="Older"
             >
               +
-            </button>
+            </Button>
           </div>
-          <p className="field__hint">
-            Sets the default difficulty and how big everything looks.
-          </p>
-        </fieldset>
+        </FieldSet>
 
         <div className="sheet__actions">
           {!isNew &&
             (confirmingDelete ? (
               <div className="sheet__confirm">
                 <span>Remove {profile.name} and all their races?</span>
-                <button
-                  type="button"
-                  className="btn btn--danger btn--sm"
+                <Button
+                  variant="danger"
+                  size="sm"
                   onClick={() => void remove()}
                   disabled={saving}
                 >
                   Remove
-                </button>
-                <button
-                  type="button"
-                  className="btn btn--ghost btn--sm"
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
                   onClick={() => setConfirmingDelete(false)}
                 >
                   Keep
-                </button>
+                </Button>
               </div>
             ) : (
-              <button
-                type="button"
-                className="btn btn--danger btn--sm"
+              <Button
+                variant="danger"
+                size="sm"
                 onClick={() => setConfirmingDelete(true)}
               >
                 Remove player
-              </button>
+              </Button>
             ))}
-          <button
+          <Button
             type="submit"
-            className="btn btn--accent"
+            variant="accent"
             disabled={!name.trim() || saving}
           >
             {isNew ? "Add player" : "Save"}
-          </button>
+          </Button>
         </div>
       </form>
     </div>
