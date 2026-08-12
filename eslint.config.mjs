@@ -83,7 +83,6 @@ const maxLinesAllowlist = [
 // <Input>, <Select> and <Field> primitives, and its entry is deleted in the
 // same PR. The list only shrinks.
 const rawControlsAllowlist = [
-  "src/games/flashcards/RaceSetup.tsx", // 19
   "src/components/PlayerEditor.tsx", // 13
   "src/games/flashcards/RaceTrack.tsx", // 12
   "src/games/flashcards/RaceResults.tsx", // 5

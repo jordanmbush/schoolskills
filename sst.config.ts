@@ -28,9 +28,17 @@
  * written DNS-only (grey cloud) — CloudFront is already the CDN, and proxying
  * through Cloudflare on top would double up TLS termination for nothing.
  *
- * Two env vars gate production and are read at deploy time, never committed:
- *   CLOUDFLARE_API_TOKEN   scoped to Zone:DNS:Edit on this zone only
+ * Env vars that gate production, read at deploy time and never committed:
+ *   CLOUDFLARE_API_TOKEN   scoped to this zone only. Needs Zone:Read as well
+ *                          as DNS:Edit — the "Edit zone DNS" template grants
+ *                          both, and the account lookup below needs the read.
  *   CLOUDFLARE_ZONE_ID     not secret, but kept alongside for symmetry
+ *   CLOUDFLARE_DEFAULT_ACCOUNT_ID
+ *                          SST demands an account id even for a DNS-only
+ *                          deploy, and a zone-scoped token can't list
+ *                          accounts to find one. deploy.yml reads it off the
+ *                          zone; set it by hand for a local `--stage
+ *                          production` run.
  */
 
 const DOMAIN = "schoolskills.app";
