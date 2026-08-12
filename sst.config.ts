@@ -45,7 +45,18 @@ export default $config({
       protect: input?.stage === "production",
       home: "aws",
       providers: {
-        aws: { region: "us-west-1", profile: "schoolskills" },
+        aws: {
+          region: "us-west-1",
+          // A named profile locally, nothing in CI.
+          //
+          // On a developer machine credentials come from `aws sso login
+          // --profile schoolskills`. On a GitHub runner they arrive as
+          // AWS_ACCESS_KEY_ID/SECRET/SESSION_TOKEN from the OIDC role
+          // assumption, and there is no shared config file at all — naming a
+          // profile there fails the deploy outright with "failed to get shared
+          // config profile, schoolskills", after OIDC has already succeeded.
+          profile: process.env.CI ? undefined : "schoolskills",
+        },
         // Only production declares the Cloudflare provider. Declaring it
         // unconditionally makes Pulumi initialise and AUTHENTICATE it on every
         // stage, so a domain-less dev deploy fails with "Invalid access token"

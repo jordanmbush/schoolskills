@@ -1,7 +1,7 @@
 import { useState } from "react";
 
 import { useHub } from "@/components/state/HubContext";
-import { FilePicker } from "@/components/ui/kit";
+import { Button, FilePicker } from "@/components/ui/kit";
 import { exportAll, importAll, type Backup } from "@/services/hub";
 import { sfx } from "@/services/sound";
 
@@ -65,13 +65,14 @@ export default function BackupPanel() {
 
   return (
     <div className="backup">
-      <button
-        className="btn btn--ghost btn--sm"
+      <Button
+        variant="ghost"
+        size="sm"
         onClick={() => void download()}
         disabled={busy || profiles.length === 0}
       >
         ⬇ Back up progress
-      </button>
+      </Button>
       <FilePicker onFile={(file) => void restore(file)}>
         ⬆ Restore from a backup
       </FilePicker>

@@ -319,6 +319,37 @@
   width: auto;
 }
 
+.field__error {
+  font-size: var(--step--2);
+  color: var(--flare);
+}
+
+/* The chevron for <Select>. `.field__input` sets `background` as a shorthand,
+   which resets background-image — so the arrow is drawn as a rotated border
+   on the wrapper instead, where it also follows the theme colour. */
+.field__selectwrap {
+  position: relative;
+  display: block;
+}
+
+.field__selectwrap::after {
+  content: "";
+  position: absolute;
+  right: 1.1em;
+  top: 50%;
+  width: 0.45em;
+  height: 0.45em;
+  border-right: 2px solid var(--chalk-dim);
+  border-bottom: 2px solid var(--chalk-dim);
+  transform: translateY(-70%) rotate(45deg);
+  pointer-events: none;
+}
+
+.field__select {
+  appearance: none;
+  padding-right: 2.6em;
+}
+
 .picker--emoji {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(2.6rem, 1fr));
