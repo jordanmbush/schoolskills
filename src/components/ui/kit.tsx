@@ -190,3 +190,38 @@ export function Scrim({
     />
   );
 }
+
+/**
+ * A file chooser that looks like the rest of the buttons.
+ *
+ * The native control can't be styled, so the real <input> is visually hidden
+ * and a <label> provides the surface — the standard accessible pattern, and it
+ * keeps click-to-open and keyboard focus working without a click handler
+ * forwarding to a ref. Resets the value after each pick so choosing the same
+ * file twice still fires a change event.
+ */
+export function FilePicker({
+  onFile,
+  accept = "application/json",
+  children,
+}: {
+  onFile: (file: File) => void;
+  accept?: string;
+  children: ReactNode;
+}) {
+  return (
+    <label className="btn btn--ghost btn--sm filepicker">
+      <input
+        type="file"
+        accept={accept}
+        className="filepicker__input"
+        onChange={(event) => {
+          const file = event.target.files?.[0];
+          event.target.value = "";
+          if (file) onFile(file);
+        }}
+      />
+      {children}
+    </label>
+  );
+}

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useHub } from "@/components/state/HubContext";
 import { Avatar, LevelRing } from "@/components/ui/kit";
 import PlayerEditor from "@/components/PlayerEditor";
+import BackupPanel from "@/components/BackupPanel";
 import { lifetimeStats, sessionsFor } from "@/engine/records";
 import { levelFromXp } from "@/engine/progress";
 import { percent } from "@/engine/format";
@@ -133,6 +134,7 @@ export default function PlayerSelect() {
       {editing !== undefined && (
         <PlayerEditor profile={editing} onClose={() => setEditing(undefined)} />
       )}
+      <BackupPanel />
     </main>
   );
 }

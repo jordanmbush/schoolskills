@@ -92,6 +92,7 @@ const rawControlsAllowlist = [
   "src/components/screens/PlayerHub.tsx", // 2
   "src/components/TopBar.tsx", // 1
   "src/games/flashcards/App.tsx", // 1
+  "src/components/BackupPanel.tsx", // 1
 ];
 
 // Storage is an implementation detail of the service layer — the direct
@@ -435,6 +436,15 @@ export default defineConfig([
       "e2e/**/*.{ts,mjs}",
       "sst.config.ts",
     ],
+    languageOptions: {
+      globals: {
+        console: "readonly",
+        process: "readonly",
+        URL: "readonly",
+        Buffer: "readonly",
+        __dirname: "readonly",
+      },
+    },
     rules: {
       "no-restricted-globals": "off",
       "@typescript-eslint/no-explicit-any": "off",
