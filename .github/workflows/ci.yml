@@ -59,5 +59,19 @@ jobs:
       - name: Unit tests
         run: npm run test:unit
 
+      # The game is an island over IndexedDB and a hash router — the two things
+      # that type-check cleanly and break on first click. This walks the real
+      # loop (create a profile → race → results → reload) against the built
+      # output. It caught a routing regression that skipped the results screen
+      # entirely while still saving the run, which no unit test would have seen.
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Smoke test the built site
+        run: |
+          npx astro preview --port 4322 &
+          npx wait-on --timeout 60000 http://localhost:4322/flash-cards
+          npm run test:smoke
+
       - name: Audit production dependencies
         run: npm audit --omit=dev --audit-level=high

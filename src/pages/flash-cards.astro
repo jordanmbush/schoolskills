@@ -1,0 +1,40 @@
+---
+import Base from "@/layouts/Base.astro";
+import FlashCardsApp from "@/games/flashcards/App";
+import "@/styles/index.css";
+
+/**
+ * The game's page. The HTML around the island still carries a real title,
+ * description and structured data, so this URL is indexable even though what
+ * it renders is an app — the crawler gets the page, the player gets the game.
+ */
+const title =
+  "Multiplication flash cards — free times tables game | School Skills";
+const description =
+  "A free multiplication flash-card game. Pick your times tables, race your own best time or a sibling's, and set a per-card clock. No sign-up, works offline, progress stays on your device.";
+---
+
+<Base
+  title={title}
+  description={description}
+  jsonLd={{
+    "@context": "https://schema.org",
+    "@type": "LearningResource",
+    name: "Multiplication Flash Cards",
+    description,
+    url: "https://schoolskills.app/flash-cards",
+    learningResourceType: "Game",
+    educationalLevel: "Elementary School",
+    teaches: "Multiplication facts, times tables 1-12",
+    typicalAgeRange: "5-12",
+    isAccessibleForFree: true,
+    inLanguage: "en",
+  }}
+>
+  <!--
+    client:only rather than client:load — the game reads IndexedDB for its
+    profile list on first render, so there is no meaningful server-rendered
+    markup to hydrate, and attempting SSR would just throw on `indexedDB`.
+  -->
+  <FlashCardsApp client:only="react" />
+</Base>

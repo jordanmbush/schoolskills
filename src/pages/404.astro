@@ -1,0 +1,21 @@
+---
+import Base from "@/layouts/Base.astro";
+
+/**
+ * Must exist as a real page: `errorPage: "404.html"` in sst.config.ts points
+ * CloudFront here, and if the object is missing CloudFront can't fetch its own
+ * error document and serves a 502 instead — so every mistyped URL would look
+ * like the site is broken rather than like a wrong address.
+ */
+---
+
+<Base
+  title="Page not found — School Skills"
+  description="That page doesn't exist. Head back to the games."
+>
+  <main>
+    <h1>That page ran off</h1>
+    <p>There's nothing at this address.</p>
+    <p><a href="/">Back to the games</a></p>
+  </main>
+</Base>
