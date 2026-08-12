@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
 import { usePlayer } from "@/components/state/HubContext";
 import { useRace } from "@/components/state/RaceContext";
-import { Avatar, Confetti } from "@/components/ui/kit";
+import { Avatar, Button, Confetti } from "@/components/ui/kit";
 import TopBar from "@/components/TopBar";
 import {
   WRONG_ANSWER_PENALTY_MS,
@@ -328,42 +328,39 @@ export default function RaceResults() {
 
       <div className="results__actions">
         {practiceFirst && (
-          <button className="btn btn--go" onClick={practise}>
+          <Button variant="go" onClick={practise}>
             Practise {plural(missedFacts.length, "fact")}
-          </button>
+          </Button>
         )}
-        <button
-          className={`btn ${practiceFirst ? "btn--accent" : "btn--go"}`}
+        <Button
+          variant={practiceFirst ? "accent" : "go"}
           onClick={() => raceAgain(ghost)}
         >
           Race again
-        </button>
+        </Button>
         {!ghost && (
-          <button
-            className="btn btn--accent"
-            onClick={() => raceAgain(selfGhost)}
-          >
+          <Button variant="accent" onClick={() => raceAgain(selfGhost)}>
             Race this ghost
-          </button>
+          </Button>
         )}
-        <button
-          className="btn btn--ghost"
+        <Button
+          variant="ghost"
           onClick={() => {
             clear();
             navigate(`/p/${profile.id}/race`);
           }}
         >
           Change settings
-        </button>
-        <button
-          className="btn btn--ghost"
+        </Button>
+        <Button
+          variant="ghost"
           onClick={() => {
             clear();
             navigate(`/p/${profile.id}`);
           }}
         >
           Back to hub
-        </button>
+        </Button>
       </div>
     </main>
   );

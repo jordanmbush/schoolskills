@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useHub } from "@/components/state/HubContext";
-import { Avatar, LevelRing } from "@/components/ui/kit";
+import { Avatar, Button, LevelRing } from "@/components/ui/kit";
 import PlayerEditor from "@/components/PlayerEditor";
 import BackupPanel from "@/components/BackupPanel";
 import { lifetimeStats, sessionsFor } from "@/engine/records";
@@ -49,9 +49,9 @@ export default function PlayerSelect() {
             Every player gets their own times, records and badges. Nothing
             leaves this device.
           </p>
-          <button className="btn btn--go" onClick={() => setEditing(null)}>
+          <Button variant="go" onClick={() => setEditing(null)}>
             Add a player
-          </button>
+          </Button>
         </div>
       ) : (
         <ul className="select__grid">
@@ -73,12 +73,13 @@ export default function PlayerSelect() {
                     } as React.CSSProperties
                   }
                 >
-                  <button
+                  <Button
+                    variant="bare"
                     className="driver__enter"
                     onClick={() => enter(profile)}
                   >
                     <span className="u-sr">Play as {profile.name}</span>
-                  </button>
+                  </Button>
                   <div className="driver__top">
                     <Avatar profile={profile} size="4.25rem" />
                     <LevelRing
@@ -104,12 +105,13 @@ export default function PlayerSelect() {
                       </dd>
                     </div>
                   </dl>
-                  <button
+                  <Button
+                    variant="bare"
                     className="driver__edit"
                     onClick={() => setEditing(profile)}
                   >
                     Edit<span className="u-sr"> {profile.name}</span>
-                  </button>
+                  </Button>
                 </div>
               </li>
             );
@@ -118,7 +120,8 @@ export default function PlayerSelect() {
             className="anim-rise"
             style={{ animationDelay: `${profiles.length * 70}ms` }}
           >
-            <button
+            <Button
+              variant="bare"
               className="driver driver--add"
               onClick={() => setEditing(null)}
             >
@@ -126,7 +129,7 @@ export default function PlayerSelect() {
                 +
               </span>
               <span className="driver__name u-display">Add player</span>
-            </button>
+            </Button>
           </li>
         </ul>
       )}

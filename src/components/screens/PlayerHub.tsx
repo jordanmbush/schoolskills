@@ -1,7 +1,7 @@
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import { useHub, usePlayer } from "@/components/state/HubContext";
 import TopBar from "@/components/TopBar";
-import { Stat } from "@/components/ui/kit";
+import { Button, Stat } from "@/components/ui/kit";
 import {
   bestRun,
   lifetimeStats,
@@ -62,17 +62,19 @@ export default function PlayerHub() {
             Race a deck of multiplication cards against the clock — or against a
             ghost of your best run, or one of your siblings&apos;.
           </p>
-          <button
-            className="btn btn--go hub__cta"
+          <Button
+            variant="go"
+            className="hub__cta"
             onClick={() => {
               sfx.select();
               navigate(`/p/${profile.id}/race`);
             }}
           >
             Set up a race →
-          </button>
+          </Button>
           {trouble.length >= 3 && (
-            <button
+            <Button
+              variant="bare"
               className="hub__drill"
               onClick={() => {
                 sfx.select();
@@ -91,7 +93,7 @@ export default function PlayerHub() {
               }}
             >
               or practise {plural(trouble.length, "fact")} you keep missing →
-            </button>
+            </Button>
           )}
         </div>
 
