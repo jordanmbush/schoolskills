@@ -79,6 +79,23 @@ export type WordConfig = {
 /** Whatever the race loop was handed. Narrow with `config.kind === "words"`. */
 export type RaceConfig = FlashConfig | WordConfig;
 
+/**
+ * A word list a parent typed in — this week's spellings, a topic's vocabulary.
+ *
+ * The same shape as a shipped list minus the editorial fields, and it plays
+ * through exactly the same deck spec. `id` is prefixed `custom-` so that
+ * `Session.mode` (`words:custom-…`) can never collide with a list this build
+ * ships, and so a run stays readable after its deck is deleted.
+ */
+export type CustomDeck = {
+  id: string;
+  name: string;
+  emoji: string;
+  words: string[];
+  createdAt: string;
+  updatedAt: string;
+};
+
 /* ── Cards ───────────────────────────────────────────────────────────────
    A card is text in and text out, deliberately. Answers were numbers until
    spelling arrived, and every alternative to widening them was worse: a

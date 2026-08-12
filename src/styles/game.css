@@ -1143,3 +1143,57 @@
 .wordpad__input:disabled {
   opacity: 0.5;
 }
+
+/* ── Parent-authored lists ─────────────────────────────────────────────── */
+
+.wordlists__row {
+  display: flex;
+  align-items: stretch;
+  gap: 0.4rem;
+}
+
+.wordlists__row .wordlists__item {
+  flex: 1;
+  min-width: 0;
+}
+
+.emojirow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.emojirow__pick {
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: var(--radius);
+  border: 2px solid var(--hairline);
+  background: var(--ink-700);
+  font-size: var(--step-1);
+  line-height: 1;
+}
+
+.emojirow__pick.is-on {
+  border-color: var(--accent);
+  background: color-mix(in oklab, var(--accent) 16%, var(--ink-700));
+}
+
+/* Monospaced and left-aligned: this is a list being checked against a school
+   letter, and a proportional font makes a column of words hard to scan. */
+.deckeditor__words {
+  min-height: 9rem;
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  line-height: 1.6;
+  resize: vertical;
+}
+
+.deckeditor__count {
+  font-size: var(--step--2);
+  color: var(--accent);
+  letter-spacing: 0.04em;
+}
+
+.deckeditor__count.is-bad {
+  color: var(--flare);
+}

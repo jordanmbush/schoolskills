@@ -1,7 +1,7 @@
 import type { Card, WordConfig } from "@/engine/types";
 
 import { mulberry32, shuffled } from "@/engine/random";
-import { WORD_LISTS_BY_ID, type WordList } from "./wordlists";
+import { WORD_LISTS_BY_ID } from "./wordlists";
 import type { DeckSpec } from "./spec";
 
 /**
@@ -57,10 +57,32 @@ function wordDistractors(answer: string, pool: string[], rand: () => number) {
   return picked;
 }
 
+/* ── Lists a parent typed in ─────────────────────────────────────────────
+   Mirrored into the engine after the hub loads them, rather than threaded
+   through as a parameter. Three unrelated places need to name and build a
+   custom deck — the setup screen, the race loop and the record book — and
+   only one of them has any business knowing where decks are stored.
+
+   `src/services/decks.ts` is the sole writer and re-mirrors on every change,
+   so a view can't forget to. Nothing here is a source of truth: it's a cache
+   of IndexedDB, and losing it just means a deck reads as "Words" until the
+   next load.                                                                */
+
+let customLists = new Map<string, { name: string; words: string[] }>();
+
+export function setCustomLists(
+  decks: Array<{ id: string; name: string; words: string[] }>,
+) {
+  customLists = new Map(
+    decks.map((d) => [d.id, { name: d.name, words: d.words }]),
+  );
+}
+
+const listFor = (listId: string) =>
+  WORD_LISTS_BY_ID.get(listId) ?? customLists.get(listId);
+
 export const wordsOf = (config: WordConfig): string[] =>
-  config.words?.length
-    ? config.words
-    : (WORD_LISTS_BY_ID.get(config.listId)?.words ?? []);
+  config.words?.length ? config.words : (listFor(config.listId)?.words ?? []);
 
 export function buildWordDeck(config: WordConfig, seed: number): Card[] {
   const rand = mulberry32(seed);
@@ -108,7 +130,7 @@ export function wordConfigKey(config: WordConfig) {
 }
 
 export function describeWordConfig(config: WordConfig) {
-  const list = WORD_LISTS_BY_ID.get(config.listId);
+  const list = listFor(config.listId);
   const what = config.words?.length
     ? `${config.words.length} words`
     : (list?.name ?? "Words");
@@ -147,7 +169,7 @@ export function buildWordDrill(
  * case once a parent can author their own.
  */
 export function wordDeckSpec(mode: string): DeckSpec {
-  const list: WordList | undefined = WORD_LISTS_BY_ID.get(listIdOf(mode));
+  const list = listFor(listIdOf(mode));
   return {
     id: mode,
     label: list?.name ?? "Words",

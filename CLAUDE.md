@@ -99,4 +99,12 @@ them between games.
 may race each other as ghosts, so changing its format orphans every personal
 best already saved. Cards written before a shape change are widened on read by
 `src/engine/migrate.ts` — never by rewriting storage, because IndexedDB holds
-the only copy there is.
+the only copy there is. Adding a store is a `DB_VERSION` bump with an
+`oldVersion`-guarded block in `db.ts`; those blocks are additive only.
+
+**Parent-authored decks live in storage but are read from the engine.**
+`src/services/decks.ts` is the only writer, and it mirrors them into the engine
+(`setCustomLists`) so `deckSpec(mode)` can name one from the record book
+without the engine knowing storage exists. Every write goes through
+`HubContext.saveDeck` — a service call that bypasses it lands in IndexedDB and
+stays invisible until the next reload.
