@@ -67,7 +67,6 @@ const maxLinesAllowlist = [
   // Retired by the flash-cards decomposition stories (PORT epic). RaceTrack is
   // the race loop, the rAF ticker, the per-card clock and the keypad in one
   // module; the split follows those seams, not arbitrary line counts.
-  "src/games/flashcards/RaceTrack.tsx", // 655
   "src/games/flashcards/RaceSetup.tsx", // 473
   "src/games/flashcards/RaceResults.tsx", // 351
   "src/components/screens/Progress.tsx", // 392
@@ -84,7 +83,6 @@ const maxLinesAllowlist = [
 // same PR. The list only shrinks.
 const rawControlsAllowlist = [
   "src/components/PlayerEditor.tsx", // 13
-  "src/games/flashcards/RaceTrack.tsx", // 12
   "src/games/flashcards/RaceResults.tsx", // 5
   "src/components/screens/PlayerSelect.tsx", // 4
   "src/components/screens/Progress.tsx", // 3
