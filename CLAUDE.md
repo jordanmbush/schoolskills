@@ -79,14 +79,21 @@ which are text in and text out — `answer` is `"56"`, not `56`, and `factId` is
 The three judgements a loop can't make generically live on a **`DeckSpec`**
 (`src/engine/decks/spec.ts`): fold two cards onto one fact (`masteryKey`,
 `drillKey`), name a fact on screen (`factLabel`), and decide whether what was
-typed matches (`normalise`). A new deck family implements that and registers in
-`src/engine/decks/registry.ts`; `deckSpec(mode)` never throws, because sessions
+typed matches (`normalise`). A new deck family implements that and routes in
+`src/engine/decks/index.ts` — the front door, and the **only** place the
+`RaceConfig` union is narrowed. `deckSpec(mode)` never throws, because sessions
 outlive the decks they were played on.
 
-So a new game is a `DeckSpec`, an input control if the kit lacks one, and a
-route under `src/pages/<game>/` — a **path, not a subdomain**, because separate
-origins would partition browser storage and a player's profile could no longer
-follow them between games.
+Two families exist: `decks/flashcards.ts` (arithmetic) and `decks/words.ts`
+(spelling and sight words). Words are a deck, not a game — they play in the
+same race loop, on the same route, so a profile and its records follow a child
+between subjects. `/spelling` is a content page pointing at it, in the same
+shape as the times-table pages.
+
+A genuinely different interaction — typing, say — is a new island with its own
+route under `src/pages/`: a **path, not a subdomain**, because separate origins
+would partition browser storage and a player's profile could no longer follow
+them between games.
 
 **Saved runs are the constraint, not the code.** `configKey` decides which runs
 may race each other as ghosts, so changing its format orphans every personal

@@ -15,6 +15,13 @@ export type Operation = "multiply" | "divide" | "add" | "subtract";
 export type InputMode = "type" | "choose";
 
 export type FlashConfig = {
+  /**
+   * Never set. It's the negative half of the `RaceConfig` discriminant: every
+   * arithmetic config already in storage predates the union, and giving them a
+   * field they'd have to grow would mean rewriting a child's whole history to
+   * add a word deck.
+   */
+  kind?: undefined;
   operation: Operation;
   /** The focus numbers — for multiplication these are the times tables. */
   tables: number[];
@@ -47,6 +54,31 @@ export type LegacyFlashConfig = Omit<FlashConfig, "others"> & {
   otherMax?: number;
 };
 
+/**
+ * A race over words rather than numbers — spelling and sight-word recognition.
+ *
+ * It is a sibling of `FlashConfig`, not a widening of it. Forcing words into
+ * the arithmetic shape would make `operation`, `tables` and `others` optional
+ * for everyone and put an `if (isWords)` at every reader; a union puts the
+ * branch in one place, at `buildDeck` and `configKey`.
+ */
+export type WordConfig = {
+  kind: "words";
+  /** The list to draw from. Also what `Session.mode` records, prefixed. */
+  listId: string;
+  /**
+   * An explicit set of words, replacing the list — a drill of the ones a
+   * player keeps missing, or a parent's own spellings for the week.
+   */
+  words?: string[];
+  cardCount: number;
+  inputMode: InputMode;
+  timeLimitMs?: number | null;
+};
+
+/** Whatever the race loop was handed. Narrow with `config.kind === "words"`. */
+export type RaceConfig = FlashConfig | WordConfig;
+
 /* ── Cards ───────────────────────────────────────────────────────────────
    A card is text in and text out, deliberately. Answers were numbers until
    spelling arrived, and every alternative to widening them was worse: a
@@ -62,6 +94,14 @@ export type Card = {
   answer: string;
   /** Shuffled options, present only in multiple-choice mode. */
   choices?: string[];
+  /**
+   * Say this aloud instead of showing the prompt.
+   *
+   * A spelling card whose prompt is on screen is a copying exercise, so the
+   * word is spoken and `prompt` is kept only for the record — the splits
+   * table and the trouble list still need to name it afterwards.
+   */
+  speak?: string;
   /**
    * Which fact this card exercises, as the deck built it — "7:8" for
    * arithmetic, the word itself for spelling. Stable across runs, because
@@ -117,7 +157,7 @@ export type Session = {
    */
   mode: string;
   configKey: string;
-  config: FlashConfig;
+  config: RaceConfig;
   seed: number;
   finishedAt: string;
   durationMs: number;

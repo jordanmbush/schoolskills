@@ -210,14 +210,20 @@ export function evaluateBadges({
   if (perfect && avgMs < 1500) earned.add("lightning");
   if (lifetimeCards >= 100) earned.add("century");
   if (lifetimeCards >= 500) earned.add("five-hundred");
-  if (session.config.tables.length >= 12) earned.add("gauntlet");
+  if (session.config.kind !== "words" && session.config.tables.length >= 12)
+    earned.add("gauntlet");
   if (cardsThisRace >= 30) earned.add("marathon");
   if (xpAfter >= xpToReach(10)) earned.add("level-10");
 
   const timedOut = session.cards.some((c) => c.timedOut);
   if (session.config.timeLimitMs && cardsThisRace >= 10 && !timedOut)
     earned.add("beat-the-clock");
-  if (session.config.facts?.length && perfect) earned.add("nemesis");
+  // A drill is a named set of things to practise, whichever deck it came from.
+  const drilled =
+    session.config.kind === "words"
+      ? session.config.words?.length
+      : session.config.facts?.length;
+  if (drilled && perfect) earned.add("nemesis");
 
   // Named outright rather than counted to four: `mode` also holds word-list
   // ids now, and four spelling decks are not "all four operations".

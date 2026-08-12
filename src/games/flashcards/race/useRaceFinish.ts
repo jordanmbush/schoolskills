@@ -5,7 +5,7 @@ import { sfx } from "@/services/sound";
 import type { useHub } from "@/components/state/HubContext";
 import type { useRace } from "@/components/state/RaceContext";
 import type { useNavigate } from "react-router-dom";
-import type { FlashConfig, Ghost, Profile, Session } from "@/engine/types";
+import type { Ghost, Profile, RaceConfig, Session } from "@/engine/types";
 
 /**
  * The end of a run: score it, write it, and hand off to the results screen.
@@ -35,7 +35,7 @@ export function useRaceFinish({
   onSaving,
 }: {
   profile: Profile;
-  config: FlashConfig;
+  config: RaceConfig;
   seed: number;
   ghost: Ghost | null;
   history: Session[];

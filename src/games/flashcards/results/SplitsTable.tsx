@@ -63,7 +63,11 @@ export function SplitsTable({
                 >
                   <td className="u-mono splits__n">{i + 1}</td>
                   <td className="splits__card">
-                    {card.prompt} = {card.answer}
+                    {/* A word card's prompt IS its answer, and "would = would"
+                        is not a row a parent should have to read past. */}
+                    {card.prompt === card.answer
+                      ? card.prompt
+                      : `${card.prompt} = ${card.answer}`}
                     {!card.ok && (
                       <span
                         className={`splits__given${card.timedOut ? " is-late" : ""}`}

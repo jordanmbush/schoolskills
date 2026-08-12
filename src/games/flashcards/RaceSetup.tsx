@@ -10,25 +10,38 @@ import { useRace } from "@/components/state/RaceContext";
 import TopBar from "@/components/TopBar";
 import { Button } from "@/components/ui/kit";
 import {
-  OPERATIONS,
-  OPERATION_ORDER,
-  buildDeck,
-  configKey,
   presetForAge,
   snapTimeLimit,
   timeLimitForAge,
 } from "@/engine/decks/flashcards";
+import { configKey, describeConfig } from "@/engine/decks";
+import { wordListForAge } from "@/engine/decks/wordlists";
 import { ghostsFor } from "@/engine/records";
 import { randomSeed } from "@/engine/random";
 import { sfx } from "@/services/sound";
 import { ClockPicker } from "./setup/ClockPicker";
-import { DeckPicker } from "./setup/DeckPicker";
+import { MathsSettings } from "./setup/MathsSettings";
 import { PresetRow } from "./setup/PresetRow";
 import { RivalList } from "./setup/RivalList";
-import type { FlashConfig, InputMode, Operation } from "@/engine/types";
+import { WordSettings } from "./setup/WordSettings";
+import type { InputMode, RaceConfig } from "@/engine/types";
 
 const CARD_COUNTS = [10, 15, 20, 30, 50];
-const TABLE_NUMBERS = Array.from({ length: 12 }, (_, i) => i + 1);
+
+/** How answering reads depends on what's on the card. */
+const ANSWER_LABELS: Record<
+  "numbers" | "words",
+  Array<[InputMode, string, string]>
+> = {
+  numbers: [
+    ["type", "Type it", "Keypad or keyboard"],
+    ["choose", "Tap one", "Four choices"],
+  ],
+  words: [
+    ["type", "Spell it", "Type what you hear"],
+    ["choose", "Spot it", "Four words to pick from"],
+  ],
+};
 
 export default function RaceSetup() {
   const { profileId } = useParams();
@@ -40,8 +53,8 @@ export default function RaceSetup() {
 
   // "Drill these" elsewhere in the hub arrives here with a deck already built,
   // so the player sees what they're about to practise before it starts.
-  const handed = (location.state as { config?: FlashConfig } | null)?.config;
-  const [config, setConfig] = useState<FlashConfig>(
+  const handed = (location.state as { config?: RaceConfig } | null)?.config;
+  const [config, setConfig] = useState<RaceConfig>(
     () => handed ?? presetForAge(profile?.age ?? 8).config,
   );
   const [rivalId, setRivalId] = useState<string | null>(null);
@@ -63,25 +76,14 @@ export default function RaceSetup() {
 
   if (!profile) return <Navigate to="/" replace />;
 
-  const spec = OPERATIONS[config.operation];
-  const patch = (next: Partial<FlashConfig>) =>
-    setConfig((current) => ({ ...current, ...next }));
+  const isWords = config.kind === "words";
+  const patchShared = (next: Partial<RaceConfig>) =>
+    setConfig((current) => ({ ...current, ...next }) as RaceConfig);
 
-  const otherNumbers = Array.from(
-    { length: 13 - spec.minOther },
-    (_, i) => i + spec.minOther,
-  );
   // A drill sizes its own deck, so make room for whatever length it picked.
   const cardCounts = CARD_COUNTS.includes(config.cardCount)
     ? CARD_COUNTS
     : [...CARD_COUNTS, config.cardCount].sort((a, b) => a - b);
-  // Three real cards from the current settings, so the effect of a tick is
-  // visible without starting a race.
-  const sample = buildDeck(config, 7)
-    .slice(0, 3)
-    .map((card) => card.prompt);
-
-  const ascending = (list: number[]) => [...list].sort((a, b) => a - b);
 
   const limitSeconds = config.timeLimitMs ? config.timeLimitMs / 1000 : null;
   // Show exactly what's being typed while the field has focus; otherwise show
@@ -91,7 +93,7 @@ export default function RaceSetup() {
 
   function setLimit(ms: number | null) {
     setLimitDraft(null);
-    patch({ timeLimitMs: ms === null ? null : snapTimeLimit(ms) });
+    patchShared({ timeLimitMs: ms === null ? null : snapTimeLimit(ms) });
   }
 
   /** Nudges the clock a step, starting from the age default if it's off. */
@@ -101,39 +103,28 @@ export default function RaceSetup() {
   }
 
   /**
-   * Unticking a table also drops that number from the right-hand grid, so
-   * "I unticked 12" means no 12 appears on any card — which is what the grid
-   * looks like it promises.
+   * Switching subject keeps how the race is run — length, clock, and whether
+   * it's typed or tapped — and replaces only what's on the cards. Someone who
+   * has set an 8-second 20-card race shouldn't have to set it again to try
+   * the same shape on spellings.
    */
-  function toggleTable(n: number) {
+  function setSubject(next: "numbers" | "words") {
+    if (isWords === (next === "words")) return;
     sfx.tap();
-    setConfig((current) => {
-      if (!current.tables.includes(n)) {
-        return { ...current, tables: ascending([...current.tables, n]) };
-      }
-      const tables = current.tables.filter((t) => t !== n);
-      if (tables.length === 0) return current;
-      const others = current.others.filter((o) => o !== n);
-      return {
-        ...current,
-        tables,
-        others: others.length === 0 ? current.others : others,
-      };
-    });
-  }
-
-  function toggleOther(n: number) {
-    sfx.tap();
-    setConfig((current) => {
-      const has = current.others.includes(n);
-      const others = has
-        ? current.others.filter((o) => o !== n)
-        : [...current.others, n];
-      return {
-        ...current,
-        others: others.length === 0 ? current.others : ascending(others),
-      };
-    });
+    const shared = {
+      cardCount: config.cardCount,
+      inputMode: config.inputMode,
+      timeLimitMs: config.timeLimitMs ?? null,
+    };
+    setConfig(
+      next === "words"
+        ? {
+            kind: "words",
+            listId: wordListForAge(profile!.age).id,
+            ...shared,
+          }
+        : { ...presetForAge(profile!.age).config, ...shared },
+    );
   }
 
   function launch() {
@@ -157,61 +148,52 @@ export default function RaceSetup() {
       />
 
       <div className="setup__grid">
-        <PresetRow
-          currentKey={key}
-          onChoose={(next) => {
-            sfx.tap();
-            setConfig(next);
-          }}
-        />
+        {!isWords && (
+          <PresetRow
+            currentKey={key}
+            onChoose={(next) => {
+              sfx.tap();
+              setConfig(next);
+            }}
+          />
+        )}
 
         <section className="panel anim-rise">
           <div className="panel__head">
             <h2 className="panel__title">Fine tune</h2>
-            <span className="chip">
-              {spec.symbol} {spec.label}
-            </span>
+            <span className="chip">{describeConfig(config)}</span>
           </div>
 
           <div className="control">
-            <span className="control__label">Operation</span>
+            <span className="control__label">Practising</span>
             <div className="segmented">
-              {OPERATION_ORDER.map((op) => (
+              {(
+                [
+                  ["numbers", "🔢", "Numbers", "Times tables and sums"],
+                  ["words", "🔤", "Words", "Spelling and sight words"],
+                ] as const
+              ).map(([subject, icon, label, hint]) => (
                 <Button
-                  key={op}
+                  key={subject}
                   variant="bare"
-                  className={`segmented__btn${config.operation === op ? " is-on" : ""}`}
-                  onClick={() => {
-                    sfx.tap();
-                    // Division can't pair with 0, so drop it when switching.
-                    const next = OPERATIONS[op as Operation];
-                    patch({
-                      operation: op,
-                      others: config.others.filter((n) => n >= next.minOther),
-                    });
-                  }}
-                  pressed={config.operation === op}
+                  className={`segmented__btn segmented__btn--stack${isWords === (subject === "words") ? " is-on" : ""}`}
+                  onClick={() => setSubject(subject)}
+                  pressed={isWords === (subject === "words")}
                 >
-                  <span aria-hidden="true">{OPERATIONS[op].symbol}</span>
                   <span className="segmented__word">
-                    {OPERATIONS[op].label}
+                    <span aria-hidden="true">{icon}</span> {label}
                   </span>
+                  <span className="segmented__hint">{hint}</span>
                 </Button>
               ))}
             </div>
           </div>
 
-          <DeckPicker
-            config={config}
-            spec={spec}
-            focusNumbers={TABLE_NUMBERS}
-            pairNumbers={otherNumbers}
-            sample={sample}
-            onToggleFocus={toggleTable}
-            onTogglePair={toggleOther}
-            patch={patch}
-            tap={sfx.tap}
-          />
+          {config.kind === "words" ? (
+            <WordSettings config={config} onChange={setConfig} />
+          ) : (
+            <MathsSettings config={config} onChange={setConfig} />
+          )}
 
           <div className="control">
             <span className="control__label">How many cards</span>
@@ -223,7 +205,7 @@ export default function RaceSetup() {
                   className={`segmented__btn u-mono${config.cardCount === count ? " is-on" : ""}`}
                   onClick={() => {
                     sfx.tap();
-                    patch({ cardCount: count });
+                    patchShared({ cardCount: count });
                   }}
                   pressed={config.cardCount === count}
                 >
@@ -244,12 +226,12 @@ export default function RaceSetup() {
             onType={(text) => {
               setLimitDraft(text);
               if (text.trim() === "") {
-                patch({ timeLimitMs: null });
+                patchShared({ timeLimitMs: null });
                 return;
               }
               const typed = Number(text);
               if (Number.isFinite(typed))
-                patch({ timeLimitMs: snapTimeLimit(typed * 1000) });
+                patchShared({ timeLimitMs: snapTimeLimit(typed * 1000) });
             }}
             onDraftEnd={() => setLimitDraft(null)}
           />
@@ -257,26 +239,23 @@ export default function RaceSetup() {
           <div className="control">
             <span className="control__label">Answering</span>
             <div className="segmented">
-              {(
-                [
-                  ["type", "Type it", "Keypad or keyboard"],
-                  ["choose", "Tap one", "Four choices"],
-                ] as Array<[InputMode, string, string]>
-              ).map(([mode, label, hint]) => (
-                <Button
-                  key={mode}
-                  variant="bare"
-                  className={`segmented__btn segmented__btn--stack${config.inputMode === mode ? " is-on" : ""}`}
-                  onClick={() => {
-                    sfx.tap();
-                    patch({ inputMode: mode });
-                  }}
-                  pressed={config.inputMode === mode}
-                >
-                  <span className="segmented__word">{label}</span>
-                  <span className="segmented__hint">{hint}</span>
-                </Button>
-              ))}
+              {ANSWER_LABELS[isWords ? "words" : "numbers"].map(
+                ([mode, label, hint]) => (
+                  <Button
+                    key={mode}
+                    variant="bare"
+                    className={`segmented__btn segmented__btn--stack${config.inputMode === mode ? " is-on" : ""}`}
+                    onClick={() => {
+                      sfx.tap();
+                      patchShared({ inputMode: mode });
+                    }}
+                    pressed={config.inputMode === mode}
+                  >
+                    <span className="segmented__word">{label}</span>
+                    <span className="segmented__hint">{hint}</span>
+                  </Button>
+                ),
+              )}
             </div>
           </div>
         </section>

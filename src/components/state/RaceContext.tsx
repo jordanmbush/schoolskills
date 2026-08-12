@@ -5,11 +5,11 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import type { FlashConfig, Ghost, Profile, Session } from "@/engine/types";
+import type { Ghost, Profile, RaceConfig, Session } from "@/engine/types";
 
 export type PendingRace = {
   profileId: string;
-  config: FlashConfig;
+  config: RaceConfig;
   /** Shared with the ghost so both runs cover the same cards in the same order. */
   seed: number;
   ghost: Ghost | null;

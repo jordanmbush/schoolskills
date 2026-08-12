@@ -1,7 +1,7 @@
 import { compareRuns } from "./records";
 import { evaluateBadges, finishBonuses } from "./progress";
-import { configKey } from "./decks/flashcards";
-import type { CardResult, FlashConfig, Ghost, Profile, Session } from "./types";
+import { configKey, modeOf } from "./decks";
+import type { CardResult, Ghost, Profile, RaceConfig, Session } from "./types";
 
 /**
  * Turning a finished race into the record of it.
@@ -47,7 +47,7 @@ export function summariseRun({
   tally,
 }: {
   profile: Profile;
-  config: FlashConfig;
+  config: RaceConfig;
   seed: number;
   ghost: Ghost | null;
   /** The player's earlier runs, snapshotted before this one existed. */
@@ -80,7 +80,7 @@ export function summariseRun({
   const draft = {
     profileId: profile.id,
     game: "flashcards" as const,
-    mode: config.operation,
+    mode: modeOf(config),
     configKey: configKey(config),
     config,
     seed,

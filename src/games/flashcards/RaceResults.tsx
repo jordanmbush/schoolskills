@@ -12,7 +12,7 @@ import {
   timeLimitOf,
   timedOutCount,
 } from "@/engine/records";
-import { buildDrill, describeConfig } from "@/engine/decks/flashcards";
+import { buildDrill, describeConfig } from "@/engine/decks";
 import { clock, delta as formatDelta, plural } from "@/engine/format";
 import { randomSeed } from "@/engine/random";
 import { sfx } from "@/services/sound";
@@ -100,10 +100,9 @@ export default function RaceResults() {
     sfx.whoosh();
     start({
       profileId: profile!.id,
-      config: buildDrill(missedFacts, {
-        // From the config, not from `mode`: same value, but `mode` is a plain
-        // string now and a drill is only ever arithmetic.
-        operation: session.config.operation,
+      // `mode` picks the family, so a spelling run drills words and an
+      // arithmetic one drills facts without this knowing which it was.
+      config: buildDrill(missedFacts, session.mode, {
         inputMode: session.config.inputMode,
         timeLimitMs: limitMs,
       }),

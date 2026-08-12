@@ -1035,3 +1035,111 @@
   gap: var(--gap-2);
   justify-content: center;
 }
+
+/* ── Word lists, in place of the two number grids ──────────────────────── */
+
+.wordlists {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.wordlists__item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.7rem 0.9rem;
+  border-radius: var(--radius);
+  border: 2px solid var(--hairline);
+  background: var(--ink-700);
+  text-align: left;
+  transition:
+    border-color 0.12s ease,
+    background 0.12s ease;
+}
+
+.wordlists__item:hover {
+  border-color: color-mix(in oklab, var(--accent) 45%, transparent);
+}
+
+.wordlists__item.is-on {
+  border-color: var(--accent);
+  background: color-mix(in oklab, var(--accent) 14%, var(--ink-700));
+}
+
+.wordlists__emoji {
+  font-size: var(--step-2);
+  line-height: 1;
+}
+
+.wordlists__body {
+  display: grid;
+  gap: 0.1rem;
+}
+
+.wordlists__name {
+  font-weight: 700;
+}
+
+.wordlists__meta {
+  font-size: var(--step--2);
+  color: var(--accent);
+  letter-spacing: 0.04em;
+}
+
+.wordlists__blurb {
+  font-size: var(--step--1);
+  color: var(--chalk-soft);
+}
+
+/* ── A word card: heard, not read ──────────────────────────────────────── */
+
+.wordprompt {
+  display: grid;
+  justify-items: center;
+  gap: 0.5rem;
+}
+
+/* Same height whether the word is showing or hidden, so the card doesn't
+   jump when the flash ends mid-answer. */
+.wordprompt__hidden {
+  letter-spacing: 0.18em;
+  color: var(--chalk-soft);
+  opacity: 0.55;
+}
+
+.wordprompt__again {
+  --btn-gap: 0.4rem;
+}
+
+.wordpad {
+  display: flex;
+  gap: 0.6rem;
+  max-width: 30rem;
+  width: 100%;
+  margin-inline: auto;
+}
+
+.wordpad__input {
+  flex: 1;
+  min-width: 0;
+  padding: clamp(0.7rem, 2.4vh, 1.1rem) 0.9rem;
+  border-radius: var(--radius);
+  border: 2px solid var(--hairline);
+  background: var(--ink-700);
+  color: var(--chalk);
+  font-family: inherit;
+  font-size: var(--step-2);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-align: center;
+}
+
+.wordpad__input:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.wordpad__input:disabled {
+  opacity: 0.5;
+}

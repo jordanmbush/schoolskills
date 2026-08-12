@@ -1,5 +1,6 @@
 import { comboMultiplier } from "@/engine/progress";
 import type { Card, InputMode } from "@/engine/types";
+import { WordPrompt } from "./WordPrompt";
 import type { Feedback } from "./types";
 
 /**
@@ -19,6 +20,9 @@ export function CardFace({
   secondsLeft,
   streak,
   fuseRef,
+  racing,
+  audible,
+  onSpeak,
 }: {
   card: Card;
   index: number;
@@ -29,6 +33,11 @@ export function CardFace({
   secondsLeft: number | null;
   streak: number;
   fuseRef: React.RefObject<HTMLDivElement | null>;
+  /** Past the countdown. A word card must not give itself away before then. */
+  racing: boolean;
+  /** Whether this device can say a word out loud. See `WordPrompt`. */
+  audible: boolean;
+  onSpeak: () => void;
 }) {
   const combo = comboMultiplier(streak);
   return (
@@ -49,9 +58,19 @@ export function CardFace({
           </span>
         </div>
       )}
-      <p className="card__prompt u-display" aria-live="polite">
-        {card.prompt}
-      </p>
+      {card.speak ? (
+        <WordPrompt
+          word={card.speak}
+          index={index}
+          active={racing}
+          audible={audible}
+          onSpeak={onSpeak}
+        />
+      ) : (
+        <p className="card__prompt u-display" aria-live="polite">
+          {card.prompt}
+        </p>
+      )}
       <div className="card__answer">
         {feedback?.kind === "timeout" ? (
           <span className="card__truth u-mono">
@@ -61,6 +80,10 @@ export function CardFace({
           <span className="card__truth u-mono">
             <s>{feedback.given}</s> {card.answer}
           </span>
+        ) : card.speak ? (
+          // Nothing: a word card types into a real field, which already shows
+          // what's been entered. Echoing it here would be the same text twice.
+          <></>
         ) : inputMode === "type" ? (
           <span className={`card__entry u-mono${entry ? "" : " is-empty"}`}>
             {entry || "?"}
