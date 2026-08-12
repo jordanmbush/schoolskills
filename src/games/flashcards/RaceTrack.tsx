@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
 import { useHub, usePlayer } from "@/components/state/HubContext";
 import { useRace } from "@/components/state/RaceContext";
-import { buildDeck, configKey } from "@/engine/decks/flashcards";
+import { OPERATIONS, buildDeck, configKey } from "@/engine/decks/flashcards";
 import {
   WRONG_ANSWER_PENALTY_MS,
   bestRun,
@@ -87,6 +87,8 @@ function Track({
   const { config, seed, ghost } = pending;
   /** Fixed for the whole run — a mid-race change isn't a thing. */
   const limitMs = config.timeLimitMs ?? null;
+  /** Owns the marking rule; see `DeckSpec.normalise`. Constant for the race. */
+  const spec = OPERATIONS[config.operation];
   const deck = useMemo(() => buildDeck(config, seed), [config, seed]);
   const ghostSplits = useMemo(
     () => (ghost ? cumulativeSplits(ghost.session) : null),
@@ -120,7 +122,7 @@ function Track({
    * times out, and `submit` needs the clock to bank the time. The ref lets the
    * clock be created first and still reach the real handler.
    */
-  const submitRef = useRef<(value: number | null) => void>(() => {});
+  const submitRef = useRef<(value: string | null) => void>(() => {});
 
   const card = deck[index];
   const total = deck.length;
@@ -192,7 +194,7 @@ function Track({
 
   /** `null` means the card's clock ran out before an answer arrived. */
   const submit = useCallback(
-    (value: number | null) => {
+    (value: string | null) => {
       const { phase, feedback, card, streak, total, limitMs } = live.current;
       if (phase !== "racing" || feedback !== null || hasFinished()) return;
       const lateOut = value === null;
@@ -200,7 +202,10 @@ function Track({
       // saved split all agree even if the timer fires a frame or two late.
       // Whole milliseconds keep the saved file readable and the totals exact.
       const ms = lateOut ? limitMs! : Math.round(onCard());
-      const ok = !lateOut && value === card.answer;
+      // Both sides through `normalise`, so "07" marks the same as "7" — and
+      // so that a deck can forgive more without this line changing.
+      const ok =
+        !lateOut && spec.normalise(value) === spec.normalise(card.answer);
       bank(ms);
       if (lateOut) spendFuse();
       results.current.push({
@@ -209,7 +214,7 @@ function Track({
         given: value,
         ok,
         ms,
-        facts: card.facts,
+        factId: card.factId,
         ...(lateOut && { timedOut: true }),
       });
 
@@ -247,7 +252,7 @@ function Track({
       // Every other value above comes from a ref; these are all pinned with
       // empty dependency lists precisely so this callback can stay stable.
     },
-    [bank, spendFuse, onCard, startCard, hasFinished],
+    [bank, spendFuse, onCard, startCard, hasFinished, spec],
   );
   submitRef.current = submit;
 
@@ -268,7 +273,7 @@ function Track({
     active: phase === "racing" && feedback === null,
     inputMode: config.inputMode,
     choices: card.choices,
-    answerLength: String(card.answer).length,
+    answerLength: card.answer.length,
     entry,
     entryRef,
     submit,
@@ -343,9 +348,7 @@ function Track({
         disabled={settled}
         onDigit={pushDigit}
         onBack={dropDigit}
-        onEnter={() =>
-          entryRef.current !== "" && submit(Number(entryRef.current))
-        }
+        onEnter={() => entryRef.current !== "" && submit(entryRef.current)}
         onChoose={submit}
       />
 

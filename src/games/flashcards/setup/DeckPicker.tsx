@@ -1,5 +1,8 @@
 import { Button } from "@/components/ui/kit";
-import type { OperationSpec } from "@/engine/decks/flashcards";
+import {
+  arithmeticFactId,
+  type OperationSpec,
+} from "@/engine/decks/flashcards";
 import type { FlashConfig } from "@/engine/types";
 
 /**
@@ -48,7 +51,7 @@ export function DeckPicker({
         <ul className="factchips">
           {drill.map(([a, b]) => (
             <li key={`${a}:${b}`} className="factchip u-mono">
-              {a} {spec.symbol} {b}
+              {spec.factLabel(arithmeticFactId(a, b))}
             </li>
           ))}
         </ul>

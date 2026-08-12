@@ -101,7 +101,9 @@ export default function RaceResults() {
     start({
       profileId: profile!.id,
       config: buildDrill(missedFacts, {
-        operation: session.mode,
+        // From the config, not from `mode`: same value, but `mode` is a plain
+        // string now and a drill is only ever arithmetic.
+        operation: session.config.operation,
         inputMode: session.config.inputMode,
         timeLimitMs: limitMs,
       }),
