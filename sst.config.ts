@@ -101,6 +101,76 @@ export default $config({
         ],
       },
       errorPage: "404.html",
+      transform: {
+        /**
+         * Return a real 404 instead of a 502 on unknown paths.
+         *
+         * SST's StaticSite doesn't give the distribution a real origin: it
+         * leaves `placeholder.sst.dev` configured and has its CloudFront
+         * Function call `updateRequestOrigin()` to point at the S3 bucket
+         * per request. That works for every normal request.
+         *
+         * It does NOT work for a CloudFront custom error response. When S3
+         * answers 403/404, CloudFront fetches `responsePagePath` itself — and
+         * that internal fetch does not run viewer-request functions, so no
+         * origin is ever set and it goes to the placeholder host. The visitor
+         * gets `502 Error from cloudfront` for what is simply a wrong URL,
+         * which reads as a broken site and which Google treats as a server
+         * fault rather than a missing page.
+         *
+         * Dropping `responsePagePath` makes CloudFront answer from its own
+         * error handling: correct 404 status, no origin fetch, no 502. The
+         * trade is CloudFront's plain error body instead of our branded 404
+         * page — status right, styling lost. Serving the real page needs the
+         * distribution to have a genuine S3 origin with its own OAC; that's
+         * tracked as its own story rather than hand-rolled here.
+         *
+         * So: drop the custom error responses entirely and let S3's own status
+         * pass straight through. CloudFront won't accept `responseCode`
+         * without `responsePagePath` ("must specify both together"), so
+         * rewriting the status without a page isn't an option either.
+         *
+         * On its own that would surface 403, not 404 — with only `s3:GetObject`
+         * granted, S3 hides the difference between "missing" and "forbidden"
+         * to avoid leaking which keys exist. The `assets` transform below adds
+         * `s3:ListBucket`, which is exactly the permission that lets S3 answer
+         * NoSuchKey. The bucket stays private; listing is granted to the
+         * CloudFront service principal, not to the public.
+         *
+         * Result: a wrong URL gets a correct 404. The body is S3's plain XML
+         * rather than our branded page — status right, styling lost. Serving
+         * the real page needs the distribution to own a genuine S3 origin so
+         * the error re-fetch has somewhere to go; that's its own story.
+         *
+         * `/404.html` is still built and still reachable directly.
+         */
+        cdn: (args) => {
+          args.customErrorResponses = [];
+        },
+        assets: (args) => {
+          args.transform = {
+            ...args.transform,
+            policy: (policyArgs) => {
+              policyArgs.policy = $resolve([
+                policyArgs.policy,
+                policyArgs.bucket,
+              ]).apply(([policy, bucket]) => {
+                const doc =
+                  typeof policy === "string"
+                    ? JSON.parse(policy)
+                    : JSON.parse(JSON.stringify(policy));
+                doc.Statement.push({
+                  Effect: "Allow",
+                  Principal: { Service: "cloudfront.amazonaws.com" },
+                  Action: "s3:ListBucket",
+                  Resource: `arn:aws:s3:::${bucket}`,
+                });
+                return JSON.stringify(doc);
+              });
+            },
+          };
+        },
+      },
     });
 
     return {
