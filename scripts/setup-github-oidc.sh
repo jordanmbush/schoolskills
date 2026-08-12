@@ -14,6 +14,16 @@
 #      triggered it was the post-merge run on main. Omitting it fails the
 #      first release deploy with AssumeRoleWithWebIdentity denied — a mistake
 #      already paid for once in monilibrium_2.
+#
+#      ⚠️ Debugging a denied assume-role: the error GitHub prints ("Not
+#      authorized to perform sts:AssumeRoleWithWebIdentity") never says which
+#      claim failed, and the token isn't in the log. CloudTrail has it —
+#      the denied event records the exact subject as the principal id:
+#        aws cloudtrail lookup-events --profile schoolskills --region us-west-1 \
+#          --lookup-attributes AttributeKey=EventName,AttributeValue=AssumeRoleWithWebIdentity \
+#          --max-results 1 --query 'Events[].CloudTrailEvent' --output text | jq .userIdentity
+#      That is how the immutable-subject mismatch below was found, after the
+#      first two production deploys failed identically.
 #   3. A least-privilege deploy policy, attached to the role.
 #   4. The `AWS_DEPLOY_ROLE_ARN` repo VARIABLE (not a secret — role ARNs
 #      aren't sensitive) that deploy.yml reads.
@@ -31,6 +41,17 @@ set -euo pipefail
 export AWS_PROFILE="${AWS_PROFILE:-schoolskills}"
 
 REPO="$(gh repo view --json nameWithOwner --jq .nameWithOwner)"
+# GitHub now issues IMMUTABLE OIDC subjects: the numeric owner and repository
+# ids are interpolated into the sub, so the claim reads
+#   repo:owner@34669268/name@1332338472:ref:refs/heads/main
+# rather than the documented `repo:owner/name:ref:...`. The ids are what make
+# it immutable — renaming the repo or the account can't be used to inherit
+# another repo's trust. Both forms are trusted below so the role keeps working
+# whichever one GitHub presents; `sub` is matched with StringEquals against
+# exact strings, never a wildcard.
+REPO_ID="$(gh repo view --json id --jq .databaseId 2>/dev/null || gh api "repos/${REPO}" --jq .id)"
+OWNER_ID="$(gh api "repos/${REPO}" --jq .owner.id)"
+REPO_IMMUTABLE="${REPO%%/*}@${OWNER_ID}/${REPO##*/}@${REPO_ID}"
 ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text)"
 ROLE_NAME="github-actions-schoolskills-deploy"
 POLICY_NAME="github-actions-schoolskills-deploy"
@@ -78,6 +99,8 @@ TRUST_POLICY="$(
         "StringEquals": {
           "token.actions.githubusercontent.com:aud": "sts.amazonaws.com",
           "token.actions.githubusercontent.com:sub": [
+            "repo:${REPO_IMMUTABLE}:ref:refs/heads/main",
+            "repo:${REPO_IMMUTABLE}:ref:refs/heads/develop",
             "repo:${REPO}:ref:refs/heads/main",
             "repo:${REPO}:ref:refs/heads/develop"
           ]
