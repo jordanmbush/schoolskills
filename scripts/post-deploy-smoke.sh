@@ -32,6 +32,14 @@ check "a times-table page serves"  "$(status "${BASE}/multiplication/7-times-tab
 check "sitemap serves"             "$(status "${BASE}/sitemap-index.xml")"   "200"
 check "robots serves"              "$(status "${BASE}/robots.txt")"          "200"
 check "manifest serves"            "$(status "${BASE}/manifest.webmanifest")" "200"
+# These four caught a real outage: a custom `fileOptions` list in sst.config.ts
+# replaced SST's default `**` catch-all, so every file not matching a listed
+# pattern was never uploaded. Pages all served fine; the PWA, the icons and the
+# social card were simply absent. Check one of each shape that isn't a document.
+check "service worker serves"      "$(status "${BASE}/sw.js")"               "200"
+check "favicon serves"             "$(status "${BASE}/favicon.svg")"         "200"
+check "apple touch icon serves"    "$(status "${BASE}/apple-touch-icon.png")" "200"
+check "OG card serves"             "$(status "${BASE}/og-default.png")"      "200"
 # A missing error document makes CloudFront answer 502 instead of 404 — which
 # is exactly what happened the first time this site was deployed.
 check "unknown path 404s (not 502)" "$(status "${BASE}/definitely-not-a-page")" "404"

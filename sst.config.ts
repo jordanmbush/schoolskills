@@ -85,18 +85,43 @@ export default $config({
             dns: sst.cloudflare.dns({ zone: zoneId! }),
           }
         : undefined,
-      // Astro emits content-hashed filenames under _astro/, so those are
-      // immutable forever. Everything else — HTML, the sitemap, robots.txt —
-      // must revalidate, or a deploy would take a day to become visible.
+      /**
+       * ⚠️ `fileOptions` REPLACES SST's default list, and SST only uploads
+       * files that match some entry. The default starts with a `**` catch-all,
+       * so omitting one doesn't just lose a cache header — those files are
+       * never uploaded at all. An earlier version of this config listed only
+       * the document and `_astro/` patterns, and the service worker, all four
+       * icons and the Open Graph image were silently absent from the live site
+       * while every page still served perfectly. Keep the catch-all first.
+       *
+       * Precedence is LAST-MATCH-WINS: SST reverses this array and skips files
+       * it has already processed, so the most specific rule goes at the bottom.
+       */
       assets: {
         fileOptions: [
+          // Catch-all. Unhashed and therefore not immutable — icons and the OG
+          // card do change, just rarely.
+          {
+            files: "**",
+            cacheControl: "public,max-age=3600,s-maxage=86400,must-revalidate",
+          },
+          // Content-hashed by the build: the bytes at a given URL can never
+          // change, so these are immutable forever.
+          {
+            files: "_astro/**",
+            cacheControl: "public,max-age=31536000,immutable",
+          },
+          // Documents must revalidate or a deploy takes a day to become visible.
           {
             files: ["**/*.{html,xml,txt,json,webmanifest}"],
             cacheControl: "public,max-age=0,s-maxage=86400,must-revalidate",
           },
+          // The service worker must never be served stale. A cached one keeps
+          // controlling the page and shipping its own old cache rules, which is
+          // the hardest kind of deploy to undo remotely.
           {
-            files: "_astro/**",
-            cacheControl: "public,max-age=31536000,immutable",
+            files: "sw.js",
+            cacheControl: "public,max-age=0,must-revalidate",
           },
         ],
       },
