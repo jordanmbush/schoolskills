@@ -1,0 +1,30 @@
+---
+import Base from "@/layouts/Base.astro";
+
+/**
+ * Placeholder landing page — enough to prove the build, the layout contract and
+ * the deploy pipeline end to end. The real hub (profile picker + game grid)
+ * lands with the PORT epic.
+ */
+const title = "School Skills — learning games that feel like games";
+const description =
+  "Free, fast learning games for kids. Multiplication flash cards with ghost racing, and more on the way. No accounts, no sign-up — progress stays on your own device.";
+---
+
+<Base
+  title={title}
+  description={description}
+  jsonLd={{
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: "School Skills",
+    url: "https://schoolskills.app",
+    description,
+  }}
+>
+  <main>
+    <h1>School Skills</h1>
+    <p>{description}</p>
+    <p><small>Under construction.</small></p>
+  </main>
+</Base>

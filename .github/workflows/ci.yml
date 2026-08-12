@@ -1,0 +1,63 @@
+# Release gates. Unlike monilibrium_2 — where CI runs only on `main` to ration
+# Actions minutes on a private repo — this repo is public, so minutes are free
+# and every PR gets the full suite. Branch protection marks "CI" as a required
+# check; husky hooks are convenience, not the gate.
+name: CI
+
+on:
+  pull_request:
+    branches: [develop, main]
+  push:
+    branches: [develop, main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    name: CI
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          # 24.16+ — astro-eslint-parser and eslint-plugin-astro both require it.
+          node-version: "24.16"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type-check
+        run: npm run type-check
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Format check
+        run: npm run format:check
+
+      - name: Build
+        run: npm run build
+
+      # The site must never stop being static: an accidental SSR adapter would
+      # turn a $2/month S3 origin into a Lambda, and silently break the deploy.
+      - name: Assert the build is static
+        run: |
+          test -f dist/index.html || { echo "::error::dist/index.html missing — output is not static"; exit 1; }
+          test -f dist/sitemap-index.xml || { echo "::error::sitemap missing — SEO regression"; exit 1; }
+          if [ -d dist/_worker.js ] || [ -f dist/entry.mjs ]; then
+            echo "::error::server output detected in dist/ — an SSR adapter crept in"; exit 1
+          fi
+
+      - name: Unit tests
+        run: npm run test:unit
+
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high

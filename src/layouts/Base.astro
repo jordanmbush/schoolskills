@@ -1,0 +1,58 @@
+---
+/**
+ * The page shell every route renders into.
+ *
+ * SEO metadata is a required prop rather than an optional slot on purpose: a
+ * page that forgets its title and description is the single most common way a
+ * static site quietly fails to rank, and making it a type error is cheaper
+ * than catching it in review. `canonical` is derived from Astro.site (set in
+ * astro.config.mjs) so it can't drift from the sitemap.
+ */
+interface Props {
+  title: string;
+  description: string;
+  /** Overrides the og:image. Defaults to the site-wide card. */
+  image?: string;
+  /** Structured data for this page, serialised into a JSON-LD script tag. */
+  jsonLd?: Record<string, unknown>;
+}
+
+const { title, description, image = "/og-default.png", jsonLd } = Astro.props;
+
+const canonical = new URL(Astro.url.pathname, Astro.site).href;
+const ogImage = new URL(image, Astro.site).href;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <meta name="generator" content={Astro.generator} />
+
+    {
+      jsonLd && (
+        <script
+          type="application/ld+json"
+          is:inline
+          set:html={JSON.stringify(jsonLd)}
+        />
+      )
+    }
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>

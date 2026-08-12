@@ -1,0 +1,33 @@
+name: Epic
+description: A tracking issue — a checklist of child stories driven by /run-orchestrator
+title: "Epic: <theme> (<CODE01>–<CODE0N>)"
+labels: ["epic"]
+body:
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+      description: What this epic delivers, and how you'll know it's done.
+    validations:
+      required: true
+  - type: textarea
+    id: stories
+    attributes:
+      label: Stories
+      description: >
+        The checklist the orchestrator drives, in dependency order. One row per
+        story as `- [ ] #NNN — CODE01 · short title`. Note blockers inline as
+        `_needs #NNN_`.
+      value: |
+        - [ ] #
+        - [ ] #
+    validations:
+      required: true
+  - type: textarea
+    id: out-of-scope
+    attributes:
+      label: Out of scope
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes / open questions

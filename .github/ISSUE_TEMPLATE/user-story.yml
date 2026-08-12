@@ -1,0 +1,34 @@
+name: User Story
+description: A user story for School Skills
+title: "As a <role>, I want <capability>, so that <benefit>"
+labels: ["user-story"]
+body:
+  - type: textarea
+    id: story
+    attributes:
+      label: Story
+      description: Restate the user story in full.
+      placeholder: As a <role>, I want <capability>, so that <benefit>.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Checklist of testable conditions that must hold for this story to be done.
+      value: |
+        - [ ]
+        - [ ]
+        - [ ]
+    validations:
+      required: true
+  - type: textarea
+    id: out-of-scope
+    attributes:
+      label: Out of scope
+      description: What this story explicitly does NOT cover.
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes / open questions
+      description: Anything that still needs a decision before or during implementation.
