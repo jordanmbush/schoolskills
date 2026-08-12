@@ -8,25 +8,32 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import * as deckService from "@/services/decks";
 import * as profileService from "@/services/profiles";
 import * as sessionService from "@/services/sessions";
 import { loadHub } from "@/services/hub";
 import type { NewProfile } from "@/services/profiles";
 import type { SessionDraft } from "@/services/sessions";
 import { setSoundEnabled } from "@/services/sound";
-import type { Profile, Session } from "@/engine/types";
+import type { CustomDeck, Profile, Session } from "@/engine/types";
 
 type Toast = { id: number; message: string; tone: "good" | "bad" };
 
 type HubValue = {
   profiles: Profile[];
   sessions: Session[];
+  decks: CustomDeck[];
   status: "loading" | "ready" | "error";
   error: string | null;
   reload: () => Promise<void>;
   createProfile: (profile: NewProfile) => Promise<Profile>;
   updateProfile: (id: string, patch: Partial<Profile>) => Promise<Profile>;
   deleteProfile: (id: string) => Promise<void>;
+  saveDeck: (
+    id: string | null,
+    input: deckService.DeckInput,
+  ) => Promise<CustomDeck>;
+  deleteDeck: (id: string) => Promise<void>;
   saveSession: (
     draft: SessionDraft,
   ) => Promise<{ session: Session; profile: Profile }>;
@@ -39,6 +46,7 @@ const HubContext = createContext<HubValue | null>(null);
 export function HubProvider({ children }: { children: ReactNode }) {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [sessions, setSessions] = useState<Session[]>([]);
+  const [decks, setDecks] = useState<CustomDeck[]>([]);
   const [status, setStatus] = useState<HubValue["status"]>("loading");
   const [error, setError] = useState<string | null>(null);
   const [toasts, setToasts] = useState<Toast[]>([]);
@@ -61,6 +69,7 @@ export function HubProvider({ children }: { children: ReactNode }) {
       const state = await loadHub();
       setProfiles(state.profiles);
       setSessions(state.sessions);
+      setDecks(state.decks);
       setStatus("ready");
       setError(null);
     } catch (err) {
@@ -74,6 +83,23 @@ export function HubProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     void reload();
   }, [reload]);
+
+  /** One entry point for both new and edited lists — the form is the same. */
+  const saveDeck = useCallback(
+    async (id: string | null, input: deckService.DeckInput) => {
+      const saved = id
+        ? await deckService.update(id, input)
+        : await deckService.create(input);
+      setDecks(await deckService.all());
+      return saved;
+    },
+    [],
+  );
+
+  const deleteDeck = useCallback(async (id: string) => {
+    await deckService.remove(id);
+    setDecks(await deckService.all());
+  }, []);
 
   const createProfile = useCallback(async (profile: NewProfile) => {
     const created = await profileService.create(profile);
@@ -109,12 +135,15 @@ export function HubProvider({ children }: { children: ReactNode }) {
     () => ({
       profiles,
       sessions,
+      decks,
       status,
       error,
       reload,
       createProfile,
       updateProfile,
       deleteProfile,
+      saveDeck,
+      deleteDeck,
       saveSession,
       notify,
       toasts,
@@ -122,12 +151,15 @@ export function HubProvider({ children }: { children: ReactNode }) {
     [
       profiles,
       sessions,
+      decks,
       status,
       error,
       reload,
       createProfile,
       updateProfile,
       deleteProfile,
+      saveDeck,
+      deleteDeck,
       saveSession,
       notify,
       toasts,

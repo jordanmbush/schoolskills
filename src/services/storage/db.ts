@@ -1,7 +1,12 @@
 import { openDB, type DBSchema, type IDBPDatabase } from "idb";
 
 import { readSession, readSessions } from "@/engine/migrate";
-import type { LegacySession, Profile, Session } from "@/engine/types";
+import type {
+  CustomDeck,
+  LegacySession,
+  Profile,
+  Session,
+} from "@/engine/types";
 
 /**
  * The only module in the codebase allowed to touch browser storage.
@@ -19,13 +24,15 @@ import type { LegacySession, Profile, Session } from "@/engine/types";
  */
 
 const DB_NAME = "schoolskills";
-const DB_VERSION = 1;
+/** 2 added `decks` — parent-authored word lists. */
+const DB_VERSION = 2;
 
 /** Oldest sessions past this count are dropped so a profile stays fast to load. */
 export const MAX_SESSIONS_PER_PROFILE = 2000;
 
 interface HubDB extends DBSchema {
   profiles: { key: string; value: Profile };
+  decks: { key: string; value: CustomDeck };
   sessions: {
     key: string;
     /**
@@ -44,12 +51,21 @@ function db() {
   // Opened lazily and memoised: the island is `client:only`, but a stray import
   // from a build-time script must not try to open IndexedDB in Node.
   handle ??= openDB<HubDB>(DB_NAME, DB_VERSION, {
-    upgrade(database) {
-      database.createObjectStore("profiles", { keyPath: "id" });
-      const sessions = database.createObjectStore("sessions", {
-        keyPath: "id",
-      });
-      sessions.createIndex("byProfile", "profileId");
+    // Each version's block is additive and guarded by the version it arrived
+    // in, so a browser two versions behind runs both and a fresh one runs both
+    // in order. Nothing here ever rewrites or drops existing data — this is
+    // the only copy of a child's record book that exists anywhere.
+    upgrade(database, oldVersion) {
+      if (oldVersion < 1) {
+        database.createObjectStore("profiles", { keyPath: "id" });
+        const sessions = database.createObjectStore("sessions", {
+          keyPath: "id",
+        });
+        sessions.createIndex("byProfile", "profileId");
+      }
+      if (oldVersion < 2) {
+        database.createObjectStore("decks", { keyPath: "id" });
+      }
     },
   });
   return handle;
@@ -79,6 +95,23 @@ export async function allProfiles(): Promise<Profile[]> {
 
 export async function allSessions(): Promise<Session[]> {
   return readSessions(await (await db()).getAll("sessions"));
+}
+
+export async function allDecks(): Promise<CustomDeck[]> {
+  return (await db()).getAll("decks");
+}
+
+export async function putDeck(deck: CustomDeck): Promise<void> {
+  await (await db()).put("decks", deck);
+}
+
+/**
+ * Removes a deck but NOT the races played on it. Those stay in the record
+ * book keyed by their own mode, which `deckSpec` still resolves — deleting a
+ * list a child has been practising must not delete the practice.
+ */
+export async function removeDeck(id: string): Promise<void> {
+  await (await db()).delete("decks", id);
 }
 
 export async function putProfile(profile: Profile): Promise<void> {
@@ -145,9 +178,11 @@ export async function trimSessions(profileId: string): Promise<number> {
 }
 
 export type Backup = {
-  version: 1;
+  /** 2 added `decks`. Files at either version restore. */
+  version: 1 | 2;
   exportedAt: string;
   profiles: Profile[];
+  decks?: CustomDeck[];
   /**
    * Written current, read wide. A file exported today holds widened cards, but
    * one exported last week — or produced by `scripts/convert-legacy-hub.mjs`
@@ -157,14 +192,16 @@ export type Backup = {
 };
 
 export async function exportAll(): Promise<Backup> {
-  const [profiles, sessions] = await Promise.all([
+  const [profiles, sessions, decks] = await Promise.all([
     allProfiles(),
     allSessions(),
+    allDecks(),
   ]);
   return {
-    version: 1,
+    version: 2,
     exportedAt: new Date().toISOString(),
     profiles,
+    decks,
     sessions,
   };
 }
@@ -180,17 +217,23 @@ export async function exportAll(): Promise<Backup> {
 export async function importAll(
   backup: Backup,
   mode: "merge" | "replace" = "merge",
-): Promise<{ profiles: number; sessions: number }> {
+): Promise<{ profiles: number; sessions: number; decks: number }> {
   const database = await db();
-  const tx = database.transaction(["profiles", "sessions"], "readwrite");
+  const tx = database.transaction(
+    ["profiles", "sessions", "decks"],
+    "readwrite",
+  );
   if (mode === "replace") {
     await Promise.all([
       tx.objectStore("profiles").clear(),
       tx.objectStore("sessions").clear(),
+      tx.objectStore("decks").clear(),
     ]);
   }
   await Promise.all([
     ...backup.profiles.map((p) => tx.objectStore("profiles").put(p)),
+    // Absent from a version 1 file, which is fine — there were none.
+    ...(backup.decks ?? []).map((d) => tx.objectStore("decks").put(d)),
     // Widened on the way in, so a restored run is stored in the shape a fresh
     // one would be. Reads migrate anyway; this just stops the file's age from
     // outliving the import.
@@ -202,5 +245,6 @@ export async function importAll(
   return {
     profiles: backup.profiles.length,
     sessions: backup.sessions.length,
+    decks: backup.decks?.length ?? 0,
   };
 }
