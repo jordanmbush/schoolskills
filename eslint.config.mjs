@@ -59,19 +59,6 @@ import prettier from "eslint-config-prettier/flat";
 // module it now describes.
 const MAX_COMPONENT_LINES = 300;
 
-// Files over the cap, each against the story that retires it. The list SHRINKS:
-// delete the entry in the same PR that splits the file. Counts are non-comment,
-// non-blank lines measured when the game was ported from the local-only app,
-// where nothing enforced a cap.
-const maxLinesAllowlist = [
-  // Retired by the flash-cards decomposition stories (PORT epic). RaceTrack is
-  // the race loop, the rAF ticker, the per-card clock and the keypad in one
-  // module; the split follows those seams, not arbitrary line counts.
-  "src/games/flashcards/RaceSetup.tsx", // 473
-  "src/games/flashcards/RaceResults.tsx", // 351
-  "src/components/screens/Progress.tsx", // 392
-];
-
 // Storage is an implementation detail of the service layer — the direct
 // analogue of monilibrium's "Prisma client only in services/" boundary. A React
 // component that reaches for `localStorage` bypasses the profile/session
@@ -398,7 +385,11 @@ export default defineConfig([
   // is coverage, not scannability.
   {
     files: ["src/components/**/*.{ts,tsx}", "src/games/**/*.{ts,tsx}"],
-    ignores: ["**/*.test.{ts,tsx}", ...maxLinesAllowlist],
+    // Tests only. There WAS an allowlist here too — RaceTrack (655), RaceSetup
+    // (473), Progress (392) and RaceResults (351), inherited from the
+    // local-only app where nothing enforced a cap. All four were split along
+    // their seams by the KIT03/KIT04 stories and the list was deleted.
+    ignores: ["**/*.test.{ts,tsx}"],
     rules: {
       "max-lines": [
         "error",

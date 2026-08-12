@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
 import { usePlayer } from "@/components/state/HubContext";
 import { useRace } from "@/components/state/RaceContext";
-import { Avatar, Button, Confetti } from "@/components/ui/kit";
+import { Button, Confetti } from "@/components/ui/kit";
 import TopBar from "@/components/TopBar";
 import {
   WRONG_ANSWER_PENALTY_MS,
@@ -12,11 +12,13 @@ import {
   timeLimitOf,
   timedOutCount,
 } from "@/engine/records";
-import { BADGES_BY_ID } from "@/engine/progress";
 import { buildDrill, describeConfig } from "@/engine/decks/flashcards";
-import { clock, delta as formatDelta, percent, plural } from "@/engine/format";
+import { clock, delta as formatDelta, plural } from "@/engine/format";
 import { randomSeed } from "@/engine/random";
 import { sfx } from "@/services/sound";
+import { Rewards } from "./results/Rewards";
+import { Scoreline } from "./results/Scoreline";
+import { SplitsTable } from "./results/SplitsTable";
 
 export default function RaceResults() {
   const { profileId } = useParams();
@@ -173,158 +175,19 @@ export default function RaceResults() {
         )}
       </section>
 
-      <section className="scoreline panel anim-rise">
-        <div className="stat">
-          <span className="stat__value">{percent(accuracy)}</span>
-          <span className="stat__label">Correct</span>
-        </div>
-        <div className="stat">
-          <span className="stat__value">
-            {session.correct}
-            <span className="scoreline__of">
-              /{session.correct + session.incorrect}
-            </span>
-          </span>
-          <span className="stat__label">Cards</span>
-        </div>
-        <div className="stat">
-          <span className="stat__value">{session.bestStreak}</span>
-          <span className="stat__label">Best streak</span>
-        </div>
-        <div className="stat">
-          <span className="stat__value">
-            {(
-              session.durationMs /
-              Math.max(1, session.cards.length) /
-              1000
-            ).toFixed(2)}
-            s
-          </span>
-          <span className="stat__label">Per card</span>
-        </div>
-        <div className="stat stat--xp">
-          <span className="stat__value">
-            +{session.xpEarned.toLocaleString()}
-          </span>
-          <span className="stat__label">XP earned</span>
-        </div>
-      </section>
+      <Scoreline session={session} accuracy={accuracy} />
 
-      {(bonuses.length > 0 || levelledUpTo || newBadges.length > 0) && (
-        <section className="rewards anim-rise">
-          {levelledUpTo && (
-            <div className="reward reward--level">
-              <span className="reward__icon" aria-hidden="true">
-                🌟
-              </span>
-              <span>
-                <strong>Level {levelledUpTo}</strong>
-                <span className="reward__sub">You levelled up</span>
-              </span>
-            </div>
-          )}
-          {bonuses.map((bonus) => (
-            <div key={bonus.label} className="reward">
-              <span className="reward__icon" aria-hidden="true">
-                ⚡
-              </span>
-              <span>
-                <strong>{bonus.label}</strong>
-                <span className="reward__sub">+{bonus.xp} XP</span>
-              </span>
-            </div>
-          ))}
-          {newBadges.map((id) => {
-            const badge = BADGES_BY_ID.get(id);
-            if (!badge) return null;
-            return (
-              <div key={id} className="reward reward--badge">
-                <span className="reward__icon" aria-hidden="true">
-                  {badge.icon}
-                </span>
-                <span>
-                  <strong>{badge.name}</strong>
-                  <span className="reward__sub">{badge.how}</span>
-                </span>
-              </div>
-            );
-          })}
-        </section>
-      )}
-
-      <section className="panel anim-rise">
-        <div className="panel__head">
-          <h2 className="panel__title">Splits</h2>
-          {ghost && (
-            <span className="chip">
-              <Avatar profile={ghost.profile} size="1.2rem" />
-              {ghost.isSelf ? "Your best run" : ghost.profile.name}
-            </span>
-          )}
-        </div>
-        <div className="splits__scroll">
-          <table className="splits">
-            <thead>
-              <tr>
-                <th scope="col">#</th>
-                <th scope="col">Card</th>
-                <th scope="col">You</th>
-                {ghostSplits && <th scope="col">Rival</th>}
-                {ghostSplits && <th scope="col">Gap</th>}
-              </tr>
-            </thead>
-            <tbody>
-              {session.cards.map((card, i) => {
-                const gap =
-                  ghostSplits && ghostSplits[i] !== undefined
-                    ? mySplits[i] - ghostSplits[i]
-                    : null;
-                return (
-                  <tr
-                    key={i}
-                    className={
-                      card.ok
-                        ? undefined
-                        : card.timedOut
-                          ? "splits__row--late"
-                          : "splits__row--miss"
-                    }
-                  >
-                    <td className="u-mono splits__n">{i + 1}</td>
-                    <td className="splits__card">
-                      {card.prompt} = {card.answer}
-                      {!card.ok && (
-                        <span
-                          className={`splits__given${card.timedOut ? " is-late" : ""}`}
-                        >
-                          {card.timedOut
-                            ? "ran out of time"
-                            : `you said ${card.given}`}
-                        </span>
-                      )}
-                    </td>
-                    <td className="u-mono">{(card.ms / 1000).toFixed(2)}</td>
-                    {ghostSplits && (
-                      <td className="u-mono splits__rival">
-                        {ghost!.session.cards[i]
-                          ? (ghost!.session.cards[i].ms / 1000).toFixed(2)
-                          : "—"}
-                      </td>
-                    )}
-                    {ghostSplits && (
-                      <td
-                        className={`u-mono splits__gap${gap !== null && gap < 0 ? " is-ahead" : " is-behind"}`}
-                      >
-                        {gap === null ? "—" : formatDelta(gap)}
-                      </td>
-                    )}
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </section>
+      <Rewards
+        levelledUpTo={levelledUpTo}
+        bonuses={bonuses}
+        newBadges={newBadges}
+      />
+      <SplitsTable
+        session={session}
+        ghost={ghost}
+        mySplits={mySplits}
+        ghostSplits={ghostSplits}
+      />
 
       <div className="results__actions">
         {practiceFirst && (
