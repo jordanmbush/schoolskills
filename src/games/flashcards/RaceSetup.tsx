@@ -8,7 +8,7 @@ import {
 import { useHub, usePlayer } from "@/components/state/HubContext";
 import { useRace } from "@/components/state/RaceContext";
 import TopBar from "@/components/TopBar";
-import { Avatar } from "@/components/ui/kit";
+import { Avatar, Button, Input } from "@/components/ui/kit";
 import {
   OPERATIONS,
   OPERATION_ORDER,
@@ -168,21 +168,22 @@ export default function RaceSetup() {
             {PRESETS.map((preset) => {
               const chosen = configKey(preset.config) === key;
               return (
-                <button
+                <Button
                   key={preset.id}
+                  variant="bare"
                   className={`preset${chosen ? " is-chosen" : ""}`}
                   onClick={() => {
                     sfx.tap();
                     setConfig(preset.config);
                   }}
-                  aria-pressed={chosen}
+                  pressed={chosen}
                 >
                   <span className="preset__emoji" aria-hidden="true">
                     {preset.emoji}
                   </span>
                   <span className="preset__name u-display">{preset.name}</span>
                   <span className="preset__tag">{preset.tagline}</span>
-                </button>
+                </Button>
               );
             })}
           </div>
@@ -200,8 +201,9 @@ export default function RaceSetup() {
             <span className="control__label">Operation</span>
             <div className="segmented">
               {OPERATION_ORDER.map((op) => (
-                <button
+                <Button
                   key={op}
+                  variant="bare"
                   className={`segmented__btn${config.operation === op ? " is-on" : ""}`}
                   onClick={() => {
                     sfx.tap();
@@ -212,13 +214,13 @@ export default function RaceSetup() {
                       others: config.others.filter((n) => n >= next.minOther),
                     });
                   }}
-                  aria-pressed={config.operation === op}
+                  pressed={config.operation === op}
                 >
                   <span aria-hidden="true">{OPERATIONS[op].symbol}</span>
                   <span className="segmented__word">
                     {OPERATIONS[op].label}
                   </span>
-                </button>
+                </Button>
               ))}
             </div>
           </div>
@@ -238,15 +240,16 @@ export default function RaceSetup() {
                 ))}
               </ul>
               <div className="control__row">
-                <button
-                  className="btn btn--ghost btn--sm"
+                <Button
+                  variant="ghost"
+                  size="sm"
                   onClick={() => {
                     sfx.tap();
                     patch({ facts: undefined });
                   }}
                 >
                   Pick numbers instead
-                </button>
+                </Button>
               </div>
             </div>
           ) : (
@@ -256,35 +259,39 @@ export default function RaceSetup() {
                   <span className="control__label">{spec.focusLabel}</span>
                   <div className="tablegrid">
                     {TABLE_NUMBERS.map((n) => (
-                      <button
+                      <Button
                         key={n}
+                        variant="bare"
                         className={`tablegrid__cell u-mono${config.tables.includes(n) ? " is-on" : ""}`}
                         onClick={() => toggleTable(n)}
-                        aria-pressed={config.tables.includes(n)}
+                        pressed={config.tables.includes(n)}
                       >
                         {n}
-                      </button>
+                      </Button>
                     ))}
                   </div>
                   <div className="control__row">
-                    <button
-                      className="btn btn--ghost btn--sm"
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       onClick={() => patch({ tables: TABLE_NUMBERS })}
                     >
                       All
-                    </button>
-                    <button
-                      className="btn btn--ghost btn--sm"
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       onClick={() => patch({ tables: [2, 5, 10] })}
                     >
                       Easy three
-                    </button>
-                    <button
-                      className="btn btn--ghost btn--sm"
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       onClick={() => patch({ tables: [6, 7, 8, 9] })}
                     >
                       Tricky four
-                    </button>
+                    </Button>
                   </div>
                 </div>
 
@@ -292,29 +299,32 @@ export default function RaceSetup() {
                   <span className="control__label">{spec.pairLabel}</span>
                   <div className="tablegrid">
                     {otherNumbers.map((n) => (
-                      <button
+                      <Button
                         key={n}
+                        variant="bare"
                         className={`tablegrid__cell u-mono${config.others.includes(n) ? " is-on" : ""}`}
                         onClick={() => toggleOther(n)}
-                        aria-pressed={config.others.includes(n)}
+                        pressed={config.others.includes(n)}
                       >
                         {n}
-                      </button>
+                      </Button>
                     ))}
                   </div>
                   <div className="control__row">
-                    <button
-                      className="btn btn--ghost btn--sm"
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       onClick={() => patch({ others: otherNumbers })}
                     >
                       All
-                    </button>
-                    <button
-                      className="btn btn--ghost btn--sm"
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       onClick={() => patch({ others: [...config.tables] })}
                     >
                       Match tables
-                    </button>
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -332,17 +342,18 @@ export default function RaceSetup() {
             <span className="control__label">How many cards</span>
             <div className="segmented">
               {cardCounts.map((count) => (
-                <button
+                <Button
                   key={count}
+                  variant="bare"
                   className={`segmented__btn u-mono${config.cardCount === count ? " is-on" : ""}`}
                   onClick={() => {
                     sfx.tap();
                     patch({ cardCount: count });
                   }}
-                  aria-pressed={config.cardCount === count}
+                  pressed={config.cardCount === count}
                 >
                   {count}
-                </button>
+                </Button>
               ))}
             </div>
           </div>
@@ -353,31 +364,33 @@ export default function RaceSetup() {
               {TIME_LIMITS.map(({ ms, label }) => {
                 const on = (config.timeLimitMs ?? null) === ms;
                 return (
-                  <button
+                  <Button
                     key={label}
+                    variant="bare"
                     className={`segmented__btn u-mono${on ? " is-on" : ""}`}
                     onClick={() => {
                       sfx.tap();
                       setLimit(ms);
                     }}
-                    aria-pressed={on}
+                    pressed={on}
                   >
                     {label}
-                  </button>
+                  </Button>
                 );
               })}
             </div>
 
             <div className="timelimit">
-              <button
+              <Button
+                variant="bare"
                 className="timelimit__step u-mono"
                 onClick={() => bumpLimit(-TIME_STEP_MS)}
                 aria-label="Quarter of a second less"
               >
                 −
-              </button>
+              </Button>
               <span className="timelimit__field">
-                <input
+                <Input
                   className="timelimit__input u-mono"
                   type="number"
                   inputMode="decimal"
@@ -387,8 +400,8 @@ export default function RaceSetup() {
                   value={limitShown}
                   placeholder="off"
                   aria-label="Seconds per card"
-                  onChange={(event) => {
-                    const text = event.target.value;
+                  blurOnEnter
+                  onChange={(text) => {
                     setLimitDraft(text);
                     if (text.trim() === "") {
                       patch({ timeLimitMs: null });
@@ -399,19 +412,17 @@ export default function RaceSetup() {
                       patch({ timeLimitMs: snapTimeLimit(typed * 1000) });
                   }}
                   onBlur={() => setLimitDraft(null)}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter") event.currentTarget.blur();
-                  }}
                 />
                 <span className="timelimit__unit u-mono">s</span>
               </span>
-              <button
+              <Button
+                variant="bare"
                 className="timelimit__step u-mono"
                 onClick={() => bumpLimit(TIME_STEP_MS)}
                 aria-label="Quarter of a second more"
               >
                 +
-              </button>
+              </Button>
               <span className="timelimit__hint">
                 Or set it exactly — quarter-second steps, down to{" "}
                 {TIME_MIN_MS / 1000}s. Clear the box for no clock.
@@ -434,18 +445,19 @@ export default function RaceSetup() {
                   ["choose", "Tap one", "Four choices"],
                 ] as Array<[InputMode, string, string]>
               ).map(([mode, label, hint]) => (
-                <button
+                <Button
                   key={mode}
+                  variant="bare"
                   className={`segmented__btn segmented__btn--stack${config.inputMode === mode ? " is-on" : ""}`}
                   onClick={() => {
                     sfx.tap();
                     patch({ inputMode: mode });
                   }}
-                  aria-pressed={config.inputMode === mode}
+                  pressed={config.inputMode === mode}
                 >
                   <span className="segmented__word">{label}</span>
                   <span className="segmented__hint">{hint}</span>
-                </button>
+                </Button>
               ))}
             </div>
           </div>
@@ -462,13 +474,14 @@ export default function RaceSetup() {
 
           <ul className="rivals">
             <li>
-              <button
+              <Button
+                variant="bare"
                 className={`rival${rivalId === null ? " is-chosen" : ""}`}
                 onClick={() => {
                   sfx.tap();
                   setRivalId(null);
                 }}
-                aria-pressed={rivalId === null}
+                pressed={rivalId === null}
               >
                 <span className="rival__icon" aria-hidden="true">
                   🕐
@@ -479,11 +492,12 @@ export default function RaceSetup() {
                     No ghost — set a time to beat
                   </span>
                 </span>
-              </button>
+              </Button>
             </li>
             {rivals.map((ghost: Ghost) => (
               <li key={ghost.session.id}>
-                <button
+                <Button
+                  variant="bare"
                   className={`rival${rivalId === ghost.session.id ? " is-chosen" : ""}`}
                   style={
                     { "--tint": ghost.profile.color } as React.CSSProperties
@@ -492,7 +506,7 @@ export default function RaceSetup() {
                     sfx.tap();
                     setRivalId(ghost.session.id);
                   }}
-                  aria-pressed={rivalId === ghost.session.id}
+                  pressed={rivalId === ghost.session.id}
                 >
                   <Avatar profile={ghost.profile} size="2.4rem" />
                   <span className="rival__body">
@@ -505,14 +519,14 @@ export default function RaceSetup() {
                       {shortDate(ghost.session.finishedAt)}
                     </span>
                   </span>
-                </button>
+                </Button>
               </li>
             ))}
           </ul>
 
-          <button className="btn btn--go setup__go" onClick={launch}>
+          <Button variant="go" className="setup__go" onClick={launch}>
             Start race
-          </button>
+          </Button>
         </section>
       </div>
     </main>
