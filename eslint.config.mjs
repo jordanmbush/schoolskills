@@ -93,6 +93,13 @@ const FRAMEWORK_BAN =
  * ESLint fail hard with `Cannot redefine plugin "local"` for exactly the files
  * in the overlap — and pass everywhere else, so it looks fine until it isn't.
  * Registering once and referencing the rule ids by name avoids that entirely.
+ *
+ * The check is by object IDENTITY, not by name: repeating
+ * `plugins: { local: localPlugin }` with this same reference is tolerated, and
+ * only a fresh object literal throws. That is a trap rather than a reprieve —
+ * it means the failure depends on how someone happens to write the duplicate.
+ * Don't rely on it; keep the single registration below.
+ * `eslint.config.test.mjs` pins both halves of this behaviour.
  */
 const localPlugin = {
   rules: {
@@ -398,6 +405,9 @@ export default defineConfig([
   {
     files: [
       "*.config.{js,mjs,ts}",
+      // The boundary suite lints code SAMPLES containing deliberate
+      // violations; the samples are strings, but the file itself is Node.
+      "*.config.test.mjs",
       "scripts/**/*.{js,mjs,ts}",
       "e2e/**/*.ts",
       "sst.config.ts",
