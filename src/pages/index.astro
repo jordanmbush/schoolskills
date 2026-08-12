@@ -1,14 +1,17 @@
 ---
 import Base from "@/layouts/Base.astro";
+import "@/styles/content.css";
 
 /**
- * Placeholder landing page — enough to prove the build, the layout contract and
- * the deploy pipeline end to end. The real hub (profile picker + game grid)
- * lands with the PORT epic.
+ * The landing page. Its job is to say what this is in one line, get a kid into
+ * the game in one click, and link to the times-table pages so the whole set is
+ * crawlable from the root.
  */
-const title = "School Skills — learning games that feel like games";
+const title = "School Skills — free learning games for kids";
 const description =
-  "Free, fast learning games for kids. Multiplication flash cards with ghost racing, and more on the way. No accounts, no sign-up — progress stays on your own device.";
+  "Free learning games that feel like games. Multiplication flash cards with ghost racing and a per-card clock. No accounts, no sign-up, and progress stays on your own device.";
+
+const tables = Array.from({ length: 12 }, (_, i) => i + 1);
 ---
 
 <Base
@@ -22,9 +25,73 @@ const description =
     description,
   }}
 >
-  <main>
-    <h1>School Skills</h1>
-    <p>{description}</p>
-    <p><small>Under construction.</small></p>
+  <main class="page">
+    <p class="page__eyebrow">School Skills</p>
+    <h1>Learning games that feel like games</h1>
+    <p class="page__lead">
+      Free practice for the things that only come with repetition. No account,
+      no sign-up, and nothing about your child is ever uploaded — progress is
+      saved in this browser and stays there.
+    </p>
+
+    <a class="cta" href="/flash-cards">Play Times Trial →</a>
+
+    <h2>The games</h2>
+    <ul class="games">
+      <li>
+        <h3>Times Trial — multiplication flash cards</h3>
+        <p>
+          Pick your tables, then race the clock — or a ghost of your own best
+          run, or a sibling's. A per-card timer can be tightened a quarter of a
+          second at a time, and the facts you keep missing become their own
+          practice deck.
+        </p>
+        <a href="/flash-cards">Play now →</a>
+      </li>
+      <li class="games--soon">
+        <h3>Typing — coming soon</h3>
+        <p>Same idea, same profiles, different skill.</p>
+      </li>
+      <li class="games--soon">
+        <h3>Spelling and sight words — coming soon</h3>
+        <p>Including lists you type in yourself.</p>
+      </li>
+    </ul>
+
+    <h2>Times tables</h2>
+    <p>
+      Every table, with the full set of facts and tips for remembering them.
+    </p>
+    <ul class="siblings">
+      {
+        tables.map((n) => (
+          <li>
+            <a href={`/multiplication/${n}-times-table`}>{n}×</a>
+          </li>
+        ))
+      }
+    </ul>
+
+    <h2>For parents</h2>
+    <p>
+      There is no account to make and no data to hand over, because there is
+      nowhere to hand it to — this is a static site with no server behind it.
+      Every profile, race and record lives in your browser's own storage. That
+      also means clearing site data clears progress, so there's a
+      <strong>Back up progress</strong> button on the player screen that saves a file
+      you keep.
+    </p>
+    <p>
+      Adding the site to your home screen is worth doing on an iPad: it makes
+      the game work offline, and it stops Safari clearing saved progress after a
+      week of not playing.
+    </p>
+
+    <footer class="page__foot">
+      <a href="/flash-cards">Flash cards</a>
+      <a href="/privacy">Privacy</a>
+      <a href="/terms">Terms</a>
+      <p>Free to use. Made for four kids, then shared.</p>
+    </footer>
   </main>
 </Base>

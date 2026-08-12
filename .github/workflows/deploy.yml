@@ -1,0 +1,101 @@
+# Deploy to production on merge to main.
+#
+# Gating: triggered by the CI workflow COMPLETING on `main`, and the job only
+# runs when that run succeeded — a red CI never deploys. `workflow_dispatch`
+# exists for manual re-runs.
+#
+# Credentials: the job assumes the deploy role via GitHub OIDC
+# (scripts/setup-github-oidc.sh). No long-lived AWS keys exist anywhere.
+#
+# Required repo secrets — the deploy FAILS LOUDLY without them, by design:
+#   CLOUDFLARE_API_TOKEN   scoped to Zone:DNS:Edit on schoolskills.app
+#   CLOUDFLARE_ZONE_ID     the zone's id (not secret, but kept alongside)
+# sst.config.ts throws a named error if the zone id is missing rather than
+# silently deploying production without its domain — a "successful" deploy that
+# leaves the real hostname pointing nowhere is the worse failure.
+name: Deploy
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  # One deploy at a time. Overlapping merges QUEUE rather than cancel: killing
+  # `sst deploy` mid-flight abandons the Pulumi state lock.
+  group: deploy-production
+  cancel-in-progress: false
+
+permissions:
+  id-token: write # OIDC
+  contents: read
+  issues: write # the failure alert below
+
+jobs:
+  deploy:
+    name: Deploy production
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.head_branch == 'main')
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # Deploy exactly the commit CI validated.
+          ref: ${{ github.event.workflow_run.head_sha || github.ref }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24.16"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: us-west-1
+
+      - name: Deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+        # `--stage production` also flips sst.config.ts to retain/protect, so a
+        # stray removal can't delete the bucket serving the live site.
+        run: npx sst deploy --stage production
+
+      - name: Post-deploy smoke checks
+        run: bash scripts/post-deploy-smoke.sh https://schoolskills.app
+
+      # A red check is easy to miss on a personal project; an issue is not.
+      - name: Alert on failed deploy
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          title="Production deploy failed"
+          body="Deploy failed: ${RUN_URL}
+
+          First things to check:
+          - Are CLOUDFLARE_API_TOKEN and CLOUDFLARE_ZONE_ID set as repo secrets?
+            sst.config.ts refuses to deploy production without the zone id.
+          - Did the ACM certificate finish DNS validation? The first production
+            deploy blocks on it and can take several minutes.
+          - The previous version is still being served — CloudFront only cuts
+            over after a successful upload."
+          existing="$(gh issue list --state open --search "in:title \"$title\"" --json number --jq '.[0].number')"
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --body "$body"
+          else
+            gh issue create --title "$title" --label bug --body "$body"
+          fi

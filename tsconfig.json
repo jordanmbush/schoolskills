@@ -13,5 +13,12 @@
     }
   },
   "include": [".astro/types.d.ts", "**/*"],
-  "exclude": ["dist", "node_modules"]
+  // `.sst/` is SST's vendored platform source, which doesn't compile under
+  // this project's `verbatimModuleSyntax` and isn't ours to fix. Excluding the
+  // directory alone is not enough: sst.config.ts's triple-slash reference to
+  // `.sst/platform/config.d.ts` pulls the whole tree in transitively, and
+  // `exclude` only filters the `include` glob — it can't drop a file another
+  // file references. So the config is excluded too. It still gets type-checked,
+  // just by SST itself (against its own tsconfig) on every `sst deploy`.
+  "exclude": ["dist", "node_modules", ".sst", "sst.config.ts"]
 }

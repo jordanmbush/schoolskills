@@ -1,0 +1,140 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useHub } from "@/components/state/HubContext";
+import { Avatar, LevelRing } from "@/components/ui/kit";
+import PlayerEditor from "@/components/PlayerEditor";
+import BackupPanel from "@/components/BackupPanel";
+import { lifetimeStats, sessionsFor } from "@/engine/records";
+import { levelFromXp } from "@/engine/progress";
+import { percent } from "@/engine/format";
+import { sfx } from "@/services/sound";
+import type { Profile } from "@/engine/types";
+
+export default function PlayerSelect() {
+  const { profiles, sessions } = useHub();
+  const navigate = useNavigate();
+  const [editing, setEditing] = useState<Profile | null | undefined>(undefined);
+
+  const totals = lifetimeStats(sessions);
+
+  function enter(profile: Profile) {
+    sfx.select();
+    navigate(`/p/${profile.id}`);
+  }
+
+  return (
+    <main className="select">
+      <header className="select__head">
+        <p className="u-eyebrow">School Skills · saved on this device</p>
+        <h1 className="u-display select__title">
+          Who&apos;s
+          <br />
+          racing?
+        </h1>
+        {profiles.length > 0 && (
+          <p className="select__totals u-mono">
+            {profiles.length} players · {totals.races} races ·{" "}
+            {totals.cards.toLocaleString()} cards answered
+          </p>
+        )}
+      </header>
+
+      {profiles.length === 0 ? (
+        <div className="select__empty panel">
+          <span className="select__empty-icon" aria-hidden="true">
+            🏁
+          </span>
+          <h2 className="panel__title">Add the first player</h2>
+          <p>
+            Every player gets their own times, records and badges. Nothing
+            leaves this device.
+          </p>
+          <button className="btn btn--go" onClick={() => setEditing(null)}>
+            Add a player
+          </button>
+        </div>
+      ) : (
+        <ul className="select__grid">
+          {profiles.map((profile, index) => {
+            const mine = sessionsFor(sessions, profile.id);
+            const stats = lifetimeStats(mine);
+            return (
+              <li
+                key={profile.id}
+                className="anim-rise"
+                style={{ animationDelay: `${index * 70}ms` }}
+              >
+                <div
+                  className="driver"
+                  style={
+                    {
+                      "--tint": profile.color,
+                      "--lean": `${(index % 2 ? 1 : -1) * 0.7}deg`,
+                    } as React.CSSProperties
+                  }
+                >
+                  <button
+                    className="driver__enter"
+                    onClick={() => enter(profile)}
+                  >
+                    <span className="u-sr">Play as {profile.name}</span>
+                  </button>
+                  <div className="driver__top">
+                    <Avatar profile={profile} size="4.25rem" />
+                    <LevelRing
+                      {...levelFromXp(profile.xp)}
+                      tint={profile.color}
+                      size="3.4rem"
+                    />
+                  </div>
+                  <p className="driver__name u-display">{profile.name}</p>
+                  <dl className="driver__stats u-mono">
+                    <div>
+                      <dt>Races</dt>
+                      <dd>{stats.races}</dd>
+                    </div>
+                    <div>
+                      <dt>Cards</dt>
+                      <dd>{stats.cards}</dd>
+                    </div>
+                    <div>
+                      <dt>Right</dt>
+                      <dd>
+                        {stats.cards === 0 ? "—" : percent(stats.accuracy)}
+                      </dd>
+                    </div>
+                  </dl>
+                  <button
+                    className="driver__edit"
+                    onClick={() => setEditing(profile)}
+                  >
+                    Edit<span className="u-sr"> {profile.name}</span>
+                  </button>
+                </div>
+              </li>
+            );
+          })}
+          <li
+            className="anim-rise"
+            style={{ animationDelay: `${profiles.length * 70}ms` }}
+          >
+            <button
+              className="driver driver--add"
+              onClick={() => setEditing(null)}
+            >
+              <span className="driver__plus" aria-hidden="true">
+                +
+              </span>
+              <span className="driver__name u-display">Add player</span>
+            </button>
+          </li>
+        </ul>
+      )}
+
+      {editing !== undefined && (
+        <PlayerEditor profile={editing} onClose={() => setEditing(undefined)} />
+      )}
+      <BackupPanel />
+    </main>
+  );
+}

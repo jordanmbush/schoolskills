@@ -14,6 +14,11 @@ test-results/
 playwright-report/
 coverage/
 
+# Exported progress. This repo is PUBLIC and a backup contains real names and
+# a child's full practice history — it must never be committed.
+*-backup.json
+schoolskills-backup*.json
+
 # Local env — never commit CLOUDFLARE_API_TOKEN or anything like it
 .env
 .env.local

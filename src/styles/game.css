@@ -1,0 +1,1037 @@
+/* ── Race setup ────────────────────────────────────────────────────────── */
+
+.setup__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(280px, 1fr);
+  grid-template-areas:
+    "presets rivals"
+    "tune rivals";
+  gap: var(--gap-3);
+  align-items: start;
+}
+
+.setup__grid > :nth-child(1) {
+  grid-area: presets;
+}
+.setup__grid > :nth-child(2) {
+  grid-area: tune;
+}
+.setup__rivals {
+  grid-area: rivals;
+  position: sticky;
+  top: 1rem;
+}
+
+@media (width < 900px) {
+  .setup__grid {
+    grid-template-columns: 1fr;
+    grid-template-areas: "presets" "tune" "rivals";
+  }
+  .setup__rivals {
+    position: static;
+  }
+}
+
+.preset-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--gap-2);
+}
+
+.preset {
+  display: grid;
+  gap: 0.25rem;
+  justify-items: start;
+  text-align: left;
+  padding: var(--gap-3);
+  border-radius: var(--radius);
+  border: 1.5px solid var(--hairline);
+  background: rgb(255 255 255 / 3%);
+  transition:
+    transform 0.16s var(--ease-spring),
+    border-color 0.16s ease,
+    background-color 0.16s ease;
+}
+
+.preset:hover {
+  transform: translateY(-3px);
+}
+
+.preset.is-chosen {
+  border-color: var(--accent);
+  background: color-mix(in oklab, var(--accent) 14%, transparent);
+}
+
+.preset__emoji {
+  font-size: var(--step-2);
+  line-height: 1;
+}
+
+.preset__name {
+  font-size: var(--step-1);
+  font-variation-settings: "wdth" 105;
+}
+
+.preset__tag {
+  font-size: var(--step--2);
+  color: var(--chalk-dim);
+  line-height: 1.35;
+}
+
+.control {
+  display: grid;
+  gap: var(--gap-2);
+  padding: var(--gap-3) 0;
+  border-top: 1px dashed var(--hairline);
+}
+
+.control:first-of-type {
+  border-top: none;
+  padding-top: 0;
+}
+
+.control__label {
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--chalk-dim);
+}
+
+.control__row {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.segmented {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  padding: 0.3rem;
+  border-radius: 999px;
+  background: rgb(0 0 0 / 30%);
+  border: 1px solid var(--hairline);
+  width: fit-content;
+  max-width: 100%;
+}
+
+.segmented__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45em 0.95em;
+  border-radius: 999px;
+  font-size: var(--step--1);
+  font-weight: 600;
+  color: var(--chalk-soft);
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.segmented__btn:hover {
+  background: rgb(255 255 255 / 7%);
+}
+
+.segmented__btn.is-on {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.segmented__btn--stack {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
+  padding: 0.4em 1em;
+}
+
+.segmented__hint {
+  font-size: var(--step--2);
+  opacity: 0.75;
+}
+
+.segmented--slim .segmented__btn {
+  padding: 0.3em 0.75em;
+  font-family: var(--font-mono);
+}
+
+@media (width < 560px) {
+  .segmented__word {
+    display: none;
+  }
+  .segmented__btn--stack .segmented__word {
+    display: inline;
+  }
+}
+
+/* Seven columns so both 12- and 13-cell grids land on two tidy rows. */
+.tablegrid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.4rem;
+  max-width: 24rem;
+}
+
+.tablegrid__cell {
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  border: 1.5px solid var(--hairline);
+  background: rgb(255 255 255 / 3%);
+  font-size: var(--step-0);
+  font-weight: 700;
+  transition:
+    transform 0.14s var(--ease-spring),
+    background-color 0.14s ease;
+}
+
+.tablegrid__cell:hover {
+  transform: scale(1.06);
+}
+
+.tablegrid__cell.is-on {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+
+/* Both halves of a card come from these two grids, so they sit side by side
+   and read as one control rather than two unrelated settings. */
+.numbers {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: var(--gap-4);
+}
+
+.numbers__side {
+  display: grid;
+  gap: var(--gap-2);
+  align-content: start;
+}
+
+.numbers__note {
+  margin-top: var(--gap-3);
+  font-size: var(--step--2);
+  color: var(--chalk-dim);
+  line-height: 1.4;
+}
+
+/* ── Setting the card clock exactly ────────────────────────────────────── */
+
+.timelimit {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.timelimit__step {
+  width: 2.2rem;
+  height: 2.2rem;
+  border-radius: 999px;
+  border: 1px solid var(--hairline);
+  background: rgb(0 0 0 / 30%);
+  font-size: var(--step-0);
+  font-weight: 700;
+  color: var(--chalk-soft);
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.timelimit__step:hover {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.timelimit__field {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.3rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid var(--hairline);
+  background: rgb(0 0 0 / 30%);
+}
+
+.timelimit__field:focus-within {
+  border-color: var(--accent);
+}
+
+.timelimit__input {
+  /* Wide enough for "12.25" plus a caret, and fixed so it never jumps. */
+  width: 5.5ch;
+  border: none;
+  background: none;
+  font-size: var(--step-0);
+  font-weight: 700;
+  color: var(--accent);
+  text-align: right;
+  /* The custom steppers are the affordance; the native spinners duplicate it. */
+  appearance: textfield;
+}
+
+.timelimit__input::-webkit-outer-spin-button,
+.timelimit__input::-webkit-inner-spin-button {
+  appearance: none;
+  margin: 0;
+}
+
+.timelimit__input:focus {
+  outline: none;
+}
+
+.timelimit__input::placeholder {
+  color: var(--chalk-dim);
+  font-weight: 400;
+}
+
+.timelimit__unit {
+  font-size: var(--step--1);
+  color: var(--chalk-dim);
+}
+
+.timelimit__hint {
+  flex: 1 1 14rem;
+  font-size: var(--step--2);
+  color: var(--chalk-dim);
+}
+
+/* ── A drill's fixed set of facts, in place of the two grids ───────────── */
+
+.drill__lead {
+  font-size: var(--step--1);
+  color: var(--chalk-soft);
+}
+
+.factchips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.factchip {
+  padding: 0.32em 0.75em;
+  border-radius: 999px;
+  border: 1px solid color-mix(in oklab, var(--accent) 42%, transparent);
+  background: color-mix(in oklab, var(--accent) 12%, transparent);
+  color: var(--accent);
+  font-size: var(--step--1);
+  font-weight: 700;
+}
+
+.numbers__preview {
+  margin-top: 0.35rem;
+  font-size: var(--step--2);
+  color: var(--accent);
+  letter-spacing: 0.04em;
+}
+
+.setup__rival-note {
+  font-size: var(--step--2);
+  margin-bottom: var(--gap-2);
+}
+
+.rivals {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.rival {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-2);
+  width: 100%;
+  text-align: left;
+  padding: 0.6rem 0.8rem;
+  border-radius: var(--radius);
+  border: 1.5px solid var(--hairline);
+  background: rgb(255 255 255 / 3%);
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.rival:hover {
+  background: rgb(255 255 255 / 7%);
+}
+
+.rival.is-chosen {
+  border-color: var(--tint, var(--accent));
+  background: color-mix(in oklab, var(--tint, var(--accent)) 16%, transparent);
+}
+
+.rival__icon {
+  display: grid;
+  place-items: center;
+  width: 2.4rem;
+  aspect-ratio: 1;
+  border-radius: 30%;
+  background: rgb(255 255 255 / 6%);
+  font-size: var(--step-0);
+}
+
+.rival__body {
+  display: grid;
+  gap: 0.1rem;
+}
+
+.rival__name {
+  font-size: var(--step-0);
+  font-variation-settings: "wdth" 100;
+}
+
+.rival__meta {
+  font-size: var(--step--2);
+  color: var(--chalk-dim);
+}
+
+.setup__go {
+  width: 100%;
+  margin-top: var(--gap-3);
+}
+
+/* ── The race ──────────────────────────────────────────────────────────── */
+
+.race {
+  width: min(720px, 100%);
+  margin-inline: auto;
+  min-height: 100dvh;
+  padding: clamp(0.75rem, 2.5vw, 1.5rem) clamp(0.75rem, 3vw, 1.5rem)
+    clamp(1rem, 3vw, 2rem);
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  gap: clamp(0.75rem, 2.5vh, 1.5rem);
+}
+
+.race__hud {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--gap-2);
+}
+
+.race__quit {
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--chalk-dim);
+  padding: 0.35em 0.8em;
+  border-radius: 999px;
+  border: 1px solid var(--hairline);
+}
+
+.race__quit:hover {
+  color: var(--flare);
+  border-color: color-mix(in oklab, var(--flare) 45%, transparent);
+}
+
+.race__clock {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.race__clock-time {
+  font-size: var(--step-2);
+  font-weight: 700;
+}
+
+.race__penalty {
+  font-size: var(--step--1);
+  font-weight: 700;
+  color: var(--flare);
+}
+
+.race__count {
+  display: flex;
+  align-items: baseline;
+  gap: 0.25rem;
+  color: var(--chalk-dim);
+  font-size: var(--step--1);
+}
+
+.race__count-now {
+  font-size: var(--step-1);
+  font-weight: 700;
+  color: var(--chalk);
+}
+
+/* ── Signature: the ghost lane ─────────────────────────────────────────── */
+
+.lane {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.lane__track {
+  position: relative;
+  height: 3rem;
+  border-radius: 999px;
+  border: 1px solid var(--hairline);
+  background:
+    repeating-linear-gradient(
+      90deg,
+      rgb(255 255 255 / 7%) 0 1px,
+      transparent 1px 24px
+    ),
+    linear-gradient(180deg, rgb(0 0 0 / 35%), rgb(0 0 0 / 15%));
+}
+
+.lane__finish {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  translate: 0 -50%;
+  font-size: var(--step-0);
+  opacity: 0.7;
+}
+
+.lane__puck {
+  position: absolute;
+  top: 50%;
+  /* Keeps the marker fully inside the rail at 0% and 100%. */
+  left: calc(1.4rem + (100% - 2.8rem) * var(--p, 0));
+  translate: -50% -50%;
+  display: grid;
+  place-items: center;
+  width: 2.3rem;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  font-size: var(--step-0);
+  background: color-mix(in oklab, var(--tint) 35%, var(--ink-900));
+  border: 2px solid var(--tint);
+  transition: left 0.4s var(--ease-out);
+}
+
+.lane__puck--me {
+  z-index: 2;
+  box-shadow: 0 0 18px color-mix(in oklab, var(--tint) 45%, transparent);
+}
+
+.lane__puck--ghost {
+  opacity: 0.62;
+  border-style: dashed;
+  filter: grayscale(0.25);
+}
+
+.lane__gap,
+.lane__note {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.4rem;
+  font-size: var(--step-1);
+  font-weight: 700;
+}
+
+.lane__note {
+  font-size: var(--step--1);
+  font-weight: 400;
+  color: var(--chalk-dim);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.lane__gap.is-ahead {
+  color: var(--lime);
+}
+
+.lane__gap.is-behind {
+  color: var(--flare);
+}
+
+.lane__gap-word {
+  font-size: var(--step--2);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+
+/* ── The card ──────────────────────────────────────────────────────────── */
+
+.card {
+  position: relative;
+  /* Hugs its content inside the flexible row instead of stretching to fill it. */
+  align-self: center;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: var(--gap-2);
+  padding: clamp(1rem, 4vw, 2rem);
+  border-radius: var(--radius-lg);
+  border: 2px solid var(--hairline);
+  background: linear-gradient(180deg, var(--ink-800), var(--ink-850));
+  box-shadow: var(--shadow-lift);
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.card--right {
+  border-color: var(--lime);
+  animation: pulse-ring 0.5s var(--ease-out);
+}
+
+.card--wrong {
+  border-color: var(--flare);
+  animation: shake 0.45s var(--ease-out);
+}
+
+.card--timeout {
+  border-color: var(--gold);
+  animation: pulse-late 0.6s var(--ease-out);
+}
+
+/* ── The card clock ──────────────────────────────────────────────────────
+   A fuse across the top of the card. Its width is written straight to the
+   DOM by the animation loop rather than run as a CSS animation: it has to
+   keep draining for players who've asked for reduced motion, because the
+   bar is information, not decoration.                                     */
+
+.fuse {
+  --left: 1;
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+.fuse__track {
+  height: 0.85rem;
+  border-radius: 999px;
+  border: 1px solid var(--hairline);
+  background: rgb(0 0 0 / 45%);
+  overflow: hidden;
+}
+
+.fuse__fill {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  transform: scaleX(var(--left));
+  transform-origin: left center;
+  transition: background-color 0.25s ease;
+}
+
+.fuse__num {
+  min-width: 2ch;
+  text-align: right;
+  font-size: var(--step-2);
+  font-weight: 700;
+  color: var(--chalk-dim);
+}
+
+.fuse.is-urgent .fuse__fill {
+  background: var(--flare);
+  box-shadow: 0 0 14px 1px color-mix(in oklab, var(--flare) 70%, transparent);
+}
+
+.fuse.is-urgent .fuse__num {
+  color: var(--flare);
+  animation: fuse-beat 1s var(--ease-out) infinite;
+}
+
+/* Spent, not merely low: the clock beat this card. */
+.fuse.is-spent .fuse__num {
+  color: var(--gold);
+}
+
+.card__prompt {
+  font-size: clamp(3rem, 13vw, 6.5rem);
+  font-variation-settings: "wdth" 118;
+  line-height: 1;
+  text-transform: none;
+}
+
+.card__answer {
+  min-height: 1.4em;
+  display: grid;
+  place-items: center;
+}
+
+.card__entry {
+  font-size: clamp(2rem, 8vw, 3.5rem);
+  font-weight: 700;
+  line-height: 1;
+  color: var(--accent);
+  letter-spacing: 0.06em;
+}
+
+.card__entry.is-empty {
+  color: var(--ink-500);
+}
+
+.card__truth {
+  font-size: clamp(1.6rem, 6vw, 2.6rem);
+  font-weight: 700;
+  color: var(--lime);
+}
+
+/* The correct answer has to win the glance; the miss is context. */
+.card__truth s {
+  color: var(--flare);
+  margin-right: 0.45em;
+  font-size: 0.6em;
+  opacity: 0.75;
+}
+
+.card__late {
+  margin-right: 0.5em;
+  font-size: 0.5em;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+.combo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3em 0.9em;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--gold) 20%, transparent);
+  border: 1px solid color-mix(in oklab, var(--gold) 45%, transparent);
+  color: var(--gold);
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  font-weight: 700;
+}
+
+/* ── Input ─────────────────────────────────────────────────────────────── */
+
+.keypad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+  max-width: 22rem;
+  width: 100%;
+  margin-inline: auto;
+}
+
+.keypad__key {
+  padding: clamp(0.5rem, 2.2vh, 1rem) 0;
+  border-radius: var(--radius);
+  background: var(--ink-700);
+  border: 1px solid var(--hairline);
+  font-size: var(--step-2);
+  font-weight: 700;
+  transition:
+    transform 0.1s var(--ease-spring),
+    background-color 0.12s ease;
+}
+
+.keypad__key:hover:not(:disabled) {
+  background: var(--ink-600);
+}
+
+.keypad__key:active:not(:disabled) {
+  transform: scale(0.94);
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.keypad__key:disabled {
+  opacity: 0.35;
+}
+
+.keypad__key--enter {
+  background: var(--lime);
+  color: var(--ink-950);
+}
+
+.keypad__key--util {
+  background: var(--ink-800);
+  color: var(--chalk-soft);
+}
+
+.choices {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.6rem;
+  max-width: 30rem;
+  width: 100%;
+  margin-inline: auto;
+}
+
+.choices__btn {
+  position: relative;
+  padding: clamp(0.8rem, 3vh, 1.6rem) 0.5rem;
+  border-radius: var(--radius);
+  background: var(--ink-700);
+  border: 2px solid var(--hairline);
+  font-size: var(--step-3);
+  font-weight: 700;
+  transition:
+    transform 0.12s var(--ease-spring),
+    border-color 0.12s ease;
+}
+
+.choices__btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  transform: translateY(-3px);
+}
+
+.choices__btn:disabled {
+  opacity: 0.4;
+}
+
+.choices__key {
+  position: absolute;
+  top: 0.4rem;
+  left: 0.6rem;
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  color: var(--chalk-dim);
+}
+
+/* ── Countdown ─────────────────────────────────────────────────────────── */
+
+.countdown {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  background: rgb(7 8 13 / 88%);
+  backdrop-filter: blur(4px);
+}
+
+.countdown__num {
+  font-size: clamp(6rem, 30vw, 16rem);
+  font-variation-settings: "wdth" 125;
+  color: var(--lime);
+  animation: pop 0.45s var(--ease-spring) both;
+  text-shadow: 0 0 60px color-mix(in oklab, var(--lime) 40%, transparent);
+}
+
+/* ── Results ───────────────────────────────────────────────────────────── */
+
+.verdict {
+  display: grid;
+  gap: 0.3rem;
+  justify-items: center;
+  text-align: center;
+  padding: clamp(1.25rem, 4vw, 2.5rem) 1rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--hairline);
+  background:
+    radial-gradient(
+      80% 120% at 50% 0%,
+      color-mix(in oklab, var(--accent) 18%, transparent),
+      transparent 65%
+    ),
+    linear-gradient(180deg, var(--ink-800), var(--ink-900));
+}
+
+.verdict--record {
+  border-color: color-mix(in oklab, var(--gold) 55%, transparent);
+  background:
+    radial-gradient(
+      80% 120% at 50% 0%,
+      color-mix(in oklab, var(--gold) 24%, transparent),
+      transparent 65%
+    ),
+    linear-gradient(180deg, var(--ink-800), var(--ink-900));
+}
+
+.verdict__title {
+  font-size: clamp(1.9rem, 7vw, 3.6rem);
+}
+
+.verdict--record .verdict__title {
+  color: var(--gold);
+}
+
+.verdict__time {
+  font-size: clamp(3rem, 14vw, 6rem);
+  font-weight: 700;
+  line-height: 1;
+  margin-block: 0.2em 0.1em;
+}
+
+.verdict__breakdown {
+  font-size: var(--step--1);
+  color: var(--chalk-dim);
+}
+
+.verdict__pen {
+  margin-left: 0.4em;
+  color: var(--flare);
+}
+
+.verdict__pen--late {
+  color: var(--gold);
+}
+
+.verdict__vs {
+  font-size: var(--step--1);
+  color: var(--chalk-dim);
+}
+
+.verdict__vs.is-ahead {
+  color: var(--lime);
+}
+
+.verdict__vs.is-behind {
+  color: var(--chalk-soft);
+}
+
+.scoreline {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: var(--gap-3);
+  padding: var(--gap-3) var(--gap-4);
+}
+
+.scoreline__of {
+  font-size: var(--step-0);
+  color: var(--chalk-dim);
+}
+
+.stat--xp .stat__value {
+  color: var(--lime);
+}
+
+.rewards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: 0.5rem;
+}
+
+.reward {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-2);
+  padding: 0.7rem 1rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--hairline);
+  background: rgb(255 255 255 / 4%);
+  animation: pop 0.45s var(--ease-spring) both;
+}
+
+.reward__icon {
+  font-size: var(--step-2);
+  line-height: 1;
+}
+
+.reward strong {
+  display: block;
+  font-size: var(--step-0);
+}
+
+.reward__sub {
+  display: block;
+  font-size: var(--step--2);
+  color: var(--chalk-dim);
+}
+
+.reward--level {
+  border-color: color-mix(in oklab, var(--gold) 50%, transparent);
+  background: color-mix(in oklab, var(--gold) 12%, transparent);
+}
+
+.reward--badge {
+  border-color: color-mix(in oklab, var(--grape) 50%, transparent);
+  background: color-mix(in oklab, var(--grape) 12%, transparent);
+}
+
+.splits__scroll {
+  overflow-x: auto;
+  max-height: 26rem;
+  overflow-y: auto;
+}
+
+.splits {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--step--1);
+}
+
+.splits th {
+  position: sticky;
+  top: 0;
+  background: var(--ink-850);
+  text-align: left;
+  padding: 0.5rem 0.6rem;
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--chalk-dim);
+  border-bottom: 1px solid var(--hairline);
+}
+
+.splits td {
+  padding: 0.45rem 0.6rem;
+  border-bottom: 1px solid rgb(255 255 255 / 5%);
+}
+
+.splits__row--miss {
+  background: color-mix(in oklab, var(--flare) 9%, transparent);
+}
+
+.splits__row--late {
+  background: color-mix(in oklab, var(--gold) 9%, transparent);
+}
+
+.splits__given.is-late {
+  color: var(--gold);
+}
+
+.splits__n {
+  color: var(--chalk-dim);
+  width: 2.5rem;
+}
+
+.splits__card {
+  font-weight: 600;
+}
+
+.splits__given {
+  margin-left: 0.6em;
+  font-size: var(--step--2);
+  color: var(--flare);
+}
+
+.splits__rival {
+  color: var(--chalk-dim);
+}
+
+.splits__gap.is-ahead {
+  color: var(--lime);
+}
+
+.splits__gap.is-behind {
+  color: var(--flare);
+}
+
+.splits__holder {
+  white-space: nowrap;
+}
+
+.splits__who {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-left: 0.6rem;
+  font-family: var(--font-body);
+  font-size: var(--step--2);
+  color: var(--chalk-dim);
+}
+
+.splits__who.is-ahead {
+  color: var(--lime);
+}
+
+.results__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gap-2);
+  justify-content: center;
+}

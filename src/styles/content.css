@@ -1,0 +1,193 @@
+/*
+ * Styling for the content pages — the crawlable surface around the game.
+ *
+ * Deliberately independent of the game's stylesheet. The game is a dark,
+ * high-contrast arcade; these pages are read by parents and teachers, often
+ * from a search result, so they optimise for legibility and fast first paint
+ * instead. They share the palette so the two don't feel like different sites.
+ */
+
+:root {
+  --ink: #0b0f1a;
+  --ink-soft: #131a2b;
+  --paper: #eef4ff;
+  --muted: #93a3bd;
+  --lime: #c8ff41;
+  --sky: #4cc4ff;
+  --line: rgb(147 163 189 / 22%);
+}
+
+.page {
+  max-width: 68ch;
+  margin: 0 auto;
+  padding: 2.5rem 1.25rem 5rem;
+  color: var(--paper);
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  font-size: 1.05rem;
+  line-height: 1.65;
+}
+
+body {
+  background: var(--ink);
+  margin: 0;
+}
+
+.page a {
+  color: var(--sky);
+}
+
+.page__eyebrow {
+  margin: 0 0 0.5rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--lime);
+}
+
+.page h1 {
+  margin: 0 0 0.75rem;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(2rem, 6vw, 3rem);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+}
+
+.page h2 {
+  margin: 2.75rem 0 0.75rem;
+  font-size: 1.4rem;
+  letter-spacing: -0.01em;
+}
+
+.page__lead {
+  font-size: 1.2rem;
+  color: var(--muted);
+}
+
+.cta {
+  display: inline-block;
+  margin: 1.5rem 0;
+  padding: 0.85rem 1.5rem;
+  border-radius: 999px;
+  background: var(--lime);
+  color: var(--ink);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.cta:hover,
+.cta:focus-visible {
+  background: #d9ff7a;
+}
+
+/* The table itself. A real <table> because it IS tabular data — that's what
+   makes it legible to a screen reader and eligible for a rich result. */
+.facts {
+  width: 100%;
+  margin: 1.25rem 0;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+
+.facts caption {
+  margin-bottom: 0.6rem;
+  text-align: left;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.facts th,
+.facts td {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+}
+
+.facts th {
+  width: 45%;
+  font-weight: 600;
+}
+
+.facts td {
+  font-weight: 700;
+  color: var(--lime);
+}
+
+.tips {
+  padding-left: 1.1rem;
+}
+
+.tips li {
+  margin-bottom: 0.6rem;
+}
+
+.tips strong {
+  color: var(--lime);
+}
+
+.siblings {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 1rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.siblings a {
+  display: inline-block;
+  padding: 0.35rem 0.8rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--paper);
+  text-decoration: none;
+  font-variant-numeric: tabular-nums;
+}
+
+.siblings a:hover,
+.siblings a:focus-visible {
+  border-color: var(--sky);
+  color: var(--sky);
+}
+
+.page__foot {
+  margin-top: 4rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--line);
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.page__foot a {
+  margin-right: 1rem;
+}
+
+.games {
+  display: grid;
+  gap: 1rem;
+  margin: 2rem 0;
+  padding: 0;
+  list-style: none;
+}
+
+.games li {
+  padding: 1.25rem;
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  background: var(--ink-soft);
+}
+
+.games h3 {
+  margin: 0 0 0.35rem;
+  font-size: 1.15rem;
+}
+
+.games p {
+  margin: 0 0 0.75rem;
+  color: var(--muted);
+}
+
+.games--soon {
+  opacity: 0.55;
+}

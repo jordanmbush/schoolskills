@@ -1,0 +1,93 @@
+import { HashRouter, Navigate, Route, Routes } from "react-router-dom";
+
+import { ToastRail } from "@/components/ToastRail";
+import { HubProvider, useHub } from "@/components/state/HubContext";
+import { RaceProvider } from "@/components/state/RaceContext";
+import PlayerSelect from "@/components/screens/PlayerSelect";
+import PlayerHub from "@/components/screens/PlayerHub";
+import Progress from "@/components/screens/Progress";
+
+import RaceSetup from "./RaceSetup";
+import RaceTrack from "./RaceTrack";
+import RaceResults from "./RaceResults";
+
+/**
+ * The game, as a single React island inside a static page.
+ *
+ * ── Why HashRouter ──────────────────────────────────────────────────────────
+ * The origin is S3 behind CloudFront: there is no server to rewrite
+ * `/flash-cards/p/abc/race` back to an HTML file, so a real path router would
+ * 404 on refresh and on every shared deep link. The alternatives were a
+ * CloudFront rewrite function (more infra, and it would have to not swallow
+ * genuine 404s) or prerendering every route (impossible — profile ids are
+ * created on the player's own device and exist nowhere at build time).
+ *
+ * Hash routes cost nothing here. Everything below the entry screen is behind
+ * interaction and profile-specific, so none of it was ever going to be
+ * crawled; the crawlable surface is the Astro pages around this island, and
+ * they keep clean paths. In exchange every `Link`, `useNavigate` and
+ * `useParams` in the ported screens works untouched, and the back button
+ * behaves the way a parent expects.
+ */
+
+function Shell() {
+  const { status, error, reload } = useHub();
+
+  if (status === "loading") {
+    return (
+      <div className="boot">
+        <p className="u-eyebrow">School Skills</p>
+        <p className="boot__msg">Loading saved progress…</p>
+      </div>
+    );
+  }
+
+  if (status === "error") {
+    // There's no server to be down any more — reaching here means the browser
+    // refused storage (private windows in some browsers block IndexedDB) or
+    // the database failed to open. Say that, rather than the old "is the
+    // server running?", which would send someone hunting for a terminal.
+    return (
+      <div className="boot">
+        <p className="u-eyebrow">School Skills</p>
+        <h1 className="u-display boot__title">
+          Can&apos;t open saved progress
+        </h1>
+        <p className="boot__msg">{error}</p>
+        <p className="boot__hint">
+          This usually means the browser is blocking storage — private browsing
+          can do that. Progress is only ever saved on this device, so there's
+          nothing to recover from elsewhere.
+        </p>
+        <button className="btn btn--go" onClick={() => void reload()}>
+          Try again
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <RaceProvider>
+      <Routes>
+        <Route path="/" element={<PlayerSelect />} />
+        <Route path="/p/:profileId" element={<PlayerHub />} />
+        <Route path="/p/:profileId/progress" element={<Progress />} />
+        <Route path="/p/:profileId/race" element={<RaceSetup />} />
+        <Route path="/p/:profileId/race/go" element={<RaceTrack />} />
+        <Route path="/p/:profileId/race/results" element={<RaceResults />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+      <ToastRail />
+    </RaceProvider>
+  );
+}
+
+export default function FlashCardsApp() {
+  return (
+    <HashRouter>
+      <HubProvider>
+        <Shell />
+      </HubProvider>
+    </HashRouter>
+  );
+}
