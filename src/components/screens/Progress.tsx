@@ -21,6 +21,7 @@ import {
 } from "@/engine/decks/flashcards";
 import { buildDrill, deckSpec } from "@/engine/decks";
 import { WORD_MODE_PREFIX, listIdOf } from "@/engine/decks/words";
+import { TYPING_MODE_PREFIX } from "@/engine/decks/typing";
 import { WORD_LISTS_BY_ID } from "@/engine/decks/wordlists";
 import { sfx } from "@/services/sound";
 import { DeckSwitch, type DeckChoice } from "./progress/DeckSwitch";
@@ -45,25 +46,28 @@ export default function Progress() {
   const trouble = useMemo(() => troubleFacts(mine, mode), [mine, mode]);
 
   /**
-   * The four operations always, plus any word list this player has actually
-   * raced. An untouched list is an empty panel, and a switcher that offers
-   * every list ever shipped would bury the four that matter.
+   * The four operations always, plus any word list or typing level this
+   * player has actually raced. An untouched list is an empty panel, and a
+   * switcher offering every deck ever shipped would bury the four that matter.
    */
   const decks = useMemo<DeckChoice[]>(() => {
-    const words = [...new Set(mine.map((s) => s.mode))]
-      .filter((m) => m.startsWith(WORD_MODE_PREFIX))
-      .sort();
+    const raced = [...new Set(mine.map((s) => s.mode))].sort();
+    const extras = (prefix: string, kind: string) =>
+      raced
+        .filter((m) => m.startsWith(prefix))
+        .map((m) => ({
+          mode: m,
+          short: deckSpec(m).label,
+          title: `${deckSpec(m).label} — ${kind}`,
+        }));
     return [
       ...OPERATION_ORDER.map((op) => ({
         mode: op as string,
         short: OPERATIONS[op].symbol,
         title: OPERATIONS[op].label,
       })),
-      ...words.map((m) => ({
-        mode: m,
-        short: deckSpec(m).label,
-        title: `${deckSpec(m).label} — spelling`,
-      })),
+      ...extras(WORD_MODE_PREFIX, "spelling"),
+      ...extras(TYPING_MODE_PREFIX, "typing"),
     ];
   }, [mine]);
 
@@ -87,7 +91,9 @@ export default function Progress() {
   const masteredCount = [...grid.keys()].filter(
     (k) => masteryOf(grid.get(k)) === "mastered",
   ).length;
-  const isWords = mode.startsWith(WORD_MODE_PREFIX);
+  const isTypingMode = mode.startsWith(TYPING_MODE_PREFIX);
+  // Both render as a list of words rather than a 12×12 grid.
+  const isWords = mode.startsWith(WORD_MODE_PREFIX) || isTypingMode;
   const spec = deckSpec(mode);
   const switcher = (
     <DeckSwitch
@@ -145,8 +151,11 @@ export default function Progress() {
           // The shipped list when it's still shipped; otherwise whatever of it
           // survives in this player's own history.
           words={
-            WORD_LISTS_BY_ID.get(listIdOf(mode))?.words ??
-            [...grid.keys()].sort()
+            // A shipped spelling list in full; for a typing level or a deleted
+            // list, whatever of it survives in this player's own history.
+            (!isTypingMode
+              ? WORD_LISTS_BY_ID.get(listIdOf(mode))?.words
+              : undefined) ?? [...grid.keys()].sort()
           }
           grid={grid}
           switcher={switcher}
@@ -162,29 +171,38 @@ export default function Progress() {
       <section className="panel anim-rise">
         <div className="panel__head">
           <h2 className="panel__title">Trouble spots</h2>
-          {trouble.length > 0 && (
-            <Button
-              variant="accent"
-              size="sm"
-              onClick={() => {
-                sfx.select();
-                navigate(`/p/${profile.id}/race`, {
-                  state: {
-                    config: buildDrill(
-                      trouble.map((fact) => fact.factId),
-                      mode,
-                      {
-                        inputMode: profile.age <= 6 ? "choose" : "type",
-                        timeLimitMs: timeLimitForAge(profile.age),
-                      },
-                    ),
-                  },
-                });
-              }}
-            >
-              Drill these
-            </Button>
-          )}
+          {trouble.length > 0 &&
+            (isTypingMode ? (
+              // The record book lives in this island; the typing game is
+              // another one. Handing a built config across a page load would
+              // need somewhere to put it, and a link to the game is worth more
+              // than that machinery — the words are listed right below.
+              <a className="btn btn--accent btn--sm" href="/typing">
+                Open the typing game
+              </a>
+            ) : (
+              <Button
+                variant="accent"
+                size="sm"
+                onClick={() => {
+                  sfx.select();
+                  navigate(`/p/${profile.id}/race`, {
+                    state: {
+                      config: buildDrill(
+                        trouble.map((fact) => fact.factId),
+                        mode,
+                        {
+                          inputMode: profile.age <= 6 ? "choose" : "type",
+                          timeLimitMs: timeLimitForAge(profile.age),
+                        },
+                      ),
+                    },
+                  });
+                }}
+              >
+                Drill these
+              </Button>
+            ))}
         </div>
         {trouble.length === 0 ? (
           <p className="muted">

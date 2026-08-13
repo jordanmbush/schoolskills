@@ -22,9 +22,9 @@ import { sfx } from "@/services/sound";
 import { ClockPicker } from "./setup/ClockPicker";
 import { MathsSettings } from "./setup/MathsSettings";
 import { PresetRow } from "./setup/PresetRow";
-import { RivalList } from "./setup/RivalList";
+import { RivalList } from "@/games/race";
 import { WordSettings } from "./setup/WordSettings";
-import type { InputMode, RaceConfig } from "@/engine/types";
+import type { CardConfig, InputMode } from "@/engine/types";
 
 const CARD_COUNTS = [10, 15, 20, 30, 50];
 
@@ -53,8 +53,8 @@ export default function RaceSetup() {
 
   // "Drill these" elsewhere in the hub arrives here with a deck already built,
   // so the player sees what they're about to practise before it starts.
-  const handed = (location.state as { config?: RaceConfig } | null)?.config;
-  const [config, setConfig] = useState<RaceConfig>(
+  const handed = (location.state as { config?: CardConfig } | null)?.config;
+  const [config, setConfig] = useState<CardConfig>(
     () => handed ?? presetForAge(profile?.age ?? 8).config,
   );
   const [rivalId, setRivalId] = useState<string | null>(null);
@@ -77,8 +77,8 @@ export default function RaceSetup() {
   if (!profile) return <Navigate to="/" replace />;
 
   const isWords = config.kind === "words";
-  const patchShared = (next: Partial<RaceConfig>) =>
-    setConfig((current) => ({ ...current, ...next }) as RaceConfig);
+  const patchShared = (next: Partial<CardConfig>) =>
+    setConfig((current) => ({ ...current, ...next }) as CardConfig);
 
   // A drill sizes its own deck, so make room for whatever length it picked.
   const cardCounts = CARD_COUNTS.includes(config.cardCount)

@@ -1,0 +1,44 @@
+---
+import Base from "@/layouts/Base.astro";
+import TypingApp from "@/games/typing/App";
+import "@/styles/index.css";
+
+/**
+ * The typing game's page. Like `/flash-cards`, the HTML around the island
+ * carries a real title, description and structured data, so the URL is
+ * indexable even though what it renders is an app.
+ *
+ * A path, not a subdomain. `typing.schoolskills.app` would be a separate
+ * browser origin with separate storage, so a profile made on the flash-card
+ * game could not follow a child here — see CLAUDE.md.
+ */
+const title =
+  "Typing practice for kids — free typing race game | School Skills";
+const description =
+  "A free typing game for children. Start on the home row and work up to real sentences, racing your own best run or a sibling's. No sign-up, works offline, progress stays on your device.";
+---
+
+<Base
+  title={title}
+  description={description}
+  jsonLd={{
+    "@context": "https://schema.org",
+    "@type": "LearningResource",
+    name: "Typing Race",
+    description,
+    url: "https://schoolskills.app/typing",
+    learningResourceType: "Game",
+    educationalLevel: "Elementary School",
+    teaches: "Touch typing, home row, keyboard accuracy",
+    typicalAgeRange: "5-12",
+    isAccessibleForFree: true,
+    inLanguage: "en",
+  }}
+>
+  <!--
+    client:only for the same reason as the flash cards: the game reads
+    IndexedDB for its profile list on first render, so there is no meaningful
+    server-rendered markup and SSR would throw on `indexedDB`.
+  -->
+  <TypingApp client:only="react" />
+</Base>

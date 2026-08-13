@@ -9,23 +9,25 @@ import {
   cumulativeSplits,
   sessionsFor,
 } from "@/engine/records";
-import type { CardResult, Profile, Session } from "@/engine/types";
+import type { CardConfig, CardResult, Profile, Session } from "@/engine/types";
 import { AnswerPad } from "./race/AnswerPad";
 import { WordPad } from "./race/WordPad";
 import { CardFace } from "./race/CardFace";
-import { Hud } from "./race/Hud";
-import { Lane } from "./race/Lane";
-import { QuitSheet } from "./race/QuitSheet";
-import { SaveFailed } from "./race/SaveFailed";
 import { useAnswerEntry } from "./race/useAnswerEntry";
 import { useCardSubmit } from "./race/useCardSubmit";
 import { useCardVoice } from "./race/useCardVoice";
-import { useCountdown } from "./race/useCountdown";
-import { useGhostGap } from "./race/useGhostGap";
-import { useRaceClock } from "./race/useRaceClock";
-import { useRaceFinish } from "./race/useRaceFinish";
+import {
+  Hud,
+  Lane,
+  QuitSheet,
+  SaveFailed,
+  useCountdown,
+  useGhostGap,
+  useRaceClock,
+  useRaceFinish,
+} from "@/games/race";
 import { useRaceKeyboard } from "./race/useRaceKeyboard";
-import type { Feedback } from "./race/types";
+import type { Feedback } from "@/games/race";
 
 export default function RaceTrack() {
   const { profileId } = useParams();
@@ -45,14 +47,21 @@ export default function RaceTrack() {
     return <Navigate to={`/p/${profile.id}/race/results`} replace />;
   }
   // A refresh mid-race clears the pending setup; send them back to configure.
+  // The typing check can't fire — the two games are separate islands with
+  // separate providers — but it's what narrows `config` to a card deck, and
+  // it would be the right behaviour if they ever shared one.
   if (!pending || pending.profileId !== profile.id) {
+    return <Navigate to={`/p/${profile.id}/race`} replace />;
+  }
+  const { config } = pending;
+  if (config.kind === "typing") {
     return <Navigate to={`/p/${profile.id}/race`} replace />;
   }
 
   return (
     <Track
       profile={profile}
-      pending={pending}
+      pending={{ ...pending, config }}
       sessions={sessions}
       saveSession={saveSession}
       notify={notify}
@@ -64,7 +73,9 @@ export default function RaceTrack() {
 
 type TrackProps = {
   profile: Profile;
-  pending: NonNullable<ReturnType<typeof useRace>["pending"]>;
+  pending: NonNullable<ReturnType<typeof useRace>["pending"]> & {
+    config: CardConfig;
+  };
   sessions: Session[];
   saveSession: ReturnType<typeof useHub>["saveSession"];
   notify: ReturnType<typeof useHub>["notify"];
@@ -174,6 +185,7 @@ function Track({
     finish,
     notify,
     navigate,
+    resultsPath: `/p/${profile.id}/race/results`,
     onSaving: () => setPhase("saving"),
   });
   completeRef.current = complete;

@@ -1,7 +1,7 @@
 import { comboMultiplier } from "@/engine/progress";
 import type { Card, InputMode } from "@/engine/types";
 import { WordPrompt } from "./WordPrompt";
-import type { Feedback } from "./types";
+import type { Feedback } from "@/games/race/types";
 
 /**
  * The card itself: the fuse draining across the top, the prompt, whatever the
