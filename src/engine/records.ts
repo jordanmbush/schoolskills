@@ -1,11 +1,12 @@
 import type {
   CardResult,
-  FlashConfig,
+  RaceConfig,
   Ghost,
-  Operation,
   Profile,
   Session,
 } from "@/engine/types";
+
+import { deckSpec } from "@/engine/decks";
 
 export const accuracyOf = (session: Pick<Session, "correct" | "incorrect">) => {
   const total = session.correct + session.incorrect;
@@ -13,7 +14,7 @@ export const accuracyOf = (session: Pick<Session, "correct" | "incorrect">) => {
 };
 
 /** The per-card clock this run was played under, or null if it was untimed. */
-export const timeLimitOf = (session: { config: FlashConfig }) =>
+export const timeLimitOf = (session: { config: RaceConfig }) =>
   session.config?.timeLimitMs ?? null;
 
 export const timedOutCount = (session: { cards: CardResult[] }) =>
@@ -136,49 +137,30 @@ export function lifetimeStats(sessions: Session[]): Lifetime {
 }
 
 /* ── Per-fact mastery ────────────────────────────────────────────────────
-   Facts are keyed by their unordered pair, so 7×8 and 8×7 feed the same
-   cell of the grid.                                                       */
+   Which cards count as the same fact is the deck's call, not this module's:
+   see `DeckSpec.masteryKey` and `DeckSpec.drillKey`. Everything here works
+   off the keys they return, which is what lets a spelling list accumulate
+   mastery through the same code as the times tables.                      */
 
 export type FactStat = { attempts: number; correct: number; totalMs: number };
 
+/** The arithmetic grid cell for a pair. Must agree with `masteryKey`. */
 export const factKey = (a: number, b: number) =>
   `${Math.min(a, b)}:${Math.max(a, b)}`;
 
-/**
- * 7 × 8 and 8 × 7 are the same fact; 21 ÷ 3 and 21 ÷ 7 are not. The fact map
- * is a symmetric 12×12 grid so it folds every operation, but a practice deck
- * has to rebuild the actual problem — and for these two, order carries it.
- */
-const COMMUTATIVE: Record<Operation, boolean> = {
-  multiply: true,
-  add: true,
-  divide: false,
-  subtract: false,
-};
-
-/** The pair as a drill needs it: folded only where the operation allows. */
-const drillPair = (
-  [a, b]: [number, number],
-  operation: Operation,
-): [number, number] =>
-  COMMUTATIVE[operation] ? [Math.min(a, b), Math.max(a, b)] : [a, b];
-
 /** De-duplicated facts behind a set of cards, ready to build a practice deck. */
-export function factsToDrill(cards: CardResult[], operation: Operation) {
-  const out = new Map<string, [number, number]>();
-  for (const card of cards) {
-    const pair = drillPair(card.facts, operation);
-    out.set(`${pair[0]}:${pair[1]}`, pair);
-  }
-  return [...out.values()];
+export function factsToDrill(cards: CardResult[], mode: string): string[] {
+  const spec = deckSpec(mode);
+  return [...new Set(cards.map((card) => spec.drillKey(card.factId)))];
 }
 
-export function factStats(sessions: Session[], operation: Operation) {
+export function factStats(sessions: Session[], mode: string) {
+  const spec = deckSpec(mode);
   const grid = new Map<string, FactStat>();
   for (const session of sessions) {
-    if (session.mode !== operation) continue;
+    if (session.mode !== mode) continue;
     for (const card of session.cards) {
-      const key = factKey(card.facts[0], card.facts[1]);
+      const key = spec.masteryKey(card.factId);
       const entry = grid.get(key) ?? { attempts: 0, correct: 0, totalMs: 0 };
       entry.attempts += 1;
       if (card.ok) entry.correct += 1;
@@ -210,8 +192,8 @@ export function masteryOf(stat: FactStat | undefined): Mastery {
    ones that were right but visibly counted out.                           */
 
 export type TroubleFact = {
-  key: string;
-  facts: [number, number];
+  /** The deck's drill key — both this fact's identity and its map key. */
+  factId: string;
   attempts: number;
   /** The per-card clock ran out. */
   timeouts: number;
@@ -230,19 +212,18 @@ export type TroubleFact = {
  */
 export function troubleFacts(
   sessions: Session[],
-  operation: Operation,
+  mode: string,
   take = 8,
 ): TroubleFact[] {
+  const spec = deckSpec(mode);
   const seen = new Map<string, TroubleFact>();
 
   for (const session of sessions) {
-    if (session.mode !== operation) continue;
+    if (session.mode !== mode) continue;
     for (const card of session.cards) {
-      const facts = drillPair(card.facts, operation);
-      const key = `${facts[0]}:${facts[1]}`;
-      const entry = seen.get(key) ?? {
-        key,
-        facts,
+      const factId = spec.drillKey(card.factId);
+      const entry = seen.get(factId) ?? {
+        factId,
         attempts: 0,
         timeouts: 0,
         wrong: 0,
@@ -259,7 +240,7 @@ export function troubleFacts(
       else if (!card.ok) entry.wrong += 1;
       else if (card.ms >= MASTERY_PACE_MS) entry.slow += 1;
       else entry.score -= 1;
-      seen.set(key, entry);
+      seen.set(factId, entry);
     }
   }
 

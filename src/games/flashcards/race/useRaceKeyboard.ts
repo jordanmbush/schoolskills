@@ -24,12 +24,12 @@ export function useRaceKeyboard({
   /** Racing, and no card currently showing feedback. */
   active: boolean;
   inputMode: InputMode;
-  choices: number[] | undefined;
+  choices: string[] | undefined;
   /** Digits in the current card's answer, for the auto-submit below. */
   answerLength: number;
   entry: string;
   entryRef: React.RefObject<string>;
-  submit: (value: number | null) => void;
+  submit: (value: string | null) => void;
   pushDigit: (digit: string) => void;
   dropDigit: () => void;
 }) {
@@ -52,7 +52,7 @@ export function useRaceKeyboard({
         dropDigit();
       } else if (event.key === "Enter") {
         event.preventDefault();
-        if (entryRef.current !== "") submit(Number(entryRef.current));
+        if (entryRef.current !== "") submit(entryRef.current);
       }
     }
     window.addEventListener("keydown", onKey);
@@ -64,8 +64,7 @@ export function useRaceKeyboard({
   useEffect(() => {
     if (!active || inputMode !== "type") return;
     if (entry.length > 0 && entry.length === answerLength) {
-      const value = Number(entry);
-      const timer = window.setTimeout(() => submit(value), 90);
+      const timer = window.setTimeout(() => submit(entry), 90);
       return () => window.clearTimeout(timer);
     }
   }, [active, inputMode, entry, answerLength, submit]);

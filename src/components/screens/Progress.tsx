@@ -16,32 +16,60 @@ import {
 } from "@/engine/records";
 import {
   OPERATIONS,
-  buildDrill,
+  OPERATION_ORDER,
   timeLimitForAge,
 } from "@/engine/decks/flashcards";
+import { buildDrill, deckSpec } from "@/engine/decks";
+import { WORD_MODE_PREFIX, listIdOf } from "@/engine/decks/words";
+import { TYPING_MODE_PREFIX } from "@/engine/decks/typing";
+import { WORD_LISTS_BY_ID } from "@/engine/decks/wordlists";
 import { sfx } from "@/services/sound";
+import { DeckSwitch, type DeckChoice } from "./progress/DeckSwitch";
 import { FactMap } from "./progress/FactMap";
+import { WordMap } from "./progress/WordMap";
 import { RecordBook, RunList } from "./progress/RecordBook";
 import { duration, percent } from "@/engine/format";
-import type { Operation } from "@/engine/types";
 
 export default function Progress() {
   const { profileId } = useParams();
   const { profiles, sessions } = useHub();
   const profile = usePlayer(profileId);
   const navigate = useNavigate();
-  const [operation, setOperation] = useState<Operation>("multiply");
+  const [mode, setMode] = useState<string>("multiply");
 
   const mine = useMemo(
     () => (profile ? sessionsFor(sessions, profile.id) : []),
     [sessions, profile],
   );
-  const grid = useMemo(() => factStats(mine, operation), [mine, operation]);
+  const grid = useMemo(() => factStats(mine, mode), [mine, mode]);
   const tables = useMemo(() => tableProgress(grid), [grid]);
-  const trouble = useMemo(
-    () => troubleFacts(mine, operation),
-    [mine, operation],
-  );
+  const trouble = useMemo(() => troubleFacts(mine, mode), [mine, mode]);
+
+  /**
+   * The four operations always, plus any word list or typing level this
+   * player has actually raced. An untouched list is an empty panel, and a
+   * switcher offering every deck ever shipped would bury the four that matter.
+   */
+  const decks = useMemo<DeckChoice[]>(() => {
+    const raced = [...new Set(mine.map((s) => s.mode))].sort();
+    const extras = (prefix: string, kind: string) =>
+      raced
+        .filter((m) => m.startsWith(prefix))
+        .map((m) => ({
+          mode: m,
+          short: deckSpec(m).label,
+          title: `${deckSpec(m).label} — ${kind}`,
+        }));
+    return [
+      ...OPERATION_ORDER.map((op) => ({
+        mode: op as string,
+        short: OPERATIONS[op].symbol,
+        title: OPERATIONS[op].label,
+      })),
+      ...extras(WORD_MODE_PREFIX, "spelling"),
+      ...extras(TYPING_MODE_PREFIX, "typing"),
+    ];
+  }, [mine]);
 
   /** Best time per configuration, with whoever in the house holds it. */
   const records = useMemo(() => {
@@ -63,7 +91,20 @@ export default function Progress() {
   const masteredCount = [...grid.keys()].filter(
     (k) => masteryOf(grid.get(k)) === "mastered",
   ).length;
-  const spec = OPERATIONS[operation];
+  const isTypingMode = mode.startsWith(TYPING_MODE_PREFIX);
+  // Both render as a list of words rather than a 12×12 grid.
+  const isWords = mode.startsWith(WORD_MODE_PREFIX) || isTypingMode;
+  const spec = deckSpec(mode);
+  const switcher = (
+    <DeckSwitch
+      choices={decks}
+      current={mode}
+      onChoose={(next) => {
+        sfx.tap();
+        setMode(next);
+      }}
+    />
+  );
 
   return (
     <main className="progress">
@@ -104,39 +145,64 @@ export default function Progress() {
         </div>
       </section>
 
-      <FactMap
-        operation={operation}
-        onOperationChange={setOperation}
-        spec={spec}
-        grid={grid}
-      />
+      {isWords ? (
+        <WordMap
+          label={spec.label}
+          // The shipped list when it's still shipped; otherwise whatever of it
+          // survives in this player's own history.
+          words={
+            // A shipped spelling list in full; for a typing level or a deleted
+            // list, whatever of it survives in this player's own history.
+            (!isTypingMode
+              ? WORD_LISTS_BY_ID.get(listIdOf(mode))?.words
+              : undefined) ?? [...grid.keys()].sort()
+          }
+          grid={grid}
+          switcher={switcher}
+        />
+      ) : (
+        <FactMap
+          spec={OPERATIONS[mode as keyof typeof OPERATIONS]}
+          grid={grid}
+          switcher={switcher}
+        />
+      )}
 
       <section className="panel anim-rise">
         <div className="panel__head">
           <h2 className="panel__title">Trouble spots</h2>
-          {trouble.length > 0 && (
-            <Button
-              variant="accent"
-              size="sm"
-              onClick={() => {
-                sfx.select();
-                navigate(`/p/${profile.id}/race`, {
-                  state: {
-                    config: buildDrill(
-                      trouble.map((fact) => fact.facts),
-                      {
-                        operation,
-                        inputMode: profile.age <= 6 ? "choose" : "type",
-                        timeLimitMs: timeLimitForAge(profile.age),
-                      },
-                    ),
-                  },
-                });
-              }}
-            >
-              Drill these
-            </Button>
-          )}
+          {trouble.length > 0 &&
+            (isTypingMode ? (
+              // The record book lives in this island; the typing game is
+              // another one. Handing a built config across a page load would
+              // need somewhere to put it, and a link to the game is worth more
+              // than that machinery — the words are listed right below.
+              <a className="btn btn--accent btn--sm" href="/typing">
+                Open the typing game
+              </a>
+            ) : (
+              <Button
+                variant="accent"
+                size="sm"
+                onClick={() => {
+                  sfx.select();
+                  navigate(`/p/${profile.id}/race`, {
+                    state: {
+                      config: buildDrill(
+                        trouble.map((fact) => fact.factId),
+                        mode,
+                        {
+                          inputMode: profile.age <= 6 ? "choose" : "type",
+                          timeLimitMs: timeLimitForAge(profile.age),
+                        },
+                      ),
+                    },
+                  });
+                }}
+              >
+                Drill these
+              </Button>
+            ))}
         </div>
         {trouble.length === 0 ? (
           <p className="muted">
@@ -152,9 +218,9 @@ export default function Progress() {
             </p>
             <ul className="trouble">
               {trouble.map((fact) => (
-                <li key={fact.key} className="trouble__item">
+                <li key={fact.factId} className="trouble__item">
                   <span className="trouble__fact u-mono">
-                    {fact.facts[0]} {spec.symbol} {fact.facts[1]}
+                    {spec.factLabel(fact.factId)}
                   </span>
                   <span className="trouble__why">
                     {fact.timeouts > 0 && (
@@ -182,33 +248,36 @@ export default function Progress() {
       </section>
 
       <div className="progress__columns">
-        <section className="panel anim-rise">
-          <div className="panel__head">
-            <h2 className="panel__title">Table trophies</h2>
-            <span className="chip">
-              {tables.filter((t) => t.complete).length} / 12
-            </span>
-          </div>
-          <ul className="trophies">
-            {tables.map((table) => (
-              <li
-                key={table.table}
-                className={`trophy${table.complete ? " is-complete" : ""}`}
-                title={`${table.mastered} of ${table.total} facts mastered`}
-              >
-                <span className="trophy__num u-display">{table.table}</span>
-                <span className="trophy__bar">
-                  <span
-                    className="trophy__fill"
-                    style={{
-                      width: `${(table.mastered / table.total) * 100}%`,
-                    }}
-                  />
-                </span>
-              </li>
-            ))}
-          </ul>
-        </section>
+        {/* Times tables only — a spelling list has no twelve of anything. */}
+        {!isWords && (
+          <section className="panel anim-rise">
+            <div className="panel__head">
+              <h2 className="panel__title">Table trophies</h2>
+              <span className="chip">
+                {tables.filter((t) => t.complete).length} / 12
+              </span>
+            </div>
+            <ul className="trophies">
+              {tables.map((table) => (
+                <li
+                  key={table.table}
+                  className={`trophy${table.complete ? " is-complete" : ""}`}
+                  title={`${table.mastered} of ${table.total} facts mastered`}
+                >
+                  <span className="trophy__num u-display">{table.table}</span>
+                  <span className="trophy__bar">
+                    <span
+                      className="trophy__fill"
+                      style={{
+                        width: `${(table.mastered / table.total) * 100}%`,
+                      }}
+                    />
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
 
         <section className="panel anim-rise">
           <div className="panel__head">

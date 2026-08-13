@@ -19,12 +19,12 @@ export function AnswerPad({
   onChoose,
 }: {
   mode: InputMode;
-  choices: number[] | undefined;
+  choices: string[] | undefined;
   disabled: boolean;
   onDigit: (digit: string) => void;
   onBack: () => void;
   onEnter: () => void;
-  onChoose: (choice: number) => void;
+  onChoose: (choice: string) => void;
 }) {
   if (mode === "choose") {
     return (

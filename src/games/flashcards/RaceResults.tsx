@@ -12,18 +12,18 @@ import {
   timeLimitOf,
   timedOutCount,
 } from "@/engine/records";
-import { buildDrill, describeConfig } from "@/engine/decks/flashcards";
+import { buildDrill, describeConfig, isTyping } from "@/engine/decks";
 import { clock, delta as formatDelta, plural } from "@/engine/format";
 import { randomSeed } from "@/engine/random";
 import { sfx } from "@/services/sound";
-import { Rewards } from "./results/Rewards";
+import { Rewards } from "@/games/race";
 import { Scoreline } from "./results/Scoreline";
 import { SplitsTable } from "./results/SplitsTable";
 
 export default function RaceResults() {
   const { profileId } = useParams();
   const profile = usePlayer(profileId);
-  const { outcome, start, clear } = useRace();
+  const { outcome, pending, start, clear } = useRace();
   const navigate = useNavigate();
   const [burst, setBurst] = useState(0);
 
@@ -45,7 +45,22 @@ export default function RaceResults() {
   }, [outcome, celebrate]);
 
   if (!profile) return <Navigate to="/" replace />;
-  if (!outcome) return <Navigate to={`/p/${profile.id}/race`} replace />;
+  /**
+   * `start()` clears the outcome and sets a pending race in ONE update, and
+   * the navigate that follows it is batched with that update. So there is
+   * exactly one render where the outcome has gone and the route is still
+   * here — and without the `pending` arm below, this guard fires in that gap
+   * and replaces the navigation to the track with one back to setup.
+   *
+   * That is not theoretical: it is what "Race again" did on this screen from the day
+   * it shipped. The mirror image of it is guarded in `RaceTrack`, and this is the half
+   * that was missed.
+   */
+  if (!outcome) {
+    return (
+      <Navigate to={`/p/${profile.id}/race${pending ? "/go" : ""}`} replace />
+    );
+  }
 
   const {
     session,
@@ -100,9 +115,11 @@ export default function RaceResults() {
     sfx.whoosh();
     start({
       profileId: profile!.id,
-      config: buildDrill(missedFacts, {
-        operation: session.mode,
-        inputMode: session.config.inputMode,
+      // `mode` picks the family, so a spelling run drills words and an
+      // arithmetic one drills facts without this knowing which it was.
+      config: buildDrill(missedFacts, session.mode, {
+        // Typing has its own results screen, so this is always a card config.
+        inputMode: isTyping(session.config) ? "type" : session.config.inputMode,
         timeLimitMs: limitMs,
       }),
       seed: randomSeed(),

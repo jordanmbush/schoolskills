@@ -72,8 +72,46 @@ OIDC — there are no long-lived AWS keys anywhere.
 
 ## Adding a game
 
-The card loop, XP, ghost racing and stats work off a generic `Card`, not off
-arithmetic. A new game is an entry in the operation/deck registry plus, if it
-needs one, an input control. It gets a route under `src/pages/<game>/` — a
-**path, not a subdomain**, because separate origins would partition browser
-storage and a player's profile could no longer follow them between games.
+The card loop, XP, ghost racing and stats work off `Card` and `CardResult`,
+which are text in and text out — `answer` is `"56"`, not `56`, and `factId` is
+`"7:8"` or `"because"`. Nothing in the loop knows about arithmetic.
+
+The three judgements a loop can't make generically live on a **`DeckSpec`**
+(`src/engine/decks/spec.ts`): fold two cards onto one fact (`masteryKey`,
+`drillKey`), name a fact on screen (`factLabel`), and decide whether what was
+typed matches (`normalise`). A new deck family implements that and routes in
+`src/engine/decks/index.ts` — the front door, and the **only** place the
+`RaceConfig` union is narrowed. `deckSpec(mode)` never throws, because sessions
+outlive the decks they were played on.
+
+Three families exist: `decks/flashcards.ts` (arithmetic), `decks/words.ts`
+(spelling and sight words) and `decks/typing.ts` (passages).
+
+**A deck is not a game.** Words are a deck: they play in the flash-card loop,
+on the same route, so a profile and its records follow a child between
+subjects. `/spelling` is a content page pointing at it. Typing is a game —
+there are no discrete cards to submit, no input mode to choose and a passage
+that stays on screen — so it is its own island at `src/games/typing/`.
+
+Either way it is a **path, not a subdomain**: separate origins would partition
+browser storage and a player's profile could no longer follow them between
+games.
+
+**`src/games/race/` is the race minus the game** — the clock and its pause, the
+3·2·1, the ghost lane, the HUD, the quit sheet, the rival list and
+scoring-and-saving. Anything a second game would otherwise copy belongs there.
+How an answer is entered, marked or displayed does not.
+
+**Saved runs are the constraint, not the code.** `configKey` decides which runs
+may race each other as ghosts, so changing its format orphans every personal
+best already saved. Cards written before a shape change are widened on read by
+`src/engine/migrate.ts` — never by rewriting storage, because IndexedDB holds
+the only copy there is. Adding a store is a `DB_VERSION` bump with an
+`oldVersion`-guarded block in `db.ts`; those blocks are additive only.
+
+**Parent-authored decks live in storage but are read from the engine.**
+`src/services/decks.ts` is the only writer, and it mirrors them into the engine
+(`setCustomLists`) so `deckSpec(mode)` can name one from the record book
+without the engine knowing storage exists. Every write goes through
+`HubContext.saveDeck` — a service call that bypasses it lands in IndexedDB and
+stays invisible until the next reload.

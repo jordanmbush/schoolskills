@@ -1,4 +1,6 @@
-import type { Operation, Session } from "@/engine/types";
+import { OPERATION_ORDER } from "@/engine/decks/flashcards";
+import { isFlash, isTyping, isWords } from "@/engine/decks";
+import type { Session } from "@/engine/types";
 
 /* ── Levels ──────────────────────────────────────────────────────────────
    Cumulative XP to reach level n is 125·n·(n−1), so early levels come fast
@@ -209,18 +211,27 @@ export function evaluateBadges({
   if (perfect && avgMs < 1500) earned.add("lightning");
   if (lifetimeCards >= 100) earned.add("century");
   if (lifetimeCards >= 500) earned.add("five-hundred");
-  if (session.config.tables.length >= 12) earned.add("gauntlet");
+  if (isFlash(session.config) && session.config.tables.length >= 12)
+    earned.add("gauntlet");
   if (cardsThisRace >= 30) earned.add("marathon");
   if (xpAfter >= xpToReach(10)) earned.add("level-10");
 
   const timedOut = session.cards.some((c) => c.timedOut);
   if (session.config.timeLimitMs && cardsThisRace >= 10 && !timedOut)
     earned.add("beat-the-clock");
-  if (session.config.facts?.length && perfect) earned.add("nemesis");
+  // A drill is a named set of things to practise, whichever deck it came from.
+  const config = session.config;
+  const drilled = isFlash(config)
+    ? config.facts?.length
+    : isWords(config) || isTyping(config)
+      ? config.words?.length
+      : 0;
+  if (drilled && perfect) earned.add("nemesis");
 
-  const operations = new Set<Operation>(history.map((s) => s.mode));
-  operations.add(session.mode);
-  if (operations.size >= 4) earned.add("all-rounder");
+  // Named outright rather than counted to four: `mode` also holds word-list
+  // ids now, and four spelling decks are not "all four operations".
+  const raced = new Set([session.mode, ...history.map((s) => s.mode)]);
+  if (OPERATION_ORDER.every((op) => raced.has(op))) earned.add("all-rounder");
 
   return [...earned];
 }

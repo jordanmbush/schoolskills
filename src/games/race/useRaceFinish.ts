@@ -5,7 +5,7 @@ import { sfx } from "@/services/sound";
 import type { useHub } from "@/components/state/HubContext";
 import type { useRace } from "@/components/state/RaceContext";
 import type { useNavigate } from "react-router-dom";
-import type { FlashConfig, Ghost, Profile, Session } from "@/engine/types";
+import type { Ghost, Profile, RaceConfig, Session } from "@/engine/types";
 
 /**
  * The end of a run: score it, write it, and hand off to the results screen.
@@ -32,10 +32,11 @@ export function useRaceFinish({
   finish,
   notify,
   navigate,
+  resultsPath,
   onSaving,
 }: {
   profile: Profile;
-  config: FlashConfig;
+  config: RaceConfig;
   seed: number;
   ghost: Ghost | null;
   history: Session[];
@@ -46,6 +47,8 @@ export function useRaceFinish({
   finish: ReturnType<typeof useRace>["finish"];
   notify: ReturnType<typeof useHub>["notify"];
   navigate: ReturnType<typeof useNavigate>;
+  /** Where the finished run is shown. Each game has its own results screen. */
+  resultsPath: string;
   onSaving: () => void;
 }) {
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -79,7 +82,7 @@ export function useRaceFinish({
         bonuses: summary.bonuses,
         levelledUpTo: levelAfter > levelBefore ? levelAfter : null,
       });
-      navigate(`/p/${profile.id}/race/results`, { replace: true });
+      navigate(resultsPath, { replace: true });
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Could not save this race";

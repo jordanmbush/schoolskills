@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/kit";
-import { PRESETS, configKey } from "@/engine/decks/flashcards";
+import { PRESETS } from "@/engine/decks/flashcards";
+import { configKey } from "@/engine/decks";
 import type { FlashConfig } from "@/engine/types";
 
 /**

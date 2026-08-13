@@ -17,7 +17,7 @@ import { sfx } from "@/services/sound";
  * the same file is idempotent rather than duplicating every run.
  */
 export default function BackupPanel() {
-  const { profiles, sessions, reload, notify } = useHub();
+  const { profiles, sessions, decks, reload, notify } = useHub();
   const [busy, setBusy] = useState(false);
 
   async function download() {
@@ -31,7 +31,10 @@ export default function BackupPanel() {
     link.download = `school-skills-${backup.exportedAt.slice(0, 10)}.json`;
     link.click();
     URL.revokeObjectURL(url);
-    notify(`Saved ${profiles.length} players and ${sessions.length} races`);
+    notify(
+      `Saved ${profiles.length} players, ${sessions.length} races` +
+        (decks.length ? ` and ${decks.length} word lists` : ""),
+    );
   }
 
   async function restore(file: File) {
@@ -52,7 +55,10 @@ export default function BackupPanel() {
       const added = await importAll(backup, "merge");
       await reload();
       sfx.record();
-      notify(`Restored ${added.profiles} players and ${added.sessions} races`);
+      notify(
+        `Restored ${added.profiles} players, ${added.sessions} races` +
+          (added.decks ? ` and ${added.decks} word lists` : ""),
+      );
     } catch (err) {
       notify(
         err instanceof Error ? err.message : "Could not read that file",

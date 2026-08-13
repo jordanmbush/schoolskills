@@ -15,6 +15,13 @@ export type Operation = "multiply" | "divide" | "add" | "subtract";
 export type InputMode = "type" | "choose";
 
 export type FlashConfig = {
+  /**
+   * Never set. It's the negative half of the `RaceConfig` discriminant: every
+   * arithmetic config already in storage predates the union, and giving them a
+   * field they'd have to grow would mean rewriting a child's whole history to
+   * add a word deck.
+   */
+  kind?: undefined;
   operation: Operation;
   /** The focus numbers — for multiplication these are the times tables. */
   tables: number[];
@@ -47,23 +54,113 @@ export type LegacyFlashConfig = Omit<FlashConfig, "others"> & {
   otherMax?: number;
 };
 
+/**
+ * A race over words rather than numbers — spelling and sight-word recognition.
+ *
+ * It is a sibling of `FlashConfig`, not a widening of it. Forcing words into
+ * the arithmetic shape would make `operation`, `tables` and `others` optional
+ * for everyone and put an `if (isWords)` at every reader; a union puts the
+ * branch in one place, at `buildDeck` and `configKey`.
+ */
+export type WordConfig = {
+  kind: "words";
+  /** The list to draw from. Also what `Session.mode` records, prefixed. */
+  listId: string;
+  /**
+   * An explicit set of words, replacing the list — a drill of the ones a
+   * player keeps missing, or a parent's own spellings for the week.
+   */
+  words?: string[];
+  cardCount: number;
+  inputMode: InputMode;
+  timeLimitMs?: number | null;
+};
+
+/**
+ * A typing passage.
+ *
+ * No `inputMode` — there is only one way to answer — and no per-card clock,
+ * because a typing test is decided on total time and a word that timed out
+ * would be indistinguishable from one you were still typing.
+ */
+export type TypingConfig = {
+  kind: "typing";
+  levelId: string;
+  /** An explicit set, for a drill of the words a player keeps fumbling. */
+  words?: string[];
+  wordCount: number;
+  /** Always absent. Declared so the shared readers can ask without narrowing. */
+  timeLimitMs?: null;
+};
+
+/**
+ * What the flash-card loop can be handed. Both are decks of discrete cards
+ * with a chosen input mode; typing is neither, and has its own island.
+ */
+export type CardConfig = FlashConfig | WordConfig;
+
+/** Anything a saved run can hold. Narrow on `kind`. */
+export type RaceConfig = CardConfig | TypingConfig;
+
+/**
+ * A word list a parent typed in — this week's spellings, a topic's vocabulary.
+ *
+ * The same shape as a shipped list minus the editorial fields, and it plays
+ * through exactly the same deck spec. `id` is prefixed `custom-` so that
+ * `Session.mode` (`words:custom-…`) can never collide with a list this build
+ * ships, and so a run stays readable after its deck is deleted.
+ */
+export type CustomDeck = {
+  id: string;
+  name: string;
+  emoji: string;
+  words: string[];
+  createdAt: string;
+  updatedAt: string;
+};
+
+/* ── Cards ───────────────────────────────────────────────────────────────
+   A card is text in and text out, deliberately. Answers were numbers until
+   spelling arrived, and every alternative to widening them was worse: a
+   `number | string` union puts a branch at every comparison, and a generic
+   `Card<T>` leaks type parameters into components that only ever render the
+   thing. What a deck family *does* know about its own answers — how to
+   compare "07" with "7", or "Cat" with "cat" — lives on its `DeckSpec`.     */
+
 export type Card = {
   /** Rendered prompt, e.g. "7 × 8". */
   prompt: string;
-  answer: number;
+  /** Text even when it's a number: "56", not 56. Compared via the spec. */
+  answer: string;
   /** Shuffled options, present only in multiple-choice mode. */
-  choices?: number[];
-  /** The two numbers the card exercises, for the mastery grid. */
-  facts: [number, number];
+  choices?: string[];
+  /**
+   * Say this aloud instead of showing the prompt.
+   *
+   * A spelling card whose prompt is on screen is a copying exercise, so the
+   * word is spoken and `prompt` is kept only for the record — the splits
+   * table and the trouble list still need to name it afterwards.
+   */
+  speak?: string;
+  /**
+   * Which fact this card exercises, as the deck built it — "7:8" for
+   * arithmetic, the word itself for spelling. Stable across runs, because
+   * mastery and trouble spots accumulate against it for years.
+   *
+   * Ordered as built. Folding 7×8 and 8×7 into one cell is the deck spec's
+   * job, not this field's: 21÷3 and 21÷7 must not fold, and only the spec
+   * knows which of the two it is.
+   */
+  factId: string;
 };
 
 export type CardResult = {
   prompt: string;
-  answer: number;
-  given: number | null;
+  answer: string;
+  given: string | null;
   ok: boolean;
   ms: number;
-  facts: [number, number];
+  factId: string;
   /**
    * The per-card clock ran out before an answer arrived. Distinct from a wrong
    * answer: it's what "didn't solve it in time" means, and it's what the
@@ -72,13 +169,35 @@ export type CardResult = {
   timedOut?: boolean;
 };
 
+/**
+ * Cards as they were written before answers became text — numeric answers and
+ * an ordered pair instead of a fact id. Every run saved up to 2026-08-13 is
+ * this shape, so `readSession` widens them on the way out of storage.
+ */
+export type LegacyCardResult = Omit<
+  CardResult,
+  "answer" | "given" | "factId"
+> & {
+  answer: number | string;
+  given: number | string | null;
+  factId?: string;
+  facts?: [number, number];
+};
+
 export type Session = {
   id: string;
   profileId: string;
   game: "flashcards";
-  mode: Operation;
+  /**
+   * Which deck within the game — an `Operation` today, a word-list id once
+   * spelling lands. A plain string rather than a union because custom decks
+   * are user-named, and because a session must still load after the deck it
+   * was played on has been deleted. `deckSpec()` resolves it, and answers for
+   * anything it doesn't recognise.
+   */
+  mode: string;
   configKey: string;
-  config: FlashConfig;
+  config: RaceConfig;
   seed: number;
   finishedAt: string;
   durationMs: number;
@@ -89,6 +208,11 @@ export type Session = {
   ghostSessionId: string | null;
   beatGhost: boolean | null;
   cards: CardResult[];
+};
+
+/** A session as it may sit in storage, with cards from before the widening. */
+export type LegacySession = Omit<Session, "cards"> & {
+  cards: LegacyCardResult[];
 };
 
 export type HubState = {

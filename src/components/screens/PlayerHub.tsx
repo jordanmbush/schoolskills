@@ -9,11 +9,8 @@ import {
   sessionsFor,
   troubleFacts,
 } from "@/engine/records";
-import {
-  buildDrill,
-  describeConfig,
-  timeLimitForAge,
-} from "@/engine/decks/flashcards";
+import { timeLimitForAge } from "@/engine/decks/flashcards";
+import { buildDrill, describeConfig } from "@/engine/decks";
 import { clock, percent, plural, shortDate } from "@/engine/format";
 import { BADGES_BY_ID } from "@/engine/progress";
 import { sfx } from "@/services/sound";
@@ -40,6 +37,10 @@ export default function PlayerHub() {
   return (
     <main className="hub">
       <TopBar profile={profile}>
+        <a className="topbar__icon" href="/typing" title="Typing">
+          <span aria-hidden="true">⌨️</span>
+          <span className="u-sr">Typing game</span>
+        </a>
         <Link
           className="topbar__icon"
           to={`/p/${profile.id}/progress`}
@@ -81,9 +82,9 @@ export default function PlayerHub() {
                 navigate(`/p/${profile.id}/race`, {
                   state: {
                     config: buildDrill(
-                      trouble.map((fact) => fact.facts),
+                      trouble.map((fact) => fact.factId),
+                      "multiply",
                       {
-                        operation: "multiply",
                         inputMode: profile.age <= 6 ? "choose" : "type",
                         timeLimitMs: timeLimitForAge(profile.age),
                       },
