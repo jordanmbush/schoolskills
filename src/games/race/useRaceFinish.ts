@@ -32,6 +32,7 @@ export function useRaceFinish({
   finish,
   notify,
   navigate,
+  resultsPath,
   onSaving,
 }: {
   profile: Profile;
@@ -46,6 +47,8 @@ export function useRaceFinish({
   finish: ReturnType<typeof useRace>["finish"];
   notify: ReturnType<typeof useHub>["notify"];
   navigate: ReturnType<typeof useNavigate>;
+  /** Where the finished run is shown. Each game has its own results screen. */
+  resultsPath: string;
   onSaving: () => void;
 }) {
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -79,7 +82,7 @@ export function useRaceFinish({
         bonuses: summary.bonuses,
         levelledUpTo: levelAfter > levelBefore ? levelAfter : null,
       });
-      navigate(`/p/${profile.id}/race/results`, { replace: true });
+      navigate(resultsPath, { replace: true });
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Could not save this race";

@@ -76,8 +76,31 @@ export type WordConfig = {
   timeLimitMs?: number | null;
 };
 
-/** Whatever the race loop was handed. Narrow with `config.kind === "words"`. */
-export type RaceConfig = FlashConfig | WordConfig;
+/**
+ * A typing passage.
+ *
+ * No `inputMode` — there is only one way to answer — and no per-card clock,
+ * because a typing test is decided on total time and a word that timed out
+ * would be indistinguishable from one you were still typing.
+ */
+export type TypingConfig = {
+  kind: "typing";
+  levelId: string;
+  /** An explicit set, for a drill of the words a player keeps fumbling. */
+  words?: string[];
+  wordCount: number;
+  /** Always absent. Declared so the shared readers can ask without narrowing. */
+  timeLimitMs?: null;
+};
+
+/**
+ * What the flash-card loop can be handed. Both are decks of discrete cards
+ * with a chosen input mode; typing is neither, and has its own island.
+ */
+export type CardConfig = FlashConfig | WordConfig;
+
+/** Anything a saved run can hold. Narrow on `kind`. */
+export type RaceConfig = CardConfig | TypingConfig;
 
 /**
  * A word list a parent typed in — this week's spellings, a topic's vocabulary.

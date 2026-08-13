@@ -3,7 +3,7 @@ import { cardXp } from "@/engine/progress";
 import { sfx } from "@/services/sound";
 import type { Card, CardResult } from "@/engine/types";
 import type { DeckSpec } from "@/engine/decks";
-import type { Feedback } from "./types";
+import type { Feedback } from "@/games/race/types";
 
 const RIGHT_PAUSE_MS = 320;
 const WRONG_PAUSE_MS = 1500;

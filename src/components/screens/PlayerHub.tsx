@@ -37,6 +37,10 @@ export default function PlayerHub() {
   return (
     <main className="hub">
       <TopBar profile={profile}>
+        <a className="topbar__icon" href="/typing" title="Typing">
+          <span aria-hidden="true">⌨️</span>
+          <span className="u-sr">Typing game</span>
+        </a>
         <Link
           className="topbar__icon"
           to={`/p/${profile.id}/progress`}

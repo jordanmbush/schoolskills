@@ -84,16 +84,23 @@ typed matches (`normalise`). A new deck family implements that and routes in
 `RaceConfig` union is narrowed. `deckSpec(mode)` never throws, because sessions
 outlive the decks they were played on.
 
-Two families exist: `decks/flashcards.ts` (arithmetic) and `decks/words.ts`
-(spelling and sight words). Words are a deck, not a game — they play in the
-same race loop, on the same route, so a profile and its records follow a child
-between subjects. `/spelling` is a content page pointing at it, in the same
-shape as the times-table pages.
+Three families exist: `decks/flashcards.ts` (arithmetic), `decks/words.ts`
+(spelling and sight words) and `decks/typing.ts` (passages).
 
-A genuinely different interaction — typing, say — is a new island with its own
-route under `src/pages/`: a **path, not a subdomain**, because separate origins
-would partition browser storage and a player's profile could no longer follow
-them between games.
+**A deck is not a game.** Words are a deck: they play in the flash-card loop,
+on the same route, so a profile and its records follow a child between
+subjects. `/spelling` is a content page pointing at it. Typing is a game —
+there are no discrete cards to submit, no input mode to choose and a passage
+that stays on screen — so it is its own island at `src/games/typing/`.
+
+Either way it is a **path, not a subdomain**: separate origins would partition
+browser storage and a player's profile could no longer follow them between
+games.
+
+**`src/games/race/` is the race minus the game** — the clock and its pause, the
+3·2·1, the ghost lane, the HUD, the quit sheet, the rival list and
+scoring-and-saving. Anything a second game would otherwise copy belongs there.
+How an answer is entered, marked or displayed does not.
 
 **Saved runs are the constraint, not the code.** `configKey` decides which runs
 may race each other as ghosts, so changing its format orphans every personal
