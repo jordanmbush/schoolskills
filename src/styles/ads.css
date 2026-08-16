@@ -65,11 +65,22 @@
  * breathe: it sits in normal flow with the page's own rhythm around it, and
  * takes the leaderboard height at every width.
  */
-.ad--content {
+.ad--content,
+.ad--article {
   height: 90px;
   margin-block: var(--gap-5);
   border: 1px solid var(--ink-800);
   border-radius: 12px;
+}
+
+/*
+ * In-article, between two sections. More breathing room than the footer slot
+ * gets, because this one interrupts a page someone is reading rather than
+ * sitting after it — the space either side is what keeps it a pause rather
+ * than an intrusion.
+ */
+.ad--article {
+  margin-block: var(--gap-6, 3rem);
 }
 
 .ad__label {
@@ -113,12 +124,14 @@
 
 /* The content slot is always leaderboard height, so on a narrow screen it
    holds the mobile banner centred rather than a cropped wide one. */
-.ad--content .ad__unit {
+.ad--content .ad__unit,
+.ad--article .ad__unit {
   height: 50px;
 }
 
 @media (width >= 728px) {
-  .ad--content .ad__unit {
+  .ad--content .ad__unit,
+  .ad--article .ad__unit {
     height: 90px;
   }
 }

@@ -42,12 +42,24 @@ const pause = world === "line" || world === "empty";
   <main id="main" class:list={["page", { "page--pause": pause }]}>
     <slot />
     {
-      /* After the article, never inside it. A content page has no clock and no
-        tap targets to sit next to, so this is the one slot on the site with no
-        interaction risk at all — and per issue #15 it is where the revenue
-        realistically is: the times-table pages are the search surface. */
+      /*
+       * After the article, never inside it. Every content page gets this one;
+       * long pages place `article` slots between their own sections as well,
+       * because a single unit at the very bottom of a scroll is the lowest
+       * viewability position on the page.
+       *
+       * Except the pause pages. /privacy and /terms carry no advertising at
+       * all: a privacy policy ringed with ads undermines the exact thing it
+       * exists to establish, and those two pages are a rounding error in the
+       * traffic anyway. `pause` already identifies them — it is the same
+       * property that strips the scenery.
+       */
+      !pause && (
+        <div class="wrap">
+          <AdSlot name="foot" />
+        </div>
+      )
     }
-    <div class="wrap"><AdSlot name="content" /></div>
   </main>
   <SiteFooter />
 </Base>

@@ -1,5 +1,6 @@
 ---
 import Content from "@/layouts/Content.astro";
+import AdSlot from "@/components/site/AdSlot.astro";
 import WorldMap from "@/components/site/WorldMap.astro";
 
 /**
@@ -62,6 +63,7 @@ const description =
     <WorldMap />
   </section>
 
+  <div class="wrap"><AdSlot name="article" /></div>
   <section class="band band--inset" id="limits">
     <div class="wrap">
       <h2 class="h2">What this is, and what it isn&rsquo;t</h2>
@@ -148,6 +150,7 @@ const description =
     </div>
   </section>
 
+  <div class="wrap"><AdSlot name="article" /></div>
   <section class="band wrap">
     <h2 class="h2">Where it fits in a day</h2>
     <p class="h2__sub">

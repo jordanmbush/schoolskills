@@ -42,8 +42,15 @@ export const AD_CLIENT = "ca-pub-2742485876369367";
  * cannot shift a layout that people have already learned.
  */
 export const AD_SLOTS = {
-  /** Content pages: below the article, above the footer. */
-  content: "",
+  /**
+   * In-article, between sections of a content page. Placed by hand at points
+   * where a reader has just finished something rather than mid-thought, and
+   * reused at more than one such point on a long page — this is where the
+   * viewable impressions are, because the reader is still on screen.
+   */
+  article: "",
+  /** Content pages: after the article, above the footer. */
+  foot: "",
   /** The game islands: a band above the game, on every screen. */
   game: "",
 } as const;
