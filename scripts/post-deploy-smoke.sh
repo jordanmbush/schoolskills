@@ -6,7 +6,9 @@
 # game against the same build artefact. What can only break HERE is the
 # delivery: DNS, the certificate, cache headers, the error document.
 #
-# Two things this got wrong once, both fixed below.
+# Three things this got wrong once, all fixed below. Two of them reported a
+# failing deploy that was in fact fine, which is the more expensive kind of
+# wrong: a smoke check nobody believes is a smoke check nobody reads.
 #
 # **It only knew about the pages it was written with.** The release that added
 # /typing and /spelling passed this script while both were 404. So the page
@@ -19,31 +21,61 @@
 # **It ran inside the invalidation window.** CloudFront keeps serving a cached
 # negative answer for a few seconds after an invalidation is issued, so the
 # first request for a page added in this very release can 404 while the deploy
-# is perfectly healthy. Every check therefore retries. A route that is
-# genuinely missing still fails; it just takes a few attempts to say so.
+# is perfectly healthy. Every check therefore retries, with a doubling gap —
+# see the budget note below, which a flat 16 seconds was not enough of.
+#
+# **It lost a race with itself.** `curl | grep -q` under `pipefail` reports
+# failure when grep matches early, because grep's exit closes the pipe and
+# curl dies of SIGPIPE. The probes no longer pipe into grep at all; the note
+# above them has the measurements.
 #
 # Usage: bash scripts/post-deploy-smoke.sh <base-url>
 set -euo pipefail
 
 BASE="${1:?usage: post-deploy-smoke.sh <base-url>}"
-ATTEMPTS="${SMOKE_ATTEMPTS:-5}"
-DELAY="${SMOKE_DELAY:-4}"
+
+# Retries back off: the gap doubles each time, so the waits are 3, 6, 12, 24
+# and 48 seconds — about a minute and a half of patience across six attempts,
+# and none of it spent when the site is healthy.
+#
+# It used to be five flat 4-second gaps, or 16 seconds total. That is inside
+# CloudFront's propagation window rather than outside it: the release that
+# added /about failed this script on /about 404 and the page was serving
+# normally by the time anyone looked. A fixed gap has to choose between being
+# quick to report a real outage and being patient with a new page; doubling
+# does not, because the early attempts stay cheap.
+ATTEMPTS="${SMOKE_ATTEMPTS:-6}"
+DELAY="${SMOKE_DELAY:-3}"
 fails=0
 
 # --- probes: each echoes one word, so a check is a string comparison ---------
+#
+# None of these pipe curl into `grep -q`, and that is not a style preference.
+# `grep -q` exits the instant it matches, which closes the pipe while curl is
+# still writing; curl dies of SIGPIPE and exits 141, `pipefail` promotes that
+# to the pipeline's status, and the `if` takes the else branch — reporting "no"
+# BECAUSE the string was found early enough. Measured against production: 4
+# false negatives in 60 runs with pipefail on, 0 with it off. It filed a
+# "Production deploy failed" issue for a deploy that was fine.
+#
+# So each probe fetches into a variable first and matches against that. No
+# pipeline, nothing to receive a SIGPIPE, and the result depends on the
+# response rather than on who won a race.
 
 status() { curl -sS -o /dev/null -w "%{http_code}" --max-time 15 "$1"; }
 
 body_contains() {
-  if curl -sS --max-time 15 "$1" | grep -qF "$2"; then echo "yes"; else echo "no"; fi
+  local body
+  body="$(curl -sS --max-time 15 "$1" || true)"
+  if grep -qF -- "$2" <<<"$body"; then echo "yes"; else echo "no"; fi
 }
 
 header_matches() {
-  if curl -sSI --max-time 15 "$1" | tr -d '\r' | grep -i "^$2:" | grep -qi "$3"; then
-    echo "yes"
-  else
-    echo "no"
-  fi
+  local headers line
+  headers="$(curl -sSI --max-time 15 "$1" | tr -d '\r' || true)"
+  # Two greps, but never piped into each other, for the reason above.
+  line="$(grep -i -- "^$2:" <<<"$headers" || true)"
+  if grep -qi -- "$3" <<<"$line"; then echo "yes"; else echo "no"; fi
 }
 
 # --- the retry harness -------------------------------------------------------
@@ -56,7 +88,7 @@ header_matches() {
 try() {
   local label="$1" expected="$2"
   shift 2
-  local actual="" attempt=1
+  local actual="" attempt=1 wait="$DELAY"
   while [ "$attempt" -le "$ATTEMPTS" ]; do
     actual="$("$@" 2>/dev/null || true)"
     if [ "$actual" = "$expected" ]; then
@@ -69,7 +101,10 @@ try() {
       fi
       return 0
     fi
-    if [ "$attempt" -lt "$ATTEMPTS" ]; then sleep "$DELAY"; fi
+    if [ "$attempt" -lt "$ATTEMPTS" ]; then
+      sleep "$wait"
+      wait=$((wait * 2))
+    fi
     attempt=$((attempt + 1))
   done
   echo "  ✗ ${label} — got '${actual}', want '${expected}'"
