@@ -38,6 +38,12 @@
   --sheet-margin: 0.5in;
   --sheet-pt: 12pt;
 
+  /* Set here rather than inherited from `base.css`: width plus padding only
+     add up to the paper size under `border-box`, and under the initial
+     `content-box` an 8.5in sheet is 9.5in wide and every print silently scales
+     or clips. Same reason as the font fallbacks below — this file has to hold
+     on a page that never loaded the rest of the app's CSS. */
+  box-sizing: border-box;
   width: var(--sheet-w);
   min-height: var(--sheet-h);
   padding: var(--sheet-margin);

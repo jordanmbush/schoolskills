@@ -64,9 +64,12 @@ function Drawn({
       width={inch(width)}
       height={inch(height)}
       viewBox={`0 0 ${width} ${height}`}
-      role="img"
-      aria-label={`Figure ${index + 1}: a ${figure.shape}`}
     >
+      {/* A `<title>` rather than `role="img"`: the side labels below are the
+          measurements the question is about, and `role="img"` would hide
+          "8 cm" behind "a rectangle". */}
+      <title>{`Figure ${index + 1}: a ${figure.shape}`}</title>
+
       {figure.shape === "circle" ? (
         <Circle points={corners.map(shift)} />
       ) : (

@@ -10,9 +10,18 @@
    scaled to fit.
 
    This file is imported by the sheet renderer rather than by a layout, so it
-   lands on exactly the pages that have a sheet on them. That matters for the
-   `@page` rule below: zeroing the margin on a page that is an article rather
-   than a worksheet would print its text to the edge of the paper.           */
+   lands on exactly the pages that have a sheet on them, and nowhere else. That
+   is what the `@page` rule below needs: a page with no sheet on it — the about
+   page, a privacy policy — keeps the browser's default margin and prints its
+   prose inside the paper rather than off the edge of it.
+
+   It buys no more than that. `@page` cannot be scoped to a class, so on a page
+   that is *both* — the catalog pages of §8 are an h1, two or three paragraphs
+   and then a sheet — the zeroed margin applies to the prose as well. Open for
+   PRINT03, when those routes are built: either the prose is `display: none`
+   under `@media print` (printing a catalog page means printing the sheet on
+   it), or the article gets its own print padding to stand in for the page
+   margin this rule takes away. It cannot be solved here.                    */
 
 /* Letter portrait, no margin — the sheet owns its own geometry, so screen and
    paper agree exactly. A sheet on any other stock emits its own `@page` (see

@@ -37,9 +37,12 @@ export function Matching({ block, metrics }: BlockProps<"matching">) {
       width={inch(width)}
       height={inch(height)}
       viewBox={`0 0 ${width} ${height}`}
-      role="img"
-      aria-label="Join each item on the left to its pair on the right"
     >
+      {/* Named with a `<title>`, not `role="img"`. Both columns of words live
+          in `<text>` inside this `<svg>`, and `role="img"` would replace the
+          whole exercise with this one instruction. */}
+      <title>Join each item on the left to its pair on the right</title>
+
       {block.left.map((text, index) => (
         <g key={`l${index}-${text}`}>
           <text
