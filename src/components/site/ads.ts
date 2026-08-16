@@ -19,15 +19,23 @@
  * compliance incident rather than a bug.
  *
  * ── Two things here are NOT sufficient on their own ─────────────────────────
- * 1. `tagForChildDirectedTreatment` in Base.astro DOES NOTHING. That is not a
- *    guess: the live ad request was captured from production and carried
- *    `npa=1` but no `tfcd` and no `tag_for_child_directed_treatment` at all.
- *    The property is a GPT/AdMob mechanism and AdSense's loader ignores it.
+ * 1. The age signal in Base.astro is NOT PROVEN. `tagForChildDirectedTreatment`
+ *    used to be set there and did nothing: the live ad request was captured
+ *    from production and carried `npa=1` but no `tfcd` and no
+ *    `tag_for_child_directed_treatment` at all. It is a GPT/AdMob mechanism
+ *    that AdSense's loader ignores, so it has been replaced with the variable
+ *    AdSense actually documents — `google_tag_for_age_treatment = 1`, where 1
+ *    is child-restricted (support.google.com/adsense/answer/3248194).
  *
- *    So the child-directed declaration in the AdSense account is not a backup
- *    to the code — it is the ONLY thing that sets this signal. It is left in
- *    the markup because it is harmless and may one day be honoured, but do
- *    not read it as protection. `requestNonPersonalizedAds`, by contrast, was
+ *    That replacement is UNVERIFIED. Nothing has served yet, so no ad request
+ *    exists to check it against, and the last thing believed about this line
+ *    turned out to be false. Capture a live request the first time an ad
+ *    fills and confirm `tfat=1` is on it. Until then assume it does nothing.
+ *
+ *    Which means: the site-level child-directed declaration in SEARCH CONSOLE
+ *    (search.google.com/search-console/coppa — not the AdSense UI) is the only
+ *    thing known to set this signal, and it is where Google's own COPPA
+ *    guidance points publishers. `requestNonPersonalizedAds`, by contrast, was
  *    confirmed working: `npa=1` was present on every request.
  * 2. Auto ads MUST be off for this site in the AdSense account. With them on,
  *    Google injects placements wherever its model likes — including on top of
@@ -63,28 +71,27 @@ export const AD_SLOTS = {
 export type AdSlotName = keyof typeof AD_SLOTS;
 
 /**
- * Is this site actually live in the AdSense account?
+ * Should the loader ship at all?
  *
- * FALSE, and it stays false until the site is approved and serving. This is
- * not caution for its own sake — a loader on an unapproved site is the worst
- * of both worlds. It contacts pagead2.googlesyndication.com and
- * googleads.g.doubleclick.net on every page load, from a child's device, and
- * receives `unfilled` in return. All of the privacy cost, none of the revenue.
+ * TRUE. Turning it off is a one-line kill switch for every ad request the site
+ * makes — reach for it if the account is suspended, if a placement turns out
+ * to be wrong on a child's screen, or if anything about Google's behaviour
+ * stops matching what /privacy says.
  *
- * That is exactly what production was doing after the site was removed from
- * AdSense, which is what this constant exists to prevent happening again.
+ * It moves TOGETHER with the advertising sections of /privacy, in both
+ * directions. That page has to describe what the site actually does, and a
+ * policy claiming ad requests that aren't happening is as wrong as one hiding
+ * requests that are. It was false for exactly that reason once already: the
+ * site was removed from AdSense while the loader kept calling
+ * pagead2.googlesyndication.com on every page load, from a child's device,
+ * getting `unfilled` back — all of the privacy cost, none of the revenue.
  *
- * False does NOT block getting approved. AdSense verifies ownership by ad
- * code, by ads.txt, or by a meta tag, and Base.astro emits the meta tag
- * unconditionally while public/ads.txt names the same publisher. So the site
- * can be added, verified and reviewed with the loader still dark, and the
- * only thing waiting on approval is the moment ads actually serve.
- *
- * Flipping it to true is a one-line change and MUST be made in the same pull
- * request that restores the advertising sections of /privacy — that page has
- * to describe what the site does, in both directions. See the header there.
+ * Note what true does NOT mean. Verification and review never needed it:
+ * AdSense accepts ad code, ads.txt, OR a meta tag, and Base.astro emits the
+ * meta tag unconditionally while public/ads.txt names the same publisher. So
+ * this being false was never what stood between the site and approval.
  */
-const ADS_LIVE = false;
+const ADS_LIVE = true;
 
 /**
  * Whether to emit the loader and the units at all.

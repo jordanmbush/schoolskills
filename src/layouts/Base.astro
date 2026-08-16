@@ -160,6 +160,15 @@ const ogImage = new URL(image, Astro.site).href;
        * would leave a race in which the first ad request of a visit could go
        * out personalised. Inline, synchronous, first.
        *
+       * `google_tag_for_age_treatment = 1` is child-restricted treatment, and
+       * it is a bare global rather than a property on the queue — that is the
+       * form AdSense documents (answer/3248194). It REPLACES
+       * `tagForChildDirectedTreatment`, which sat here for a while doing
+       * nothing at all: a captured production ad request carried `npa=1` but
+       * no `tfcd` of any spelling. Treat this one as unproven too until a live
+       * request is captured showing `tfat=1`; the declaration that is known to
+       * work is the site-level one in Search Console.
+       *
        * `is:inline` on both: Astro would otherwise bundle and hoist them, which
        * breaks that ordering and rewrites the loader's URL.
        */
@@ -167,7 +176,7 @@ const ogImage = new URL(image, Astro.site).href;
         <>
           <script
             is:inline
-            set:html={`window.adsbygoogle=window.adsbygoogle||[];window.adsbygoogle.requestNonPersonalizedAds=1;window.adsbygoogle.tagForChildDirectedTreatment=1;`}
+            set:html={`window.adsbygoogle=window.adsbygoogle||[];window.adsbygoogle.requestNonPersonalizedAds=1;window.google_tag_for_age_treatment=1;`}
           />
           <script
             is:inline
