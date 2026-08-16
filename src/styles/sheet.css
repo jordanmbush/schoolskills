@@ -1,0 +1,341 @@
+/* ── The sheet's own geometry ───────────────────────────────────────────────
+   A worksheet is HTML laid out in real inches (docs/printables.md §2), and
+   this is the file where that stops being a claim.
+
+   ── Why nothing here is in `rem` ────────────────────────────────────────────
+   The rest of the app sizes everything in `rem × --ui-scale`, so a five-year-
+   old's screen is physically bigger than a ten-year-old's. A worksheet must not
+   do that. A ⅝-inch handwriting rule is ⅝ of an inch or it is wrong, and a
+   child who has been taught to write between two lines notices before an adult
+   does. So the subtree opts out — `--ui-scale: 1` below is set, not inherited —
+   and every length in here is an inch, a point, or an em of a size that was
+   itself set in points.
+
+   ── One name collision, recorded rather than worked around ──────────────────
+   `screens.css` already has a `.sheet`: the modal panel behind the player
+   editor and the quit confirmation. The two never meet today — that one arrives
+   with `index.css` on the game islands, this one with the renderer that uses it
+   — but `/printables/make` will be an island that loads both, and on that day
+   an 8.5in-wide `position: fixed` modal is what happens. The builder story
+   renames one of them; this note is here so it is a decision rather than a
+   surprise.
+
+   ── The ink ────────────────────────────────────────────────────────────────
+   Black on white with no fills, by default and on purpose. A parent printing
+   thirty pages a week is paying for this in toner, so ink-saving is a feature
+   rather than an accident (§5) — and it composes with the fact that browsers
+   drop background paint when printing anyway. Everything a child writes on is
+   a stroke or a border, both of which are foreground and always print.       */
+
+.sheet {
+  --ui-scale: 1;
+
+  /* Overwritten inline by the renderer from the sheet's own `paper`. The
+     defaults are Letter portrait at half-inch margins, which is what most of
+     this audience prints on. */
+  --sheet-w: 8.5in;
+  --sheet-h: 11in;
+  --sheet-margin: 0.5in;
+  --sheet-pt: 12pt;
+
+  /* Set here rather than inherited from `base.css`: width plus padding only
+     add up to the paper size under `border-box`, and under the initial
+     `content-box` an 8.5in sheet is 9.5in wide and every print silently scales
+     or clips. Same reason as the font fallbacks below — this file has to hold
+     on a page that never loaded the rest of the app's CSS. */
+  box-sizing: border-box;
+  width: var(--sheet-w);
+  min-height: var(--sheet-h);
+  padding: var(--sheet-margin);
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  /* The fallbacks are not decoration: this stylesheet arrives with the
+     renderer, so it has to stand up on a page that never loaded tokens.css. */
+  font-family: var(--font-body, system-ui, sans-serif);
+  font-size: var(--sheet-pt);
+  line-height: 1.35;
+  color: #000;
+  background: #fff;
+
+  /* Consecutive sheets — variants A/B/C, or a sheet and its answer key — are
+     one page each. The last one doesn't push a blank page after itself. */
+  break-after: page;
+}
+
+.sheet:last-of-type {
+  break-after: auto;
+}
+
+/* On screen the sheet is white paper floating on the world's own ground, which
+   is how every layout tool on earth presents a page and is also just true. */
+@media screen {
+  .sheet {
+    box-shadow: 0 24px 60px -30px rgb(0 0 0 / 90%);
+  }
+}
+
+/* ── Chrome ─────────────────────────────────────────────────────────────── */
+
+.sheet__head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.09in;
+  margin-bottom: 0.16in;
+}
+
+.sheet__title {
+  font-family: var(--font-display, system-ui, sans-serif);
+  font-size: 1.7em;
+  font-weight: 400;
+  line-height: 1.05;
+}
+
+.sheet__fields {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.06in 0.28in;
+  font-size: 0.82em;
+}
+
+.sheet__field,
+.sheet__score {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.06in;
+}
+
+.sheet__score {
+  margin-left: auto;
+}
+
+/* A border, not a row of underscores: underscores set in a proportional face
+   are a ragged line whose length depends on how many the generator wrote, and
+   a child needs the same room whatever they are writing. */
+.sheet__field-rule {
+  display: inline-block;
+  width: 2.1in;
+  border-bottom: 0.75pt solid currentcolor;
+}
+
+.sheet__field-rule--short {
+  width: 0.7in;
+}
+
+.sheet__instructions {
+  font-size: 0.9em;
+}
+
+.sheet__blocks {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.14in;
+}
+
+.sheet__block {
+  display: flex;
+  flex-direction: column;
+}
+
+.sheet__foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.04in 0.16in;
+  margin-top: 0.18in;
+  padding-top: 0.05in;
+  border-top: 0.5pt solid currentcolor;
+  font-size: 0.62em;
+}
+
+.sheet__seed {
+  margin-left: auto;
+  font-family: var(--font-mono, ui-monospace, monospace);
+}
+
+/* Every list on a sheet numbers itself in `<span class="sheet__number">`
+   rather than with a marker: `base.css` strips markers site-wide and this
+   file has to hold on a page that never loaded it, a problem a child is told
+   to "do 4, 7 and 12 of" needs its number as selectable text anyway, and a
+   marker outside the box is a marker outside the margin. */
+.sheet__problems,
+.sheet__blanks,
+.sheet__questions,
+.sheet__options,
+.sheet__words {
+  list-style: none;
+  padding-left: 0;
+}
+
+/* ── Ink ────────────────────────────────────────────────────────────────────
+   Colour and font family only. Stroke widths and dash patterns are attributes
+   in mil, set by the renderer — see src/components/sheet/units.ts for why a
+   `stroke-width` declared here would come out about a thousandth of the size
+   it says.                                                                  */
+
+.sheet__ink {
+  display: block;
+  max-width: 100%;
+  font-family: var(--font-body, system-ui, sans-serif);
+}
+
+.sheet__rule,
+.sheet__dial,
+.sheet__shape {
+  stroke: currentcolor;
+  fill: none;
+}
+
+.sheet__cell,
+.sheet__dot {
+  fill: currentcolor;
+  stroke: none;
+}
+
+/* The solution stroke on a word search. Lighter than the letters it crosses,
+   so the key is still readable underneath it. */
+.sheet__found {
+  stroke: currentcolor;
+  fill: none;
+  opacity: 45%;
+}
+
+.sheet__cell--start {
+  text-anchor: start;
+}
+
+.sheet__cell--end {
+  text-anchor: end;
+}
+
+/* ── Letterforms, from an ordinary font (§6) ─────────────────────────────── */
+
+.sheet__glyph--solid {
+  fill: currentcolor;
+  stroke: none;
+}
+
+.sheet__glyph--dim {
+  fill: currentcolor;
+  stroke: none;
+  opacity: 28%;
+}
+
+.sheet__glyph--hollow,
+.sheet__glyph--dotted,
+.sheet__glyph--dashed {
+  fill: none;
+  stroke: currentcolor;
+}
+
+/* ── Problems ───────────────────────────────────────────────────────────────
+   `break-inside: avoid` here and on every other row-shaped thing below is not
+   a nicety. Print is the whole of the output path (§10), so the preview has to
+   be right the first time — a problem split across two pages is a problem a
+   child can't answer, and there is no PDF to fall back on.                   */
+
+.sheet__problems {
+  display: grid;
+  grid-template-columns: repeat(var(--sheet-columns, 2), minmax(0, 1fr));
+  gap: 0.2in 0.3in;
+}
+
+.sheet__problem,
+.sheet__row,
+.sheet__sentence,
+.sheet__question,
+.sheet__face,
+.sheet__figure {
+  break-inside: avoid;
+}
+
+.sheet__problem {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.06in;
+}
+
+.sheet__number,
+.sheet__mark {
+  font-variant-numeric: tabular-nums;
+  margin-right: 0.06in;
+}
+
+.sheet__mark {
+  font-weight: 700;
+  margin-right: 0.05in;
+}
+
+/* Where the answer goes: a ruled slot when the sheet is blank, the answer
+   itself on the key. Same element either way, so the two can't drift apart. */
+.sheet__slot {
+  display: inline-block;
+  min-width: 0.8in;
+  border-bottom: 0.75pt solid currentcolor;
+  text-align: center;
+}
+
+.sheet__slot--answered {
+  font-weight: 700;
+}
+
+.sheet__workspace {
+  display: block;
+  flex: 1 0 100%;
+}
+
+/* ── The rest of the blocks ─────────────────────────────────────────────── */
+
+.sheet__blanks,
+.sheet__questions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.16in;
+}
+
+.sheet__sentence,
+.sheet__ask {
+  display: block;
+}
+
+.sheet__options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.06in 0.3in;
+  padding-left: 0.3in;
+}
+
+/* A rule under the right answer, never a tint behind it — see the ink note. */
+.sheet__option--answer {
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+.sheet__words {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.06in 0.28in;
+  margin-top: 0.12in;
+  font-size: 0.9em;
+}
+
+.sheet__faces,
+.sheet__figures {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.24in;
+}
+
+.sheet__face {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.04in;
+}
+
+.sheet__caption {
+  font-size: 0.8em;
+}
