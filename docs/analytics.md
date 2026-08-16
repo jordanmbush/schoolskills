@@ -39,16 +39,51 @@ in `src/services/analytics.ts` — if it isn't there, it isn't collected:
 sent — see the tests in `src/services/analytics.test.ts`, which exist to keep
 that true.
 
-## Retention, which is a promise
+## Retention, and the thing that actually protects the history
 
-Raw lines are deleted after **30 days** (`LOG_RETENTION_DAYS` in
+Raw lines are deleted after **90 days** (`LOG_RETENTION_DAYS` in
 `sst.config.ts`). `/privacy` tells parents that number, so it can go down
 without ceremony and cannot go up without editing that page in the same PR.
 
-The limit is on the raw lines, not on knowledge. A monthly count carries no IP
-and no identifier, so **run the queries below monthly and keep the results
-somewhere.** That's the intended workflow: the material expires, the
-arithmetic doesn't.
+**Retention is not what preserves the site's history.** A per-day count carries
+no IP and no identifier, so the counts are what get kept — permanently, in this
+repo, at `analytics/counts.json`. `.github/workflows/analytics.yml` runs on the
+2nd of each month, reduces whatever is in the bucket to per-day totals, and
+commits the result.
+
+So the numbers you can look back on are bounded by _that job having run_, not by
+the retention window. Retention only governs how far back a forgotten number can
+be re-derived. If the job breaks it opens an issue, and that issue is more urgent
+than it looks: while it is broken, history is on a 90-day timer.
+
+Read the file directly on GitHub — no AWS login, no query, no dashboard:
+
+```jsonc
+"2026-08-16": {
+  "visitors": 2,          // distinct IPs seen that day; approximate by design
+  "pageViews": 3,
+  "pages":  { "/": 1, "/flash-cards/": 1, "/spelling/play/": 1 },
+  "events": { "race_start": 2, "race_end:finished": 1, "race_end:quit": 1 },
+  "decks":  { "multiply": 1, "words:dolch-4": 1 }
+}
+```
+
+Bots are excluded, assets and beacons don't count as page views, and re-running
+overwrites per-day rather than accumulating — so a day whose logs arrived late is
+corrected rather than doubled.
+
+To run it by hand (or after fixing something):
+
+```bash
+aws s3 sync s3://schoolskills-access-logs-<account>/cf/ /tmp/cflogs --profile schoolskills
+node scripts/rollup-analytics.mjs /tmp/cflogs analytics/counts.json
+```
+
+## Athena, for questions the rollup doesn't answer
+
+Everything below is optional. The rollup covers the standing questions; Athena
+is for one-off digging — a specific week, a referrer breakdown, a suspicion
+about bot traffic.
 
 ## Setting up Athena (once)
 

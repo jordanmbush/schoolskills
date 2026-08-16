@@ -83,18 +83,23 @@ export default $config({
     /**
      * How long a raw access log line lives.
      *
-     * /privacy tells parents these logs are "short-lived", so this number is a
-     * promise rather than a preference — it may go down, and it may not go up
-     * without that page changing in the same pull request.
+     * /privacy states this number to parents, so it is a promise rather than a
+     * preference — it may go down freely, and it may not go up without that
+     * page changing in the same pull request.
      *
-     * Thirty days is the whole retention because a raw line contains an IP
-     * address, and an IP belonging to a child is the sort of thing worth not
-     * keeping. It is not a limit on what can be *known*: the counts derived
-     * from these lines carry no IP at all, so anything worth a trend gets
-     * aggregated and stored as numbers (see docs/analytics.md). The raw
-     * material expires; the arithmetic doesn't have to.
+     * Ninety days, because a raw line contains an IP address and an IP
+     * belonging to a child is the sort of thing worth not keeping. A quarter is
+     * long enough to go back and re-derive a number nobody thought to take at
+     * the time, which is the only thing retention actually buys.
+     *
+     * It is NOT what protects the history. The counts derived from these lines
+     * carry no IP, so they are committed to the repo monthly by
+     * .github/workflows/analytics.yml and kept forever. The raw material
+     * expires; the arithmetic doesn't have to. If that job ever stops running,
+     * this number quietly becomes the limit of what anyone can know about the
+     * site's first year — so it is the job to fix, not this constant.
      */
-    const LOG_RETENTION_DAYS = 30;
+    const LOG_RETENTION_DAYS = 90;
 
     // Only production claims the hostname. A dev or throwaway stage gets the
     // CloudFront URL, so it can deploy with no Cloudflare credentials at all.
@@ -119,6 +124,14 @@ export default $config({
      */
     const logs = production
       ? new aws.s3.BucketV2("AccessLogs", {
+          // Named deterministically rather than left to Pulumi's random
+          // suffix, because two things have to find this bucket without
+          // reading SST state: the monthly rollup workflow, and a human
+          // following docs/analytics.md. The account id is what makes an S3
+          // bucket name globally unique.
+          bucket: aws
+            .getCallerIdentityOutput({})
+            .accountId.apply((id) => `schoolskills-access-logs-${id}`),
           forceDestroy: false,
         })
       : undefined;
@@ -151,7 +164,10 @@ export default $config({
           {
             id: "expire-raw-lines",
             status: "Enabled",
-            filter: {},
+            // Scoped to the log prefix rather than the whole bucket, so that
+            // anything else ever kept here isn't swept up by a rule that was
+            // only ever about IP addresses.
+            filter: { prefix: "cf/" },
             expiration: { days: LOG_RETENTION_DAYS },
             // A delivery that dies mid-upload otherwise accrues cost forever.
             abortIncompleteMultipartUpload: { daysAfterInitiation: 7 },

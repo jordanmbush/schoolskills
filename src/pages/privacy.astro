@@ -18,7 +18,7 @@ import Content from "@/layouts/Content.astro";
  * line: it is CloudFront's own access logs plus a first-party image request,
  * described under "Hosting, and how we count". Two things there are load-
  * bearing and are asserted elsewhere in the codebase rather than left to
- * goodwill — the 30-day retention is `LOG_RETENTION_DAYS` in sst.config.ts, and
+ * goodwill — the 90-day retention is `LOG_RETENTION_DAYS` in sst.config.ts, and
  * the promise that a beacon carries no deck id or answer is enforced by
  * src/services/analytics.test.ts. Change either and this page is wrong.
  *
@@ -107,7 +107,7 @@ const updated = "16 August 2026";
       <p>
         The one exception is the ordinary web-server log described below, which
         records the IP address a request came from. Every website has one, it is
-        needed to deliver a page at all, we keep ours for 30 days, and we use it
+        needed to deliver a page at all, we keep ours for 90 days, and we use it
         only to count visits in aggregate.
       </p>
       <p>
@@ -126,7 +126,7 @@ const updated = "16 August 2026";
       <p>
         The site is served from Amazon CloudFront. Like any web host, its
         servers write a line for each request &mdash; your IP address, browser
-        type and the file requested. Those lines are kept for 30 days and then
+        type and the file requested. Those lines are kept for 90 days and then
         deleted automatically.
       </p>
       <p>
