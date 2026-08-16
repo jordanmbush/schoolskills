@@ -1,5 +1,11 @@
 ---
-import { AD_CLIENT, ADS_PREVIEW, adSlotId, type AdSlotName } from "./ads";
+import {
+  AD_CLIENT,
+  ADS_ENABLED,
+  ADS_PREVIEW,
+  adSlotId,
+  type AdSlotName,
+} from "./ads";
 
 /**
  * An ad unit on a static content page.
@@ -23,7 +29,11 @@ const slot = adSlotId(name);
 ---
 
 {
-  slot ? (
+  /* Ads off entirely (see ADS_LIVE): nothing at all, not even the reservation.
+     A reserved box with no advertising behind it is just a gap in the page. */
+}
+{
+  !ADS_ENABLED ? null : slot ? (
     <aside class:list={["ad", className]} aria-label="Advertisement">
       <span class="ad__label">Ad</span>
       <ins

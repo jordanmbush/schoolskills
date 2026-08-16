@@ -128,6 +128,22 @@ const ogImage = new URL(image, Astro.site).href;
         />
       )
     }
+    <!--
+      Proves to AdSense that we own this domain, and nothing else.
+
+      It is inert markup: no script, no request, no identifier — so unlike the
+      loader below it costs a visitor nothing and is emitted unconditionally,
+      including while ADS_LIVE is false. That combination is the point.
+      AdSense will verify a site by ad code, by ads.txt, OR by this tag, and
+      the tag exists precisely for publishers who do not want the loader on
+      the page. So the site can sit in review, or sit approved-but-dark, with
+      no child's browser ever contacting Google.
+
+      Keep it in step with AD_CLIENT and with public/ads.txt: all three name
+      the same publisher, and a mismatch fails verification silently.
+    -->
+    <meta name="google-adsense-account" content={AD_CLIENT} />
+
     {
       /*
        * Google AdSense.

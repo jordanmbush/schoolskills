@@ -19,11 +19,16 @@
  * compliance incident rather than a bug.
  *
  * ── Two things here are NOT sufficient on their own ─────────────────────────
- * 1. `tagForChildDirectedTreatment` below is belt-and-braces. The AUTHORITATIVE
- *    control is the child-directed declaration in the AdSense account, which
- *    is a setting on the site, not markup. If that is not set, this flag will
- *    not save you. Set it in the account first; treat the code as a second
- *    lock on the same door.
+ * 1. `tagForChildDirectedTreatment` in Base.astro DOES NOTHING. That is not a
+ *    guess: the live ad request was captured from production and carried
+ *    `npa=1` but no `tfcd` and no `tag_for_child_directed_treatment` at all.
+ *    The property is a GPT/AdMob mechanism and AdSense's loader ignores it.
+ *
+ *    So the child-directed declaration in the AdSense account is not a backup
+ *    to the code — it is the ONLY thing that sets this signal. It is left in
+ *    the markup because it is harmless and may one day be honoured, but do
+ *    not read it as protection. `requestNonPersonalizedAds`, by contrast, was
+ *    confirmed working: `npa=1` was present on every request.
  * 2. Auto ads MUST be off for this site in the AdSense account. With them on,
  *    Google injects placements wherever its model likes — including on top of
  *    a race, next to the answer keypad, regardless of anything written here.
@@ -58,14 +63,40 @@ export const AD_SLOTS = {
 export type AdSlotName = keyof typeof AD_SLOTS;
 
 /**
+ * Is this site actually live in the AdSense account?
+ *
+ * FALSE, and it stays false until the site is approved and serving. This is
+ * not caution for its own sake — a loader on an unapproved site is the worst
+ * of both worlds. It contacts pagead2.googlesyndication.com and
+ * googleads.g.doubleclick.net on every page load, from a child's device, and
+ * receives `unfilled` in return. All of the privacy cost, none of the revenue.
+ *
+ * That is exactly what production was doing after the site was removed from
+ * AdSense, which is what this constant exists to prevent happening again.
+ *
+ * False does NOT block getting approved. AdSense verifies ownership by ad
+ * code, by ads.txt, or by a meta tag, and Base.astro emits the meta tag
+ * unconditionally while public/ads.txt names the same publisher. So the site
+ * can be added, verified and reviewed with the loader still dark, and the
+ * only thing waiting on approval is the moment ads actually serve.
+ *
+ * Flipping it to true is a one-line change and MUST be made in the same pull
+ * request that restores the advertising sections of /privacy — that page has
+ * to describe what the site does, in both directions. See the header there.
+ */
+const ADS_LIVE = false;
+
+/**
  * Whether to emit the loader and the units at all.
  *
- * Off in dev by default: `astro dev` should not be making requests to Google
+ * Off in dev regardless: `astro dev` should not be making requests to Google
  * on every save, and an unfilled unit in development tells you nothing. Set
- * PUBLIC_ADS_PREVIEW=1 to render them locally when you actually want to look.
+ * PUBLIC_ADS_PREVIEW=1 to render them locally when you want to look at the
+ * layout — that path draws placeholders and never loads the real script.
  */
 export const ADS_ENABLED =
-  import.meta.env.PROD || import.meta.env.PUBLIC_ADS_PREVIEW === "1";
+  (ADS_LIVE && import.meta.env.PROD) ||
+  import.meta.env.PUBLIC_ADS_PREVIEW === "1";
 
 /**
  * Looking at the layout rather than at real ads.
