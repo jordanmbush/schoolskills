@@ -1,5 +1,11 @@
 import { useEffect, useRef } from "react";
-import { AD_CLIENT, ADS_PREVIEW, adSlotId, type AdSlotName } from "./ads";
+import {
+  AD_CLIENT,
+  ADS_ENABLED,
+  ADS_PREVIEW,
+  adSlotId,
+  type AdSlotName,
+} from "./ads";
 
 /**
  * An ad unit inside a React island.
@@ -42,8 +48,15 @@ export function AdSlot({
     }
   }, [slot]);
 
-  // No unit id yet, or ads are off in this build. Keep the reservation so
-  // turning a slot on later can't shift a layout people already know.
+  // Ads off entirely (see ADS_LIVE): render nothing at all, not even the
+  // reservation. A reserved box with no advertising behind it is just a gap in
+  // the page — the reservation exists to stop a KNOWN unit shifting things, not
+  // to hold space for advertising that isn't running.
+  if (!ADS_ENABLED) return null;
+
+  // Ads are on but this unit doesn't exist in the account yet. Keep the
+  // reservation so turning it on later can't shift a layout people already
+  // know.
   if (!slot) {
     return (
       <div
