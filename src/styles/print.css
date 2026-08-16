@@ -1,0 +1,80 @@
+/* ── What happens when somebody presses ⌘P ──────────────────────────────────
+   Print only. There is no PDF library here and there never will be: it would
+   cost ~600KB and a second rendering path that drifts from the first, and the
+   browser's own "Save as PDF" is already the download path (§10, decided).
+
+   That makes the print dialog the *whole* of the output. Everything in this
+   file is therefore load-bearing rather than cosmetic — a masthead that
+   survives onto paper is a masthead a parent pays for in toner, and a page box
+   that disagrees with the sheet on it prints across two pages or gets silently
+   scaled to fit.
+
+   This file is imported by the sheet renderer rather than by a layout, so it
+   lands on exactly the pages that have a sheet on them. That matters for the
+   `@page` rule below: zeroing the margin on a page that is an article rather
+   than a worksheet would print its text to the edge of the paper.           */
+
+/* Letter portrait, no margin — the sheet owns its own geometry, so screen and
+   paper agree exactly. A sheet on any other stock emits its own `@page` (see
+   `PageSize` in Sheet.tsx); `@page` cannot be scoped to a class, so that is
+   the only way one can say so. */
+@page {
+  size: 8.5in 11in;
+  margin: 0;
+}
+
+@media print {
+  /*
+   * Everything that is the site rather than the sheet: the masthead, the site
+   * footer, the skip link, the ad slots, and every builder control.
+   *
+   * `.no-print` is the contract for that last one. The builder (§14) is a
+   * print bar, an option panel and a preview frame around a sheet, and none of
+   * it is paper — so each of those carries the class rather than this file
+   * naming components that don't exist yet.
+   *
+   * The ad slots are the important entry. They must never sit inside the
+   * printable region in the first place — `src/components/sheet/` renders no
+   * `.ad` and a test holds it to that — and this is the second line of
+   * defence, for a slot placed beside a sheet by a page around it.
+   */
+  .mast,
+  .foot,
+  .skip,
+  .ad,
+  .no-print {
+    display: none !important;
+  }
+
+  /*
+   * The world's ground, and the dark ink ramp that goes with it. Both are
+   * background paint, which most browsers drop when printing anyway — but
+   * "most" is not "all", and a reader who has ticked "Background graphics" to
+   * get a photo out of some other site should not get a black page here.
+   */
+  html,
+  body {
+    background: #fff !important;
+    background-image: none !important;
+    color: #000;
+  }
+
+  /*
+   * `min-height` has to go. On screen it is what makes a short sheet still
+   * look like a page; in print the page box already supplies the height, and
+   * an element exactly as tall as the paper it is on rounds up often enough to
+   * push a blank second page out of the printer.
+   */
+  .sheet {
+    min-height: 0;
+    margin: 0;
+    box-shadow: none;
+  }
+
+  /* Belt and braces with `break-after` in sheet.css: some engines honour one
+     and not the other, and a variant sharing a page with the sheet before it
+     is the single most visible way this can go wrong. */
+  .sheet + .sheet {
+    break-before: page;
+  }
+}
