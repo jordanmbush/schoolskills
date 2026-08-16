@@ -11,6 +11,7 @@
 import Base from "@/layouts/Base.astro";
 import SiteHeader from "@/components/site/SiteHeader.astro";
 import SiteFooter from "@/components/site/SiteFooter.astro";
+import AdSlot from "@/components/site/AdSlot.astro";
 import type { World } from "@/engine/worlds";
 import "@/styles/site.css";
 
@@ -40,6 +41,25 @@ const pause = world === "line" || world === "empty";
   <SiteHeader world={world} />
   <main id="main" class:list={["page", { "page--pause": pause }]}>
     <slot />
+    {
+      /*
+       * After the article, never inside it. Every content page gets this one;
+       * long pages place `article` slots between their own sections as well,
+       * because a single unit at the very bottom of a scroll is the lowest
+       * viewability position on the page.
+       *
+       * Except the pause pages. /privacy and /terms carry no advertising at
+       * all: a privacy policy ringed with ads undermines the exact thing it
+       * exists to establish, and those two pages are a rounding error in the
+       * traffic anyway. `pause` already identifies them — it is the same
+       * property that strips the scenery.
+       */
+      !pause && (
+        <div class="wrap">
+          <AdSlot name="foot" />
+        </div>
+      )
+    }
   </main>
   <SiteFooter />
 </Base>
