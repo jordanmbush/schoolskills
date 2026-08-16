@@ -12,19 +12,41 @@
 import type { BlankConfig, Sheet } from "./types";
 
 import { blockBox } from "./layout";
+import { inches } from "./paper";
 import { SHEET_CREDIT, SHEET_URL, SHEET_WORLD, type SheetSpec } from "./spec";
+
+/**
+ * What the header and footer take out of the page.
+ *
+ * Declared, not measured — the bargain `blockBox` is built on (§4). An inch is
+ * a title with a name and date line under it; a quarter is one small line of
+ * credit. A family that reserved nothing would hand back a block the height of
+ * the whole content area and print a page and a bit.
+ */
+const HEADER_HEIGHT = inches(1);
+const FOOTER_HEIGHT = inches(0.25);
 
 export function buildBlankSheet(config: BlankConfig, seed: number): Sheet {
   return {
     paper: config.paper,
+    fontPt: config.fontPt,
     header: {
       title: config.title ?? "",
       instructions: config.instructions,
       fields: config.fields,
     },
-    // One spacer the height of the page, so the sheet holds its shape rather
-    // than collapsing to its header. The height is arithmetic, not a guess.
-    blocks: [{ kind: "spacer", height: blockBox(config.paper).height }],
+    // One spacer filling what the chrome leaves, so the sheet holds its shape
+    // rather than collapsing to its header. The height is arithmetic, not a
+    // guess: the content box less the two reservations above.
+    blocks: [
+      {
+        kind: "spacer",
+        height: blockBox(config.paper, {
+          header: HEADER_HEIGHT,
+          footer: FOOTER_HEIGHT,
+        }).height,
+      },
+    ],
     footer: { credit: SHEET_CREDIT, url: SHEET_URL, seed },
     answers: false,
   };

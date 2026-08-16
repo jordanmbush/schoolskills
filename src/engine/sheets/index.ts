@@ -25,9 +25,14 @@ const SHEETS: Record<string, SheetSpec> = {
 /**
  * Resolves a sheet family. Never throws — see `UNKNOWN_SHEET` for why a kind
  * this build has never heard of has to print something rather than fail.
+ *
+ * The lookup asks for an *own* property, because `kind` arrives from outside
+ * this build. Plain `SHEETS[kind]` would answer `sheetSpec("toString")` with
+ * `Object.prototype.toString`, which is truthy, is not a spec, and turns a
+ * promise never to throw into a `TypeError` one line later in `buildSheet`.
  */
 export function sheetSpec(kind: string): SheetSpec {
-  return SHEETS[kind] ?? UNKNOWN_SHEET;
+  return Object.hasOwn(SHEETS, kind) ? SHEETS[kind] : UNKNOWN_SHEET;
 }
 
 /** Everything this build can make, for the catalog and the builder's picker. */

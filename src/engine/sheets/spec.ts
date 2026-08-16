@@ -10,7 +10,7 @@
 import type { World } from "@/engine/worlds";
 
 import type { Sheet, SheetConfig } from "./types";
-import { DEFAULT_PAPER } from "./paper";
+import { DEFAULT_FONT_PT, DEFAULT_PAPER } from "./paper";
 
 /**
  * Which world a sheet prints in — stated, not assumed, exactly as
@@ -73,6 +73,7 @@ export const UNKNOWN_SHEET: SheetSpec = {
     // Everything that lands here came from outside this build — a shared URL,
     // a saved sheet — so the field the type promises may simply not be there.
     paper: config.paper ?? DEFAULT_PAPER,
+    fontPt: config.fontPt ?? DEFAULT_FONT_PT,
     header: {
       title: "Sheet unavailable",
       instructions: "This kind of sheet isn't made any more.",

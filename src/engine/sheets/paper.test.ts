@@ -7,6 +7,7 @@ import {
   RULINGS,
   gridPitch,
   inches,
+  marginOf,
   mm,
   pageSize,
   points,
@@ -17,7 +18,7 @@ import {
   toMm,
   toPoints,
 } from "./paper";
-import type { Paper, Rule, RuleStyle } from "./types";
+import type { MarginSize, Paper, PaperSize, Rule, RuleStyle } from "./types";
 
 const paper = (over: Partial<Paper> = {}): Paper => ({
   size: "letter",
@@ -108,6 +109,29 @@ describe("the rulings of §5", () => {
     expect(ruleLines(retired)).toEqual([]);
     expect(rulePitch(retired)).toBe(0);
   });
+
+  it("is not fooled by a style that names something on Object.prototype", () => {
+    // The fallback exists for strings from outside this build, and these are
+    // strings from outside this build. Looked up with `??` they resolve to an
+    // inherited function, which is truthy, so `ruling.pitch` is undefined and
+    // every length computed from it turns into NaN without a single throw.
+    for (const style of ["toString", "constructor", "valueOf"]) {
+      const stale = { style: style as RuleStyle };
+      expect(rulingOf(stale).id).toBe("blank");
+      expect(rulePitch(stale)).toBe(0);
+      expect(gridPitch(stale)).toBe(0);
+      expect(ruleLines(stale)).toEqual([]);
+    }
+  });
+
+  it("falls back to Letter and normal margins for the same reason", () => {
+    const stale = paper({
+      size: "constructor" as PaperSize,
+      margin: "toString" as MarginSize,
+    });
+    expect(pageSize(stale)).toEqual({ width: 8500, height: 11000 });
+    expect(marginOf(stale)).toBe(MARGINS.normal);
+  });
 });
 
 describe("ruleLines", () => {
@@ -167,6 +191,10 @@ describe("grid pitches", () => {
 
   it("ignores an override on a ruling that doesn't have squares", () => {
     expect(rulePitch({ style: "hand-5-8", pitch: 999 })).toBe(625);
+    // And reports no square at all, rather than the vertical pitch: a
+    // handwriting rule has no grid for a renderer to draw.
+    expect(gridPitch({ style: "hand-5-8", pitch: 999 })).toBe(0);
+    expect(gridPitch({ style: "college" })).toBe(0);
   });
 
   it("spaces isometric rows by the height of the triangle, not its side", () => {

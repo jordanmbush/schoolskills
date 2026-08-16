@@ -37,6 +37,24 @@ export const toInches = (mil: Mil): number => mil / MIL_PER_INCH;
 export const toMm = (mil: Mil): number => (mil * 25.4) / MIL_PER_INCH;
 export const toPoints = (mil: Mil): number => (mil * 72) / MIL_PER_INCH;
 
+/* ── Lookups ───────────────────────────────────────────────────────────── */
+
+/**
+ * A table lookup that survives a key from outside this build.
+ *
+ * Every table below is keyed by a string union, and every one of them is asked
+ * about a value that may have arrived from a bookmarked URL or a sheet saved
+ * before a ruling was renamed — so each needs a fallback. `table[key] ??
+ * fallback` is not that fallback: `"toString"`, `"constructor"` and the rest of
+ * `Object.prototype` resolve to inherited functions, which are truthy, so the
+ * `??` never fires and the caller is handed a function where it expected a
+ * stock or a pitch. Nothing throws at that point; the lengths computed from it
+ * just quietly become `NaN`. Asking for an *own* property is the whole fix.
+ */
+function own<T>(table: Record<string, T>, key: string, fallback: T): T {
+  return Object.hasOwn(table, key) ? table[key] : fallback;
+}
+
 /* ── Stock ─────────────────────────────────────────────────────────────── */
 
 export type PaperStock = {
@@ -88,16 +106,24 @@ export const DEFAULT_PAPER: Paper = {
   margin: "normal",
 };
 
+/**
+ * The body size a sheet is set at when its config doesn't say. Points, because
+ * that is what a type size means on paper — and 12pt because it is what a
+ * worksheet for a reader who has finished learning to read is printed at. The
+ * larger sizes of §17 are the config's job, not a fallback's.
+ */
+export const DEFAULT_FONT_PT = 12;
+
 /** The sheet of paper itself, with landscape already applied. */
 export function pageSize(paper: Paper): { width: Mil; height: Mil } {
-  const stock = PAPERS[paper.size] ?? PAPERS.letter;
+  const stock = own(PAPERS, paper.size, PAPERS.letter);
   return paper.orientation === "landscape"
     ? { width: stock.height, height: stock.width }
     : { width: stock.width, height: stock.height };
 }
 
 export function marginOf(paper: Paper): Mil {
-  return MARGINS[paper.margin] ?? MARGINS.normal;
+  return own(MARGINS, paper.margin, MARGINS.normal);
 }
 
 /* ── Rulings ───────────────────────────────────────────────────────────── */
@@ -232,7 +258,7 @@ export const GRID_PITCHES = {
  * and blank paper is the honest answer to "I don't know that one".
  */
 export function rulingOf(rule: Rule): Ruling {
-  return RULINGS[rule.style] ?? RULINGS.blank;
+  return own(RULINGS, rule.style, RULINGS.blank);
 }
 
 /**
@@ -260,10 +286,17 @@ export function rulePitch(rule: Rule): Mil {
   return pitch;
 }
 
-/** The square, or the triangle's side, across the page. */
+/**
+ * The square, or the triangle's side, across the page.
+ *
+ * Zero for every ruling that doesn't repeat across the page, which is the
+ * mirror of `ruleLines` returning nothing for the ones that do: a handwriting
+ * rule has no square, and answering with its vertical pitch would invite a
+ * renderer to draw one that isn't there.
+ */
 export function gridPitch(rule: Rule): Mil {
   const ruling = rulingOf(rule);
-  return ruling.grid ? (rule.pitch ?? ruling.pitch) : ruling.pitch;
+  return ruling.grid ? (rule.pitch ?? ruling.pitch) : 0;
 }
 
 /**

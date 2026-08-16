@@ -8,9 +8,9 @@
  * the same build function run in a unit test, in the build-time render of a
  * catalog page, and in the live builder (docs/printables.md §2).
  *
- * Answers are on the sheet from the moment it is built. The answer key is the
- * same `Sheet` with `answers: true`, not a second build from the same seed, so
- * a key can't drift from the sheet it belongs to.
+ * Answers are on the sheet from the moment it is built. A key prints the
+ * answers the build already computed — `answers: true` and nothing else — so
+ * however a key is obtained it can't disagree with the sheet it belongs to.
  */
 
 /* ── Units ────────────────────────────────────────────────────────────────
@@ -234,6 +234,14 @@ export type SheetFooter = {
 
 export type Sheet = {
   paper: Paper;
+  /**
+   * Body type size, in points rather than `Mil` — a font size on paper is
+   * quoted in points by everyone who has ever set one, and it is the one number
+   * here a renderer hands straight to CSS (`--sheet-pt`, §4). It travels on the
+   * sheet because a `Sheet` is the whole hand-off: a renderer holding one has
+   * to be able to set the type without also being given the config.
+   */
+  fontPt: number;
   header: SheetHeader;
   /**
    * The flow, in order. A sheet is one document that may print over more than

@@ -7,7 +7,7 @@ import {
   listSheets,
   sheetSpec,
 } from "./index";
-import { SHEET_WORLD, UNKNOWN_SHEET } from "./spec";
+import { SHEET_CREDIT, SHEET_URL, SHEET_WORLD, UNKNOWN_SHEET } from "./spec";
 import { DEFAULT_PAPER } from "./paper";
 import type { BlankConfig, SheetConfig } from "./types";
 
@@ -32,6 +32,18 @@ describe("the registry", () => {
     const sheet = sheetSpec("long-division-2027").build(config(), 1);
     expect(sheet.blocks).toEqual([]);
     expect(sheet.header.title).toBe("Sheet unavailable");
+  });
+
+  it("is not fooled by a kind that names something on Object.prototype", () => {
+    // `kind` comes from a URL or a saved sheet, so it can be any string at all.
+    // A plain `SHEETS[kind] ?? UNKNOWN_SHEET` hands back the inherited function
+    // for these three — truthy, not a spec — and `buildSheet` throws.
+    for (const kind of ["toString", "constructor", "valueOf"]) {
+      expect(sheetSpec(kind)).toBe(UNKNOWN_SHEET);
+      const stale = { ...config(), kind } as SheetConfig;
+      expect(() => buildSheet(stale, 1)).not.toThrow();
+      expect(buildSheet(stale, 1).header.title).toBe("Sheet unavailable");
+    }
   });
 
   it("falls back to Letter when the saved config has no paper at all", () => {
@@ -93,6 +105,9 @@ describe("buildSheet", () => {
   });
 
   it("sizes the page from geometry, not from a guess", () => {
+    // Letter, half-inch margins: 11in less 1in of margin is 10in of content,
+    // less the 1¼in the header and footer reserve. A4 wide: 11.693in less 2in
+    // of margin, less the same 1¼in. The block fits *inside* the chrome.
     const letter = buildSheet(config(), 1).blocks[0];
     const a4 = buildSheet(
       config({
@@ -100,8 +115,32 @@ describe("buildSheet", () => {
       }),
       1,
     ).blocks[0];
-    expect(letter).toEqual({ kind: "spacer", height: 10_000 });
-    expect(a4).toEqual({ kind: "spacer", height: 9693 });
+    expect(letter).toEqual({ kind: "spacer", height: 8750 });
+    expect(a4).toEqual({ kind: "spacer", height: 8443 });
+  });
+
+  it("carries the type size onto the sheet, where a renderer can reach it", () => {
+    // §17's larger type is a config option, so it has to arrive at the output:
+    // a renderer is handed a Sheet and nothing else. Two configs that differ
+    // only in fontPt must not build the same sheet.
+    expect(buildSheet(config({ fontPt: 18 }), 1).fontPt).toBe(18);
+    expect(buildSheet(config({ fontPt: 18 }), 1)).not.toEqual(
+      buildSheet(config({ fontPt: 12 }), 1),
+    );
+  });
+
+  it("credits the site on every sheet, including the retired one", () => {
+    // §19: the credit is a constant in the engine and prints on every sheet,
+    // and §16 makes the URL the way back from paper to the games.
+    for (const sheet of [
+      buildSheet(config(), 1),
+      UNKNOWN_SHEET.build(config(), 1),
+    ]) {
+      expect(sheet.footer).toMatchObject({
+        credit: SHEET_CREDIT,
+        url: SHEET_URL,
+      });
+    }
   });
 });
 
