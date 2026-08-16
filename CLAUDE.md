@@ -57,7 +57,7 @@ That is a real structure, not a metaphor in the copy:
 | `grid`   | `/flash-cards`, `/multiplication/*` | times tables (space)       |
 | `jungle` | `/spelling/play`, `/spelling`       | spelling and sight words   |
 | `ice`    | `/typing`                           | touch typing (glacier)     |
-| `line`   | `/privacy`, `/terms`                | the pause menu             |
+| `line`   | `/privacy`, `/terms`, `/about`      | the pause menu             |
 | `empty`  | `/404`                              | literally nothing          |
 
 A world is `data-world` on `<html>` and **nothing else**. Every screen already

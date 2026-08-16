@@ -1,0 +1,145 @@
+---
+import Content from "@/layouts/Content.astro";
+
+/**
+ * Who made this and how to reach them.
+ *
+ * Every other page here sells a subject. This one answers the question a
+ * parent asks before letting a child type into a website at all — who is
+ * behind it, what do they want, and what happens if something is wrong. That
+ * is a different job from /privacy, which says what the site does with data;
+ * this says who is answerable for it.
+ *
+ * Line world, like /privacy and /terms: it is the pause menu rather than a
+ * place. Which also means it carries no advertising, because `pause` in
+ * Content.astro strips the foot slot — a page whose entire purpose is to be
+ * trusted should not be ringed with ads.
+ *
+ * The contact address is real and is the same one on /privacy and /terms.
+ * Three pages promise it; if it ever stops forwarding, all three are lying.
+ */
+const title = "About School Skills — who made it and how to reach us";
+const description =
+  "School Skills is a free set of practice games built by a parent for four kids, then shared. No accounts, no tracking, and a real address to write to.";
+const updated = "16 August 2026";
+---
+
+<Content
+  title={title}
+  description={description}
+  world="line"
+  jsonLd={{
+    "@context": "https://schema.org",
+    "@type": "AboutPage",
+    name: title,
+    description,
+    url: "https://schoolskills.app/about",
+    mainEntity: {
+      "@type": "Organization",
+      name: "School Skills",
+      url: "https://schoolskills.app",
+      email: "hello@schoolskills.app",
+      description:
+        "Free browser games for times tables, spelling and touch typing. Built for children, with no accounts and nothing uploaded.",
+    },
+  }}
+>
+  <header class="hero wrap">
+    <p class="hero__eyebrow">
+      <span class="hero__world">About</span>
+      Updated {updated}
+    </p>
+    <h1 class="hero__title">Built for four kids, then shared</h1>
+    <p class="hero__lead">
+      School Skills started as a way to get my own children through the handful
+      of things that only ever come with repetition. It works, so it&rsquo;s
+      here, free, for anyone else in the same position.
+    </p>
+  </header>
+
+  <section class="band band--tight wrap">
+    <div class="prose">
+      <h2>Why it exists</h2>
+      <p>
+        Some things can be taught. The seven times table, <em>because</em>,{" "}
+        <em>enough</em>, and where your left hand goes on a keyboard cannot
+        &mdash; they only come from doing them again, and again, on a day when
+        nobody feels like it. That is a miserable job for a parent and a worse
+        one for a child, and it is the entire problem this site tries to solve.
+      </p>
+      <p>
+        So the games are built around the two things that actually make
+        repetition bearable: a clock, and a version of yourself from last week
+        to race. A child who is bored of being told they are improving can
+        instead watch a ghost of their own previous run and beat it.
+      </p>
+
+      <h2>What it is, and what it isn&rsquo;t</h2>
+      <p>
+        It is practice for facts a child has already been taught. It is not a
+        curriculum, not a scheme of work, and not an assessment &mdash; nothing
+        here diagnoses anything, and a bad afternoon on the six times table
+        means a child was tired. Use it as ten minutes alongside the real
+        lessons, which is what it was built to be.
+      </p>
+      <p>
+        There is no account, no sign-up and no email address to give. Progress
+        is saved in your own browser and never sent anywhere, which is why the
+        player screen has a <strong>Back up progress</strong> button &mdash; we cannot
+        restore what we never receive.{" "}
+        <a href="/privacy">The privacy policy</a> is one page and explains exactly
+        where every line is.
+      </p>
+
+      <h2>How it pays for itself</h2>
+      <p>
+        There is nothing to buy here, no premium tier, and no plan to add one.
+        The site is paid for by advertising, and those ads are{" "}
+        <strong>non-personalised everywhere</strong> &mdash; chosen from the page
+        they sit on, never from anything about the child looking at it. That is not
+        a setting we might revisit: a site made for children is not a place where
+        behavioural advertising belongs.
+      </p>
+      <p>
+        The trade is stated plainly rather than buried. Advertising is the one
+        part of this site that involves another company, and the{" "}
+        <a href="/privacy#advertising"
+          >Advertising section of the privacy policy</a
+        > says exactly what Google does and does not receive.
+      </p>
+
+      <h2>Write to us</h2>
+      <p>
+        <a href="mailto:hello@schoolskills.app">hello@schoolskills.app</a>{" "}
+        &mdash; a real address, read by a person.
+      </p>
+      <p>Worth writing about, specifically:</p>
+      <ul>
+        <li>
+          <strong>A right answer marked wrong.</strong> These are the ones we most
+          want to hear about. Tell us the word or the sum and what you typed, and
+          it gets fixed.
+        </li>
+        <li>
+          <strong>A word spelled differently where you live.</strong> The word lists
+          are American English. If your child is being marked down for{" "}
+          <em>colour</em>, that is our problem and not theirs.
+        </li>
+        <li>
+          <strong>Anything broken, confusing or unreadable</strong> &mdash; especially
+          on a school device, an old tablet, or with a screen reader.
+        </li>
+        <li>
+          <strong
+            >An ad you think shouldn&rsquo;t be on a children&rsquo;s site.</strong
+          > We can block advertisers, but only ones we know about. Say what you saw
+          and where.
+        </li>
+      </ul>
+      <p>
+        It&rsquo;s one person answering, so a reply may take a few days. Every
+        message gets read.
+      </p>
+    </div>
+  </section>
+</Content>
