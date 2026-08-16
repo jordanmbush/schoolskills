@@ -1,0 +1,71 @@
+---
+/**
+ * The footer, and the site's internal-linking backbone.
+ *
+ * The twelve times-table pages are the main organic-search surface, and they
+ * are listed here rather than only on the home page so every page links to
+ * every one of them — which is the cheap half of making a set of pages
+ * crawlable from any entry point. As a row of number chips it costs one line
+ * of vertical space instead of twelve.
+ */
+import { WORLDS } from "@/engine/worlds";
+
+const tables = Array.from({ length: 12 }, (_, i) => i + 1);
+
+// A world's links go to the game; the page ABOUT a world is a different link
+// and needs its own, or it's a page nothing points at. Only some worlds have
+// one, so this renders nothing when none do.
+const guides = WORLDS.flatMap((w) => (w.guide ? [w.guide] : []));
+---
+
+<footer class="foot">
+  <div class="foot__in">
+    <div class="foot__lede">
+      <p class="foot__mark">School Skills</p>
+      <p class="foot__blurb">
+        Free practice games for the handful of things that only come with
+        repetition. No account, nothing uploaded, and it works on a plane.
+      </p>
+    </div>
+
+    <nav class="foot__col" aria-label="Worlds">
+      <p class="foot__head">Worlds</p>
+      {WORLDS.map((w) => <a href={w.href}>{w.name}</a>)}
+      {
+        guides.length > 0 && (
+          <>
+            <p class="foot__head foot__head--next">Read first</p>
+            {guides.map((g) => (
+              <a href={g.href}>{g.label}</a>
+            ))}
+          </>
+        )
+      }
+    </nav>
+
+    <nav class="foot__col" aria-label="Times tables">
+      <p class="foot__head">Times tables</p>
+      <div class="foot__tables">
+        {
+          tables.map((n) => (
+            <a href={`/multiplication/${n}-times-table`}>{n}&times;</a>
+          ))
+        }
+      </div>
+    </nav>
+
+    <nav class="foot__col" aria-label="About">
+      <p class="foot__head">The small print</p>
+      <a href="/#for-parents">For parents</a>
+      <a href="/privacy">Privacy</a>
+      <a href="/terms">Terms</a>
+    </nav>
+  </div>
+
+  <p class="foot__fine">
+    Made for four kids, then shared. Progress is saved in this browser and
+    nowhere else &mdash; which also means clearing site data clears it, so
+    there&rsquo;s a <strong>Back up progress</strong> button on the player screen
+    that writes a file you keep.
+  </p>
+</footer>

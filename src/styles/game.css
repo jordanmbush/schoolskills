@@ -69,7 +69,6 @@
 
 .preset__name {
   font-size: var(--step-1);
-  font-variation-settings: "wdth" 105;
 }
 
 .preset__tag {
@@ -380,7 +379,6 @@
 
 .rival__name {
   font-size: var(--step-0);
-  font-variation-settings: "wdth" 100;
 }
 
 .rival__meta {
@@ -643,7 +641,6 @@
 
 .card__prompt {
   font-size: clamp(3rem, 13vw, 6.5rem);
-  font-variation-settings: "wdth" 118;
   line-height: 1;
   text-transform: none;
 }
@@ -739,9 +736,11 @@
   opacity: 0.35;
 }
 
+/* Enter is an action, not a verdict — so it takes the world's `--go` rather
+   than `--lime`, which in here always means "that was correct". */
 .keypad__key--enter {
-  background: var(--lime);
-  color: var(--ink-950);
+  background: var(--go);
+  color: var(--go-ink);
 }
 
 .keypad__key--util {
@@ -803,10 +802,9 @@
 
 .countdown__num {
   font-size: clamp(6rem, 30vw, 16rem);
-  font-variation-settings: "wdth" 125;
-  color: var(--lime);
+  color: var(--go);
   animation: pop 0.45s var(--ease-spring) both;
-  text-shadow: 0 0 60px color-mix(in oklab, var(--lime) 40%, transparent);
+  text-shadow: 0 0 60px color-mix(in oklab, var(--go) 40%, transparent);
 }
 
 /* ── Results ───────────────────────────────────────────────────────────── */
@@ -1106,6 +1104,38 @@
   letter-spacing: 0.18em;
   color: var(--chalk-soft);
   opacity: 0.55;
+}
+
+/* The sentence the word was spoken in. Deliberately NOT display type: it is a
+   line of prose to be read, not a prompt to be shouted, and at the card
+   prompt's size a seven-word sentence is a wall. The blank is the loud part. */
+.wordprompt__clue {
+  max-width: 20ch;
+  font-size: clamp(1.6rem, 6vw, 2.7rem);
+  line-height: 1.4;
+  text-align: center;
+  text-wrap: balance;
+  color: var(--chalk-soft);
+}
+
+/* The gap where the word goes. Sized in `ch` rather than to the word's own
+   length — a blank that grew with the answer would leak how long it is. */
+.wordprompt__blank,
+.wordprompt__filled {
+  display: inline-block;
+  min-width: 4.5ch;
+  margin-inline: 0.15em;
+  padding-inline: 0.2em;
+  border-bottom: 3px solid var(--accent);
+  font-weight: 800;
+  text-align: center;
+  color: var(--accent);
+}
+
+/* The flash fallback, on a device with no voice: the blank fills in for a
+   moment and then empties again. */
+.wordprompt__filled {
+  animation: pop 0.3s var(--ease-spring) both;
 }
 
 .wordprompt__again {

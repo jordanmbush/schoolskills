@@ -14,9 +14,18 @@ const description =
   "A free multiplication flash-card game. Pick your times tables, race your own best time or a sibling's, and set a per-card clock. No sign-up, works offline, progress stays on your device.";
 ---
 
+<!--
+  Base rather than the Content layout: no masthead over a race. The way back
+  out is the map icon in the game's own top bar.
+
+  `world="grid"` is the starting scenery only. Picking a spelling deck on the
+  setup screen swaps <html data-world> to `jungle` from the client — see
+  src/components/state/useWorld.ts.
+-->
 <Base
   title={title}
   description={description}
+  world="grid"
   jsonLd={{
     "@context": "https://schema.org",
     "@type": "LearningResource",

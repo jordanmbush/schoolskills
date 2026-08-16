@@ -296,6 +296,7 @@ export function typingDeckSpec(mode: string): DeckSpec {
   return {
     id: mode,
     label: level?.name ?? "Typing",
+    world: "ice",
     // Exact, including case: at the sentence level the shift key IS the
     // exercise, so "the" and "The" are two different things to get right.
     masteryKey: (factId) => factId,

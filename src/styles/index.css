@@ -1,4 +1,9 @@
+/* The game's stylesheet. Content pages load site.css instead; both start from
+   the same four files, which is what keeps the game and the pages around it
+   looking like one product. */
+@import "./fonts.css";
 @import "./tokens.css";
+@import "./worlds.css";
 @import "./base.css";
 @import "./components.css";
 @import "./screens.css";

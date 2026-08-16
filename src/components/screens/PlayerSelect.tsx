@@ -24,6 +24,16 @@ export default function PlayerSelect() {
 
   return (
     <main className="select">
+      {/*
+        The way out. A real <a> rather than a router link: this leaves the
+        island entirely and goes back to the site, which the HashRouter knows
+        nothing about. It's the only exit from the entry screen — every screen
+        past this one has the same door in its top bar.
+      */}
+      <a className="exit" href="/">
+        <span aria-hidden="true">🗺</span> Back to the map
+      </a>
+
       <header className="select__head">
         <p className="u-eyebrow">School Skills · saved on this device</p>
         <h1 className="u-display select__title">

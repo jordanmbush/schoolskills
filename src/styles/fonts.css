@@ -1,0 +1,55 @@
+/* ── Type, served from our own origin ──────────────────────────────────────
+   Google's CDN would be one <link> and nothing in the repo. It would also
+   mean a request carrying a child's IP address to a third party on every
+   single page load, which is exactly the thing /privacy says does not happen
+   here. Under COPPA that isn't a preference, it's the claim. 69KB of woff2 on
+   our own origin is the cheaper half of that trade — and it works on a plane.
+
+   Latin subsets only, and no `unicode-range`: with a single subset per family
+   the range would buy nothing, and per-glyph fallback already covers the few
+   characters outside it (→ is the one that actually comes up).
+
+   Three faces, three jobs, and the split is deliberate:
+
+     Lilita One   Display. Chunky, rounded, one weight — which is the point,
+                  because a face with no weight axis can't be leaned on. It
+                  runs in two registers: uppercase in the game HUD, sentence
+                  case on the content pages, so the same voice can shout at a
+                  seven-year-old and talk to their parent.
+     Nunito       Body. Rounded terminals and a tall x-height; the most
+                  legible thing we could find that doesn't read as a form.
+                  Variable 400–800, so the whole weight range is one file.
+     Space Mono   Data. Clocks, splits, XP, level chips. Tabular figures are
+                  the requirement; the personality is a bonus.               */
+
+@font-face {
+  font-family: "Lilita One";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/lilita-one-latin-400.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Nunito";
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url("/fonts/nunito-latin-var.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Space Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/space-mono-latin-400.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Space Mono";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/fonts/space-mono-latin-700.woff2") format("woff2");
+}

@@ -19,24 +19,13 @@ body {
   font-size: var(--step-0);
   line-height: 1.5;
   color: var(--chalk);
+  /* The ground you're standing on is whichever world <html> declares — see
+     worlds.css. Fixed attachment so the terrain stays put while the content
+     scrolls over it, which is what makes it read as scenery rather than
+     wallpaper. */
   background-color: var(--ink-900);
-  /* Graph paper: fine 24px rule with a heavier line every 5th square. */
-  background-image:
-    linear-gradient(var(--grid-line-strong) 1px, transparent 1px),
-    linear-gradient(90deg, var(--grid-line-strong) 1px, transparent 1px),
-    linear-gradient(var(--grid-line) 1px, transparent 1px),
-    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px),
-    radial-gradient(
-      ellipse 90% 60% at 50% -10%,
-      rgb(76 196 255 / 10%),
-      transparent 70%
-    );
-  background-size:
-    120px 120px,
-    120px 120px,
-    24px 24px,
-    24px 24px,
-    100% 100%;
+  background-image: var(--terrain);
+  background-size: var(--terrain-size);
   background-attachment: fixed;
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
@@ -66,8 +55,11 @@ ol {
   list-style: none;
 }
 
+/* `--go` rather than `--lime`: the focus ring follows the world's "press this"
+   colour, so it stays visible against jungle green and glacier blue alike.
+   `--lime` is reserved for meaning "correct" and must not drift. */
 :focus-visible {
-  outline: 3px solid var(--lime);
+  outline: 3px solid var(--go);
   outline-offset: 3px;
   border-radius: 4px;
 }

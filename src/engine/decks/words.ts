@@ -173,6 +173,7 @@ export function wordDeckSpec(mode: string): DeckSpec {
   return {
     id: mode,
     label: list?.name ?? "Words",
+    world: "jungle",
     // A word is one fact however it's asked, so nothing folds and nothing
     // splits. Normalised so "Because" and "because" are the same square.
     masteryKey: normaliseWord,
