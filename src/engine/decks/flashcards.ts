@@ -71,7 +71,7 @@ export type OperationSpec = DeckSpec & {
  */
 type OperationDef = Omit<
   OperationSpec,
-  "masteryKey" | "drillKey" | "factLabel" | "normalise" | "build"
+  "masteryKey" | "drillKey" | "factLabel" | "normalise" | "build" | "world"
 > & {
   /**
    * Whether the two numbers can swap without changing the question. Decides
@@ -141,6 +141,9 @@ const flip = (rand: () => number) => rand() < 0.5;
 function toSpec(def: OperationDef): OperationSpec {
   return {
     ...def,
+    // All four operations are the same 12×12 grid of facts, so all four are
+    // played in the same world.
+    world: "grid",
     // The map is a symmetric 12×12 for every operation, so it always folds.
     // Division's two questions therefore share a square on purpose; the drill
     // key below is what keeps them apart where it matters.

@@ -1,0 +1,347 @@
+/* ── Worlds ────────────────────────────────────────────────────────────────
+   The same game, in a different biome.
+
+   A world is normally set once, as `data-world` on <html>, and owns four kinds
+   of token: the ink ramp it is built out of, the chalk it writes with, the two
+   colours you can press (`--accent`, `--go`), and the ground you stand on
+   (`--terrain`). Nothing else. Every screen in the app already reads its
+   colours through those names, which is why a world is thirty lines of custom
+   properties instead of a second stylesheet — and why re-skinning a screen
+   cannot move a box on it.
+
+   What a world may NOT touch is the telemetry five in tokens.css. Wrong is the
+   same red everywhere. A child should not have to re-learn the signal because
+   the background changed.
+
+   The blocks are scoped to `[data-world]` rather than `:root[data-world]` so
+   the same declarations can dress a single element. That is what lets the
+   overworld map show three worlds at once: each card carries `data-world` and
+   is therefore built out of that world's ink, accent and ground, on a page
+   standing somewhere else entirely.
+
+   ── The worlds, and what each one is for ──────────────────────────────────
+     grid    Space. Times tables and flash cards. The multiplication grid IS a
+             star chart — twelve rows of twelve, and the fact you can't recall
+             is the one dark square in it. Keeps the neon-on-black the game
+             already had, so entering it from a content page is seamless.
+     jungle  Spelling and sight words. Canopy light, lantern amber, and
+             handwriting rules for ground — the substrate a word is practised
+             on, the same way graph paper is the substrate of a times table.
+     ice     Typing. Speed reads as gliding, so: a glacier, frost cracks, and
+             keycap-shaped slabs underfoot.
+     map     The overworld. Not a world — the screen you pick one from. Dusk,
+             stars and contour lines, like a map left open on a table.
+     line    The pause menu: privacy and terms. Ruled paper, one grey, no
+             scenery. These pages are a promise being read carefully and they
+             should not cosplay as an adventure.
+     empty   404. There is nothing here, and that is the joke and also the
+             literal truth. One horizon and no ground.
+
+   ── Adding a world ────────────────────────────────────────────────────────
+   Copy a block, change the eleven colours and the terrain, add it to the map
+   in src/components/site/WorldMap.astro, and point a page at it with
+   `world="…"`. Nothing else needs to know it exists.                       */
+
+/* ── Every world's signature colour, readable from inside any of them ──────
+   The map shows three worlds at once and the masthead shows all of them from
+   wherever you're standing, so these can't live inside a world block — by
+   definition only one of those is ever in scope. Keep them in step with the
+   `--accent`/`--go` of the matching world below; they're the same colour seen
+   from outside. */
+:root {
+  --w-grid: #c8ff41;
+  --w-jungle: #ffb545;
+  --w-ice: #7fe8ff;
+}
+
+/* ── grid · space, and the default ─────────────────────────────────────────
+   Default because it's the biggest surface: an unthemed <html> anywhere in
+   the game should land somewhere deliberate rather than somewhere blank. */
+:root,
+[data-world="grid"] {
+  --ink-950: #05060c;
+  --ink-900: #0a0c16;
+  --ink-850: #0f111d;
+  --ink-800: #151827;
+  --ink-700: #1e2234;
+  --ink-600: #2b3047;
+  --ink-500: #3f4664;
+
+  --chalk: #e9eff7;
+  --chalk-soft: #b9c4d6;
+  --chalk-dim: #7b8699;
+
+  --accent: #4cc4ff;
+  --accent-ink: #04121b;
+  --go: #c8ff41;
+  --go-ink: #0a1000;
+
+  --grid-line: rgb(255 255 255 / 4.5%);
+  --grid-line-strong: rgb(255 255 255 / 8%);
+  --hairline: rgb(233 239 247 / 12%);
+  --world-glow: rgb(76 196 255 / 12%);
+
+  /* Star field over a targeting grid over a nebula. The 24px rule is the
+     same graph paper the game was designed on; the stars are what changed. */
+  --terrain:
+    radial-gradient(
+      1.5px 1.5px at 38px 52px,
+      rgb(255 255 255 / 55%),
+      transparent 100%
+    ),
+    radial-gradient(
+      1px 1px at 176px 128px,
+      rgb(200 255 65 / 40%),
+      transparent 100%
+    ),
+    radial-gradient(
+      1.2px 1.2px at 268px 36px,
+      rgb(76 196 255 / 45%),
+      transparent 100%
+    ),
+    linear-gradient(var(--grid-line-strong) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line-strong) 1px, transparent 1px),
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px),
+    radial-gradient(
+      ellipse 90% 60% at 50% -10%,
+      rgb(120 90 255 / 16%),
+      transparent 70%
+    );
+  --terrain-size:
+    340px 260px, 340px 260px, 340px 260px, 120px 120px, 120px 120px, 24px 24px,
+    24px 24px, 100% 100%;
+}
+
+/* ── jungle · spelling and sight words ───────────────────────────────────── */
+[data-world="jungle"] {
+  --ink-950: #050f0a;
+  --ink-900: #08160f;
+  --ink-850: #0c1e15;
+  --ink-800: #11281b;
+  --ink-700: #193825;
+  --ink-600: #244c33;
+  --ink-500: #356b48;
+
+  --chalk: #f0f8ee;
+  --chalk-soft: #b9d3bd;
+  --chalk-dim: #7fa088;
+
+  --accent: #86e08a;
+  --accent-ink: #05200c;
+  --go: #ffb545;
+  --go-ink: #2a1500;
+
+  --grid-line: rgb(255 255 255 / 4%);
+  --grid-line-strong: rgb(255 255 255 / 7%);
+  --hairline: rgb(240 248 238 / 13%);
+  --world-glow: rgb(255 181 69 / 14%);
+
+  /* Handwriting paper under a canopy: a solid baseline every 64px with a
+     fainter midline halfway, then two shafts of light coming through. */
+  --terrain:
+    linear-gradient(
+      104deg,
+      transparent 18%,
+      rgb(255 208 130 / 7%) 25%,
+      transparent 33%
+    ),
+    linear-gradient(
+      76deg,
+      transparent 58%,
+      rgb(255 208 130 / 5%) 64%,
+      transparent 71%
+    ),
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0 31px,
+      var(--grid-line) 31px 32px,
+      transparent 32px 62px,
+      var(--grid-line-strong) 62px 64px
+    ),
+    radial-gradient(
+      ellipse 110% 55% at 50% -8%,
+      rgb(134 224 138 / 12%),
+      transparent 72%
+    );
+  --terrain-size: 100% 100%, 100% 100%, 100% 64px, 100% 100%;
+}
+
+/* ── ice · typing ────────────────────────────────────────────────────────── */
+[data-world="ice"] {
+  --ink-950: #030b14;
+  --ink-900: #06121e;
+  --ink-850: #0a1a2a;
+  --ink-800: #0f2437;
+  --ink-700: #163348;
+  --ink-600: #20475f;
+  --ink-500: #2e6180;
+
+  --chalk: #eaf6ff;
+  --chalk-soft: #aecbe0;
+  --chalk-dim: #7191a8;
+
+  --accent: #7fe8ff;
+  --accent-ink: #04202b;
+  --go: #ffd166;
+  --go-ink: #2b1d00;
+
+  --grid-line: rgb(255 255 255 / 5%);
+  --grid-line-strong: rgb(255 255 255 / 9%);
+  --hairline: rgb(234 246 255 / 14%);
+  --world-glow: rgb(127 232 255 / 15%);
+
+  /* Slabs of ice the size of keycaps, cracked diagonally, under an aurora. */
+  --terrain:
+    linear-gradient(
+      62deg,
+      transparent 40%,
+      rgb(255 255 255 / 3.5%) 40.2%,
+      transparent 40.5%
+    ),
+    linear-gradient(
+      -71deg,
+      transparent 72%,
+      rgb(255 255 255 / 3%) 72.2%,
+      transparent 72.6%
+    ),
+    repeating-linear-gradient(
+      to bottom,
+      rgb(255 255 255 / 5%) 0 1px,
+      transparent 1px 54px,
+      rgb(0 0 0 / 22%) 54px 56px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      rgb(255 255 255 / 3.5%) 0 1px,
+      transparent 1px 64px
+    ),
+    radial-gradient(
+      ellipse 120% 45% at 50% -6%,
+      rgb(127 232 255 / 14%),
+      transparent 70%
+    );
+  --terrain-size: 100% 100%, 100% 100%, 100% 56px, 64px 100%, 100% 100%;
+}
+
+/* ── map · the overworld ─────────────────────────────────────────────────── */
+[data-world="map"] {
+  --ink-950: #05030e;
+  --ink-900: #0a0819;
+  --ink-850: #100d26;
+  --ink-800: #171334;
+  --ink-700: #221c48;
+  --ink-600: #2f2761;
+  --ink-500: #453b82;
+
+  --chalk: #f2edff;
+  --chalk-soft: #c2b8e0;
+  --chalk-dim: #8a7eae;
+
+  --accent: #ffc53d;
+  --accent-ink: #1c1300;
+  --go: #ffc53d;
+  --go-ink: #1c1300;
+
+  --grid-line: rgb(255 255 255 / 4%);
+  --grid-line-strong: rgb(255 255 255 / 7%);
+  --hairline: rgb(242 237 255 / 13%);
+  --world-glow: rgb(255 197 61 / 14%);
+
+  /* Stars, then contour rings rising from off the bottom-left corner — the
+     elevation lines of an island you haven't walked yet. */
+  --terrain:
+    radial-gradient(
+      1.4px 1.4px at 44px 38px,
+      rgb(255 255 255 / 50%),
+      transparent 100%
+    ),
+    radial-gradient(
+      1px 1px at 152px 118px,
+      rgb(255 197 61 / 45%),
+      transparent 100%
+    ),
+    radial-gradient(
+      1.6px 1.6px at 246px 74px,
+      rgb(255 255 255 / 30%),
+      transparent 100%
+    ),
+    repeating-radial-gradient(
+      circle at 8% 104%,
+      transparent 0 62px,
+      rgb(255 255 255 / 3.5%) 62px 64px
+    ),
+    radial-gradient(
+      ellipse 120% 62% at 50% -12%,
+      rgb(167 139 250 / 18%),
+      transparent 72%
+    );
+  --terrain-size: 300px 240px, 300px 240px, 300px 240px, 100% 100%, 100% 100%;
+}
+
+/* ── line · privacy and terms ────────────────────────────────────────────── */
+[data-world="line"] {
+  --ink-950: #08090c;
+  --ink-900: #0c0e12;
+  --ink-850: #101319;
+  --ink-800: #151821;
+  --ink-700: #1e222c;
+  --ink-600: #2b303c;
+  --ink-500: #3d4351;
+
+  --chalk: #e8ecf2;
+  --chalk-soft: #a6afbd;
+  --chalk-dim: #757e8c;
+
+  --accent: #9fb6cf;
+  --accent-ink: #0a0d12;
+  --go: #9fb6cf;
+  --go-ink: #0a0d12;
+
+  --grid-line: rgb(255 255 255 / 3%);
+  --grid-line-strong: rgb(255 255 255 / 5%);
+  --hairline: rgb(232 236 242 / 11%);
+  --world-glow: rgb(159 182 207 / 8%);
+
+  /* Ruled paper and nothing else. No glow, no stars, no weather. */
+  --terrain: repeating-linear-gradient(
+    to bottom,
+    transparent 0 47px,
+    var(--grid-line) 47px 48px
+  );
+  --terrain-size: 100% 48px;
+}
+
+/* ── empty · the 404 ─────────────────────────────────────────────────────── */
+[data-world="empty"] {
+  --ink-950: #08090c;
+  --ink-900: #0c0e12;
+  --ink-850: #101319;
+  --ink-800: #151821;
+  --ink-700: #1e222c;
+  --ink-600: #2b303c;
+  --ink-500: #3d4351;
+
+  --chalk: #e8ecf2;
+  --chalk-soft: #a6afbd;
+  --chalk-dim: #757e8c;
+
+  --accent: #9fb6cf;
+  --accent-ink: #0a0d12;
+  --go: #9fb6cf;
+  --go-ink: #0a0d12;
+
+  --grid-line: rgb(255 255 255 / 3%);
+  --grid-line-strong: rgb(255 255 255 / 5%);
+  --hairline: rgb(232 236 242 / 11%);
+  --world-glow: rgb(159 182 207 / 6%);
+
+  /* One horizon, and above it nothing. */
+  --terrain: linear-gradient(
+    to bottom,
+    transparent 0 61%,
+    rgb(255 255 255 / 9%) 61% calc(61% + 1px),
+    transparent calc(61% + 1px) 100%
+  );
+  --terrain-size: 100% 100%;
+}

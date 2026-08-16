@@ -1,6 +1,11 @@
 import { useMemo, useState } from "react";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
 import { useHub, usePlayer } from "@/components/state/HubContext";
+import {
+  homeMode,
+  ownsMode,
+  useSubject,
+} from "@/components/state/SubjectContext";
 import TopBar from "@/components/TopBar";
 import { Button } from "@/components/ui/kit";
 import { BADGES } from "@/engine/progress";
@@ -22,7 +27,8 @@ import {
 import { buildDrill, deckSpec } from "@/engine/decks";
 import { WORD_MODE_PREFIX, listIdOf } from "@/engine/decks/words";
 import { TYPING_MODE_PREFIX } from "@/engine/decks/typing";
-import { WORD_LISTS_BY_ID } from "@/engine/decks/wordlists";
+import { WORD_LISTS_BY_ID, listWords } from "@/engine/decks/wordlists";
+import { WORLDS } from "@/engine/worlds";
 import { sfx } from "@/services/sound";
 import { DeckSwitch, type DeckChoice } from "./progress/DeckSwitch";
 import { FactMap } from "./progress/FactMap";
@@ -34,12 +40,23 @@ export default function Progress() {
   const { profileId } = useParams();
   const { profiles, sessions } = useHub();
   const profile = usePlayer(profileId);
+  const subject = useSubject();
   const navigate = useNavigate();
-  const [mode, setMode] = useState<string>("multiply");
 
   const mine = useMemo(
     () => (profile ? sessionsFor(sessions, profile.id) : []),
     [sessions, profile],
+  );
+
+  // Opens on this app's own deck. The record book still covers everything the
+  // player has ever raced — it is their book, not this world's — but the panel
+  // you land on should be the one you came in through.
+  const [mode, setMode] = useState<string>(() =>
+    homeMode(
+      subject,
+      mine.map((s) => s.mode),
+      profile?.age ?? 8,
+    ),
   );
   const grid = useMemo(() => factStats(mine, mode), [mine, mode]);
   const tables = useMemo(() => tableProgress(grid), [grid]);
@@ -94,7 +111,13 @@ export default function Progress() {
   const isTypingMode = mode.startsWith(TYPING_MODE_PREFIX);
   // Both render as a list of words rather than a 12×12 grid.
   const isWords = mode.startsWith(WORD_MODE_PREFIX) || isTypingMode;
+  /** Null for a typing level, and for a list a parent has since deleted. */
+  const shippedList = isTypingMode
+    ? undefined
+    : WORD_LISTS_BY_ID.get(listIdOf(mode));
   const spec = deckSpec(mode);
+  /** Which world this deck is played in — and so where a drill of it starts. */
+  const owner = WORLDS.find((w) => w.id === spec.world);
   const switcher = (
     <DeckSwitch
       choices={decks}
@@ -148,15 +171,9 @@ export default function Progress() {
       {isWords ? (
         <WordMap
           label={spec.label}
-          // The shipped list when it's still shipped; otherwise whatever of it
-          // survives in this player's own history.
-          words={
-            // A shipped spelling list in full; for a typing level or a deleted
-            // list, whatever of it survives in this player's own history.
-            (!isTypingMode
-              ? WORD_LISTS_BY_ID.get(listIdOf(mode))?.words
-              : undefined) ?? [...grid.keys()].sort()
-          }
+          // A shipped spelling list in full; for a typing level or a deleted
+          // list, whatever of it survives in this player's own history.
+          words={shippedList ? listWords(shippedList) : [...grid.keys()].sort()}
           grid={grid}
           switcher={switcher}
         />
@@ -172,13 +189,14 @@ export default function Progress() {
         <div className="panel__head">
           <h2 className="panel__title">Trouble spots</h2>
           {trouble.length > 0 &&
-            (isTypingMode ? (
-              // The record book lives in this island; the typing game is
-              // another one. Handing a built config across a page load would
-              // need somewhere to put it, and a link to the game is worth more
-              // than that machinery — the words are listed right below.
-              <a className="btn btn--accent btn--sm" href="/typing">
-                Open the typing game
+            (!ownsMode(subject, mode) ? (
+              // This deck belongs to another world. The record book spans all
+              // of them, but a drill can only start where the deck lives, and
+              // handing a built config across a page load would need somewhere
+              // to put it — a link is worth more than that machinery, and the
+              // facts are listed right below either way.
+              <a className="btn btn--accent btn--sm" href={owner?.href ?? "/"}>
+                Open {owner?.name ?? "the map"}
               </a>
             ) : (
               <Button

@@ -17,6 +17,31 @@
   color: var(--chalk-dim);
 }
 
+/* The way out of an island, on the one screen that has no top bar to hold it.
+   Deliberately small: leaving is a thing a player should be able to do, not a
+   thing the entry screen should suggest. */
+.exit {
+  /* `.select` is a flex column, so `align-self` is the one that stops this
+     stretching the full width of the screen. */
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4em 0.9em;
+  border-radius: 999px;
+  border: 1px solid var(--hairline);
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--chalk-dim);
+}
+
+.exit:hover {
+  color: var(--chalk);
+  border-color: var(--chalk-dim);
+}
+
 .boot {
   min-height: 100dvh;
   display: grid;
@@ -72,7 +97,6 @@
 
 .select__title {
   font-size: clamp(3rem, 11vw, 6.5rem);
-  font-variation-settings: "wdth" 118;
   background: linear-gradient(180deg, var(--chalk), #7f8ca3);
   -webkit-background-clip: text;
   background-clip: text;
@@ -152,7 +176,6 @@
 
 .driver__name {
   font-size: var(--step-2);
-  font-variation-settings: "wdth" 105;
 }
 
 .driver__stats {
@@ -462,7 +485,6 @@
 
 .topbar__name {
   font-size: var(--step-0);
-  font-variation-settings: "wdth" 100;
 }
 
 .topbar__xp {
@@ -513,6 +535,30 @@
   background: rgb(255 255 255 / 12%);
 }
 
+/* The bar carries a back link, a player, and up to five round controls — two
+   sibling worlds, progress, the way out to the map, and sound. That is wider
+   than a phone, so below this width it wraps onto two lines and the XP rail
+   gives up some of its length. Wrapping rather than hiding: each of those
+   controls is the only route to somewhere. */
+@media (width < 640px) {
+  .topbar {
+    flex-wrap: wrap;
+    row-gap: var(--gap-2);
+  }
+
+  .topbar__actions {
+    margin-left: auto;
+  }
+
+  .topbar__bar {
+    width: 4.5rem;
+  }
+
+  .topbar__icon {
+    width: 2.2rem;
+  }
+}
+
 /* ── Hub ───────────────────────────────────────────────────────────────── */
 
 .hub__hero {
@@ -533,6 +579,15 @@
   box-shadow: var(--shadow-lift);
 }
 
+/* Two columns is a desktop arrangement. On a phone the "best run" card was
+   being squeezed into a third of 390px, which turned the CTA beside it into a
+   four-line blob. */
+@media (width < 720px) {
+  .hub__hero {
+    grid-template-columns: 1fr;
+  }
+}
+
 .hub__hero-copy {
   display: grid;
   gap: var(--gap-2);
@@ -541,7 +596,6 @@
 
 .hub__title {
   font-size: clamp(2.6rem, 8vw, 5rem);
-  font-variation-settings: "wdth" 120;
 }
 
 .hub__blurb {

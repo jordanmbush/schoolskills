@@ -26,17 +26,29 @@ export function useCardVoice({
   //
   // If the engine turns out not to work after all, drop to showing the word.
   // A card that can neither be heard nor read is unanswerable, and the clock
-  // is running.
+  // is running. That verdict arrives two ways, and the second one matters
+  // more: `say` returns false when it couldn't even start, and calls back
+  // when a voice accepted the word and then failed to say it — a stalled
+  // engine, a revoked autoplay permission, a device that simply went quiet.
+  // Only the first was ever handled, so the commonest silent card wasn't.
+  //
+  // Demotion is one-way. Re-testing per card would let a child who has settled
+  // into listening be handed a flashing word halfway through a race, which is
+  // the change of exercise this hook exists to prevent.
   useEffect(() => {
     if (!racing || !audible || !card.speak) return;
-    if (!say(card.speak)) setAudible(false);
+    const mute = () => setAudible(false);
+    if (!say(card.speak, mute)) mute();
   }, [card, racing, audible]);
 
-  // Leaving mid-word must not leave a voice talking over the next screen.
+  // Leaving mid-word must not leave a voice talking over the next screen —
+  // nor a pending verdict about a word nobody is waiting for any more.
   useEffect(() => hush, []);
 
   const replay = useCallback(() => {
-    if (card.speak) say(card.speak);
+    if (!card.speak) return;
+    const mute = () => setAudible(false);
+    if (!say(card.speak, mute)) mute();
   }, [card]);
 
   return { audible, replay };

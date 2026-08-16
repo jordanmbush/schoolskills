@@ -1,0 +1,10 @@
+/* The content pages' stylesheet — everything crawlable that isn't the game.
+   Shares its first four files with index.css on purpose: same type, same
+   worlds, same ground. What it adds is a reading surface and a way in. */
+@import "./fonts.css";
+@import "./tokens.css";
+@import "./worlds.css";
+@import "./base.css";
+@import "./chrome.css";
+@import "./content.css";
+@import "./map.css";

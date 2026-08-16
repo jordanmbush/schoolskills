@@ -12,7 +12,8 @@ import {
   timeLimitOf,
   timedOutCount,
 } from "@/engine/records";
-import { buildDrill, describeConfig, isTyping } from "@/engine/decks";
+import { useWorld } from "@/components/state/useWorld";
+import { buildDrill, deckSpec, describeConfig, isTyping } from "@/engine/decks";
 import { clock, delta as formatDelta, plural } from "@/engine/format";
 import { randomSeed } from "@/engine/random";
 import { sfx } from "@/services/sound";
@@ -26,6 +27,10 @@ export default function RaceResults() {
   const { outcome, pending, start, clear } = useRace();
   const navigate = useNavigate();
   const [burst, setBurst] = useState(0);
+
+  // The world a run was played in, resolved from its saved mode — so the score
+  // for a spelling race is read in the same jungle it was run in.
+  useWorld(outcome ? deckSpec(outcome.session.mode).world : "grid");
 
   const celebrate =
     outcome !== null &&

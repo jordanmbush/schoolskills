@@ -1,0 +1,49 @@
+---
+import Base from "@/layouts/Base.astro";
+import FlashCardsApp from "@/games/flashcards/App";
+import "@/styles/index.css";
+
+/**
+ * Word Jungle — the same card island as `/flash-cards`, mounted with the word
+ * decks instead of the sums.
+ *
+ * A separate route rather than a separate app, and deliberately a route on the
+ * SAME ORIGIN: browser storage is scoped to an origin, so this page and
+ * `/flash-cards` share one IndexedDB, one profile list and one record book. A
+ * child's level and badges follow them between subjects because of that, not
+ * in spite of it. See `src/components/state/SubjectContext.tsx`.
+ *
+ * Under `/spelling/` because the guide at `/spelling` is what a parent finds
+ * first — the URL says the game is the same subject as the page they read.
+ */
+const title = "Spelling race — free sight word game for kids | School Skills";
+const description =
+  "A free spelling game for children. Hear a word, spell it from memory, and race the clock or a sibling's best run. Dolch sight words or your own list. No sign-up, works offline.";
+---
+
+<!-- Base rather than Content: no masthead over a race. See /flash-cards. -->
+<Base
+  title={title}
+  description={description}
+  world="jungle"
+  jsonLd={{
+    "@context": "https://schema.org",
+    "@type": "LearningResource",
+    name: "Word Jungle — spelling race",
+    description,
+    url: "https://schoolskills.app/spelling/play",
+    learningResourceType: "Game",
+    educationalLevel: "Elementary School",
+    teaches: "Spelling, sight word recall",
+    typicalAgeRange: "4-9",
+    isAccessibleForFree: true,
+    inLanguage: "en",
+  }}
+>
+  <!--
+    client:only for the same reason as the flash cards: the island reads
+    IndexedDB for its profile list on first render, so there is no meaningful
+    server-rendered markup and SSR would throw on `indexedDB`.
+  -->
+  <FlashCardsApp subject="words" client:only="react" />
+</Base>

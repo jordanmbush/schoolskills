@@ -1,15 +1,25 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  CLUE_SLOT,
   buildWordDeck,
   buildWordDrill,
+  clueParts,
   describeWordConfig,
+  fillClue,
   normaliseWord,
+  setCustomLists,
+  utteranceFor,
   wordConfigKey,
   wordDeckSpec,
   wordMode,
 } from "./words";
-import { WORD_LISTS, WORD_LISTS_BY_ID, wordListForAge } from "./wordlists";
+import {
+  WORD_LISTS,
+  WORD_LISTS_BY_ID,
+  listWords,
+  wordListForAge,
+} from "./wordlists";
 import {
   buildDeck,
   configKey,
@@ -30,7 +40,8 @@ const config = (over: Partial<WordConfig> = {}): WordConfig => ({
 describe("the word lists", () => {
   it("has no duplicates within a list", () => {
     for (const list of WORD_LISTS) {
-      expect(new Set(list.words).size).toBe(list.words.length);
+      const words = listWords(list);
+      expect(new Set(words).size).toBe(words.length);
     }
   });
 
@@ -38,7 +49,7 @@ describe("the word lists", () => {
     // A spelling card can't tell a child that a space is expected, and the
     // splits table would render a stray one invisibly.
     for (const list of WORD_LISTS) {
-      for (const word of list.words) {
+      for (const word of listWords(list)) {
         expect(word.trim()).toBe(word);
         expect(word).not.toBe("");
         expect(word).not.toContain(" ");
@@ -51,7 +62,7 @@ describe("the word lists", () => {
     // with a capital is a proper noun that doesn't belong in a spelling list,
     // because nothing on the card signals that a capital is required.
     for (const list of WORD_LISTS) {
-      for (const word of list.words) {
+      for (const word of listWords(list)) {
         if (word === "I") continue;
         expect(word).toBe(word.toLowerCase());
       }
@@ -60,8 +71,79 @@ describe("the word lists", () => {
 
   it("gives every age a list", () => {
     for (const age of [3, 4, 5, 6, 7, 8, 9, 10, 11, 14]) {
-      expect(wordListForAge(age).words.length).toBeGreaterThan(0);
+      expect(wordListForAge(age).entries.length).toBeGreaterThan(0);
     }
+  });
+});
+
+/**
+ * The sentences are three hundred hand-written strings, which is exactly the
+ * kind of content that rots one careless edit at a time. These check the
+ * mechanical half of the house rules in wordlists.ts — the half a machine can
+ * see. Whether a sentence actually settles which homophone is meant is a
+ * judgement, and stays a human's.
+ */
+describe("the sentence on every word", () => {
+  it("gives every word exactly one slot to fill", () => {
+    for (const list of WORD_LISTS) {
+      for (const { word, clue } of list.entries) {
+        expect(clue.split(CLUE_SLOT), `${list.id} · ${word}`).toHaveLength(2);
+      }
+    }
+  });
+
+  it("never spells the word out in its own sentence", () => {
+    // The sentence is shown on screen with the slot blank. A clue that also
+    // contains the word somewhere else would print the answer next to the gap.
+    for (const list of WORD_LISTS) {
+      for (const { word, clue } of list.entries) {
+        const rest = clue.replace(CLUE_SLOT, " ").toLowerCase();
+        const words = rest.split(/[^a-z']+/).filter(Boolean);
+        expect(words, `${list.id} · ${word}`).not.toContain(word.toLowerCase());
+      }
+    }
+  });
+
+  it("gives every word a sentence of its own", () => {
+    // Four sentences were doing double duty when this was written, including
+    // "It is _ hot today." for both "too" and "very" — which is the file's own
+    // showcase example of a clue that settles a homophone, quietly settling
+    // nothing. Across all six lists, not within one: a child works through
+    // them in order and remembers.
+    const seen = new Map<string, string>();
+    for (const list of WORD_LISTS) {
+      for (const { word, clue } of list.entries) {
+        const key = clue.toLowerCase();
+        const owner = seen.get(key);
+        expect(owner, `"${clue}" is also ${owner}'s`).toBeUndefined();
+        seen.set(key, `${list.id}:${word}`);
+      }
+    }
+  });
+
+  it("keeps them short enough to read out on a clock", () => {
+    for (const list of WORD_LISTS) {
+      for (const { word, clue } of list.entries) {
+        const length = fillClue(clue, word).split(/\s+/).length;
+        expect(length, `${list.id} · ${word}`).toBeLessThanOrEqual(8);
+      }
+    }
+  });
+
+  it("speaks the word first, then the word in its sentence", () => {
+    // Word first so a child can start typing while the context arrives — see
+    // `utteranceFor`.
+    expect(utteranceFor({ word: "sleep", clue: "Time to go to _." })).toBe(
+      "sleep. Time to go to sleep.",
+    );
+  });
+
+  it("says only the word for a deck that has no sentences", () => {
+    expect(utteranceFor({ word: "photosynthesis" })).toBe("photosynthesis");
+  });
+
+  it("splits a clue either side of its slot, for rendering the gap", () => {
+    expect(clueParts("This is _ house.")).toEqual(["This is ", " house."]);
   });
 });
 
@@ -96,10 +178,31 @@ describe("buildWordDeck", () => {
     );
   });
 
-  it("speaks the word rather than showing it", () => {
+  it("speaks the word rather than showing it, and leads with the word", () => {
     for (const card of buildWordDeck(config(), 5)) {
-      expect(card.speak).toBe(card.answer);
+      expect(card.speak).toBeTruthy();
+      expect(card.speak!.startsWith(`${card.answer}.`)).toBe(true);
     }
+  });
+
+  it("carries the sentence for the card to show with a blank in it", () => {
+    for (const card of buildWordDeck(config(), 5)) {
+      expect(card.clue).toContain(CLUE_SLOT);
+      // What's spoken is the word, then that same sentence filled in.
+      expect(card.speak).toBe(
+        `${card.answer}. ${fillClue(card.clue!, card.answer)}`,
+      );
+    }
+  });
+
+  it("still builds a deck from a list with no sentences", () => {
+    // A parent's list is plain words. Those cards say the word and show dots,
+    // exactly as every word card did before sentences existed.
+    setCustomLists([{ id: "mine", name: "Week 3", words: ["stegosaurus"] }]);
+    const [card] = buildWordDeck(config({ listId: "mine", cardCount: 1 }), 1);
+    expect(card.speak).toBe("stegosaurus");
+    expect(card.clue).toBeUndefined();
+    setCustomLists([]);
   });
 
   it("keys each card on the normalised word", () => {
@@ -111,7 +214,7 @@ describe("buildWordDeck", () => {
   it("draws only from its list", () => {
     const list = WORD_LISTS_BY_ID.get("dolch-4")!;
     for (const card of buildWordDeck(config({ listId: "dolch-4" }), 9)) {
-      expect(list.words).toContain(card.answer);
+      expect(listWords(list)).toContain(card.answer);
     }
   });
 
@@ -126,6 +229,26 @@ describe("buildWordDeck", () => {
       2,
     );
     expect(new Set(deck.map((c) => c.answer))).toEqual(new Set(["cat", "dog"]));
+  });
+
+  it("reunites a drill's words with their sentences", () => {
+    // A drill carries plain strings, so the clues have to be looked up again
+    // from the list it came from. Getting this wrong would strip the context
+    // from the one deck that needs it most: the words already going wrong.
+    const deck = buildWordDeck(
+      config({ listId: "dolch-4", words: ["their"], cardCount: 2 }),
+      7,
+    );
+    expect(deck[0].clue).toBe("This is _ house.");
+  });
+
+  it("leaves a drilled word clueless if its list no longer has it", () => {
+    const deck = buildWordDeck(
+      config({ listId: "dolch-4", words: ["zzz"], cardCount: 1 }),
+      7,
+    );
+    expect(deck[0].clue).toBeUndefined();
+    expect(deck[0].speak).toBe("zzz");
   });
 
   it("offers four distinct choices including the answer", () => {

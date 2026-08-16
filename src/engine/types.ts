@@ -143,6 +143,16 @@ export type Card = {
    */
   speak?: string;
   /**
+   * The word in a short sentence, with `_` marking where the word goes.
+   *
+   * Shown on screen with the slot left blank, alongside `speak` saying it
+   * filled in. That is what makes a spoken card answerable: "their" and
+   * "there" are one sound, so without the sentence there is no right answer
+   * to give. Absent on a deck that has no sentences — a list a parent typed
+   * in — and on every deck that isn't spoken at all.
+   */
+  clue?: string;
+  /**
    * Which fact this card exercises, as the deck built it — "7:8" for
    * arithmetic, the word itself for spelling. Stable across runs, because
    * mastery and trouble spots accumulate against it for years.

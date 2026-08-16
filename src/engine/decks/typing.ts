@@ -1,7 +1,7 @@
 import type { Card, TypingConfig } from "@/engine/types";
 
 import { mulberry32, shuffled } from "@/engine/random";
-import { WORD_LISTS } from "./wordlists";
+import { WORD_LISTS, listWords } from "./wordlists";
 import type { DeckSpec } from "./spec";
 
 /**
@@ -121,7 +121,7 @@ const TOP_ROW = [
  * through "because" as a spelling meets it again as a thing their fingers
  * have to find, and the two reinforce each other.
  */
-const COMMON = [...new Set(WORD_LISTS.flatMap((list) => list.words))];
+const COMMON = [...new Set(WORD_LISTS.flatMap(listWords))];
 
 const SENTENCES = [
   "The quick brown fox jumps over the lazy dog.",
@@ -296,6 +296,7 @@ export function typingDeckSpec(mode: string): DeckSpec {
   return {
     id: mode,
     label: level?.name ?? "Typing",
+    world: "ice",
     // Exact, including case: at the sentence level the shift key IS the
     // exercise, so "the" and "The" are two different things to get right.
     masteryKey: (factId) => factId,

@@ -1,0 +1,65 @@
+---
+/**
+ * The masthead, on content pages only.
+ *
+ * It never renders inside a game: a nav bar over a race is a nav bar in a
+ * child's way, and the way back out of an island is the one map icon in its
+ * top bar instead. So this is the site's only navigation, and it carries the
+ * colour code the map teaches — a dot per world, in that world's own colour,
+ * so "the green one" means the same thing here as it does there.
+ *
+ * The flag's pennant takes `--accent`, which is whatever world the page is
+ * standing in. Walking from the jungle to the glacier recolours it.
+ */
+import { WORLDS, type World } from "@/engine/worlds";
+
+interface Props {
+  /** Which world this page is in, so its nav entry can mark itself current. */
+  world: World;
+}
+
+const { world } = Astro.props;
+---
+
+<a class="skip" href="#main">Skip to the page</a>
+
+<header class="mast">
+  <div class="mast__in">
+    <a class="mast__mark" href="/">
+      <svg
+        class="mast__flag"
+        width="22"
+        height="24"
+        viewBox="0 0 22 24"
+        aria-hidden="true"
+      >
+        <path
+          d="M4.2 2.5v19"
+          stroke="currentColor"
+          stroke-width="2.4"
+          stroke-linecap="round"></path>
+        <path class="mast__pennant" d="M5.4 3.6 19 8.2 5.4 12.8z"></path>
+      </svg>
+      <span class="mast__name">School Skills</span>
+    </a>
+
+    <nav class="mast__nav" aria-label="Worlds">
+      {
+        WORLDS.map((w) => (
+          <a
+            class="mast__link"
+            data-world={w.id}
+            href={w.href}
+            aria-current={w.id === world ? "page" : undefined}
+          >
+            <span class="mast__dot" aria-hidden="true" />
+            {w.name}
+          </a>
+        ))
+      }
+      <a class="mast__link" href="/#for-parents">For parents</a>
+    </nav>
+
+    <a class="mast__play" href="/flash-cards">Play</a>
+  </div>
+</header>

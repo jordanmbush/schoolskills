@@ -1,5 +1,6 @@
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import { useHub, usePlayer } from "@/components/state/HubContext";
+import { homeMode, useSubject } from "@/components/state/SubjectContext";
 import TopBar from "@/components/TopBar";
 import { Button, Stat } from "@/components/ui/kit";
 import {
@@ -13,12 +14,14 @@ import { timeLimitForAge } from "@/engine/decks/flashcards";
 import { buildDrill, describeConfig } from "@/engine/decks";
 import { clock, percent, plural, shortDate } from "@/engine/format";
 import { BADGES_BY_ID } from "@/engine/progress";
+import { WORLDS } from "@/engine/worlds";
 import { sfx } from "@/services/sound";
 
 export default function PlayerHub() {
   const { profileId } = useParams();
   const { sessions } = useHub();
   const profile = usePlayer(profileId);
+  const subject = useSubject();
   const navigate = useNavigate();
 
   if (!profile) return <Navigate to="/" replace />;
@@ -30,17 +33,38 @@ export default function PlayerHub() {
   const badges = profile.badges
     .map((id) => BADGES_BY_ID.get(id))
     .filter(Boolean);
-  // Multiplication is the game's headline deck, so that's what the hub offers
-  // to drill; the record book covers the other three.
-  const trouble = troubleFacts(mine, "multiply", 6);
+  // The deck this app opens on — whichever of its own the player raced last.
+  // The hub only ever offers to drill a deck it can actually run: a spelling
+  // trouble list belongs to Word Jungle, and the record book is where you go
+  // to see across both.
+  const drillMode = homeMode(
+    subject,
+    mine.map((s) => s.mode),
+    profile.age,
+  );
+  const trouble = troubleFacts(mine, drillMode, 6);
+  // Everywhere else you could be. The world you're standing in isn't offered.
+  const elsewhere = WORLDS.filter((w) => w.id !== subject.world);
 
   return (
     <main className="hub">
       <TopBar profile={profile}>
-        <a className="topbar__icon" href="/typing" title="Typing">
-          <span aria-hidden="true">⌨️</span>
-          <span className="u-sr">Typing game</span>
-        </a>
+        {/*
+          Hop straight to another world without going back out to the map.
+          Real <a>s, not router links: each world is a different island behind
+          a different Astro page, and the HashRouter here owns none of them.
+        */}
+        {elsewhere.map((world) => (
+          <a
+            key={world.id}
+            className="topbar__icon"
+            href={world.href}
+            title={world.name}
+          >
+            <span aria-hidden="true">{world.icon}</span>
+            <span className="u-sr">{world.name}</span>
+          </a>
+        ))}
         <Link
           className="topbar__icon"
           to={`/p/${profile.id}/progress`}
@@ -53,16 +77,13 @@ export default function PlayerHub() {
 
       <section className="hub__hero anim-rise">
         <div className="hub__hero-copy">
-          <p className="u-eyebrow">Game 01 · Flash cards</p>
+          <p className="u-eyebrow">{subject.eyebrow}</p>
           <h1 className="u-display hub__title">
-            Times
+            {subject.title[0]}
             <br />
-            Trial
+            {subject.title[1]}
           </h1>
-          <p className="hub__blurb">
-            Race a deck of multiplication cards against the clock — or against a
-            ghost of your best run, or one of your siblings&apos;.
-          </p>
+          <p className="hub__blurb">{subject.blurb}</p>
           <Button
             variant="go"
             className="hub__cta"
@@ -83,7 +104,7 @@ export default function PlayerHub() {
                   state: {
                     config: buildDrill(
                       trouble.map((fact) => fact.factId),
-                      "multiply",
+                      drillMode,
                       {
                         inputMode: profile.age <= 6 ? "choose" : "type",
                         timeLimitMs: timeLimitForAge(profile.age),
@@ -205,8 +226,9 @@ export default function PlayerHub() {
             </ul>
           )}
           <p className="hub__soon">
-            <span className="u-eyebrow">Next up</span> Spelling lists and
-            parent-made decks plug into this same race engine — not built yet.
+            <span className="u-eyebrow">Everywhere counts</span> Badges, XP and
+            your level are yours, not this world&apos;s — spelling and typing
+            earn them the same way, and the record book covers all three.
           </p>
         </section>
       </div>

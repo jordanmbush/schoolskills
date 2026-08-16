@@ -1,0 +1,45 @@
+---
+/**
+ * The layout for everything that isn't a game: the map, the world pages, and
+ * the pause menu.
+ *
+ * It is a separate layout rather than a flag on Base for one reason — the
+ * games must not get a masthead. `/flash-cards` and `/typing` render Base
+ * directly, so there is no prop to set wrong and no way for site chrome to
+ * appear over a race. The way out of an island is the map icon in its top bar.
+ */
+import Base from "@/layouts/Base.astro";
+import SiteHeader from "@/components/site/SiteHeader.astro";
+import SiteFooter from "@/components/site/SiteFooter.astro";
+import type { World } from "@/engine/worlds";
+import "@/styles/site.css";
+
+interface Props {
+  title: string;
+  description: string;
+  image?: string;
+  jsonLd?: Record<string, unknown>;
+  /** Which world this page is in. Drives every colour on it. */
+  world: World;
+}
+
+const { title, description, image, jsonLd, world } = Astro.props;
+
+// Line world and Empty world have no scenery, so their pages tighten the
+// measure and drop the display type a size. See content.css.
+const pause = world === "line" || world === "empty";
+---
+
+<Base
+  title={title}
+  description={description}
+  image={image}
+  jsonLd={jsonLd}
+  world={world}
+>
+  <SiteHeader world={world} />
+  <main id="main" class:list={["page", { "page--pause": pause }]}>
+    <slot />
+  </main>
+  <SiteFooter />
+</Base>

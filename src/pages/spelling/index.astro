@@ -1,0 +1,189 @@
+---
+import Content from "@/layouts/Content.astro";
+import { WORD_LISTS, listWords } from "@/engine/decks/wordlists";
+
+/**
+ * Word Jungle's front door — the organic-search surface for the word decks, in
+ * the same shape as the times-table pages: real prerendered HTML that answers
+ * the query itself, with the game one link away.
+ *
+ * The page a parent reads; `/spelling/play` next door is the game itself.
+ * Splitting them is what lets this one answer the search — "sight words" is a
+ * different query from "times tables", and the answer to it is prose a crawler
+ * can read rather than an island it can't.
+ */
+
+const title =
+  "Sight words and spelling practice — free Dolch word lists | School Skills";
+const description =
+  "The Dolch sight words, graded by age, as a free spelling game. Every word is read aloud in a sentence, so their/there and to/too/two are telling apart rather than guessing. No sign-up, works offline, progress stays on your device.";
+---
+
+<Content
+  title={title}
+  description={description}
+  world="jungle"
+  jsonLd={{
+    "@context": "https://schema.org",
+    "@type": "LearningResource",
+    name: "Sight words and spelling practice",
+    description,
+    url: "https://schoolskills.app/spelling",
+    learningResourceType: "Game",
+    educationalLevel: "Elementary School",
+    teaches: "Sight word recognition and spelling, Dolch word lists",
+    typicalAgeRange: "4-9",
+    isAccessibleForFree: true,
+    inLanguage: "en",
+  }}
+>
+  <header class="hero wrap">
+    <p class="hero__eyebrow">
+      <span class="hero__world">Word Jungle</span>
+      Spelling and sight words
+    </p>
+    <h1 class="hero__title">The words that don&rsquo;t play fair</h1>
+    <p class="hero__lead">
+      <em>Said</em>, <em>because</em>, <em>one</em> &mdash; the words a child can&rsquo;t
+      sound their way to. Graded by age and drilled by ear, the way a spelling test
+      actually works.
+    </p>
+    <div class="hero__actions">
+      <a class="cta" href="/spelling/play">Start a spelling race</a>
+    </div>
+    <p class="hero__note">Free &middot; no account &middot; works offline</p>
+  </header>
+
+  <section class="band band--tight wrap">
+    <h2 class="h2">What sight words are</h2>
+    <div class="prose">
+      <p>
+        Most words can be sounded out. These can&rsquo;t, or not reliably: a
+        child who attacks <em>said</em> phonetically arrives at &ldquo;say-id&rdquo;.
+        Edward Dolch collected the worst offenders in 1936 and the list has barely
+        moved since, because the words that break the rules are the common ones. Between
+        them they account for something like half the words in a typical children&rsquo;s
+        book, which is why they get memorised rather than decoded.
+      </p>
+    </div>
+  </section>
+
+  <section class="band band--tight wrap">
+    <h2 class="h2">The lists</h2>
+    <p class="h2__sub">
+      Graded by age rather than by school year, because Dolch&rsquo;s own grades
+      are American and the mapping to other systems is approximate. Pick the one
+      that matches the reader, not the one that matches the label.
+    </p>
+    <table class="facts">
+      <caption>The Dolch sight words, by age</caption>
+      <thead>
+        <tr>
+          <th scope="col">List</th>
+          <th scope="col">Age</th>
+          <th scope="col">Words</th>
+          <th scope="col">Starts with</th>
+        </tr>
+      </thead>
+      <tbody>
+        {
+          WORD_LISTS.map((list) => (
+            <tr>
+              <th scope="row">{list.name}</th>
+              <td>{list.group}</td>
+              <td>{list.entries.length}</td>
+              <td>{listWords(list).slice(0, 4).join(", ")}&hellip;</td>
+            </tr>
+          ))
+        }
+      </tbody>
+    </table>
+  </section>
+
+  <section class="band band--inset">
+    <div class="wrap">
+      <h2 class="h2">Heard in a sentence, not copied</h2>
+      <div class="prose">
+        <p>
+          A spelling card that shows you the word is a handwriting exercise. So
+          the word is read out instead &mdash; and then read out again inside a
+          short sentence, which is what a teacher does and what this list in
+          particular needs.
+        </p>
+        <p>
+          It needs it because these words collide.
+          <em>Their</em>, <em>there</em> and <em>they&rsquo;re</em> are one sound;
+          so are <em>to</em>, <em>too</em> and <em>two</em>,
+          <em>one</em> and <em>won</em>, <em>ate</em> and <em>eight</em>,
+          <em>no</em> and <em>know</em>. Asked to spell the sound on its own, a
+          child cannot be wrong, because there is no answer. The commonest words
+          are exactly the ones English has the most collisions in, which is why
+          a sight-word list is dense with them.
+        </p>
+        <p>
+          The sentence is on screen as well as in the ear, with the word itself
+          left as a blank &mdash; <em>&ldquo;This is ____ house&rdquo;</em>.
+          That gives away which word is meant and nothing at all about how it is
+          spelt. It also rescues the words a device&rsquo;s built-in voice
+          mumbles: <em>sleep</em> is one soft consonant away from
+          <em>sleeve</em> on several of them, and context repairs a mis-heard sound
+          the way it always does.
+        </p>
+        <p>
+          Nothing is recorded and nothing is sent anywhere &mdash; the voice is
+          the one already installed on the device. Where there is no voice at
+          all, the blank fills itself in for a moment and empties again, which
+          is weaker than hearing it but still recall rather than transcription.
+        </p>
+        <p>
+          Younger readers can switch to <em>spot it</em>: hear the word, read
+          the sentence, and pick it out of four. Recognition first, spelling
+          second.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="band band--tight wrap">
+    <h2 class="h2">This week&rsquo;s spellings, as a deck</h2>
+    <div class="prose">
+      <p>
+        The lists above are a starting point, not the point. Paste in whatever
+        came home &mdash; a newline, a comma or a semicolon between them,
+        however they arrived &mdash; and they become a deck like any other, with
+        their own records and their own trouble list.
+      </p>
+      <p>
+        Save one as a file and another family can open it and get their own
+        copy. Everything stays on the device it was typed on; there is no
+        account and nothing is uploaded, so a shared list travels the way a
+        photocopy would &mdash; because someone sent it.
+      </p>
+    </div>
+  </section>
+
+  <section class="band wrap">
+    <h2 class="h2">Practising it properly</h2>
+    <div class="prose">
+      <p>
+        Words that come out wrong, or come out slowly, collect in a trouble list
+        you can drill on their own. A word only counts as known once it&rsquo;s
+        right three times running and under four seconds &mdash; the same bar
+        the times tables are held to, and for the same reason: recall, not
+        working it out.
+      </p>
+      <p>
+        Short and frequent beats long and rare. Ten words a day will move a list
+        faster than a whole list once a week.
+      </p>
+      <p class="aside">
+        This is spelling practice, not a reading programme. It won&rsquo;t teach
+        phonics, it doesn&rsquo;t follow a curriculum, and it has no opinion
+        about how you teach reading &mdash; it drills the list you give it.
+      </p>
+    </div>
+    <div class="hero__actions">
+      <a class="cta" href="/spelling/play">Start a spelling race</a>
+    </div>
+  </section>
+</Content>

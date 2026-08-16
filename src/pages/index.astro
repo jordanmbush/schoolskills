@@ -1,117 +1,271 @@
 ---
-import Base from "@/layouts/Base.astro";
-import "@/styles/content.css";
+import Content from "@/layouts/Content.astro";
+import WorldMap from "@/components/site/WorldMap.astro";
 
 /**
- * The landing page. Its job is to say what this is in one line, get a kid into
- * the game in one click, and link to the times-table pages so the whole set is
- * crawlable from the root.
+ * The overworld.
+ *
+ * Two people land here and they want opposite things. A parent — usually a
+ * homeschooling one, often arriving from a search for practice rather than for
+ * curriculum — wants to know in thirty seconds what this is, what it costs,
+ * and what it won't do. A child who has just been handed the tablet wants a
+ * button.
+ *
+ * So the page is the map first and the argument second: colour, worlds and one
+ * obvious way in above the fold, then the honest prose underneath it. The
+ * "what it isn't" block is deliberately the same size as the "what it is" one,
+ * because the limits are half the pitch here. This is a supplement — three
+ * narrow skills drilled properly — and a parent who discovers that in week
+ * three instead of minute one has been sold something.
  */
-const title = "School Skills — free learning games for kids";
+const title =
+  "School Skills — free homeschool practice games for times tables, spelling and typing";
 const description =
-  "Free learning games that feel like games. Multiplication flash cards with ghost racing and a per-card clock. No accounts, no sign-up, and progress stays on your own device.";
-
-const tables = Array.from({ length: 12 }, (_, i) => i + 1);
+  "Three free practice games for homeschool and after-school: times tables, sight words and touch typing. No account, no tracking, works offline. A supplement to your lessons, not a curriculum.";
 ---
 
-<Base
+<Content
   title={title}
   description={description}
+  world="map"
   jsonLd={{
     "@context": "https://schema.org",
     "@type": "WebSite",
     name: "School Skills",
     url: "https://schoolskills.app",
     description,
+    audience: {
+      "@type": "EducationalAudience",
+      educationalRole: "parent",
+    },
+    isAccessibleForFree: true,
   }}
 >
-  <main class="page">
-    <p class="page__eyebrow">School Skills</p>
-    <h1>Learning games that feel like games</h1>
-    <p class="page__lead">
-      Free practice for the things that only come with repetition. No account,
-      no sign-up, and nothing about your child is ever uploaded — progress is
-      saved in this browser and stays there.
+  <header class="hero wrap">
+    <p class="hero__eyebrow">
+      <span class="hero__world">The map</span>
+      Free &middot; no account &middot; works offline
     </p>
-
-    <a class="cta" href="/flash-cards">Play Times Trial →</a>
-
-    <h2>The games</h2>
-    <ul class="games">
-      <li>
-        <h3>Times Trial — multiplication flash cards</h3>
-        <p>
-          Pick your tables, then race the clock — or a ghost of your own best
-          run, or a sibling's. A per-card timer can be tightened a quarter of a
-          second at a time, and the facts you keep missing become their own
-          practice deck.
-        </p>
-        <a href="/flash-cards">Play now →</a>
-      </li>
-      <li>
-        <h3>Spelling and sight words</h3>
-        <p>
-          The Dolch lists, graded by age. Each word is read out and typed from
-          memory rather than copied off the screen — or, for a reader who
-          isn&rsquo;t spelling yet, heard and picked out of four. Same profiles,
-          same records, same clock.
-        </p>
-        <a href="/spelling">Learn more &rarr;</a>
-      </li>
-      <li>
-        <h3>Typing race</h3>
-        <p>
-          Start on the home row and work up to real sentences with capitals and
-          commas. Every word is a split, so you race a rival&rsquo;s pace word
-          by word rather than being handed a score at the end.
-        </p>
-        <a href="/typing">Play now &rarr;</a>
-      </li>
-      <li>
-        <h3>Your own word lists</h3>
-        <p>
-          Paste in this week&rsquo;s spellings and they become a deck like any
-          other, with their own records. A list can be saved as a file and
-          passed to another family, who get their own copy of it.
-        </p>
-        <a href="/spelling">How it works &rarr;</a>
-      </li>
-    </ul>
-
-    <h2>Times tables</h2>
-    <p>
-      Every table, with the full set of facts and tips for remembering them.
+    <h1 class="hero__title">Ten minutes of drill they&rsquo;ll ask for</h1>
+    <p class="hero__lead">
+      Times tables, sight words and touch typing, as three small games. Made for
+      homeschool and after-school practice at home &mdash; free, with no account
+      and nothing about your child ever leaving the device it&rsquo;s on.
     </p>
-    <ul class="siblings">
-      {
-        tables.map((n) => (
-          <li>
-            <a href={`/multiplication/${n}-times-table`}>{n}×</a>
-          </li>
-        ))
-      }
-    </ul>
+    <div class="hero__actions">
+      <a class="cta" href="/flash-cards">Start the times tables</a>
+      <a class="cta cta--quiet" href="#limits">What it isn&rsquo;t</a>
+    </div>
+  </header>
 
-    <h2>For parents</h2>
-    <p>
-      There is no account to make and no data to hand over, because there is
-      nowhere to hand it to — this is a static site with no server behind it.
-      Every profile, race and record lives in your browser's own storage. That
-      also means clearing site data clears progress, so there's a
-      <strong>Back up progress</strong> button on the player screen that saves a file
-      you keep.
-    </p>
-    <p>
-      Adding the site to your home screen is worth doing on an iPad: it makes
-      the game work offline, and it stops Safari clearing saved progress after a
-      week of not playing.
-    </p>
+  <section class="band band--tight wrap">
+    <WorldMap />
+  </section>
 
-    <footer class="page__foot">
-      <a href="/flash-cards">Flash cards</a>
-      <a href="/privacy">Privacy</a>
-      <a href="/terms">Terms</a>
-      <p>Free to use. Made for four kids, then shared.</p>
-    </footer>
-  </main>
-</Base>
+  <section class="band band--inset" id="limits">
+    <div class="wrap">
+      <h2 class="h2">What this is, and what it isn&rsquo;t</h2>
+      <p class="h2__sub">
+        Worth knowing before you build a morning around it. This is one piece of
+        a homeschool day and a deliberately small one, so the second column
+        matters as much as the first.
+      </p>
+
+      <div class="truth">
+        <div class="truth__col truth__col--is">
+          <p class="truth__head">What it is</p>
+          <ul class="truth__list" role="list">
+            <li>
+              <span class="truth__what">Practice, drilled properly</span>
+              <span class="truth__why"
+                >The facts that don&rsquo;t yield to being explained again
+                &mdash; 7 &times; 8, <em>said</em>, the home row. Timed,
+                repeated, and marked on recall rather than on working it out.</span
+              >
+            </li>
+            <li>
+              <span class="truth__what">Something they start on their own</span>
+              <span class="truth__why"
+                >Racing a ghost of their own best run turns a worksheet into a
+                rematch. That is most of why it actually gets done, and it is
+                the only trick here.</span
+              >
+            </li>
+            <li>
+              <span class="truth__what">Free, offline and private</span>
+              <span class="truth__why"
+                >No account, no ads, no analytics, no third-party scripts. Added
+                to an iPad&rsquo;s home screen it works with the wifi off.</span
+              >
+            </li>
+            <li>
+              <span class="truth__what">One player across all three</span>
+              <span class="truth__why"
+                >Times tables, spelling and typing share a profile, a level and
+                a record book, so changing subject isn&rsquo;t starting over.</span
+              >
+            </li>
+          </ul>
+        </div>
+
+        <div class="truth__col truth__col--isnt">
+          <p class="truth__head">What it isn&rsquo;t</p>
+          <ul class="truth__list" role="list">
+            <li>
+              <span class="truth__what">Not a curriculum</span>
+              <span class="truth__why"
+                >There is no scope and sequence, no lesson and nothing to plan a
+                term around. You teach it however you teach it; this is the
+                drill afterwards.</span
+              >
+            </li>
+            <li>
+              <span class="truth__what">Not tied to one, either</span>
+              <span class="truth__why"
+                >It doesn&rsquo;t know which programme you use and it never
+                will. Convenient, in that the seven times table is the seven
+                times table in all of them.</span
+              >
+            </li>
+            <li>
+              <span class="truth__what">Not a progress report for you</span>
+              <span class="truth__why"
+                >No dashboard, no export, no weekly email. Records live on your
+                child&rsquo;s device and the only way to see them is the screen
+                they&rsquo;re playing on.</span
+              >
+            </li>
+            <li>
+              <span class="truth__what">Not a whole subject</span>
+              <span class="truth__why"
+                >Three narrow skills, on purpose. Reading comprehension, writing
+                and maths reasoning aren&rsquo;t here and aren&rsquo;t planned.</span
+              >
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="band wrap">
+    <h2 class="h2">Where it fits in a day</h2>
+    <p class="h2__sub">
+      Short and frequent beats long and rare, which is convenient &mdash; ten
+      minutes is all this is built to hold.
+    </p>
+    <div class="beats">
+      <div class="beat">
+        <p class="beat__when">Before the lesson</p>
+        <p class="beat__what">Five minutes on the tables</p>
+        <p>
+          Warms up the recall you&rsquo;re about to lean on. A child who
+          isn&rsquo;t hunting for 6 &times; 7 has more room for the thing
+          you&rsquo;re actually teaching.
+        </p>
+      </div>
+      <div class="beat">
+        <p class="beat__when">After the lesson</p>
+        <p class="beat__what">Drill exactly what you taught</p>
+        <p>
+          Pick the tables or paste in the words from this morning. Anything that
+          came out slow or wrong collects in a trouble list and becomes its own
+          deck.
+        </p>
+      </div>
+      <div class="beat">
+        <p class="beat__when">The dead time</p>
+        <p class="beat__what">Car parks and waiting rooms</p>
+        <p>
+          It&rsquo;s a tablet game and it works with no signal. Ten minutes
+          there beats an hour on a Sunday, and nobody has to supervise it.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="band band--inset">
+    <div class="wrap">
+      <h2 class="h2">What they see, and what you don&rsquo;t</h2>
+      <p class="h2__sub">
+        There is no parent account because there is no account at all. This is
+        the honest version of what that costs you and what it buys.
+      </p>
+
+      <div class="ledger">
+        <div class="ledger__col">
+          <p class="ledger__who">Your child sees</p>
+          <ul role="list">
+            <li>XP and a level, earned per race</li>
+            <li>A record book of best times, one per deck</li>
+            <li>A ghost of their own best run &mdash; or a sibling&rsquo;s</li>
+            <li>A map of every fact, coloured by how solid it is</li>
+            <li>A trouble list of the ones they keep missing</li>
+          </ul>
+        </div>
+        <div class="ledger__col ledger__col--you">
+          <p class="ledger__who">You get</p>
+          <ul role="list">
+            <li>No dashboard</li>
+            <li>No weekly email, no export, no report card</li>
+            <li>No login, and no password to reset</li>
+            <li>Nothing to cancel</li>
+          </ul>
+        </div>
+      </div>
+
+      <p class="aside">
+        What you do get is a child who hands you the tablet to show you a record
+        they just beat. It&rsquo;s the same screen they play on &mdash; ask them
+        to open the record book, and you&rsquo;ll see every race, every time and
+        every fact that isn&rsquo;t solid yet.
+      </p>
+    </div>
+  </section>
+
+  <section class="band" id="for-parents">
+    <div class="wrap">
+      <h2 class="h2">For parents</h2>
+      <div class="prose">
+        <p>
+          There is no account to make and no data to hand over, because there is
+          nowhere to hand it to. This is a static site: every page is a file,
+          and there is no server behind it that could run a query or hold a
+          session. Every profile, race and record lives in your own
+          browser&rsquo;s storage and has never been anywhere else.
+        </p>
+        <p>
+          That is a deliberate choice rather than a shortcut. Under COPPA a
+          persistent identifier &mdash; an ad cookie, a device id, an analytics
+          client id &mdash; counts as personal information collected from a
+          child. The way to not mishandle a child&rsquo;s data is to never
+          collect it, so there are no analytics, no advertising and no
+          third-party scripts of any kind. <a href="/privacy">The full policy</a
+          > is one page and says the same thing at more length.
+        </p>
+        <h3>Back it up, because there&rsquo;s only one copy</h3>
+        <p>
+          The flip side of nothing being uploaded is that nothing is
+          recoverable. Clearing site data clears progress, and no one can
+          restore it for you. There&rsquo;s a <strong>Back up progress</strong> button
+          on the player screen that writes a file you keep; it restores on any device.
+        </p>
+        <h3>Add it to the home screen on an iPad</h3>
+        <p>
+          Worth doing for two reasons. It makes the games work offline, and it
+          exempts the site from Safari&rsquo;s seven-day cap on script-writable
+          storage &mdash; without it, a child who doesn&rsquo;t play for a week
+          can come back to an empty profile list.
+        </p>
+        <h3>Several children</h3>
+        <p>
+          Add a profile each. They share the device and nothing else: separate
+          records, separate levels, separate trouble lists. What they can do is
+          race each other &mdash; a ghost of a sibling&rsquo;s best run is the
+          single most effective thing on this site for getting a second ten
+          minutes out of someone.
+        </p>
+      </div>
+    </div>
+  </section>
+</Content>

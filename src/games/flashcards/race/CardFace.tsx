@@ -60,7 +60,10 @@ export function CardFace({
       )}
       {card.speak ? (
         <WordPrompt
-          word={card.speak}
+          // `prompt`, not `speak`: what's spoken is now the word AND the
+          // sentence it sits in, and the no-voice fallback flashes the word.
+          word={card.prompt}
+          clue={card.clue}
           index={index}
           active={racing}
           audible={audible}
