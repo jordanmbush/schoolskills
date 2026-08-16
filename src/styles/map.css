@@ -1,0 +1,348 @@
+/* ── The overworld map ─────────────────────────────────────────────────────
+   The one place this site spends its boldness.
+
+   Every other surface here is a stack of quiet bands. This is a route with
+   stops on it: a dotted path, a node per world, and each node built out of
+   that world's own colours and standing on a strip of that world's own
+   ground. The card is a window into the place it takes you, which is why it
+   works without a single illustration — the terrain is the same CSS the world
+   itself is painted with (see worlds.css), just cropped to 80 pixels.
+
+   Dotted, not solid, and unnumbered: nothing is locked and nothing has to be
+   finished before anything else. A dashed line between stops is what a map
+   looks like when the order is yours.                                      */
+
+.map {
+  --path-y: 1.35rem;
+  --node-top: 3.25rem;
+}
+
+.map__route {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--gap-4);
+  margin-top: var(--gap-4);
+  padding-left: 2.75rem;
+}
+
+/* The path itself. Vertical on a phone, where the worlds stack. */
+.map__route::before {
+  content: "";
+  position: absolute;
+  left: 0.95rem;
+  top: 1.5rem;
+  bottom: 1.5rem;
+  width: 3px;
+  background: repeating-linear-gradient(
+    180deg,
+    var(--chalk-dim) 0 6px,
+    transparent 6px 15px
+  );
+  opacity: 0.45;
+}
+
+.map__node {
+  position: relative;
+}
+
+/* The stop on the path, in the colour of the world it leads to. */
+.map__node::before {
+  content: "";
+  position: absolute;
+  top: 2.1rem;
+  left: -2.35rem;
+  width: 1.1rem;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--node, var(--chalk-dim));
+  box-shadow: 0 0 0 4px color-mix(in oklab, var(--node) 25%, transparent);
+}
+
+.map__node[data-world="grid"] {
+  --node: var(--w-grid);
+}
+.map__node[data-world="jungle"] {
+  --node: var(--w-jungle);
+}
+.map__node[data-world="ice"] {
+  --node: var(--w-ice);
+}
+
+@media (width >= 62rem) {
+  .map__route {
+    grid-template-columns: repeat(3, 1fr);
+    padding-left: 0;
+    padding-top: var(--node-top);
+  }
+
+  .map__route::before {
+    /* Between the first and last node centre — a sixth in from each edge. */
+    left: 16.6%;
+    right: 16.6%;
+    top: var(--path-y);
+    bottom: auto;
+    width: auto;
+    height: 3px;
+    background: repeating-linear-gradient(
+      90deg,
+      var(--chalk-dim) 0 6px,
+      transparent 6px 15px
+    );
+  }
+
+  .map__node::before {
+    top: calc(var(--path-y) - var(--node-top) - 0.55rem + 1.5px);
+    left: 50%;
+    translate: -50% 0;
+  }
+}
+
+/* ── A world ────────────────────────────────────────────────────────────── */
+
+.world {
+  position: relative;
+  display: grid;
+  gap: 0.55rem;
+  align-content: start;
+  overflow: hidden;
+  height: 100%;
+  padding: var(--gap-4) var(--gap-4) calc(var(--gap-4) + 4.5rem);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--hairline);
+  background:
+    radial-gradient(120% 90% at 50% -15%, var(--world-glow), transparent 62%),
+    linear-gradient(180deg, var(--ink-800), var(--ink-900));
+  box-shadow: var(--shadow-paper);
+  color: var(--chalk);
+  transition:
+    transform 0.2s var(--ease-spring),
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.world:hover,
+.world:focus-within {
+  transform: translateY(-5px);
+  border-color: color-mix(in oklab, var(--accent) 55%, transparent);
+  box-shadow: var(--shadow-lift);
+}
+
+/* The card's primary link, stretched over the whole card. Its text is the
+   world's name, so that's the accessible name of the big target — which is
+   what you'd want read out anyway. */
+.world__enter {
+  color: inherit;
+}
+
+.world__enter::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+
+/* Anything that has to stay clickable sits above the stretched link. */
+.world__guide {
+  position: relative;
+  z-index: 1;
+  justify-self: start;
+  margin-top: 0.1rem;
+  font-size: var(--step--1);
+  font-weight: 700;
+  color: var(--chalk-soft);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+  text-decoration-color: color-mix(
+    in oklab,
+    var(--chalk-soft) 40%,
+    transparent
+  );
+}
+
+.world__guide:hover {
+  color: var(--accent);
+  text-decoration-color: var(--accent);
+}
+
+.world__badge {
+  display: grid;
+  place-items: center;
+  width: 3rem;
+  aspect-ratio: 1;
+  margin-bottom: 0.35rem;
+  border-radius: 30%;
+  border: 1.5px solid color-mix(in oklab, var(--accent) 40%, transparent);
+  background: color-mix(in oklab, var(--accent) 14%, transparent);
+  color: var(--accent);
+}
+
+.world__subject {
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--chalk-dim);
+}
+
+.world__name {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(1.6rem, 3.4vw, 2.1rem);
+  line-height: 1;
+  letter-spacing: 0.005em;
+}
+
+/* Written for the child picking, not the parent reading. */
+.world__tag {
+  font-size: var(--step-0);
+  font-weight: 700;
+  color: var(--accent);
+  line-height: 1.4;
+}
+
+.world__blurb {
+  font-size: var(--step--1);
+  line-height: 1.6;
+  color: var(--chalk-soft);
+}
+
+.world__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.2rem;
+}
+
+.world__meta span {
+  padding: 0.25em 0.7em;
+  border-radius: 999px;
+  border: 1px solid var(--hairline);
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  letter-spacing: 0.06em;
+  color: var(--chalk-dim);
+}
+
+.world__go {
+  margin-top: 0.6rem;
+  font-family: var(--font-display);
+  font-size: var(--step-0);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--go);
+}
+
+.world:hover .world__go {
+  text-decoration: underline;
+  text-underline-offset: 0.25em;
+}
+
+/* The strip of that world's actual ground, cropped and faded into the card.
+   `--terrain` here resolves to the CARD's world, not the page's. */
+.world__ground {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 5rem;
+  /* `--ink-850` rather than the darkest step, and a mask that clears early:
+     the terrains are painted to be quiet behind a whole page, and at eighty
+     pixels a quiet pattern on near-black is just a shadow. */
+  background-color: var(--ink-850);
+  background-image: var(--terrain);
+  background-size: var(--terrain-size);
+  box-shadow: inset 0 1px 0 color-mix(in oklab, var(--accent) 30%, transparent);
+  mask-image: linear-gradient(180deg, transparent, #000 28%);
+  pointer-events: none;
+}
+
+/* ── Worlds that don't exist yet ────────────────────────────────────────── */
+
+.soon {
+  margin-top: var(--gap-5);
+  padding-top: var(--gap-4);
+  border-top: 1px dashed var(--hairline);
+}
+
+.soon__head {
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--chalk-dim);
+}
+
+.soon__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: var(--gap-2);
+}
+
+.soon__list li {
+  padding: 0.4em 0.9em;
+  border-radius: 999px;
+  border: 1px dashed var(--hairline);
+  font-family: var(--font-display);
+  font-size: var(--step-0);
+  color: var(--chalk-dim);
+}
+
+.soon__note {
+  margin-top: var(--gap-2);
+  max-width: 56ch;
+  font-size: var(--step--1);
+  line-height: 1.6;
+  color: var(--chalk-dim);
+}
+
+/* ── What the child sees, and what you don't ────────────────────────────── */
+
+.ledger {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(18rem, 100%), 1fr));
+  gap: var(--gap-4);
+  margin-top: var(--gap-4);
+}
+
+.ledger__col {
+  display: grid;
+  gap: 0.55rem;
+  align-content: start;
+}
+
+.ledger__who {
+  font-family: var(--font-display);
+  font-size: var(--step-1);
+  letter-spacing: 0.005em;
+  padding-bottom: 0.6rem;
+  border-bottom: 2px solid color-mix(in oklab, var(--accent) 45%, transparent);
+}
+
+.ledger__col--you .ledger__who {
+  border-bottom-color: var(--hairline);
+  color: var(--chalk-dim);
+}
+
+.ledger__col li {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.6rem;
+  font-size: var(--step--1);
+  line-height: 1.6;
+  color: var(--chalk-soft);
+}
+
+.ledger__col li::before {
+  content: "✓";
+  font-family: var(--font-mono);
+  color: var(--accent);
+}
+
+.ledger__col--you li::before {
+  content: "—";
+  color: var(--chalk-dim);
+}

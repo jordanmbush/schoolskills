@@ -1,21 +1,33 @@
 ---
-import Base from "@/layouts/Base.astro";
+import Content from "@/layouts/Content.astro";
 
 /**
  * Must exist as a real page: `errorPage: "404.html"` in sst.config.ts points
  * CloudFront here, and if the object is missing CloudFront can't fetch its own
  * error document and serves a 502 instead — so every mistyped URL would look
  * like the site is broken rather than like a wrong address.
+ *
+ * It renders in Empty world, which is one horizon line and no ground. The joke
+ * is that it's also the literal truth, and a dead end is a better place to be
+ * charming than a privacy policy is.
  */
 ---
 
-<Base
+<Content
   title="Page not found — School Skills"
-  description="That page doesn't exist. Head back to the games."
+  description="That page doesn't exist. Head back to the map."
+  world="empty"
 >
-  <main>
-    <h1>That page ran off</h1>
-    <p>There's nothing at this address.</p>
-    <p><a href="/">Back to the games</a></p>
-  </main>
-</Base>
+  <div class="void">
+    <p class="hero__eyebrow">
+      <span class="hero__world">Empty world</span>
+      Nothing here
+    </p>
+    <h1 class="void__title">You found the edge of the map</h1>
+    <p class="void__note">
+      There&rsquo;s nothing at this address. No world was built here, and
+      that&rsquo;s the whole of it.
+    </p>
+    <a class="cta" href="/">Back to the map</a>
+  </div>
+</Content>

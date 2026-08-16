@@ -7,7 +7,15 @@
  * static site quietly fails to rank, and making it a type error is cheaper
  * than catching it in review. `canonical` is derived from Astro.site (set in
  * astro.config.mjs) so it can't drift from the sitemap.
+ *
+ * `world` is the other required-ish decision: it stamps `data-world` on <html>
+ * and every colour on the page follows from it (see src/styles/worlds.css).
+ * The default is `grid` because that's the game, and an unthemed game screen
+ * should land somewhere deliberate rather than somewhere blank.
  */
+import type { World } from "@/engine/worlds";
+import { THEME_COLOUR } from "@/engine/worlds";
+
 interface Props {
   title: string;
   description: string;
@@ -15,16 +23,24 @@ interface Props {
   image?: string;
   /** Structured data for this page, serialised into a JSON-LD script tag. */
   jsonLd?: Record<string, unknown>;
+  /** Which world this page is in. Drives every colour on it. */
+  world?: World;
 }
 
-const { title, description, image = "/og-default.png", jsonLd } = Astro.props;
+const {
+  title,
+  description,
+  image = "/og-default.png",
+  jsonLd,
+  world = "grid",
+} = Astro.props;
 
 const canonical = new URL(Astro.url.pathname, Astro.site).href;
 const ogImage = new URL(image, Astro.site).href;
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang="en" data-world={world}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -42,8 +58,30 @@ const ogImage = new URL(image, Astro.site).href;
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
-    <meta name="theme-color" content="#0b0f1a" />
+    <!-- Tints the browser chrome to the world you're standing in. -->
+    <meta name="theme-color" content={THEME_COLOUR[world]} />
     <meta name="generator" content={Astro.generator} />
+
+    <!--
+      Both faces are above the fold on every page: the headline is Lilita, the
+      first paragraph under it is Nunito. Preloading them is what stops the
+      swap landing after the reader has already started, which on a page whose
+      whole job is a first impression is worth two requests.
+    -->
+    <link
+      rel="preload"
+      href="/fonts/lilita-one-latin-400.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      href="/fonts/nunito-latin-var.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
 
     <!--
       Registered on `load` rather than immediately: service-worker registration

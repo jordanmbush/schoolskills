@@ -2,6 +2,7 @@ import { useCallback, useMemo, useRef, useState } from "react";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
 import { useHub, usePlayer } from "@/components/state/HubContext";
 import { useRace } from "@/components/state/RaceContext";
+import { useWorld, worldOfRace } from "@/components/state/useWorld";
 import { buildDeck, configKey, deckSpec, modeOf } from "@/engine/decks";
 import {
   WRONG_ANSWER_PENALTY_MS,
@@ -35,6 +36,11 @@ export default function RaceTrack() {
   const profile = usePlayer(profileId);
   const { pending, outcome, finish } = useRace();
   const navigate = useNavigate();
+
+  // Above the guards below, because it's a hook. A track with no pending race
+  // is about to redirect anyway, so the world it names in that gap never
+  // reaches a paint.
+  useWorld(pending ? worldOfRace(pending.config) : "grid");
 
   if (!profile) return <Navigate to="/" replace />;
   // Finishing a race clears `pending` and sets `outcome` in one update, and the

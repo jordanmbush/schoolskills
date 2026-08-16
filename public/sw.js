@@ -22,11 +22,24 @@
  * Bump CACHE to evict everything; old caches are deleted on activate.
  */
 
-const CACHE = "schoolskills-v1";
+const CACHE = "schoolskills-v2";
 
 // The shell worth having before the first offline visit. Deliberately short —
 // hashed assets arrive on their own as they're requested.
-const PRECACHE = ["/", "/flash-cards", "/404.html", "/manifest.webmanifest"];
+//
+// The two fonts are here because they're the two the pages preload, and unlike
+// everything else in this list their absence is visible rather than fatal: an
+// offline first visit would render the whole site in Arial and look broken
+// rather than look offline. They're unhashed and served from our own origin
+// (see src/styles/fonts.css for why not a CDN), so the URLs are stable.
+const PRECACHE = [
+  "/",
+  "/flash-cards",
+  "/404.html",
+  "/manifest.webmanifest",
+  "/fonts/lilita-one-latin-400.woff2",
+  "/fonts/nunito-latin-var.woff2",
+];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(

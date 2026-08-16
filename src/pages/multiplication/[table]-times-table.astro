@@ -1,6 +1,5 @@
 ---
-import Base from "@/layouts/Base.astro";
-import "@/styles/content.css";
+import Content from "@/layouts/Content.astro";
 
 /**
  * One prerendered page per times table — the site's main organic-search
@@ -9,9 +8,12 @@ import "@/styles/content.css";
  * day one; the game behind it is not.
  *
  * Each page carries the full table as a real <table>, a tip that is specific to
- * that number rather than generic filler, and a link into the game preloaded
- * with that table. They cross-link to each other so the set is reachable from
- * any entry point.
+ * that number rather than generic filler, and a link into the game. They
+ * cross-link to each other so the set is reachable from any entry point.
+ *
+ * These are the twelve levels of The Grid, and the only numbered sequence on
+ * the site — a number IS what distinguishes one of these pages from the next,
+ * so the numbering carries information rather than decorating the page.
  */
 
 export function getStaticPaths() {
@@ -67,15 +69,13 @@ const rows = Array.from({ length: 12 }, (_, i) => i + 1);
 const tips = TIPS[n] ?? [];
 
 const title = `${n} times table — free practice, flash cards and tips | School Skills`;
-const description = `The full ${n} times table from ${n} × 1 to ${n} × 12, with tips for remembering it and a free flash-card game to practise. No sign-up.`;
-
-// Neighbouring tables, so every page links onward to the rest of the set.
-const others = rows.filter((r) => r !== n);
+const description = `The full ${n} times table from ${n} × 1 to ${n} × 12, with tips for remembering it and a free flash-card game to practise. No sign-up, works offline.`;
 ---
 
-<Base
+<Content
   title={title}
   description={description}
+  world="grid"
   jsonLd={{
     "@context": "https://schema.org",
     "@type": "LearningResource",
@@ -90,77 +90,114 @@ const others = rows.filter((r) => r !== n);
     inLanguage: "en",
   }}
 >
-  <main class="page">
-    <p class="page__eyebrow">Multiplication</p>
-    <h1>The {n} times table</h1>
-    <p class="page__lead">
-      Every fact from {n} × 1 to {n} × 12, what to notice about them, and a game for
-      drilling the ones that don't stick.
+  <header class="hero wrap">
+    <p class="hero__eyebrow">
+      <span class="hero__world">The Grid</span>
+      Level {n} of 12
     </p>
+    <h1 class="hero__title">The {n} times table</h1>
+    <p class="hero__lead">
+      Every fact from {n} &times; 1 to {n} &times; 12, what to notice about them,
+      and a game for drilling the ones that don&rsquo;t stick.
+    </p>
+    <div class="hero__actions">
+      <a class="cta" href="/flash-cards">Practise the {n}s</a>
+    </div>
+    <p class="hero__note">Free &middot; no account &middot; works offline</p>
+  </header>
 
-    <a class="cta" href="/flash-cards">Practise the {n}s →</a>
+  {
+    /*
+    The table is the answer to the query, so it leads and it stays narrow —
+    twelve rows of two numbers don't want a wide column. Everything written
+    ABOUT the table sits beside it rather than under it, which is both better
+    reading and the difference between a full page and a narrow strip of one.
+  */
+  }
+  <section class="band band--tight wrap">
+    <div class="split">
+      <div>
+        <h2 class="h2">The full table</h2>
+        <table class="facts facts--pairs">
+          <caption>The {n} times table, 1 to 12</caption>
+          <tbody>
+            {
+              rows.map((r) => (
+                <tr>
+                  <th scope="row">
+                    {n} × {r}
+                  </th>
+                  <td>{n * r}</td>
+                </tr>
+              ))
+            }
+          </tbody>
+        </table>
+      </div>
 
-    <h2>The full table</h2>
-    <table class="facts">
-      <caption>The {n} times table, 1 to 12</caption>
-      <tbody>
+      <div>
         {
-          rows.map((r) => (
-            <tr>
-              <th scope="row">
-                {n} × {r}
-              </th>
-              <td>{n * r}</td>
-            </tr>
-          ))
+          tips.length > 0 && (
+            <>
+              <h2 class="h2">How to remember it</h2>
+              <div class="hints">
+                {tips.map((tip) => (
+                  <p class="hint">
+                    <span set:html={tip} />
+                  </p>
+                ))}
+              </div>
+            </>
+          )
         }
-      </tbody>
-    </table>
 
-    {
-      tips.length > 0 && (
-        <>
-          <h2>How to remember it</h2>
-          <ul class="tips">
-            {tips.map((tip) => (
-              <li set:html={tip} />
-            ))}
-          </ul>
-        </>
-      )
-    }
+        <h2 class="h2 h2--next">Practising it properly</h2>
+        <div class="prose">
+          <p>
+            Recall and calculation are different skills. A child who works out 7
+            &times; 8 by counting up from 7 &times; 4 knows the maths, but
+            they&rsquo;ll still stall on it in a longer problem. The goal is
+            answering without working it out &mdash; which is why the game times
+            every card and treats a slow correct answer as something still worth
+            practising.
+          </p>
+          <p>
+            Short and frequent beats long and rare. Five minutes a day moves a
+            fact from &ldquo;worked out&rdquo; to &ldquo;known&rdquo; faster
+            than half an hour on a Sunday, and it doesn&rsquo;t need
+            supervising.
+          </p>
+          <p class="aside">
+            This is drill, not a maths lesson. It won&rsquo;t explain what
+            multiplication <em>is</em> and it isn&rsquo;t tied to any curriculum &mdash;
+            you teach the {n}s however you teach them, and this is the ten
+            minutes afterwards that make them stick.
+          </p>
+        </div>
+        <div class="hero__actions">
+          <a class="cta" href="/flash-cards">Start a race</a>
+        </div>
+      </div>
+    </div>
+  </section>
 
-    <h2>Practising it properly</h2>
-    <p>
-      Recall and calculation are different skills. A child who works out 7 × 8
-      by counting up from 7 × 4 knows the maths, but they'll still stall on it
-      in a longer problem. The goal is answering without working it out — which
-      is why the game times every card and treats a slow correct answer as
-      something still worth practising.
+  <section class="band band--tight wrap">
+    <h2 class="h2">The other levels</h2>
+    <p class="h2__sub">
+      Twelve tables, no order. Take the one that&rsquo;s giving trouble.
     </p>
-    <p>
-      Short and frequent beats long and rare. Five minutes a day moves a fact
-      from "worked out" to "known" faster than half an hour on a Sunday.
-    </p>
-
-    <a class="cta" href="/flash-cards">Start a race →</a>
-
-    <h2>The other tables</h2>
-    <ul class="siblings">
+    <nav class="stones" aria-label="Times tables">
       {
-        others.map((r) => (
-          <li>
-            <a href={`/multiplication/${r}-times-table`}>{r}×</a>
-          </li>
+        rows.map((r) => (
+          <a
+            class="stone"
+            href={`/multiplication/${r}-times-table`}
+            aria-current={r === n ? "page" : undefined}
+          >
+            {r}×
+          </a>
         ))
       }
-    </ul>
-
-    <footer class="page__foot">
-      <a href="/">School Skills</a>
-      <a href="/flash-cards">Flash cards</a>
-      <a href="/privacy">Privacy</a>
-      <p>Free to use. No account, and progress never leaves your device.</p>
-    </footer>
-  </main>
-</Base>
+    </nav>
+  </section>
+</Content>

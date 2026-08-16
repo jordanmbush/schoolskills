@@ -78,34 +78,108 @@ export function setCustomLists(
   );
 }
 
-const listFor = (listId: string) =>
-  WORD_LISTS_BY_ID.get(listId) ?? customLists.get(listId);
+/**
+ * A word as the deck sees it.
+ *
+ * A shipped list gives every word a sentence to be heard in — see the note at
+ * the top of wordlists.ts for why that isn't optional on those. A list a
+ * parent typed in has no sentences and never will, so `clue` is absent and
+ * those cards behave exactly as every word card did before: the word alone,
+ * spoken once. Both have to work, so nothing downstream may assume a clue.
+ */
+export type DeckWord = { word: string; clue?: string };
 
+/** Marks where the word goes in a clue. See `wordlists.ts`. */
+export const CLUE_SLOT = "_";
+
+/** The clue with the word dropped into its slot — what gets spoken. */
+export const fillClue = (clue: string, word: string) =>
+  clue.replace(CLUE_SLOT, word);
+
+/**
+ * The clue either side of its slot, so a view can render the gap however it
+ * renders gaps. Returns the whole clue and an empty tail if there is no slot,
+ * which can only happen for a clue this build didn't ship.
+ */
+export function clueParts(clue: string): [string, string] {
+  const at = clue.indexOf(CLUE_SLOT);
+  return at < 0 ? [clue, ""] : [clue.slice(0, at), clue.slice(at + 1)];
+}
+
+/**
+ * What the voice says for a card: the word, then the word in a sentence.
+ *
+ * That order is the one a spelling test uses, and it is the order for a
+ * reason — the child can start typing off the first word while the context
+ * arrives behind them, rather than waiting out a sentence to reach the point.
+ * The sentence is what makes homophones answerable at all, and what repairs a
+ * word the device's voice enunciates badly.
+ */
+export const utteranceFor = ({ word, clue }: DeckWord): string =>
+  clue ? `${word}. ${fillClue(clue, word)}` : word;
+
+type ResolvedList = { name: string; entries: DeckWord[] };
+
+/** A shipped list or a parent's, flattened to the one shape the deck uses. */
+function listFor(listId: string): ResolvedList | undefined {
+  const shipped = WORD_LISTS_BY_ID.get(listId);
+  if (shipped) return { name: shipped.name, entries: shipped.entries };
+  const custom = customLists.get(listId);
+  if (custom)
+    return {
+      name: custom.name,
+      entries: custom.words.map((word) => ({ word })),
+    };
+  return undefined;
+}
+
+export function deckWordsOf(config: WordConfig): DeckWord[] {
+  const list = listFor(config.listId);
+  if (!config.words?.length) return list?.entries ?? [];
+  // A drill carries its own words as plain strings, so reunite them with the
+  // sentences from the list they came from. Without this the drill — the deck
+  // of exactly the words a child keeps getting wrong — would be the one place
+  // they lost the context that makes those words answerable.
+  const clues = new Map(
+    list?.entries.map((e) => [normaliseWord(e.word), e.clue]) ?? [],
+  );
+  return config.words.map((word) => ({
+    word,
+    clue: clues.get(normaliseWord(word)),
+  }));
+}
+
+/** Just the words, for counting them and showing a few as a preview. */
 export const wordsOf = (config: WordConfig): string[] =>
-  config.words?.length ? config.words : (listFor(config.listId)?.words ?? []);
+  deckWordsOf(config).map((e) => e.word);
 
 export function buildWordDeck(config: WordConfig, seed: number): Card[] {
   const rand = mulberry32(seed);
-  const pool = wordsOf(config);
+  const pool = deckWordsOf(config);
   if (pool.length === 0) return [];
 
   // Exhaust the list before repeating, exactly as the arithmetic deck does, so
   // a 10-card race over 40 words never asks the same one twice.
-  const drawn: string[] = [];
+  const drawn: DeckWord[] = [];
   while (drawn.length < config.cardCount) drawn.push(...shuffled(pool, rand));
 
-  return drawn.slice(0, config.cardCount).map((word) => {
+  const words = pool.map((e) => e.word);
+  return drawn.slice(0, config.cardCount).map((entry) => {
     const card: Card = {
       // Kept for the record, never rendered during play — see `Card.speak`.
-      prompt: word,
-      answer: word,
-      factId: normaliseWord(word),
-      speak: word,
+      prompt: entry.word,
+      answer: entry.word,
+      factId: normaliseWord(entry.word),
+      speak: utteranceFor(entry),
+      clue: entry.clue,
     };
     if (config.inputMode !== "choose") return card;
     return {
       ...card,
-      choices: shuffled([word, ...wordDistractors(word, pool, rand)], rand),
+      choices: shuffled(
+        [entry.word, ...wordDistractors(entry.word, words, rand)],
+        rand,
+      ),
     };
   });
 }
@@ -173,6 +247,7 @@ export function wordDeckSpec(mode: string): DeckSpec {
   return {
     id: mode,
     label: list?.name ?? "Words",
+    world: "jungle",
     // A word is one fact however it's asked, so nothing folds and nothing
     // splits. Normalised so "Because" and "because" are the same square.
     masteryKey: normaliseWord,

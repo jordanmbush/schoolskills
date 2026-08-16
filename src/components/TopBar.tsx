@@ -61,6 +61,16 @@ export default function TopBar({
 
       <div className="topbar__actions">
         {children}
+        {/*
+          The way out of the island. A real <a>, not a router <Link> — "/" here
+          means the site's map page, which the HashRouter doesn't own. Sits with
+          the sound toggle because it's the same kind of control: chrome, not
+          part of the game.
+        */}
+        <a className="topbar__icon" href="/" title="Back to the map">
+          <span aria-hidden="true">🗺</span>
+          <span className="u-sr">Leave the game, back to the map</span>
+        </a>
         <Button
           variant="bare"
           className="topbar__icon"

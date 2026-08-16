@@ -46,6 +46,47 @@ move the doc block onto the thing it now describes. Files over the cap sit in
 `maxLinesAllowlist` against the story that retires them; delete the entry in the
 same PR that splits the file.
 
+## Worlds — one game, several biomes
+
+The site presents itself as a single game with a map and a world per subject.
+That is a real structure, not a metaphor in the copy:
+
+| World    | Where                               | Subject                    |
+| -------- | ----------------------------------- | -------------------------- |
+| `map`    | `/`                                 | the overworld, not a world |
+| `grid`   | `/flash-cards`, `/multiplication/*` | times tables (space)       |
+| `jungle` | `/spelling/play`, `/spelling`       | spelling and sight words   |
+| `ice`    | `/typing`                           | touch typing (glacier)     |
+| `line`   | `/privacy`, `/terms`                | the pause menu             |
+| `empty`  | `/404`                              | literally nothing          |
+
+A world is `data-world` on `<html>` and **nothing else**. Every screen already
+reads its colours through `--ink-*`, `--chalk-*`, `--accent`, `--go` and
+`--terrain`, so `src/styles/worlds.css` swaps eleven custom properties and the
+whole app changes biome without a box moving. Adding one is a block in that file
+plus an entry in `src/engine/worlds.ts` — the registry both halves read, and the
+only place a world's name, blurb or theme colour is written down.
+
+Three rules:
+
+- **The telemetry five never change.** `--lime` (correct), `--flare` (wrong),
+  `--sky` (the ghost), `--gold` (records), `--grape` (badges) live in
+  `tokens.css` and mean the same thing in every world. Use `--go` for "press
+  this", which _is_ per-world; a world that recoloured `--lime` would teach a
+  child to re-learn the signal every time the background changed.
+- **The deck decides the world, via `DeckSpec.world`.** Keyed off `mode`, so a
+  race saved three months ago still opens in the scenery it was run in. The
+  engine never interprets the value — to it a world id is an opaque string.
+  `useWorld()` in `src/components/state/` is what writes it from the client.
+- **World blocks are scoped to `[data-world]`, not `:root[data-world]`.** That is
+  what lets the overworld map render three worlds at once: each card carries
+  `data-world` and is built out of that world's own tokens.
+
+Content pages use `src/layouts/Content.astro` (masthead + footer). The two games
+use `Base.astro` directly, so **site chrome can never appear over a race** —
+there is no prop to set wrong. The way out of an island is the map icon in its
+top bar.
+
 ## Validation
 
 ```bash
@@ -87,15 +128,25 @@ outlive the decks they were played on.
 Three families exist: `decks/flashcards.ts` (arithmetic), `decks/words.ts`
 (spelling and sight words) and `decks/typing.ts` (passages).
 
-**A deck is not a game.** Words are a deck: they play in the flash-card loop,
-on the same route, so a profile and its records follow a child between
-subjects. `/spelling` is a content page pointing at it. Typing is a game —
-there are no discrete cards to submit, no input mode to choose and a passage
-that stays on screen — so it is its own island at `src/games/typing/`.
+**A deck is not a game, but a subject is a front door.** Words are a deck —
+they play in the flash-card loop, using the same clock, ghost and record book.
+What they don't share is a route: `src/games/flashcards/App.tsx` is mounted
+twice, at `/flash-cards` (The Grid) and `/spelling/play` (Word Jungle), with a
+`subject` prop deciding which decks exist inside. A child sent to practise
+spellings should not have to walk past a times-table picker to get there.
+`src/components/state/SubjectContext.tsx` is where a subject is defined and
+where the reasoning lives; `/spelling` remains the crawlable page about it.
 
-Either way it is a **path, not a subdomain**: separate origins would partition
-browser storage and a player's profile could no longer follow them between
-games.
+Typing is a different game, not a different subject — no discrete cards to
+submit, no input mode to choose, a passage that stays on screen — so it is its
+own island at `src/games/typing/`.
+
+All of them are a **path, not a subdomain.** Storage is scoped to an origin,
+not a route, so every mount shares one IndexedDB, one profile list and one
+record book — which is the only reason a child's level and badges follow them
+between subjects. Splitting by subdomain would partition that permanently;
+splitting by path costs nothing. Whichever runs belong to a mount is decided by
+`deckSpec(mode).world === subject.world` and nothing else.
 
 **`src/games/race/` is the race minus the game** — the clock and its pause, the
 3·2·1, the ghost lane, the HUD, the quit sheet, the rival list and

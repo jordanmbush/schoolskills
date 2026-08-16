@@ -1,0 +1,107 @@
+---
+/**
+ * The overworld map — the home page's thesis, and the only place on the site
+ * that spends any budget on ornament.
+ *
+ * Each node is built out of its own world's tokens: the card carries
+ * `data-world`, so `--accent`, the ink ramp and `--terrain` inside it resolve
+ * to that world rather than to the page's. The strip along the bottom of a
+ * card is therefore not a picture of the jungle, it is the jungle — the same
+ * CSS the world itself is painted with, cropped to seventy pixels. That is why
+ * this works with no illustration and no image request.
+ *
+ * The path between nodes is dashed and the nodes aren't numbered, because
+ * nothing here is gated. A five-year-old who wants to start with spelling and
+ * never touch a times table is playing it correctly.
+ */
+import { UNBUILT_WORLDS, WORLDS, type World } from "@/engine/worlds";
+
+/** One mark per world, drawn rather than illustrated so it inherits `--accent`. */
+const BADGES: Partial<Record<World, string>> = {
+  grid: `<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="currentColor">
+      <circle cx="5" cy="5" r="1.4" opacity=".4"/><circle cx="12" cy="5" r="1.4" opacity=".4"/><circle cx="19" cy="5" r="2.7"/>
+      <circle cx="5" cy="12" r="1.4" opacity=".4"/><circle cx="12" cy="12" r="1.4" opacity=".4"/><circle cx="19" cy="12" r="1.4" opacity=".4"/>
+      <circle cx="5" cy="19" r="1.4" opacity=".4"/><circle cx="12" cy="19" r="1.4" opacity=".4"/><circle cx="19" cy="19" r="1.4" opacity=".4"/>
+    </svg>`,
+  jungle: `<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+      <path d="M20 4c0 9-5.6 15.2-13.2 15.2C6.8 10.2 12.4 4 20 4z" fill="currentColor" opacity=".26"/>
+      <path d="M20 4c0 9-5.6 15.2-13.2 15.2C6.8 10.2 12.4 4 20 4z" fill="none" stroke="currentColor" stroke-width="1.6"/>
+      <path d="M17.6 6.4 6.6 20" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" fill="none"/>
+    </svg>`,
+  ice: `<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none"
+      stroke="currentColor" stroke-width="1.7" stroke-linecap="round">
+      <path d="M12 3v18M4.2 7.5l15.6 9M19.8 7.5l-15.6 9"/>
+      <path d="M12 7.4 9.7 5.2M12 7.4l2.3-2.2M12 16.6l-2.3 2.2M12 16.6l2.3 2.2"/>
+    </svg>`,
+};
+---
+
+<section class="map" aria-labelledby="map-head">
+  <h2 class="h2" id="map-head">Three worlds, and no locked doors</h2>
+  <p class="h2__sub">
+    Each world is one subject and one thing to get good at. Start anywhere, stop
+    anywhere, and switch mid-week &mdash; nothing has to be finished before
+    anything else opens, and the same player carries their records between all
+    three.
+  </p>
+
+  {
+    /* <ul>, not <ol> — the order these appear in isn't an order to play them
+      in, and an ordered list would tell a screen reader otherwise. `role`
+      restores the list semantics that base.css's `list-style: none` strips in
+      Safari. */
+  }
+  <ul class="map__route" role="list">
+    {
+      WORLDS.map((w) => (
+        <li class="map__node" data-world={w.id}>
+          {/*
+            A card, not a link — a world with a guide needs a second link
+            inside it, and an <a> inside an <a> is not markup. The name's link
+            is stretched over the whole card instead (see .world__enter), so
+            the card is still one big target and the guide sits above it.
+          */}
+          <div class="world">
+            <span class="world__badge" aria-hidden="true">
+              <Fragment set:html={BADGES[w.id]} />
+            </span>
+            <p class="world__subject">{w.subject}</p>
+            <h3 class="world__name">
+              <a class="world__enter" href={w.href}>
+                {w.name}
+              </a>
+            </h3>
+            <p class="world__tag">{w.tagline}</p>
+            <p class="world__blurb">{w.blurb}</p>
+            <p class="world__meta">
+              <span>{w.levels}</span>
+              <span>{w.ages}</span>
+            </p>
+            <span class="world__go" aria-hidden="true">
+              Enter &rarr;
+            </span>
+            {w.guide && (
+              <a class="world__guide" href={w.guide.href}>
+                {w.guide.label} &rarr;
+              </a>
+            )}
+            <span class="world__ground" aria-hidden="true" />
+          </div>
+        </li>
+      ))
+    }
+  </ul>
+
+  <div class="soon">
+    <p class="soon__head">Worlds in the workshop</p>
+    <ul class="soon__list" role="list">
+      {UNBUILT_WORLDS.map((name) => <li>{name}</li>)}
+    </ul>
+    <p class="soon__note">
+      Not built yet, and not promised by a date &mdash; this is a free site made
+      in evenings. There is nothing to sign up to and no list to join. A new
+      world just turns up on the map one day, and it works the same as the
+      others.
+    </p>
+  </div>
+</section>
