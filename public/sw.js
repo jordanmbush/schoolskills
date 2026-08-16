@@ -76,6 +76,13 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
 
+  // Measurement beacons (src/services/analytics.ts). Left entirely alone: the
+  // whole point of one is that it reaches the CDN and gets written to an
+  // access log, so caching it would silently stop the counting, and serving a
+  // cached one offline would count an event that never happened. Untouched
+  // means it simply fails offline, which is the correct number.
+  if (url.pathname.startsWith("/_e/")) return;
+
   if (url.pathname.startsWith("/_astro/")) {
     event.respondWith(
       caches.match(request).then(

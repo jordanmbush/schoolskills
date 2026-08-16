@@ -80,6 +80,22 @@ export default $config({
   async run() {
     const production = $app.stage === "production";
 
+    /**
+     * How long a raw access log line lives.
+     *
+     * /privacy tells parents these logs are "short-lived", so this number is a
+     * promise rather than a preference — it may go down, and it may not go up
+     * without that page changing in the same pull request.
+     *
+     * Thirty days is the whole retention because a raw line contains an IP
+     * address, and an IP belonging to a child is the sort of thing worth not
+     * keeping. It is not a limit on what can be *known*: the counts derived
+     * from these lines carry no IP at all, so anything worth a trend gets
+     * aggregated and stored as numbers (see docs/analytics.md). The raw
+     * material expires; the arithmetic doesn't have to.
+     */
+    const LOG_RETENTION_DAYS = 30;
+
     // Only production claims the hostname. A dev or throwaway stage gets the
     // CloudFront URL, so it can deploy with no Cloudflare credentials at all.
     const zoneId = process.env.CLOUDFLARE_ZONE_ID;
@@ -87,6 +103,61 @@ export default $config({
       throw new Error(
         "CLOUDFLARE_ZONE_ID is required for the production stage — it's what points schoolskills.app at this distribution. Export it (and CLOUDFLARE_API_TOKEN, scoped to Zone:DNS:Edit) before deploying.",
       );
+    }
+
+    /**
+     * Where CloudFront writes its access logs, and the only place any
+     * measurement of this site comes from.
+     *
+     * There is no analytics script and no third-party anything — see
+     * src/services/analytics.ts for the reasoning and docs/analytics.md for
+     * how to read these. CloudFront already writes a line per request; this
+     * bucket is just somewhere for it to go.
+     *
+     * Production only. A dev stage that logged would create a second bucket
+     * with a second copy of everyone's IP address for no reason.
+     */
+    const logs = production
+      ? new aws.s3.BucketV2("AccessLogs", {
+          forceDestroy: false,
+        })
+      : undefined;
+
+    if (logs) {
+      // CloudFront's standard logging writes with an ACL, so the bucket has to
+      // accept one. Buckets created since April 2023 default to
+      // BucketOwnerEnforced, which disables ACLs outright and makes the
+      // distribution fail to deliver logs — silently, with no error anywhere
+      // except the absence of files.
+      new aws.s3.BucketOwnershipControls("AccessLogsOwnership", {
+        bucket: logs.id,
+        rule: { objectOwnership: "BucketOwnerPreferred" },
+      });
+
+      // Belt and braces: these logs contain IP addresses and must never be
+      // readable by anyone but us. The bucket is private by default; saying so
+      // explicitly means a later console click can't quietly undo it.
+      new aws.s3.BucketPublicAccessBlock("AccessLogsPrivate", {
+        bucket: logs.id,
+        blockPublicAcls: true,
+        blockPublicPolicy: true,
+        ignorePublicAcls: true,
+        restrictPublicBuckets: true,
+      });
+
+      new aws.s3.BucketLifecycleConfigurationV2("AccessLogsExpiry", {
+        bucket: logs.id,
+        rules: [
+          {
+            id: "expire-raw-lines",
+            status: "Enabled",
+            filter: {},
+            expiration: { days: LOG_RETENTION_DAYS },
+            // A delivery that dies mid-upload otherwise accrues cost forever.
+            abortIncompleteMultipartUpload: { daysAfterInitiation: 7 },
+          },
+        ],
+      });
     }
 
     const site = new sst.aws.StaticSite("Site", {
@@ -142,6 +213,16 @@ export default $config({
             files: "sw.js",
             cacheControl: "public,max-age=0,must-revalidate",
           },
+          // The measurement pixel (src/services/analytics.ts). `no-store` so
+          // neither the browser nor CloudFront can answer a beacon from cache:
+          // a cached response means no request, and no request means no access
+          // log line, which is the entire mechanism. The cache-buster in the
+          // URL says the same thing twice on purpose — this one is cheap
+          // insurance against a future edge cache policy that ignores it.
+          {
+            files: "_e/px.gif",
+            cacheControl: "no-store",
+          },
         ],
       },
       errorPage: "404.html",
@@ -190,6 +271,18 @@ export default $config({
          */
         cdn: (args) => {
           args.customErrorResponses = [];
+          // Turn on access logging. This is the entire analytics pipeline:
+          // no script, no cookie, no identifier, no third party — just the
+          // request lines CloudFront was already generating, kept somewhere we
+          // can count them. `includeCookies` stays false because we set none
+          // and logging them would be a way to start.
+          if (logs) {
+            args.loggingConfig = {
+              bucket: logs.bucketDomainName,
+              prefix: "cf/",
+              includeCookies: false,
+            };
+          }
         },
         assets: (args) => {
           args.transform = {
@@ -220,6 +313,9 @@ export default $config({
     return {
       url: site.url,
       stage: $app.stage,
+      // Named in the outputs so docs/analytics.md doesn't have to hardcode a
+      // generated bucket name that changes if the stack is ever rebuilt.
+      logs: logs?.bucket ?? "none (production only)",
     };
   },
 });

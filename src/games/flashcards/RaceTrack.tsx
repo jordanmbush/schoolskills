@@ -4,6 +4,7 @@ import { useHub, usePlayer } from "@/components/state/HubContext";
 import { useRace } from "@/components/state/RaceContext";
 import { useWorld, worldOfRace } from "@/components/state/useWorld";
 import { buildDeck, configKey, deckSpec, modeOf } from "@/engine/decks";
+import { useRaceCount } from "./race/useRaceCount";
 import {
   WRONG_ANSWER_PENALTY_MS,
   bestRun,
@@ -151,6 +152,7 @@ function Track({
     drop,
     clear,
   } = useAnswerEntry();
+  const measure = useRaceCount(config);
   const { audible, replay } = useCardVoice({
     card,
     racing: phase === "racing",
@@ -192,7 +194,10 @@ function Track({
     notify,
     navigate,
     resultsPath: `/p/${profile.id}/race/results`,
-    onSaving: () => setPhase("saving"),
+    onSaving: () => {
+      setPhase("saving");
+      measure.ended("finished");
+    },
   });
   completeRef.current = complete;
 
@@ -201,7 +206,8 @@ function Track({
     onGo: useCallback(() => {
       startCard();
       setPhase("racing");
-    }, [startCard]),
+      measure.started();
+    }, [startCard, measure]),
   });
 
   /* ── Answering ─────────────────────────────────────────────────────── */
@@ -280,7 +286,10 @@ function Track({
         misses={misses.current}
         answered={answered}
         total={total}
-        onQuit={() => setQuitting(true)}
+        onQuit={() => {
+          setQuitting(true);
+          measure.ended("quit");
+        }}
       />
 
       <Lane
