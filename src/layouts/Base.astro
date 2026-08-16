@@ -26,6 +26,24 @@ interface Props {
   jsonLd?: Record<string, unknown>;
   /** Which world this page is in. Drives every colour on it. */
   world?: World;
+  /**
+   * Keep this page out of search results.
+   *
+   * For the game routes, which are `client:only` islands: their prerendered
+   * body is two words, so there is nothing for a crawler to rank and a shelf
+   * of near-empty pages is a thin-content signal against the whole domain.
+   * The crawlable surface is the content pages AROUND the islands — that is
+   * the split the architecture is built on, and this is the half of it that
+   * was missing.
+   *
+   * `follow` rather than `nofollow`: the page is not worth indexing, but the
+   * links out of it — to the map, to the other worlds — still are.
+   *
+   * Anything set here must also be excluded from the sitemap; listing a URL
+   * you have told Google to ignore is a contradiction it reports back to you.
+   * astro.config.mjs does that from the same list of routes.
+   */
+  noindex?: boolean;
 }
 
 const {
@@ -34,6 +52,7 @@ const {
   image = "/og-default.png",
   jsonLd,
   world = "grid",
+  noindex = false,
 } = Astro.props;
 
 const canonical = new URL(Astro.url.pathname, Astro.site).href;
@@ -48,6 +67,7 @@ const ogImage = new URL(image, Astro.site).href;
     <title>{title}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
+    {noindex && <meta name="robots" content="noindex, follow" />}
 
     <meta property="og:type" content="website" />
     <meta property="og:title" content={title} />
