@@ -15,6 +15,7 @@ import { loadHub } from "@/services/hub";
 import type { NewProfile } from "@/services/profiles";
 import type { SessionDraft } from "@/services/sessions";
 import { setSoundEnabled } from "@/services/sound";
+import { count } from "@/services/analytics";
 import type { CustomDeck, Profile, Session } from "@/engine/types";
 
 type Toast = { id: number; message: string; tone: "good" | "bad" };
@@ -91,6 +92,9 @@ export function HubProvider({ children }: { children: ReactNode }) {
         ? await deckService.update(id, input)
         : await deckService.create(input);
       setDecks(await deckService.all());
+      // Only that a deck was written, never which one or what is in it — the
+      // words a parent types are this week's spellings for one child.
+      if (!id) count({ event: "deck_saved" });
       return saved;
     },
     [],
@@ -104,6 +108,9 @@ export function HubProvider({ children }: { children: ReactNode }) {
   const createProfile = useCallback(async (profile: NewProfile) => {
     const created = await profileService.create(profile);
     setProfiles((current) => [...current, created]);
+    // No name, no age, no id. "A profile was added" is the whole event, and
+    // it is the only way to tell a household of four from a household of one.
+    count({ event: "profile_added" });
     return created;
   }, []);
 

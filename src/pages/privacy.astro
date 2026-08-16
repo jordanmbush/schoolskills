@@ -3,14 +3,24 @@ import Content from "@/layouts/Content.astro";
 
 /**
  * ⚠️ This document describes the site as it actually behaves TODAY: no
- * accounts, no analytics, no advertising, no network calls carrying user data.
- * That is an unusually strong claim and it is only true while it stays true.
+ * accounts, no advertising, no cookies, no third-party requests, and no
+ * identifier of any kind written to a child's device. That is an unusually
+ * strong claim and it is only true while it stays true.
  *
- * If analytics, an ad network, embedded video, or any third-party script is
- * ever added, this page MUST be updated in the same pull request. Under COPPA a
- * persistent identifier — an ad cookie, a device id, an analytics client id —
- * counts as personal information collected from a child, and shipping one while
- * this page says otherwise turns a technical change into a false statement.
+ * If an ad network, embedded video, a hosted analytics service or any
+ * third-party script is ever added, this page MUST be updated in the same pull
+ * request. Under COPPA a persistent identifier — an ad cookie, a device id, an
+ * analytics client id — counts as personal information collected from a child,
+ * and shipping one while this page says otherwise turns a technical change into
+ * a false statement.
+ *
+ * Measurement was added on 16 August 2026 and deliberately did not cross that
+ * line: it is CloudFront's own access logs plus a first-party image request,
+ * described under "Hosting, and how we count". Two things there are load-
+ * bearing and are asserted elsewhere in the codebase rather than left to
+ * goodwill — the 90-day retention is `LOG_RETENTION_DAYS` in sst.config.ts, and
+ * the promise that a beacon carries no deck id or answer is enforced by
+ * src/services/analytics.test.ts. Change either and this page is wrong.
  *
  * It renders in Line world, which has no scenery on purpose. Every other page
  * here is a place; this one is a promise being read carefully, and dressing it
@@ -18,8 +28,8 @@ import Content from "@/layouts/Content.astro";
  */
 const title = "Privacy — School Skills";
 const description =
-  "School Skills collects nothing. No accounts, no analytics, no advertising, no tracking. Everything a child does stays in their own browser.";
-const updated = "12 August 2026";
+  "School Skills has no accounts, no advertising, no cookies and no third-party scripts. Everything a child does stays in their own browser. We count visits from our own server logs and nothing else.";
+const updated = "16 August 2026";
 ---
 
 <Content title={title} description={description} world="line">
@@ -28,10 +38,11 @@ const updated = "12 August 2026";
       <span class="hero__world">Privacy</span>
       Updated {updated}
     </p>
-    <h1 class="hero__title">We don&rsquo;t collect anything</h1>
+    <h1 class="hero__title">Nothing about your child leaves your device</h1>
     <p class="hero__lead">
-      That is the whole policy. The rest of this page explains how that can be
-      true, and what it means for you.
+      That is the whole policy. We count visits the way a web server always has,
+      and we stop there. The rest of this page explains how that can be true,
+      and what it means for you.
     </p>
   </header>
 
@@ -39,9 +50,18 @@ const updated = "12 August 2026";
     <div class="prose">
       <h2>What we collect</h2>
       <p>
-        Nothing. There are no accounts, no sign-up, no email addresses, no
-        analytics, no advertising, and no third-party scripts of any kind. We do
-        not know who you are, how many of you there are, or that you visited.
+        Nothing about your child. There are no accounts, no sign-up, no email
+        addresses, no advertising, no cookies, and no third-party scripts of any
+        kind. Nothing your child does in a game is sent anywhere, and nothing
+        stored on your device identifies them to us or to anyone else.
+      </p>
+      <p>
+        We do count how many people visit and which parts of the site get used
+        &mdash; how many races are started and finished, and whether the
+        custom-deck feature is used at all. That counting is described in full
+        below. It runs on our own web server rather than an analytics service,
+        it stores nothing on your device, and it cannot tell one visitor from
+        another on a different day.
       </p>
 
       <h2>How that&rsquo;s possible</h2>
@@ -77,11 +97,18 @@ const updated = "12 August 2026";
       <h2>Children</h2>
       <p>
         This site is intended for children and the adults helping them. We do
-        not knowingly collect personal information from anyone, of any age,
-        because we do not collect personal information at all &mdash; including
-        the persistent identifiers (advertising IDs, analytics IDs, tracking
-        cookies) that children&rsquo;s privacy law treats as personal
-        information.
+        not knowingly collect personal information from a child. In particular
+        there are no persistent identifiers &mdash; no advertising ID, no
+        analytics ID, no tracking cookie, nothing written to the device that
+        would let anyone recognise the same child twice. Those are what
+        children&rsquo;s privacy law treats as personal information, and not
+        having them is the point rather than an oversight.
+      </p>
+      <p>
+        The one exception is the ordinary web-server log described below, which
+        records the IP address a request came from. Every website has one, it is
+        needed to deliver a page at all, we keep ours for 90 days, and we use it
+        only to count visits in aggregate.
       </p>
       <p>
         The name you type for a player is stored only in your browser. We
@@ -95,13 +122,36 @@ const updated = "12 August 2026";
         nothing to consent to.
       </p>
 
-      <h2>Hosting</h2>
+      <h2>Hosting, and how we count</h2>
       <p>
         The site is served from Amazon CloudFront. Like any web host, its
-        servers process the standard request information needed to deliver a
-        page &mdash; your IP address, browser type and the file requested
-        &mdash; in short-lived operational logs. We do not use this to identify
-        or track anyone, and it is never combined with anything from the app.
+        servers write a line for each request &mdash; your IP address, browser
+        type and the file requested. Those lines are kept for 90 days and then
+        deleted automatically.
+      </p>
+      <p>
+        Those lines are the only thing we measure from. Once a month or so we
+        count them: how many different addresses appeared, which pages were
+        asked for, how many races were started and finished. The answers are
+        numbers &mdash; &ldquo;412 people, 1,900 races&rdquo; &mdash; and the
+        numbers are all that&rsquo;s kept once the lines expire.
+      </p>
+      <p>
+        There is no analytics service involved and nothing added to your device.
+        Most sites count visitors by storing an identifier in the browser so the
+        same person can be recognised next week; we deliberately don&rsquo;t,
+        because a persistent identifier belonging to a child is exactly what
+        children&rsquo;s privacy law treats as personal information. The trade
+        is that our numbers are approximate: a household sharing one connection
+        counts once, and a phone that changes network counts twice. We would
+        rather have the rougher number.
+      </p>
+      <p>
+        A few in-game actions &mdash; a race started, a race finished, a deck
+        saved &mdash; are counted by requesting a tiny image from this site with
+        the action&rsquo;s name in the address. That request carries no
+        identifier, and it never carries what your child typed, which list they
+        chose, their name, or their age.
       </p>
 
       <h2>Advertising</h2>

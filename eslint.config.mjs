@@ -416,6 +416,9 @@ export default defineConfig([
         console: "readonly",
         process: "readonly",
         URL: "readonly",
+        // Node has had this since v10; the analytics rollup parses beacon
+        // query strings with it.
+        URLSearchParams: "readonly",
         Buffer: "readonly",
         __dirname: "readonly",
       },
