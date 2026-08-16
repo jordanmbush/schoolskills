@@ -74,6 +74,12 @@ export type AdSlotName = keyof typeof AD_SLOTS;
  * That is exactly what production was doing after the site was removed from
  * AdSense, which is what this constant exists to prevent happening again.
  *
+ * False does NOT block getting approved. AdSense verifies ownership by ad
+ * code, by ads.txt, or by a meta tag, and Base.astro emits the meta tag
+ * unconditionally while public/ads.txt names the same publisher. So the site
+ * can be added, verified and reviewed with the loader still dark, and the
+ * only thing waiting on approval is the moment ads actually serve.
+ *
  * Flipping it to true is a one-line change and MUST be made in the same pull
  * request that restores the advertising sections of /privacy — that page has
  * to describe what the site does, in both directions. See the header there.
