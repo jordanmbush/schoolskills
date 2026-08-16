@@ -3,6 +3,11 @@ import { HashRouter, Navigate, Route, Routes } from "react-router-dom";
 import { ToastRail } from "@/components/ToastRail";
 import { HubProvider, useHub } from "@/components/state/HubContext";
 import { RaceProvider } from "@/components/state/RaceContext";
+import {
+  SUBJECTS,
+  SubjectProvider,
+  type SubjectId,
+} from "@/components/state/SubjectContext";
 import { Button } from "@/components/ui/kit";
 import PlayerSelect from "@/components/screens/PlayerSelect";
 import PlayerHub from "@/components/screens/PlayerHub";
@@ -83,12 +88,24 @@ function Shell() {
   );
 }
 
-export default function FlashCardsApp() {
+/**
+ * Mounted twice, at `/flash-cards` and at `/spelling/play`, with `subject`
+ * deciding which decks exist inside. Same origin either way, so both mounts
+ * read the same profiles out of the same IndexedDB — see SubjectContext for
+ * why that matters more than the routing does.
+ */
+export default function FlashCardsApp({
+  subject = "numbers",
+}: {
+  subject?: SubjectId;
+}) {
   return (
     <HashRouter>
-      <HubProvider>
-        <Shell />
-      </HubProvider>
+      <SubjectProvider subject={SUBJECTS[subject]}>
+        <HubProvider>
+          <Shell />
+        </HubProvider>
+      </SubjectProvider>
     </HashRouter>
   );
 }

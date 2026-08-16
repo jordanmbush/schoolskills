@@ -7,15 +7,12 @@ import {
 } from "react-router-dom";
 import { useHub, usePlayer } from "@/components/state/HubContext";
 import { useRace } from "@/components/state/RaceContext";
+import { useSubject } from "@/components/state/SubjectContext";
+import { useWorld, worldOfRace } from "@/components/state/useWorld";
 import TopBar from "@/components/TopBar";
 import { Button } from "@/components/ui/kit";
-import {
-  presetForAge,
-  snapTimeLimit,
-  timeLimitForAge,
-} from "@/engine/decks/flashcards";
+import { snapTimeLimit, timeLimitForAge } from "@/engine/decks/flashcards";
 import { configKey, describeConfig } from "@/engine/decks";
-import { wordListForAge } from "@/engine/decks/wordlists";
 import { ghostsFor } from "@/engine/records";
 import { randomSeed } from "@/engine/random";
 import { sfx } from "@/services/sound";
@@ -48,18 +45,26 @@ export default function RaceSetup() {
   const { profiles, sessions } = useHub();
   const profile = usePlayer(profileId);
   const { start } = useRace();
+  const subject = useSubject();
   const navigate = useNavigate();
   const location = useLocation();
 
   // "Drill these" elsewhere in the hub arrives here with a deck already built,
-  // so the player sees what they're about to practise before it starts.
+  // so the player sees what they're about to practise before it starts. A drill
+  // is always built from a deck this app owns, so it can't hand in a subject
+  // this screen has no settings for.
   const handed = (location.state as { config?: CardConfig } | null)?.config;
   const [config, setConfig] = useState<CardConfig>(
-    () => handed ?? presetForAge(profile?.age ?? 8).config,
+    () => handed ?? subject.startingConfig(profile?.age ?? 8),
   );
   const [rivalId, setRivalId] = useState<string | null>(null);
   /** Raw text while the clock field is being typed into; null when it isn't. */
   const [limitDraft, setLimitDraft] = useState<string | null>(null);
+
+  // Picking a spelling list turns this screen into the jungle while the player
+  // watches — the deck decides the world, so choosing one is choosing where to
+  // stand. See src/engine/worlds.ts.
+  useWorld(worldOfRace(config));
 
   const key = configKey(config);
   const rivals = useMemo(
@@ -102,31 +107,6 @@ export default function RaceSetup() {
     setLimit((config.timeLimitMs ?? timeLimitForAge(profile!.age)) + stepMs);
   }
 
-  /**
-   * Switching subject keeps how the race is run — length, clock, and whether
-   * it's typed or tapped — and replaces only what's on the cards. Someone who
-   * has set an 8-second 20-card race shouldn't have to set it again to try
-   * the same shape on spellings.
-   */
-  function setSubject(next: "numbers" | "words") {
-    if (isWords === (next === "words")) return;
-    sfx.tap();
-    const shared = {
-      cardCount: config.cardCount,
-      inputMode: config.inputMode,
-      timeLimitMs: config.timeLimitMs ?? null,
-    };
-    setConfig(
-      next === "words"
-        ? {
-            kind: "words",
-            listId: wordListForAge(profile!.age).id,
-            ...shared,
-          }
-        : { ...presetForAge(profile!.age).config, ...shared },
-    );
-  }
-
   function launch() {
     const ghost = rivals.find((g) => g.session.id === rivalId) ?? null;
     sfx.whoosh();
@@ -162,31 +142,6 @@ export default function RaceSetup() {
           <div className="panel__head">
             <h2 className="panel__title">Fine tune</h2>
             <span className="chip">{describeConfig(config)}</span>
-          </div>
-
-          <div className="control">
-            <span className="control__label">Practising</span>
-            <div className="segmented">
-              {(
-                [
-                  ["numbers", "🔢", "Numbers", "Times tables and sums"],
-                  ["words", "🔤", "Words", "Spelling and sight words"],
-                ] as const
-              ).map(([subject, icon, label, hint]) => (
-                <Button
-                  key={subject}
-                  variant="bare"
-                  className={`segmented__btn segmented__btn--stack${isWords === (subject === "words") ? " is-on" : ""}`}
-                  onClick={() => setSubject(subject)}
-                  pressed={isWords === (subject === "words")}
-                >
-                  <span className="segmented__word">
-                    <span aria-hidden="true">{icon}</span> {label}
-                  </span>
-                  <span className="segmented__hint">{hint}</span>
-                </Button>
-              ))}
-            </div>
           </div>
 
           {config.kind === "words" ? (
