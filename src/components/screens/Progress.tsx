@@ -22,7 +22,7 @@ import {
 import { buildDrill, deckSpec } from "@/engine/decks";
 import { WORD_MODE_PREFIX, listIdOf } from "@/engine/decks/words";
 import { TYPING_MODE_PREFIX } from "@/engine/decks/typing";
-import { WORD_LISTS_BY_ID } from "@/engine/decks/wordlists";
+import { WORD_LISTS_BY_ID, listWords } from "@/engine/decks/wordlists";
 import { sfx } from "@/services/sound";
 import { DeckSwitch, type DeckChoice } from "./progress/DeckSwitch";
 import { FactMap } from "./progress/FactMap";
@@ -153,9 +153,12 @@ export default function Progress() {
           words={
             // A shipped spelling list in full; for a typing level or a deleted
             // list, whatever of it survives in this player's own history.
-            (!isTypingMode
-              ? WORD_LISTS_BY_ID.get(listIdOf(mode))?.words
-              : undefined) ?? [...grid.keys()].sort()
+            (() => {
+              const list = isTypingMode
+                ? undefined
+                : WORD_LISTS_BY_ID.get(listIdOf(mode));
+              return list ? listWords(list) : [...grid.keys()].sort();
+            })()
           }
           grid={grid}
           switcher={switcher}

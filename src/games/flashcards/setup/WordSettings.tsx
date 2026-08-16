@@ -84,7 +84,9 @@ export function WordSettings({
   }
 
   const row = (
-    list: { id: string; name: string; emoji: string; words: string[] },
+    // Only what a row actually renders, so a shipped list (which carries
+    // entries) and a parent's deck (which carries plain words) both fit.
+    list: { id: string; name: string; emoji: string },
     meta: string,
     blurb: string | null,
     own: CustomDeck | null,
@@ -133,7 +135,7 @@ export function WordSettings({
         {WORD_LISTS.map((list) =>
           row(
             list,
-            `${list.group} · ${list.words.length} words`,
+            `${list.group} · ${list.entries.length} words`,
             list.blurb,
             null,
           ),
