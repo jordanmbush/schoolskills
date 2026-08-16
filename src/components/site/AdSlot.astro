@@ -1,5 +1,5 @@
 ---
-import { AD_CLIENT, adSlotId, type AdSlotName } from "./ads";
+import { AD_CLIENT, ADS_PREVIEW, adSlotId, type AdSlotName } from "./ads";
 
 /**
  * An ad unit on a static content page.
@@ -40,6 +40,11 @@ const slot = adSlotId(name);
   ) : (
     /* No unit id yet, or ads are off in this build. The reservation stays so
        turning a slot on later can't shift a layout people already know. */
-    <div class:list={["ad", "ad--blank", className]} aria-hidden="true" />
+    <div
+      class:list={["ad", ADS_PREVIEW ? "ad--preview" : "ad--blank", className]}
+      aria-hidden="true"
+    >
+      {ADS_PREVIEW && <span class="ad__ghost">ad slot · {name}</span>}
+    </div>
   )
 }

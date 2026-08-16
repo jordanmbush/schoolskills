@@ -133,3 +133,28 @@
   background: none;
   border: 0;
 }
+
+/*
+ * PUBLIC_ADS_PREVIEW only — never production. Draws the reserved box so the
+ * placement can be judged before any unit exists in the AdSense account.
+ * Hatched rather than solid so nobody mistakes a screenshot of this for a
+ * screenshot of the live site.
+ */
+.ad--preview {
+  background: repeating-linear-gradient(
+    45deg,
+    var(--ink-850),
+    var(--ink-850) 8px,
+    var(--ink-800) 8px,
+    var(--ink-800) 16px
+  );
+  border: 1px dashed var(--chalk-dim);
+}
+
+.ad__ghost {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--chalk-soft);
+}

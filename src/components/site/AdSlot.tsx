@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { AD_CLIENT, adSlotId, type AdSlotName } from "./ads";
+import { AD_CLIENT, ADS_PREVIEW, adSlotId, type AdSlotName } from "./ads";
 
 /**
  * An ad unit inside a React island.
@@ -44,7 +44,16 @@ export function AdSlot({
 
   // No unit id yet, or ads are off in this build. Keep the reservation so
   // turning a slot on later can't shift a layout people already know.
-  if (!slot) return <div className={`ad ad--blank ${className}`} aria-hidden />;
+  if (!slot) {
+    return (
+      <div
+        className={`ad ${ADS_PREVIEW ? "ad--preview" : "ad--blank"} ${className}`}
+        aria-hidden
+      >
+        {ADS_PREVIEW && <span className="ad__ghost">ad slot · {name}</span>}
+      </div>
+    );
+  }
 
   return (
     <aside className={`ad ${className}`} aria-label="Advertisement">

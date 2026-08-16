@@ -60,6 +60,20 @@ export type AdSlotName = keyof typeof AD_SLOTS;
 export const ADS_ENABLED =
   import.meta.env.PROD || import.meta.env.PUBLIC_ADS_PREVIEW === "1";
 
+/**
+ * Looking at the layout rather than at real ads.
+ *
+ * Before the units exist in the AdSense account there is nothing to render,
+ * and a reserved box with nothing in it is invisible — which makes a preview
+ * build useless for the one question worth asking early: does the band change
+ * how the game feels, and does it crowd the race on a small screen?
+ *
+ * So in preview only, an empty slot draws itself at exactly the reserved size.
+ * Never in production: there the same absence is silence, because a visible
+ * frame with no advert in it reads as broken rather than empty.
+ */
+export const ADS_PREVIEW = import.meta.env.PUBLIC_ADS_PREVIEW === "1";
+
 /** A slot is live only when ads are on AND its unit exists. */
 export const adSlotId = (name: AdSlotName): string | null =>
   ADS_ENABLED && AD_SLOTS[name] ? AD_SLOTS[name] : null;
