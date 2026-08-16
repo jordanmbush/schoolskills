@@ -135,6 +135,27 @@ else
   echo "  ✓ ${pagecount} pages listed in the sitemap"
 fi
 
+# --- the game routes ---------------------------------------------------------
+#
+# Deliberately NOT in the sitemap: each is a `client:only` island whose
+# prerendered body is two words, so they carry `noindex` and are filtered out
+# in astro.config.mjs. That is correct for search and it silently removed them
+# from the loop above, which discovers pages FROM the sitemap — leaving the
+# three most important URLs on the site unchecked after a deploy.
+#
+# So they are named here. A new world means a new line here as well as an entry
+# in src/engine/worlds.ts; there is no way to derive one from the other in a
+# script that only has an origin to talk to.
+echo "Game routes (noindex, so not in the sitemap):"
+for path in /flash-cards/ /spelling/play/ /typing/; do
+  try "${path}" "200" status "${BASE}${path}"
+  # The noindex is the point of excluding them, so it is worth asserting: a
+  # game route that lost its robots tag would start competing with the content
+  # page written to rank for exactly that query.
+  try "${path} is noindex" "yes" \
+    body_contains "${BASE}${path}" 'name="robots" content="noindex'
+done
+
 # --- everything that isn't a page --------------------------------------------
 
 echo "Delivery:"
