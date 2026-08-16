@@ -1,0 +1,45 @@
+---
+import { AD_CLIENT, adSlotId, type AdSlotName } from "./ads";
+
+/**
+ * An ad unit on a static content page.
+ *
+ * The React twin of this is AdSlot.tsx — same markup, same reservation. Two
+ * files because the game screens are a client island and these pages are
+ * static HTML; neither component can host the other.
+ *
+ * There is no clock on a content page and nothing to mis-tap, so this one sits
+ * in normal flow with the page's rhythm around it. It still reserves its
+ * height in CSS rather than growing into place, because a reflow that moves
+ * the paragraph someone is reading is its own small rudeness.
+ */
+interface Props {
+  name: AdSlotName;
+  class?: string;
+}
+
+const { name, class: className = "ad--content" } = Astro.props;
+const slot = adSlotId(name);
+---
+
+{
+  slot ? (
+    <aside class:list={["ad", className]} aria-label="Advertisement">
+      <span class="ad__label">Ad</span>
+      <ins
+        class="adsbygoogle ad__unit"
+        data-ad-client={AD_CLIENT}
+        data-ad-slot={slot}
+      />
+      {/* Per unit, immediately after it — this is the call that tells the
+          loader to fill this particular <ins>. */}
+      <script is:inline>
+        (window.adsbygoogle = window.adsbygoogle || []).push({});
+      </script>
+    </aside>
+  ) : (
+    /* No unit id yet, or ads are off in this build. The reservation stays so
+       turning a slot on later can't shift a layout people already know. */
+    <div class:list={["ad", "ad--blank", className]} aria-hidden="true" />
+  )
+}

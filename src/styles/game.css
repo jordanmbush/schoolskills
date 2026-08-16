@@ -396,7 +396,11 @@
 .race {
   width: min(720px, 100%);
   margin-inline: auto;
-  min-height: 100dvh;
+  /* One viewport MINUS the ad band above it (0 when there is none). Without
+     the subtraction a race gains a scrollbar the moment ads are switched on,
+     and a page that scrolls under a child's thumb mid-answer is worse than
+     the ad is worth. */
+  min-height: calc(100dvh - var(--ad-h));
   padding: clamp(0.75rem, 2.5vw, 1.5rem) clamp(0.75rem, 3vw, 1.5rem)
     clamp(1rem, 3vw, 2rem);
   display: grid;

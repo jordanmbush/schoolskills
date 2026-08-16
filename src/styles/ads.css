@@ -1,0 +1,135 @@
+/*
+ * Ad slots.
+ *
+ * Two jobs, and the first one is the important one.
+ *
+ * ── Reserving space, so an ad can never move the game ───────────────────────
+ * The band on the game islands sits above a race that is on a clock. An ad
+ * that arrives late and pushes the card down by 90px moves the answer keypad
+ * under a child's finger mid-tap — that is a wrong answer they didn't give,
+ * and on a timed card it is unrecoverable. So the space is reserved by CSS at
+ * first paint, before any request to Google has been made, and the ad renders
+ * INTO a box that already exists. Whether the ad loads, fails, is blocked, or
+ * the device is offline, the layout is identical.
+ *
+ * `--ad-h` is the mechanism. It is 0 by default and only becomes a real height
+ * on pages that actually carry a band, so screens sized to `100dvh` can
+ * subtract it and stay exactly one viewport tall — see `.race`, `.select` and
+ * `.boot`. Without that subtraction a race would gain a scrollbar it never had.
+ *
+ * ── Saying it's an ad ───────────────────────────────────────────────────────
+ * The label is not decoration and not a legal formality we're copying. The
+ * youngest player here is five, and the ability to tell advertising from
+ * content is a skill children acquire late — younger ones simply don't. A
+ * small, permanent, unmissable label is the least we can do about that.
+ */
+
+:root {
+  --ad-h: 0px;
+}
+
+/* Only pages that carry the band pay for it. Set on <html> by Base.astro. */
+[data-ads="on"] {
+  /* A phone in a race has very little screen; 50px is the standard mobile
+     banner and roughly 8% of a short viewport. 90px (leaderboard) only once
+     there is room to spare. */
+  --ad-h: 50px;
+}
+
+@media (width >= 728px) {
+  [data-ads="on"] {
+    --ad-h: 90px;
+  }
+}
+
+.ad {
+  /* Exactly the reserved height. Never min-height: a unit that grows is a
+     unit that shifts, which is the whole thing this file exists to prevent. */
+  height: var(--ad-h);
+  width: 100%;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  position: relative;
+  background: var(--ink-850);
+  border-bottom: 1px solid var(--ink-800);
+}
+
+/* The band above a game. Full-bleed, hard against the top of the island. */
+.ad--game {
+  margin-inline: 0;
+}
+
+/*
+ * On a content page there is no clock and nothing to mis-tap, so the slot can
+ * breathe: it sits in normal flow with the page's own rhythm around it, and
+ * takes the leaderboard height at every width.
+ */
+.ad--content {
+  height: 90px;
+  margin-block: var(--gap-5);
+  border: 1px solid var(--ink-800);
+  border-radius: 12px;
+}
+
+.ad__label {
+  position: absolute;
+  top: 2px;
+  left: 6px;
+  z-index: 1;
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--chalk-dim);
+  pointer-events: none;
+}
+
+/*
+ * A FIXED unit, sized to match the reservation exactly at each breakpoint.
+ *
+ * Not a responsive unit. A responsive one measures its container and may
+ * return a 100px creative for a 50px box — which `overflow: hidden` would then
+ * clip, and a clipped ad breaches AdSense's viewability policy. Naming the
+ * size means Google fills it with something that fits, so the box and the
+ * creative agree and nothing is cropped or shifted.
+ *
+ * These two sizes are standard AdSense inventory (mobile banner and
+ * leaderboard), so they are the two most likely to fill. Their heights are
+ * `--ad-h` above; if one changes, both change.
+ */
+.ad__unit {
+  display: inline-block;
+  width: 320px;
+  height: 50px;
+}
+
+@media (width >= 728px) {
+  .ad__unit {
+    width: 728px;
+    height: 90px;
+  }
+}
+
+/* The content slot is always leaderboard height, so on a narrow screen it
+   holds the mobile banner centred rather than a cropped wide one. */
+.ad--content .ad__unit {
+  height: 50px;
+}
+
+@media (width >= 728px) {
+  .ad--content .ad__unit {
+    height: 90px;
+  }
+}
+
+/*
+ * Nothing to show — no slot id yet, ads disabled, or the request failed. The
+ * box stays exactly the same size and says nothing, because an empty labelled
+ * frame looks like a broken advert rather than an absent one.
+ */
+.ad:empty,
+.ad--blank {
+  background: none;
+  border: 0;
+}
