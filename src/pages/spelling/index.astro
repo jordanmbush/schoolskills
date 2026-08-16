@@ -1,5 +1,6 @@
 ---
 import Content from "@/layouts/Content.astro";
+import AdSlot from "@/components/site/AdSlot.astro";
 import { WORD_LISTS, listWords } from "@/engine/decks/wordlists";
 
 /**
@@ -100,6 +101,7 @@ const description =
     </table>
   </section>
 
+  <div class="wrap"><AdSlot name="article" /></div>
   <section class="band band--inset">
     <div class="wrap">
       <h2 class="h2">Heard in a sentence, not copied</h2>

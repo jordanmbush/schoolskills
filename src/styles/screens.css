@@ -43,7 +43,7 @@
 }
 
 .boot {
-  min-height: 100dvh;
+  min-height: calc(100dvh - var(--ad-h));
   display: grid;
   place-content: center;
   justify-items: center;
@@ -84,7 +84,7 @@
 /* ── Player select ─────────────────────────────────────────────────────── */
 
 .select {
-  min-height: 100dvh;
+  min-height: calc(100dvh - var(--ad-h));
   justify-content: center;
 }
 

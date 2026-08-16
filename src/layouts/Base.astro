@@ -15,6 +15,7 @@
  */
 import type { World } from "@/engine/worlds";
 import { THEME_COLOUR } from "@/engine/worlds";
+import { AD_CLIENT, ADS_ENABLED } from "@/components/site/ads";
 
 interface Props {
   title: string;
@@ -59,7 +60,7 @@ const ogImage = new URL(image, Astro.site).href;
 ---
 
 <!doctype html>
-<html lang="en" data-world={world}>
+<html lang="en" data-world={world} data-ads={ADS_ENABLED ? "on" : undefined}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -125,6 +126,40 @@ const ogImage = new URL(image, Astro.site).href;
           is:inline
           set:html={JSON.stringify(jsonLd)}
         />
+      )
+    }
+    {
+      /*
+       * Google AdSense.
+       *
+       * NON-PERSONALISED, ALWAYS. This site is directed to children, so
+       * behavioural advertising here would need verifiable parental consent
+       * that a free static site cannot obtain — see src/components/site/ads.ts
+       * for the COPPA and AdSense-policy reasoning, and /privacy for what we
+       * tell parents.
+       *
+       * The order of these two tags is the whole point. `requestNonPersonalized
+       * Ads` has to be set on the queue BEFORE the loader executes, because the
+       * loader reads it when it initialises; putting the async script first
+       * would leave a race in which the first ad request of a visit could go
+       * out personalised. Inline, synchronous, first.
+       *
+       * `is:inline` on both: Astro would otherwise bundle and hoist them, which
+       * breaks that ordering and rewrites the loader's URL.
+       */
+      ADS_ENABLED && (
+        <>
+          <script
+            is:inline
+            set:html={`window.adsbygoogle=window.adsbygoogle||[];window.adsbygoogle.requestNonPersonalizedAds=1;window.adsbygoogle.tagForChildDirectedTreatment=1;`}
+          />
+          <script
+            is:inline
+            async
+            crossorigin="anonymous"
+            src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${AD_CLIENT}`}
+          />
+        </>
       )
     }
   </head>

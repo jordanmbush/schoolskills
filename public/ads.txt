@@ -1,0 +1,8 @@
+# Authorised Digital Sellers — https://iabtechlab.com/ads-txt/
+#
+# Declares who may sell inventory on schoolskills.app. A publisher id that
+# appears in a page but not here is, to a buyer, an unauthorised reseller — so
+# this file existing is what lets the inventory be bought at all.
+#
+# Fields: <exchange domain>, <publisher id>, <DIRECT|RESELLER>, <cert id>
+google.com, pub-2742485876369367, DIRECT, f08c47fec0942fa0

@@ -1,6 +1,7 @@
 import { HashRouter, Navigate, Route, Routes } from "react-router-dom";
 
 import { ToastRail } from "@/components/ToastRail";
+import { AdSlot } from "@/components/site/AdSlot";
 import { HubProvider, useHub } from "@/components/state/HubContext";
 import { RaceProvider } from "@/components/state/RaceContext";
 import { Button } from "@/components/ui/kit";
@@ -62,6 +63,12 @@ function Shell() {
 
   return (
     <RaceProvider>
+      {/* Above everything, on every screen including a live race. Its height is
+          reserved in CSS at first paint and subtracted from the viewport by
+          `--ad-h`, so it cannot move the card or the keypad whenever it fills —
+          see src/styles/ads.css. Placed at the top of the island because that
+          is the furthest point in the layout from the answer controls. */}
+      <AdSlot name="game" className="ad--game" />
       <Routes>
         <Route path="/" element={<PlayerSelect />} />
         <Route path="/p/:profileId" element={<TypingSetup />} />
