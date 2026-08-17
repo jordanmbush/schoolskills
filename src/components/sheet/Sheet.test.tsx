@@ -197,12 +197,35 @@ const EVERY_BLOCK: Block[] = [
   {
     kind: "wordsearch",
     letters: [
-      ["c", "a", "t"],
-      ["x", "y", "z"],
-      ["d", "o", "g"],
+      ["C", "A", "T"],
+      ["X", "Y", "Z"],
+      ["D", "O", "G"],
     ],
-    find: ["cat", "dog"],
-    solution: [{ word: "cat", column: 0, row: 0, dx: 1, dy: 0 }],
+    find: ["CAT", "DOG"],
+    solution: [{ word: "CAT", column: 0, row: 0, dx: 1, dy: 0 }],
+    // A word the grid had no room for, printed rather than dropped — the one
+    // line on a sheet whose job is to admit a failure.
+    omitted: ["ELEPHANT"],
+    // And the ones the page had no room to *name*. The line is reserved for at
+    // a capped number of rows, so past that the count carries what the names
+    // cannot — see `Block.omittedMore`.
+    omittedMore: 3,
+  },
+  {
+    // Two entries crossing at their shared T, one of them numbered in both
+    // directions — the smallest thing that draws every part of the block.
+    kind: "crossword",
+    cells: [
+      [{ letter: "C", number: 1 }, { letter: "A" }, { letter: "T", number: 2 }],
+      [null, null, { letter: "O" }],
+      [null, null, { letter: "P" }],
+    ],
+    across: [
+      { number: 1, clue: "It purrs.", answer: "CAT", column: 0, row: 0 },
+    ],
+    down: [
+      { number: 2, clue: "Jumbled: O P T", answer: "TOP", column: 2, row: 0 },
+    ],
   },
   {
     kind: "matching",
@@ -352,6 +375,17 @@ describe("rendering a sheet", () => {
     expect(html).toContain("Times tables");
     expect(html).toContain("schoolskills.app");
     expect(html).toContain("#4242");
+  });
+
+  it("admits what a puzzle could not hold, and counts what it could not name", () => {
+    // The one line on a sheet whose job is to admit a failure. Both halves of
+    // it, because a page that named three of twenty-three and said nothing
+    // about the rest would be the silent drop again in a smaller font.
+    const search = EVERY_BLOCK.filter((block) => block.kind === "wordsearch");
+    const html = renderToStaticMarkup(
+      <SheetView sheet={sheet({ blocks: search })} />,
+    );
+    expect(html).toContain("Not in the grid: ELEPHANT … and 3 more");
   });
 
   it("keeps the problems as real text, not as a picture of text", () => {

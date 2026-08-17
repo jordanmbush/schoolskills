@@ -33,6 +33,7 @@ import { UNKNOWN_SHEET, type SheetSpec } from "./spec";
 import { PAPER_SHEET } from "./templates/paper";
 import { HANDWRITING_SHEET } from "./writing/handwriting";
 import { MEMORY_SHEET } from "./writing/memory";
+import { PUZZLE_SHEET } from "./words/puzzles";
 import { WORDS_SHEET } from "./words/spelling";
 import { WORD_STUDY_SHEET } from "./words/study";
 
@@ -54,6 +55,7 @@ const SHEETS: Record<string, SheetSpec> = {
   [WORD_PROBLEMS_SHEET.id]: WORD_PROBLEMS_SHEET,
   [WORDS_SHEET.id]: WORDS_SHEET,
   [WORD_STUDY_SHEET.id]: WORD_STUDY_SHEET,
+  [PUZZLE_SHEET.id]: PUZZLE_SHEET,
   [HANDWRITING_SHEET.id]: HANDWRITING_SHEET,
   [MEMORY_SHEET.id]: MEMORY_SHEET,
 };

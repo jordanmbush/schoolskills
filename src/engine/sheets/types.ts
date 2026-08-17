@@ -414,6 +414,59 @@ export type Figure = {
   labels?: string[];
 };
 
+/**
+ * One word read out of a finished grid: where it starts, and which way it runs.
+ *
+ * "Read out of", not "written into", and the distinction is the whole of the
+ * answer key on a word search. A puzzle whose key is its own placement record
+ * is a key that agrees with the generator rather than with the paper — it says
+ * a word is at (3, 4) because that is where the code meant to put it, which is
+ * exactly the claim that is wrong when a later word overwrote a letter. So the
+ * key is derived by searching the grid it is a key to (`findWord`), and this is
+ * what that search returns.
+ */
+export type Found = {
+  word: string;
+  column: number;
+  row: number;
+  /** One step along the word, per letter. `(1, 0)` reads left to right. */
+  dx: number;
+  dy: number;
+};
+
+/**
+ * One square of a crossword. `null` in the grid is a blocked square — no
+ * letter, no ink, nothing written in it.
+ *
+ * The letter is on the square whether or not the sheet is a key: it is what the
+ * square *is*, and `Sheet.answers` decides whether it is printed. Same bargain
+ * as every other answer place, and the reason a key cannot disagree with its
+ * sheet.
+ */
+export type CrosswordCell = {
+  letter: string;
+  /** The small number in the corner, where an entry starts on this square. */
+  number?: number;
+};
+
+/**
+ * One clue and the entry it belongs to.
+ *
+ * `column` and `row` are where the answer starts, so a test can hold the clue
+ * list against the grid letter for letter rather than against the placement the
+ * generator remembers making. That is the same independence `Found` buys the
+ * word search, and it is what makes "the crossings agree" a checkable claim:
+ * two entries that cross share one square, so if both spell their own answer
+ * out of the grid then the crossing agrees by construction.
+ */
+export type CrosswordEntry = {
+  number: number;
+  clue: string;
+  answer: string;
+  column: number;
+  row: number;
+};
+
 export type Block =
   | { kind: "problems"; columns: number; items: Problem[] }
   | { kind: "rules"; rule: Rule; lines: number }
@@ -423,15 +476,50 @@ export type Block =
   | {
       kind: "wordsearch";
       letters: string[][];
+      /**
+       * The words to look for, exactly as they appear in the grid — upper case,
+       * and with anything that is not a letter taken out. A grid has nowhere to
+       * put the apostrophe in "don't", so the list says `DONT`: what is printed
+       * under the puzzle is what is findable in it.
+       */
       find: string[];
-      /** Where each word was placed, for the key. `dx`/`dy` are per step. */
-      solution?: Array<{
-        word: string;
-        column: number;
-        row: number;
-        dx: number;
-        dy: number;
-      }>;
+      /** Where each word was found, for the key. Derived from `letters`. */
+      solution?: Found[];
+      /**
+       * Words the grid could not hold, printed on the sheet rather than quietly
+       * dropped.
+       *
+       * The classic silent bug in a word search is a word that failed to place
+       * and vanished: the child hunts for something that is not there, and the
+       * answer key is wrong about a word it never mentions. A word that could
+       * not be placed is not on the `find` list, and it is named here instead.
+       *
+       * Only as many as the family reserved room to print. The line is set
+       * under a block already trimmed to the page, so what it holds is capped —
+       * and the rest are counted in `omittedMore` rather than named.
+       */
+      omitted?: string[];
+      /**
+       * How many more there were than the page could name.
+       *
+       * A count is a poor substitute for a name and it is only ever reached by
+       * a config at the far end — the largest type, the longest list — where
+       * naming them all would be a page with no puzzle on it. The alternative
+       * is a paragraph below the bottom margin, which names them on a sheet of
+       * paper nobody prints.
+       */
+      omittedMore?: number;
+    }
+  | {
+      kind: "crossword";
+      /** Row-major. `null` is a blocked square. */
+      cells: Array<Array<CrosswordCell | null>>;
+      across: CrosswordEntry[];
+      down: CrosswordEntry[];
+      /** Words the grid had no room for — see `wordsearch.omitted`. */
+      omitted?: string[];
+      /** And how many more than it could name — see `wordsearch.omittedMore`. */
+      omittedMore?: number;
     }
   | {
       kind: "matching";
@@ -1374,6 +1462,87 @@ export type WordStudyConfig = SheetOptions & {
   columns: number;
 };
 
+/* ── Puzzles ───────────────────────────────────────────────────────────────
+   The third of the words shelf, and the one where a sheet can look completely
+   right and be completely wrong. A page of sums is checked by doing the sums;
+   a word search is checked by *reading the paper*, which nobody does, so a word
+   that failed to place looks exactly like a word that placed well. The whole
+   design of this family is arranged around that one failure:
+
+   - Nothing on the page is trusted to the generator's own bookkeeping. The key
+     to a word search is found by searching the finished grid, and a crossword's
+     entries are read out of the finished squares. If the letters on the paper
+     say something different from what the placer intended, the paper wins.
+   - A word that could not be placed is **named on the sheet**. Not logged, not
+     dropped — printed, under the puzzle, where the person marking it will see
+     it.
+   - Everything terminates. There is no "shuffle and try again until it works"
+     anywhere in here: a candidate position is tried at most once, so a list of
+     twenty words that cannot possibly fit produces a sheet rather than a hung
+     tab (`puzzles.test.ts` is what holds it to that).                       */
+
+/**
+ * Which puzzle.
+ *
+ * `search` is a letter grid with the words hidden in it; `crossword` is the
+ * numbered squares, clued from the list's own sentences where it has them; and
+ * `scramble` is the letters of a word out of order, which is the one of the
+ * three that is a plain list of problems and needs no grid at all.
+ */
+export type PuzzleStyle = "search" | "crossword" | "scramble";
+
+/**
+ * Which ways a word may run in a word-search grid.
+ *
+ * A stated set rather than a count, because the three are not degrees of
+ * difficulty so much as three different exercises: `across` is a reading
+ * exercise a five-year-old can do, `across-down` is the usual school puzzle,
+ * and `all` adds the two diagonals, which is where a word search stops being
+ * about reading and starts being about scanning. `reverse` is separate for the
+ * same reason — a backwards word is a different kind of hard from a diagonal
+ * one, and a parent setting one of them is not asking for the other.
+ */
+export type SearchDirections = "across" | "across-down" | "all";
+
+export type PuzzleConfig = SheetOptions & {
+  kind: "puzzle";
+  style: PuzzleStyle;
+  /**
+   * The list, in the order it was given — the same field `WordsConfig` carries,
+   * and for the same reasons: there is no name for it here, because a config
+   * travels in a URL and a child must never be in one (§14).
+   */
+  words: string[];
+  /**
+   * How many cells across and down. Square, and a request rather than a
+   * promise: a grid that would not fit the paper with its word list under it is
+   * shrunk until it does (`searchLayout`).
+   *
+   * The crossword reads it too, as the largest grid it may lay words out in.
+   * The finished puzzle is cropped to the words that actually landed, so this
+   * is a bound rather than a size — but it is the same question asked of the
+   * same paper, and two fields for it would be two things a saved config could
+   * disagree about.
+   */
+  size: number;
+  /** `search` only. */
+  directions: SearchDirections;
+  /** `search` only: words may be written backwards. */
+  reverse: boolean;
+  /**
+   * `search` only: words may cross, sharing a letter where they meet.
+   *
+   * Off makes a sparser, easier grid and a harder placement problem — every
+   * word needs a clear run of its own — so this is the setting most likely to
+   * leave a word unplaced, which is exactly why the sheet says when it has.
+   */
+  overlap: boolean;
+  /** How many words to use. Capped at what the page holds. */
+  count: number;
+  /** `scramble` only — a grid and a clue list are the width of the page. */
+  columns: number;
+};
+
 /* ── Handwriting ───────────────────────────────────────────────────────────
    The family where the ruling stops being the paper and becomes the exercise.
    Every sheet above this line could be printed a thousandth of an inch out and
@@ -1585,6 +1754,7 @@ export type SheetConfig =
   | WordProblemConfig
   | WordsConfig
   | WordStudyConfig
+  | PuzzleConfig
   | HandwritingConfig
   | MemoryConfig;
 

@@ -83,8 +83,14 @@ const em = (fontPt: number, rows: number): Mil => points(fontPt * rows);
  * mean advance `handwriting.ts` packs a row of letters by: characters times the
  * face's own declared mean, at whatever share of the body size sheet.css sets
  * this part of the chrome in. There is no DOM at build time to ask instead.
+ *
+ * Exported because the header and footer stopped being the only wrapping rows
+ * on a sheet: a word search prints its word list as a wrapping flex row and a
+ * crossword prints its clues as wrapping paragraphs, and both have to be
+ * reserved for before the words are known. A family's own copy of this would be
+ * a second declared mean advance to keep in step with `faces.ts`.
  */
-const declaredWidth = (
+export const declaredWidth = (
   text: string,
   options: SheetOptions,
   share: number,
@@ -102,8 +108,12 @@ const declaredWidth = (
  * breaks *inside* an item: a field rule and a credit line are atomic, so a page
  * too narrow for one whole item still prints one per row rather than looping
  * forever, which is what `used > 0` is for.
+ *
+ * Exported alongside `declaredWidth`, and for the same reason: the word list
+ * under a word search is the third wrapping flex row on a sheet, and it wraps
+ * by exactly this rule.
  */
-function packRows(widths: Mil[], limit: Mil, gap: Mil): number {
+export function packRows(widths: Mil[], limit: Mil, gap: Mil): number {
   if (widths.length === 0) return 0;
   let rows = 1;
   let used = 0;

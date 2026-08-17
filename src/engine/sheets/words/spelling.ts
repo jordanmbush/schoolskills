@@ -98,8 +98,14 @@ const clamp = (value: number, low: number, high: number): number =>
  * paste, a saved sheet, and a link somebody was sent — and only one of those
  * has ever been near a validator. Duplicates go the way the marker sees them,
  * so "Because" and "because" are one word on the page rather than two.
+ *
+ * Takes a list-carrying config rather than a `WordsConfig`, because the puzzle
+ * family is handed a list through the same three doors and must hold it to the
+ * same shape. A second sanitiser would be a second answer to "is `Cat` the same
+ * word as `cat`", and the two sheets would disagree about a list they were both
+ * given.
  */
-export function wordsOf(config: WordsConfig): string[] {
+export function wordsOf(config: { words?: string[] }): string[] {
   const seen = new Set<string>();
   const out: string[] = [];
   for (const raw of config.words ?? []) {

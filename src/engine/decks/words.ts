@@ -1,7 +1,7 @@
 import type { Card, WordConfig } from "@/engine/types";
 
 import { mulberry32, shuffled } from "@/engine/random";
-import { WORD_LISTS_BY_ID } from "./wordlists";
+import { WORD_LISTS, WORD_LISTS_BY_ID } from "./wordlists";
 import type { DeckSpec } from "./spec";
 
 /**
@@ -114,6 +114,33 @@ export function clueParts(clue: string): [string, string] {
   const at = clue.indexOf(CLUE_SLOT);
   return at < 0 ? [clue, ""] : [clue.slice(0, at), clue.slice(at + 1)];
 }
+
+/**
+ * Every sentence this build ships, by the word it is about.
+ *
+ * Indexed across all the lists at once rather than looked up inside one,
+ * because the caller that needs it doesn't have a list to look in: the Print
+ * Shop's crossword is set on whatever words a parent pasted into a box, and if
+ * `because` happens to be one of the words the jungle already teaches then the
+ * sentence somebody wrote for it is the clue that crossword should use. Which
+ * is the whole of "clues from the list's own definitions where available" —
+ * available means somebody wrote one, and this is where they are.
+ *
+ * Normalised on the way in and on the way out, so a list typed in capitals
+ * still finds its sentence. A few hundred entries, built once at load.
+ */
+const SHIPPED_CLUES = new Map<string, string>(
+  WORD_LISTS.flatMap((list) =>
+    list.entries.map((entry): [string, string] => [
+      normaliseWord(entry.word),
+      entry.clue,
+    ]),
+  ),
+);
+
+/** The sentence a shipped list gives this word, if any list gives it one. */
+export const shippedClue = (word: string): string | undefined =>
+  SHIPPED_CLUES.get(normaliseWord(word));
 
 /**
  * What the voice says for a card: the word, then the word in a sentence.

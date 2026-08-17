@@ -1,13 +1,9 @@
-import { inches } from "@/engine/sheets/paper";
+import { searchCell } from "@/engine/sheets/words/search";
 
 import { HEAVY, inch } from "../units";
 import type { BlockProps } from "./block";
+import { Omitted } from "./Omitted";
 
-/**
- * A letter big enough for a five-year-old to find and small enough that a
- * ten-by-ten puzzle doesn't take the whole page.
- */
-const MAX_CELL = inches(0.34);
 const CELL_TO_EM = 0.62;
 
 /**
@@ -17,6 +13,12 @@ const CELL_TO_EM = 0.62;
  * The letters are `<text>` rather than a table so the solution can be drawn
  * over them in the same coordinate system. They are still selectable, readable
  * text; an `<svg>` is not an image unless it contains one.
+ *
+ * How big a cell is comes from the engine (`searchCell`) rather than from a
+ * constant here, because the family reserved the page against exactly that
+ * number before the grid existed. Two copies of it would be a grid an eighth of
+ * an inch taller than the room made for it — which looks right on screen and
+ * puts the word list on a second sheet of paper.
  */
 export function WordSearch({ block, metrics }: BlockProps<"wordsearch">) {
   const rows = block.letters.length;
@@ -26,7 +28,7 @@ export function WordSearch({ block, metrics }: BlockProps<"wordsearch">) {
   );
   if (rows === 0 || columns === 0) return null;
 
-  const cell = Math.min(MAX_CELL, Math.floor(metrics.box.width / columns));
+  const cell = searchCell(metrics.box.width, columns);
   const width = columns * cell;
   const height = rows * cell;
   const centre = (index: number) => (index + 0.5) * cell;
@@ -79,6 +81,8 @@ export function WordSearch({ block, metrics }: BlockProps<"wordsearch">) {
           <li key={word}>{word}</li>
         ))}
       </ul>
+
+      <Omitted words={block.omitted} more={block.omittedMore} />
     </div>
   );
 }

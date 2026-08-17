@@ -204,6 +204,7 @@
 .sheet__questions,
 .sheet__options,
 .sheet__wordshapes,
+.sheet__clue-list,
 .sheet__words {
   list-style: none;
   padding-left: 0;
@@ -628,6 +629,43 @@
   gap: 0.06in 0.28in;
   margin-top: 0.12in;
   font-size: 0.9em;
+}
+
+/* ── Puzzles ────────────────────────────────────────────────────────────────
+   Every number here is trailed by `words/puzzles.ts`, which reserves the page
+   against it before the puzzle exists — the same bargain `chrome.ts` and
+   `layout.ts` strike, and the same silent failure when it is broken: a clue
+   list an eighth of an inch taller than the room made for it looks perfect on
+   screen and prints its last clue on a second sheet of paper.               */
+
+.sheet__clues {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.05in 0.3in;
+  margin-top: 0.12in;
+  font-size: 0.9em;
+  /* A clue list splits between two columns and a column may not split between
+     two pages: half a crossword's clues overleaf is a puzzle nobody can do. */
+  break-inside: avoid;
+}
+
+.sheet__clue-head {
+  font-weight: 700;
+}
+
+.sheet__clue-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.05in;
+}
+
+/* The line that admits a word did not fit. Set apart from the puzzle it is
+   about — italic and a size down — because it is the sheet talking about
+   itself rather than something a child is asked to do. */
+.sheet__missing {
+  margin-top: 0.1in;
+  font-size: 0.85em;
+  font-style: italic;
 }
 
 /* ── Word shapes ────────────────────────────────────────────────────────────
