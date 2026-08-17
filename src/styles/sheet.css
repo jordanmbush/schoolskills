@@ -223,6 +223,25 @@
   stroke: none;
 }
 
+/* The shaded parts of a fraction bar or circle.
+
+   The one place a sheet paints inside a shape rather than only round it, and
+   the ink note above is exactly why it is a `fill`: the shading is the question
+   on a naming sheet, so it has to survive a printer with background graphics
+   switched off, and only foreground paint does. A fraction of the ink, because
+   a solid quarter-circle thirty times a week is a cartridge. */
+.sheet__shade {
+  fill: currentcolor;
+  stroke: none;
+  opacity: 22%;
+}
+
+/* The picture sits in the row with the number and the blank, and gives itself a
+   little air rather than butting against either. */
+.sheet__art {
+  margin-right: 0.06in;
+}
+
 /* The solution stroke on a word search. Lighter than the letters it crosses,
    so the key is still readable underneath it. */
 .sheet__found {

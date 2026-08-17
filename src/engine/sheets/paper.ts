@@ -50,8 +50,13 @@ export const toPoints = (mil: Mil): number => (mil * 72) / MIL_PER_INCH;
  * `??` never fires and the caller is handed a function where it expected a
  * stock or a pitch. Nothing throws at that point; the lengths computed from it
  * just quietly become `NaN`. Asking for an *own* property is the whole fix.
+ *
+ * Exported because the hazard is not about paper. Every table in the shop that
+ * is keyed by something a saved config carries has it — the currencies in
+ * `maths/money.ts` are the second — and a second copy of this three-line
+ * function would be a second place for somebody to write the `??` instead.
  */
-function own<T>(table: Record<string, T>, key: string, fallback: T): T {
+export function own<T>(table: Record<string, T>, key: string, fallback: T): T {
   return Object.hasOwn(table, key) ? table[key] : fallback;
 }
 

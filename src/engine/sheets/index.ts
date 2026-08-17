@@ -17,6 +17,9 @@ import type { Sheet, SheetConfig } from "./types";
 
 import { BLANK_SHEET } from "./blank";
 import { ARITHMETIC_SHEET } from "./maths/arithmetic";
+import { DECIMALS_SHEET } from "./maths/decimals";
+import { FRACTIONS_SHEET } from "./maths/fractions";
+import { MONEY_SHEET } from "./maths/money";
 import { MULTIPLICATION_SHEET } from "./maths/multiplication";
 import { UNKNOWN_SHEET, type SheetSpec } from "./spec";
 import { PAPER_SHEET } from "./templates/paper";
@@ -26,6 +29,9 @@ const SHEETS: Record<string, SheetSpec> = {
   [PAPER_SHEET.id]: PAPER_SHEET,
   [ARITHMETIC_SHEET.id]: ARITHMETIC_SHEET,
   [MULTIPLICATION_SHEET.id]: MULTIPLICATION_SHEET,
+  [FRACTIONS_SHEET.id]: FRACTIONS_SHEET,
+  [DECIMALS_SHEET.id]: DECIMALS_SHEET,
+  [MONEY_SHEET.id]: MONEY_SHEET,
 };
 
 /**

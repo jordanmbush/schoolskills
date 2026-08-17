@@ -11,10 +11,13 @@ import { DEFAULT_PAPER } from "@/engine/sheets/paper";
 import type {
   ArithmeticConfig,
   Block,
+  FractionConfig,
+  MoneyConfig,
   MultiplicationConfig,
   Paper,
   Problem,
   Sheet,
+  SheetConfig,
 } from "@/engine/sheets/types";
 
 import { SheetView } from "./Sheet";
@@ -78,6 +81,15 @@ const EVERY_BLOCK: Block[] = [
         bracket: { divisor: "4", dividend: "938" },
         answer: "234 r 2",
         workspace: 1500,
+      },
+      // And the one problem whose question is a picture: a whole cut into equal
+      // parts with some of them shaded, which prints on the blank sheet as well
+      // as on the key.
+      { prompt: "", answer: "3/4", art: { shape: "bar", parts: 4, shaded: 3 } },
+      {
+        prompt: "",
+        answer: "1/6",
+        art: { shape: "circle", parts: 6, shaded: 1 },
       },
     ],
   },
@@ -374,9 +386,14 @@ const blank = (over: Partial<ArithmeticConfig> = {}) =>
 const keyed = (over: Partial<ArithmeticConfig> = {}) =>
   render(answerKey(arithmetic(over), SEED) as Sheet);
 
-/** The problems of a built sheet, narrowed out of the block union. */
-function itemsOf(over: Partial<ArithmeticConfig> = {}): Problem[] {
-  const block = buildSheet(arithmetic(over), SEED).blocks[0];
+/**
+ * The problems of a built sheet, narrowed out of the block union.
+ *
+ * One helper for every family rather than one each: what a caller holds is a
+ * config, and what it wants is the list the renderer is about to be handed.
+ */
+function itemsOf(config: SheetConfig): Problem[] {
+  const block = buildSheet(config, SEED).blocks[0];
   if (block.kind !== "problems") throw new Error(`got ${block.kind}`);
   return block.items;
 }
@@ -446,7 +463,7 @@ describe("a rendered arithmetic sheet", () => {
   });
 
   it("draws a number line under every problem, ticks and labels included", () => {
-    const items = itemsOf({ numberLine: true });
+    const items = itemsOf(arithmetic({ numberLine: true }));
     const line = items[0].line;
     if (!line) throw new Error("no number line was built");
 
@@ -461,7 +478,9 @@ describe("a rendered arithmetic sheet", () => {
 
   it("rules a line for each of a fact family's four sentences", () => {
     const family = { style: "fact-family" as const, count: 4 };
-    const written = itemsOf(family).flatMap((problem) => problem.answers ?? []);
+    const written = itemsOf(arithmetic(family)).flatMap(
+      (problem) => problem.answers ?? [],
+    );
     expect(written.length).toBe(16);
 
     const sheet = blank(family);
@@ -606,7 +625,7 @@ describe("a rendered multiplication sheet", () => {
   });
 
   it("writes a long multiplication's partials between the rule and the total", () => {
-    const items = itemsOfMultiplication(LONG_MULTIPLICATION);
+    const items = itemsOf(multiplication(LONG_MULTIPLICATION));
     const partials = items.flatMap((problem) => problem.working ?? []);
     expect(partials.length).toBe(items.length * 2);
 
@@ -698,12 +717,155 @@ describe("a rendered multiplication sheet", () => {
   });
 });
 
-/** The problems of a built multiplication sheet, narrowed out of the union. */
-function itemsOfMultiplication(over: Partial<MultiplicationConfig>): Problem[] {
-  const block = buildSheet(multiplication(over), SEED).blocks[0];
-  if (block.kind !== "problems") throw new Error(`got ${block.kind}`);
-  return block.items;
-}
+/* ── The sheets whose questions are pictures, and whose answers have points ──
+   Fractions, decimals and money. The engine's suites prove the answers are
+   right and stop at the edge of the markup; these are the two halves of that
+   which only exist once it is drawn — a diagram that has to survive a printer
+   with background graphics turned off, and a column of amounts whose points
+   have to land under one another.                                           */
+
+const fractions = (over: Partial<FractionConfig> = {}): FractionConfig => ({
+  kind: "fractions",
+  paper: DEFAULT_PAPER,
+  fontPt: 12,
+  fields: ["name"],
+  style: "identify",
+  operation: "add",
+  denominators: [2, 3, 4, 5, 6, 8],
+  pairing: "either",
+  count: 4,
+  columns: 2,
+  ...over,
+});
+
+const named = (over: Partial<FractionConfig> = {}) =>
+  render(buildSheet(fractions(over), SEED) as Sheet);
+const namedKey = (over: Partial<FractionConfig> = {}) =>
+  render(answerKey(fractions(over), SEED) as Sheet);
+
+describe("a rendered fraction sheet", () => {
+  it("draws the picture on the blank sheet, not only on the key", () => {
+    // The one drawing on a sheet that is the *question*. A child handed a
+    // naming sheet with no pictures on it has been handed a page of blanks.
+    const sheet = named();
+    expect(count(sheet, 'class="sheet__ink sheet__art"')).toBe(4);
+    expect(count(namedKey(), 'class="sheet__ink sheet__art"')).toBe(4);
+    expect(count(sheet, 'class="sheet__shade"')).toBe(4);
+  });
+
+  it("shades with a fill, so it survives a printer with backgrounds off", () => {
+    // §5, and the reason this block is drawn rather than styled: a browser
+    // drops background paint unless the reader has found the "Background
+    // graphics" checkbox, and a naming sheet whose shading was a background
+    // comes out as a row of empty boxes. `fill` is content — it always prints.
+    expect(named()).not.toContain("background");
+    const css = read(join(ROOT, "src/styles/sheet.css"));
+    const shade = css.slice(css.indexOf(".sheet__shade {"));
+    const rule = shade.slice(0, shade.indexOf("}"));
+    expect(rule).toContain("fill: currentcolor");
+    expect(rule).not.toContain("background");
+  });
+
+  it("draws the diagram in mil inside a box measured in inches", () => {
+    // The same correspondence every ruled thing on a sheet rests on: the <svg>
+    // is sized in inches while its viewBox counts mil, so one user unit is a
+    // thousandth of an inch. Get it wrong and the picture is a thousand times
+    // the size it says — which a screen never shows.
+    expect(named({ model: "bar" })).toContain(
+      'width="1.3in" height="0.36in" viewBox="0 0 1300 360"',
+    );
+    expect(named({ model: "circle" })).toContain(
+      'width="0.9in" height="0.9in" viewBox="0 0 900 900"',
+    );
+  });
+
+  it("cuts the whole into as many parts as the fraction has", () => {
+    // A bar in sixths has five cuts in it, because its two ends are its own
+    // outline; a circle in sixths has six, because none of them is. A picture
+    // whose cuts and whose answer disagree is a question with no right answer.
+    for (const model of ["bar", "circle"] as const) {
+      const items = itemsOf(fractions({ model, count: 6 }));
+      const drawn = problems(named({ model, count: 6 }));
+      expect(drawn.length).toBe(items.length);
+      items.forEach((problem, index) => {
+        const parts = problem.art?.parts ?? 0;
+        expect(count(drawn[index], "<line")).toBe(
+          model === "bar" ? parts - 1 : parts,
+        );
+      });
+    }
+  });
+
+  it("gives every problem exactly one place to write the answer", () => {
+    // The rule `Problems.tsx` is built around, over the four styles this family
+    // prints: the picture is not an answer place, and the blank beside it is.
+    for (const shape of [
+      { style: "identify" as const },
+      { style: "equivalent" as const },
+      { style: "simplify" as const },
+      { style: "arithmetic" as const },
+    ]) {
+      for (const html of [named(shape), namedKey(shape)]) {
+        const items = problems(html);
+        expect(items.length).toBeGreaterThan(0);
+        for (const item of items) {
+          expect(count(item, 'class="sheet__slot'), item).toBe(1);
+        }
+      }
+    }
+  });
+
+  it("prints nothing in the blank until the sheet is a key", () => {
+    const sheet = named();
+    expect(sheet).not.toContain("--answered");
+    for (const [, inside] of sheet.matchAll(
+      /<span class="sheet__slot"[^>]*>(.*?)<\/span>/g,
+    )) {
+      expect(inside).toBe("");
+    }
+    // And the key writes the fraction into it — the same drawing, answered.
+    for (const problem of itemsOf(fractions())) {
+      expect(namedKey()).toContain(`>${problem.answer}<`);
+    }
+  });
+});
+
+const money = (over: Partial<MoneyConfig> = {}): MoneyConfig => ({
+  kind: "money",
+  paper: DEFAULT_PAPER,
+  fontPt: 12,
+  fields: ["name"],
+  currency: "gbp",
+  operation: "add",
+  form: "vertical",
+  range: { min: 1, max: 20 },
+  count: 4,
+  columns: 2,
+  ...over,
+});
+
+describe("a rendered money sheet", () => {
+  it("stacks the amounts so their points land under one another", () => {
+    // Every amount carries both its digits of change, so right-aligned tabular
+    // figures put the points in a column with nothing having to align them —
+    // which is the whole of what a stacked money sum teaches. The alignment
+    // itself is `.sheet__column`, asserted with the long forms above; what is
+    // checked here is that the amounts reach it in the shape that makes it
+    // work.
+    const html = render(answerKey(money(), SEED) as Sheet);
+    for (const item of problems(html)) {
+      expect(count(item, 'class="sheet__addend"')).toBe(2);
+      expect(item).toMatch(/<span>£\d+\.\d\d<\/span>/);
+      expect(item).toMatch(
+        /class="sheet__total sheet__total--answered">£\d+\.\d\d</,
+      );
+    }
+    // And the blank sheet is the same stack with nothing under the rule.
+    expect(render(buildSheet(money(), SEED) as Sheet)).toContain(
+      '<span class="sheet__total"></span>',
+    );
+  });
+});
 
 /* ── It has to survive the printer ─────────────────────────────────────── */
 
