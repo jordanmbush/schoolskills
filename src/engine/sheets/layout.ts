@@ -56,6 +56,19 @@ export const answerLine = (fontPt: number): Mil =>
  */
 export const PROBLEM_GAP = { x: inches(0.3), y: inches(0.2) };
 
+/**
+ * The air *inside* a problem, between two lines of one that wrapped.
+ *
+ * `.sheet__problem` is a wrapping flex row, and it has to be: a number line and
+ * a workspace take a line of their own under the sum, and so does the ruled
+ * blank beside a fraction diagram. So a problem is sometimes two lines tall, and
+ * a family that reserves for the second one has to know what the browser will
+ * put between them. Trailing sheet.css exactly as `chromeHeight` does, and for
+ * the same reason: the failure is silent on screen and is a row of problems
+ * below the bottom margin on paper.
+ */
+export const WRAP_GAP: Mil = inches(0.06);
+
 /** The paper minus its margins: everything a sheet is allowed to print in. */
 export function contentBox(paper: Paper): Box {
   const { width, height } = pageSize(paper);

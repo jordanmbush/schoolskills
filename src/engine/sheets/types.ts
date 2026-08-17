@@ -117,6 +117,27 @@ export type NumberLine = {
   width: Mil;
 };
 
+/**
+ * A whole cut into equal parts, some of them shaded.
+ *
+ * The picture a fraction is taught from before it is a pair of numbers, and the
+ * only thing on a maths sheet that is a drawing rather than a sentence. Two
+ * numbers and a shape is the whole of it: how many equal parts the whole was cut
+ * into, and how many of them are filled in.
+ *
+ * How big it is drawn is deliberately not here. `fractionart.ts` is the one
+ * place a bar's width and a circle's diameter are written down, so the height a
+ * family reserves for the row and the height the renderer draws cannot disagree
+ * (§4) — the same bargain `NumberLine` makes by declaring its width.
+ */
+export type FractionArt = {
+  shape: "bar" | "circle";
+  /** How many equal parts the whole is cut into — the denominator. */
+  parts: number;
+  /** How many of them are shaded — the numerator. */
+  shaded: number;
+};
+
 export type Problem = {
   /**
    * How it reads on the sheet: "7 × 8 =".
@@ -201,6 +222,18 @@ export type Problem = {
    * turns them into problems without either side learning the other's shape.
    */
   factId?: string;
+  /**
+   * A fraction diagram beside the problem: a bar or a circle with some of its
+   * parts shaded in.
+   *
+   * On a naming sheet this *is* the question — the child reads the picture and
+   * writes the fraction — so it prints on the blank sheet as well as on the key,
+   * exactly as a column stack does. Which is why it is shaded with an SVG fill
+   * rather than with a CSS background: background paint is what a browser drops
+   * when printing (§5), and a naming sheet whose pictures came out as empty
+   * boxes asks a question that isn't there.
+   */
+  art?: FractionArt;
   /** A number line under the problem, to count along. */
   line?: NumberLine;
   /** Blank height under the problem for working out. Absent means none. */
@@ -526,9 +559,149 @@ export type MultiplicationConfig = SheetOptions & {
   workspace?: boolean;
 };
 
+/* ── Fractions ─────────────────────────────────────────────────────────────
+   The first family whose answer is not a number a child can count to. Every
+   sheet above this line is marked by reading a total; a fraction is two numbers
+   that mean one value, several pairs mean the same value, and only one of those
+   pairs is the answer — so "right" here includes "in its lowest terms".       */
+
+/**
+ * What the sheet asks for.
+ *
+ * `identify` shows a picture and asks what fraction is shaded; `equivalent`
+ * gives one pair and half of another; `simplify` asks for the same value
+ * written the smallest way; `arithmetic` is the four operations.
+ */
+export type FractionStyle =
+  "identify" | "equivalent" | "simplify" | "arithmetic";
+
+/**
+ * Which operation is on the page. `both` is addition and subtraction shuffled
+ * together — the pair a child meets in one lesson. Multiplying and dividing
+ * fractions is a different lesson, and a different sheet.
+ */
+export type FractionOperation =
+  "add" | "subtract" | "multiply" | "divide" | "both";
+
+/**
+ * Whether the two fractions in a problem share a denominator.
+ *
+ * The switch this family turns on, the way regrouping is the switch on an
+ * addition sheet: adding halves to quarters is a different week's work from
+ * adding quarters to quarters, and a sheet that mixed them would be set at a
+ * level nobody chose. `either` is whatever the draw happens to give.
+ */
+export type Denominators = "like" | "unlike" | "either";
+
+/** Which picture a naming sheet draws. `both` shuffles the two together. */
+export type FractionModel = "bar" | "circle" | "both";
+
+export type FractionConfig = SheetOptions & {
+  kind: "fractions";
+  style: FractionStyle;
+  /** Arithmetic only; the other three styles have no operation to choose. */
+  operation: FractionOperation;
+  /**
+   * The denominators a sheet draws from — halves, thirds, quarters, and as far
+   * up as a parent wants. A pool rather than a range, for the reason `tables`
+   * is: "sevenths" is a choice somebody makes, and 2 to 12 is not.
+   */
+  denominators: number[];
+  pairing: Denominators;
+  /**
+   * Whether whole numbers ride along with the fractions: `2 1/4` rather than
+   * `1/4`, on the page and in the answer.
+   */
+  mixed?: boolean;
+  /** Naming sheets only. */
+  model?: FractionModel;
+  /** How many problems to ask for. Capped at what the page holds. */
+  count: number;
+  columns: number;
+  /** Blank space under every problem, to work in. */
+  workspace?: boolean;
+};
+
+/* ── Decimals, percents and money ──────────────────────────────────────────
+   Three sheets built on one idea: a number with a point in it is a whole
+   number of hundredths wearing a costume. Everything in `maths/exact.ts` is
+   there so that nothing below ever holds 0.1 + 0.2 as a float.               */
+
+/** What the sheet asks for. */
+export type DecimalStyle = "standard" | "percent" | "convert";
+
+/** `both` shuffles addition and subtraction, as it does on an arithmetic sheet. */
+export type DecimalOperation = "add" | "subtract" | "multiply" | "both";
+
+/**
+ * Written across the line, or stacked in columns.
+ *
+ * Column form is worth more here than anywhere else in the shop: every value on
+ * a decimal sheet prints to the same number of places, so stacking them
+ * right-aligned puts the points in a column — which is the one thing a child
+ * lining up a decimal sum has to get right.
+ */
+export type DecimalForm = "horizontal" | "vertical";
+
+export type DecimalConfig = SheetOptions & {
+  kind: "decimals";
+  style: DecimalStyle;
+  operation: DecimalOperation;
+  form: DecimalForm;
+  /**
+   * How many digits after the point, 1 to 3. The whole of what makes a decimal
+   * sheet easy or hard, and the one thing every other generator of these gets
+   * wrong by rounding a float into the answer key.
+   */
+  places: number;
+  /** The whole numbers the values sit between, ends included. */
+  range: { min: number; max: number };
+  /** How many problems to ask for. Capped at what the page holds. */
+  count: number;
+  columns: number;
+  /** Blank space under every problem, to work in. */
+  workspace?: boolean;
+};
+
+/**
+ * Which money is on the page.
+ *
+ * A switch rather than a build-time constant, for the same reason A4 is (§4):
+ * a British child counting dollars is being asked a question about a foreign
+ * country, and the sheet is otherwise identical.
+ */
+export type Currency = "usd" | "gbp" | "eur";
+
+/** `both` shuffles addition and subtraction — the two a till does. */
+export type MoneyOperation = "add" | "subtract" | "multiply" | "both";
+
+export type MoneyConfig = SheetOptions & {
+  kind: "money";
+  currency: Currency;
+  operation: MoneyOperation;
+  /**
+   * Money is a two-place decimal with a symbol in front of it, so it is written
+   * down the same two ways a decimal is.
+   */
+  form: DecimalForm;
+  /** The whole units the amounts sit between — dollars, pounds or euros. */
+  range: { min: number; max: number };
+  /** How many problems to ask for. Capped at what the page holds. */
+  count: number;
+  columns: number;
+  /** Blank space under every problem, to work in. */
+  workspace?: boolean;
+};
+
 /**
  * Anything a saved sheet can hold. Narrow on `kind` — and only in index.ts,
  * which is the one module that knows the whole union.
  */
 export type SheetConfig =
-  BlankConfig | PaperConfig | ArithmeticConfig | MultiplicationConfig;
+  | BlankConfig
+  | PaperConfig
+  | ArithmeticConfig
+  | MultiplicationConfig
+  | FractionConfig
+  | DecimalConfig
+  | MoneyConfig;

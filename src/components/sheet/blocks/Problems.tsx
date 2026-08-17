@@ -2,6 +2,7 @@ import type { CSSProperties } from "react";
 
 import type { Problem } from "@/engine/sheets/types";
 
+import { FractionArtView } from "../FractionArt";
 import { NumberLineView } from "../NumberLine";
 import { inch } from "../units";
 import type { BlockProps } from "./block";
@@ -40,6 +41,10 @@ export function Problems({ block, metrics }: BlockProps<"problems">) {
               child is told to "do 4, 7 and 12 of" has to carry its number as
               text anyway. */}
           <span className="sheet__number">{index + 1}.</span>
+          {/* The picture a naming problem asks about, before the blank it is
+              answered in. On the sheet as well as on the key, because it is the
+              question rather than the answer. */}
+          {problem.art && <FractionArtView art={problem.art} />}
           {/* Three drawings and one rule: a problem is set the way the data
               says it is set. A stack when there is a stack, a bracket when
               there is a bracket, and a sentence otherwise — no flag beside the
