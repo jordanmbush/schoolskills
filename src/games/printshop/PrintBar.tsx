@@ -18,6 +18,20 @@ import { Button, Checkbox, FieldSet, NumberStepper } from "@/components/ui/kit";
 
 import { MAX_VARIANTS } from "./useBuilder";
 
+/**
+ * The button's three labels.
+ *
+ * "Copy it from the address bar" is the refusal, and it is an instruction
+ * rather than an apology: the link the button would have copied is already
+ * visible, so the one useful thing to say is where. It is held for the same
+ * 2400ms as the success, then the button goes back to offering.
+ */
+const COPY_LABEL = {
+  nothing: "Copy link",
+  copied: "Link copied",
+  refused: "Copy it from the address bar",
+} as const;
+
 export function PrintBar({
   seed,
   variants,
@@ -33,20 +47,24 @@ export function PrintBar({
   onAnswers: (on: boolean) => void;
   onReroll: () => void;
 }) {
-  const [copied, setCopied] = useState(false);
+  // What the button last did, which is the only thing it has to say. Three
+  // states rather than a boolean because the failure has to be visible: see
+  // `copyLink`.
+  const [said, setSaid] = useState<"nothing" | "copied" | "refused">("nothing");
 
   const copyLink = async () => {
     try {
       await navigator.clipboard.writeText(window.location.href);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 2400);
+      setSaid("copied");
     } catch {
       // Clipboard access is refused often enough — an insecure origin, a
       // browser that wants a gesture it didn't see — that failing silently
       // would be a button that does nothing. The URL is in the address bar
-      // either way, so the honest fallback is to say so.
-      setCopied(false);
+      // either way, so the honest fallback is to say so, and the label is
+      // where it gets said.
+      setSaid("refused");
     }
+    window.setTimeout(() => setSaid("nothing"), 2400);
   };
 
   return (
@@ -80,7 +98,7 @@ export function PrintBar({
           Another sheet like this
         </Button>
         <Button variant="ghost" onClick={() => void copyLink()}>
-          {copied ? "Link copied" : "Copy link"}
+          {COPY_LABEL[said]}
         </Button>
       </div>
 

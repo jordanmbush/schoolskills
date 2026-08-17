@@ -85,7 +85,11 @@ export default function PrintShopApp() {
         />
       </div>
 
-      <div className="bench__paper">
+      {/* `.no-print` on the column and not only on the two things inside it:
+          both children already carry it, but a bench column emptied by
+          `display: none` on its contents is still a column, and the print copy
+          below would lay out under it rather than at the top of the paper. */}
+      <div className="bench__paper no-print">
         <PrintBar
           seed={bench.seed}
           variants={bench.variants}

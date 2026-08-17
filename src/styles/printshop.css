@@ -14,8 +14,9 @@
    forget to bring the bench's stylesheet.
 
    Everything in here is screen furniture, and every element that carries it
-   also carries `.no-print` — see the print block at the foot of the file for
-   the one exception, which is the whole point of the screen.                */
+   also carries `.no-print` — except the two the print block at the foot of the
+   file deals with: `.print-only`, which is the whole point of the screen, and
+   `.bench` itself, which cannot be hidden because it is what holds it.       */
 
 .bench {
   display: grid;
@@ -243,6 +244,26 @@
 }
 
 @media print {
+  /* The bench stops being a layout.
+
+     `print.css` hides everything carrying `.no-print`, but a hidden grid item
+     is still nothing laid out in a grid: left as it was, the bench indents the
+     print copy by its own `padding-inline` and drops it a row below the empty
+     column where the preview was. On Letter that is the sheet printed 18px past
+     the right edge of the paper, and a full-page sheet spilling onto a second
+     one — silently, because the two lengths that disagree are on different
+     elements. A catalog page has no bench and prints the same sheet at 0,0.
+
+     The sheet owns its own geometry (§4) and `print.css` zeroes its margin, so
+     the only correct thing between it and the page box is nothing at all. */
+  .bench {
+    display: block;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    gap: 0;
+  }
+
   .print-only {
     display: block;
   }

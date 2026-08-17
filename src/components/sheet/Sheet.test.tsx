@@ -1338,6 +1338,27 @@ describe("print isolation", () => {
     }
   });
 
+  it("takes the builder's own layout out from under the sheet", () => {
+    // `.no-print` empties the bench's columns; it does not remove them. A print
+    // copy left inside a live two-column grid prints indented by the bench's
+    // padding and a row down from where the preview was — on Letter, 18px off
+    // the right edge of the paper and a full-page sheet onto a second one. It
+    // cannot be seen on screen, because the preview is a separate scaled copy.
+    //
+    // The smoke run measures the real box in a browser, which is the only place
+    // that can. This is the fast half: the two lines that make it possible.
+    const css = read(join(ROOT, "src/styles/printshop.css"));
+    const print = css.slice(css.indexOf("@media print"));
+    expect(print).toMatch(/\.bench\s*\{[^}]*display:\s*block/);
+    expect(print).toMatch(/\.bench\s*\{[^}]*padding:\s*0/);
+    expect(print).toMatch(/\.bench\s*\{[^}]*max-width:\s*none/);
+
+    // And the column itself, not only the two controls inside it — an empty
+    // grid item still occupies the row above the paper.
+    const app = read(join(ROOT, "src/games/printshop/App.tsx"));
+    expect(app).toMatch(/className="bench__paper[^"]*\bno-print\b/);
+  });
+
   it("breaks pages where a reader would expect it to", () => {
     const css = read(join(ROOT, "src/styles/sheet.css"));
     expect(css).toContain("break-after: page");

@@ -227,6 +227,57 @@ try {
   await page.waitForTimeout(900);
   check("the shared link reopens the same sheet", page.url() === shared);
 
+  /*
+   * Where the paper actually lands on the paper.
+   *
+   * Print is the whole output path here (§10) — there is no PDF render to
+   * notice a problem in first — and the failure mode is invisible on screen by
+   * construction: the preview is a separate, scaled copy, so a bench that
+   * indents or offsets the *print* copy looks perfect right up until the
+   * printer runs. It cost 18px off the right edge of Letter and a second sheet
+   * of paper once already.
+   *
+   * The assertion is the whole contract in two numbers. `print.css` zeroes the
+   * `@page` margin because the sheet owns its own geometry, so a correctly
+   * printed sheet starts at 0,0 — the same box a catalog page gives it, which
+   * is measured here too rather than assumed. Anything between the sheet and
+   * the page box shows up as a non-zero offset and nothing else does.
+   */
+  log("\n7. The printed sheet is the paper, not a sheet inside a layout");
+  await page.emulateMedia({ media: "print" });
+  await page.waitForTimeout(400);
+  const benchBox = await page
+    .locator(".print-only .sheet")
+    .first()
+    .boundingBox();
+  check(
+    "the builder's printed sheet starts at the corner of the page",
+    benchBox !== null &&
+      Math.round(benchBox.x) === 0 &&
+      Math.round(benchBox.y) === 0,
+    JSON.stringify(benchBox),
+  );
+  // 8.5in at 96dpi. A sheet that measures anything else has had a transform or
+  // a scale leak onto it, which is a ⅝ rule that prints as something else.
+  check(
+    "and is 8.5in wide, unscaled",
+    benchBox !== null && Math.round(benchBox.width) === 816,
+    JSON.stringify(benchBox),
+  );
+
+  await page.goto(`${BASE}/printables/lined-paper`, {
+    waitUntil: "networkidle",
+  });
+  const catalogBox = await page.locator(".sheet").first().boundingBox();
+  check(
+    "a catalog page puts the same sheet in the same place",
+    catalogBox !== null &&
+      Math.round(catalogBox.x) === 0 &&
+      Math.round(catalogBox.y) === 0,
+    JSON.stringify(catalogBox),
+  );
+  await page.emulateMedia({ media: null });
+
   log(
     `\nconsole errors: ${errors.length ? errors.slice(0, 5).join(" | ") : "none"}`,
   );
