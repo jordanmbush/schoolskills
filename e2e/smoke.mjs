@@ -308,6 +308,63 @@ try {
       Math.round(catalogBox.y) === 0,
     JSON.stringify(catalogBox),
   );
+
+  /*
+   * And where the scissors go.
+   *
+   * The card shelf makes the one claim on this site that a reader settles with
+   * a ruler: a blank flashcard is three and three quarter inches by two and a
+   * quarter, and the cut lines are the edges of it. Neither half of that can be
+   * checked without a browser — the engine's numbers are in mil, and what
+   * reaches paper is whatever the box model and the grid did with them.
+   *
+   * The third measurement is the one that would go wrong silently. The block is
+   * exactly as wide as its cards, so what the page did not use sits outside it,
+   * and `margin-inline: auto` is the only thing making the left of that equal
+   * the right. A block flushed to one side prints a stack of cut sheets that are
+   * not square with each other, and looks identical in every preview.
+   */
+  log("\n8. A card measures what the page says it measures");
+  await page.goto(`${BASE}/printables/templates/blank-flashcards`, {
+    waitUntil: "networkidle",
+  });
+  const face = await page.locator(".sheet__cut-card").first().boundingBox();
+  check(
+    "a blank flashcard is 3.75in by 2.25in on the paper",
+    face !== null &&
+      Math.round(face.width) === Math.round(3.75 * 96) &&
+      Math.round(face.height) === Math.round(2.25 * 96),
+    JSON.stringify(face),
+  );
+
+  const cutBlock = await page.locator(".sheet__cut").boundingBox();
+  const cardPage = await page.locator(".sheet").first().boundingBox();
+  const left = cutBlock.x - cardPage.x;
+  const right = cardPage.x + cardPage.width - (cutBlock.x + cutBlock.width);
+  check(
+    "and what is left over is split evenly either side of it",
+    Math.round(left) === Math.round(right),
+    `left ${left}, right ${right}`,
+  );
+
+  // The vertical guides, in order. Two columns is three of them, and the middle
+  // one has to land on the boundary the two cards share — a guide near the cut
+  // rather than on it is the sliver down one side of every other card.
+  const guides = await page
+    .locator(".sheet__cut-guides line")
+    .evaluateAll((lines) =>
+      lines
+        .map((line) => line.getBoundingClientRect())
+        .filter((box) => box.width < 1)
+        .map((box) => Math.round(box.x)),
+    );
+  check(
+    "the cut lines are the card boundaries, trim edge included",
+    guides.length === 3 &&
+      Math.abs(guides[1] - (Math.round(cutBlock.x) + Math.round(3.75 * 96))) <=
+        1,
+    JSON.stringify(guides),
+  );
   await page.emulateMedia({ media: null });
 
   log(

@@ -540,6 +540,164 @@ export type SoundCard = {
   small?: MarkedWord;
 };
 
+/**
+ * One labelled place on a form: a heading, and room to answer under it.
+ *
+ * The whole of what a blank form is. A book report, a lab report and a story
+ * map differ in what the headings say and in nothing else — which is why they
+ * are one family and one block rather than three drawings, and why the honest
+ * thing this tier can offer is a good set of headings rather than a generator
+ * (§11: "they're supposed to be empty").
+ *
+ * `space` is stated rather than derived from `lines` because a field with no
+ * lines is the one a child draws in, and a drawing box has a height that has
+ * nothing to do with writing. Where there *are* lines, the family sets `space`
+ * to `lines × answerLine(fontPt)`, so a line on a form is the same height as a
+ * line anywhere else in the shop and a page of them can be counted.
+ */
+export type FormField = {
+  /** What goes above the space — "What I predicted", "Beginning". */
+  label: string;
+  /**
+   * How many places there are to write, which is one more than the number of
+   * rules drawn inside the box: the last line is written on the box's own
+   * bottom edge. Zero is a blank box — somewhere to draw rather than write.
+   */
+  lines: number;
+  /** How tall the box under the label stands. */
+  space: Mil;
+  /**
+   * And how wide it is drawn.
+   *
+   * Declared here rather than left to a CSS grid, for the reason a problem cell
+   * declares its size (§4): the family already worked out how wide a column is
+   * in order to decide what fits, and a second width discovered in the browser
+   * is a second width. It also means the rules inside the box are drawn in the
+   * same mil viewBox as every other stroke on a sheet, which is what keeps a
+   * hairline a hairline on paper.
+   */
+  width: Mil;
+  /** How many of the form's columns it takes. */
+  span: number;
+};
+
+/**
+ * One column of a table, and how wide it is drawn.
+ *
+ * Widths in mil rather than shares of the page, for the reason every other
+ * length here is (§4): a reading log's "Minutes" column is as wide as three
+ * numerals and its "Book" column is as wide as a title, and a table that
+ * divided the page evenly would print the one too narrow to use and the other
+ * mostly empty. The family works the widths out against the box it was given,
+ * so what the renderer draws is what the capacity arithmetic already fitted.
+ */
+export type TableColumn = { label: string; width: Mil };
+
+/**
+ * One cell of a table: what is printed in it, and what is printed in its
+ * corner.
+ *
+ * Two places rather than one, because a calendar needs both at once — the date
+ * is set small in the top-left corner so the rest of the square stays empty for
+ * whatever is written in it, and a row label on a chore chart sits in the
+ * middle of its own cell like ordinary text. A cell with neither is a box to
+ * fill in, which is most of them.
+ */
+export type TableCell = {
+  /** Set on the cell's own baseline, left-aligned. A row label, a day name. */
+  text?: string;
+  /** Set small in the top-left corner. A calendar's date. */
+  corner?: string;
+};
+
+/**
+ * One card face — the piece of paper that gets cut out.
+ *
+ * Every field is optional and a face with none of them is a blank card, which
+ * is the commonest thing on this shelf and not a degenerate case: "blank
+ * flashcards" is what somebody searched for.
+ *
+ * `fields` is a rule with its purpose printed *under* it rather than beside it,
+ * which is the shape a certificate is written in — the name goes on the line
+ * and the word "Name" goes small underneath so it does not crowd what is
+ * written. `lines` is the same rule with nothing said about it.
+ */
+export type CardFace = {
+  /** Small, above the big line — "Hello, my name is", "This certifies that". */
+  eyebrow?: string;
+  /** The big line: the word, the verse reference, what the award is for. */
+  heading?: string;
+  /** The words under it: the verse itself, a quotation. */
+  body?: string;
+  /** A rule to write on, with what it is for set small underneath. */
+  fields?: string[];
+  /** Rules to write on with nothing said about them. */
+  lines?: number;
+};
+
+/**
+ * One face of a cube net: how many pips are on it, or what is written there.
+ *
+ * `pips` is a count rather than a numeral because a die has spots, and a child
+ * who is learning to subitise is reading a pattern rather than a number. Zero
+ * pips with a `label` is the same net used as a word die — six things to do,
+ * six sounds to say — which is the version most homeschool rooms actually cut
+ * out, and it is the same six squares either way.
+ */
+export type NetFace = { pips: number; label?: string };
+
+/** Which edge of a face a glue tab hangs off. */
+export type NetEdge = "top" | "right" | "bottom" | "left";
+
+/**
+ * A tab to glue under the face it meets when the net is folded up.
+ *
+ * On the net rather than left to the renderer, because which edges get one is a
+ * fact about the *folding* and not about the drawing: a cube has twelve edges,
+ * five of them are folds in this net, and the remaining seven each need exactly
+ * one tab. Two tabs on one join is a lump that stops the cube closing, and none
+ * is a hole — both invisible until somebody has cut it out.
+ */
+export type NetTab = { face: number; edge: NetEdge };
+
+/**
+ * Something to cut out and fold, or cut out and spin.
+ *
+ * The two share a block because they share the thing that makes them hard: the
+ * ink says where the scissors go, and being a sixteenth of an inch out is a
+ * cube that will not close or a spinner that is not fair. Neither has an answer
+ * and neither is drawn from a seed.
+ */
+export type Net =
+  | {
+      shape: "cube";
+      /** One face's edge. The cube it folds up into is this on a side. */
+      edge: Mil;
+      /** The grid the net is laid out on, so a renderer places nothing. */
+      columns: number;
+      rows: number;
+      /** Row-major over that grid. `null` is paper with no face on it. */
+      faces: Array<NetFace | null>;
+      tabs: NetTab[];
+      /** How far a glue tab sticks out from the edge it hangs off. */
+      tab: Mil;
+    }
+  | {
+      shape: "spinner";
+      radius: Mil;
+      /**
+       * One label per sector, clockwise from twelve o'clock.
+       *
+       * The sectors are equal by construction — the renderer divides a whole
+       * turn by `sectors.length` — because a spinner whose sectors are not
+       * equal is not the spinner the sheet says it is, and "is this fair?" is
+       * the question the thing exists to answer.
+       */
+      sectors: string[];
+      /** The pointer to cut out and pin through the middle. */
+      pointer: { length: Mil; width: Mil };
+    };
+
 export type Block =
   | { kind: "problems"; columns: number; items: Problem[] }
   | { kind: "rules"; rule: Rule; lines: number }
@@ -649,6 +807,99 @@ export type Block =
    * under a sum do.
    */
   | { kind: "numberline"; line: NumberLine }
+  /**
+   * A blank form: labelled boxes to write in, laid out across the page.
+   *
+   * A block of its own rather than a `problems` block with empty answers, for
+   * the reason `wordshapes` is one: there is no question here. A form asks
+   * nothing that has a right answer — it asks what the book was about — so
+   * numbering it "1." would be a page pretending to be a worksheet, and the key
+   * mechanism has nothing to reveal on it.
+   */
+  | { kind: "form"; columns: number; fields: FormField[] }
+  /**
+   * A ruled table: headings across the top, and rows to fill in under them.
+   *
+   * Distinct from a `grid`, which is squares a child measures against and whose
+   * columns are therefore all one width. A table's columns are as wide as what
+   * goes in them, its heading row is its own height, and its cells hold words
+   * rather than numerals. Everything on this shelf that is a week — a reading
+   * log, a chore chart, a calendar, a timeline — is this block with different
+   * headings on it.
+   */
+  | {
+      kind: "table";
+      columns: TableColumn[];
+      /** Whether the column labels are drawn as a heading row above the body. */
+      head: boolean;
+      /** How many body rows there are under the heading. */
+      rows: number;
+      /** Row-major, `columns.length` to a row. Short lists leave cells blank. */
+      cells: TableCell[];
+      /** How tall a body row stands, and how tall the heading row does. */
+      row: Mil;
+      headRow: Mil;
+      /**
+       * A heavier upright at this column boundary, with a tick into every row —
+       * the line a timeline is drawn along.
+       *
+       * Counted in column boundaries, so `1` is the rule between the first
+       * column and the second and `0` is the left edge of the table. A timeline
+       * is a table whose spine happens to be a date column wide; nothing else on
+       * the shelf sets it.
+       */
+      spine?: number;
+    }
+  /**
+   * Cards to cut out: faces at a stated size, in a grid, with the cut lines on
+   * the boundaries between them.
+   *
+   * The one block on the shelf whose geometry a pair of scissors checks. Three
+   * things are therefore not the renderer's to decide and all three are here:
+   * how big a card is, how many there are across and down, and where the cuts
+   * go — which is every card boundary, the outside trim included, because a
+   * sheet whose outer edge is not marked is a sheet cut freehand.
+   *
+   * There is no gutter, and that is the design rather than an omission. A
+   * gutter means two cuts and a strip of waste per boundary; a shared edge
+   * means one cut makes two cards, which is what a paper trimmer is for. The
+   * waste that is left over goes *round* the block, split evenly, so a sheet
+   * fed back through a printer or a guillotine is square with itself — an
+   * uneven margin is the way this goes wrong, and it goes wrong invisibly.
+   */
+  | {
+      kind: "cutcards";
+      /** The face, on paper. What the sheet says it is, and what it measures. */
+      card: { width: Mil; height: Mil };
+      columns: number;
+      rows: number;
+      faces: CardFace[];
+      /** How big the heading is set, in ems of the body size. */
+      headingEms: number;
+      /**
+       * A ruled border inside every card, for a certificate.
+       *
+       * `plain` draws nothing but the cut guides, which is what a blank
+       * flashcard wants: a card that is going to be written on all over does not
+       * need a box drawn round the writing. `award` is the double rule a
+       * certificate is printed in, set in from the cut so that a cut a
+       * thirty-second of an inch out does not slice through it.
+       */
+      frame: "plain" | "award";
+      /**
+       * Fold the card in half across the middle, and print the upper half
+       * upside down.
+       *
+       * A tent — a name tag that stands on a desk and reads from both sides.
+       * The rotation is what makes that true rather than a nicety: fold the top
+       * half back and down and it ends up facing the other way, so it has to be
+       * printed the other way up to be read. The fold is exactly halfway down
+       * the card, which is the whole of what makes the two panels match.
+       */
+      fold?: boolean;
+    }
+  /** Something to cut out and fold up, or cut out and spin. */
+  | { kind: "net"; net: Net }
   /** Where to cut, for cards and bookmarks. */
   | { kind: "cutline" }
   | { kind: "spacer"; height: Mil };
@@ -912,6 +1163,202 @@ export type ChartConfig = SheetOptions & {
   places?: { largest: number; smallest: number };
   /** The place-value chart: how many rows there are to write numbers in. */
   rows?: number;
+};
+
+/* ── The paperwork ─────────────────────────────────────────────────────────
+   The rest of the "templates" tier of §11: the forms, the week, and the paper
+   that gets cut up. Four families, and the thing they have in common is the
+   thing that makes them honest — **they are supposed to be empty.** Nothing on
+   any of them is generated out of a subject we would be inventing, which is
+   exactly the line §11's third tier draws: a reading log is a reading log
+   whoever printed it, and "5th grade science worksheets" without an editor is
+   plausible nonsense.
+
+   Three things *are* worked out rather than left blank, and each is worked out
+   because getting it wrong would be a sheet that lies:
+
+     - a calendar's weekdays, which is arithmetic with a right answer,
+     - a die's faces, which have to come out opposite in threes summing to
+       seven when the net is folded,
+     - a spinner's sectors, which are equal or the thing is not fair.
+
+   Everything else on these four is a heading, a rule and a box.             */
+
+/**
+ * The forms a week of lessons is written on.
+ *
+ * One family and nine styles, for the reason the spelling family is one: none
+ * of the nine changes what the sheet *is*. It is a set of headings with room to
+ * answer under each, and which headings they are is the setting — so a book
+ * report and a lab report are one block with two vocabularies rather than two
+ * families that would each grow their own idea of how tall a line is.
+ *
+ * The science styles are the ones worth being careful about, and the care is
+ * all in what they leave out. A lab report sheet is a *form*: it asks what the
+ * question was and what happened, and it does not supply either. That is the
+ * distinction §11's third tier turns on — the paperwork around a science
+ * lesson is ours to print, and the science is not.
+ */
+export type FormStyle =
+  | "reading-log"
+  | "book-report"
+  | "story-map"
+  | "paragraph-frame"
+  | "writing-prompt"
+  | "lab-report"
+  | "scientific-method"
+  | "observation-journal"
+  | "timeline";
+
+export type FormConfig = SheetOptions & {
+  kind: "form";
+  style: FormStyle;
+  /**
+   * How many rows the two styles that are lists print — the reading log and the
+   * timeline. Capped at what the page holds, like every other count.
+   */
+  rows?: number;
+  /**
+   * How much room each answer gets, as a multiplier on what the style asks for.
+   *
+   * One control rather than a height per field, because the fields are not
+   * independent: a form is a page, and giving "What it is about" four more
+   * lines has to take them from somewhere. So the style says the proportions
+   * and this says how generous the whole sheet is — which is also the honest
+   * way to offer "my child writes large".
+   */
+  space?: number;
+  /**
+   * The prompt on a writing-prompt sheet, where a parent has set their own.
+   *
+   * Absent draws one from the seed out of the bank in `templates/prompts.ts`,
+   * which is what makes that style the one generated thing on this shelf and
+   * why "another one like this" is `seed + 1` here as everywhere else (§7).
+   */
+  prompt?: string;
+};
+
+/**
+ * The week, on a wall.
+ *
+ * A calendar, a planner, a chore chart, a behaviour chart and a verse of the
+ * week — five things that are all a table with different headings, which is why
+ * they are one family. The two charts differ only in their labels and their
+ * title, and that is stated rather than hidden: "chore chart" and "behaviour
+ * chart" are different queries, different sets of rows and the same paper, and
+ * pretending otherwise would mean either two families or one page that answers
+ * neither search.
+ */
+export type PlannerStyle =
+  "calendar" | "week" | "chores" | "behaviour" | "verse-week";
+
+export type PlannerConfig = SheetOptions & {
+  kind: "planner";
+  style: PlannerStyle;
+  /**
+   * Which month the calendar prints, as a full year and a month 1–12.
+   *
+   * **Both, or neither.** With neither the calendar is undated — seven columns
+   * of empty squares under the weekday names, which is what "blank calendar"
+   * means and is the version that does not go out of date. With both, the dates
+   * are worked out (`monthGrid`), and that is the one piece of arithmetic on
+   * this shelf with a right answer: a calendar whose first of the month is
+   * under the wrong weekday is a sheet somebody plans a term around.
+   */
+  year?: number;
+  month?: number;
+  /** Whether the week is drawn starting on Sunday or on Monday. */
+  weekStart?: "sunday" | "monday";
+  /**
+   * The rows: the jobs on a chore chart, the goals on a behaviour chart, the
+   * parts of the day on a planner.
+   *
+   * A parent's own words, always, and empty is a legitimate answer — a chart
+   * with blank row labels is one to fill in by hand, which is what a family
+   * whose jobs change weekly actually wants.
+   */
+  labels?: string[];
+  /** How many rows, where the labels do not decide it. */
+  rows?: number;
+  /** The verse on a verse-of-the-week chart — a library id (§12). */
+  passage?: string;
+  translation?: TranslationId;
+  /** Or the words somebody pasted, if they did not pick one. */
+  text?: string;
+};
+
+/**
+ * The paper that gets cut up.
+ *
+ * Five styles and one geometry. What they have in common is the only thing that
+ * matters on this shelf: a stated size on paper, a grid of that size, and cut
+ * guides on the boundaries. What they differ in is what is printed on a face,
+ * which is a handful of strings.
+ *
+ * "Blank flashcards", "printable name tags" and "printable bookmarks" are three
+ * of the plainest queries in this whole section and all three are the same
+ * sheet with a different rectangle on it, which is exactly the case §8 says to
+ * curate the slugs for and generate the sheets from.
+ */
+export type CardStyle =
+  "flashcard" | "name-tag" | "bookmark" | "verse-card" | "certificate";
+
+export type CardsConfig = SheetOptions & {
+  kind: "cards";
+  style: CardStyle;
+  /**
+   * How many cards to a page — the 2-up and 4-up of §17.
+   *
+   * A request, like every other count: each style declares the layouts it has
+   * (`CARD_LAYOUTS`), because how many cards fit across is a fact about the
+   * shape of the card and not something to be asked for freely — four bookmarks
+   * to a page is four columns, and four flashcards is two by two.
+   */
+  up?: number;
+  /**
+   * What is written on the faces, one card each.
+   *
+   * Empty is the default and is not a lesser sheet: blank is what a flashcard
+   * is for. A list shorter than the page holds fills the cards it can and
+   * leaves the rest blank, which is what a parent with nine spellings and a
+   * ten-up sheet should get.
+   */
+  words?: string[];
+  /** The verse on a memory-verse card or a Scripture bookmark (§12). */
+  passage?: string;
+  translation?: TranslationId;
+  text?: string;
+  /**
+   * Fold each card in half and print the top half upside down — a tent name
+   * tag that stands on a desk and reads from both sides.
+   */
+  fold?: boolean;
+  /** What a certificate is awarded for: "for finishing the times tables". */
+  reason?: string;
+};
+
+/** Something to cut out and fold up, or cut out and spin. */
+export type NetStyle = "dice" | "spinner";
+
+export type NetConfig = SheetOptions & {
+  kind: "net";
+  style: NetStyle;
+  /**
+   * How many equal sectors a spinner is cut into.
+   *
+   * Equal is not negotiable and is not a setting: a spinner is a thing a child
+   * is asked whether they think is fair, and one whose sectors were sized by
+   * how long their labels are would teach the opposite of the answer.
+   */
+  sectors?: number;
+  /**
+   * What is written on the faces or in the sectors, in order.
+   *
+   * On a die, replacing the pips: six things to do, six sounds to say, six ways
+   * to end a story. On a spinner, one per sector. Empty leaves a die with its
+   * pips and a spinner with its numbers.
+   */
+  labels?: string[];
 };
 
 /* ── Arithmetic ────────────────────────────────────────────────────────────
@@ -2085,6 +2532,10 @@ export type SheetConfig =
   | BlankConfig
   | PaperConfig
   | ChartConfig
+  | FormConfig
+  | PlannerConfig
+  | CardsConfig
+  | NetConfig
   | ArithmeticConfig
   | MultiplicationConfig
   | FractionConfig

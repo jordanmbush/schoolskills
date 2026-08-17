@@ -29,7 +29,9 @@ import type {
   WordsConfig,
 } from "@/engine/sheets/types";
 
+import type { BlockOf } from "./blocks/block";
 import { SheetView } from "./Sheet";
+import { HEAVY } from "./units";
 
 /**
  * The properties a printable sheet lives or dies by.
@@ -296,6 +298,90 @@ const EVERY_BLOCK: Block[] = [
     // shape of it that thins its own labels out, which is what `label` says.
     kind: "numberline",
     line: { from: 0, to: 100, step: 5, width: 7500, label: 2 },
+  },
+  // The paperwork tier (§11): a blank form, a ruled table, a page of cards to
+  // cut out, and something to fold up. Nothing on any of them has an answer,
+  // which is what makes them honest — and every one of them is geometry the
+  // engine declared and this layer only draws.
+  {
+    kind: "form",
+    columns: 2,
+    fields: [
+      { label: "Title", lines: 2, space: 540, width: 7500, span: 2 },
+      { label: "Who wrote it", lines: 2, space: 540, width: 3680, span: 1 },
+      // The box a child draws in rather than writes in: no rules at all.
+      { label: "What I saw", lines: 0, space: 2200, width: 3680, span: 1 },
+    ],
+  },
+  {
+    kind: "table",
+    columns: [
+      { label: "Sunday", width: 1072 },
+      { label: "Monday", width: 1072 },
+    ],
+    head: true,
+    rows: 2,
+    cells: [{ corner: "1" }, { corner: "2" }, { text: "Reading" }, {}],
+    row: 1600,
+    headRow: 317,
+    spine: 1,
+  },
+  {
+    kind: "cutcards",
+    card: { width: 3750, height: 2250 },
+    columns: 2,
+    rows: 2,
+    faces: [
+      { heading: "because" },
+      { eyebrow: "Hello, my name is", lines: 1 },
+      { heading: "John 3:16", body: "For God so loved the world" },
+      { heading: "Certificate", fields: ["Awarded to", "Date"] },
+    ],
+    headingEms: 2.6,
+    frame: "award",
+    fold: true,
+  },
+  {
+    kind: "net",
+    net: {
+      shape: "cube",
+      edge: 2000,
+      columns: 3,
+      rows: 4,
+      faces: [
+        null,
+        { pips: 1 },
+        null,
+        { pips: 3 },
+        { pips: 2 },
+        { pips: 4 },
+        null,
+        { pips: 6 },
+        null,
+        null,
+        { pips: 5 },
+        null,
+      ],
+      tabs: [
+        { face: 1, edge: "left" },
+        { face: 1, edge: "right" },
+        { face: 1, edge: "top" },
+        { face: 3, edge: "bottom" },
+        { face: 5, edge: "bottom" },
+        { face: 3, edge: "left" },
+        { face: 5, edge: "right" },
+      ],
+      tab: 360,
+    },
+  },
+  {
+    kind: "net",
+    net: {
+      shape: "spinner",
+      radius: 2800,
+      sectors: ["1", "2", "3", "4"],
+      pointer: { length: 2520, width: 616 },
+    },
   },
   { kind: "cutline" },
   { kind: "spacer", height: 1200 },
@@ -1813,6 +1899,268 @@ describe("trace styles", () => {
     expect(styles).toContain(".sheet__glyph--dotted");
     expect(styles.slice(0, styles.indexOf("── Problems"))) //
       .not.toContain("background");
+  });
+});
+
+/* ── The paperwork ─────────────────────────────────────────────────────────
+   The tier whose geometry is checked with a pair of scissors rather than by
+   reading it. The engine's own suites hold the *numbers*; what can only be
+   checked here is that the ink lands on them.                               */
+
+describe("a rendered form", () => {
+  const html = (fields: BlockOf<"form">["fields"]) =>
+    renderToStaticMarkup(
+      <SheetView
+        sheet={sheet({ blocks: [{ kind: "form", columns: 2, fields }] })}
+      />,
+    );
+
+  it("draws a box the size the family declared, in mil inside inches", () => {
+    // The same bargain every drawn block strikes (§4): the box model is in
+    // inches so it survives the print pipeline, and the viewBox is in mil so a
+    // hairline is a hairline rather than a thousandth of one.
+    const markup = html([
+      { label: "Title", lines: 4, space: 1000, width: 3680, span: 1 },
+    ]);
+    expect(markup).toContain('width="3.68in"');
+    expect(markup).toContain('height="1in"');
+    expect(markup).toContain('viewBox="0 0 3680 1000"');
+  });
+
+  it("rules one line fewer than there are places to write", () => {
+    // A child writes *on* a rule, so the bottom edge of the box is the last
+    // line: four places to write is a rectangle with three rules through it.
+    // Four rules and a floating bottom edge would print an empty strip along
+    // the bottom and a line attached to nothing.
+    const markup = html([
+      { label: "Title", lines: 4, space: 1000, width: 3680, span: 1 },
+    ]);
+    const rules = [...markup.matchAll(/<line[^>]*y1="(\d+)"/g)].map((m) =>
+      Number(m[1]),
+    );
+    expect(rules).toEqual([250, 500, 750]);
+  });
+
+  it("leaves a drawing box unruled", () => {
+    const markup = html([
+      { label: "What I saw", lines: 0, space: 2200, width: 3680, span: 1 },
+    ]);
+    expect(markup).not.toContain("<line");
+    expect(markup).toContain("<rect");
+  });
+
+  it("rules the box rather than tinting it, so it always prints", () => {
+    const markup = html([
+      { label: "Title", lines: 2, space: 600, width: 3680, span: 1 },
+    ]);
+    expect(markup).toMatch(/<rect[^>]*class="sheet__box"/);
+    expect(markup).not.toContain("background");
+  });
+});
+
+describe("a rendered table", () => {
+  const built = () =>
+    renderToStaticMarkup(
+      <SheetView
+        sheet={sheet({
+          blocks: EVERY_BLOCK.filter((block) => block.kind === "table"),
+        })}
+      />,
+    );
+
+  it("draws one stroke per boundary, not a border per cell", () => {
+    // Two adjacent cells with a border each print a rule twice as heavy as the
+    // outside of the table, on a device pixel the pair do not always agree
+    // about. Two columns is three uprights, not four.
+    const markup = built();
+    const uprights = [
+      ...markup.matchAll(/<line[^>]*x1="([\d.]+)"[^>]*y1="0"/g),
+    ];
+    expect(uprights).toHaveLength(3);
+  });
+
+  it("prints a date in the corner of its square and a word on its baseline", () => {
+    // The distinction a calendar lives on: the numeral is in the corner so the
+    // rest of the square stays empty for what is written in it.
+    const markup = built();
+    expect(markup).toContain(">1</text>");
+    expect(markup).toContain(">Reading</text>");
+    expect(markup).toContain(">Sunday</text>");
+  });
+
+  it("keeps its outermost strokes inside its own viewBox", () => {
+    // An `<svg>` clips to its box, so a hairline drawn at x=0 loses the outer
+    // half of itself and prints lighter than the identical rule two columns
+    // along — which the eye catches, because it is next to the comparison.
+    const markup = built();
+    expect(markup).not.toMatch(/<line[^>]*x1="0"[^>]*y1="0"[^>]*y2="\d/);
+  });
+});
+
+describe("a rendered page of cards", () => {
+  const built = (over: Partial<BlockOf<"cutcards">> = {}) => {
+    const [block] = EVERY_BLOCK.filter((entry) => entry.kind === "cutcards");
+    return renderToStaticMarkup(
+      <SheetView sheet={sheet({ blocks: [{ ...block, ...over }] })} />,
+    );
+  };
+
+  it("puts a cut line on every boundary, the outside trim included", () => {
+    // A sheet whose outer edge is unmarked is a sheet cut freehand, and
+    // freehand is where the white sliver down one side of every other card
+    // comes from. Two columns and two rows is three lines each way.
+    const markup = built({ fold: false });
+    const cuts = markup.slice(markup.indexOf("sheet__cut-guides"));
+    const uprights = [
+      ...cuts.matchAll(
+        /<line[^>]*x1="([\d.]+)"[^>]*x2="[\d.]+"[^>]*y1="0"[^>]*y2="4500"/g,
+      ),
+    ];
+    expect(uprights.map((match) => Number(match[1]))).toEqual([
+      // Half a stroke in at the trim, exactly on the shared edge in the middle,
+      // and half a stroke in at the far trim.
+      HEAVY / 2,
+      3750,
+      7500 - HEAVY / 2,
+    ]);
+  });
+
+  it("cuts where the cards actually end", () => {
+    // The claim that makes the sheet usable: the guides are the boundaries of
+    // the declared card, not a decoration near them.
+    const markup = built({ fold: false });
+    const cuts = markup.slice(markup.indexOf("sheet__cut-guides"));
+    const across = [
+      ...cuts.matchAll(/<line[^>]*x1="0"[^>]*y1="([\d.]+)"/g),
+    ].map((match) => Number(match[1]));
+    expect(across).toEqual([HEAVY / 2, 2250, 4500 - HEAVY / 2]);
+  });
+
+  it("folds exactly halfway down the card, and turns the top panel round", () => {
+    // The two panels of a tent are the same piece of paper, so they cannot be
+    // out of register with each other — but they can be different sizes, and
+    // that is what a fold line anywhere but the middle prints. Folding the top
+    // back and down turns it round, so it has to be printed round.
+    const markup = built();
+    const cuts = markup.slice(markup.indexOf("sheet__cut-guides"));
+    const folds = [
+      ...cuts.matchAll(/sheet__rule--fold[^>]*y1="([\d.]+)"/g),
+    ].map((match) => Number(match[1]));
+    expect(folds).toEqual([1125, 3375]);
+    expect(markup).toContain("sheet__cut-panel--flipped");
+    const css = read(join(ROOT, "src/styles/sheet.css"));
+    expect(css.slice(css.indexOf(".sheet__cut-panel--flipped"))).toContain(
+      "rotate(180deg)",
+    );
+  });
+
+  it("tells a cut from a fold without a legend", () => {
+    const markup = built();
+    const cuts = markup.slice(markup.indexOf("sheet__cut-guides"));
+    const cut =
+      /sheet__rule--cut[^>]*stroke-width="(\d+)"[^>]*stroke-dasharray="([^"]+)"/.exec(
+        cuts,
+      );
+    const fold =
+      /sheet__rule--fold[^>]*stroke-width="(\d+)"[^>]*stroke-dasharray="([^"]+)"/.exec(
+        cuts,
+      );
+    expect(Number(cut?.[1])).toBeGreaterThan(Number(fold?.[1]));
+    expect(cut?.[2]).not.toBe(fold?.[2]);
+  });
+
+  it("splits what is left over evenly on both sides", () => {
+    // The mirrored-margin failure, and it is the one that cannot be seen on
+    // screen: the block is exactly as wide as its cards, so whatever the page
+    // did not use is outside it — and `margin-inline: auto` is what makes the
+    // left of that equal the right. A block flushed to one side prints a stack
+    // of cut sheets that are not square with each other.
+    const markup = built();
+    expect(markup).toContain(
+      'class="sheet__cut" style="width:7.5in;height:4.5in"',
+    );
+    const css = read(join(ROOT, "src/styles/sheet.css"));
+    const rule = css.slice(
+      css.indexOf(".sheet__cut {"),
+      css.indexOf(".sheet__cut-grid"),
+    );
+    expect(rule).toContain("margin-inline: auto");
+  });
+
+  it("lays the cards out at the size the family stated, in inches", () => {
+    const markup = built();
+    expect(markup).toContain("--card-w:3.75in");
+    expect(markup).toContain("--card-h:2.25in");
+  });
+
+  it("keeps what is written on a card as real text", () => {
+    // Half of §2 on the shelf where it is easiest to give up: a card is small,
+    // and a drawing would have been simpler. A crawler reads none of it.
+    const markup = built();
+    expect(markup).toContain("because");
+    expect(markup).toContain("Hello, my name is");
+    expect(markup).toContain("For God so loved the world");
+    expect(markup).toContain("Awarded to");
+  });
+});
+
+describe("a rendered net", () => {
+  const built = (shape: "cube" | "spinner") =>
+    renderToStaticMarkup(
+      <SheetView
+        sheet={sheet({
+          blocks: EVERY_BLOCK.filter(
+            (block) => block.kind === "net" && block.net.shape === shape,
+          ),
+        })}
+      />,
+    );
+
+  it("draws six faces, five folds and seven tabs", () => {
+    // Everything about which edges those are is the engine's (`nets.test.ts`
+    // folds the thing up to check). What this holds is that each one is drawn
+    // once: a tab missing is a hole in the cube, and a fold drawn as a cut is a
+    // cube cut into six squares.
+    const markup = built("cube");
+    expect([...markup.matchAll(/<rect[^>]*sheet__rule--cut/g)]).toHaveLength(6);
+    expect([...markup.matchAll(/<polygon[^>]*sheet__rule--cut/g)]).toHaveLength(
+      7,
+    );
+    expect([...markup.matchAll(/sheet__rule--fold/g)]).toHaveLength(5);
+  });
+
+  it("spots the faces the way a die is spotted", () => {
+    const markup = built("cube");
+    // 1 + 2 + 3 + 4 + 5 + 6 spots, and every one of them a circle of ink rather
+    // than a tint — a printer with background graphics off would drop a tint.
+    expect([...markup.matchAll(/<circle[^>]*sheet__dot/g)]).toHaveLength(21);
+  });
+
+  it("cuts a spinner into equal sectors, from twelve o'clock", () => {
+    // Four sectors is four spokes at a quarter turn each, and the first of them
+    // points straight up. Measured off the ink, because "equal" is the only
+    // thing the object is for.
+    const markup = built("spinner");
+    const spokes = [
+      ...markup.matchAll(/<line[^>]*x2="([-\d.]+)"[^>]*y2="([-\d.]+)"/g),
+    ].map((match) => [Number(match[1]), Number(match[2])] as const);
+    expect(spokes).toHaveLength(4);
+    const middle = [spokes[0][0], spokes[0][1] + 2800] as const;
+    const angles = spokes.map(
+      ([x, y]) =>
+        Math.round(
+          (Math.atan2(x - middle[0], middle[1] - y) * 180) / Math.PI + 360,
+        ) % 360,
+    );
+    expect(angles).toEqual([0, 90, 180, 270]);
+  });
+
+  it("marks where the pin goes, and gives it a pointer to turn", () => {
+    const markup = built("spinner");
+    expect([...markup.matchAll(/<polygon/g)]).toHaveLength(1);
+    expect(markup).toContain(
+      'aria-label="A spinner cut into 4 equal sectors, with a pointer to cut out"',
+    );
   });
 });
 

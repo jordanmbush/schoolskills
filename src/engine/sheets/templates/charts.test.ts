@@ -1,8 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { answerKey, buildSheet, describeSheet } from "../index";
-import { chromeHeight, sheetBlockBox } from "../chrome";
-import { blockBox, type Box } from "../layout";
+import { printedBlockBox, sheetBlockBox } from "../chrome";
 import { ticks } from "../numberline";
 import { MARGINS, PAPERS, toInches } from "../paper";
 import type {
@@ -51,30 +50,6 @@ const linesOf = (sheet: Sheet) =>
   sheet.blocks
     .filter((block) => block.kind === "numberline")
     .map((b) => b.line);
-
-/**
- * What is left for the blocks, read off the sheet that was built.
- *
- * `sheetBlockBox(config)` answers the same question from the *config*, which is
- * what the family reserved against — so checking a sheet against it cannot fail
- * however wrong the reservation was. This asks the header and footer that were
- * actually printed, which is the only version of the question a page can
- * disagree with.
- */
-function printedBox(sheet: Sheet): Box {
-  const chrome = chromeHeight(
-    {
-      paper: sheet.paper,
-      fontPt: sheet.fontPt,
-      fields: sheet.header.fields,
-      title: sheet.header.title,
-      instructions: sheet.header.instructions,
-    },
-    sheet.header.score !== undefined,
-    { source: sheet.footer.source, note: sheet.footer.note },
-  );
-  return blockBox(sheet.paper, chrome);
-}
 
 /** How much of the page the blocks take, gaps included. */
 function used(blocks: Block[], grid: GridSpec | null): number {
@@ -444,7 +419,7 @@ describe("every reference sheet", () => {
               const grids = sheet.blocks.filter(
                 (block) => block.kind === "grid",
               );
-              const box = printedBox(sheet);
+              const box = printedBlockBox(sheet);
               const where = `${style}/${size}/${margin}/${fontPt}`;
               expect(sheet.blocks.length, where).toBeGreaterThan(0);
               expect(

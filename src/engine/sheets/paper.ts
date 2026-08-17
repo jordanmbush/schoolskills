@@ -60,6 +60,32 @@ export function own<T>(table: Record<string, T>, key: string, fallback: T): T {
   return Object.hasOwn(table, key) ? table[key] : fallback;
 }
 
+/**
+ * The numeric twin of `own`: a number a config asked for, as a whole number
+ * inside the bounds.
+ *
+ * Beside it because it guards the same thing. Every optional number on a config
+ * can arrive from outside this build — a bookmarked link, a sheet saved last
+ * term, a hand-edited fragment — and a row count of `NaN`, a month of `13` or a
+ * range of `"lots"` has to produce a sheet rather than an exception four modules
+ * downstream. Rounding rather than truncating, so a stepper that has been
+ * through a JSON round trip lands where the parent left it.
+ *
+ * It was the chart family's private helper until four more families in the same
+ * tier wanted it. A copy each would be four chances to write `??` instead, which
+ * is the mistake `own` exists to stop.
+ */
+export function whole(
+  value: unknown,
+  fallback: number,
+  low: number,
+  high: number,
+): number {
+  const asked = typeof value === "number" ? Math.round(value) : NaN;
+  const chosen = Number.isFinite(asked) ? asked : fallback;
+  return Math.max(low, Math.min(high, chosen));
+}
+
 /* ── Stock ─────────────────────────────────────────────────────────────── */
 
 export type PaperStock = {

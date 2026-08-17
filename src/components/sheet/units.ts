@@ -53,3 +53,10 @@ export const HEAVY: Mil = points(1.25);
 export const DASH_MIDLINE = `${inches(0.09)} ${inches(0.07)}`;
 /** Cut here. Long enough to read as scissors rather than as a faint rule. */
 export const DASH_CUT = `${inches(0.12)} ${inches(0.08)}`;
+/**
+ * Fold here. The same instruction one step down, and it has to *look* one step
+ * down: a net whose folds and cuts were drawn alike is a cube cut into six
+ * squares. Half the pitch of a cut and set at `RULE` rather than `HEAVY`, which
+ * is the pair of differences a reader takes in without reading a legend.
+ */
+export const DASH_FOLD = `${inches(0.06)} ${inches(0.04)}`;

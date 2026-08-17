@@ -20,8 +20,10 @@ import type { ReactNode } from "react";
 import type { SheetConfig } from "@/engine/sheets/types";
 
 import { ArithmeticPanel } from "./arithmetic";
+import { CardsPanel } from "./cards";
 import { ChartsPanel } from "./charts";
 import { DecimalsPanel } from "./decimals";
+import { FormsPanel } from "./forms";
 import { FractionsPanel } from "./fractions";
 import { GeometryPanel } from "./geometry";
 import { GrammarPanel } from "./grammar";
@@ -31,7 +33,9 @@ import { MeasurePanel } from "./measure";
 import { MemoryPanel } from "./memory";
 import { MoneyPanel } from "./money";
 import { MultiplicationPanel } from "./multiplication";
+import { NetsPanel } from "./nets";
 import { PaperPanel } from "./paper";
+import { PlannerPanel } from "./planner";
 import { PhonicsPanel } from "./phonics";
 import { PreAlgebraPanel } from "./prealgebra";
 import { PuzzlesPanel } from "./puzzles";
@@ -80,6 +84,10 @@ const PANELS: Record<string, FamilyPanel> = {
   blank: NO_OPTIONS,
   paper: panel(PaperPanel),
   chart: panel(ChartsPanel),
+  form: panel(FormsPanel),
+  planner: panel(PlannerPanel),
+  cards: panel(CardsPanel),
+  net: panel(NetsPanel),
   arithmetic: panel(ArithmeticPanel),
   multiplication: panel(MultiplicationPanel),
   fractions: panel(FractionsPanel),

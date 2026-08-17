@@ -23,7 +23,7 @@
  * footer wraps because it is a flex row that a Scripture credit joins (§12).
  * Each is counted below rather than assumed, and each was assumed once.
  */
-import type { Mil, SheetOptions } from "./types";
+import type { Mil, Sheet, SheetOptions } from "./types";
 
 import { faceOf } from "./faces";
 import { blockBox, contentBox, type Box } from "./layout";
@@ -287,4 +287,36 @@ export function sheetBlockBox(
   foot: FootLine = {},
 ): Box {
   return blockBox(options.paper, chromeHeight(options, score, foot));
+}
+
+/**
+ * The same box, asked of a **built sheet** rather than of the config behind it.
+ *
+ * The distinction is the whole reason this exists, and it is the only version
+ * of the question a family can be caught out by. `sheetBlockBox(config)` is
+ * what the family reserved against, so checking its blocks against that cannot
+ * fail however wrong the reservation was — capacity is floored against the same
+ * number. This reads the header and footer that were actually printed, which is
+ * where the reservation and the page can disagree: a family that prints a title
+ * its config never mentioned reserves a row too few here and nowhere else.
+ *
+ * It is in the engine rather than in a suite because five families' worth of
+ * tests want it, and a copy each would be five chances to ask the config by
+ * mistake — which is the exact bug it exists to catch.
+ */
+export function printedBlockBox(sheet: Sheet): Box {
+  return blockBox(
+    sheet.paper,
+    chromeHeight(
+      {
+        paper: sheet.paper,
+        fontPt: sheet.fontPt,
+        fields: sheet.header.fields,
+        title: sheet.header.title,
+        instructions: sheet.header.instructions,
+      },
+      sheet.header.score !== undefined,
+      { source: sheet.footer.source, note: sheet.footer.note },
+    ),
+  );
 }

@@ -1,5 +1,6 @@
-import { faceOf, glyphAdvance, type Face } from "@/engine/sheets/faces";
+import { faceOf } from "@/engine/sheets/faces";
 
+import { fitText } from "../text";
 import { HAIRLINE, HEAVY, inch } from "../units";
 import type { BlockProps } from "./block";
 
@@ -73,11 +74,12 @@ export function Grid({ block, metrics }: BlockProps<"grid">) {
   // cell would be arithmetically tidier and would print a header row with a
   // different type size in each column, which reads as a mistake whether or not
   // it is one.
-  const size = fits(
+  const size = fitText(
     [...(cells ?? []), ...(answers ?? [])],
     cell,
     Math.round(Math.min(cell, rowHeight) * CELL_TO_EM),
     faceOf(metrics.font),
+    CELL_FILL,
   );
 
   // How far off the edge of the drawing a numeral and a point's letter have to
@@ -241,26 +243,9 @@ export function Grid({ block, metrics }: BlockProps<"grid">) {
   );
 }
 
-/**
- * The size the squares' text is set at: the shared one, or what the widest of
- * them will fit at.
- *
- * Declared rather than measured, the same way every other run of text on a
- * sheet is (§4) — there is no DOM at build time to ask instead, and a size a
- * browser worked out is a size no test can check. The mean advance is the
- * face's own, so a heading that fits in the print face is not clipped in the
- * dyslexic one.
- */
-function fits(texts: string[], cell: number, size: number, face: Face): number {
-  return texts.reduce((smallest, text) => {
-    const advance = glyphAdvance(text, face);
-    if (text.length === 0 || advance <= 0) return smallest;
-    return Math.min(
-      smallest,
-      Math.floor((cell * CELL_FILL) / (text.length * advance)),
-    );
-  }, size);
-}
+/* The size the squares' text is set at — the shared one, or what the widest of
+   them will fit at — is `fitText` in ../text.ts, which is where that arithmetic
+   moved once a table's headings and a card's big line wanted it too.        */
 
 /** The squares of a list that have something in them, with their positions. */
 function written(cells: string[] | undefined): Array<[number, string]> {

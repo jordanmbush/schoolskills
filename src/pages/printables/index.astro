@@ -29,6 +29,11 @@ import {
   pathFor as spellingPath,
   spellingShelf,
 } from "./_spelling";
+import {
+  TEMPLATE_SHEETS,
+  pathFor as templatePath,
+  templateShelf,
+} from "./_templates";
 
 /**
  * The Print Shop's front door.
@@ -43,7 +48,7 @@ import {
  * It lists what exists and nothing else. A shelf of links to sheets that
  * haven't been built is the thin-content pattern Base.astro's `noindex` block
  * already argues against, and a catalog page here is meant to BE the worksheet
- * — real prerendered HTML a parent can print without touching anything. Nine
+ * — real prerendered HTML a parent can print without touching anything. Ten
  * families fill it: every ruling in §5 on both stocks, the curated maths topics
  * of §8, each of which prints its own answer key, the handwriting and cursive
  * sheets, which come on both stocks for the same reason the paper does, the
@@ -51,8 +56,10 @@ import {
  * spelling shelf, which is the one whose content a parent can replace with their
  * own list, the grammar shelf, which is the one whose answers had to be written
  * down because they cannot be worked out, the phonics shelf, which is the one
- * whose content is decided by what a parent says has been taught, and the charts
- * shelf, which is the one with no questions on it at all.
+ * whose content is decided by what a parent says has been taught, the charts
+ * shelf, which is the one with no questions on it at all, and the paperwork —
+ * forms, planners, cards and nets — which is the one that is supposed to be
+ * empty and is the more useful for it.
  */
 const title = "Free printable worksheets — The Print Shop | School Skills";
 const description =
@@ -69,6 +76,7 @@ const words = spellingShelf();
 const sentences = grammarShelf();
 const sounds = phonicsShelf();
 const references = chartShelf();
+const paperwork = templateShelf();
 ---
 
 <Content
@@ -111,16 +119,17 @@ const references = chartShelf();
   <section class="band band--tight wrap">
     <h2 class="h2">On the shelf now</h2>
     <p class="h2__sub">
-      Nine families: maths worksheets, each with its answer key on the page
+      Ten families: maths worksheets, each with its answer key on the page
       behind it, handwriting practice that traces before it copies, the same
       progression again in cursive, Scripture copywork and memory work, spelling
       and word study on this week&rsquo;s list or your own, grammar whose
       answers were written down rather than worked out, phonics built from the
       sounds you have taught, charts and grids with nothing to answer on them,
-      and paper in every ruling. Each of these is a page that is itself the
-      sheet &mdash; open it, press print, and that is the whole of it.
-      Everything ruled comes on both stocks, because a ruling shrunk to fit
-      whatever is in the tray is no longer the ruling you chose.
+      the forms, planners and cards that are supposed to be empty, and paper in
+      every ruling. Each of these is a page that is itself the sheet &mdash;
+      open it, press print, and that is the whole of it. Everything ruled comes
+      on both stocks, because a ruling shrunk to fit whatever is in the tray is
+      no longer the ruling you chose.
     </p>
 
     <h3 class="h2 h2--next">Maths worksheets</h3>
@@ -289,6 +298,30 @@ const references = chartShelf();
       <a class="cta" href="/printables/charts">All the charts and grids</a>
     </div>
 
+    <h3 class="h2 h2--next">Forms, planners and cards</h3>
+    <p class="h2__sub">
+      {TEMPLATE_SHEETS.length} sheets that are supposed to be empty &mdash; reading
+      logs, book reports, lab reports, calendars, chore charts, award certificates,
+      blank flashcards, bookmarks, and dice and spinners to cut out. Nothing on any
+      of them is generated, which is exactly what makes them useful.
+    </p>
+    {
+      paperwork.map((group) => (
+        <nav class="stones" aria-label={`Templates — ${group.label}`}>
+          {group.sheets.map((sheet) => (
+            <a class="stone" href={templatePath(sheet)}>
+              {sheet.short}
+            </a>
+          ))}
+        </nav>
+      ))
+    }
+    <div class="hero__actions">
+      <a class="cta" href="/printables/templates">
+        All the forms, planners and cards
+      </a>
+    </div>
+
     {
       /*
         Paper keeps its groups and its one-line summaries; every subject shelf
@@ -346,8 +379,9 @@ const references = chartShelf();
       <p class="h2__sub">
         The Print Shop is opening a family at a time, and this page lists what
         exists rather than what is planned. Paper, maths, handwriting, cursive,
-        copywork, spelling, grammar, phonics and the blank references are open.
-        The certificates, logs and planners are next.
+        copywork, spelling, grammar, phonics, the blank references and the
+        paperwork &mdash; logs, planners, certificates and cards &mdash; are all
+        open. The grade and subject hubs, and a search across the lot, are next.
       </p>
       <div class="prose">
         <p>
@@ -355,9 +389,12 @@ const references = chartShelf();
           and the cursive above, then the copywork &mdash; a few hundred
           passages from the public domain, Scripture among them &mdash; then the
           spelling and word-study shelf, the grammar sheets beside it, the
-          phonics shelf after them, and then the charts and grids &mdash; the
-          first family here with nothing on it to answer. What is left is the
-          certificates, reading logs and planners that are simply blank forms.
+          phonics shelf after them, then the charts and grids &mdash; the first
+          family here with nothing on it to answer &mdash; and last the
+          paperwork: reading logs, report forms, calendars, chore charts, award
+          certificates, blank flashcards and a die to fold up. Those are the
+          honest ones. They are supposed to be empty, so there is nothing on any
+          of them that could be wrong.
         </p>
         <p>
           The one it is really being built for comes with the sheet builder:
