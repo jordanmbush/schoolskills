@@ -17,6 +17,7 @@
 import type { GrammarConfig, GrammarStyle } from "@/engine/sheets/types";
 import {
   GRAMMAR_TOPICS,
+  grammarColumns,
   grammarStyles,
   grammarTopicLabel,
 } from "@/engine/sheets/grammar/grammar";
@@ -36,6 +37,7 @@ const STYLE_LABELS: Record<GrammarStyle, string> = {
 export function GrammarPanel({ config, set }: PanelProps<GrammarConfig>) {
   const styles = grammarStyles(config.topic);
   const style = styles.includes(config.style) ? config.style : styles[0];
+  const across = grammarColumns(config.topic);
 
   return (
     <>
@@ -64,18 +66,17 @@ export function GrammarPanel({ config, set }: PanelProps<GrammarConfig>) {
 
       {/* Columns only where a sentence and a slot share a line. A row of
           options is the width of the paper, and so are the two ruled lines a
-          subject-and-predicate sheet writes its answer on. */}
+          subject-and-predicate sheet writes its answer on — which is why both
+          the offer and the cap are `grammarColumns` rather than a topic named
+          here: the engine already decides this, and a second copy of the rule
+          is a stepper that moves a number the paper ignores. */}
       <Sizing
         label="Sentences"
         count={config.count}
-        columns={
-          style === "write" && config.topic !== "subject"
-            ? config.columns
-            : undefined
-        }
+        columns={style === "write" && across > 1 ? config.columns : undefined}
         onCount={(count) => set({ count })}
         onColumns={(columns) => set({ columns })}
-        maxColumns={2}
+        maxColumns={across}
       />
     </>
   );

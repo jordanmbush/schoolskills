@@ -56,7 +56,16 @@ export type GrammarSheet = {
   summary: string;
   /** The lead paragraph: what the sheet asks for, stated plainly. */
   lead: string;
-  /** Two things that are true of this sheet and not of the one beside it. */
+  /**
+   * Two things that are true of this sheet and not of the one beside it.
+   *
+   * The sheet is prerendered directly under this prose (§8), which makes a
+   * quoted sentence a claim about the paper rather than an illustration — a
+   * reader can look down the page and check it. So anything quoted here at five
+   * words or more has to be a sentence this page really draws, and
+   * `_grammar.test.ts` holds it there; a hypothetical the sheet never prints
+   * (“Close the gate”) stays shorter than that.
+   */
   notes: string[];
   /** For the `LearningResource` block. */
   teaches: string;
@@ -143,8 +152,8 @@ export const GRAMMAR_SHEETS: GrammarSheet[] = [
       "Twelve sentences to sort into statements, questions, commands and exclamations, with four names to circle on every line and the key behind.",
     lead: "A sentence on each line and four things it could be underneath: a statement, a question, a command or an exclamation. Two of the four announce themselves with the mark on the end; the other two do not, and that is where the work is.",
     notes: [
-      "Statements and commands both end in a full stop, and telling them apart is the whole exercise. “The children waited quietly for the bus” and “Bring the shopping into the kitchen” look identical at the end of the line, and the only way through is to ask what the sentence is for — one of them says how the world is, and the other tells somebody to change it. Questions and exclamations are the easy half, and they are there so a six-year-old can start.",
-      "Every exclamation on this sheet is an exclamation by its grammar rather than by its tone: “What a tremendous splash that was!” and “How quickly the storm arrived!” cannot be written any other way. That rules out a whole class of sentence a worksheet usually smuggles in — the plain statement with a bang on the end, where whether it should have been a full stop is a matter of how loudly you were imagining it. There is no right answer to that, so it is not asked.",
+      "Statements and commands both end in a full stop, and telling them apart is the whole exercise. “The old tractor belonged to Jack” and “Put the muddy boots outside the door” look identical at the end of the line, and the only way through is to ask what the sentence is for — one of them says how the world is, and the other tells somebody to change it. Questions and exclamations are the easy half, and they are there so a six-year-old can start.",
+      "Every exclamation on this sheet is an exclamation by its grammar rather than by its tone: “What a tremendous splash that was!” and “How brightly the lights of Oslo shone!” cannot be written any other way. That rules out a whole class of sentence a worksheet usually smuggles in — the plain statement with a bang on the end, where whether it should have been a full stop is a matter of how loudly you were imagining it. There is no right answer to that, so it is not asked.",
     ],
     teaches: "Statements, questions, commands and exclamations",
     ages: "Ages 6–10",

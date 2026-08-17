@@ -58,6 +58,34 @@ function items(block: Block): number {
   return 0;
 }
 
+/** What a block printed, in the words a reader sees down the page. */
+function prompts(block: Block): string[] {
+  if (block.kind === "problems") return block.items.map((item) => item.prompt);
+  if (block.kind === "choice") return block.questions.map((one) => one.prompt);
+  return [];
+}
+
+/** Everything the prose puts in curly quotes. */
+const QUOTED = /“([^”]+)”/g;
+
+/**
+ * How long a quotation has to be before it is read as a claim about the sheet.
+ *
+ * The prose quotes two different things. A word or a phrase is an example of a
+ * *kind* of sentence — “Close the gate”, “What a mess” — and is deliberately
+ * one the sheet does not print. A whole sentence is the page itself being
+ * pointed at. Five words is the line between them, and it is a house rule of
+ * `_grammar.ts` rather than a fact about English: keep a hypothetical short.
+ */
+const CLAIMED = 5;
+
+/** A quotation and a prompt compared as the same sentence. */
+const same = (text: string): string =>
+  text
+    .trim()
+    .replace(/[.?!]$/, "")
+    .toLowerCase();
+
 const built = (sheet: GrammarSheet) => buildSheet(sheet.config, GRAMMAR_SEED);
 
 describe("the grammar catalog", () => {
@@ -147,6 +175,26 @@ describe("the sheet on a catalog page", () => {
       );
       expect(printed, sheet.slug).toBe(sheet.config.count);
       expect(printed, sheet.slug).toBeGreaterThan(7);
+    }
+  });
+
+  it("quotes only sentences the sheet printed under the prose says", () => {
+    // The page IS the sheet (§8), so a note that quotes a sentence is telling a
+    // reader to look down the page and find it. Three of them did not: the
+    // sentences were real bank sentences, and the seed-1 draw simply did not
+    // contain them. Nothing but a test can keep the two together, because a
+    // count or a seed moving is what breaks it and neither looks like prose.
+    for (const sheet of GRAMMAR_SHEETS) {
+      const printed = built(sheet).blocks.flatMap(prompts).map(same);
+      const prose = [sheet.lead, sheet.summary, ...sheet.notes];
+      for (const [, quote] of prose.join(" ").matchAll(QUOTED)) {
+        if (quote.trim().split(/\s+/).length < CLAIMED) continue;
+        const wanted = same(quote);
+        expect(
+          printed.some((prompt) => prompt.includes(wanted)),
+          `${sheet.slug} quotes “${quote}”, which it does not print`,
+        ).toBe(true);
+      }
     }
   });
 

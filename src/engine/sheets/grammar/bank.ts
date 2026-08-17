@@ -122,6 +122,12 @@ export type Tagged = {
    * The capitals sheet prints the sentence with this word in lower case and
    * asks for it back, so it is never the first word — a lower-cased opening
    * word is two mistakes wearing one coat.
+   *
+   * It is also the tag that sizes the smallest topic in the bank, so a
+   * sentence that can honestly carry a name, a place or a day should carry
+   * one. `grammar.test.ts` holds every topic above a full page of itself for
+   * exactly this reason — a capitals supply of thirteen against a page that
+   * holds seventeen is the same sheet whatever seed a parent rerolls to.
    */
   proper?: string;
 };
@@ -245,6 +251,50 @@ const STATEMENTS: Tagged[] = [
     focus: { word: "us", part: "pronoun" },
     proper: "Scotland",
   },
+  {
+    text: "The lesson finished early on Thursday.",
+    kind: "statement",
+    split: { subject: "The lesson", predicate: "finished early on Thursday" },
+    focus: { word: "finished", part: "verb" },
+    proper: "Thursday",
+  },
+  {
+    text: "My cousin posted the letter to Ireland.",
+    kind: "statement",
+    split: { subject: "My cousin", predicate: "posted the letter to Ireland" },
+    focus: { word: "posted", part: "verb" },
+    proper: "Ireland",
+  },
+  {
+    text: "The gentle donkey carried our bags to Dover.",
+    kind: "statement",
+    split: {
+      subject: "The gentle donkey",
+      predicate: "carried our bags to Dover",
+    },
+    focus: { word: "gentle", part: "adjective" },
+    proper: "Dover",
+  },
+  {
+    text: "The noisy seagulls followed us to Bristol.",
+    kind: "statement",
+    split: {
+      subject: "The noisy seagulls",
+      predicate: "followed us to Bristol",
+    },
+    focus: { word: "noisy", part: "adjective" },
+    proper: "Bristol",
+  },
+  {
+    text: "The scouts marched proudly through Norway.",
+    kind: "statement",
+    split: {
+      subject: "The scouts",
+      predicate: "marched proudly through Norway",
+    },
+    focus: { word: "proudly", part: "adverb" },
+    proper: "Norway",
+  },
 ];
 
 /* ── Questions ─────────────────────────────────────────────────────────────
@@ -292,6 +342,24 @@ const QUESTIONS: Tagged[] = [
     kind: "question",
     focus: { word: "safely", part: "adverb" },
   },
+  {
+    text: "Did they remember the tickets for Wednesday?",
+    kind: "question",
+    focus: { word: "they", part: "pronoun" },
+    proper: "Wednesday",
+  },
+  {
+    text: "Why is the castle in Denmark so famous?",
+    kind: "question",
+    focus: { word: "famous", part: "adjective" },
+    proper: "Denmark",
+  },
+  {
+    text: "Has the parcel arrived in Kenya?",
+    kind: "question",
+    focus: { word: "arrived", part: "verb" },
+    proper: "Kenya",
+  },
 ];
 
 /* ── Commands ──────────────────────────────────────────────────────────────
@@ -328,6 +396,18 @@ const COMMANDS: Tagged[] = [
     kind: "command",
     focus: { word: "clearly", part: "adverb" },
   },
+  {
+    text: "Deliver these letters to Harriet.",
+    kind: "command",
+    focus: { word: "Deliver", part: "verb" },
+    proper: "Harriet",
+  },
+  {
+    text: "Describe the journey to Iceland.",
+    kind: "command",
+    focus: { word: "Describe", part: "verb" },
+    proper: "Iceland",
+  },
 ];
 
 /* ── Exclamations ──────────────────────────────────────────────────────────
@@ -357,6 +437,12 @@ const EXCLAMATIONS: Tagged[] = [
     text: "How chilly the water felt!",
     kind: "exclamation",
     focus: { word: "chilly", part: "adjective" },
+  },
+  {
+    text: "How brightly the lights of Oslo shone!",
+    kind: "exclamation",
+    focus: { word: "brightly", part: "adverb" },
+    proper: "Oslo",
   },
 ];
 

@@ -355,6 +355,18 @@ const columnsFor = (topic: Topic): number =>
   topic.lines > 0 ? 1 : MAX_COLUMNS;
 
 /**
+ * The widest a topic may be laid out, for a panel that has to offer it.
+ *
+ * Exported for the same reason `grammarStyles` is: the options panel needs the
+ * rule, and a panel that restated it would be a second place for it to be true.
+ * A sixth topic with ruled answer lines would otherwise get a columns stepper
+ * that the engine silently ignores — the panel and the paper disagreeing, which
+ * is the one thing the builder's live preview cannot show a parent.
+ */
+export const grammarColumns = (topic: string): number =>
+  columnsFor(topicOf(topic));
+
+/**
  * How many sentences the paper holds, and how wide a column of them is.
  *
  * Arithmetic rather than measurement, so a unit test, a catalog page built at
@@ -406,16 +418,44 @@ export function grammarLayout(config: GrammarConfig): {
  * twelve would be a sheet with one answer on it. Never more than the bank holds
  * and never more than the page holds, so the count is a request exactly as it
  * is everywhere else in the shop.
+ *
+ * **The scale is covered rather than hoped for.** A shuffle-and-slice is fair
+ * over many pages and says nothing about any one of them: a sentence-types
+ * sheet drawn at random comes up with no command about one page in six, on the
+ * page whose own instruction prints "statement, question, command or
+ * exclamation" down every line and whose whole exercise is telling the first
+ * two of those apart. Every item on such a page is still correct, which is what
+ * makes it the worse bug — it is a page that has quietly stopped being the
+ * lesson it claims to be. So where the topic answers to a closed list and there
+ * is room for one of each, one of each is drawn first, off the same stream; the
+ * rest of the page is filled from what is left and the whole is shuffled again,
+ * so the guaranteed items are not the first `options.length` rows every time.
  */
 export function grammarQuestions(
   config: GrammarConfig,
   seed: number,
 ): Question[] {
-  const { questions } = topicOf(config.topic);
+  const { questions, options } = topicOf(config.topic);
   const { perPage } = grammarLayout(config);
   const room = Math.min(perPage, questions.length);
   const wanted = clamp(config.count ?? room, 0, room);
-  return shuffled(questions, mulberry32(seed)).slice(0, wanted);
+
+  const rand = mulberry32(seed);
+  const pool = shuffled(questions, rand);
+  // Too small a page to hold the scale: a four-question sheet cannot show five
+  // parts of speech, and pretending otherwise would be dropping a question.
+  if (!options || wanted < options.length) return pool.slice(0, wanted);
+
+  const covered = new Set<string>();
+  const first: Question[] = [];
+  const rest: Question[] = [];
+  for (const question of pool) {
+    const fresh =
+      options.includes(question.answer) && !covered.has(question.answer);
+    if (fresh) covered.add(question.answer);
+    (fresh ? first : rest).push(question);
+  }
+  return shuffled([...first, ...rest.slice(0, wanted - first.length)], rand);
 }
 
 /** A sentence and the place its answer goes: a ruled slot, or ruled lines. */

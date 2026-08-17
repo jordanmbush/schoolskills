@@ -7,6 +7,7 @@ import { END_MARK, KINDS, PARTS, SENTENCES, type Tagged } from "./bank";
 import {
   GRAMMAR_SHEET,
   GRAMMAR_TOPICS,
+  grammarColumns,
   grammarLayout,
   grammarStyles,
   topicOf,
@@ -144,9 +145,21 @@ describe("the sentence bank", () => {
     }
   });
 
-  it("has enough of every topic to fill a page of it", () => {
+  it("has more of every topic than a page of it holds", () => {
+    // The bank's own header names this as the failure to avoid: a page whose
+    // sentences are the topic's whole supply is the same page every week,
+    // whatever seed a parent rerolls to. Measured against what the paper holds
+    // rather than against a number somebody typed, so the bar moves the day a
+    // row gets shorter — and against the *widest* style a topic offers, since a
+    // "write" page fits half again as many as a "circle one" page.
     for (const topic of GRAMMAR_TOPICS) {
-      expect(topicOf(topic).questions.length, topic).toBeGreaterThan(11);
+      const page = Math.max(
+        ...grammarStyles(topic).map(
+          (style) =>
+            grammarLayout(config({ topic, style, columns: 1 })).perPage,
+        ),
+      );
+      expect(topicOf(topic).questions.length, topic).toBeGreaterThan(page);
     }
   });
 
@@ -254,6 +267,9 @@ describe("the grammar family", () => {
       if (!grammarStyles(topic).includes("write")) continue;
       const wide = grammarLayout(config({ topic, style: "write", columns: 6 }));
       expect(wide.columns, topic).toBe(topic === "subject" ? 1 : 2);
+      // And the number the options panel builds its stepper out of is the one
+      // the paper obeys, rather than a second copy of the same rule.
+      expect(grammarColumns(topic), topic).toBe(wide.columns);
     }
     // And a circled sheet is a list down the page whatever the config says.
     expect(grammarLayout(config({ topic: "parts", columns: 2 })).columns).toBe(
@@ -357,6 +373,32 @@ describe("the answers on a grammar sheet", () => {
 });
 
 describe("circling one of a closed list", () => {
+  it("puts every name on the list on the page, at every seed", () => {
+    // The variety is asserted rather than hoped for, as `wordproblems.test.ts`
+    // puts it. A shuffle is fair across many pages and silent about any one of
+    // them: before this was drawn deliberately, one page in six of "kinds of
+    // sentence" came up with no command on it — every item correct, and the
+    // sheet no longer the exercise its own instruction line describes.
+    for (const topic of GRAMMAR_TOPICS) {
+      if (!grammarStyles(topic).includes("choose")) continue;
+      const scale = topicOf(topic).options;
+      if (!scale) throw new Error(`${topic} circles nothing`);
+      for (let seed = 1; seed <= 50; seed++) {
+        const block = blockOf(
+          config({ topic, style: "choose", count: 12 }),
+          seed,
+        );
+        if (block.kind !== "choice") throw new Error("expected choice");
+        const drawn = new Set(
+          block.questions.map((question) => question.options[question.answer]),
+        );
+        expect([...drawn].sort(), `${topic} @${seed}`).toEqual(
+          [...scale].sort(),
+        );
+      }
+    }
+  });
+
   it("prints the whole scale, in order, and marks the tagged answer", () => {
     for (const topic of GRAMMAR_TOPICS) {
       if (!grammarStyles(topic).includes("choose")) continue;

@@ -512,8 +512,9 @@ rhyming · syllables · word families · prefixes and suffixes · plurals ·
 contractions · homophones · synonyms and antonyms.
 
 **Grammar.** Parts of speech · subject and predicate · sentence types ·
-punctuation · capitalisation. Generatable from a tagged sentence bank, which is
-authored content but small and reusable.
+punctuation · capitalisation. Not generated from a rule but drawn from a tagged
+sentence bank — authored content, small and reusable, because grammar is a
+judgement rather than a calculation.
 
 **What shipped (PRINT20).** The words shelf, and it is two families rather than
 one because the two halves are mirror images. `words/spelling.ts` is a list
@@ -535,6 +536,38 @@ round ask one question of one list. And a sight word to _trace_ is the
 handwriting family with a word list on it, so the shelf's tracing page is a
 `HandwritingConfig` rather than an eighth spelling style: two families that draw
 letterforms would be one too many. Word search and crossword stay PRINT21.
+
+**What shipped (PRINT22).** Grammar: one family, five topics, one bank. The
+bank is the story. Spelling is authored because **English will not yield to a
+rule**; grammar is authored because **grammar is a judgement** — whether a word
+is an adverb, whether a comma is needed, which half of a sentence is the
+subject, each decidable in a particular sentence and arguable in general. A
+parser would be right most of the time, and a sheet that marks a defensible
+answer wrong teaches a child something false, which is worse than no sheet. So
+`engine/sheets/grammar/bank.ts` is sentences written down once and **tagged** —
+what the sentence is for, where it divides, which one word can be named without
+argument, which word has lost its capital — and the five topics are five views
+of those tags rather than five parses. Nothing in `grammar.ts` analyses English.
+
+The house rules are the feature, and they are all of the form _leave it out_. No
+article or possessive is ever the tagged word, because the schemes disagree
+about what those are; verbs are past tense or the word that opens a command,
+which is the cheapest way to make a word class unarguable; a split is exhaustive
+or absent, which is what stops "complete subject" and "simple subject" being two
+right answers to one question; an exclamation is exclamative in _form_, so the
+mark on the end is grammar rather than tone. Those rules are what decide the
+shape of the shelf too: there is no `match` style, because pairing a word to a
+class is the same judgement with a worse layout; there is no comma topic and no
+exclamation-mark topic, because neither has a key; and end punctuation asks only
+for a full stop or a question mark for the same reason.
+
+Five catalog pages, and five is the point rather than a start. "Noun
+worksheets", "verb worksheets" and "adjective worksheets" are all real queries
+and all three would be this one sheet with a filter on it — the doorway-page
+farm §8 argues against. Two things the pages are held to mechanically: a drawn
+page covers the closed list it prints down every line (a types sheet with no
+command on it is correct in every item and no longer the exercise), and every
+sentence the prose quotes is a sentence the sheet under it prints.
 
 ### Templates — blank forms, high value, low effort
 
