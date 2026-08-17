@@ -20,10 +20,15 @@ import { ARITHMETIC_SHEET } from "./maths/arithmetic";
 import { DECIMALS_SHEET } from "./maths/decimals";
 import { FRACTIONS_SHEET } from "./maths/fractions";
 import { GEOMETRY_SHEET } from "./maths/geometry";
+import { INTEGERS_SHEET } from "./maths/integers";
 import { MEASURE_SHEET } from "./maths/measure";
 import { MONEY_SHEET } from "./maths/money";
 import { MULTIPLICATION_SHEET } from "./maths/multiplication";
+import { PREALGEBRA_SHEET } from "./maths/prealgebra";
+import { RATIO_SHEET } from "./maths/ratio";
+import { STATISTICS_SHEET } from "./maths/statistics";
 import { TIME_SHEET } from "./maths/time";
+import { WORD_PROBLEMS_SHEET } from "./maths/wordproblems";
 import { UNKNOWN_SHEET, type SheetSpec } from "./spec";
 import { PAPER_SHEET } from "./templates/paper";
 
@@ -38,6 +43,11 @@ const SHEETS: Record<string, SheetSpec> = {
   [TIME_SHEET.id]: TIME_SHEET,
   [MEASURE_SHEET.id]: MEASURE_SHEET,
   [GEOMETRY_SHEET.id]: GEOMETRY_SHEET,
+  [INTEGERS_SHEET.id]: INTEGERS_SHEET,
+  [PREALGEBRA_SHEET.id]: PREALGEBRA_SHEET,
+  [RATIO_SHEET.id]: RATIO_SHEET,
+  [STATISTICS_SHEET.id]: STATISTICS_SHEET,
+  [WORD_PROBLEMS_SHEET.id]: WORD_PROBLEMS_SHEET,
 };
 
 /**

@@ -29,7 +29,6 @@ import type {
   GeometryConfig,
   GeometryStyle,
   GridMark,
-  GridSpec,
   Mil,
   Problem,
   Sheet,
@@ -56,6 +55,14 @@ import {
   type Box,
 } from "../layout";
 import { inches } from "../paper";
+import {
+  letterAt,
+  markAt,
+  planeFloor,
+  planeHeight,
+  planeOf,
+  type Plane,
+} from "../plane";
 import { SHEET_CREDIT, SHEET_URL, SHEET_WORLD, type SheetSpec } from "../spec";
 import { cubed, figureUnitsOf, squared } from "./units";
 
@@ -83,78 +90,10 @@ const MISS_BUDGET = 500;
 /* ── The plane ─────────────────────────────────────────────────────────────
    One grid at the top of the page and the questions under it, rather than a
    little pair of axes beside every problem: a child reads the scale once and
-   then uses it a dozen times.                                               */
+   then uses it a dozen times.
 
-/** The biggest a square on the plane is drawn, and how much page it may take. */
-const GRID_CELL = inches(0.4);
-const GRID_SHARE = 0.55;
-
-/** How far the axes run from the origin, in each of the two shapes. */
-const QUADRANT_SPAN = 10;
-const FOUR_QUADRANT_SPAN = 8;
-
-export type Plane = {
-  /** How far the axes run from nought. */
-  span: number;
-  /** Whether the plane has negative coordinates on it. */
-  negative: boolean;
-  grid: GridSpec;
-};
-
-/**
- * The grid a coordinate sheet is drawn on.
- *
- * A first-quadrant plane keeps one square of margin below and to the left of the
- * axes, which is where the numbers along them go: the drawing is exactly as wide
- * as its squares say it is (§4), so a numeral outside the grid is a numeral off
- * the edge of the drawing.
- */
-export function planeOf(config: GeometryConfig, box: Box): Plane {
-  const negative = Math.floor(config.quadrants ?? 1) === 4;
-  const span = negative ? FOUR_QUADRANT_SPAN : QUADRANT_SPAN;
-  const pad = negative ? span : 1;
-  const columns = span + pad;
-  const rows = span + pad;
-  const cell = Math.max(
-    1,
-    Math.min(
-      GRID_CELL,
-      Math.floor(box.width / columns),
-      Math.floor((box.height * GRID_SHARE) / rows),
-    ),
-  );
-  return {
-    span,
-    negative,
-    grid: {
-      kind: "coordinate",
-      columns,
-      rows,
-      cell,
-      origin: { column: pad, row: span },
-      // What is on the plane, as against what the ruling runs to. On a
-      // first-quadrant plane the padding square outside the axes is where the
-      // numerals go, not a column of −1: this is what stops one being printed
-      // there, on the sheet that promised no negative numbers at all.
-      axis: { min: negative ? -span : 0, max: span },
-    },
-  };
-}
-
-/** Where a point sits on the plane, in squares from the top-left of the grid. */
-const markAt = (
-  plane: Plane,
-  x: number,
-  y: number,
-  label: string,
-): GridMark => ({
-  column: (plane.grid.origin?.column ?? 0) + x,
-  row: (plane.grid.origin?.row ?? 0) - y,
-  label,
-});
-
-/** A, B, C … the letters a point is called by. */
-const LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+   The geometry of it lives in `plane.ts`, because a plane is the question on a
+   pre-algebra sheet as well as on this one — see the note there.             */
 
 /* ── Drawing a problem ─────────────────────────────────────────────────────
    Each style draws its own shape and they have little in common, so each
@@ -413,14 +352,14 @@ function drawPoint(
   index: number,
   rand: () => number,
 ): Drawn | null {
-  const low = plane.negative ? -plane.span : 1;
+  const low = planeFloor(plane);
   const x = between(low, plane.span, rand);
   const y = between(low, plane.span, rand);
   // Never on an axis. A dot sitting on one of the two heavy rules is a dot a
   // child has to look twice at, and nought is not the part of this that is
   // being taught.
   if (x === 0 || y === 0) return null;
-  const label = LETTERS[index % LETTERS.length];
+  const label = letterAt(index);
   return {
     key: `point:${x}:${y}`,
     prompt: `${label} = _`,
@@ -478,11 +417,13 @@ export function geometryLayout(config: GeometryConfig): {
   const row = rowHeight(config);
 
   const plane =
-    config.style === "coordinates" ? planeOf(config, box) : undefined;
+    config.style === "coordinates"
+      ? planeOf(config.quadrants ?? 1, box)
+      : undefined;
   // The grid is a block of its own above the problems, so it takes its height
   // and the gap under it out of what is left for them.
   const left = plane
-    ? Math.max(0, box.height - plane.grid.rows * plane.grid.cell - BLOCK_GAP)
+    ? Math.max(0, box.height - planeHeight(plane) - BLOCK_GAP)
     : box.height;
 
   return {

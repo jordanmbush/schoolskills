@@ -127,6 +127,39 @@ export function mixedText(value: Fraction): string {
 export const writeFraction = (value: Fraction, mixed: boolean): string =>
   mixed ? mixedText(value) : fractionText(value);
 
+/* ── Signed whole numbers ──────────────────────────────────────────────────
+   The third shape a worksheet's numbers take, and the one that looks like it
+   needs no help at all. It does: a minus sign is the whole of the difference
+   between a right answer and a wrong one on an integers sheet, and where it is
+   written down is a typographic question with a right answer of its own.     */
+
+/**
+ * The proper minus sign, U+2212 — not a hyphen.
+ *
+ * The same character `arithmetic.ts` prints as its operator, and for the same
+ * reason: a hyphen is narrower than a plus and sits at the wrong height beside
+ * one, so a column of sums set in the two of them looks like a typing error to
+ * the adult marking it.
+ */
+export const MINUS = "−";
+
+/** A signed whole number as it is written on its own: "7", "−7". */
+export const signedText = (value: number): string =>
+  value < 0 ? `${MINUS}${Math.abs(value)}` : String(value);
+
+/**
+ * The same number written *after* an operator: "7", "(−7)".
+ *
+ * The bracket is the notation rather than a nicety — `7 + −4` is two operators
+ * in a row, and a child asked to read it aloud has been asked the wrong
+ * question. Algebra is the one place this does not apply: `3x − 4` is how a
+ * negative constant is written in an equation, with the sign folded into the
+ * operator, and a sheet printing `3x + (−4)` would be teaching notation nobody
+ * uses.
+ */
+export const factorText = (value: number): string =>
+  value < 0 ? `(${signedText(value)})` : String(value);
+
 /* ── Fixed point ───────────────────────────────────────────────────────────
    A whole number of hundredths, and a count of how many digits go after the
    point. $3.45 is `{ units: 345, places: 2 }` from the moment it is drawn to
