@@ -317,6 +317,27 @@ export function gridPitch(rule: Rule): Mil {
 }
 
 /**
+ * The writing space of a ruling: the top line down to the baseline.
+ *
+ * The one distance a type size is set from (`glyphEm`), because it is the space
+ * the tallest letter has to stand in. A notebook rule has no top line, so its
+ * writing space is the whole repeat — you write on the line, and everything
+ * above it is the room you have.
+ *
+ * Here rather than in the family that first needed it: the trace renderer, the
+ * handwriting family and the suite that holds the faces to their files all ask
+ * the same question, and three copies of it would be three chances to disagree
+ * about where a letter sits.
+ */
+export function writingSpace(rule: Rule): Mil {
+  const lines = ruleLines(rule);
+  const pitch = rulePitch(rule);
+  const base = lines.find((line) => line.role === "base")?.at ?? pitch;
+  const top = lines.find((line) => line.role === "top")?.at ?? 0;
+  return base - top;
+}
+
+/**
  * The lines of one repeat, as offsets down from the top of it.
  *
  * A notebook rule is one line at the foot of its repeat, because you write on

@@ -12,9 +12,10 @@ import {
   faceOf,
   fittedEm,
   glyphEm,
+  glyphHeight,
   traceInk,
 } from "./faces";
-import { RULINGS, rulePitch, ruleLines } from "./paper";
+import { RULINGS, rulePitch, writingSpace } from "./paper";
 import type { Rule, RuleStyle, SheetFont } from "./types";
 
 const ROOT = fileURLToPath(new URL("../../..", import.meta.url));
@@ -27,15 +28,6 @@ const HANDWRITING = Object.values(RULINGS)
     { style: ruling.id, descender: false },
     { style: ruling.id, descender: true },
   ]);
-
-/** The writing space of a rule: the top line down to the baseline. */
-function writingSpace(rule: Rule): number {
-  const lines = ruleLines(rule);
-  const base =
-    lines.find((line) => line.role === "base")?.at ?? rulePitch(rule);
-  const top = lines.find((line) => line.role === "top")?.at ?? 0;
-  return base - top;
-}
 
 describe("resolving a face", () => {
   it("answers with the face that was asked for", () => {
@@ -69,6 +61,43 @@ describe("sizing letters to a ruling", () => {
     }
   });
 
+  it("sizes a capital or a numeral off its own height, not off an ascender", () => {
+    // The thing a sheet of nothing but capitals gets wrong otherwise. Andika
+    // is a text face: its caps are 0.713 against a 0.791 ascender, so a page
+    // of them sized off `ascent` stops a tenth of the writing space short of
+    // the top line — on a sheet whose whole copy is "every capital starts at
+    // the top line".
+    for (const face of Object.values(FACES)) {
+      expect(glyphHeight("ABC", face), face.family).toBe(face.capHeight);
+      expect(glyphHeight("0123", face), face.family).toBe(face.figure);
+      // Neither is ever taller than the ascender, or a row would be sized off
+      // the wrong one of the three the moment the two were mixed.
+      expect(face.capHeight, face.family).toBeLessThanOrEqual(face.ascent);
+      expect(face.figure, face.family).toBeLessThanOrEqual(face.ascent);
+    }
+
+    // And it is a real difference, not a rounding of the same number: an
+    // Andika capital sheet is set a tenth larger than an Andika `Aa` one.
+    expect(glyphEm(500, FACES.print, "ABC")) //
+      .toBeGreaterThan(glyphEm(500, FACES.print, "Aa"));
+  });
+
+  it("goes back to the ascender the moment the row is mixed", () => {
+    // A row cannot put a capital and an `l` on the top line at once. The
+    // ascender wins, because a capital a tenth under the line is a smaller
+    // error than an ascender drawn through it — and an empty row has to agree
+    // with the row above it rather than resize itself.
+    for (const face of Object.values(FACES)) {
+      expect(glyphHeight("Aa", face), face.family).toBe(face.ascent);
+      expect(glyphHeight("A1a", face), face.family).toBe(face.ascent);
+      expect(glyphHeight("", face), face.family).toBe(face.ascent);
+      expect(glyphHeight("— .", face), face.family).toBe(face.ascent);
+      // Two classes with no lower-case between them take the taller of them.
+      expect(glyphHeight("A1", face), face.family) //
+        .toBe(Math.max(face.capHeight, face.figure));
+    }
+  });
+
   it("puts a letter body over the midline, never under it", () => {
     // The midline sits at exactly half the writing space, and it is the line a
     // child is told to write their letter bodies up to. The em is fixed to the
@@ -86,6 +115,28 @@ describe("sizing letters to a ruling", () => {
         expect(over / writing, face.family).toBeLessThanOrEqual(1 / 6);
       }
     }
+  });
+
+  it("keeps a tail in the room the ruling gives it", () => {
+    // The other end of the same question. A handwriting rule with descender
+    // space gives a third of its repeat to the tail against two thirds to the
+    // writing space, so the room below the baseline is half the writing space
+    // — which is `ascent / 2` of the em at every rule size, and the number a
+    // measured `descent` has to be checked against.
+    //
+    // Playwrite is the one face that hangs over, by 0.009 of the em: a joined
+    // script draws its loops to the full descender the file declares. Four
+    // thousandths of an inch on a ⅝ rule is the stated tolerance, and it is
+    // drawn rather than clipped — see `.sheet__ink--trace` in sheet.css.
+    for (const face of Object.values(FACES)) {
+      const room = face.ascent / 2;
+      expect(face.descent, face.family).toBeLessThanOrEqual(room + 0.01);
+      // And deep enough to be a tail at all: a `g` whose loop stopped at a
+      // twentieth of an em would be a face measured off the wrong glyph.
+      expect(face.descent, face.family).toBeGreaterThan(0.15);
+    }
+    expect(FACES.print.descent).toBeLessThan(FACES.print.ascent / 2);
+    expect(FACES.dyslexic.descent).toBeLessThan(FACES.dyslexic.ascent / 2);
   });
 
   it("never returns a size that rounds away to nothing", () => {

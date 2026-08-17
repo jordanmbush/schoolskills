@@ -1,0 +1,194 @@
+---
+import Content from "@/layouts/Content.astro";
+import AdSlot from "@/components/site/AdSlot.astro";
+import {
+  HANDWRITING_SHEETS,
+  STOCKS,
+  handwritingShelf,
+  hrefFor,
+} from "../_handwriting";
+
+/**
+ * The handwriting subject hub — the second of the three §8 names to exist.
+ *
+ * A listing rather than a sheet, which makes it one of the two pages in this
+ * corner that isn't itself printable, and that is the right split: nobody
+ * searches for "printable list of handwriting worksheets". What it is for is
+ * the two jobs a hub does — giving a parent who arrived on
+ * `/printables/handwriting/letter-tracing-worksheets` somewhere to go next, and
+ * giving the topic pages a crawlable parent that says what they have in common.
+ *
+ * It lists what exists and nothing else. Cursive is a story of its own and
+ * Scripture copywork another; neither is linked from here until it prints.
+ */
+const title =
+  "Free printable handwriting worksheets — trace, copy, write | School Skills";
+const description =
+  "Printable handwriting practice: letter tracing in upper and lower case, number formation 0–9, sight words, sentences and copywork. Every sheet traces first, then copies, then leaves an empty line. Free, no account, and nothing to download.";
+
+const groups = handwritingShelf();
+const letter = STOCKS[0];
+---
+
+<Content
+  title={title}
+  description={description}
+  world="paper"
+  jsonLd={{
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name: "Printable handwriting worksheets",
+    description,
+    url: "https://schoolskills.app/printables/handwriting",
+    isAccessibleForFree: true,
+    inLanguage: "en",
+    hasPart: HANDWRITING_SHEETS.map((sheet) => ({
+      "@type": "LearningResource",
+      name: sheet.heading,
+      url: `https://schoolskills.app${hrefFor(sheet, letter)}`,
+      learningResourceType: "Worksheet",
+      teaches: sheet.teaches,
+      typicalAgeRange: sheet.ages,
+      isAccessibleForFree: true,
+    })),
+  }}
+>
+  <header class="hero wrap">
+    <p class="hero__eyebrow">
+      <span class="hero__world">The Print Shop</span>
+      Handwriting
+    </p>
+    <h1 class="hero__title">Printable handwriting worksheets</h1>
+    <p class="hero__lead">
+      {HANDWRITING_SHEETS.length} sheets, from the first capital letter through to
+      copying out a poem. Every one of them traces first, then copies, then leaves
+      an empty line &mdash; so one page carries a child through the whole progression.
+    </p>
+    <p class="hero__note">Free &middot; two paper sizes &middot; no download</p>
+  </header>
+
+  {
+    /*
+      What exists, first — before the page explains itself. Somebody who came
+      looking for letter tracing should be one link from letter tracing, and
+      the argument for how these sheets are ruled reads better after you have
+      seen one than before.
+    */
+  }
+  <section class="band band--tight wrap">
+    <h2 class="h2">On the shelf now</h2>
+    <p class="h2__sub">
+      Each of these is a page that is itself the worksheet &mdash; open it,
+      press print, and that is the whole of it. Every sheet comes on US Letter
+      and on A4, because a ⅝-inch rule shrunk to fit whatever is in the tray is
+      no longer a ⅝-inch rule.
+    </p>
+    {
+      groups.map((group) => (
+        <>
+          <h3 class="h2 h2--next">{group.label}</h3>
+          <p class="h2__sub">{group.blurb}</p>
+          <div class="prose">
+            <ul>
+              {group.sheets.map((sheet) => (
+                <li>
+                  <a href={hrefFor(sheet, letter)}>{sheet.name}</a> &mdash;{" "}
+                  {sheet.summary}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </>
+      ))
+    }
+  </section>
+
+  <div class="wrap"><AdSlot name="article" /></div>
+
+  <section class="band band--tight wrap">
+    <h2 class="h2">Trace, copy, then write it alone</h2>
+    <div class="prose">
+      <p>
+        Every sheet here runs the same three steps, and they are meant to be
+        done in order. A solid model to look at. A dotted one to trace over. An
+        empty space where nobody is helping. Tracing on its own practises
+        following a line; the empty space is where a child practises writing,
+        and it is the reason these pages are worth more than a sheet of dotted
+        letters twice the length.
+      </p>
+      <p>
+        How far along that progression a page sits is a setting rather than a
+        different worksheet. The model can be dotted, dashed, hollow, grey or
+        left off altogether, and each thing can be written anywhere from once to
+        eight times. Turn the progression off and every repeat is drawn the same
+        way, which is the sheet for a child who is still tracing and not yet
+        ready to be left on their own.
+      </p>
+    </div>
+  </section>
+
+  <section class="band band--inset">
+    <div class="wrap">
+      <h2 class="h2">The ruling is the size it says it is</h2>
+      <p class="h2__sub">
+        Five handwriting sizes, three notebook rules, and squares, dots and
+        triangles &mdash; any of them, with any of the letterforms above.
+      </p>
+      <div class="prose">
+        <p>
+          A ⅝-inch rule is ⅝ of an inch under a ruler or it is teaching the
+          wrong size of letter, and a child who has been taught to write between
+          two lines notices before an adult does. So the lines are drawn as real
+          strokes at real distances rather than as a background tint &mdash;
+          which also means they survive a printer with &ldquo;background
+          graphics&rdquo; unticked, the setting most people never find and the
+          reason ruled paper from elsewhere so often comes out blank.
+        </p>
+        <p>
+          The letters are set to the ruling rather than to a type size: the
+          tallest letter stands on the baseline and reaches the top line, worked
+          out from the ruling and from the font&rsquo;s own measured
+          proportions. The dotted and hollow letterforms come from that same
+          ordinary font rather than from a licensed tracing font, which is why
+          there is nothing to buy and nothing to install here.
+        </p>
+        <p>
+          Blank paper in every one of those rulings is a page of its own, for
+          when what is wanted is the paper rather than the practice.
+        </p>
+      </div>
+      <div class="hero__actions">
+        <a class="cta cta--quiet" href="/printables/handwriting-paper">
+          Handwriting paper, ⅝ inch
+        </a>
+        <a class="cta cta--quiet" href="/printables/lined-paper">
+          Lined paper, wide ruled
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <section class="band band--tight wrap">
+    <h2 class="h2">Your own words on the same sheet</h2>
+    <div class="prose">
+      <p>
+        This week&rsquo;s spellings off a school letter, a name to practise, a
+        verse to copy out &mdash; the builder takes a typed or pasted list and
+        prints it as any of the sheets above, on any ruling, at any size. The
+        settings travel in the link, so a sheet you make can be sent to another
+        family as it stands.
+      </p>
+      <p class="aside">
+        The <em>Name:</em> line is printed blank and filled in with a pencil. Nothing
+        is uploaded to make a sheet and there is nowhere in a shared link to put a
+        child&rsquo;s name &mdash; see <a href="/privacy"
+          >what we don&rsquo;t collect</a
+        >.
+      </p>
+    </div>
+    <div class="hero__actions">
+      <a class="cta" href="/printables/make">Open the sheet builder</a>
+      <a class="cta cta--quiet" href="/printables">Back to The Print Shop</a>
+    </div>
+  </section>
+</Content>

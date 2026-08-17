@@ -45,18 +45,48 @@ export type Face = {
    * real ascender overshoots a declared one in most faces and it is the ink
    * that has to fit between the rules.
    *
-   * It is the *tallest ascender*, which in two of the three is a lower-case
-   * letter rather than a capital. Playwrite and OpenDyslexic draw both to the
-   * same height (caps 1.015 and 0.849 against these), so a capital lands on
-   * the top line in those. Andika's caps are 0.713 — it is a text face, not a
-   * manuscript model drawn to a ruling — so an Andika capital stops about a
-   * tenth of the writing space short of the top line: 0.039in on the default
-   * ⅝ rule with tails, 0.093in on a 1-inch one. That is the accepted
-   * tolerance, not an oversight. Sizing capitals off a per-face cap height
-   * instead would leave a row's `l` and `h` overshooting the rule by the same
-   * tenth, and a row mixing the two cannot satisfy both.
+   * It is the *tallest ascender*, which in all three is a lower-case letter —
+   * `f` in Andika, `b` in the other two. It is therefore the right number for
+   * any row that has a lower-case letter on it, and the wrong one for a row
+   * that has not: see `capHeight` and `figure` below, and `glyphHeight`, which
+   * is what picks between the three.
    */
   ascent: number;
+  /**
+   * Baseline up to the top of a capital, as a share of the em.
+   *
+   * Measured off the flat-topped capitals (`E H I L T`), which is the height
+   * the face draws a capital to; the round ones (`C G O Q S`) overshoot it by
+   * the face's own optical overshoot, exactly as they overshoot the cap line
+   * in any book — Andika by 0.012em, OpenDyslexic by 0.013em.
+   *
+   * Here because a sheet of nothing but capitals is one of the seven the shop
+   * prints, and on it the tallest thing written *is* a capital. Sized off
+   * `ascent` a capital would stop short of the top line by the difference
+   * between the two — a tenth of the writing space in Andika, which is a text
+   * face rather than a manuscript model drawn to a ruling, and 0.039in on the
+   * default ⅝ rule. The page says "every capital starts at the top line", so
+   * it has to.
+   *
+   * A row that mixes the two cannot satisfy both, and `glyphHeight` resolves
+   * that the only way round that is safe: the moment a lower-case letter is on
+   * the row, the em goes back to `ascent` and the capital rides low. An `l`
+   * through the top rule is a worse sheet than a capital a tenth under it.
+   */
+  capHeight: number;
+  /**
+   * Baseline up to the top of a numeral, as a share of the em.
+   *
+   * The same argument as `capHeight`, for the sheet of nothing but numerals.
+   * Not the same *number*, which is why it is a second field: Andika and
+   * Playwrite draw lining figures to their cap height, but OpenDyslexic's are
+   * a tenth shorter than its capitals, so one shared value would print that
+   * face's digits well under the top line.
+   *
+   * Measured off the flat-topped numerals (`1 4 5 7`), for the reason
+   * `capHeight` is measured off the flat capitals.
+   */
+  figure: number;
   /**
    * Baseline up to the top of `x`, as a share of the em.
    *
@@ -71,6 +101,26 @@ export type Face = {
    * the child to ignore the line they are being asked to write to.
    */
   xHeight: number;
+  /**
+   * Baseline down to the bottom of the deepest tail, as a share of the em —
+   * `p` and `q` in Andika, `g` in the other two.
+   *
+   * Recorded rather than used, exactly as `xHeight` is, and read by
+   * `faces.test.ts`. What it is checked against is the tail space of a
+   * handwriting rule, which is a third of the repeat against a writing space of
+   * two thirds (`DESCENDER_SHARE` in paper.ts) — so the room below the baseline
+   * is half the writing space, and half the writing space is `ascent / 2` of
+   * the em whatever the rule size. A tail deeper than that is drawn through the
+   * next set's top line rather than into clean paper.
+   *
+   * Andika uses 0.239 of the 0.396 it is given and OpenDyslexic 0.261 of 0.425,
+   * so both print sheets clear it comfortably. Playwrite's descenders are a
+   * whole 0.519 against 0.510, which is the one face that hangs over — by 0.009
+   * of the em, four thousandths of an inch on a ⅝ rule. That is the stated
+   * tolerance and the reason a traced row is not allowed to clip: a joined `g`
+   * with its loop cut off is a worse model than one that crosses a line.
+   */
+  descent: number;
   /**
    * A *declared* mean advance across `a`–`z` and the space, as a share of the
    * em.
@@ -137,7 +187,10 @@ export const FACES: Record<SheetFont, Face> = {
     id: "print",
     family: "Andika",
     ascent: 0.791,
+    capHeight: 0.713,
+    figure: 0.713,
     xHeight: 0.498,
+    descent: 0.239,
     advance: 0.506,
     stroke: 0.022,
     dotted: [0, 4.5],
@@ -147,7 +200,10 @@ export const FACES: Record<SheetFont, Face> = {
     id: "cursive",
     family: "Playwrite US Trad",
     ascent: 1.019,
+    capHeight: 1.015,
+    figure: 1.015,
     xHeight: 0.519,
+    descent: 0.519,
     advance: 0.57,
     // Finer than the other two, and dotted tighter. A joined script is one
     // continuous stroke, so its outline doubles back on itself down every
@@ -162,7 +218,10 @@ export const FACES: Record<SheetFont, Face> = {
     id: "dyslexic",
     family: "OpenDyslexic",
     ascent: 0.85,
+    capHeight: 0.847,
+    figure: 0.729,
     xHeight: 0.56,
+    descent: 0.261,
     advance: 0.795,
     // The heaviest of the three, because the face is: weighted bottoms and
     // 0.099em stems can carry an outline that would fill Andika's counters.
@@ -183,14 +242,43 @@ export function faceOf(font: SheetFont | undefined): Face {
 }
 
 /**
+ * How tall the tallest thing in `text` is drawn, as a share of the em.
+ *
+ * The one judgement that decides whether a printed model reaches the top line:
+ * a face states three heights and which of them applies is a fact about what
+ * is written, not about the face. So it is read off the text itself rather
+ * than off a config — the sheet of capitals and the word "ABC" typed into the
+ * builder get the same answer, and a renderer that only has cells to look at
+ * can still ask.
+ *
+ * The classes are taken at their largest, so a row of `Aa` is sized off the
+ * ascender and not off the capital. `ascent` is also the answer for a row with
+ * none of them on it: a line of punctuation is not a reason to resize the
+ * page, and an empty row has to agree with the row above it.
+ */
+export function glyphHeight(text: string, face: Face): number {
+  let height = 0;
+  if (/[a-z]/.test(text)) height = face.ascent;
+  if (/[A-Z]/.test(text)) height = Math.max(height, face.capHeight);
+  if (/[0-9]/.test(text)) height = Math.max(height, face.figure);
+  return height > 0 ? height : face.ascent;
+}
+
+/**
  * The type size that fills a writing space, in mil.
  *
  * `writing` is the distance from the top line down to the baseline — what
  * `ruleLines` calls `top` to `base`. A notebook rule has no top line, so its
  * caller passes the whole repeat and the letters fill it.
+ *
+ * `text` is what will be written at that size, and it is what decides which of
+ * the face's three heights has to reach the top line (`glyphHeight`). Left
+ * out, the answer is the tallest letter there is — the safe end, and the right
+ * one for a caller asking "how big is this ruling" rather than "how big is
+ * this row".
  */
-export function glyphEm(writing: Mil, face: Face): Mil {
-  return Math.max(1, Math.round(writing / face.ascent));
+export function glyphEm(writing: Mil, face: Face, text = ""): Mil {
+  return Math.max(1, Math.round(writing / glyphHeight(text, face)));
 }
 
 /**
@@ -203,6 +291,21 @@ export function glyphEm(writing: Mil, face: Face): Mil {
 export function fittedEm(width: Mil, characters: number, face: Face): Mil {
   if (characters <= 0) return Infinity;
   return Math.max(1, Math.floor(width / (characters * face.advance)));
+}
+
+/**
+ * How many characters fit across `width` at one type size — `fittedEm` read
+ * the other way round.
+ *
+ * What a passage is wrapped at. The em is fixed by the ruling on a handwriting
+ * sheet, so the question is never "how small must this be to fit" but "where
+ * does the line run out", and answering it needs no DOM: it is the same
+ * declared mean advance, divided rather than multiplied.
+ */
+export function fittedCharacters(width: Mil, em: Mil, face: Face): number {
+  const advance = em * face.advance;
+  if (advance <= 0 || width <= 0) return 1;
+  return Math.max(1, Math.floor(width / advance));
 }
 
 /** What a stroked letterform is drawn with, at one type size. */
