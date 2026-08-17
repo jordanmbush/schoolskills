@@ -12,6 +12,7 @@ import { openDB, type IDBPDatabase } from "idb";
 import { describe, expect, it, vi } from "vitest";
 
 import { DEFAULT_FONT_PT, DEFAULT_PAPER } from "@/engine/sheets/paper";
+import type { SavedInventory } from "@/engine/sheets/phonics";
 import type { SavedSheet } from "@/engine/sheets/types";
 import type { CustomDeck, Profile, Session } from "@/engine/types";
 
@@ -21,7 +22,7 @@ import type { CustomDeck, Profile, Session } from "@/engine/types";
  * The one file in the suite that opens a database, and it exists because this
  * layer holds the only copy of a child's record book there is. An upgrade that
  * dropped a store, an index that came back missing, or a backup that restored
- * three of four collections cannot be caught by reading the diff — the failure
+ * four of five collections cannot be caught by reading the diff — the failure
  * is in what the browser did with the data, not in what the code says.
  *
  * `fake-indexeddb` rather than the browser suite: the interesting case is a
@@ -105,6 +106,15 @@ const sheet: SavedSheet = {
   updatedAt: "2026-03-01T09:00:00.000Z",
 };
 
+const inventory: SavedInventory = {
+  id: "sounds-abc",
+  name: "Sounds we know",
+  sounds: ["s:s", "a:a", "t:t"],
+  tricky: ["said"],
+  createdAt: "2026-03-01T09:00:00.000Z",
+  updatedAt: "2026-03-01T09:00:00.000Z",
+};
+
 const EXPORTED_AT = "2026-03-03T09:00:00.000Z";
 
 /**
@@ -159,8 +169,8 @@ async function seedVersion2(): Promise<IDBPDatabase> {
   return old;
 }
 
-describe("upgrading to version 3", () => {
-  it("adds the sheets store and leaves everything else exactly as it was", async () => {
+describe("upgrading from an older version", () => {
+  it("adds the new stores and leaves everything else exactly as it was", async () => {
     freshIndexedDB();
     (await seedVersion2()).close();
 
@@ -172,12 +182,15 @@ describe("upgrading to version 3", () => {
     expect(await db.allSessions()).toEqual([session]);
     expect(await db.allDecks()).toEqual([deck]);
 
-    // The new store is there and has nothing in it.
+    // The new stores are there and have nothing in them. Two of them from a
+    // version 2 database, which is the case a guarded block has to get right:
+    // both run, in order, on the way past.
     expect(await db.allSheets()).toEqual([]);
+    expect(await db.allInventories()).toEqual([]);
 
     // And `sessions` kept its index. Losing it is the quiet failure: every read
     // above still works, and profile deletion and the ghost list stop.
-    const raw = await openDB("schoolskills", 3);
+    const raw = await openDB("schoolskills", 4);
     expect(await raw.getAllFromIndex("sessions", "byProfile", "kid-1")).toEqual(
       [session],
     );
@@ -209,10 +222,12 @@ describe("backing up and restoring", () => {
     await source.putSession(session);
     await source.putDeck(deck);
     await source.putSheet(sheet);
+    await source.putInventory(inventory);
 
     const backup = await source.exportAll();
-    expect(backup.version).toBe(3);
+    expect(backup.version).toBe(4);
     expect(backup.sheets).toEqual([sheet]);
+    expect(backup.inventories).toEqual([inventory]);
 
     // The new laptop: a fresh database, and the file is all it has.
     freshIndexedDB();
@@ -222,11 +237,13 @@ describe("backing up and restoring", () => {
       sessions: 1,
       decks: 1,
       sheets: 1,
+      inventories: 1,
     });
     expect(await moved.allProfiles()).toEqual([profile]);
     expect(await moved.allSessions()).toEqual([session]);
     expect(await moved.allDecks()).toEqual([deck]);
     expect(await moved.allSheets()).toEqual([sheet]);
+    expect(await moved.allInventories()).toEqual([inventory]);
   });
 
   it("restores a file written before decks and before sheets existed", async () => {
@@ -242,7 +259,13 @@ describe("backing up and restoring", () => {
         profiles: [profile],
         sessions: [session],
       }),
-    ).toEqual({ profiles: 1, sessions: 1, decks: 0, sheets: 0 });
+    ).toEqual({
+      profiles: 1,
+      sessions: 1,
+      decks: 0,
+      sheets: 0,
+      inventories: 0,
+    });
     expect(await db.allProfiles()).toEqual([profile]);
     expect(await db.allSheets()).toEqual([]);
 
@@ -254,7 +277,13 @@ describe("backing up and restoring", () => {
         decks: [deck],
         sessions: [session],
       }),
-    ).toEqual({ profiles: 1, sessions: 1, decks: 1, sheets: 0 });
+    ).toEqual({
+      profiles: 1,
+      sessions: 1,
+      decks: 1,
+      sheets: 0,
+      inventories: 0,
+    });
     expect(await db.allDecks()).toEqual([deck]);
   });
 
@@ -263,6 +292,7 @@ describe("backing up and restoring", () => {
     const db = await loadDb();
     await db.putSheet(sheet);
     await db.putDeck(deck);
+    await db.putInventory(inventory);
 
     // "This device is wrong, make it match the file" has to mean every store,
     // or a restore reports that it replaced everything and quietly keeps the
@@ -278,6 +308,7 @@ describe("backing up and restoring", () => {
     );
     expect(await db.allSheets()).toEqual([]);
     expect(await db.allDecks()).toEqual([]);
+    expect(await db.allInventories()).toEqual([]);
     expect(await db.allProfiles()).toEqual([profile]);
   });
 });
@@ -298,5 +329,50 @@ describe("what the sheet service writes", () => {
     });
     expect(saved.id.startsWith("sheet-")).toBe(true);
     expect(await sheets.all()).toEqual([saved]);
+  });
+});
+
+describe("what the phonics service writes", () => {
+  it("keeps a named inventory, and hands it back to be re-ticked", async () => {
+    // "Saved and reusable" is the whole of what the store is for: a parent
+    // ticks the sounds once and adds to the same list after every lesson.
+    freshIndexedDB();
+    await loadDb();
+    const phonics = await import("../phonics");
+
+    const saved = await phonics.create({
+      name: "Sounds we know",
+      inventory: { sounds: ["s:s", "a:a"], tricky: [] },
+    });
+    expect(saved.id.startsWith("sounds-")).toBe(true);
+    expect(await phonics.all()).toEqual([saved]);
+
+    const grown = await phonics.update(saved.id, {
+      name: "Sounds we know",
+      inventory: { sounds: ["s:s", "a:a", "t:t"], tricky: ["said"] },
+    });
+    expect(grown.sounds).toEqual(["s:s", "a:a", "t:t"]);
+    expect(await phonics.all()).toEqual([grown]);
+
+    await phonics.remove(saved.id);
+    expect(await phonics.all()).toEqual([]);
+  });
+
+  it("refuses a list nobody named and one with nothing on it", async () => {
+    freshIndexedDB();
+    await loadDb();
+    const phonics = await import("../phonics");
+
+    await expect(
+      phonics.create({ name: " ", inventory: { sounds: ["s:s"], tricky: [] } }),
+    ).rejects.toThrow(/name/i);
+    // Held to the engine's reading of an inventory: `ai:e` is in the table so
+    // `said` can be described honestly, and is not something a parent can tick.
+    await expect(
+      phonics.create({
+        name: "Everything",
+        inventory: { sounds: ["ai:e"], tricky: [] },
+      }),
+    ).rejects.toThrow(/at least one sound/i);
   });
 });
