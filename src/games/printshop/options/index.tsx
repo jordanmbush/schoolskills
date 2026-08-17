@@ -31,6 +31,7 @@ import { MemoryPanel } from "./memory";
 import { MoneyPanel } from "./money";
 import { MultiplicationPanel } from "./multiplication";
 import { PaperPanel } from "./paper";
+import { PhonicsPanel } from "./phonics";
 import { PreAlgebraPanel } from "./prealgebra";
 import { PuzzlesPanel } from "./puzzles";
 import { RatioPanel } from "./ratio";
@@ -94,6 +95,7 @@ const PANELS: Record<string, FamilyPanel> = {
   "word-study": panel(WordStudyPanel),
   puzzle: panel(PuzzlesPanel),
   grammar: panel(GrammarPanel),
+  phonics: panel(PhonicsPanel),
   handwriting: panel(HandwritingPanel),
   memory: panel(MemoryPanel),
 };

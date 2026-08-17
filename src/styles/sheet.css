@@ -204,6 +204,7 @@
 .sheet__questions,
 .sheet__options,
 .sheet__wordshapes,
+.sheet__cards,
 .sheet__clue-list,
 .sheet__words {
   list-style: none;
@@ -702,6 +703,66 @@
 .sheet__box {
   fill: none;
   stroke: currentcolor;
+}
+
+/* ── Sound cards, wall charts and sentence strips (§13) ─────────────────────
+   The same grid again, and the same bargain: the family decided how many
+   columns fit and how tall a card stands, so the gaps here are the ones
+   `PROBLEM_GAP` names in mil and every type size on a card is set inline from
+   `phonics/cards.ts`. Nothing about a card's size is decided in this file.   */
+
+.sheet__cards {
+  display: grid;
+  grid-template-columns: repeat(var(--sheet-columns, 3), minmax(0, 1fr));
+  gap: 0.2in 0.3in;
+}
+
+.sheet__card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  break-inside: avoid;
+}
+
+/* A real border rather than a tint, for the reason the ink note above gives: a
+   printer with "Background graphics" unticked drops paint and keeps strokes,
+   and a page of cards to cut out whose boxes vanished is a page nobody can cut
+   out. The wall chart has no box at all — it is read, not cut. */
+.sheet__cards--boxed .sheet__card {
+  border: 0.75pt solid currentcolor;
+}
+
+/* A strip is a whole sentence at nearly twice the body size, and the family
+   reserved for it wrapping (`stripRows`). Breaking inside a word rather than
+   overflowing the column is what keeps that reservation honest at the far end,
+   where the type is large and the column is narrow. */
+.sheet__card-big,
+.sheet__card-small {
+  overflow-wrap: break-word;
+}
+
+/* ── The three marks (§13) ──────────────────────────────────────────────────
+   Independent switches, never a preset, and each one a convention shared by
+   many phonics traditions rather than owned by any: a bar over a vowel saying
+   its own name, a letter that says nothing set faintly, and two letters saying
+   one sound tied underneath. All three are foreground ink — an overline, an
+   underline and a lighter weight of the same colour — so all three print. */
+
+.sheet__part--macron {
+  text-decoration: overline;
+  text-decoration-thickness: 0.06em;
+}
+
+.sheet__part--silent {
+  opacity: 40%;
+}
+
+.sheet__part--joined {
+  text-decoration: underline;
+  text-decoration-thickness: 0.06em;
+  text-underline-offset: 0.1em;
 }
 
 .sheet__faces,

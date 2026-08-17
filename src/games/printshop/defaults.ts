@@ -59,6 +59,55 @@ const DENOMINATORS = [2, 3, 4, 5, 6, 8, 10, 12];
 export const STARTER_WORDS = listWords(WORD_LISTS[0]).slice(0, 12);
 
 /**
+ * One sound each for the letters of the alphabet — where a phonics sheet opens.
+ *
+ * **This is not a preset and not a sequence.** `engine/sheets/phonics/
+ * inventory.ts` is explicit that shipping "Lesson 47" would be reproducing
+ * somebody's copyrighted course by reference, and shipping "Level 3" would be
+ * pretending there is one course when the point of the model is that there
+ * isn't. What is below is neither: it is the commonest sound of each of the
+ * twenty-six letters, which every scheme on earth teaches and none of them
+ * owns, and it is here for exactly the reason `STARTER_WORDS` is — the bench's
+ * first job is to show a sheet rather than a form, and a sheet built from an
+ * empty inventory is a blank page.
+ *
+ * A parent ticks their way to their own list in the panel and keeps it under
+ * their own name (`services/phonics.ts`). This one has no name at all.
+ *
+ * Exported because the catalog's phonics pages are meant to be built from the
+ * same starting point (`pages/printables/_phonics.ts`), and two lists of the
+ * letters would be two lists that could quietly stop matching.
+ */
+export const FIRST_LETTERS: string[] = [
+  "b:b",
+  "c:k",
+  "d:d",
+  "f:f",
+  "g:g",
+  "h:h",
+  "j:j",
+  "k:k",
+  "l:l",
+  "m:m",
+  "n:n",
+  "p:p",
+  "qu:k-w",
+  "r:r",
+  "s:s",
+  "t:t",
+  "v:v",
+  "w:w",
+  "x:k-s",
+  "y:y",
+  "z:z",
+  "a:a",
+  "e:e",
+  "i:i",
+  "o:o",
+  "u:u",
+];
+
+/**
  * A passage to open the copywork style on.
  *
  * A pangram first, because a sentence set for handwriting is chosen for the
@@ -296,6 +345,21 @@ const DEFAULTS: Record<string, SheetConfig> = {
     // What the written topics get when a parent switches to one — a circle-one
     // sheet is a list down the page whatever this says (`grammarLayout`).
     columns: 1,
+  },
+  phonics: {
+    ...BASE,
+    kind: "phonics",
+    // Blending, because it is the one of the seven that looks like a worksheet
+    // at a glance and the one a child does most days. Everything else — the
+    // cards to cut out, the wall chart, the dictation lines, the sentence
+    // strips — is one control away.
+    style: "blending",
+    inventory: { sounds: FIRST_LETTERS, tricky: ["the"] },
+    // All three off. A marked sheet is a choice a parent makes; most schemes
+    // print plain text and mark on the whiteboard.
+    marking: {},
+    count: 20,
+    columns: 2,
   },
   handwriting: {
     ...BASE,

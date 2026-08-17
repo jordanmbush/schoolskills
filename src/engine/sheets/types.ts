@@ -12,6 +12,7 @@
  * answers the build already computed — `answers: true` and nothing else — so
  * however a key is obtained it can't disagree with the sheet it belongs to.
  */
+import type { Inventory } from "./phonics/inventory";
 import type { TranslationId } from "./passages/types";
 
 /* ── Units ────────────────────────────────────────────────────────────────
@@ -474,6 +475,41 @@ export type CrosswordEntry = {
   row: number;
 };
 
+/**
+ * One piece of a word as it is printed, and how it is marked.
+ *
+ * The piece is a *spelling* rather than a letter — `sh` is one piece, and so is
+ * the `a` of `cake` while its `e` is another at the end of the word — because
+ * that is the unit the whole phonics family is built on (`phonics/sounds.ts`).
+ * A piece carries at most one mark, and the three cannot collide: see the note
+ * in `phonics/cards.ts` for why that is provable rather than hoped for.
+ *
+ * `mark` absent is the ordinary case and is what every piece looks like with
+ * all three switches off.
+ */
+export type MarkedPart = {
+  text: string;
+  mark?: "macron" | "silent" | "joined";
+};
+
+/** A word, or a whole sentence, cut into those pieces. */
+export type MarkedWord = MarkedPart[];
+
+/**
+ * One card: a big line, and a smaller one under it.
+ *
+ * Three sheets are made of these and they differ only in what goes on the two
+ * lines — a spelling over the word it is in, the same pair unboxed on a wall
+ * chart, or a whole sentence on a strip with nothing underneath. Which is why
+ * there is no `kind` here: a card is a shape, and the family that filled it is
+ * the one that knows what it means.
+ */
+export type SoundCard = {
+  big: MarkedWord;
+  /** The example word under a spelling. Absent on a sentence strip. */
+  small?: MarkedWord;
+};
+
 export type Block =
   | { kind: "problems"; columns: number; items: Problem[] }
   | { kind: "rules"; rule: Rule; lines: number }
@@ -546,6 +582,29 @@ export type Block =
    * slot on the end of it would be a sheet a child answers twice.
    */
   | { kind: "wordshapes"; columns: number; words: WordShape[] }
+  /**
+   * Cards: a spelling over the word it is in, or a sentence on a strip.
+   *
+   * A block of its own rather than `problems` with a big prompt, for the reason
+   * `wordshapes` is one: there is no answer place on it at all. A card is a
+   * thing to be read — cut out, pinned up, or handed over — and a ruled slot on
+   * the end of one would be a sheet asking a question nobody set.
+   */
+  | {
+      kind: "cards";
+      columns: number;
+      cards: SoundCard[];
+      /**
+       * How big the big line is set, in ems of the body size.
+       *
+       * On the block rather than in the stylesheet because a card and a
+       * sentence strip are the same block at two very different sizes, and the
+       * family reserved the page against this number — see `cardRowEms`.
+       */
+      bigEms: number;
+      /** A border to cut round. Off for a wall chart, which is not cut up. */
+      boxed: boolean;
+    }
   | { kind: "clock"; faces: ClockFace[] }
   | { kind: "shapes"; figures: Figure[] }
   /** Where to cut, for cards and bookmarks. */
@@ -648,8 +707,8 @@ export type Sheet = {
    *
    * No family sets them. They are copied on by `buildSheet` at the front door
    * (index.ts), which is the same bargain `chrome.ts` struck — every family
-   * would otherwise write the same three lines, and the fifteenth one to be
-   * added would be the one that forgot.
+   * would otherwise write the same three lines, and the next one to be added
+   * would be the one that forgot.
    */
   font?: SheetFont;
   /** A box round the answer place rather than a rule under it. */
@@ -1800,6 +1859,95 @@ export type MemoryConfig = SheetOptions & {
   rounds: number;
 };
 
+/* ── Phonics ───────────────────────────────────────────────────────────────
+   The family whose content is decided by something the parent states rather
+   than by a range or a list: a sound inventory, which is the set of spellings
+   their child has been taught (`engine/sheets/phonics/`, §13). Everything on
+   every one of these sheets is spellable from it, which is the one promise the
+   family makes and the reason it exists rather than a word list.
+
+   The inventory travels *in the config*, as a value, rather than as an id
+   pointing at the store `services/phonics.ts` keeps. That is what lets a sheet
+   somebody configured survive being sent to a family who has never heard of
+   this household's list — and it is why a config carrying a two-hundred-word
+   sight list can outgrow the share cap in `share.ts` and simply not decode,
+   which is the same "fall back to defaults rather than throw" §14 asks for. */
+
+/**
+ * What the sheet asks for.
+ *
+ * Seven, and each of them is a thing somebody sets on a Tuesday morning:
+ * `cards` are the spellings to cut out, `chart` is the same set as one page for
+ * the wall, `blending` prints a word cut into its sounds to be said slowly and
+ * then quickly, `families` adds a beginning to an ending, `matching` joins a
+ * spelling to a word it is in, `dictation` is ruled lines for words read aloud,
+ * and `sentences` are strips of connected text with nothing in them a child has
+ * not been taught.
+ *
+ * One family rather than seven, for the reason the spelling family is one: none
+ * of the seven changes what the sheet is *about*. It is about the sounds this
+ * child knows, and a parent who has ticked those gets all seven from the
+ * control beside the list.
+ */
+export type PhonicsStyle =
+  | "cards"
+  | "chart"
+  | "blending"
+  | "families"
+  | "matching"
+  | "dictation"
+  | "sentences";
+
+/**
+ * The three typographic conventions, as three independent switches.
+ *
+ * Switches rather than a named preset, and that is the whole design (§13):
+ * marking a long vowel with a bar, a silent letter with a lighter weight and a
+ * digraph with a join are shared across many phonics traditions and belong to
+ * none of them, but a particular *combination* of them under a programme's name
+ * is that programme's modified alphabet. So there are three booleans, no
+ * shipped set of them is named after anything, and every mark is derived from
+ * the table of spellings rather than authored (`phonics/cards.ts`).
+ *
+ * All three off is the default, and is not a lesser sheet: most schemes print
+ * plain text and mark on the whiteboard.
+ */
+export type PhonicsMarking = {
+  /** A bar over a single vowel letter that says its own name — `cāke`. */
+  macron?: boolean;
+  /** Letters that say nothing, set pale — the `e` of `cake`, the `w` of `two`. */
+  silent?: boolean;
+  /** Two letters saying one sound, joined underneath — `sh`, `ck`, `igh`. */
+  joined?: boolean;
+};
+
+export type PhonicsConfig = SheetOptions & {
+  kind: "phonics";
+  style: PhonicsStyle;
+  /**
+   * What this child has been taught. Everything on the page comes out of it.
+   *
+   * Read through `readInventory` before it is used, exactly as a word list is
+   * read through `wordsOf`: it arrives from a saved sheet, from a link somebody
+   * was sent, or from a record written by a build that taught a spelling this
+   * one has retired.
+   */
+  inventory: Inventory;
+  /**
+   * Only words using this spelling — "this week we're doing `sh`".
+   *
+   * A correspondence id, and a sheet about a spelling the parent has not ticked
+   * comes back empty rather than quietly widening: see `WordPick.focus`, which
+   * is where that argument is made.
+   */
+  focus?: string;
+  marking: PhonicsMarking;
+  /** How many cards, lines, pairs or strips. Capped at what the page holds. */
+  count: number;
+  /** How many across the page. */
+  columns: number;
+};
+
 /**
  * Anything a saved sheet can hold. Narrow on `kind` — and only in index.ts,
  * which is the one module that knows the whole union.
@@ -1825,7 +1973,8 @@ export type SheetConfig =
   | PuzzleConfig
   | GrammarConfig
   | HandwritingConfig
-  | MemoryConfig;
+  | MemoryConfig
+  | PhonicsConfig;
 
 /* ── A sheet somebody kept ─────────────────────────────────────────────── */
 
