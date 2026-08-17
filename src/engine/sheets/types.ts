@@ -618,6 +618,22 @@ export type ArithmeticConfig = SheetOptions & {
    * sum may run past it. That is what carrying is.
    */
   range: { min: number; max: number };
+  /**
+   * Named facts, in the vocabulary the race already uses ("7:8") — the whole
+   * of "print exactly what they keep missing" (§14) on this family.
+   *
+   * When it has anything in it, it *is* the pool: `range` and `regrouping`
+   * stop applying, because the facts are the constraint and a sheet that
+   * dropped half of them for not carrying would not be the sheet that was
+   * asked for. Absent or empty is a sheet drawn from the range as usual, which
+   * is what a child with nothing in the record book gets.
+   *
+   * A pair is read the way `decks/flashcards.ts` builds it: added, the two
+   * addends; subtracted, the number taken away and what is left. The record
+   * book hands these over and the family turns them into problems, and neither
+   * side learns the other's shape — see `Problem.factId`.
+   */
+  facts?: string[];
   /** How many problems to ask for. Capped at what the page holds. */
   count: number;
   columns: number;
@@ -680,6 +696,22 @@ export type MultiplicationConfig = SheetOptions & {
   tables: number[];
   /** What each table is multiplied by, ends included. */
   factors: { min: number; max: number };
+  /**
+   * Named facts, in the vocabulary the race already uses ("7:8") — the whole
+   * of "print exactly what they keep missing" (§14) on this family.
+   *
+   * When it has anything in it, it *is* the pool: `tables` and `factors` stop
+   * deciding what is on the page, because a sheet of the eight facts a child
+   * keeps missing is not a sheet of the eight times table. The pair reads the
+   * way the deck builds it — the table that was picked, then what it was
+   * paired with — so a division fact is its divisor and its answer, and
+   * "56 ÷ 7" and "56 ÷ 8" stay the two questions the drill keeps apart.
+   *
+   * Ignored by the grid and the long forms, which have no facts to name: a
+   * multiplication square is every fact there is, and a three-digit long
+   * division is not one of the twelve tables at all.
+   */
+  facts?: string[];
   /** How many problems to ask for. Capped at what the page holds. */
   count: number;
   columns: number;
@@ -1141,6 +1173,53 @@ export type WordProblemConfig = SheetOptions & {
   workspace?: boolean;
 };
 
+/* ── Words ─────────────────────────────────────────────────────────────────
+   The first family whose content is not generated at all. Every sheet above
+   this line is drawn from a range or a pool the engine owns; a spelling sheet
+   is a list somebody else wrote — this week's words off a school letter, a
+   deck a parent typed in, or the words a child kept missing in the jungle —
+   and the only judgements left are how they are set on the page.
+
+   Which is why the list travels in the config rather than being named by an
+   id: a sheet has to print the same words next term after the deck it came
+   from has been deleted, exactly as a saved run outlives its deck. It is also
+   what keeps the shared-link promise intact — a word list is what a parent
+   typed, never anything the site knows about their child (§1).             */
+
+/**
+ * What the sheet asks a child to do with the list.
+ *
+ * `copy` is "write it three times", the oldest spelling exercise there is;
+ * `missing` takes letters out and leaves the gaps to fill; `test` prints
+ * numbered lines and nothing else, for a list read aloud. The wider set —
+ * ABC order, word shapes, use it in a sentence — is PRINT20's, and lands here
+ * as more of this union rather than as another family.
+ */
+export type WordSheetStyle = "copy" | "missing" | "test";
+
+export type WordsConfig = SheetOptions & {
+  kind: "words";
+  style: WordSheetStyle;
+  /**
+   * The list, in the order it was given: a spelling list is often taught in
+   * order, and `parseWords` already keeps it.
+   *
+   * There is no name for the list here on purpose. A config travels in a URL
+   * (§14), and the one thing that must never be in one is a child — so the
+   * sheet is titled after what it does, and a parent who wants their own words
+   * at the top of the page types them into `title` themselves.
+   */
+  words: string[];
+  /** `copy` only: how many times each word is written out. */
+  times: number;
+  /** `missing` only: how many letters are taken out of each word. */
+  gaps: number;
+  /** How many words to ask for. Capped at what the page holds. */
+  count: number;
+  /** `copy` and `test` only — a gapped word is a line of its own. */
+  columns: number;
+};
+
 /**
  * Anything a saved sheet can hold. Narrow on `kind` — and only in index.ts,
  * which is the one module that knows the whole union.
@@ -1160,7 +1239,8 @@ export type SheetConfig =
   | PreAlgebraConfig
   | RatioConfig
   | StatisticsConfig
-  | WordProblemConfig;
+  | WordProblemConfig
+  | WordsConfig;
 
 /* ── A sheet somebody kept ─────────────────────────────────────────────── */
 

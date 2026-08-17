@@ -927,3 +927,137 @@ describe("how much fits", () => {
     expect(divisionLines({ into: 1, by: 5 })).toBe(2);
   });
 });
+
+/* ── The facts they keep missing ───────────────────────────────────────────
+   The other way into this family (docs/printables.md §14). The record book
+   ranks the fact ids and this prints exactly those, in that order — still
+   checked by repeated addition and by the inverse, because a practice sheet
+   with a wrong answer on it is worse than no practice sheet.               */
+
+describe("the facts they keep missing", () => {
+  /** Three fact ids in the shape `decks/flashcards.ts` writes them. */
+  const MISSED = ["7:8", "6:9", "12:4"];
+
+  it("prints exactly those facts, in the order they were ranked", () => {
+    const items = problemsOf({ facts: MISSED, count: 20 }, 5);
+    expect(items.flatMap(sentences)).toEqual([
+      "7 × 8 = 56",
+      "6 × 9 = 54",
+      "12 × 4 = 48",
+    ]);
+    for (const sentence of items.flatMap(sentences)) {
+      expect(holds(sentence), sentence).toBe(true);
+    }
+  });
+
+  it("carries the id the race files each of them under", () => {
+    // The hand-off in both directions: `troubleFacts` speaks in these strings
+    // and `Problem.factId` answers in them, so neither side has to learn the
+    // other's shape.
+    expect(problemsOf({ facts: MISSED }, 5).map((p) => p.factId)) //
+      .toEqual(MISSED);
+  });
+
+  it("reads a division fact backwards, as the drill keeps it", () => {
+    // `3:7` is the pair the deck builds "21 ÷ 3" from — the divisor, then the
+    // answer — which is why 56 ÷ 7 and 56 ÷ 8 stay two facts where 7 × 8 and
+    // 8 × 7 are one.
+    const [sentence] = problemsOf(
+      { facts: ["3:7"], operation: "divide" },
+      1,
+    ).flatMap(sentences);
+    expect(sentence).toBe("21 ÷ 3 = 7");
+    expect(holds(sentence)).toBe(true);
+  });
+
+  it("never divides by zero, whatever the record book hands over", () => {
+    // A zero fact is real — 0 × 4 is a card the race asks — and it has no
+    // division. So it is asked the one way it can be asked rather than
+    // dropped or, worse, printed as "0 ÷ 0".
+    for (const seed of SEEDS) {
+      const items = problemsOf(
+        { facts: ["0:4", "0:9"], operation: "both" },
+        seed,
+      );
+      for (const sentence of items.flatMap(sentences)) {
+        expect(read(sentence).sign, sentence).toBe("×");
+        expect(holds(sentence), sentence).toBe(true);
+      }
+    }
+  });
+
+  it("prints them whatever the tables and factors say", () => {
+    // Both describe a pool to draw from, and a named sheet does not draw: a
+    // sheet of the eight facts a child keeps missing is not a sheet of the
+    // eight times table, and clipping it to `tables` would print neither.
+    expect(
+      problemsOf(
+        { facts: ["11:12"], tables: [2], factors: { min: 1, max: 3 } },
+        2,
+      ).flatMap(sentences),
+    ).toEqual(["11 × 12 = 132"]);
+  });
+
+  it("leaves a zero out of a missing-number sheet", () => {
+    // The same judgement the drawn path makes: a blank that any number would
+    // fill is not a question, and "_ × 0 = 0" is true of every number there
+    // is. Dropping it is the honest answer; printing it is a page a child
+    // cannot answer.
+    expect(
+      problemsOf({ facts: ["0:4", "7:8"], style: "missing" }, 1).map(
+        (p) => p.factId,
+      ),
+    ).toEqual(["7:8"]);
+  });
+
+  it("says on the page, and in the record, that it is a practice sheet", () => {
+    const practice = config({ facts: MISSED });
+    const sheet = buildSheet(practice, 1);
+    // Not "the 7 times table" and not "Multiplication to 12": the sheet never
+    // saw either pool, and a title claiming one would be the only untrue line
+    // on the page.
+    expect(sheet.header.title).toBe("Multiplication practice");
+    expect(sheet.header.score).toEqual({ outOf: 3 });
+    expect(describeSheet(practice)) //
+      .toBe("Multiplication practice — 3 tricky facts");
+  });
+
+  it("keys them the way it keys everything else", () => {
+    const key = answerKey(config({ facts: MISSED, operation: "both" }), 9);
+    const block = key.blocks[0];
+    if (block.kind !== "problems") throw new Error("expected problems");
+    expect(key.answers).toBe(true);
+    for (const sentence of block.items.flatMap(sentences)) {
+      expect(holds(sentence), sentence).toBe(true);
+    }
+  });
+
+  it("is ignored by the two styles that have no facts to name", () => {
+    // A square is every fact there is and a long form is not one of the
+    // twelve tables at all, so neither may quietly become a three-problem
+    // sheet because a config carried a list it has no use for.
+    const grid = config({ facts: MISSED, style: "grid" });
+    expect(buildSheet(grid, 1).blocks[0].kind).toBe("grid");
+    expect(problemsOf({ facts: MISSED, style: "long", count: 6 }, 1).length) //
+      .toBe(6);
+  });
+
+  it("falls back to the ordinary sheet when nothing is standing out", () => {
+    // A child with nothing in the record book is the commonest case on a
+    // family machine rather than an error, and what they get is the mixed
+    // sheet the tables describe — which is a sheet worth printing.
+    expect(problemsOf({ facts: [] }, 4)).toEqual(problemsOf({}, 4));
+    expect(buildSheet(config({ facts: [] }), 4).header.title) //
+      .toBe("Multiplication to 12");
+  });
+
+  it("never prints more of them than the paper holds", () => {
+    const many: string[] = [];
+    for (let a = 1; a <= 12; a += 1) {
+      for (let b = 1; b <= 12; b += 1) many.push(`${a}:${b}`);
+    }
+    const over = { facts: many, count: many.length };
+    expect(problemsOf(over, 1).length) //
+      .toBe(multiplicationLayout(config(over)).perPage);
+  });
+});

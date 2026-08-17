@@ -13,15 +13,20 @@
  * it goes in `src/components/ui/`, which is the rule the lint config states in
  * its own words.
  */
+import type { ReactNode } from "react";
+
 import {
   Checkbox,
+  Field,
   FieldSet,
   NumberStepper,
   SegmentedControl,
   Select,
+  TextArea,
   type SegmentedOption,
 } from "@/components/ui/kit";
 import type { SheetConfig } from "@/engine/sheets/types";
+import { parseWords } from "@/services/decks";
 
 /**
  * What a family's panel is handed.
@@ -148,41 +153,102 @@ export function Span({
  * at what the page holds, so asking for two hundred sums on a Letter page gives
  * as many as fit and no second page of nothing. The hint says so, because a
  * number that silently becomes another number is worse than a smaller maximum.
+ *
+ * `columns` is optional because not every family lays its items out across the
+ * page: a word with letters missing is a line of its own whatever the config
+ * says, and a stepper that could only ever be set to one is an option that does
+ * nothing — which is worse than a missing one.
  */
 export function Sizing({
+  label = "Problems",
   count,
   columns,
   onCount,
   onColumns,
   maxColumns = 6,
 }: {
+  /** What the family calls the things it is counting. */
+  label?: string;
   count: number;
-  columns: number;
+  columns?: number;
   onCount: (next: number) => void;
-  onColumns: (next: number) => void;
+  onColumns?: (next: number) => void;
   maxColumns?: number;
 }) {
   return (
     <>
-      <FieldSet legend="Problems" hint="Capped at what fits on the page.">
+      <FieldSet legend={label} hint="Capped at what fits on the page.">
         <NumberStepper
-          label="Problems"
+          label={label}
           value={count}
           min={1}
           max={200}
           onChange={onCount}
         />
       </FieldSet>
-      <FieldSet legend="Columns">
-        <NumberStepper
-          label="Columns"
-          value={columns}
-          min={1}
-          max={maxColumns}
-          onChange={onColumns}
-        />
-      </FieldSet>
+      {columns !== undefined && onColumns && (
+        <FieldSet legend="Columns">
+          <NumberStepper
+            label="Columns"
+            value={columns}
+            min={1}
+            max={maxColumns}
+            onChange={onColumns}
+          />
+        </FieldSet>
+      )}
     </>
+  );
+}
+
+/**
+ * A list of words, typed or pasted in.
+ *
+ * One box rather than a row of fields, for the reason `DeckEditor` gives about
+ * the same paste: the list is coming off a school letter or a phone
+ * screenshot, and retyping it into twelve inputs is how a parent decides not to
+ * bother. `parseWords` is what splits it — newlines, commas, tabs and
+ * semicolons all work — so a sheet takes whatever shape the letter was in.
+ *
+ * It is here rather than in the spelling panel because two screens need the
+ * same box: the panel, where the list is what the sheet is *about*, and the
+ * bootstrap, where a paste is one of the three ways to start a sheet at all
+ * (§14). Two copies would be two rules about what counts as a word.
+ */
+export function WordList({
+  label,
+  text,
+  onChange,
+  hint,
+  rows = 5,
+}: {
+  label: string;
+  text: string;
+  onChange: (text: string) => void;
+  hint?: ReactNode;
+  rows?: number;
+}) {
+  const words = parseWords(text);
+  return (
+    <Field
+      label={label}
+      hint={
+        hint ?? (
+          <>
+            One a line, or separated by commas. {words.length}{" "}
+            {words.length === 1 ? "word" : "words"} so far.
+          </>
+        )
+      }
+    >
+      <TextArea
+        value={text}
+        rows={rows}
+        spellCheck={false}
+        placeholder={"because\nthought\nfriend"}
+        onChange={onChange}
+      />
+    </Field>
   );
 }
 

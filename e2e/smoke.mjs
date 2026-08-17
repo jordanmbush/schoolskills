@@ -228,6 +228,38 @@ try {
   check("the shared link reopens the same sheet", page.url() === shared);
 
   /*
+   * The headline of the whole section, walked end to end (§14).
+   *
+   * It is the one feature that crosses every layer in the app — the record
+   * book computes it, a service reads it out of the same IndexedDB the race
+   * just wrote to, the engine turns it into a sheet, and the bench prints it —
+   * so it is exactly the kind of thing that type-checks and fails on first
+   * click. The smoke player answers correctly and quickly, so what this
+   * usually exercises is the *other* path: a child with nothing standing out
+   * still gets a sheet worth printing rather than an empty page.
+   */
+  log("\n6b. The bench starts from what the record book knows");
+  const steps = await page.locator(".bootstrap__step").count();
+  // Two at least — the missed facts and a paste. The saved-list step only
+  // appears for a household that has typed one in, which this one has not.
+  check("the bootstraps are offered", steps >= 2, `${steps} steps`);
+
+  const beforeBootstrap = page.url();
+  await page
+    .locator(".bootstrap__step")
+    .first()
+    .getByRole("button")
+    .first()
+    .click();
+  await page.waitForTimeout(900);
+  check(
+    "pressing one puts a printable sheet on the bench",
+    page.url() !== beforeBootstrap &&
+      (await page.locator(".preview .sheet__problem").count()) > 0,
+    page.url().slice(0, 60),
+  );
+
+  /*
    * Where the paper actually lands on the paper.
    *
    * Print is the whole output path here (§10) — there is no PDF render to

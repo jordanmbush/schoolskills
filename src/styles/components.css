@@ -88,6 +88,16 @@
   margin-bottom: var(--gap-3);
 }
 
+/* Where a panel has more than one thing to offer — drill these, or print them
+   — the pair sits together at the end of the head rather than being spread to
+   both ends of it by the flex row above. */
+.panel__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-2);
+  flex-wrap: wrap;
+}
+
 .panel__title {
   font-family: var(--font-display);
   font-weight: 800;

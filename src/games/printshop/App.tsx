@@ -22,6 +22,7 @@ import { answerKey, buildSheet } from "@/engine/sheets";
 import type { Sheet } from "@/engine/sheets/types";
 import "@/styles/printshop.css";
 
+import { Bootstrap } from "./Bootstrap";
 import { FamilyOptions } from "./options";
 import { PageOptions } from "./PageOptions";
 import { Picker } from "./Picker";
@@ -66,6 +67,12 @@ export default function PrintShopApp() {
   return (
     <div className="bench">
       <div className="bench__panel no-print">
+        {/* Above the picker, because it answers the question the picker asks:
+            a parent who came to print what their child keeps missing should not
+            have to work out which family that is. It only ever opens a sheet on
+            the bench — everything below stays in charge of it afterwards. */}
+        <Bootstrap onOpen={bench.open} />
+
         <Picker config={bench.config} onFamily={bench.setFamily} />
 
         <section className="bench__group">
