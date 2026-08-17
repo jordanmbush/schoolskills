@@ -1286,7 +1286,7 @@ export type HandwritingStyle =
  * `breaks` is not a join at all: the pairs where a model may lift the pencil.
  * It is a group here because *whether* it lifts is the model's business and not
  * ours — the looped and British hands join out of every letter, the unlooped
- * one stops after `b g j p q s y` — so the sheet prints the pair and the face
+ * one stops after `b f g j p q s y` — so the sheet prints the pair and the face
  * answers the question (`writing/joins.ts`).
  */
 export type JoinFamily =

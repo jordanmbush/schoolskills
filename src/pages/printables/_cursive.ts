@@ -27,6 +27,16 @@
  * **Two stocks, as with paper and handwriting.** A ⅝ rule sent to a printer
  * loaded with A4 is scaled to fit, and a scaled ⅝ rule is not a ⅝ rule.
  *
+ * **The data is this file's; the plumbing is not.** Which paper, which route,
+ * which URL and which link opens the bench are the same four answers on all
+ * three shelves, so they live once in `_catalog.ts` and this file keeps a named
+ * wrapper apiece. What stays here is what is genuinely only true of cursive —
+ * the slugs, the configs, the prose, and the one link the print shelf has no
+ * use for, `builderHref`'s `font`. The route *page* is still its own file
+ * rather than a shared template: four of its sections are prose about joined
+ * writing specifically, and those sections are the reason the page exists as a
+ * crawlable answer at all (§8).
+ *
  * **One model on the shelf, three in the builder.** Every sheet here is set in
  * the looped traditional hand, because a shelf whose pages each used a
  * different model would be a shelf that looks inconsistent to the one reader
@@ -35,16 +45,22 @@
  * where the hub sends anyone whose school teaches a different one.
  */
 import { DEFAULT_FONT_PT } from "@/engine/sheets/paper";
-import { encodeSharedSheet } from "@/engine/sheets/share";
 import type {
   HandwritingConfig,
-  HeaderField,
-  Paper,
   PaperSize,
   SheetFont,
 } from "@/engine/sheets/types";
 
-import { STOCKS, type Stock } from "./_catalog";
+import {
+  SHEET_FIELDS as FIELDS,
+  STOCKS,
+  benchHref,
+  paperOf,
+  shelve,
+  stockHref,
+  stockPath,
+  type Stock,
+} from "./_catalog";
 
 /** How the hub groups the shelf: what is being written, in the order it is learnt. */
 export type CursiveGroup = "letters" | "joins" | "words" | "passages";
@@ -96,22 +112,6 @@ export const CURSIVE_SEED = 1;
  * builder, which is where choosing belongs (§8).
  */
 const MODEL: SheetFont = "cursive";
-
-/** Portrait, half-inch margins — the stock is the only thing that varies. */
-const paperOf = (size: PaperSize): Paper => ({
-  size,
-  orientation: "portrait",
-  margin: "normal",
-});
-
-/**
- * Printed blank, always, and the reason there is no third field.
- *
- * A worksheet asks for a name because a teacher has thirty of them to hand
- * back. Nothing here holds one (§1): these are two ruled lines on paper and
- * there is nowhere in a config to put a value for either.
- */
-const FIELDS: HeaderField[] = ["name", "date"];
 
 /**
  * The seven days, which is what a first cursive word list should be.
@@ -180,7 +180,7 @@ export const CURSIVE_SHEETS: CursiveSheet[] = [
     lead: "All twenty-six letters in a joined hand, each written as the pair a child is taught — A then a, B then b. Every letter gets a solid model to look at, a dotted one to trace over, and an empty space at the end where nobody is helping.",
     notes: [
       "Cursive starts where printing started, with the letters, and that is not a step to skip because a child can already print. The shapes are different: a cursive a starts with a lead-in from the baseline, a b finishes at the top of its body rather than the bottom, and an f is one stroke rather than two. What carries over is the paper and the progression — the same ⅝ ruling, the same trace, then copy, then write on your own.",
-      "The capital and the small letter sit together on the same line, and in cursive that is doing a second job. Some capitals join to the letter after them and some do not, and which is which is a fact about the hand being taught rather than about the letter: in this model B, D, G, H and S are the five that stand alone. Writing the pair is how a child finds that out without being told it.",
+      "The capital and the small letter sit together on the same line, and in cursive that is doing a second job. Some capitals join to the letter after them and some do not, and which is which is a fact about the hand being taught rather than about the letter — the model decides it, and a model taught two counties away decides it differently. That is why this page does not list them: what is printed on the sheet is whatever the hand it is set in actually does, and writing the pair is how a child finds it out without being told.",
     ],
     teaches: "Writing the cursive alphabet",
     ages: "Ages 7–10",
@@ -235,7 +235,7 @@ export const CURSIVE_SHEETS: CursiveSheet[] = [
     keyword: "Free printable cursive lowercase worksheets",
     summary:
       "The twenty-six small cursive letters on ⅝-inch paper with a dashed midline and room for the loops, traced twice and then written alone.",
-    lead: "Small letters on their own, on the ⅝ paper a school means by handwriting paper. Every one of them starts with a lead-in stroke from the baseline and finishes with an exit stroke, and those two strokes are what every join is made of.",
+    lead: "Small letters on their own, on the ⅝ paper a school means by handwriting paper. Most of them start with a lead-in stroke from the baseline and all of them finish with an exit stroke — the anticlockwise letters a, c, d, g, o and q are the exception, because they are entered at the top — and those strokes are what every join is made of.",
     notes: [
       "The small letters are where joined writing is actually learnt, because they are the ones that join. Each letter here is drawn with the stroke that leads into it and the stroke that leaves it, so a child practising a single letter is already practising both halves of a join — which is why a cursive letter looks unfinished on its own and is supposed to.",
       "The descender space matters more here than it does in print. In the looped hand a g, a j and a y drop below the baseline and come back up to meet the next letter, so the tail is not decoration but the road to the following letter. That is the reason this sheet is ruled with a tail space rather than on plain two-line paper, and the reason the loops are drawn full size rather than clipped at the line.",
@@ -433,7 +433,7 @@ export const CURSIVE_MODELS: Array<{
     font: "cursive-modern",
     label: "Unlooped",
     blurb:
-      "The same letters without the loops, and the model that lifts the pencil: b, g, j, p, q, s and y do not join to what follows them.",
+      "The same letters without the loops, and the model that lifts the pencil: b, f, g, j, p, q, s and y do not join to what follows them.",
   },
   {
     font: "cursive-uk",
@@ -451,54 +451,34 @@ export function configFor(
   return { ...sheet.config, paper: paperOf(size) };
 }
 
-/** The route a sheet prints at, on a given stock. */
-export function pathFor(sheet: CursiveSheet, stock: Stock): string {
-  return stock.path ? `${sheet.slug}/${stock.path}` : sheet.slug;
-}
+/** The route a sheet prints at, on a given stock — see `_catalog.ts`. */
+export const pathFor = (sheet: CursiveSheet, stock: Stock): string =>
+  stockPath(sheet.slug, stock);
 
 /** The whole URL, which is what a hub links to and the canonical says. */
 export const hrefFor = (sheet: CursiveSheet, stock: Stock): string =>
-  `/printables/cursive/${pathFor(sheet, stock)}`;
+  stockHref("/printables/cursive", sheet.slug, stock);
 
 /**
  * The builder, opened on this sheet — optionally in another model.
  *
- * §14: the config lives in the fragment, so "change what is on it" is an
- * ordinary link on a static site rather than a lookup on a server that isn't
- * there. The stock goes with it, so a parent who came from the A4 page gets the
- * A4 sheet on the bench rather than a Letter one to set again, and `font` is
- * how the hub offers the other two models without a second copy of the shelf.
+ * The one link this shelf needs that the print one doesn't: `font` is how the
+ * hub offers the other two models without a second copy of the shelf.
  */
-export function builderHref(
+export const builderHref = (
   sheet: CursiveSheet,
   stock: Stock,
   font: SheetFont = MODEL,
-): string {
-  const payload = encodeSharedSheet({
-    config: { ...configFor(sheet, stock.id), font },
-    seed: CURSIVE_SEED,
-  });
-  return `/printables/make#s=${payload}`;
-}
+): string => benchHref({ ...configFor(sheet, stock.id), font }, CURSIVE_SEED);
 
-/**
- * The shelf, grouped — the shape every page lists it in.
- *
- * Written once because the hub and each sheet's row of neighbours would
- * otherwise have to be kept in step by hand, and the failure would be silent: a
- * sheet added here and shown on one page but not the other still builds, still
- * deploys, and still looks right.
- */
+/** The shelf, grouped — the shape every page lists it in. */
 export function cursiveShelf(): Array<{
   id: CursiveGroup;
   label: string;
   blurb: string;
   sheets: CursiveSheet[];
 }> {
-  return CURSIVE_GROUPS.map((group) => ({
-    ...group,
-    sheets: CURSIVE_SHEETS.filter((sheet) => sheet.group === group.id),
-  }));
+  return shelve(CURSIVE_GROUPS, CURSIVE_SHEETS);
 }
 
 /** Letter first, then A4 — the order `_catalog.ts` sets and the reason for it. */

@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { brotliDecompressSync } from "node:zlib";
 
 import { describe, expect, it } from "vitest";
 
@@ -338,6 +339,175 @@ describe("the licence beside the files", () => {
         .update(readFileSync(join(dir, file)))
         .digest("hex");
       expect(sha, file).toBe(digest);
+    }
+  });
+});
+
+/* ── The joining is in the file, and this checks the file ──────────────────
+   The whole cursive story rests on a claim about bytes nothing else here reads:
+   "the font decides whether letters join, and this repo never does"
+   (`writing/joins.ts`). The digests above pin the bytes, which catches a file
+   swapped for a different one — but a pin says nothing about what is *in* the
+   file, so a subset built without layout features would still be a legitimate
+   Playwrite US Trad and would still print `in` as an `i` and an `n` standing
+   apart under an instruction to join them.
+
+   So this reads the shipped woff2 directly: brotli out of the compressed table
+   stream, then the two tables that answer the question. `calt` in `GSUB` is the
+   feature every join here is drawn by; the `cnct` glyphs are the joining
+   strokes themselves, the thing the face inserts *between* two letters and the
+   reason a cell has to be one `<text>` element.
+
+   What this deliberately does not assert is which letters join — that needs a
+   shaper, and there isn't one in this suite. `f` was missing from the unlooped
+   model's break list in ten places for exactly that reason. The nearest honest
+   substitute is below: both print faces must have no `calt` at all, so a test
+   that passed because it was asserting nothing would fail here.            */
+
+/** The table tags WOFF2 abbreviates to an index, in the spec's order. */
+const WOFF2_TAGS =
+  "cmap,head,hhea,hmtx,maxp,name,OS/2,post,cvt ,fpgm,glyf,loca,prep,CFF ,VORG,EBDT,EBLC,gasp,hdmx,kern,LTSH,PCLT,VDMX,vhea,vmtx,BASE,GDEF,GPOS,GSUB,EBSC,JSTF,MATH,CBDT,CBLC,COLR,CPAL,SVG ,sbix,acnt,avar,bdat,bloc,bsln,cvar,fdsc,feat,fmtx,fvar,gvar,hsty,just,lcar,mort,morx,opbd,prop,trak,Zapf,Silf,Glat,Gloc,Feat,Sill".split(
+    ",",
+  );
+
+/** WOFF2's variable-length integer: seven bits a byte, high bit continues. */
+function base128(bytes: Buffer, from: number): [number, number] {
+  let value = 0;
+  let at = from;
+  for (let read = 0; read < 5; read++) {
+    const byte = bytes.readUInt8(at++);
+    value = value * 128 + (byte & 0x7f);
+    if ((byte & 0x80) === 0) return [value, at];
+  }
+  throw new Error("UIntBase128 longer than five bytes");
+}
+
+/**
+ * The sfnt tables inside a woff2, by tag.
+ *
+ * The directory is plain; everything after it is one brotli stream holding the
+ * tables back to back in directory order and with no padding between them, so
+ * a running offset is all that is needed to cut them apart again. `glyf` and
+ * `loca` are the two that may arrive transformed, and their stored length is
+ * the transformed one — which matters here only because it is what moves the
+ * offset on to `GSUB`.
+ */
+function woff2Tables(file: string): Map<string, Buffer> {
+  const bytes = readFileSync(file);
+  expect(bytes.toString("latin1", 0, 4), file).toBe("wOF2");
+  const count = bytes.readUInt16BE(12);
+  const compressed = bytes.readUInt32BE(20);
+
+  const directory: Array<{ tag: string; length: number }> = [];
+  let at = 48;
+  for (let entry = 0; entry < count; entry++) {
+    const flags = bytes.readUInt8(at++);
+    const known = flags & 0x3f;
+    let tag = WOFF2_TAGS[known] ?? "";
+    if (known === 0x3f) {
+      tag = bytes.toString("latin1", at, at + 4);
+      at += 4;
+    }
+    let length: number;
+    [length, at] = base128(bytes, at);
+    const outline = tag === "glyf" || tag === "loca";
+    if (outline ? flags >> 6 === 0 : flags >> 6 !== 0) {
+      [length, at] = base128(bytes, at);
+    }
+    directory.push({ tag, length });
+  }
+
+  const stream = brotliDecompressSync(bytes.subarray(at, at + compressed));
+  const tables = new Map<string, Buffer>();
+  let start = 0;
+  for (const { tag, length } of directory) {
+    tables.set(tag, stream.subarray(start, start + length));
+    start += length;
+  }
+  return tables;
+}
+
+/** The feature tags in a `GSUB` that actually have a lookup behind them. */
+function gsubFeatures(gsub: Buffer): Set<string> {
+  const list = gsub.readUInt16BE(6);
+  const count = gsub.readUInt16BE(list);
+  const tags = new Set<string>();
+  for (let entry = 0; entry < count; entry++) {
+    const at = list + 2 + entry * 6;
+    const feature = list + gsub.readUInt16BE(at + 4);
+    if (gsub.readUInt16BE(feature + 2) > 0) {
+      tags.add(gsub.toString("latin1", at, at + 4));
+    }
+  }
+  return tags;
+}
+
+/** The glyph names in a version 2 `post`. Empty for any other version. */
+function glyphNames(post: Buffer | undefined): string[] {
+  if (post === undefined || post.readUInt32BE(0) !== 0x00020000) return [];
+  const glyphs = post.readUInt16BE(32);
+  const names: string[] = [];
+  let at = 34 + glyphs * 2;
+  while (at < post.length) {
+    const length = post.readUInt8(at++);
+    names.push(post.toString("latin1", at, at + length));
+    at += length;
+  }
+  return names;
+}
+
+describe("the joining is in the font file", () => {
+  /**
+   * The file each family is actually served from, read out of the stylesheet
+   * rather than guessed from the family name — which is the same reason "is a
+   * family the sheet is actually set in" above reads the stylesheet: the
+   * mapping is a fact about `fonts.css`, and the one place it can go wrong.
+   */
+  const served = new Map(
+    [
+      ...read("src/styles/fonts.css").matchAll(
+        /font-family:\s*"([^"]+)"[\s\S]*?url\("([^"]+)"\)/g,
+      ),
+    ].map((block) => [block[1], block[2]] as const),
+  );
+  const fileOf = (face: SheetFont): string => {
+    const source = served.get(FACES[face].family);
+    expect(source, FACES[face].family).toBeDefined();
+    return join(ROOT, "public", source!);
+  };
+
+  it("draws its joins with `calt`, in all three models", () => {
+    for (const face of CURSIVE_FACES) {
+      const tables = woff2Tables(fileOf(face));
+      const gsub = tables.get("GSUB");
+      expect(gsub, `${face} has a GSUB`).toBeDefined();
+      expect([...gsubFeatures(gsub!)], face).toContain("calt");
+    }
+  });
+
+  it("ships the joining strokes themselves, not just the letters", () => {
+    // A `cnct` glyph is the stroke drawn *between* two letters — the thing a
+    // join is, and the thing a face that only had letters in it could not
+    // produce however many features its GSUB declared.
+    for (const face of CURSIVE_FACES) {
+      const tables = woff2Tables(fileOf(face));
+      const joins = glyphNames(tables.get("post")).filter((name) =>
+        name.startsWith("cnct"),
+      );
+      expect(joins.length, face).toBeGreaterThan(0);
+    }
+  });
+
+  it("is a claim about these files and not about every font", () => {
+    // The discriminator. Without it the two tests above could be passing
+    // because a woff2 reader that returned nothing makes every `toContain`
+    // vacuous — and because "fonts have features" is not what is being said.
+    // Neither print face joins anything, and neither declares `calt`.
+    for (const face of Object.keys(FACES) as SheetFont[]) {
+      if (isCursive(face)) continue;
+      const gsub = woff2Tables(fileOf(face)).get("GSUB");
+      expect(gsub, `${face} has a GSUB`).toBeDefined();
+      expect([...gsubFeatures(gsub!)], face).not.toContain("calt");
     }
   });
 });

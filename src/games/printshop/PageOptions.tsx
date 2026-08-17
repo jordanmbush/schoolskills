@@ -57,9 +57,12 @@ const MARGINS = [
  * Three of the five are cursive, and describing them by what the pencil does is
  * the only honest way to offer them: the hands taught in different countries
  * disagree about whether an ascender loops and about which letters join at all,
- * so there is no one of them to ship and call correct. Five options is exactly
- * where `Choice` turns into a dropdown, which is the right control for a list
- * where two entries differ by a detail worth reading.
+ * so there is no one of them to ship and call correct. Five is the last count
+ * `Choice` still draws as a row of pills — the threshold is *past* five, not at
+ * it (`options/parts.tsx`) — so all five faces stay on screen at once, which is
+ * what a list where two entries differ by a detail worth reading needs. Each
+ * carries a `hint`, and a sixth face would take the row to a dropdown and the
+ * hints with it.
  */
 const FONTS = [
   opt<SheetFont>("print", "Print", "single-storey a and g"),
@@ -67,7 +70,7 @@ const FONTS = [
   opt<SheetFont>(
     "cursive-modern",
     "Cursive, unlooped",
-    "simpler shapes; the pencil lifts after b, g, j, p, q, s and y",
+    "simpler shapes; the pencil lifts after b, f, g, j, p, q, s and y",
   ),
   opt<SheetFont>(
     "cursive-uk",

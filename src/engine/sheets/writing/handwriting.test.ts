@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { CURSIVE_FACES, FACES, glyphEm, isCursive } from "../faces";
+import {
+  CURSIVE_FACES,
+  FACES,
+  glyphAdvance,
+  glyphEm,
+  isCursive,
+} from "../faces";
 import { ruleCapacity, ruledLines } from "../layout";
 import { RULINGS, inches, rulePitch, toInches, writingSpace } from "../paper";
 import type {
@@ -185,20 +191,17 @@ describe("trace, copy, then write it alone", () => {
     // enough to write several times on one line does, and a line of a passage
     // takes the next row instead.
     const across = rowsOf({ letters: "upper", repeats: 4 });
-    expect(across[0].cells.map((cell) => cell.style)).toEqual([
-      "solid",
-      "dotted",
-      "dotted",
-      "none",
-      "solid",
-      "dotted",
-      "dotted",
-      "none",
-      "solid",
-      "dotted",
-      "dotted",
-      "none",
-    ]);
+    const group = ["solid", "dotted", "dotted", "none"];
+    const cells = across[0].cells.map((cell) => cell.style);
+    // A whole number of progressions, more than one of them, and no partial
+    // group at the end. How many fit is the packing's business and depends on
+    // the face and on what is written (`glyphAdvance`); that several do is
+    // this style's, and it is what the assertion is for.
+    expect(cells.length % group.length).toBe(0);
+    expect(cells.length / group.length).toBeGreaterThan(1);
+    for (let at = 0; at < cells.length; at += group.length) {
+      expect(cells.slice(at, at + group.length)).toEqual(group);
+    }
 
     const down = rowsOf({ style: "passage", text: "One line.", repeats: 3 });
     expect(down.map((row) => row.cells.length)).toEqual([1, 1, 1]);
@@ -416,6 +419,49 @@ describe("a ⅝ rule under a ruler", () => {
     );
     const small = glyphEm(writingSpace({ style: "hand-3-8" }), FACES.print);
     expect(small).toBeLessThan(big);
+  });
+
+  it("gives a cell room for what is written in it, in every face", () => {
+    // The invariant the packing exists to hold, and the one that broke: a row
+    // is divided into equal cells (`TracedRow`), so a group packed off a mean
+    // that is too small for what is actually on the row puts the model's ink
+    // over the trace beside it. In a joined hand that does not look like
+    // crowding — it looks like one continuous joined string, on the sheet
+    // whose whole subject is where a join belongs.
+    //
+    // Asserted against the face's own declared width for what is written
+    // (`glyphAdvance`), because there is no DOM here to measure ink in — the
+    // same bargain the packing itself strikes. A row with one group on it is
+    // exempt: `perRow` floors at one, and past that point it is `fittedEm` in
+    // `TracedRow` that shrinks the type rather than the packing that widens
+    // the cell.
+    for (const face of Object.values(FACES)) {
+      for (const style of STYLES) {
+        for (const letters of ["both", "upper", "lower"] as const) {
+          const over = { rule: { style }, font: face.id, letters } as const;
+          const rows = rowsOf(over);
+          const { box, em, perRow } = handwritingLayout(config(over), 2);
+          if (perRow < 2) continue;
+          for (const row of rows) {
+            const said = row.cells.map((cell) => cell.text).join("");
+            if (said === "") continue;
+            const cell = Math.floor(box.width / row.cells.length);
+            const longest = row.cells.reduce(
+              (most, one) => Math.max(most, one.text.length),
+              0,
+            );
+            // The longest thing on the row plus the character of air the
+            // packing reserved for it — the whole of what a cell was promised.
+            const need = em * glyphAdvance(said, face) * (longest + 1);
+            // A mil of slack, and only a mil: `across` and the cell width are
+            // each floored to a whole thousandth of an inch, which is already
+            // finer than a 600dpi printer can place a dot.
+            expect(cell, `${face.id} / ${style} / ${letters}`) //
+              .toBeGreaterThanOrEqual(need - 1);
+          }
+        }
+      }
+    }
   });
 });
 

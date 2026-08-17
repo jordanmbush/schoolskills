@@ -4,13 +4,22 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 import { answerKey, buildSheet } from "@/engine/sheets";
-import { CURSIVE_FACES, isCursive } from "@/engine/sheets/faces";
+import {
+  CURSIVE_FACES,
+  faceOf,
+  glyphAdvance,
+  isCursive,
+} from "@/engine/sheets/faces";
 import type {
   HandwritingConfig,
   TraceRow,
   TraceStyle,
 } from "@/engine/sheets/types";
-import { MODELLED } from "@/engine/sheets/writing/handwriting";
+import {
+  MODELLED,
+  fontOf,
+  handwritingLayout,
+} from "@/engine/sheets/writing/handwriting";
 import { JOIN_FAMILIES, joinPairs } from "@/engine/sheets/writing/joins";
 
 import { PAPER_SHEETS, STOCKS, pathFor as paperPath } from "./_catalog";
@@ -245,6 +254,48 @@ describe("the sheet on a catalog page", () => {
             : on;
         for (const thing of promised(config)) {
           expect(words, `${sheet.slug} on ${stock.id}`).toContain(thing);
+        }
+      }
+    }
+  });
+
+  it("never runs one cell's letters into the cell beside it", () => {
+    // The failure a joined hand has and a printed one mostly doesn't. A row is
+    // divided into equal cells (`TracedRow`), and the packing reserves each
+    // one the longest thing on the row plus a character of air — at the face's
+    // declared width *for what is written*, which on `Aa`…`Zz` is not the mean
+    // over `a`–`z` (`glyphAdvance`). Packed off the wrong mean, `Mm` printed a
+    // tenth of an inch into the trace beside it and the two merged into one
+    // continuous joined string: on a sheet whose whole subject is where a join
+    // belongs, exactly the wrong lesson.
+    for (const sheet of CURSIVE_SHEETS) {
+      for (const stock of STOCKS) {
+        const config = configFor(sheet, stock.id);
+        const rows = buildSheet(config, CURSIVE_SEED).blocks.flatMap(
+          (block): TraceRow[] => (block.kind === "trace" ? block.rows : []),
+        );
+        const face = faceOf(fontOf(config));
+        const longest = rows.reduce(
+          (most, row) =>
+            Math.max(most, ...row.cells.map((cell) => cell.text.length)),
+          1,
+        );
+        const { box, em, perRow } = handwritingLayout(config, longest);
+        // One group to a row is the packing's floor, and past it the type
+        // shrinks (`fittedEm`) rather than the cell widening.
+        if (perRow < 2) continue;
+        for (const row of rows) {
+          const said = row.cells.map((cell) => cell.text).join("");
+          if (said === "") continue;
+          const wide = row.cells.reduce(
+            (most, one) => Math.max(most, one.text.length),
+            0,
+          );
+          const cell = Math.floor(box.width / row.cells.length);
+          const need = em * glyphAdvance(said, face) * (wide + 1);
+          // A mil of slack for the two floors, and no more.
+          expect(cell, `${sheet.slug} on ${stock.id}: ${said}`) //
+            .toBeGreaterThanOrEqual(need - 1);
         }
       }
     }

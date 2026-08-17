@@ -306,7 +306,7 @@ regional variants turned out to be the whole story, so the model is a choice.
 **Playwrite US Trad** is the looped traditional hand and stays the `cursive` id
 saved sheets already carry; **Playwrite US Modern** is the same letters unlooped
 and is the one model that lifts the pencil — its `calt` table breaks after
-`b g j p q s y`; **Playwrite GB J** is the fully joined British hand, with a
+`b f g j p q s y`; **Playwrite GB J** is the fully joined British hand, with a
 lead-in stroke into every letter. All three are measured into `faces.ts` beside
 the other two (ascents 1.019, 0.957 and 0.894, so one shared ratio would print
 two of them through the rule), and only the looped one hangs its descender over
@@ -321,6 +321,19 @@ that style resolves its own face rather than trusting a config that says
 `print`: two letters that don't touch are not a join. The families themselves
 are in `engine/sheets/writing/joins.ts`, and the shelf is `/printables/cursive`,
 cross-linked with the print handwriting hub.
+
+One thing a joining face broke that a printed one never had: `Face.advance` is a
+mean over `a`–`z`, and a row of `Aa`…`Zz` is not a sample of `a`–`z`. In a
+joined hand a capital is drawn with an entry flourish and a stroke out to the
+letter after it, so packed off the small-letter mean the alphabet row came out
+one group too dense and `Mm` printed a tenth of an inch into the trace beside
+it — which reads as one continuous joined string rather than as a model and a
+copy. `faces.ts` therefore declares a second mean, `capAdvance`, measured off
+the shaped pairs, and `glyphAdvance` picks between the two by reading the text
+exactly as `glyphHeight` picks between the three heights. The packing is checked
+by a test that no cell is narrower than what the row writes, and the font files
+themselves are checked for the `calt` feature and the connector glyphs a join is
+actually drawn with.
 
 ---
 

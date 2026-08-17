@@ -273,7 +273,9 @@ export type HandwritingLayout = {
  * twelve cells and two words written three times each is a row of six. The
  * mean advance it is counted in is the face's own (`faces.ts`), because
  * OpenDyslexic is half as wide again as Andika and one shared guess would push
- * a word off the end of the line in one of them.
+ * a word off the end of the line in one of them — and it is the face's mean
+ * *for what this sheet writes*, because a row of `Aa` is not a sample of
+ * `a`–`z` (`glyphAdvance`).
  *
  * The em is worked out against everything the sheet writes rather than against
  * one row, and that is the conservative direction: a page of capitals is set
@@ -309,7 +311,12 @@ export function handwritingLayout(
     };
   }
 
-  const across = fittedCharacters(box.width, em, face);
+  // Packed against what this sheet writes rather than against the alphabet:
+  // `Aa`…`Zz` is half capitals, and a capital in a joined hand is drawn with
+  // an entry flourish and a stroke out to the letter after it (`glyphAdvance`).
+  // Off the small-letter mean the row comes out one group too dense and the
+  // model runs into the trace beside it.
+  const across = fittedCharacters(box.width, em, face, writtenOf(config));
   const perRow = Math.max(1, Math.floor(across / (times * (longest + 1))));
   return { rule, box, face, em, rows, perRow, perPage: perRow * rows };
 }

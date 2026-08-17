@@ -19,7 +19,15 @@
  * two cannot share a page. Hence a route each.
  */
 import { DEFAULT_FONT_PT } from "@/engine/sheets/paper";
-import type { PaperConfig, PaperSize, Rule } from "@/engine/sheets/types";
+import { encodeSharedSheet } from "@/engine/sheets/share";
+import type {
+  HeaderField,
+  Paper,
+  PaperConfig,
+  PaperSize,
+  Rule,
+  SheetConfig,
+} from "@/engine/sheets/types";
 
 /** How the hub groups the shelf. Three shapes of paper, not three subjects. */
 export type PaperGroup = "notebook" | "handwriting" | "grid";
@@ -286,28 +294,88 @@ export const GROUPS: Array<{ id: PaperGroup; label: string; blurb: string }> = [
   },
 ];
 
-/** The route a sheet prints at, on a given stock. */
-export function pathFor(sheet: PaperSheet, stock: Stock): string {
-  return stock.path ? `${sheet.slug}/${stock.path}` : sheet.slug;
-}
+/* ── The plumbing every shelf needs ────────────────────────────────────────
+   Three catalogs live under `/printables` — this one, `_handwriting.ts` and
+   `_cursive.ts` — and each is rightly its own file, because what a shelf *is*
+   is its slugs, its configs and its prose, and none of that is shared. What is
+   shared is the four questions every one of them answers identically: what
+   paper, which route, which URL, and which link opens the bench on it. Those
+   were copied twice before they were lifted here, and a copied route helper is
+   the kind that gets fixed in one file and left wrong in the other two.
+
+   Generic over `{ slug, config }` rather than over a sheet type, because that
+   is all any of them touches: the entry shape stays each catalog's own, and
+   each keeps a one-line named wrapper so its pages read in its own vocabulary
+   rather than in this file's.                                              */
+
+/** Portrait, half-inch margins — the stock is the only thing that varies. */
+export const paperOf = (size: PaperSize): Paper => ({
+  size,
+  orientation: "portrait",
+  margin: "normal",
+});
 
 /**
- * The shelf, grouped — the shape both the hub and a sheet page list it in.
+ * Printed blank, always, and the reason there is no third field.
+ *
+ * A worksheet asks for a name because a teacher has thirty of them to hand
+ * back. Nothing here holds one (§1): these are two ruled lines on paper and
+ * there is nowhere in a config to put a value for either.
+ */
+export const SHEET_FIELDS: HeaderField[] = ["name", "date"];
+
+/** The route a slug prints at, on a given stock. */
+export const stockPath = (slug: string, stock: Stock): string =>
+  stock.path ? `${slug}/${stock.path}` : slug;
+
+/** The whole URL, which is what a hub links to and the canonical says. */
+export const stockHref = (base: string, slug: string, stock: Stock): string =>
+  `${base}/${stockPath(slug, stock)}`;
+
+/**
+ * The builder, opened on a config.
+ *
+ * §14: the config lives in the fragment, so "change what is on it" is an
+ * ordinary link on a static site rather than a lookup on a server that isn't
+ * there. Whichever stock the config carries goes with it, so a parent who came
+ * from the A4 page gets the A4 sheet on the bench rather than a Letter one to
+ * set again.
+ */
+export const benchHref = (config: SheetConfig, seed: number): string =>
+  `/printables/make#s=${encodeSharedSheet({ config, seed })}`;
+
+/**
+ * The shelf, grouped — the shape every hub and every row of neighbours lists
+ * it in.
  *
  * Written once because the two would otherwise have to be kept in step by
- * hand, and the failure would be silent: a ruling added here and shown on one
- * page but not the other still builds, still deploys, and still looks right.
+ * hand, and the failure would be silent: a sheet added to the data and shown
+ * on one page but not the other still builds, still deploys, and still looks
+ * right.
  */
+export function shelve<Id extends string, Sheet extends { group: Id }, Meta>(
+  groups: Array<Meta & { id: Id }>,
+  sheets: Sheet[],
+): Array<Meta & { id: Id; sheets: Sheet[] }> {
+  return groups.map((group) => ({
+    ...group,
+    sheets: sheets.filter((sheet) => sheet.group === group.id),
+  }));
+}
+
+/** The route a sheet prints at, on a given stock. */
+export function pathFor(sheet: PaperSheet, stock: Stock): string {
+  return stockPath(sheet.slug, stock);
+}
+
+/** The shelf, grouped — see `shelve`. */
 export function shelf(): Array<{
   id: PaperGroup;
   label: string;
   blurb: string;
   sheets: PaperSheet[];
 }> {
-  return GROUPS.map((group) => ({
-    ...group,
-    sheets: PAPER_SHEETS.filter((sheet) => sheet.group === group.id),
-  }));
+  return shelve(GROUPS, PAPER_SHEETS);
 }
 
 /**
@@ -321,9 +389,9 @@ export function shelf(): Array<{
 export function paperConfig(sheet: PaperSheet, size: PaperSize): PaperConfig {
   return {
     kind: "paper",
-    paper: { size, orientation: "portrait", margin: "normal" },
+    paper: paperOf(size),
     fontPt: DEFAULT_FONT_PT,
-    fields: ["name", "date"],
+    fields: SHEET_FIELDS,
     rule: sheet.rule,
   };
 }

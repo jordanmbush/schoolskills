@@ -20,7 +20,7 @@ import { JOIN_FAMILIES, joinFamily, joinPairs } from "./joins";
  * What is deliberately *not* asserted here is whether any given pair joins.
  * That is the font's answer and not the engine's (`faces.ts`): the looped and
  * fully joined models join out of every letter, the unlooped one lifts the
- * pencil after `b g j p q s y`, and the same table is correct in all three.
+ * pencil after `b f g j p q s y`, and the same table is correct in all three.
  */
 
 describe("the families of join", () => {

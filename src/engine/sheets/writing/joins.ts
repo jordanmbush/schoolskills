@@ -20,7 +20,7 @@
  * face's `calt` table from the letters either side, which is exactly the
  * context a join is correct in. That is also what makes `breaks` an honest
  * group rather than a claim: the looped and British models join out of every
- * letter, and the unlooped model lifts the pencil after `b g j p q s y`. The
+ * letter, and the unlooped model lifts the pencil after `b f g j p q s y`. The
  * same sheet is right in all three because the model answers the question, not
  * the engine — which is the whole reason the model is a choice (`faces.ts`).
  *
