@@ -155,9 +155,9 @@ export const PHONICS_SHEETS: PhonicsSheet[] = [
     keyword: "Free printable phonics sound cards",
     summary:
       "One card for each letter of the alphabet, with the sound it makes and a word it is in, laid out to cut apart along the dashed guides.",
-    lead: "Twenty-six cards to cut out: the letter large enough to read across a table, and underneath it a word that letter starts. Cut once down the guides and once across, and the pack is done.",
+    lead: "Twenty-six cards to cut out: the letter large enough to read across a table, and underneath it a word that letter is in. Cut once down the guides and once across, and the pack is done.",
     notes: [
-      "The word under each letter is a reminder rather than something to decode. A child three days into phonics cannot read “fan”, and is not being asked to — it is there so that whoever is holding the card can say the sound rather than the letter name, which is the single commonest thing to get wrong when teaching this at home. The letter says /f/; it is called “eff”; the card is about the first of those.",
+      "The word under each letter is a reminder rather than something to decode, and it is the word the sound table itself keeps — “cat” sits under the “a” and “box” under the “x” — so it is not always a word the letter starts, and one word can turn up under two cards. A child three days into phonics cannot read “fan”, and is not being asked to: it is there so that whoever is holding the card can say the sound rather than the letter name, which is the single commonest thing to get wrong when teaching this at home. The letter says /f/; it is called “eff”; the card is about the first of those.",
       "Cards for the digraphs are one setting away rather than on this page. Tick “sh”, “ch” and “th” in the builder and they join the pack — and “th” arrives as two cards, because the sound at the front of “thin” and the sound at the front of “this” are two different things a child has to learn separately, however identical they look on paper.",
     ],
     teaches: "Letter sounds",
@@ -173,7 +173,7 @@ export const PHONICS_SHEETS: PhonicsSheet[] = [
     keyword: "Free printable phonics sounds chart",
     summary:
       "Every sound covered so far on one page for the wall — the alphabet and the consonant digraphs, each with a word it is in.",
-    lead: "The same spellings as the card pack, laid out as one page to pin up: the letters first, then the two-letter spellings, each with an example beside it. It is a record of where a child has got to rather than a poster of the whole language.",
+    lead: "The card pack plus the consonant digraphs, laid out as one page to pin up: every spelling in the order the sound table teaches them, each with a word it is in beside it. It is a record of where a child has got to rather than a poster of the whole language.",
     notes: [
       "A chart of what has actually been taught is worth more than a chart of everything, and it is the reason this page exists at all. A wall covered in sounds a child has not met is a wall they learn to stop looking at; a chart that grows by one row a week is one they can point at. Reprint it whenever the list changes — the sounds on it are a setting, and the sheet takes a second.",
       "The two “th” rows are not a mistake. One is the sound at the front of “thin” and the other the sound at the front of “this”, and no rule in English tells a child which of them a “th” is going to be. Every other spelling that says more than one thing is on the chart twice for the same reason, which is what makes it a chart of sounds rather than of letters.",
@@ -198,13 +198,17 @@ export const PHONICS_SHEETS: PhonicsSheet[] = [
       "Twenty short words printed as the sounds they are made of, with a line to write the whole word on — and the answer key on the page behind.",
     lead: "Each line is one word cut into its sounds, spaced apart. A child says each sound on its own, says them again quickly until they hear the word, and writes it on the line. That is the whole of blending, and it is the step everything else in reading waits for.",
     notes: [
-      "Every word here is spellable from the letters of the alphabet and nothing else, which is what makes it a CVC sheet rather than a list of short words. Nothing on the page uses a spelling that has not been taught — no “sh”, no silent “e”, no vowel team — because a child who is still blending three sounds and meets a fourth spelling has been set up to fail at the thing they were doing correctly.",
+      "Every word here is three sounds at most, and every spelling in it is a single letter of the alphabet — no “sh”, no silent “e”, no vowel team. That is what makes it a CVC sheet rather than a list of short words, and both halves of it matter: a child who is still blending three sounds and meets a fourth has been set up to fail at the thing they were doing correctly. The counting is in sounds and not in letters, which is the only way to count it: “box” is three letters and four sounds and is off this page, while “ship” is four letters and three sounds and would be perfectly at home on a page where “sh” had been taught. A two-sound word turns up now and again — “on”, “up” — and it is the same exercise with one sound fewer.",
       "The sounds are printed rather than said, and the separation is the exercise. Reading “sat” as one shape is a thing a child can do by memory long before they can read “sap”; reading it as /s/ /a/ /t/ is a thing that works on every word they will ever meet. Cover the line with a finger, do the sounds twice, and only then write it.",
     ],
     teaches: "Blending sounds into words",
     ages: "Ages 4–6",
     group: "words",
-    config: phonics("blending", LETTERS, 20, 2),
+    // Three sounds at most, which is the whole of what "CVC" names — and the
+    // one page on the shelf that says how long a word may be. `maxSounds`
+    // counts sounds rather than letters, so `box` is out at four and `ship`
+    // would be in at three if the digraph were ever ticked here.
+    config: phonics("blending", LETTERS, 20, 2, { maxSounds: 3 }),
   },
   {
     slug: "word-family-worksheets",

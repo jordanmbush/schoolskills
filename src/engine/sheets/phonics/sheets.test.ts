@@ -18,7 +18,6 @@ import { SENTENCES, sentenceText, sentenceWords } from "./sentences";
 import {
   PHONICS_STYLES,
   familiesOf,
-  graphemeText,
   phonicsColumns,
   phonicsLayout,
   phonicsSupply,
@@ -27,6 +26,7 @@ import {
   CORRESPONDENCES,
   CORRESPONDENCE_BY_ID,
   PHONEME_BY_ID,
+  graphemeText,
   isTeachable,
 } from "./sounds";
 
@@ -301,6 +301,32 @@ describe("an answer that can be checked without the generator", () => {
     }
   });
 
+  it("puts a different ending on every line while endings are left", () => {
+    // The shape the sheet is set in: one word from each family before a second
+    // from any. A page of twenty over three rimes is a spelling list — eleven
+    // of its rows were `-ip` before the draw went round by round — and it is
+    // not what somebody who printed "word families" asked for.
+    for (const [name, inventory] of INVENTORIES) {
+      // Never more lines than there are families, which is the condition the
+      // rule can be stated under: past that a rime has to come round twice.
+      const wanted = Math.min(12, familiesOf(inventory).size);
+      for (let seed = 0; seed < 4; seed++) {
+        const block = only(
+          buildSheet(config("families", inventory, { count: wanted }), seed),
+        );
+        if (block.kind !== "problems") return;
+        // Read off the paper: the ending is the second half of the sum.
+        const rimes = block.items.map(
+          (item) => item.prompt.replace(" =", "").split(" + ")[1],
+        );
+        expect(rimes.length, `${name} · seed ${seed}`).toBeGreaterThan(0);
+        expect(new Set(rimes).size, `${name} · seed ${seed}`).toBe(
+          rimes.length,
+        );
+      }
+    }
+  });
+
   it("never groups two rimes that only look alike", () => {
     // `be` and `the` end in the same letter and not in the same sound. A
     // family keyed on letters would put them together and teach a rhyme that
@@ -360,6 +386,40 @@ describe("an answer that can be checked without the generator", () => {
       // And the same letters never appear twice down the left, which would be
       // two identical rows a child could not tell apart.
       expect(new Set(block.left).size).toBe(block.left.length);
+    }
+  });
+
+  it("leaves no second line a child could defensibly draw", () => {
+    // The same exclusivity, asked the way the child holding the pencil asks it:
+    // over the letters *printed* on the two columns, with no table consulted.
+    // A `n` on the left and `strong` on the right is a line somebody can draw
+    // and be marked wrong for, however certain the generator is that the `ng`
+    // in it is one sound. A split vowel prints with its halves apart — `a-e` —
+    // so there is nothing to search a word for, and it is the one row this
+    // reads by the cut instead.
+    for (const [name, inventory] of INVENTORIES) {
+      for (let seed = 0; seed < 8; seed++) {
+        const block = only(buildSheet(config("matching", inventory), seed));
+        if (block.kind !== "matching") return;
+        expect(block.left.length, `${name} · seed ${seed}`).toBeGreaterThan(0);
+
+        block.left.forEach((letters, at) => {
+          const [head, tail] = letters.split("-");
+          block.right.forEach((word, other) => {
+            if (other === block.answer[at]) return;
+            const shows = tail
+              ? (WORD_BY_SPELLING.get(word)?.parts ?? []).some(
+                  (part) =>
+                    CORRESPONDENCE_BY_ID.get(part)?.grapheme ===
+                    `${head}_${tail}`,
+                )
+              : word.includes(head);
+            expect(shows, `${name} · seed ${seed} · ${letters} → ${word}`).toBe(
+              false,
+            );
+          });
+        });
+      }
     }
   });
 
@@ -584,6 +644,29 @@ describe("the sheet as a whole", () => {
     const block = only(buildSheet(config("blending", EVERYTHING), 9));
     if (block.kind !== "problems") return;
     for (const item of block.items) expect(item.prompt).not.toContain("_");
+  });
+
+  it("shows one on a card and on the chart too, an inch high", () => {
+    // The two styles that print a grapheme *as the thing on the paper* rather
+    // than inside a prompt — which is where the underscore would be an inch
+    // tall and a dashed guide would be cut round it.
+    //
+    // Ticked directly rather than drawn out of everything, because both styles
+    // take the table in its own order and the vowels are the end of it: a page
+    // built from the whole table is as many consonants as the paper holds, and
+    // would pass this without a split vowel ever being on it.
+    const split: Inventory = {
+      sounds: ["a_e:ai", "i_e:ie", "o_e:oa", "s:s", "t:t"],
+      tricky: [],
+    };
+    for (const style of ["cards", "chart"] as const) {
+      const block = only(buildSheet(config(style, split, { count: 5 }), 3));
+      if (block.kind !== "cards") return;
+      const printed = block.cards.map((card) => markedText(card.big));
+      expect(printed, style).toHaveLength(5);
+      for (const letters of printed) expect(letters, style).not.toContain("_");
+      expect(printed, style).toContain("a-e");
+    }
   });
 
   it("cuts every card out of a spelling this build still teaches", () => {

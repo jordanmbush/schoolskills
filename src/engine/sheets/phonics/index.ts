@@ -27,6 +27,7 @@ export {
   PHONEME_BY_ID,
   defaultSpelling,
   graphemeParts,
+  graphemeText,
   isTeachable,
   spellingId,
   type Correspondence,

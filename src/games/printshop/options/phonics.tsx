@@ -22,13 +22,13 @@ import { Checkbox, FieldSet } from "@/components/ui/kit";
 import {
   CORRESPONDENCES,
   PHONEME_BY_ID,
+  graphemeText,
   isTeachable,
   type Correspondence,
   type Inventory,
 } from "@/engine/sheets/phonics";
 import {
   PHONICS_STYLES,
-  graphemeText,
   phonicsColumns,
   phonicsStyleLabel,
 } from "@/engine/sheets/phonics/sheets";

@@ -830,10 +830,13 @@ list: sound cards, the "sounds we know" wall chart, blending lines, word
 families, sound-to-word matching, dictation lines and decodable sentence strips.
 
 The promise is that nothing on any of those pages uses a spelling that has not
-been ticked, and it is checked the way the word search's key is: `sheets.test.ts`
-reads the words back off the finished page, looks each one up in the bank, and
-compares its spellings with the inventory the config carried. A generator
-asserting its own output would agree with itself whatever it did.
+been ticked — with one deliberate exception, the example word printed under a
+sound card, which is the table's own mnemonic ("`sh` as in `ship`") rather than
+a word to decode, and stays put as the inventory grows. Both suites say so where
+they check it. Otherwise it is checked the way the word search's key is:
+`sheets.test.ts` reads the words back off the finished page, looks each one up in
+the bank, and compares its spellings with the inventory the config carried. A
+generator asserting its own output would agree with itself whatever it did.
 
 Two things had to be authored rather than derived. **Sentences** —
 `phonics/sentences.ts` — because a list of readable words is not a sentence and

@@ -79,6 +79,8 @@ import { SENTENCES, pickSentences, type Sentence } from "./sentences";
 import {
   CORRESPONDENCE_BY_ID,
   PHONEME_BY_ID,
+  graphemeParts,
+  graphemeText,
   type Correspondence,
 } from "./sounds";
 
@@ -114,18 +116,6 @@ const MIN_FAMILY = 2;
 
 /** What goes between the sounds of a word that is being said slowly. */
 const BLEND_JOIN = " · ";
-
-/**
- * A split vowel as it is printed: `a-e`, not `a_e`.
- *
- * The underscore is the table's own notation for "the consonant goes here", and
- * it cannot survive onto a sheet for two separate reasons. It reads as a blank
- * to fill in, which is the opposite of what it means; and `Problem.prompt` uses
- * a single `_` to mark where the answer goes, so a prompt carrying one would
- * have a ruled slot drawn through the middle of a spelling.
- */
-export const graphemeText = (grapheme: string): string =>
-  grapheme.replace("_", "-");
 
 const clamp = (value: number, low: number, high: number): number =>
   Math.max(low, Math.min(high, Math.floor(value)));
@@ -338,11 +328,19 @@ export function phonicsLayout(config: PhonicsConfig): {
 /**
  * How many items this style has to offer, before the paper is asked.
  *
- * Read at seed zero for the two that draw from a shuffled pool, because the
+ * Read at seed zero for the three that draw from a shuffled pool, because the
  * *size* of that pool is what is wanted and a shuffle does not change it. Which
  * means the count in `describe` and the count on the paper are one number: a
  * line promising twenty over a page of fourteen would be wrong in the record
  * book and in the picker at once.
+ *
+ * Matching is the one style where a shuffle *can* change the size, because its
+ * rows are paired greedily and a different order knocks out a different
+ * spelling. So its supply is the pairing run rather than the spellings counted:
+ * counting them said twelve over a page of eleven, which is exactly the line
+ * this comment promises does not exist. Seed zero is not the sheet's own seed,
+ * so a row either way is still possible there — what is gone is the style
+ * systematically over-promising by the width of everything it discards.
  */
 export function phonicsSupply(config: PhonicsConfig): number {
   const inventory = inventoryOf(config);
@@ -351,12 +349,9 @@ export function phonicsSupply(config: PhonicsConfig): number {
     case "chart":
       return taughtSounds(inventory).length;
     case "matching":
-      // Distinct *letters*, because that is what the left column holds — see
-      // `matchingOf`, where `th` is two sounds and one row.
-      return Math.min(
-        MAX_MATCHES,
-        new Set(taughtSounds(inventory).map((entry) => entry.grapheme)).size,
-      );
+      // Rows, not spellings — `matchingOf` drops any it cannot pair without
+      // making the key ambiguous, and `th` is two sounds and one row.
+      return matchingOf(inventory, MAX_MATCHES, 0).left.length;
     case "families":
       return [...familiesOf(inventory).values()].reduce(
         (total, words) => total + words.length,
@@ -438,6 +433,11 @@ function wordPool(config: PhonicsConfig, seed: number): Word[] {
     {
       count: WORDS.length,
       ...(config.focus ? { focus: config.focus } : {}),
+      // How short a word has to be, where a sheet says so. A blending page for
+      // a child three weeks in is `hat` and `pet`, not `strong` — and "short"
+      // has to be counted in *sounds* rather than in letters, or `box` would
+      // pass for three and `ship` would fail for four.
+      ...(config.maxSounds ? { maxSounds: config.maxSounds } : {}),
       // A dictation line is the one place a sight word belongs — it is read
       // out rather than sounded out, which is exactly how `said` is taught.
       ...(styleOf(config) === "dictation" ? { tricky: true } : {}),
@@ -449,19 +449,46 @@ function wordPool(config: PhonicsConfig, seed: number): Word[] {
 /**
  * The spellings on the left and a word each on the right.
  *
- * **Every word on the right contains exactly one of the spellings on the
- * left**, which is what makes the key the only possible answer rather than the
- * one the generator happened to mean. A sheet with `s` and `sh` down one side
- * and `shop` down the other has two lines a child could defensibly draw, and
- * the honest fix is not to print that sheet: a spelling with no word that
- * avoids the others is dropped rather than paired with an ambiguous one.
+ * **Every word on the right shows exactly one of the spellings on the left**,
+ * which is what makes the key the only possible answer rather than the one the
+ * generator happened to mean. A sheet with `s` and `sh` down one side and `shop`
+ * down the other has two lines a child could defensibly draw, and the honest fix
+ * is not to print that sheet: a spelling with no word that avoids the others is
+ * dropped rather than paired with an ambiguous one.
+ *
+ * **"Shows" is about letters on paper and not about sounds**, and getting that
+ * wrong is the whole failure this exercise can have. A child holding a pencil
+ * sees `n` on the left and hunts the right-hand column for an `n`; `strong` has
+ * one, whatever the table says the `ng` in it is doing. Excluding by
+ * correspondence rather than by letters would leave `n` → `land` keyed and
+ * `strong` sitting three lines below it, and the child who joined `n` to
+ * `strong` read the page correctly and would be marked wrong. So a word is out
+ * when another chosen spelling's letters appear *anywhere* in it — `much` bars
+ * `h`, `fell` bars `l`, `chief` bars both `c` and `i`.
+ *
+ * A split vowel is the one spelling whose letters are not next to each other, so
+ * there is nothing to search a word for: `a-e` is excluded by the cut instead —
+ * a word is out when the bank says it is spelled with that correspondence. It is
+ * the only case where the two rules differ, and it differs in the safe
+ * direction.
+ *
+ * The pairing itself still goes by the cut and not by the letters, which is the
+ * other half of the same care: `shop` contains the letters of `s` and does not
+ * contain the *sound*, so it can never be the answer to `s` however it is
+ * spelled.
  *
  * **The left column is letters, not correspondences**, and this is the one
  * place in the family where that is the right unit. `th` is two tick boxes —
  * `thin` and `this` are different sounds — but they are one thing on paper, and
  * a sheet printing `th` twice down the left would be asking a child to tell two
  * identical lines apart. So the column is deduplicated by its letters and a
- * word is excluded when it holds *any* sound those letters make.
+ * word is excluded when it shows those letters at all.
+ *
+ * All of that costs rows — the spellings made of the commonest letters knock
+ * each other out — which is why `phonicsSupply` counts this style by running
+ * the pairing rather than by counting the spellings it could draw from. A page
+ * of nine where ten were asked for is the sheet being honest, and the catalog
+ * page says so in as many words.
  *
  * Nothing here is marked either, and for the reason a blending line isn't — a
  * joined `sh` inside `shop` would print the answer beside the question.
@@ -482,15 +509,23 @@ function matchingOf(
 
   const graphemeOf = (part: string): string =>
     CORRESPONDENCE_BY_ID.get(part)?.grapheme ?? part;
-  const holds = (word: string, letters: string): boolean =>
-    (WORD_BY_SPELLING.get(word)?.parts ?? []).some(
-      (part) => graphemeOf(part) === letters,
-    );
+
+  /** Is this word spelled with that grapheme — what makes it the answer. */
+  const uses = (word: Word, grapheme: string): boolean =>
+    word.parts.some((part) => graphemeOf(part) === grapheme);
+
+  /** Could a child find those letters in this word — what makes it ambiguous. */
+  const shows = (word: string, grapheme: string): boolean => {
+    const [head, tail] = graphemeParts(grapheme);
+    if (!tail) return word.includes(head);
+    const entry = WORD_BY_SPELLING.get(word);
+    return entry !== undefined && uses(entry, grapheme);
+  };
 
   // Built a row at a time rather than chosen and then filled, because the
   // exclusivity runs both ways: a spelling can only join the sheet if a word
   // exists that avoids everything already on it *and* nothing already on it
-  // holds the new spelling. Choosing ten and then looking for words would
+  // shows the new spelling. Choosing ten and then looking for words would
   // print seven rows and throw three away, which is a shorter sheet for no
   // reason. Every candidate is tried once, so this terminates.
   const pairs: Array<{ grapheme: string; word: string }> = [];
@@ -500,18 +535,15 @@ function matchingOf(
     if (pairs.length === count) break;
     const grapheme = entry.grapheme;
     if (chosen.has(grapheme)) continue;
-    if (pairs.some((pair) => holds(pair.word, grapheme))) continue;
+    if (pairs.some((pair) => shows(pair.word, grapheme))) continue;
 
     const word = shuffled(readable, rand).find(
       (candidate) =>
         !used.has(candidate.word) &&
-        candidate.parts.some((part) => graphemeOf(part) === grapheme) &&
+        uses(candidate, grapheme) &&
         // The exclusivity that makes the key unique: no *other* spelling on
-        // this sheet may be in the word as well.
-        candidate.parts.every((part) => {
-          const letters = graphemeOf(part);
-          return letters === grapheme || !chosen.has(letters);
-        }),
+        // this sheet may be visible in the word as well.
+        [...chosen].every((letters) => !shows(candidate.word, letters)),
     );
     if (!word) continue;
     chosen.add(grapheme);
@@ -587,12 +619,27 @@ function bodyOf(
     // is twelve rimes rather than four rimes three times over — which is the
     // shape a word-family sheet is set in, and the reason the draw is over the
     // groups rather than over the words.
+    //
+    // A round at a time, not family after family. Concatenating the groups
+    // would put the whole of `-ip` on the page before `-at` was reached: the
+    // draw would still be over the groups and the paper would still be eleven
+    // `-ip` words out of twenty, which is a spelling list rather than a set of
+    // patterns. Both loops are over arrays the seed has already shuffled, so
+    // the page stays deterministic in `(config, seed)`.
     const rand = mulberry32(seed);
     const families = familiesOf(inventory);
     const rimes = shuffled([...families.keys()], rand);
-    const pool = rimes.flatMap((key) =>
-      shuffled(families.get(key) ?? [], rand),
+    const drawn = rimes.map((key) => shuffled(families.get(key) ?? [], rand));
+    const deepest = drawn.reduce(
+      (most, words) => Math.max(most, words.length),
+      0,
     );
+    const pool: Family[] = [];
+    for (let round = 0; round < deepest; round++)
+      for (const words of drawn) {
+        const one = words[round];
+        if (one) pool.push(one);
+      }
     const items = pool.slice(0, wanted).map(familyOf);
     return {
       blocks: [{ kind: "problems", columns, items }],

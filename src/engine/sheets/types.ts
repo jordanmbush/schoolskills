@@ -1941,6 +1941,20 @@ export type PhonicsConfig = SheetOptions & {
    * is where that argument is made.
    */
   focus?: string;
+  /**
+   * At most this many *sounds* in a word — what makes a CVC sheet a CVC sheet.
+   *
+   * Counted in sounds rather than in letters, which is the same distinction the
+   * rest of the model turns on: `box` is three letters and four sounds, `ship`
+   * is four letters and three. A child who has just learned to hold three
+   * sounds in their head meets a fourth and stalls at the thing they were doing
+   * correctly, and "short word" is not a length in characters.
+   *
+   * Absent on most sheets, and that is the honest default — once blending is
+   * working, the length of the word is no longer the exercise. See
+   * `WordPick.maxSounds`, which is where the filter lives.
+   */
+  maxSounds?: number;
   marking: PhonicsMarking;
   /** How many cards, lines, pairs or strips. Capped at what the page holds. */
   count: number;

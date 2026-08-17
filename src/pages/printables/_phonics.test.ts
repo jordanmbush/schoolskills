@@ -4,7 +4,11 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 import { answerKey, buildSheet } from "@/engine/sheets";
-import { WORD_BY_SPELLING, readInventory } from "@/engine/sheets/phonics";
+import {
+  WORD_BY_SPELLING,
+  readInventory,
+  wordSounds,
+} from "@/engine/sheets/phonics";
 import { PHONICS_STYLES } from "@/engine/sheets/phonics/sheets";
 import type { Block } from "@/engine/sheets/types";
 
@@ -208,6 +212,28 @@ describe("the sheet on a catalog page", () => {
           decodable || inventory.tricky.includes(word),
           `${sheet.slug} · ${word}`,
         ).toBe(true);
+      }
+    }
+  });
+
+  it("keeps a page that says how long a word may be to it", () => {
+    // The CVC page is the one entry that names a length, and its prose is a
+    // claim a reader can disprove by looking at the sheet under it — "three
+    // sounds at most" over a page with `camp` and `stop` on it. Counted in
+    // sounds off the bank rather than in letters, which is the rule the copy
+    // states: `box` is three letters and four sounds and is not on the page.
+    for (const sheet of PHONICS_SHEETS) {
+      const cap = sheet.config.maxSounds;
+      if (cap === undefined) continue;
+      const printed = words(built(sheet).blocks[0]);
+      expect(printed.length, sheet.slug).toBeGreaterThan(0);
+      for (const word of printed) {
+        const entry = WORD_BY_SPELLING.get(word);
+        expect(entry, `${sheet.slug} · ${word}`).toBeDefined();
+        expect(
+          wordSounds(entry!).length,
+          `${sheet.slug} · ${word}`,
+        ).toBeLessThanOrEqual(cap);
       }
     }
   });

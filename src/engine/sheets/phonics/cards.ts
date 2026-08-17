@@ -45,6 +45,7 @@ import { sentenceText, type Sentence } from "./sentences";
 import {
   CORRESPONDENCE_BY_ID,
   graphemeParts,
+  graphemeText,
   type Correspondence,
 } from "./sounds";
 
@@ -112,7 +113,7 @@ const SAYS_ITS_NAME = new Map<string, string>([
  * One piece of a spelling, marked — or not, if the switch for it is off.
  *
  * `letters` is what is printed, which is not always the whole grapheme: a split
- * vowel is drawn whole on a sound card (`a_e`) and in two places inside a word
+ * vowel is drawn whole on a sound card (`a-e`) and in two places inside a word
  * (`c a k e`), and both go through here.
  */
 function markOf(
@@ -134,19 +135,25 @@ function markOf(
 }
 
 /**
- * A spelling as a card prints it: the letters as the table writes them, with
- * the `_` of a split vowel left in.
+ * A spelling as a card prints it: the letters as the table writes them, with a
+ * split vowel written the way a page writes one — `a-e`, never `a_e`.
  *
  * Whole rather than cut in two, because on a card the spelling is the *thing*
- * — `a_e` is what a parent ticked and what the child is being shown — and a
+ * — `a-e` is what a parent ticked and what the child is being shown — and a
  * card reading "a" beside a card reading "e" would be two cards that are not
  * the spelling. A macron here does real work: it is what tells the `a` of
  * `baby` from the `a` of `cat` when the two are next to each other on the wall.
+ *
+ * The `graphemeText` is not cosmetic and not the family's job to do afterwards:
+ * a card's big line is the last thing between the table's own notation and a
+ * dashed guide a parent cuts along, and an underscore an inch high reads as a
+ * blank to fill in. Every other place a grapheme is printed goes through the
+ * same call, so there is one answer to "how is a split vowel written down".
  */
 export const markGrapheme = (
   entry: Correspondence,
   marking: PhonicsMarking,
-): MarkedWord => [markOf(entry.grapheme, entry, marking)];
+): MarkedWord => [markOf(graphemeText(entry.grapheme), entry, marking)];
 
 /**
  * A word, cut into the spellings it is made of and marked.
