@@ -286,10 +286,16 @@ export function handwritingLayout(
   longest: number,
 ): HandwritingLayout {
   const rule = ruleOf(config);
-  // Against the header the sheet will print rather than the one the config
-  // holds, and with no score box: there is nothing on a handwriting sheet to
-  // mark out of anything.
-  const box = sheetBlockBox(headerOf(config));
+  // Against the header and the footer the sheet will print rather than the ones
+  // the config holds, and with no score box: there is nothing on a handwriting
+  // sheet to mark out of anything. No `note` either — this family's key is the
+  // sheet itself, so nothing is ever added to the foot after the layout.
+  const credit = sourceOf(config)?.credit;
+  const box = sheetBlockBox(
+    headerOf(config),
+    false,
+    credit ? { source: credit } : {},
+  );
   const face = faceOf(fontOf(config));
   const em = glyphEm(writingSpace(rule), face, writtenOf(config));
   const rows = ruleCapacity(box.height, rule);

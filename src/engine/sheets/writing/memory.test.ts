@@ -1,14 +1,17 @@
 import { describe, expect, it } from "vitest";
 
-import { sheetBlockBox } from "../chrome";
-import { DEFAULT_FONT_PT, DEFAULT_PAPER } from "../paper";
+import { chromeHeight, sheetBlockBox, type FootLine } from "../chrome";
+import { faceOf } from "../faces";
+import { contentBox } from "../layout";
+import { DEFAULT_FONT_PT, DEFAULT_PAPER, points } from "../paper";
 import { SCRIPTURE_CREDIT, passage, passageText } from "../passages";
-import type { Blank, MemoryConfig } from "../types";
+import type { Blank, MemoryConfig, SheetOptions } from "../types";
 
 import {
   MAX_ROUNDS,
   MEMORY_SHEET,
   describeMemory,
+  instructionOf,
   memoryLayout,
   memoryWords,
   removalCounts,
@@ -238,6 +241,69 @@ describe("what fits on the paper", () => {
           );
         }
       }
+    }
+  });
+
+  it("reserves the rows the notice and the credit line actually wrap onto", () => {
+    /*
+     * The check the test above cannot make. "Never prints more than the page
+     * holds" measures the rounds against `sheetBlockBox` — the same number the
+     * layout used — so a chrome that under-reserved by a row satisfies it while
+     * the last round prints below the bottom margin.
+     *
+     * This family is the one that made two rows of the chrome wrap: the §12
+     * notice is 157 characters, and the answer key's foot carries a 75-character
+     * Scripture credit beside "Answer key". Both are measured here against what
+     * `chromeHeight` reserved, and both are measured off *sheet.css's* own
+     * line-height rather than off `chrome.ts`'s rounded-up row — so the test
+     * cannot pass by restating the constant it is checking.
+     */
+    const LINE = 1.35; // `.sheet`
+    const INSTRUCTION_EM = 0.9; // `.sheet__instructions`
+    const FOOT_EM = 0.62; // `.sheet__foot`
+    const notice = instructionOf(4);
+
+    for (const size of ["letter", "a4"] as const) {
+      const paper = {
+        size,
+        orientation: "portrait",
+        margin: "normal",
+      } as const;
+      const head: SheetOptions = {
+        paper,
+        fontPt: DEFAULT_FONT_PT,
+        fields: ["name", "date"],
+        title: "Memory work — Psalm 23",
+        instructions: notice,
+      };
+      const width = contentBox(paper).width;
+
+      /** How many rows a run of text takes, and how tall those rows are. */
+      const wrapped = (text: string, share: number): number => {
+        const advance =
+          points(DEFAULT_FONT_PT * share) * faceOf(head.font).advance;
+        const rows = Math.ceil((text.length * advance) / width);
+        expect(rows, `${text.slice(0, 12)} on ${size}`).toBeGreaterThan(0);
+        return rows * points(DEFAULT_FONT_PT * share * LINE);
+      };
+
+      // The header, less the header without the notice in it: whatever that
+      // difference is, the wrapped sentence has to fit inside it.
+      const bare: SheetOptions = { ...head, instructions: undefined };
+      expect(
+        chromeHeight(head).header - chromeHeight(bare).header,
+        `notice on ${size}`,
+      ).toBeGreaterThanOrEqual(wrapped(notice, INSTRUCTION_EM));
+
+      // And the same for the credit line, against the foot without it. The note
+      // is on both sides, because a key's footer carries it either way.
+      const foot = (over: FootLine): number =>
+        chromeHeight(head, false, over).footer;
+      expect(
+        foot({ source: SCRIPTURE_CREDIT, note: "Answer key" }) -
+          foot({ note: "Answer key" }),
+        `credit on ${size}`,
+      ).toBeGreaterThanOrEqual(wrapped(SCRIPTURE_CREDIT, FOOT_EM));
     }
   });
 

@@ -9,6 +9,7 @@ import { answerKey, buildSheet } from "@/engine/sheets";
 import { figureBounds, labelPad } from "@/engine/sheets/figure";
 import { ticks } from "@/engine/sheets/numberline";
 import { DEFAULT_PAPER } from "@/engine/sheets/paper";
+import { SCRIPTURE_CREDIT } from "@/engine/sheets/passages";
 import type {
   ArithmeticConfig,
   Block,
@@ -354,6 +355,38 @@ describe("rendering a sheet", () => {
     const html = render();
     expect(html).toContain("Name");
     expect(html).toContain("sheet__field-rule");
+  });
+
+  it("prints the credit its words came with, beside the note and not instead of it", () => {
+    // §12, in the one place it has to be: the credit line is a condition of the
+    // World English Bible's name rather than a courtesy, and `.sheet__source`
+    // has no CSS rule of its own — so a renamed or dropped span would pass every
+    // other gate in this file and every gate in the engine's, which only assert
+    // the `Sheet` object's field. This is the assertion that it reaches paper.
+    const credited = (over: Partial<Sheet["footer"]> = {}) =>
+      render(
+        sheet({
+          footer: {
+            credit: "Free printables and learning games",
+            source: SCRIPTURE_CREDIT,
+            url: "schoolskills.app",
+            seed: 4242,
+            ...over,
+          },
+        }),
+      );
+
+    // Nothing where the words are the sheet's own: an 1885 poem needs no credit
+    // line, and one printed anyway would be noise on a child's page.
+    expect(render()).not.toContain("sheet__source");
+
+    expect(credited()).toContain(SCRIPTURE_CREDIT);
+    // And on an answer key, both — the page that carries the whole passage is
+    // the one that most needs to say where the passage came from.
+    const key = credited({ note: "Answer key" });
+    expect(key).toContain(SCRIPTURE_CREDIT);
+    expect(key).toContain("Answer key");
+    expect(key).toContain("Free printables and learning games");
   });
 
   it("prints the answers only when the sheet says so", () => {

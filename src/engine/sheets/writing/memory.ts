@@ -41,7 +41,7 @@ import type {
   SheetOptions,
 } from "../types";
 
-import { sheetBlockBox } from "../chrome";
+import { sheetBlockBox, type FootLine } from "../chrome";
 import { faceOf } from "../faces";
 import { type Box } from "../layout";
 import { inches, points } from "../paper";
@@ -173,7 +173,7 @@ export type MemoryLayout = {
  * many rounds it has.
  */
 export function memoryLayout(config: MemoryConfig, seed: number): MemoryLayout {
-  const box = sheetBlockBox(headerOf(config));
+  const box = sheetBlockBox(headerOf(config), false, footOf(config));
   const words = memoryWords(copyworkSource(config).text);
   if (words.length === 0) return { box, rounds: [] };
 
@@ -216,6 +216,33 @@ export function instructionOf(rounds: number): string {
   if (rounds <= 1) return "Read it, and say it from memory.";
   return "Read it, then fill in the missing words from memory — more of them go each time. Words are left out for the exercise; the whole passage is on the answer key.";
 }
+
+/**
+ * What this printout is, where it is the key rather than the sheet.
+ *
+ * One constant because two places read it: `SheetSpec.key`, which prints it,
+ * and `footOf` below, which reserves room for it on the *sheet* — the key keeps
+ * the sheet's blocks, so both are laid out against one box and the taller of
+ * the two footers is the one that has to fit.
+ */
+const KEY_NOTE = "Answer key";
+
+/**
+ * What the foot of this sheet will carry beyond the spine's own three.
+ *
+ * The credit its source asks for, and the note the key prints. Both are
+ * declared to `chrome.ts` rather than discovered from the footer, because the
+ * footer is built after the rounds have been fitted against the room the footer
+ * left — and this family is the one that made both of them more than one row:
+ * 75 characters of Scripture credit beside "Answer key" is two rows at 12pt on
+ * A4, and a round reserved into that second row prints below the bottom margin.
+ */
+const footOf = (config: MemoryConfig): FootLine => ({
+  note: KEY_NOTE,
+  ...(copyworkSource(config).credit
+    ? { source: copyworkSource(config).credit }
+    : {}),
+});
 
 /**
  * The header this sheet will actually print.
@@ -298,7 +325,7 @@ export const MEMORY_SHEET: SheetSpec<MemoryConfig> = {
   key: (sheet) => ({
     ...sheet,
     answers: true,
-    footer: { ...sheet.footer, note: "Answer key" },
+    footer: { ...sheet.footer, note: KEY_NOTE },
   }),
   describe: describeMemory,
 };

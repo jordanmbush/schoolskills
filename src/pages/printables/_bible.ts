@@ -116,7 +116,7 @@ export const BIBLE_SHEETS: BibleSheet[] = [
     lead: "Ten words a five-year-old can hear the whole of, on the ⅝-inch ruling a school means by “handwriting paper”. Each line is printed once to read, once in dots to trace over, and then left empty.",
     notes: [
       "This is a handwriting sheet that happens to be a verse, which is the right way round at this age. A child who is still forming letters cannot also be thinking about what a sentence means, so the sentence had better be one they already half know — and “In the beginning, God created the heavens and the earth” is ten words, one clause, and no word longer than nine letters. By the fourth line it is being written from memory without anybody having called it memory work.",
-      "The ⅝ ruling has a dashed midline and room below the baseline for a tail, which this verse needs twice over: the g of “beginning” and the g of “God” both drop below the line, and on paper without descender space they get written small and flat to avoid the rule underneath. Print the ¾ or the inch version from the builder if letters are still growing into the line — the sheet is identical apart from the size.",
+      "The ⅝ ruling has a dashed midline and room below the baseline for a tail, which this verse needs twice over: the two g’s of “beginning” are the only letters on it that drop below the line, and on paper without descender space they get written small and flat to avoid the rule underneath. Print the ¾ or the inch version from the builder if letters are still growing into the line — the sheet is identical apart from the size.",
     ],
     teaches: "Letter formation and Scripture copywork",
     ages: "Ages 5–7",
@@ -229,7 +229,7 @@ export const BIBLE_SHEETS: BibleSheet[] = [
       "The Lord’s Prayer from Matthew 6 on ⅜-inch paper, each line printed once and left once to copy.",
     lead: "The prayer as Matthew has it, a line at a time on the transitional ⅜-inch ruling. Each line is printed to read and followed by an empty rule to write it on.",
     notes: [
-      "The Lord’s Prayer is the passage most often learnt by heart before it is understood, which makes it unusually good copywork: a child who has said it a hundred times meets the words on paper and notices where the clauses actually break. Writing “as we also have forgiven our debtors” out slowly is the first time most people see that half of it is a comparison.",
+      "The Lord’s Prayer is the passage most often learnt by heart before it is understood, which makes it unusually good copywork: a child who has said it a hundred times meets the words on paper and notices where the clauses actually break. Writing “Forgive us our debts, as we also forgive our debtors” out slowly is the first time most people see that half of it is a comparison.",
       "One copy under each line rather than two, because the lines here are long and the prayer is not short. That is the trade a copywork sheet always makes — how many times each line is written against how much of the passage fits on the page — and the builder is where to change it: the same prayer at three copies a line runs to two sheets, which is a perfectly good week’s work if that is what is wanted.",
     ],
     teaches: "Copywork and Scripture memory",
@@ -257,7 +257,7 @@ export const BIBLE_SHEETS: BibleSheet[] = [
       "“Love is patient and is kind…” — five verses on college ruled paper, printed to read and left to copy.",
     lead: "The passage from verse four to verse eight, on college ruled paper. Each line is printed once and followed by an empty rule, so the whole of it fits on a single page.",
     notes: [
-      "This is the longest passage on the shelf and the one that reads least like a list when it is copied out — which is the point of copying it. Fifteen separate statements about one word go past far too quickly when they are read; written out at the speed of a hand, the shape of the argument shows up, and so does the fact that most of the statements are about what love does not do.",
+      "Psalm 23 aside, this is the longest passage on the shelf, and the one that reads least like a list when it is copied out — which is the point of copying it. Fifteen separate statements about one word go past far too quickly when they are read; written out at the speed of a hand, the shape of the argument shows up, and so does the fact that most of the statements are about what love does not do.",
       "College ruled rather than handwriting paper, because by the age this passage is worth setting a child is writing on ordinary lined paper at school and should be practising on the same thing. There is no midline and no descender space here; what there is instead is about six more lines to the page than wide ruled gives you, which is what makes a passage this long fit on one.",
     ],
     teaches: "Copywork and sustained handwriting",
@@ -287,7 +287,7 @@ export const BIBLE_SHEETS: BibleSheet[] = [
       "John 3:16 written out four times with more words missing each time — and the whole verse on the answer key.",
     lead: "The verse in full at the top, then three times over with more of it gone: a few words, then most of them, then a line of blanks. It is the whiteboard exercise every family already does, on paper.",
     notes: [
-      "Rubbing a few words off the board and saying it again is how a verse is learnt, and the reason it works is that each round is only slightly harder than the one before. That is the whole of what this sheet does: the words are taken away in the same order every round, so nothing that has gone ever comes back, and by the last line there is nothing left to read from. A child who gets to the bottom has said the verse from memory four times without being asked to recite it once.",
+      "Rubbing a few words off the board and saying it again is how a verse is learnt, and the reason it works is that each round is only slightly harder than the one before. That is the whole of what this sheet does: the words are taken away in the same order every round, so nothing that has gone ever comes back, and by the last line there is nothing left to read from. A child who gets to the bottom has said the verse from memory three times without being asked to recite it once.",
       "Words are left out here on purpose, and the sheet says so on it — printing part of a translation without saying that is what it is would be publishing a modified text under somebody else’s name. The answer key behind this page is the verse whole, exactly as the translation has it, punctuation and all. That is also the page to hand the person doing the listening.",
     ],
     teaches: "Scripture memory",
@@ -309,11 +309,11 @@ export const BIBLE_SHEETS: BibleSheet[] = [
     heading: "Psalm 23 memory worksheet",
     keyword: "Free printable Psalm 23 memory worksheet",
     summary:
-      "The whole of Psalm 23 three times over, with half the words gone in the second and all of them in the third.",
-    lead: "A psalm rather than a verse, which changes the exercise: six hundred characters will not go four times onto one page, so this is the whole psalm, then half of it, then none of it.",
+      "The whole of Psalm 23 printed to read, and then asked for again with every word of it gone — with the psalm entire on the answer key.",
+    lead: "A psalm rather than a verse, which changes the exercise: a hundred and eighteen words will not go three times onto one page once every one of them needs a gap wide enough to write in, so this is the psalm printed whole and then asked for with nothing left to read from.",
     notes: [
-      "Three rounds rather than four is the page deciding, not a judgement about difficulty — the sheet asks for as many as fit and comes down to the number that do, keeping the empty round at the end because that is the one the whole progression aims at. It also makes the middle round harder than it looks: half of six hundred characters is three hundred, and the gaps are spread through the psalm rather than clustered.",
-      "This is a sheet to spend a fortnight on rather than an afternoon. The usual way through it is to do the first round as copywork on one day, the middle round a few days later, and the last one when somebody thinks they have it — and the answer key behind this page is the psalm entire, which is what the person listening should be holding.",
+      "Two rounds rather than four is the page deciding, not a judgement about difficulty — the sheet asks for four and comes down to the number that fit, keeping the empty round at the end because that is the one the whole progression aims at. A gap has to be wide enough to write a word in, so it takes more room on the paper than the word it replaced: the psalm printed runs to eight lines and the psalm with every word gone to about twice that, which is why a whole psalm gets two rounds where a single verse gets four.",
+      "This is a sheet to spend a fortnight on rather than an afternoon. The usual way through it is to do the first round as copywork on one day and the second one when somebody thinks they have it, a week or two later — and the answer key behind this page is the psalm entire, which is what the person listening should be holding.",
     ],
     teaches: "Scripture memory",
     ages: "Ages 9–14",
@@ -324,7 +324,11 @@ export const BIBLE_SHEETS: BibleSheet[] = [
       paper: paperOf("letter"),
       fontPt: DEFAULT_FONT_PT,
       fields: FIELDS,
-      rounds: 3,
+      // Four asked for and two printed. Nothing here decides that the psalm
+      // gets fewer rounds than the verses do — `memoryLayout` does, against the
+      // room a hundred and eighteen gaps take, and the note above says so
+      // because the page says so.
+      rounds: 4,
     },
   },
   {
@@ -337,7 +341,7 @@ export const BIBLE_SHEETS: BibleSheet[] = [
       "Galatians 5:22-23 four times over with more of the list missing each time, and the full verse on the key.",
     lead: "The nine-word list every Sunday school teaches, in the sentence it comes in. Written out in full, then three times with more of it gone, ending with a line of blanks.",
     notes: [
-      "A list is the hardest kind of thing to learn by heart and the easiest to think you have learnt: most children can say seven of the nine and stall in the same place every time. Taking the words out in a fixed order is what finds the gap — whichever two are missing on the third round are the two that were never really there, and they are worth five minutes on their own before the last round is attempted.",
+      "A list is the hardest kind of thing to learn by heart and the easiest to think you have learnt: most children can say seven of the nine and stall in the same place every time. Taking the words out in a fixed order is what finds the gap — a third of the verse is gone in the second round and two thirds of it in the third, so whichever of the nine is missed at that point is missed in the same place every time, and it is worth five minutes on its own before the last round is attempted.",
       "The verse rather than the list on its own, deliberately. “Love, joy, peace…” recited as nine nouns is a spelling test; the sentence around them says what they are and what they are not, and the last clause — “against such things there is no law” — is the part almost nobody remembers, which is a fair sign it is usually taught as a list rather than as a verse.",
     ],
     teaches: "Scripture memory",

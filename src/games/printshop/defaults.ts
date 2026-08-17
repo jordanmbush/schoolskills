@@ -92,6 +92,23 @@ const PASSAGE =
 const COPYWORK_PASSAGE = "psalm-23";
 const MEMORY_PASSAGE = "for-god-so-loved-the-world";
 
+/**
+ * A passage to open memory work's own paste box on.
+ *
+ * Not `PASSAGE` above, for two reasons. A memory sheet is something somebody
+ * means to know by heart, where a handwriting sentence is chosen for the letters
+ * it happens to use; and a round is a paragraph — `memory.ts` sets a passage's
+ * own line breaks as spaces — so the second line of a pangram would arrive
+ * looking like a break the sheet then ignored.
+ *
+ * Here for the reason `PASSAGE` is: the family opens on the library, and this is
+ * what choosing "Your own words" leaves behind. Without it that choice lands a
+ * parent in an empty box, `memoryLayout` finds no words to take out, and the
+ * preview goes to a header over a blank page — the one thing the bench must
+ * never show.
+ */
+const MEMORY_TEXT = "A verse is learnt by saying it, not by reading it again.";
+
 const DEFAULTS: Record<string, SheetConfig> = {
   blank: { ...BASE, kind: "blank", title: "Blank sheet" },
   paper: { ...BASE, kind: "paper", rule: { style: "wide" } },
@@ -251,6 +268,7 @@ const DEFAULTS: Record<string, SheetConfig> = {
     ...BASE,
     kind: "memory",
     passage: MEMORY_PASSAGE,
+    text: MEMORY_TEXT,
     // The whole verse, two rounds with more of it gone, and one with none of
     // it left — the shortest progression that is still a progression.
     rounds: 4,

@@ -25,17 +25,39 @@ import { DEFAULT_TRANSLATION, passage, passageText } from "../passages";
 import type { TranslationId } from "../passages/types";
 
 /**
- * The longest passage worth setting.
+ * The longest **paste** worth setting.
  *
  * The smallest ruling holds about twenty-two lines to a page and about
  * forty-six characters to a line, so a thousand characters is already more than
- * any sheet can print — this is twice that, and still short enough that a
- * config fits in a URL (§14), which is not the place for an essay. Applied to
- * the library's own passages as well as to a paste: the Christmas story is
- * longer than this, and a sheet that printed the first page of it and stopped
- * is the honest thing rather than one that refuses to build.
+ * any sheet can print — this is twice that, and still short enough that a config
+ * fits in a URL (§14), which is not the place for an essay.
+ *
+ * A paste only. A library passage is nine characters of id in the `#s=` link and
+ * its words never travel, so the cap's own reason does not reach it — and
+ * applying it there once cost the Christmas story (2,048 characters) its last
+ * eight words *and* half of the word before them, on a sheet whose instruction
+ * line promises the whole passage on the answer key. Nothing refuses to build
+ * without the cap either: how much of a passage reaches the paper is already
+ * decided by the capacity arithmetic, a page at a time.
  */
 export const MAX_TEXT = 2000;
+
+/**
+ * A paste cut down to length on a boundary its author put there.
+ *
+ * Back to the last space rather than to a character index, because the cut shows
+ * on the paper: half a word reads as a misprint, and on a memory sheet it is
+ * printed under a promise that the answer key holds the passage whole. A run
+ * with no whitespace in it at all keeps the plain cut — there is no boundary to
+ * find, and one very long word is still better than a blank page.
+ */
+export function trimText(text: string, limit: number = MAX_TEXT): string {
+  if (text.length <= limit) return text;
+  const cut = text.slice(0, limit);
+  if (/\s/.test(text.charAt(limit))) return cut.trimEnd();
+  const whole = cut.replace(/\S+$/, "").trimEnd();
+  return whole === "" ? cut : whole;
+}
 
 /** What either family is actually handed, whichever door the words came in. */
 export type CopyworkSource = {
@@ -72,14 +94,17 @@ export function copyworkSource(config: CopyworkConfig): CopyworkSource {
       : undefined;
 
   if (chosen) {
+    // Verbatim, and uncapped: the library's own text is the one thing on a sheet
+    // that is quoted rather than generated (§12), so it is handed on whole and
+    // the page decides how much of it fits.
     return {
-      text: passageText(chosen).slice(0, MAX_TEXT),
+      text: passageText(chosen),
       title: chosen.title,
       attribution: chosen.attribution,
       credit: chosen.credit,
     };
   }
   return {
-    text: typeof config.text === "string" ? config.text.slice(0, MAX_TEXT) : "",
+    text: typeof config.text === "string" ? trimText(config.text) : "",
   };
 }
