@@ -419,21 +419,22 @@ export type Block =
  * Which face a sheet is set in.
  *
  * Three names rather than a font stack, because the name is the part that has
- * to survive: a sheet saved this term must still open on the face it was set
- * in after the stacks behind these ids are replaced by self-hosted files
- * (PRINT15). Until then each id resolves to whatever the reader's machine
- * already has, which is honest — a parent who asked for a dyslexia-friendly
- * face and has one installed gets it, and one who hasn't gets the default
- * rather than a download.
+ * to survive: these ids were system stacks for two stories and are self-hosted
+ * files now (`src/styles/fonts.css`), and not one saved sheet had to change its
+ * mind about which face it wanted. Named by shape, never by a teaching model —
+ * D'Nealian® and Zaner-Bloser® are trademarks with commercial fonts behind
+ * them, and this is a description of letterforms.
  *
  * `dyslexic` is an accessibility option and not a style: §17 lists a
  * dyslexia-friendly face beside larger type as a first-class choice rather than
  * a zoom hack, and the reason is the same for both — the sheet stays real
  * selectable text either way.
  *
- * It changes no length on the page. Every height the layout arithmetic
- * reserves is computed from `fontPt`, in points, so swapping the face cannot
- * push the last row onto a second sheet of paper.
+ * It changes almost no length on the page: every height the layout arithmetic
+ * reserves is computed from `fontPt`, in points, so a face swap can't move a
+ * ruling or a row. What it does change is how wide a *character* is, and the
+ * proportions the three differ by are measured in `faces.ts` rather than
+ * assumed.
  */
 export type SheetFont = "print" | "cursive" | "dyslexic";
 

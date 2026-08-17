@@ -32,8 +32,11 @@
 
   /* The face everything on the paper is set in, named once so the SVG blocks
      below can be set in it too. `data-font` swaps it; see the block after the
-     ink section for what each of the three ids resolves to. */
-  --sheet-face: var(--font-body, system-ui, sans-serif);
+     ink section for what each of the three ids resolves to. Andika is the
+     print face and therefore the default, because a worksheet is set in print
+     unless somebody says otherwise — with the site's own body face behind it
+     while the file is in flight. */
+  --sheet-face: "Andika", var(--font-body, system-ui, sans-serif);
 
   /* Overwritten inline by the renderer from the sheet's own `paper`. The
      defaults are Letter portrait at half-inch margins, which is what most of
@@ -218,28 +221,35 @@
 }
 
 /* ── The three faces (§17) ──────────────────────────────────────────────────
-   Stacks rather than files, for now and on purpose. A self-hosted set arrives
-   with the handwriting stories (PRINT15), which need real letterforms to draw
-   the trace styles from; until then each id resolves to whatever the reader's
-   machine already has and falls back to the default when it has none. That is
-   the honest version of the option: a parent who has installed a dyslexia-
-   friendly face gets it, and one who hasn't gets a readable sheet rather than a
-   download and a wait.
+   Files now, self-hosted beside the site's own three — see `fonts.css` for
+   which face does which job and why none of them is a request to a CDN. What
+   is left in here is the part that belongs in a stylesheet: the stack, and the
+   fallback each id lands on while its woff2 is in flight or on a page that
+   never loaded `fonts.css`.
 
-   The `Sheet` carries the id and never the stack, so a sheet saved this term
-   opens in the *named* face once the files land, rather than in whatever this
-   list happened to say the week it was saved.                                */
+   The `Sheet` carries the id and never the stack. That is what let these three
+   be system fonts for two stories and files today without a single saved sheet
+   changing its mind about which face it wanted.
+
+   The engine has measured proportions for all three (`faces.ts`) and sizes
+   traced letterforms off them, so **the family named here and the family named
+   there have to be the same font**. Changing one alone prints letters through
+   the top rule.                                                              */
 
 .sheet[data-font="cursive"] {
   --sheet-face:
-    "Segoe Script", "Bradley Hand", "Snell Roundhand", "Lucida Handwriting",
+    "Playwrite US Trad", "Segoe Script", "Bradley Hand", "Snell Roundhand",
     cursive;
 }
 
-/* Comic Sans is in here on the evidence rather than on taste: it is one of the
-   faces dyslexia guidance actually names, for the same reason OpenDyslexic is —
-   letters that can't be mistaken for one another when they are rotated or
-   mirrored. Verdana behind it for its width and its open counters. */
+/* Comic Sans is still in the stack, on the evidence rather than on taste: it is
+   one of the faces dyslexia guidance actually names, for the same reason
+   OpenDyslexic is — letters that can't be mistaken for one another when they
+   are rotated or mirrored. Verdana behind it for its width and open counters.
+
+   OpenDyslexic is half as wide again as the other two, so a page of word
+   problems set in it can push its last row onto a second sheet. That is the
+   honest price of the option and a better answer than not offering it. */
 .sheet[data-font="dyslexic"] {
   --sheet-face:
     "OpenDyslexic", "Open Dyslexic", "Comic Sans MS", verdana, sans-serif;

@@ -49,6 +49,11 @@ const MARGINS = [
   opt<MarginSize>("wide", "Wide"),
 ];
 
+/**
+ * Named by shape, and never by a teaching model: D'Nealian® and Zaner-Bloser®
+ * are trademarks with per-seat fonts behind them, and what a parent is picking
+ * here is letterforms — a single-storey `a`, or a joined hand.
+ */
 const FONTS = [
   opt<SheetFont>("print", "Print"),
   opt<SheetFont>("cursive", "Cursive"),
@@ -115,7 +120,7 @@ export function PageOptions({ config, set }: PanelProps) {
         value={config.font ?? "print"}
         onChange={(font) => set({ font })}
         options={FONTS}
-        hint="Cursive and the dyslexia-friendly face use whatever is installed on this machine until the sheets ship their own."
+        hint="Print is a single-storey a and g, cursive is a joined hand, and the dyslexia-friendly face has weighted letters that can't be mirrored. All three come with the sheet."
       />
 
       <Field label="Title">

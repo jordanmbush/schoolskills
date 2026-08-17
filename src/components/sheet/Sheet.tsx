@@ -39,6 +39,7 @@ export function SheetView({ sheet }: { sheet: Sheet }) {
   const metrics: SheetMetrics = {
     box: contentBox(sheet.paper),
     fontPt: sheet.fontPt,
+    font: sheet.font,
     answers: sheet.answers,
   };
 

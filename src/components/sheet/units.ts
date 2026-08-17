@@ -41,14 +41,15 @@ export const HEAVY: Mil = points(1.25);
 /* ── Dashes ────────────────────────────────────────────────────────────────
    `stroke-dasharray` in mil, for the same reason the weights are. Each pair is
    ink-then-gap, and each is tuned to what it marks rather than shared: a
-   handwriting midline is a broken line a child ignores, a dotted letterform is
-   a path they trace over, and a cut line is an instruction.                 */
+   handwriting midline is a broken line a child ignores and a cut line is an
+   instruction.
+
+   The dotted and dashed *letterforms* used to live here too and no longer do:
+   theirs is the one pattern that can't be absolute, because it has to keep its
+   dot-to-gap ratio across a face whose em changes with the ruling. They are
+   shares of the outline weight now, in `src/engine/sheets/faces.ts`.        */
 
 /** The dashed midline of a handwriting rule — the usual (§5). */
 export const DASH_MIDLINE = `${inches(0.09)} ${inches(0.07)}`;
-/** A dotted letterform: round caps on a near-zero dash make actual dots (§6). */
-export const DASH_DOTTED = `${points(0.5)} ${points(3)}`;
-/** A dashed letterform — the same trick, longer strokes. */
-export const DASH_DASHED = `${points(4)} ${points(3)}`;
 /** Cut here. Long enough to read as scissors rather than as a faint rule. */
 export const DASH_CUT = `${inches(0.12)} ${inches(0.08)}`;

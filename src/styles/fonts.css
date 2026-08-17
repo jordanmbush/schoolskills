@@ -53,3 +53,61 @@
   font-display: swap;
   src: url("/fonts/space-mono-latin-700.woff2") format("woff2");
 }
+
+/* ── Three more, for paper ─────────────────────────────────────────────────
+   The Print Shop's faces. Same argument as above and then some: a worksheet is
+   the one thing here a parent is asked to look at for a minute before they
+   print it, so a face that arrives from Google's CDN would be a request with a
+   child's IP in it on the page that exists to make something for that child.
+
+   They cost every other page nothing. A `@font-face` is a declaration, not a
+   download — a browser fetches the file only when it has a glyph to draw in
+   it, and only a `.sheet` ever names these. The map, the races and the content
+   pages carry the three above and no more.
+
+     Andika        Print. A manuscript face SIL drew for literacy materials,
+                   which is to say for this exact job: single-storey `a` and
+                   `g`, a straight-stemmed `l` a child can copy, an `I` with
+                   serifs so it can't be mistaken for one, and an x-height that
+                   sits nearer the midline of primary ruled paper than a text
+                   face's does. The default, because a worksheet is set in
+                   print unless somebody says otherwise.
+     Playwrite     Cursive. TypeTogether's superfamily of the handwriting
+     US Trad       models actually taught, built on the Primarium research; the
+                   US traditional one is the continuous joined hand. Its
+                   capitals are exactly one em tall — the face is drawn to the
+                   ruling rather than to a paragraph, which is why the tracing
+                   arithmetic in `faces.ts` can be arithmetic.
+     OpenDyslexic  The accessibility option, and the heaviest file on the site
+                   at 113KB: it is redistributed whole because subsetting a
+                   font whose licence reserves its name would make it a
+                   Modified Version that may no longer carry the name. Nobody
+                   who doesn't ask for it ever fetches it.
+
+   Provenance and licences: `public/fonts/LICENSE.md`. All three are OFL 1.1,
+   and all three are the distributor's own web build byte for byte — nothing in
+   this repo modifies a font.                                                */
+
+@font-face {
+  font-family: "Andika";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/andika-latin-400.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Playwrite US Trad";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/playwrite-us-trad-400.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "OpenDyslexic";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/opendyslexic-latin-400.woff2") format("woff2");
+}

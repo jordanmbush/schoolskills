@@ -8,6 +8,7 @@
  * layout instead of discovering one.
  */
 import type { Box } from "@/engine/sheets/layout";
+import type { SheetFont } from "@/engine/sheets/types";
 
 export type SheetMetrics = {
   /**
@@ -19,6 +20,20 @@ export type SheetMetrics = {
   box: Box;
   /** The sheet's body size, in points. Sets the type inside an `<svg>`. */
   fontPt: number;
+  /**
+   * The face the sheet is set in — the id, never a font stack, which stays in
+   * `sheet.css` where it belongs.
+   *
+   * A fourth fact rather than a third because a traced letterform is sized off
+   * the face's own proportions and not off `fontPt`: a ⅝ rule holds a whole em
+   * of Playwrite and only 0.79 of an em of Andika, so a renderer that couldn't
+   * see the face would draw one of them through the top line (`faces.ts`).
+   *
+   * Absent is the print face, exactly as it is on the `Sheet` this came from —
+   * carried through rather than resolved here, so there is one place that
+   * decides what an unknown or missing face means (`faceOf`).
+   */
+  font?: SheetFont;
   /** Print the answers that were computed when the sheet was built. */
   answers: boolean;
 };

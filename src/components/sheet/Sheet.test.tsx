@@ -21,7 +21,9 @@ import type {
   Problem,
   Sheet,
   SheetConfig,
+  SheetFont,
   TimeConfig,
+  TraceStyle,
 } from "@/engine/sheets/types";
 
 import { SheetView } from "./Sheet";
@@ -1286,6 +1288,93 @@ describe("ruled blocks", () => {
         "repeating-linear-gradient",
       );
     }
+  });
+});
+
+/* ── The five trace styles (§6) ────────────────────────────────────────────
+   All five out of one ordinary font, which is the whole reason a handwriting
+   sheet here needs no per-seat tracing licence: `<text>` can be stroked, and a
+   dash pattern runs along the glyph outline. Every one of them is fill or
+   stroke — foreground paint — so they survive a printer with "Background
+   graphics" unticked, which is the default and the thing that silently ruins
+   this kind of page.                                                        */
+
+describe("trace styles", () => {
+  const tracedIn = (style: TraceStyle, font?: SheetFont) =>
+    render(
+      sheet({
+        font,
+        blocks: [
+          {
+            kind: "trace",
+            rule: { style: "hand-5-8", midline: "dashed", descender: true },
+            rows: [{ text: "cat", repeats: [style] }],
+          },
+        ],
+      }),
+    );
+
+  /** The `<text>` a trace row drew, with the attributes that decide its look. */
+  const drawn = (html: string) =>
+    /<text class="sheet__glyph sheet__glyph--(\w+)"[^>]*font-size="(\d+)"([^>]*)>/.exec(
+      html,
+    );
+
+  it("is one font and five appearances, never a file per style", () => {
+    const looks = new Map<TraceStyle, string>();
+    for (const style of [
+      "solid",
+      "dim",
+      "hollow",
+      "dotted",
+      "dashed",
+    ] as TraceStyle[]) {
+      const glyph = drawn(tracedIn(style));
+      expect(glyph, style).not.toBeNull();
+      expect(glyph?.[1]).toBe(style);
+      looks.set(style, glyph?.[3] ?? "");
+    }
+
+    // Filled: no outline to weight and nothing to break up.
+    expect(looks.get("solid")).toBe("");
+    expect(looks.get("dim")).toBe("");
+    // Outlined: a weight, and a pattern on two of the three.
+    expect(looks.get("hollow")).toContain("stroke-width=");
+    expect(looks.get("hollow")).not.toContain("stroke-dasharray=");
+    // A zero-length dash under a round cap is a dot, the same trick the dot
+    // grid uses — so a dotted letterform needs no second font either.
+    expect(looks.get("dotted")).toMatch(/stroke-dasharray="0 \d+"/);
+    expect(looks.get("dotted")).toContain('stroke-linecap="round"');
+    expect(looks.get("dashed")).toMatch(/stroke-dasharray="[1-9]\d* \d+"/);
+    expect(looks.get("dashed")).not.toContain("stroke-linecap=");
+
+    // The face is named once, in the stylesheet, for the whole sheet.
+    expect(tracedIn("dotted")).not.toContain("font-family");
+  });
+
+  it("draws nothing where the child is on their own", () => {
+    expect(drawn(tracedIn("none"))).toBeNull();
+  });
+
+  it("sizes the letters to the face, not to a shared guess", () => {
+    // The same ⅝ rule in the three faces is three type sizes, because a
+    // capital is a whole em of Playwrite and 0.79 of one in Andika. A single
+    // ratio here would print two of the three through the top line.
+    const sizes = (["print", "cursive", "dyslexic"] as SheetFont[]).map(
+      (font) => Number(drawn(tracedIn("solid", font))?.[2]),
+    );
+    expect(new Set(sizes).size).toBe(3);
+  });
+
+  it("paints them with ink rather than with a background", () => {
+    // The failure this guards is invisible on screen: a style that leaned on
+    // `background` looks right in the preview and prints as nothing.
+    const css = read(join(ROOT, "src/styles/sheet.css"));
+    const styles =
+      /Letterforms, from an ordinary font.*$/s.exec(css)?.[0] ?? "";
+    expect(styles).toContain(".sheet__glyph--dotted");
+    expect(styles.slice(0, styles.indexOf("── Problems"))) //
+      .not.toContain("background");
   });
 });
 
