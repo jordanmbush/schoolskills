@@ -263,6 +263,26 @@ const DEFAULTS: Record<string, SheetConfig> = {
     // list down the page whatever this says (`studyLayout`).
     columns: 2,
   },
+  puzzle: {
+    ...BASE,
+    kind: "puzzle",
+    // A word search, because it is the one of the three a parent recognises
+    // from across the room — and the bench's first job is to show a sheet
+    // rather than a form. The same starter list as the spelling family, so
+    // switching between the two shelves keeps the words a parent is looking at.
+    style: "search",
+    words: STARTER_WORDS,
+    // Twelve squares holds a ten-letter word with room to hide it, and comes
+    // out at the full cell size on both stocks.
+    size: 12,
+    // The usual school puzzle. Diagonals and backwards words are each one
+    // control away, and each is a different kind of harder.
+    directions: "across-down",
+    reverse: false,
+    overlap: true,
+    count: STARTER_WORDS.length,
+    columns: 2,
+  },
   handwriting: {
     ...BASE,
     kind: "handwriting",

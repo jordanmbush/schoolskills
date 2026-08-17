@@ -31,6 +31,7 @@ import { MoneyPanel } from "./money";
 import { MultiplicationPanel } from "./multiplication";
 import { PaperPanel } from "./paper";
 import { PreAlgebraPanel } from "./prealgebra";
+import { PuzzlesPanel } from "./puzzles";
 import { RatioPanel } from "./ratio";
 import { StatisticsPanel } from "./statistics";
 import { TimePanel } from "./time";
@@ -90,6 +91,7 @@ const PANELS: Record<string, FamilyPanel> = {
   "word-problems": panel(WordProblemsPanel),
   words: panel(WordsPanel),
   "word-study": panel(WordStudyPanel),
+  puzzle: panel(PuzzlesPanel),
   handwriting: panel(HandwritingPanel),
   memory: panel(MemoryPanel),
 };

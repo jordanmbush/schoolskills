@@ -18,6 +18,7 @@ import { Blanks } from "./Blanks";
 import { Choice } from "./Choice";
 import { Clock } from "./Clock";
 import { Copywork } from "./Copywork";
+import { Crossword } from "./Crossword";
 import { Cutline } from "./Cutline";
 import { Grid } from "./Grid";
 import { Matching } from "./Matching";
@@ -49,6 +50,8 @@ export function BlockView({
       return <Grid block={block} metrics={metrics} />;
     case "wordsearch":
       return <WordSearch block={block} metrics={metrics} />;
+    case "crossword":
+      return <Crossword block={block} metrics={metrics} />;
     case "matching":
       return <Matching block={block} metrics={metrics} />;
     case "blanks":

@@ -197,12 +197,31 @@ const EVERY_BLOCK: Block[] = [
   {
     kind: "wordsearch",
     letters: [
-      ["c", "a", "t"],
-      ["x", "y", "z"],
-      ["d", "o", "g"],
+      ["C", "A", "T"],
+      ["X", "Y", "Z"],
+      ["D", "O", "G"],
     ],
-    find: ["cat", "dog"],
-    solution: [{ word: "cat", column: 0, row: 0, dx: 1, dy: 0 }],
+    find: ["CAT", "DOG"],
+    solution: [{ word: "CAT", column: 0, row: 0, dx: 1, dy: 0 }],
+    // A word the grid had no room for, printed rather than dropped — the one
+    // line on a sheet whose job is to admit a failure.
+    omitted: ["ELEPHANT"],
+  },
+  {
+    // Two entries crossing at their shared T, one of them numbered in both
+    // directions — the smallest thing that draws every part of the block.
+    kind: "crossword",
+    cells: [
+      [{ letter: "C", number: 1 }, { letter: "A" }, { letter: "T", number: 2 }],
+      [null, null, { letter: "O" }],
+      [null, null, { letter: "P" }],
+    ],
+    across: [
+      { number: 1, clue: "It purrs.", answer: "CAT", column: 0, row: 0 },
+    ],
+    down: [
+      { number: 2, clue: "Jumbled: O P T", answer: "TOP", column: 2, row: 0 },
+    ],
   },
   {
     kind: "matching",
