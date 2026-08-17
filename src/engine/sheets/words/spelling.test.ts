@@ -277,6 +277,24 @@ describe("word shapes", () => {
     expect(letterShape("'")).toBe("small");
   });
 
+  it("draws no box where a space is", () => {
+    // A box is a thing a child writes a letter into, and a space is nothing to
+    // write — so a two-word entry keeps the slot and loses the rectangle,
+    // which is what makes "1 Samuel" read as two words on the paper.
+    expect(letterShape(" ")).toBe("gap");
+    const [samuel] = shapesOf({ words: ["1 Samuel"], count: 1 });
+    expect(samuel.letters).toEqual([
+      "tall",
+      "gap",
+      "tall",
+      "small",
+      "small",
+      "small",
+      "small",
+      "tall",
+    ]);
+  });
+
   it("gives two words the same letters the same outline", () => {
     // The exercise only works because a word has a silhouette: "bed" and "bad"
     // are the same picture, and "big" is not.

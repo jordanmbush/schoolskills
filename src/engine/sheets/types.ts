@@ -276,8 +276,15 @@ export type Problem = {
  *
  * Punctuation counts as `small`. An apostrophe is not a letter with a body, and
  * a box drawn for it at any other height would be a shape a child cannot match.
+ *
+ * A space is `gap`, and it is the one that is not a box at all. Every other
+ * value is something a child writes into the box drawn for it — a letter, a
+ * numeral, an apostrophe — and a space is nothing to write, so `1 Samuel` with
+ * a box over its space would be asking for a ninth letter that does not exist.
+ * The slot is still counted, because the boxes either side of a space have to
+ * land where they would have anyway; only the rectangle goes.
  */
-export type LetterShape = "tall" | "small" | "tail";
+export type LetterShape = "tall" | "small" | "tail" | "gap";
 
 /**
  * One word as a row of boxes, plus the word those boxes were drawn from.

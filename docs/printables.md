@@ -610,8 +610,8 @@ rather than a section off to one side.
   handwriting practice" are queries with genuine homeschool volume.
 - **Grade hubs list Scripture sheets** with everything else for that age.
 - **Words and vocabulary.** Books of the Bible (in order — a memory-work
-  staple), key names and places, catechism vocabulary, as shipped lists
-  alongside Dolch.
+  staple), key names and places, and the words the stories are told in, as
+  shipped lists alongside Dolch.
 - **Templates.** Memory-verse cards to cut out, verse-of-the-week wall chart,
   Scripture bookmarks, a reading-plan grid, a Bible-study journal page.
 
@@ -700,6 +700,26 @@ says the words are left out for the exercise and the key prints the passage
 whole — both halves, in the engine, so neither is a page's decision to forget.
 The shelf is `/printables/bible`, a peer of `/printables/math` and
 `/printables/handwriting`; the maths sheets stay clear of it, as above.
+
+**What shipped (PRINT23), and the one thing that didn't.** Five word lists in
+`engine/decks/biblelists.ts` — the thirty-nine and the twenty-seven in canonical
+order, people, places, and Bible words — as ordinary `WordList`s, so they print
+as any of the seven spelling styles and any of the three puzzles and are played
+by the word deck without being authored twice. The books say **which canon** in
+the blurb a parent reads: sixty-six is the Protestant count, a family whose
+Bible has seventy-three would be taught something to unlearn, and the release we
+quote ships the deuterocanon itself, so sixty-six is our editorial choice and is
+stated as one.
+
+**Catechism vocabulary, promised above, is declined.** Not an oversight and not
+a scheduling call: a word list is a list of definitions a child memorises, and
+the catechism words worth listing are the ones the traditions answer
+differently — what baptism accomplishes, what happens at communion. A
+seven-year-old handed one side of that as a fact to learn, who later finds it
+was one side, learns to distrust the sheet. "Bible words" is what shipped
+instead, and every entry on it is a definition the churches agree on. Anything
+past that line is a parent's own list to paste in, which is a door that is
+already open.
 
 ### Scripture on the front door: content, never a credential
 

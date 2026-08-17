@@ -1,7 +1,7 @@
 import type { Card, WordConfig } from "@/engine/types";
 
 import { mulberry32, shuffled } from "@/engine/random";
-import { WORD_LISTS, WORD_LISTS_BY_ID } from "./wordlists";
+import { SHIPPED_LISTS, WORD_LISTS_BY_ID } from "./wordlists";
 import type { DeckSpec } from "./spec";
 
 /**
@@ -128,9 +128,15 @@ export function clueParts(clue: string): [string, string] {
  *
  * Normalised on the way in and on the way out, so a list typed in capitals
  * still finds its sentence. A few hundred entries, built once at load.
+ *
+ * Across every shipped list rather than the graded ones, for the same reason:
+ * a parent who pasted the books of the Bible into the box gets the sentences
+ * `biblelists.ts` wrote for them. No word is in two shipped lists — the rule is
+ * that file's, and `biblelists.test.ts` holds the whole shelf to it — so this
+ * map has one sentence per word rather than whichever list was registered last.
  */
 const SHIPPED_CLUES = new Map<string, string>(
-  WORD_LISTS.flatMap((list) =>
+  SHIPPED_LISTS.flatMap((list) =>
     list.entries.map((entry): [string, string] => [
       normaliseWord(entry.word),
       entry.clue,

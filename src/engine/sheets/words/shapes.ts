@@ -41,6 +41,11 @@ const TAIL = new Set([..."gjpqy"]);
 export function letterShape(letter: string): LetterShape {
   if (TAIL.has(letter)) return "tail";
   if (TALL.has(letter)) return "tall";
+  // A space is not a band, it is the absence of one: a box is a thing a child
+  // writes a letter into, and a two-word entry like "1 Samuel" or "Song of
+  // Solomon" would otherwise print boxes nothing can go in. The slot is still
+  // counted so the boxes either side keep their positions — see `LetterShape`.
+  if (/\s/.test(letter)) return "gap";
   // A capital or a numeral is drawn from the top line to the baseline, which is
   // the tall box — and `letter.toLowerCase() !== letter` is the whole test,
   // rather than a range, so an accented capital is not read as a small letter.
@@ -48,7 +53,7 @@ export function letterShape(letter: string): LetterShape {
   return "small";
 }
 
-/** One word, box by box. Punctuation and spaces count as small — see `LetterShape`. */
+/** One word, box by box. Punctuation counts as small, a space as a gap. */
 export const wordShape = (word: string): WordShape => ({
   word,
   letters: [...word].map(letterShape),
@@ -90,7 +95,14 @@ export const SHAPE_BOX_EMS = 1.3;
 /** The air between one box and the next, in ems. */
 export const SHAPE_BOX_GAP_EMS = 0.1;
 
-/** The top and the bottom of one letter's box, as shares of the row. */
+/**
+ * The top and the bottom of one letter's box, as shares of the row.
+ *
+ * `gap` has no box, so it has no band. It answers with the body one anyway
+ * rather than throwing or widening the return type: the caller that meets a
+ * gap skips drawing before it ever asks, and a total function here is what
+ * keeps that the renderer's one decision instead of two.
+ */
 export function shapeBand(shape: LetterShape): { top: number; bottom: number } {
   if (shape === "tall")
     return { top: BANDS.ascender.top, bottom: BANDS.body.bottom };
