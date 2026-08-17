@@ -94,7 +94,7 @@ export const PAPER_SHEETS: PaperSheet[] = [
     keyword: "Free printable college ruled paper",
     summary:
       "College ruled paper: rules 9/32 of an inch apart, with the same 1¼-inch margin line.",
-    lead: "The narrower of the two notebook rules — nine thirty-seconds of an inch — with the same margin line as wide ruled and about four more lines on the page.",
+    lead: "The narrower of the two notebook rules — nine thirty-seconds of an inch — with the same margin line as wide ruled and about six more lines on the page.",
     notes: [
       "College ruled is what secondary-school and university notebooks are printed at, and what a teacher usually means by “lined paper” from around Year 6 upwards. More words to a page is the whole of the difference.",
       "If handwriting is still growing into the line, print the wide ruled sheet instead. Narrow rules do not make writing neater; they make a child write smaller than they can control, which is the opposite of the thing being practised.",

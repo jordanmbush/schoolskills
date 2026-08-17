@@ -12,7 +12,7 @@ import type {
   RuleStyle,
 } from "../types";
 
-import { PAPER_SHEET } from "./paper";
+import { PAPER_SHEET, paperBlockBox } from "./paper";
 
 /**
  * The family the geometry is proved on.
@@ -114,31 +114,58 @@ describe("what a ruler would find", () => {
   it("never rules past the bottom of the paper, whatever it is printed on", () => {
     // The failure this exists to catch is silent on screen and obvious on
     // paper: one rule too many is a second sheet out of the printer.
+    //
+    // Measured against the *block* box, which is the only box that can fail.
+    // The content box cannot: `ruleCapacity` floors against a height that is
+    // already the content box minus the chrome, so a family that reserved
+    // nothing at all would still satisfy it, and deleting `chrome()` would
+    // leave this test green while every sheet overran its footer.
     for (const size of SIZES) {
       for (const margin of MARGINS) {
         for (const style of RULED) {
           const rule: Rule = { style };
-          const block = rulesOf({ paper: paper({ size, margin }), rule });
-          const height = block.lines * rulePitch(rule);
-          expect(height).toBeLessThanOrEqual(
-            contentBox(paper({ size, margin })).height,
-          );
+          const over = { paper: paper({ size, margin }), rule };
+          const lines = rulesOf(over).lines;
+          const pitch = rulePitch(rule);
+          const box = paperBlockBox(config(over));
+
+          expect(lines * pitch).toBeLessThanOrEqual(box.height);
+          // ...and one more would not have fitted, which is what makes the
+          // reservation testable in both directions.
+          expect((lines + 1) * pitch).toBeGreaterThan(box.height);
         }
       }
     }
   });
 
   it("does not throw the page away either", () => {
-    // The other half of the same property. What is left over has to be the
-    // header, the footer and less than one more repeat — a family that
-    // reserved for the worst case would cost every sheet two lines to write
-    // on, which on ⅝ paper a child notices.
-    for (const style of RULED) {
-      const rule: Rule = { style };
-      const block = rulesOf({ rule });
-      const spare = contentBox(paper()).height - block.lines * rulePitch(rule);
-      expect(spare).toBeLessThan(rulePitch(rule) + inches(0.8));
-    }
+    // The half the block box cannot see: what the chrome took in the first
+    // place. A family that reserved for the worst case would satisfy every
+    // assertion above and still cost each sheet two lines to write on, which
+    // on ⅝ paper a child notices. Name and date, no title, no instructions —
+    // the sheet the catalog actually ships — spends under an inch on chrome.
+    const bare = config();
+    const spare = contentBox(bare.paper).height - paperBlockBox(bare).height;
+    expect(spare).toBeGreaterThan(0);
+    expect(spare).toBeLessThan(inches(0.8));
+  });
+
+  it("reserves a second row when the name line wraps onto one", () => {
+    // `HEAD_ROWS.fields` is charged per row, not per line. Three fields are
+    // all legal in `HeaderField` and measure more than a Letter content width
+    // between them, so they wrap — and a wrap that was not reserved for puts
+    // the last rule below the bottom margin and a blank second page out of
+    // the printer. Not reachable from the shipped catalog, which always
+    // passes two; reachable from `buildSheet` today and from the builder next.
+    const two = config();
+    const three = config({ fields: ["name", "date", "class"] });
+    expect(paperBlockBox(three).height).toBeLessThan(paperBlockBox(two).height);
+
+    // The sheet pays for the row by losing a line, rather than by overrunning.
+    const rule: Rule = { style: "narrow" };
+    expect(rulesOf({ fields: ["name", "date", "class"], rule }).lines).toBe(
+      rulesOf({ rule }).lines - 1,
+    );
   });
 
   it("gives a sheet with no title the lines the title would have taken", () => {
