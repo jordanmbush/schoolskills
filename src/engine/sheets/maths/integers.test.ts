@@ -281,6 +281,12 @@ describe("the integers family", () => {
     expect(describeSheet(config({ style: "powers", negatives: false }))).toBe(
       "Powers and roots — positive numbers only — squares and cubes",
     );
+    // A config arrives from a bookmark or from a sheet saved months ago, so the
+    // numbers in it are not to be trusted: seven operations prints three, and
+    // the line has to say three.
+    expect(describeSheet(config({ style: "order", terms: 7 }))).toBe(
+      "Order of operations — positive and negative — numbers to 12 — 3 operations",
+    );
   });
 
   it("gives the sheet a title and a score box it can be marked against", () => {
@@ -449,6 +455,41 @@ describe("what may be on the page", () => {
             expect(Math.abs(value), problem.prompt).toBeLessThanOrEqual(
               range.max,
             );
+          }
+        }
+      }
+    }
+  });
+
+  it("keeps an order-of-operations expression inside the ceiling it declares", () => {
+    // The family holds these numbers down to twelve whatever the range says,
+    // because the rule being practised is which operation goes first. What the
+    // cap must not do is turn the range round on the way: a range starting
+    // above it would draw *between* the cap and the ask — thirteen to nineteen
+    // on a sheet that asked for twenty to thirty — which is neither.
+    //
+    // Written out here rather than imported, as everything in this file is.
+    const CEILING = 12;
+    for (const range of [
+      { min: 1, max: 9 },
+      { min: 2, max: 30 },
+      { min: 20, max: 30 },
+    ]) {
+      for (const terms of [2, 3]) {
+        const shape = { style: "order" as const, terms, range, count: 9 };
+        // A dividend runs past the range exactly as a product does — it is
+        // built from two drawn numbers — so the lines it is on are read for
+        // what they say about the draw everywhere else in this suite, and left
+        // out of a bound on the numbers themselves.
+        const problems = problemsOf(shape, 5).filter(
+          (problem) => !problem.prompt.includes("÷"),
+        );
+        expect(problems.length, JSON.stringify(shape)).toBeGreaterThan(0);
+        for (const problem of problems) {
+          for (const token of tokens(problem.prompt)) {
+            if (!/\d/.test(token)) continue;
+            expect(Math.abs(numberOf(token)), problem.prompt) //
+              .toBeLessThanOrEqual(Math.min(range.max, CEILING));
           }
         }
       }

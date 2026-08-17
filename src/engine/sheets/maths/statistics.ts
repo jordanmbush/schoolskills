@@ -172,6 +172,39 @@ const needsMean = (style: StatisticStyle): boolean =>
   style === "mean" || style === "all";
 
 /**
+ * How often the repeated value appears, in a set of this size.
+ *
+ * Twice on a small set, and three times on a big one — a value appearing twice
+ * in nine numbers is a mode by the letter of the definition and not by anything
+ * a child would see.
+ */
+const repeatsIn = (size: number): number => (size >= 7 ? 3 : 2);
+
+/**
+ * How many numbers a set will actually hold — which is not always the ask.
+ *
+ * A mode set needs every value but the repeated one to be different, so it can
+ * only be as wide as the range has distinct numbers to fill it: nine numbers
+ * with three of them the same want seven different values, and one to three
+ * has three. The size comes *down* to what can be built rather than the draw
+ * quietly stopping short of it, because the size is also what the catalog line
+ * and the header advertise — and a page of fives under "sets of 9" is the sheet
+ * disagreeing with its own heading. Read by the draw and by the description
+ * from here, so the two cannot part company.
+ */
+function sizeOf(config: StatisticsConfig): number {
+  const wanted = clamp(config.size, SIZES.min, SIZES.max);
+  if (!needsMode(config.style)) return wanted;
+  const { min, max } = bounds(config.range);
+  const distinct = max - min + 1;
+  // The repeated value, and one each of `size − repeats` others that are all
+  // different from it and from each other.
+  let size = wanted;
+  while (size > SIZES.min && distinct < size - repeatsIn(size) + 1) size -= 1;
+  return size;
+}
+
+/**
  * A set of numbers, built to have the answer the sheet is going to ask for.
  *
  * Where a mode is wanted the set is *constructed* rather than drawn and tested:
@@ -180,18 +213,18 @@ const needsMean = (style: StatisticStyle): boolean =>
  * about half the time on a set of five, and the half it fails on is a sheet that
  * quietly comes up four problems short.
  */
-function drawValues(config: StatisticsConfig, rand: () => number): number[] {
-  const size = clamp(config.size, SIZES.min, SIZES.max);
+function drawValues(
+  config: StatisticsConfig,
+  size: number,
+  rand: () => number,
+): number[] {
   const { min, max } = bounds(config.range);
   if (!needsMode(config.style)) {
     return Array.from({ length: size }, () => between(min, max, rand));
   }
 
   const repeated = between(min, max, rand);
-  // Twice on a small set, and three times on a big one — a value appearing
-  // twice in nine numbers is a mode by the letter of the definition and not by
-  // anything a child would see.
-  const times = size >= 7 ? 3 : 2;
+  const times = repeatsIn(size);
   const others: number[] = [];
   const seen = new Set([repeated]);
   let misses = 0;
@@ -217,8 +250,12 @@ function drawValues(config: StatisticsConfig, rand: () => number): number[] {
  * 7" is a question about nothing.
  */
 function drawSet(config: StatisticsConfig, rand: () => number): Drawn | null {
-  const values = drawValues(config, rand);
-  if (values.length < SIZES.min) return null;
+  const size = sizeOf(config);
+  const values = drawValues(config, size, rand);
+  // Against the size this sheet says it prints, not against the smallest set
+  // there is: a mode draw that ran out of distinct values comes back short, and
+  // a short set accepted here is a page that contradicts its own heading.
+  if (values.length < size) return null;
 
   const summary = summaryOf(values);
   if (needsMean(config.style) && summary.mean === null) return null;
@@ -389,10 +426,11 @@ function headerOf(config: StatisticsConfig): SheetOptions {
  * harder one: the median lands between two numbers rather than on one.
  */
 export function describeStatistics(config: StatisticsConfig): string {
-  const size = clamp(config.size, SIZES.min, SIZES.max);
   return [
     titleOf(config),
-    `sets of ${size}`,
+    // What the sets on the page actually hold, which a narrow range can make
+    // smaller than the ask (see `sizeOf`).
+    `sets of ${sizeOf(config)}`,
     `numbers to ${bounds(config.range).max}`,
   ].join(" — ");
 }

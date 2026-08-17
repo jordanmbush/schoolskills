@@ -326,9 +326,39 @@ describe("what may be on the page", () => {
   });
 
   it("puts as many numbers in a set as were asked for", () => {
-    for (const size of [3, 4, 5, 6, 7, 9]) {
-      for (const problem of problemsOf({ size, count: 5 }, 2)) {
-        expect(setOn(problem).length, problem.prompt).toBe(size);
+    // Every style, because only two of them build the set rather than drawing
+    // it: a mode has to be placed, and the placing is where a set can come out
+    // shorter than the heading over it says.
+    for (const style of ["mean", "median", "mode", "range", "all"] as const) {
+      for (const size of [3, 4, 5, 6, 7, 9]) {
+        const said = `${style}, sets of ${size}`;
+        const problems = problemsOf({ style, size, count: 5 }, 2);
+        expect(problems.length, said).toBeGreaterThan(0);
+        for (const problem of problems) {
+          expect(setOn(problem).length, `${problem.prompt} — ${said}`).toBe(
+            size,
+          );
+        }
+      }
+    }
+  });
+
+  it("names the smaller set a narrow range can fill, and prints that", () => {
+    // A mode set wants every value but the repeated one to be different, so
+    // nine numbers cannot be built out of one, two and three however long the
+    // draw runs at it. Whichever size it settles on, the sets on the page and
+    // the size the catalog line advertises have to be the same number.
+    for (const style of ["mode", "all"] as const) {
+      const shape = { style, size: 9, range: { min: 1, max: 3 }, count: 6 };
+      const said = describeSheet(config(shape));
+      const named = Number(/sets of (\d+)/.exec(said)?.[1]);
+      expect(named, said).toBeLessThan(9);
+      const problems = problemsOf(shape, 5);
+      expect(problems.length, said).toBeGreaterThan(0);
+      for (const problem of problems) {
+        expect(setOn(problem).length, `${problem.prompt} — ${said}`).toBe(
+          named,
+        );
       }
     }
   });

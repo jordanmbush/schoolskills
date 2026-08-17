@@ -393,11 +393,22 @@ const FORMS: Form[] = [
 const valueAt = (side: Side, x: number): number =>
   (side.p * x + side.q) / side.r;
 
+/**
+ * How many moves this sheet's problems take to undo.
+ *
+ * Read by the draw and by the title, from one place. A config arrives from a
+ * bookmarked URL or from a sheet saved months ago, so `steps: 5` is a thing
+ * that happens — it draws two-step problems, and a heading reading the raw
+ * number would call them one-step over a page that is nothing of the kind.
+ */
+const stepsOf = (config: PreAlgebraConfig): number =>
+  Math.max(1, Math.min(2, Math.floor(config.steps ?? 1)));
+
 function drawSide(
   config: PreAlgebraConfig,
   rand: () => number,
 ): { side: Side; x: number } {
-  const wanted = Math.max(1, Math.min(2, Math.floor(config.steps ?? 1)));
+  const wanted = stepsOf(config);
   return pick(
     FORMS.filter((form) => form.steps === wanted),
     rand,
@@ -666,7 +677,7 @@ function drawOne(
 
 /** "Two-step equations" — the phrase a parent says, and the one they search. */
 function titleOf(config: PreAlgebraConfig): string {
-  const steps = Math.floor(config.steps ?? 1) === 2 ? "Two-step" : "One-step";
+  const steps = stepsOf(config) === 2 ? "Two-step" : "One-step";
   switch (config.style) {
     case "equation":
       return `${steps} equations`;

@@ -428,6 +428,17 @@ const TEMPLATES: Template[] = [
 const EXPRESSION_MAX = 12;
 
 /**
+ * How many operations an expression on this sheet has.
+ *
+ * Read by the draw and by the line that names the sheet, from one place. A
+ * config arrives from a bookmarked URL or from a sheet saved months ago, so
+ * `terms: 7` is a thing that happens — it draws three operations, and a
+ * description reading the raw number would advertise seven of them.
+ */
+const termsOf = (config: IntegerConfig): number =>
+  Math.max(2, Math.min(3, Math.floor(config.terms ?? 2)));
+
+/**
  * One expression, or `null` when what came out is not what the sheet asked for.
  *
  * A sheet with no negatives on it means no negative *anywhere*: not in the
@@ -440,11 +451,16 @@ function drawExpression(
   config: IntegerConfig,
   rand: () => number,
 ): Drawn | null {
-  const wanted = Math.max(2, Math.min(3, Math.floor(config.terms ?? 2)));
+  const wanted = termsOf(config);
   const pool = TEMPLATES.filter((one) => one.ops === wanted);
   const template = pick(pool, rand);
   const { min, max } = bounds(config.range);
-  const range = { min, max: Math.min(max, EXPRESSION_MAX) };
+  // Both ends, because the cap moves the top: a range that started above it
+  // would come out inverted, and `between(20, 12)` draws from thirteen to
+  // nineteen — numbers that are neither what the parent asked for nor what this
+  // cap allows. `drawPower` guards the same thing; this draw was the outlier.
+  const high = Math.min(max, EXPRESSION_MAX);
+  const range = { min: Math.min(min, high), max: high };
   const drawn = template.draw(() => draw(config, rand, range), rand);
   if (drawn === null) return null;
 
@@ -621,7 +637,7 @@ export function describeIntegers(config: IntegerConfig): string {
     titleOf(config),
     signed(config) ? "positive and negative" : "positive numbers only",
     config.style === "powers" ? "squares and cubes" : `numbers to ${max}`,
-    config.style === "order" ? `${config.terms ?? 2} operations` : null,
+    config.style === "order" ? `${termsOf(config)} operations` : null,
   ]
     .filter((part): part is string => part !== null)
     .join(" — ");

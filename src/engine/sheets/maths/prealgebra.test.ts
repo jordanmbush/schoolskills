@@ -256,6 +256,15 @@ describe("the pre-algebra family", () => {
     expect(describeSheet(config({ style: "graph", quadrants: 1 }))).toBe(
       "Slope from a graph — the first quadrant",
     );
+    // A config arrives from a bookmark or from a sheet saved months ago, so the
+    // numbers in it are not to be trusted: five steps prints two-step problems,
+    // and the name has to be the name of what came out.
+    expect(describeSheet(config({ style: "equation", steps: 5 }))).toBe(
+      "Two-step equations — positive and negative — numbers to 12",
+    );
+    expect(describeSheet(config({ style: "inequality", steps: 0 }))).toBe(
+      "One-step inequalities — positive and negative — numbers to 12",
+    );
   });
 
   it("tells a child what to write, which is not a number on three of these", () => {
@@ -499,6 +508,18 @@ describe("what may be on the page", () => {
           const { scaled, shifted } = movesOf(problem.prompt);
           expect(scaled && shifted, problem.prompt).toBe(true);
         }
+      }
+      // And a number nobody chose — a saved config, or a bookmarked URL — is
+      // drawn as the nearest one that exists and *named* as that one. A page of
+      // two-step problems under "One-step equations" is the same lie the other
+      // way round.
+      const wild = { style, steps: 5, count: 10 };
+      expect(buildSheet(config(wild), 1).header.title, style).toBe(
+        `Two-step ${style === "equation" ? "equations" : "inequalities"}`,
+      );
+      for (const problem of problemsOf(wild, 1)) {
+        const { scaled, shifted } = movesOf(problem.prompt);
+        expect(scaled && shifted, problem.prompt).toBe(true);
       }
     }
   });
