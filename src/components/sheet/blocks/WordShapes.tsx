@@ -84,6 +84,11 @@ function Boxes({
       <title>{`Boxes for the letters of "${shape.word}"`}</title>
 
       {shape.letters.map((letter, at) => {
+        // A gap keeps its slot and loses its box: "1 Samuel" reads as two words
+        // because the space between them is empty paper, and there is nothing
+        // to write on the key either. The `left` below is still `at`-based, so
+        // the boxes after a space land exactly where they always did.
+        if (letter === "gap") return null;
         const band = shapeBand(letter);
         const top = Math.round(height * band.top);
         const tall = Math.round(height * band.bottom) - top;

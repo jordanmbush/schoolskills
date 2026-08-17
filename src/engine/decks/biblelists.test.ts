@@ -11,7 +11,7 @@
  *     release the passage library quotes — name for name, position for
  *     position. Two files would have to be edited identically for a book to
  *     move, which is the same mechanism `scripture.test.ts` gives the verses.
- *   - **Against the passage library itself.** Forty-seven of the sixty-six are
+ *   - **Against the passage library itself.** Forty-eight of the sixty-six are
  *     already named in a `ScriptureEntry.ref`, and those verses are checked
  *     character for character against the release. A book spelt one way on a
  *     copywork sheet and another on a memory list is a contradiction inside one
@@ -176,7 +176,11 @@ describe("the books of the Bible", () => {
   it("is checked against the passage library on most of the canon", () => {
     // The guard above only guards the books something quotes. This says how
     // many that is, so the day it stops being most of them is a day somebody
-    // reads about rather than assumes.
+    // reads about rather than assumes. Forty-eight today, and a floor rather
+    // than an equality because adding a passage from the eighteen unquoted
+    // books is a good day and should not be a red suite — but the number in
+    // this file's header and in `biblelists.ts` is the count, so raise both
+    // when it moves.
     const referenced = new Set(
       SCRIPTURE.map((entry) =>
         entry.ref
@@ -184,7 +188,7 @@ describe("the books of the Bible", () => {
           .replace(/^Psalm$/, "Psalms"),
       ),
     );
-    expect(referenced.size).toBeGreaterThanOrEqual(47);
+    expect(referenced.size).toBeGreaterThanOrEqual(48);
   });
 });
 

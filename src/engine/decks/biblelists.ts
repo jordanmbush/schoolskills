@@ -36,7 +36,7 @@
  *               spelt on a memory list cannot be two different spellings.
  *
  * `biblelists.test.ts` pins that: every book the passage library references —
- * forty-seven of the sixty-six, each already checked character for character
+ * forty-eight of the sixty-six, each already checked character for character
  * against the release — must appear in these lists spelt identically. Rename
  * one and the suite fails, which is the same mechanism the verses have.
  *
@@ -50,6 +50,12 @@
  * that cannot say which Samuel it means, and the seven spelling styles — which
  * are where a memory list actually gets used — print every one of the sixty-six
  * as it is written here.
+ *
+ * One of those seven had to learn what a space is to do that. Word shapes draws
+ * a box per character, and a box is a thing a child writes a letter into — so
+ * `1 Samuel` used to ask for a letter in the box where the space is. A space is
+ * a `gap` in `words/shapes.ts` now: the slot is still reserved, so the boxes
+ * either side of it stay where they were, and nothing is drawn in it.
  *
  * ── Why these lists break two of the Dolch rules ────────────────────────────
  * `wordlists.ts` holds its entries to lower case and to one word each, and the
@@ -150,7 +156,7 @@ export const BIBLE_LISTS: WordList[] = [
       { word: "Obadiah", clue: "_ is the shortest Old Testament book." },
       { word: "Jonah", clue: "_ was swallowed by a great fish." },
       { word: "Micah", clue: "_ said the king would come from Bethlehem." },
-      { word: "Nahum", clue: "_ warned Nineveh a second time." },
+      { word: "Nahum", clue: "_ said Nineveh would fall." },
       { word: "Habakkuk", clue: "_ asked God why the wicked win." },
       { word: "Zephaniah", clue: "_ wrote about a coming day of judgement." },
       { word: "Haggai", clue: "_ told the people to rebuild the temple." },
@@ -241,12 +247,12 @@ export const BIBLE_LISTS: WordList[] = [
       { word: "Andrew", clue: "_ was the brother of Peter." },
       { word: "Thomas", clue: "_ wanted to see for himself." },
       { word: "Nicodemus", clue: "_ came to Jesus at night." },
-      { word: "Martha", clue: "_ was busy while Mary listened." },
+      { word: "Martha", clue: "_ was busy with the serving." },
       { word: "Lazarus", clue: "_ came out of the tomb." },
       { word: "Zacchaeus", clue: "_ climbed a tree to see." },
       { word: "Paul", clue: "_ was blinded on the Damascus road." },
       { word: "Barnabas", clue: "_ travelled with Paul." },
-      { word: "Timothy", clue: "_ was taught by his grandmother." },
+      { word: "Timothy", clue: "_ had a mother and grandmother of faith." },
       { word: "Lydia", clue: "_ sold purple cloth." },
     ],
   },
@@ -254,8 +260,14 @@ export const BIBLE_LISTS: WordList[] = [
     id: "bible-places",
     name: "Places in the Bible",
     group: "Names to know",
-    blurb: "Eden to Rome — where the story happens, in the order it happens.",
+    blurb: "Eden to Patmos — where the story happens, in the order it happens.",
     emoji: "🗺️",
+    // "In the order it happens" is a promise the list has to keep, and the order
+    // is the one the sentence beside each place puts it in rather than a rough
+    // sense of era: Nineveh before Babylon because Jonah is generations before
+    // the exile, the Jordan before Capernaum because the baptism is what Jesus
+    // goes to Galilee from, Athens before Corinth and Ephesus because that is
+    // Acts 17, 18 and 19 in that order.
     entries: [
       { word: "Eden", clue: "God planted a garden in _." },
       { word: "Ararat", clue: "The ark came to rest on _." },
@@ -267,20 +279,20 @@ export const BIBLE_LISTS: WordList[] = [
       { word: "Bethlehem", clue: "David and Jesus were both born in _." },
       { word: "Jerusalem", clue: "David made _ his capital city." },
       { word: "Zion", clue: "Another name for Jerusalem is _." },
-      { word: "Babylon", clue: "Daniel was carried away to _." },
       { word: "Nineveh", clue: "Jonah did not want to go to _." },
+      { word: "Babylon", clue: "Daniel was carried away to _." },
       { word: "Nazareth", clue: "Jesus grew up in _." },
+      { word: "Jordan", clue: "Jesus was baptised in the river _." },
       { word: "Galilee", clue: "Jesus called fishermen beside the sea of _." },
       { word: "Capernaum", clue: "Jesus made his home in _." },
-      { word: "Jordan", clue: "Jesus was baptised in the river _." },
       { word: "Samaria", clue: "The woman at the well came from _." },
       { word: "Bethany", clue: "Lazarus and Martha lived in _." },
       { word: "Gethsemane", clue: "Jesus prayed in the garden of _." },
       { word: "Damascus", clue: "Paul saw a bright light near _." },
       { word: "Antioch", clue: "Believers were first called Christians at _." },
-      { word: "Corinth", clue: "Paul wrote two letters to _." },
-      { word: "Ephesus", clue: "Paul stayed two years at _." },
       { word: "Athens", clue: "Paul preached about the unknown god in _." },
+      { word: "Corinth", clue: "Paul wrote two letters to _." },
+      { word: "Ephesus", clue: "Paul stayed three years at _." },
       { word: "Rome", clue: "Paul was kept under guard in _." },
       { word: "Patmos", clue: "John saw his visions on _." },
     ],
@@ -311,8 +323,8 @@ export const BIBLE_LISTS: WordList[] = [
       { word: "sacrifice", clue: "Something given up for God is a _." },
       { word: "priest", clue: "A _ offered gifts for the people." },
       { word: "angel", clue: "A messenger from heaven is an _." },
-      { word: "ark", clue: "Noah built a great wooden _." },
-      { word: "manger", clue: "Jesus was laid in a _." },
+      { word: "ark", clue: "A big wooden boat is an _." },
+      { word: "manger", clue: "A box animals eat from is a _." },
       { word: "shepherd", clue: "A _ looks after the sheep." },
       { word: "miracle", clue: "Something only God could do is a _." },
       { word: "faith", clue: "Trusting what you cannot see is _." },
