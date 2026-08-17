@@ -6,7 +6,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
 import { DEFAULT_PAPER } from "@/engine/sheets/paper";
-import type { Block, Sheet } from "@/engine/sheets/types";
+import type { Block, Paper, Sheet } from "@/engine/sheets/types";
 
 import { SheetView } from "./Sheet";
 
@@ -166,6 +166,18 @@ function filesUnder(dir: string, endings: string[]): string[] {
 
 const read = (path: string) => readFileSync(path, "utf8");
 
+/**
+ * The landmarks a page puts around a sheet: its sections, its page header, and
+ * any full-width wrap that is not the sheet's own frame. Everything nested
+ * inside one of these goes wherever it goes, so these are the elements the
+ * `.no-print` contract is actually about.
+ */
+function landmarks(source: string): Array<[string, string]> {
+  return [...source.matchAll(/<(section|header|div)\s[^>]*class="([^"]*)"/g)]
+    .filter(([, tag, classes]) => tag !== "div" || /\bwrap\b/.test(classes))
+    .map(([, tag, classes]) => [tag, classes] as [string, string]);
+}
+
 /* ── The blocks ────────────────────────────────────────────────────────── */
 
 describe("rendering a sheet", () => {
@@ -215,6 +227,47 @@ describe("rendering a sheet", () => {
     // sheet on it prints scaled or across two pages (§10).
     expect(a4).toContain("--sheet-w:11.693in");
     expect(a4).toContain("@page{size:11.693in 8.268in;margin:0}");
+  });
+
+  it("draws rules in mil inside a box measured in inches, so ⅝ prints as ⅝", () => {
+    // The whole physical-measurement claim rests on one correspondence, and it
+    // lives in three attributes of one element: the <svg> is sized in inches
+    // while its viewBox counts mil, so one user unit is a thousandth of an
+    // inch and a 625-unit gap comes off the printer at ⅝. Put the viewBox in
+    // inches, or drop the width and height, and every other test in this file
+    // stays green while every printed rule is a thousand times the wrong size
+    // — the one bug this feature cannot afford, and the one a screen never
+    // shows. The engine's own tests stop short of it: they never render.
+    const LINES = 14;
+    const ruled: Block = {
+      kind: "rules",
+      rule: { style: "hand-5-8", descender: true },
+      lines: LINES,
+    };
+
+    const measure = (paper: Paper, inches: string, mil: number) => {
+      const html = render(sheet({ paper, blocks: [ruled] }));
+      expect(html).toContain(
+        `<svg class="sheet__ink" width="${inches}in" height="8.75in" viewBox="0 0 ${mil} 8750"`,
+      );
+
+      const tops = [...html.matchAll(/sheet__rule--top"[^>]*y1="(\d+)"/g)].map(
+        (line) => Number(line[1]),
+      );
+      expect(tops.length).toBe(LINES);
+      for (let i = 1; i < tops.length; i++) {
+        expect(tops[i] - tops[i - 1]).toBe(625);
+      }
+    };
+
+    // 8.5in less two half-inch margins, and 14 × ⅝ of an inch down the page.
+    measure(DEFAULT_PAPER, "7.5", 7500);
+    // The same ruling on the second stock: 210mm less the same margins.
+    measure(
+      { size: "a4", orientation: "portrait", margin: "normal" },
+      "7.268",
+      7268,
+    );
   });
 });
 
@@ -275,6 +328,29 @@ describe("print isolation", () => {
     }
     expect(css).toMatch(/@page\s*\{[^}]*size:/);
     expect(css).toMatch(/@page\s*\{[^}]*margin:\s*0/);
+  });
+
+  it("keeps everything that is not the sheet off the paper", () => {
+    // print.css zeroes the `@page` margin on every page that renders a sheet,
+    // because the sheet owns its own geometry. On a catalog page — an h1, some
+    // prose, and then the paper — the only thing stopping the article printing
+    // off the edge is that every section of it carries `.no-print`. print.css
+    // records that as the settled decision; this is what holds a page to it. A
+    // section added later without the class prints an article with no page
+    // margin, silently, and "⌘P with no interaction produces usable paper"
+    // stops being true with nothing failing.
+    const pages = filesUnder(join(ROOT, "src/pages"), [".astro"]).filter(
+      (page) => read(page).includes("components/sheet"),
+    );
+    expect(pages.length).toBeGreaterThan(0);
+
+    for (const page of pages) {
+      for (const [tag, classes] of landmarks(read(page))) {
+        expect(classes, `<${tag} class="${classes}"> in ${page}`).toMatch(
+          /\bno-print\b/,
+        );
+      }
+    }
   });
 
   it("breaks pages where a reader would expect it to", () => {

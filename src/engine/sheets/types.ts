@@ -289,7 +289,20 @@ export type SheetOptions = {
 export type BlankConfig = SheetOptions & { kind: "blank" };
 
 /**
+ * Lined, ruled, graph, dot and isometric paper — a ruling and nothing written
+ * on it.
+ *
+ * The first real family (§11's "templates" tier), and the smallest one that
+ * proves the geometry end to end: there is nothing here but the ruling, so a ⅝
+ * rule that comes off the printer at anything other than ⅝ of an inch has
+ * nowhere to hide. It carries no options of its own beyond `rule`, because
+ * `Rule` already says everything there is to say about a ruling — which size,
+ * which midline, whether there is room for a `g`.
+ */
+export type PaperConfig = SheetOptions & { kind: "paper"; rule: Rule };
+
+/**
  * Anything a saved sheet can hold. Narrow on `kind` — and only in index.ts,
  * which is the one module that knows the whole union.
  */
-export type SheetConfig = BlankConfig;
+export type SheetConfig = BlankConfig | PaperConfig;
