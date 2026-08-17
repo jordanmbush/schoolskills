@@ -42,6 +42,7 @@ import type {
   SheetOptions,
 } from "./types";
 
+import { FACES } from "./faces";
 import { DEFAULT_FONT_PT, FONT_PT, MARGINS, PAPERS } from "./paper";
 
 /** What a link carries: which sheet, and which one of them. */
@@ -97,7 +98,13 @@ export const MAX_TITLE = 120;
 export const MAX_INSTRUCTIONS = 400;
 
 const FIELDS: HeaderField[] = ["name", "date", "class"];
-const FONTS: SheetFont[] = ["print", "cursive", "dyslexic"];
+/**
+ * Read off the faces the engine actually has rather than listed again here. A
+ * second list is a second thing to remember: a face added to `FACES` and left
+ * out of this one would decode to the print face, so a shared cursive sheet
+ * would open on the bench in print and nothing would say why.
+ */
+const FONTS = Object.keys(FACES) as SheetFont[];
 const ORIENTATIONS: Orientation[] = ["portrait", "landscape"];
 
 /** One of a known set, or the fallback. Never what the payload said. */

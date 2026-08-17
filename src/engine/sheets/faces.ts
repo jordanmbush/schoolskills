@@ -1,13 +1,14 @@
 /**
- * The three faces a sheet can be set in, measured rather than guessed.
+ * The five faces a sheet can be set in, measured rather than guessed.
  *
  * Tracing is the one place on this site where a font's own proportions are
  * load-bearing arithmetic instead of taste. A ⅝ rule is ⅝ of an inch (§4), the
  * tallest letter has to stand on the baseline and reach the top line, and the
- * em that does that is different in every face: Playwrite's tallest ascender is
- * 1.02 em, Andika's 0.79, OpenDyslexic's 0.85. One shared ratio therefore sets
- * exactly one of them correctly and the other two through the rule — which is
- * the difference between paper a child can write on and paper they can't.
+ * em that does that is different in every face: the looped cursive's tallest
+ * ascender is 1.02 em, Andika's 0.79, OpenDyslexic's 0.85, and the two other
+ * cursive models fall between at 0.96 and 0.89. One shared ratio therefore sets
+ * exactly one of them correctly and the rest through the rule — which is the
+ * difference between paper a child can write on and paper they can't.
  *
  * So each face is measured once, here. Every number below is a share of the em
  * read out of the font file itself with fontTools (the files are in
@@ -59,6 +60,21 @@ export type Face = {
    * the face draws a capital to; the round ones (`C G O Q S`) overshoot it by
    * the face's own optical overshoot, exactly as they overshoot the cap line
    * in any book — Andika by 0.012em, OpenDyslexic by 0.013em.
+   *
+   * The three cursive models do not do that, and one of them does something
+   * else. In the unlooped and British hands every round capital is drawn to
+   * exactly this height — no overshoot at all, which is what a face drawn to a
+   * ruling rather than to a paragraph looks like. In the looped hand `C G O Q`
+   * are likewise flush, and it is `S`, `V` and `W` that stand above: `S` by
+   * 0.071 em and `V` and `W` by 0.034. Those are letterforms rather than
+   * optical corrections — a looped cursive `S` is *drawn* through the cap line
+   * — and on the ¾ rule the capitals sheet uses they print 0.036in and 0.017in
+   * above the top rule. That is well past the 0.004in this file calls a
+   * tolerance elsewhere, and it is still the right way round: sizing the em off
+   * `S` instead would drop the other twenty-three capitals the same 0.036in
+   * *below* the line the page says every capital starts on, which is the miss
+   * this field exists to avoid. Nothing is clipped either way — `TracedRow`
+   * gives its viewport an em of slack at each end.
    *
    * Here because a sheet of nothing but capitals is one of the seven the shop
    * prints, and on it the tallest thing written *is* a capital. Sized off
@@ -114,11 +130,13 @@ export type Face = {
    * next set's top line rather than into clean paper.
    *
    * Andika uses 0.239 of the 0.396 it is given and OpenDyslexic 0.261 of 0.425,
-   * so both print sheets clear it comfortably. Playwrite's descenders are a
-   * whole 0.519 against 0.510, which is the one face that hangs over — by 0.009
-   * of the em, four thousandths of an inch on a ⅝ rule. That is the stated
-   * tolerance and the reason a traced row is not allowed to clip: a joined `g`
-   * with its loop cut off is a worse model than one that crosses a line.
+   * so both print sheets clear it comfortably, and the two unlooped cursive
+   * models clear it as well (0.457 of 0.478, 0.394 of 0.447). The looped hand
+   * is the one face that hangs over: 0.519 against 0.510, by 0.009 of the em,
+   * four thousandths of an inch on a ⅝ rule. That is the stated tolerance and
+   * the reason a traced row is not allowed to clip — a looped `g` with its loop
+   * cut off is a worse model than one that crosses a line, and on a cursive
+   * sheet that loop is also where the join to the next letter starts.
    */
   descent: number;
   /**
@@ -131,19 +149,60 @@ export type Face = {
    * run out of its cell — and it is per-face because OpenDyslexic is half as
    * wide again as Andika, so one shared guess would either waste a third of
    * the line or push a word off the end of it.
+   *
+   * It is the mean over the *small* letters, which is the honest statistic for
+   * running text and the wrong one for a row with a capital on it. See
+   * `capAdvance` below, and `glyphAdvance`, which picks between the two.
    */
   advance: number;
+  /**
+   * The same declared mean, for a row that has a capital on it.
+   *
+   * The width answer to what `capHeight` is the height answer to, and it
+   * exists for the same sheet: `Aa`…`Zz` and a page of nothing but capitals
+   * are two of the seven the shop prints, and on neither of them is a mean
+   * over `a`–`z` a description of what is in the cell. A capital is wider than
+   * a small letter in every face — and much wider in a joined one, where it is
+   * drawn with an entry flourish and then a stroke out to the letter after it.
+   *
+   * Measured across the twenty-six `Aa`…`Zz` pairs **as they are actually
+   * set** — shaped, so whatever alternates and joining strokes the face
+   * inserts are in the number — and divided by the two characters. Two
+   * departures from `advance`, both deliberate:
+   *
+   * - *A pair, not a capital.* On these sheets a capital never stands alone
+   *   in a cell without a small letter's worth of company: it heads a pair, a
+   *   word or a sentence. What has to fit is the pair.
+   * - *Ink, not advance.* A cell is a box the letters have to sit inside, and
+   *   the side bearings either side of that box cost nothing — the neighbour's
+   *   bearing is there to meet them. What overflows a cell is ink.
+   *
+   * The three joined models are where the difference bites. Andika's is a
+   * sixth over its small-letter mean and the character of air `handwriting.ts`
+   * reserves absorbs that; the looped hand's is a third over, and it does not
+   * — a row of `Aa` packed off `advance` puts `Mm` 0.1in into the cell beside
+   * it, which on a sheet whose whole subject is where a join belongs prints
+   * the model and the trace as one continuous joined string.
+   *
+   * It can come out *under* `advance`, and in OpenDyslexic it does: that face
+   * sets every letter in a wide slot, so its ink mean is narrower than its
+   * advance mean even with a capital on the row. `glyphAdvance` takes the
+   * classes at their largest for that reason, exactly as `glyphHeight` does —
+   * a capital is not a reason to pack a row tighter.
+   */
+  capAdvance: number;
   /**
    * The weight of an outlined letterform, as a share of the em.
    *
    * Tuned against the face's own stem — roughly a fifth to a quarter of it, so
    * the white core of a hollow letter stays open and a child can see the shape
    * they are tracing rather than a filled one. Stems scanlined at half the
-   * x-height across `lnioe`: Andika 0.090em, Playwrite 0.088em, OpenDyslexic
-   * 0.099em, which makes these three 24%, 18% and 26% of their stem. The three
-   * stems are within 12% of each other, so the ratios are not: Playwrite takes
-   * the lightest hand, for the reason in its entry below, and OpenDyslexic the
-   * heaviest because its counters are wide enough to take it.
+   * x-height across `lnioe`: Andika 0.090em, the three cursive models 0.088,
+   * 0.086 and 0.086, OpenDyslexic 0.099em — which makes these 24%, 18% and 26%
+   * of their stem. Every stem here is within 15% of every other, so the ratios
+   * are not: a joined script takes the lightest hand, for the reason in the
+   * `cursive` entry below, and OpenDyslexic the heaviest because its counters
+   * are wide enough to take it.
    */
   stroke: number;
   /**
@@ -177,10 +236,19 @@ export const MIN_INK: Mil = points(0.25);
 export const MAX_OUTLINE: Mil = points(0.75);
 
 /**
- * Andika for print, Playwrite for cursive, OpenDyslexic for the accessibility
- * option — chosen in that order for the reasons in §6 and recorded in
- * `public/fonts/LICENSE.md`. The ids are the user's choice; the families are
- * an implementation detail that a saved sheet deliberately does not carry.
+ * Andika for print, three Playwrite models for cursive, OpenDyslexic for the
+ * accessibility option — chosen in that order for the reasons in §6 and
+ * recorded in `public/fonts/LICENSE.md`. The ids are the user's choice; the
+ * families are an implementation detail that a saved sheet deliberately does
+ * not carry.
+ *
+ * Three cursives rather than one because there is no such thing as cursive:
+ * Playwrite's regional families are the handwriting models actually taught, and
+ * they disagree about the two things a cursive sheet is *for* — whether an
+ * ascender loops, and which letters join to the next. Shipping one and calling
+ * it correct would tell a British child their `b` joins wrongly. Which letters
+ * join is the file's own `calt` table and never this repo's opinion; see
+ * `writing/joins.ts`.
  */
 export const FACES: Record<SheetFont, Face> = {
   print: {
@@ -192,10 +260,17 @@ export const FACES: Record<SheetFont, Face> = {
     xHeight: 0.498,
     descent: 0.239,
     advance: 0.506,
+    capAdvance: 0.537,
     stroke: 0.022,
     dotted: [0, 4.5],
     dashed: [6, 4],
   },
+  /**
+   * The looped hand: traditional American cursive, and the id every saved
+   * cursive sheet already carries, so it stays unqualified (§7). Loops on the
+   * ascenders and descenders, and a join out of every letter — its `calt`
+   * table breaks after nothing at all.
+   */
   cursive: {
     id: "cursive",
     family: "Playwrite US Trad",
@@ -205,11 +280,54 @@ export const FACES: Record<SheetFont, Face> = {
     xHeight: 0.519,
     descent: 0.519,
     advance: 0.57,
-    // Finer than the other two, and dotted tighter. A joined script is one
+    capAdvance: 0.739,
+    // Finer than the print faces, and dotted tighter. A joined script is one
     // continuous stroke, so its outline doubles back on itself down every
     // stem; too heavy a line closes the pair into a solid bar and too loose a
     // dot pitch lands one dot on each side instead of a pair a child can see
-    // is a stem.
+    // is a stem. The three cursive models share these three numbers because
+    // they share a stem: 0.088, 0.086 and 0.086 of the em.
+    stroke: 0.016,
+    dotted: [0, 3.5],
+    dashed: [5, 3.5],
+  },
+  /**
+   * The same letters unlooped, and the model that lifts the pencil: `b f g j
+   * p q s y` do not join to what follows them. Shorter ascenders than the looped
+   * hand by 0.06 em and a tail two thirds the depth, both of which follow from
+   * dropping the loops — which is also why this is the one cursive model whose
+   * descender fits inside the room a ⅝ rule gives it.
+   */
+  "cursive-modern": {
+    id: "cursive-modern",
+    family: "Playwrite US Modern",
+    ascent: 0.957,
+    capHeight: 0.953,
+    figure: 0.953,
+    xHeight: 0.517,
+    descent: 0.457,
+    advance: 0.546,
+    capAdvance: 0.622,
+    stroke: 0.016,
+    dotted: [0, 3.5],
+    dashed: [5, 3.5],
+  },
+  /**
+   * The fully joined hand a British primary school teaches: unlooped like the
+   * modern American model, joined out of every letter like the traditional
+   * one, and with a lead-in stroke from the baseline into each letter — which
+   * is what makes it "continuous cursive" rather than joined print.
+   */
+  "cursive-uk": {
+    id: "cursive-uk",
+    family: "Playwrite GB J",
+    ascent: 0.894,
+    capHeight: 0.89,
+    figure: 0.89,
+    xHeight: 0.517,
+    descent: 0.394,
+    advance: 0.548,
+    capAdvance: 0.608,
     stroke: 0.016,
     dotted: [0, 3.5],
     dashed: [5, 3.5],
@@ -223,6 +341,7 @@ export const FACES: Record<SheetFont, Face> = {
     xHeight: 0.56,
     descent: 0.261,
     advance: 0.795,
+    capAdvance: 0.732,
     // The heaviest of the three, because the face is: weighted bottoms and
     // 0.099em stems can carry an outline that would fill Andika's counters.
     stroke: 0.026,
@@ -240,6 +359,36 @@ export const FACES: Record<SheetFont, Face> = {
 export function faceOf(font: SheetFont | undefined): Face {
   return own(FACES, font ?? "print", FACES.print);
 }
+
+/**
+ * The cursive models, in the order a picker offers them: the looped hand
+ * first, because it is the default and the id a saved sheet already carries.
+ *
+ * A list rather than a flag on `Face`, because the order is the whole of what
+ * a caller wants — a builder listing the models, a hub page naming them, and
+ * `cursiveOf` picking one when a sheet has to be joined and isn't.
+ */
+export const CURSIVE_FACES: SheetFont[] = [
+  "cursive",
+  "cursive-modern",
+  "cursive-uk",
+];
+
+/** Whether a face joins its letters. Three of the five do. */
+export const isCursive = (font: SheetFont | undefined): boolean =>
+  font !== undefined && CURSIVE_FACES.includes(font);
+
+/**
+ * The cursive model to set joined writing in — the one asked for, if it joins.
+ *
+ * A sheet of joins set in a print face is two letters standing next to each
+ * other, which is precisely the thing the sheet exists to teach a child not to
+ * write. So the one content style that is *only* a cursive exercise resolves
+ * its own face rather than printing a contradiction, and a parent who has
+ * chosen a model keeps it.
+ */
+export const cursiveOf = (font: SheetFont | undefined): SheetFont =>
+  isCursive(font) ? (font as SheetFont) : "cursive";
 
 /**
  * How tall the tallest thing in `text` is drawn, as a share of the em.
@@ -262,6 +411,29 @@ export function glyphHeight(text: string, face: Face): number {
   if (/[A-Z]/.test(text)) height = Math.max(height, face.capHeight);
   if (/[0-9]/.test(text)) height = Math.max(height, face.figure);
   return height > 0 ? height : face.ascent;
+}
+
+/**
+ * How wide one character of `text` is reserved, as a share of the em.
+ *
+ * `glyphHeight` read sideways, and the same judgement: a face states more than
+ * one mean and which of them applies is a fact about what is written, not
+ * about the face. A row of `Aa` is not a sample of `a`–`z` and must not be
+ * packed as though it were — half of it is capitals, and in a joined hand a
+ * capital is drawn with an entry flourish and a stroke out to the letter after
+ * it.
+ *
+ * The classes are taken at their largest, for the reason they are in
+ * `glyphHeight` and one more: `capAdvance` can measure narrower than `advance`
+ * (OpenDyslexic), and a capital arriving on a row is never a reason to give the
+ * row less room. Numerals count with the capitals — they are drawn to the cap
+ * line and no face here draws one wider than its widest capital — and `advance`
+ * is the answer for a row with none of them on it.
+ */
+export function glyphAdvance(text: string, face: Face): number {
+  return /[A-Z0-9]/.test(text)
+    ? Math.max(face.advance, face.capAdvance)
+    : face.advance;
 }
 
 /**
@@ -297,13 +469,25 @@ export function fittedEm(width: Mil, characters: number, face: Face): Mil {
  * How many characters fit across `width` at one type size — `fittedEm` read
  * the other way round.
  *
- * What a passage is wrapped at. The em is fixed by the ruling on a handwriting
- * sheet, so the question is never "how small must this be to fit" but "where
- * does the line run out", and answering it needs no DOM: it is the same
- * declared mean advance, divided rather than multiplied.
+ * What a passage is wrapped at, and what a row of cells is packed by. The em
+ * is fixed by the ruling on a handwriting sheet, so the question is never "how
+ * small must this be to fit" but "where does the line run out", and answering
+ * it needs no DOM: it is the same declared mean advance, divided rather than
+ * multiplied.
+ *
+ * `text` is what will be written across that width, and it picks the mean
+ * (`glyphAdvance`) the way it picks the height in `glyphEm`. Left out, the
+ * answer is the small-letter mean — which is the right one for running text,
+ * where a capital is the first letter of a sentence rather than half of every
+ * cell, and the wrong one for a row of `Aa`.
  */
-export function fittedCharacters(width: Mil, em: Mil, face: Face): number {
-  const advance = em * face.advance;
+export function fittedCharacters(
+  width: Mil,
+  em: Mil,
+  face: Face,
+  text = "",
+): number {
+  const advance = em * glyphAdvance(text, face);
   if (advance <= 0 || width <= 0) return 1;
   return Math.max(1, Math.floor(width / advance));
 }

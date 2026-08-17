@@ -24,18 +24,21 @@
  * each, exactly as `_catalog.ts` argues.
  */
 import { DEFAULT_FONT_PT } from "@/engine/sheets/paper";
-import { encodeSharedSheet } from "@/engine/sheets/share";
-import type {
-  HandwritingConfig,
-  HeaderField,
-  Paper,
-  PaperSize,
-} from "@/engine/sheets/types";
+import type { HandwritingConfig, PaperSize } from "@/engine/sheets/types";
 // The same twelve words the bench opens its own sight-word sheet on. Sliced in
 // one place so the catalog page and the builder default cannot drift apart.
 import { STARTER_WORDS } from "@/games/printshop/defaults";
 
-import { STOCKS, type Stock } from "./_catalog";
+import {
+  SHEET_FIELDS as FIELDS,
+  STOCKS,
+  benchHref,
+  paperOf,
+  shelve,
+  stockHref,
+  stockPath,
+  type Stock,
+} from "./_catalog";
 
 /** How the hub groups the shelf: what is being written, in the order it is learnt. */
 export type HandwritingGroup = "letters" | "words" | "passages";
@@ -77,22 +80,6 @@ export type HandwritingSheet = {
  * sheet back, whichever family printed it.
  */
 export const HANDWRITING_SEED = 1;
-
-/** Portrait, half-inch margins — the stock is the only thing that varies. */
-const paperOf = (size: PaperSize): Paper => ({
-  size,
-  orientation: "portrait",
-  margin: "normal",
-});
-
-/**
- * Printed blank, always, and the reason there is no third field.
- *
- * A worksheet asks for a name because a teacher has thirty of them to hand
- * back. Nothing here holds one (§1): these are two ruled lines on paper and
- * there is nowhere in a config to put a value for either.
- */
-const FIELDS: HeaderField[] = ["name", "date"];
 
 /**
  * The first verse of "The Star", Jane Taylor, 1806 — the poem everyone knows
@@ -365,49 +352,26 @@ export function configFor(
   return { ...sheet.config, paper: paperOf(size) };
 }
 
-/** The route a sheet prints at, on a given stock. */
-export function pathFor(sheet: HandwritingSheet, stock: Stock): string {
-  return stock.path ? `${sheet.slug}/${stock.path}` : sheet.slug;
-}
+/** The route a sheet prints at, on a given stock — see `_catalog.ts`. */
+export const pathFor = (sheet: HandwritingSheet, stock: Stock): string =>
+  stockPath(sheet.slug, stock);
 
 /** The whole URL, which is what a hub links to and the canonical says. */
 export const hrefFor = (sheet: HandwritingSheet, stock: Stock): string =>
-  `/printables/handwriting/${pathFor(sheet, stock)}`;
+  stockHref("/printables/handwriting", sheet.slug, stock);
 
-/**
- * The builder, opened on this sheet.
- *
- * §14: the config lives in the fragment, so "change what is on it" is an
- * ordinary link on a static site rather than a lookup on a server that isn't
- * there. The stock goes with it, so a parent who came from the A4 page gets the
- * A4 sheet on the bench rather than a Letter one to set again.
- */
-export function builderHref(sheet: HandwritingSheet, stock: Stock): string {
-  const payload = encodeSharedSheet({
-    config: configFor(sheet, stock.id),
-    seed: HANDWRITING_SEED,
-  });
-  return `/printables/make#s=${payload}`;
-}
+/** The builder, opened on this sheet. */
+export const builderHref = (sheet: HandwritingSheet, stock: Stock): string =>
+  benchHref(configFor(sheet, stock.id), HANDWRITING_SEED);
 
-/**
- * The shelf, grouped — the shape every page lists it in.
- *
- * Written once because the hub and each sheet's row of neighbours would
- * otherwise have to be kept in step by hand, and the failure would be silent: a
- * sheet added here and shown on one page but not the other still builds, still
- * deploys, and still looks right.
- */
+/** The shelf, grouped — the shape every page lists it in. */
 export function handwritingShelf(): Array<{
   id: HandwritingGroup;
   label: string;
   blurb: string;
   sheets: HandwritingSheet[];
 }> {
-  return HANDWRITING_GROUPS.map((group) => ({
-    ...group,
-    sheets: HANDWRITING_SHEETS.filter((sheet) => sheet.group === group.id),
-  }));
+  return shelve(HANDWRITING_GROUPS, HANDWRITING_SHEETS);
 }
 
 /** Letter first, then A4 — the order `_catalog.ts` sets and the reason for it. */

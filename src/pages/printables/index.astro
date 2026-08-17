@@ -1,7 +1,16 @@
 ---
 import Content from "@/layouts/Content.astro";
 import { STOCKS, pathFor, shelf } from "./_catalog";
-import { HANDWRITING_SHEETS, handwritingShelf, hrefFor } from "./_handwriting";
+import {
+  CURSIVE_SHEETS,
+  cursiveShelf,
+  hrefFor as cursiveHref,
+} from "./_cursive";
+import {
+  HANDWRITING_SHEETS,
+  handwritingShelf,
+  hrefFor as handwritingHref,
+} from "./_handwriting";
 import { MATHS_SHEETS, mathsShelf, pathFor as mathsPath } from "./_maths";
 
 /**
@@ -17,10 +26,10 @@ import { MATHS_SHEETS, mathsShelf, pathFor as mathsPath } from "./_maths";
  * It lists what exists and nothing else. A shelf of links to sheets that
  * haven't been built is the thin-content pattern Base.astro's `noindex` block
  * already argues against, and a catalog page here is meant to BE the worksheet
- * — real prerendered HTML a parent can print without touching anything. Three
+ * — real prerendered HTML a parent can print without touching anything. Four
  * families fill it: every ruling in §5 on both stocks, the curated maths topics
- * of §8, each of which prints its own answer key, and the handwriting sheets,
- * which come on both stocks for the same reason the paper does.
+ * of §8, each of which prints its own answer key, and the handwriting and
+ * cursive sheets, which come on both stocks for the same reason the paper does.
  */
 const title = "Free printable worksheets — The Print Shop | School Skills";
 const description =
@@ -31,6 +40,7 @@ const letter = STOCKS[0];
 const groups = shelf();
 const strands = mathsShelf();
 const writing = handwritingShelf();
+const joined = cursiveShelf();
 ---
 
 <Content
@@ -73,12 +83,12 @@ const writing = handwritingShelf();
   <section class="band band--tight wrap">
     <h2 class="h2">On the shelf now</h2>
     <p class="h2__sub">
-      Three families: maths worksheets, each with its answer key on the page
-      behind it, handwriting practice that traces before it copies, and paper in
-      every ruling. Each of these is a page that is itself the sheet &mdash;
-      open it, press print, and that is the whole of it. Handwriting and paper
-      come on both stocks, because a ruling shrunk to fit whatever is in the
-      tray is no longer the ruling you chose.
+      Four families: maths worksheets, each with its answer key on the page
+      behind it, handwriting practice that traces before it copies, the same
+      progression again in cursive, and paper in every ruling. Each of these is
+      a page that is itself the sheet &mdash; open it, press print, and that is
+      the whole of it. Everything ruled comes on both stocks, because a ruling
+      shrunk to fit whatever is in the tray is no longer the ruling you chose.
     </p>
 
     <h3 class="h2 h2--next">Maths worksheets</h3>
@@ -110,7 +120,7 @@ const writing = handwritingShelf();
       writing.map((group) => (
         <nav class="stones" aria-label={group.label}>
           {group.sheets.map((sheet) => (
-            <a class="stone" href={hrefFor(sheet, letter)}>
+            <a class="stone" href={handwritingHref(sheet, letter)}>
               {sheet.short}
             </a>
           ))}
@@ -121,6 +131,26 @@ const writing = handwritingShelf();
       <a class="cta" href="/printables/handwriting">
         All the handwriting sheets
       </a>
+    </div>
+
+    <h3 class="h2 h2--next">Cursive</h3>
+    <p class="h2__sub">
+      {CURSIVE_SHEETS.length} sheets in a joined hand, including the page printing
+      never needed &mdash; the joins themselves. Three cursive models to choose between.
+    </p>
+    {
+      joined.map((group) => (
+        <nav class="stones" aria-label={`Cursive — ${group.label}`}>
+          {group.sheets.map((sheet) => (
+            <a class="stone" href={cursiveHref(sheet, letter)}>
+              {sheet.short}
+            </a>
+          ))}
+        </nav>
+      ))
+    }
+    <div class="hero__actions">
+      <a class="cta" href="/printables/cursive">All the cursive sheets</a>
     </div>
 
     {
@@ -179,15 +209,16 @@ const writing = handwritingShelf();
       <h2 class="h2">What the press is being set for</h2>
       <p class="h2__sub">
         The Print Shop is opening a family at a time, and this page lists what
-        exists rather than what is planned. Paper, maths and handwriting are
-        open. Cursive is next.
+        exists rather than what is planned. Paper, maths, handwriting and
+        cursive are open. The wider copywork is next.
       </p>
       <div class="prose">
         <p>
-          The order it opens in: the paper, the maths sheets and the handwriting
-          above, then cursive and the wider copywork &mdash; passages from the
-          public domain, Scripture among them &mdash; then spelling, phonics,
-          and the charts, certificates and planners that are simply blank forms.
+          The order it opens in: the paper, the maths sheets, the handwriting
+          and the cursive above, then the wider copywork &mdash; passages from
+          the public domain, Scripture among them &mdash; then spelling,
+          phonics, and the charts, certificates and planners that are simply
+          blank forms.
         </p>
         <p>
           The one it is really being built for comes with the sheet builder:

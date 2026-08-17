@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { FACES, glyphEm } from "../faces";
+import {
+  CURSIVE_FACES,
+  FACES,
+  glyphAdvance,
+  glyphEm,
+  isCursive,
+} from "../faces";
 import { ruleCapacity, ruledLines } from "../layout";
 import { RULINGS, inches, rulePitch, toInches, writingSpace } from "../paper";
 import type {
@@ -16,11 +22,13 @@ import {
   HANDWRITING_SHEET,
   MAX_REPEATS,
   describeHandwriting,
+  fontOf,
   handwritingLayout,
   instructionOf,
   traceStyles,
   wrapPassage,
 } from "./handwriting";
+import { JOIN_FAMILIES, joinPairs } from "./joins";
 
 /**
  * The family where the paper is the exercise.
@@ -33,7 +41,7 @@ import {
  * repeat of the ruling, so that promise is the row pitch and nothing else.
  *
  * **The model sits on the rules.** The tallest letter stands on the baseline
- * and reaches the top line, in whichever of the three faces the sheet is set
+ * and reaches the top line, in whichever of the five faces the sheet is set
  * in — which is arithmetic over proportions measured out of the font files
  * (`faces.ts`), not a guess that happens to look right in one of them.
  *
@@ -179,24 +187,21 @@ describe("trace, copy, then write it alone", () => {
   });
 
   it("runs across the row for a letter and down the page for a line", () => {
-    // The whole of the difference between the four styles: something short
+    // The whole of the difference between the styles: something short
     // enough to write several times on one line does, and a line of a passage
     // takes the next row instead.
     const across = rowsOf({ letters: "upper", repeats: 4 });
-    expect(across[0].cells.map((cell) => cell.style)).toEqual([
-      "solid",
-      "dotted",
-      "dotted",
-      "none",
-      "solid",
-      "dotted",
-      "dotted",
-      "none",
-      "solid",
-      "dotted",
-      "dotted",
-      "none",
-    ]);
+    const group = ["solid", "dotted", "dotted", "none"];
+    const cells = across[0].cells.map((cell) => cell.style);
+    // A whole number of progressions, more than one of them, and no partial
+    // group at the end. How many fit is the packing's business and depends on
+    // the face and on what is written (`glyphAdvance`); that several do is
+    // this style's, and it is what the assertion is for.
+    expect(cells.length % group.length).toBe(0);
+    expect(cells.length / group.length).toBeGreaterThan(1);
+    for (let at = 0; at < cells.length; at += group.length) {
+      expect(cells.slice(at, at + group.length)).toEqual(group);
+    }
 
     const down = rowsOf({ style: "passage", text: "One line.", repeats: 3 });
     expect(down.map((row) => row.cells.length)).toEqual([1, 1, 1]);
@@ -414,6 +419,181 @@ describe("a ⅝ rule under a ruler", () => {
     );
     const small = glyphEm(writingSpace({ style: "hand-3-8" }), FACES.print);
     expect(small).toBeLessThan(big);
+  });
+
+  it("gives a cell room for what is written in it, in every face", () => {
+    // The invariant the packing exists to hold, and the one that broke: a row
+    // is divided into equal cells (`TracedRow`), so a group packed off a mean
+    // that is too small for what is actually on the row puts the model's ink
+    // over the trace beside it. In a joined hand that does not look like
+    // crowding — it looks like one continuous joined string, on the sheet
+    // whose whole subject is where a join belongs.
+    //
+    // Asserted against the face's own declared width for what is written
+    // (`glyphAdvance`), because there is no DOM here to measure ink in — the
+    // same bargain the packing itself strikes. A row with one group on it is
+    // exempt: `perRow` floors at one, and past that point it is `fittedEm` in
+    // `TracedRow` that shrinks the type rather than the packing that widens
+    // the cell.
+    for (const face of Object.values(FACES)) {
+      for (const style of STYLES) {
+        for (const letters of ["both", "upper", "lower"] as const) {
+          const over = { rule: { style }, font: face.id, letters } as const;
+          const rows = rowsOf(over);
+          const { box, em, perRow } = handwritingLayout(config(over), 2);
+          if (perRow < 2) continue;
+          for (const row of rows) {
+            const said = row.cells.map((cell) => cell.text).join("");
+            if (said === "") continue;
+            const cell = Math.floor(box.width / row.cells.length);
+            const longest = row.cells.reduce(
+              (most, one) => Math.max(most, one.text.length),
+              0,
+            );
+            // The longest thing on the row plus the character of air the
+            // packing reserved for it — the whole of what a cell was promised.
+            const need = em * glyphAdvance(said, face) * (longest + 1);
+            // A mil of slack, and only a mil: `across` and the cell width are
+            // each floored to a whole thousandth of an inch, which is already
+            // finer than a 600dpi printer can place a dot.
+            expect(cell, `${face.id} / ${style} / ${letters}`) //
+              .toBeGreaterThanOrEqual(need - 1);
+          }
+        }
+      }
+    }
+  });
+});
+
+/* ── Cursive, and the one style only cursive has ───────────────────────────
+   A cursive sheet is these same sheets in a joining face, so most of what is
+   asserted above covers it already — the rulings, the progression, the em set
+   from the face's own ascent. What is new is a set of content that print has no
+   use for, and a face that a sheet can insist on.                           */
+
+describe("joined writing", () => {
+  it("writes the joins, all six families, on one page", () => {
+    // The story's own criterion. A join is only correct in the company of the
+    // letters either side of it, so what goes on the page is pairs — and the
+    // sheet has to hold every family rather than as many as happen to fit.
+    const written = new Set(
+      rowsOf({ style: "joins", font: "cursive", repeats: 3 }).flatMap((row) =>
+        row.cells.map((cell) => cell.text).filter((text) => text !== ""),
+      ),
+    );
+    for (const pair of joinPairs()) expect(written, pair).toContain(pair);
+    expect(written.size).toBe(joinPairs().length);
+  });
+
+  it("writes one family when one was asked for", () => {
+    for (const family of JOIN_FAMILIES) {
+      const written = new Set(
+        rowsOf({ style: "joins", joins: family.id }).flatMap((row) =>
+          row.cells.map((cell) => cell.text).filter((text) => text !== ""),
+        ),
+      );
+      expect([...written].sort(), family.id).toEqual([...family.pairs].sort());
+    }
+  });
+
+  it("sets a joins sheet in a joining hand, whatever face was asked for", () => {
+    // Two letters that do not touch are not a join, so this is the one style
+    // that resolves its own face. A saved sheet or a hand-edited link can say
+    // `print` here, and the sheet still has to teach what it says it teaches.
+    for (const font of ["print", "dyslexic", undefined] as const) {
+      const joined = config({ style: "joins", font });
+      expect(isCursive(fontOf(joined)), `${font}`).toBe(true);
+      expect(isCursive(HANDWRITING_SHEET.build(joined, 1).font), `${font}`) //
+        .toBe(true);
+    }
+  });
+
+  it("keeps the cursive model that was chosen", () => {
+    // Resolving is not overriding: a parent who picked the unlooped model gets
+    // it, and the three are genuinely different hands rather than three names
+    // for one — which is why the em they are set at differs too.
+    const sizes = new Set<number>();
+    for (const font of CURSIVE_FACES) {
+      const joined = config({ style: "joins", font });
+      expect(fontOf(joined), font).toBe(font);
+      expect(HANDWRITING_SHEET.build(joined, 1).font, font).toBe(font);
+      sizes.add(handwritingLayout(joined, 2).em);
+    }
+    expect(sizes.size).toBe(CURSIVE_FACES.length);
+  });
+
+  it("leaves every other style's face exactly as it found it", () => {
+    for (const style of ["letters", "numbers", "words", "passage"] as const) {
+      expect(fontOf(config({ style, font: "print" })), style).toBe("print");
+      expect(fontOf(config({ style })), style).toBeUndefined();
+    }
+  });
+
+  it("asks for a join rather than a letter, and says so on the paper", () => {
+    expect(instructionOf(config({ style: "joins", repeats: 3 }))).toBe(
+      "Trace each join, then write it on your own.",
+    );
+    const sheet = HANDWRITING_SHEET.build(config({ style: "joins" }), 1);
+    expect(sheet.header.title).toBe("Joining letters");
+  });
+
+  it("calls a cursive sheet cursive, and a printed one nothing of the kind", () => {
+    // The title is what somebody reads off the paper on the fridge a week
+    // later, so it follows the hand the sheet was actually set in.
+    const titleOf = (over: Partial<HandwritingConfig>) =>
+      HANDWRITING_SHEET.build(config(over), 1).header.title;
+    expect(titleOf({ font: "cursive" })).toBe("Cursive letters");
+    expect(titleOf({ font: "cursive-uk", style: "passage" })) //
+      .toBe("Cursive copywork");
+    expect(titleOf({ font: "cursive-modern", style: "words" })) //
+      .toBe("Cursive practice");
+    expect(titleOf({})).toBe("Letter practice");
+    // A numeral is a numeral in any hand.
+    expect(titleOf({ font: "cursive", style: "numbers" })) //
+      .toBe("Number formation");
+    // And a title somebody typed always wins.
+    expect(titleOf({ font: "cursive", title: "Tuesday" })).toBe("Tuesday");
+  });
+
+  it("prints on every ruling, in every trace style, in every model", () => {
+    // The criterion, for the family that added a face rather than a ruling:
+    // three cursive models against twelve rulings and six ways of drawing a
+    // model, including the combinations nobody would choose.
+    for (const font of CURSIVE_FACES) {
+      for (const style of STYLES) {
+        for (const trace of TRACES) {
+          const over = {
+            style: "joins",
+            font,
+            rule: { style },
+            trace,
+          } as const;
+          const rows = rowsOf(over);
+          const where = `${font} / ${style} / ${trace}`;
+          expect(rows.length, where).toBeGreaterThan(0);
+          expect(rows[0].cells.length, where).toBeGreaterThan(0);
+          // And never more rows than the paper holds, which is the only way a
+          // handwriting sheet can silently become two sheets.
+          const rule: Rule = { style };
+          const { box } = handwritingLayout(config(over), 2);
+          expect(rows.length, where).toBeLessThanOrEqual(
+            ruleCapacity(
+              box.height,
+              rulePitch(rule) > 0 ? rule : DEFAULT_HAND_RULE,
+            ),
+          );
+        }
+      }
+    }
+  });
+
+  it("names itself by the hand it is written in", () => {
+    expect(describeHandwriting(config({ style: "joins", repeats: 3 }))).toBe(
+      'Joining letters — the common joins — handwriting ⅝" — written 3 times',
+    );
+    expect(
+      describeHandwriting(config({ style: "joins", joins: "round" })),
+    ).toContain("joins into a round letter");
   });
 });
 
