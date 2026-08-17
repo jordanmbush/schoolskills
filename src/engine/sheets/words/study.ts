@@ -477,8 +477,14 @@ function bodyOf(
   const drawn = studyQuestions(config, seed);
   const outOf = drawn.length;
   const style = styleOf(config);
-  // One generator for the whole page, so the draw and the options are one
-  // sequence and the sheet is reproducible from its seed alone (§7).
+  // A second generator off the same seed — `studyQuestions` made its own for
+  // the draw and this one shuffles the options. Two streams rather than one, as
+  // in `spelling.ts`, and reproducibility comes from the seed being fixed
+  // rather than from there being a single sequence: same seed, same draw, same
+  // options, every build (§7). What it costs is that the options replay values
+  // the draw already spent, which is harmless — they are consumed against
+  // different lengths — but it does mean anything reaching for statistical
+  // independence between the two has to thread one generator through instead.
   const rand = mulberry32(seed);
 
   if (style === "choose") {

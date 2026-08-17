@@ -198,7 +198,7 @@ describe("the word-study family", () => {
     for (const size of ["letter", "a4"] as const) {
       for (const fontPt of [10, 12, 18]) {
         for (const one of EVERY_SHEET) {
-          const big = { ...one, paper: { ...paper, size }, count: 200 };
+          const big = { ...one, paper: { ...paper, size }, fontPt, count: 200 };
           const { perPage } = studyLayout(big);
           const printed = countOf(blockOf(big));
           expect(printed, `${where(one)} ${size}@${fontPt}`) //

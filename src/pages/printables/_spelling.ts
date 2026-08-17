@@ -152,7 +152,7 @@ export const SPELLING_SHEETS: SpellingSheet[] = [
     keyword: "Free printable spelling practice worksheets",
     summary:
       "Twelve words to write out three times each on ruled lines — the oldest spelling exercise there is, on the words phonics stops helping with.",
-    lead: "One word to a line, printed once to read and then three ruled lines to write it on. The words are the ones that stop yielding to sounding out at about six or seven — “could”, “know”, “once” — which is the point at which writing a word out starts being worth the time.",
+    lead: "One word to a line, printed once to read and then three ruled lines to write it on. The words are the ones that stop yielding to sounding out at about six or seven — “again”, “could”, “every” — which is the point at which writing a word out starts being worth the time.",
     notes: [
       "Writing a word three times is not busywork if the word was chosen properly, and that is the whole difference between this page and a page of lines. A word that can be sounded out does not need to be written out; a word like “because” or “friend” has to be held in the hand until it comes back without thinking, and three goes is roughly where that starts. If a child is copying the model letter by letter rather than looking, cover it after the first line.",
       "The model at the start of the line is printed once and never repeated, which is deliberate. A sheet that prints the word at the head of every line is a tracing exercise wearing a spelling exercise's clothes — the eye never has to hold the word for more than a second. One model, three empty lines, and the last of the three is the one worth marking.",
@@ -173,7 +173,7 @@ export const SPELLING_SHEETS: SpellingSheet[] = [
     lead: "Each word is printed with two of its letters missing and a ruled gap where each one goes. The letters taken out are always inside the word rather than at the start of it, so there is a word to work from rather than a guessing game.",
     notes: [
       "Never the first letter, and never two in a row: those two rules are what make this an exercise rather than a puzzle. A child reading “_at” has a word to work from; a child reading “_ _ t” has a lottery. What is being practised is the middle of a word, which is where nearly every spelling mistake in English actually happens — the vowels a speaker cannot hear the difference between and the doubled consonants nobody sounds out.",
-      "The words are the longer sight words, which is where the gaps do the most work. “Because”, “before”, “their” and “would” are all mis-spelt in the middle by the same children who can spell them aloud, and a gap in that exact position is a question they cannot answer by sounding it out. The answer key on the page behind prints the letters back in, so this can be marked by somebody who was not sitting next to them.",
+      "The words are the longer sight words, which is where the gaps do the most work. “Because”, “before”, “around” and “always” are all mis-spelt in the middle by the same children who can spell them aloud, and a gap in that exact position is a question they cannot answer by sounding it out. The answer key on the page behind prints the letters back in, so this can be marked by somebody who was not sitting next to them.",
     ],
     teaches: "Spelling patterns inside a word",
     ages: "Ages 6–9",
@@ -275,6 +275,11 @@ export const SPELLING_SHEETS: SpellingSheet[] = [
       paper: paperOf("letter"),
       fontPt: DEFAULT_FONT_PT,
       fields: FIELDS,
+      // The one sheet on this shelf built by another family, so the one whose
+      // paper would otherwise come out headed "Handwriting practice" while the
+      // page it printed from is headed for sight words. `title` is the override
+      // for exactly that, and `_spelling.test.ts` holds the two together.
+      title: "Sight words to trace",
       style: "words",
       words: dolch("dolch-2", 12),
       rule: { style: "hand-5-8", midline: "dashed", descender: true },

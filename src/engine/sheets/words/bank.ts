@@ -22,15 +22,22 @@
  *   - **No second right answer among the near misses.** A distractor is drawn
  *     from another entry of the same topic (`study.ts`), so two entries that
  *     could answer each other are a question with two answers on it. `light` is
- *     the one to watch: its opposite is `dark` and also `heavy`.
+ *     the one to watch: its opposite is `dark` and also `heavy`. `soft` is the
+ *     other, and it is why `hard` is answered `easy` below rather than `soft`:
+ *     `soft` is the opposite of `hard` and equally of `loud`, so a bank holding
+ *     both pairs would eventually print `soft` as a near miss for `loud` and
+ *     mark a child wrong for a right answer. Neither word appears in `ANTONYMS`
+ *     at all, and no test can hold that line for you: a clash of meanings is
+ *     invisible to something comparing strings.
  *   - **British spelling**, as everywhere in this repo — and nothing whose
  *     spelling differs between the two, because a sheet is printed on both sides
  *     of the Atlantic and a child marked wrong for `colour` is a bad sheet.
  *   - **Words a child of the age can picture.** These are read without a
  *     teacher standing beside them.
- *   - `bank.test.ts` enforces the mechanical half: no duplicate prompts, no
- *     duplicate answers inside a topic, no empty strings, and — for the two
- *     topics built out of parts — that the parts really do make the word.
+ *   - `study.test.ts` enforces the mechanical half, under its "the word bank"
+ *     describe: no duplicate prompts, no duplicate answers inside a topic, no
+ *     empty strings, and — for the two topics built out of parts — that the
+ *     parts really do make the word.
  */
 
 /* ── Rimes, and what goes in front of them ─────────────────────────────────
@@ -372,7 +379,10 @@ export const ANTONYMS: Meaning[] = [
   { word: "old", match: "new" },
   { word: "open", match: "shut" },
   { word: "wet", match: "dry" },
-  { word: "hard", match: "soft" },
+  // Not "soft", which is also the opposite of "loud" further down: a distractor
+  // is another entry's answer, so the two pairs together put "soft" on the
+  // "loud" line as a wrong option that is right. See the house rules above.
+  { word: "hard", match: "easy" },
   { word: "full", match: "empty" },
   { word: "long", match: "short" },
   { word: "high", match: "low" },

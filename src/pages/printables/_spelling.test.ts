@@ -196,6 +196,10 @@ describe("the sheet on a catalog page", () => {
       // a handwriting sheet and has nothing anybody can award a mark for.
       if (sheet.config.kind === "handwriting") {
         expect(header.score, sheet.slug).toBeUndefined();
+        // And titled after the page it came off rather than after the family
+        // that built it: paper headed "Handwriting practice" on a sight-word
+        // page is paper that disagrees with the page it was printed from.
+        expect(header.title, sheet.slug).toBe(sheet.name);
       } else {
         expect(header.score?.outOf, sheet.slug).toBe(promised(sheet.config));
       }
