@@ -58,10 +58,46 @@ interface HubDB extends DBSchema {
 
 let handle: Promise<IDBPDatabase<HubDB>> | null = null;
 
+/**
+ * What a parent is told when another tab is holding the old version open.
+ *
+ * The one storage failure with an instruction attached, which is why it is a
+ * sentence rather than a code: every screen renders `err.message` straight out
+ * of the hub's error state, so this is the whole of what somebody sees.
+ */
+const BLOCKED_MSG =
+  "School Skills is open in another tab from before this update. Close the other tabs, then reload this page.";
+
 function db() {
   // Opened lazily and memoised: the island is `client:only`, but a stray import
   // from a build-time script must not try to open IndexedDB in Node.
-  handle ??= openDB<HubDB>(DB_NAME, DB_VERSION, {
+  handle ??= open().catch((err: unknown) => {
+    // A failure is never memoised. The commonest one is a stale tab, which the
+    // parent fixes by closing it — and the retry button on the boot screen has
+    // to be able to actually retry rather than re-await the same dead promise.
+    handle = null;
+    throw err;
+  });
+  return handle;
+}
+
+/**
+ * Opens the database, refusing to hang when another tab blocks the upgrade.
+ *
+ * A version bump cannot start while a connection to the older version is still
+ * open somewhere, and `openDB`'s promise simply never settles while that is
+ * true — so without the race below every service read awaits `db()` forever and
+ * the app sits on its loading state with nothing to say. The epic's own premise
+ * is a parent in the print shop with a kid's game open in another tab, so this
+ * is reachable rather than theoretical.
+ */
+function open(): Promise<IDBPDatabase<HubDB>> {
+  let stall: (reason: Error) => void = () => {};
+  const stalled = new Promise<never>((_, reject) => {
+    stall = reject;
+  });
+
+  const opening = openDB<HubDB>(DB_NAME, DB_VERSION, {
     // Each version's block is additive and guarded by the version it arrived
     // in, so a browser two versions behind runs both and a fresh one runs both
     // in order. Nothing here ever rewrites or drops existing data — this is
@@ -81,8 +117,30 @@ function db() {
         database.createObjectStore("sheets", { keyPath: "id" });
       }
     },
+    // We are the tab asking for the new version and somebody else won't let go.
+    blocked() {
+      stall(new Error(BLOCKED_MSG));
+    },
+    // The mirror image: we are the old tab, and another one wants to upgrade.
+    // Letting go is the only way that upgrade ever runs. The handle is dropped
+    // before the close so this tab's next read opens a fresh connection at
+    // whatever version is current by then, rather than being handed back the
+    // one we just closed.
+    blocking() {
+      const stale = handle;
+      handle = null;
+      void stale?.then((database) => database.close()).catch(() => {});
+    },
   });
-  return handle;
+
+  return Promise.race([opening, stalled]).catch((err: unknown) => {
+    // The open we walked away from can still succeed later, once the other tab
+    // goes. Close it rather than strand a connection nobody holds a reference
+    // to — that one would block the *next* version bump exactly as this one was
+    // blocked, and there would be no tab to close to clear it.
+    void opening.then((database) => database.close()).catch(() => {});
+    throw err;
+  });
 }
 
 /**

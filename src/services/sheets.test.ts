@@ -8,8 +8,9 @@ import { InvalidSheet, MAX_NAME, readSheetFile, toFile } from "./sheets";
 
 /**
  * The pure half of the sheet service — what may be saved, and refusing a file
- * that isn't ours. Everything that writes needs IndexedDB and is covered in the
- * browser instead, the same way the deck service's writing half is.
+ * that isn't ours. Everything that writes needs IndexedDB, so it is covered in
+ * `storage/db.test.ts` against a fake one, alongside the store's own upgrade
+ * and backup paths.
  */
 
 const config: SheetConfig = {
@@ -71,6 +72,22 @@ describe("sharing a sheet", () => {
     );
     expect(() => readSheetFile("a string")).toThrow(InvalidSheet);
     expect(() => readSheetFile(null)).toThrow(InvalidSheet);
+  });
+
+  it("refuses a half-built config as InvalidSheet, not as a TypeError", () => {
+    // The kind is one this build makes, so the spec check passes — and then the
+    // family reads its own config to name the sheet, and `paper` has no rule to
+    // read. Whatever comes out of this door has to be an `InvalidSheet`, or the
+    // caller that catches one is left holding a crash instead of a message.
+    expect(() =>
+      readSheetFile({
+        kind: "schoolskills-sheet",
+        version: 1,
+        name: "",
+        config: { kind: "paper" },
+        seed: 1,
+      }),
+    ).toThrow(InvalidSheet);
   });
 
   it("refuses a sheet this build doesn't know how to make", () => {

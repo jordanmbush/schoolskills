@@ -59,7 +59,21 @@ function validate(input: SheetInput): SheetInput {
   // is documented as the line for the catalog *and the record*. Clipped rather
   // than checked against the cap, because a name the service chose for itself
   // must never be the thing that refuses the save.
-  const name = typed || describeSheet(input.config).slice(0, MAX_NAME);
+  //
+  // Guarded, because this is the untrusted door. A family describes its own
+  // config and reaches into it to do so — `describePaper` reads `rule.style` —
+  // and all this config has been held to so far is a `kind` string. A file
+  // carrying the right kind and a missing sub-object would throw a raw
+  // TypeError out of a function documented as throwing `InvalidSheet`, which a
+  // caller catching `InvalidSheet` would not catch at all.
+  let name = typed;
+  if (!name) {
+    try {
+      name = describeSheet(input.config).slice(0, MAX_NAME);
+    } catch {
+      throw new InvalidSheet("That sheet has nothing to print");
+    }
+  }
 
   // The seed is which one of the infinitely many sheets a config makes this is
   // (§7). A fraction or a negative would still build — `mulberry32` starts with
