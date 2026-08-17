@@ -403,9 +403,17 @@
 }
 
 /* Right-aligned over the dividend, not centred: a quotient's last digit
-   belongs over the dividend's last digit, always, whatever either measures. */
+   belongs over the dividend's last digit, always, whatever either measures.
+
+   Which is why the right inset below is the dividend's own, written out again.
+   Both boxes stretch the full width of `.sheet__house`, so their right *edges*
+   already agree — but a quotient without the padding the dividend holds its
+   digits off by would put its units digit two thirds of a digit clear of the
+   one it is supposed to sit over, and place value is the entire exercise. The
+   two values are asserted equal in Sheet.test.tsx so they cannot drift. */
 .sheet__quotient {
   min-height: 1.2em;
+  padding-right: 0.06in;
   text-align: right;
   white-space: nowrap;
 }

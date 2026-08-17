@@ -217,6 +217,27 @@ function filesUnder(dir: string, endings: string[]): string[] {
 const read = (path: string) => readFileSync(path, "utf8");
 
 /**
+ * How far a rule holds its text off the right edge of its own box, as written.
+ *
+ * Compared as the source string rather than as a length, because that is all
+ * this can honestly claim without a browser: two rules that declare `0.06in`
+ * agree, and two that declare different things are a question for whoever
+ * changed one of them. Both the longhand and the three-value shorthand are
+ * read, since the two rules this compares are written each way.
+ */
+function rightInset(css: string, rule: string): string {
+  const block = css.slice(css.indexOf(rule));
+  const body = block.slice(0, block.indexOf("}"));
+  const longhand = /padding-right:\s*([^;]+);/.exec(body);
+  if (longhand) return longhand[1].trim();
+  const shorthand = /padding:\s*([^;]+);/.exec(body);
+  if (!shorthand) throw new Error(`${rule} declares no padding at all`);
+  // top | right-and-left | bottom, and the one-value form besides.
+  const parts = shorthand[1].trim().split(/\s+/);
+  return parts.length === 1 ? parts[0] : parts[1];
+}
+
+/**
  * The landmarks a page puts around a sheet: its sections, its page header, and
  * any full-width wrap that is not the sheet's own frame. Everything nested
  * inside one of these goes wherever it goes, so these are the elements the
@@ -625,6 +646,15 @@ describe("a rendered multiplication sheet", () => {
         "font-variant-numeric: tabular-nums",
       );
     }
+
+    // Tabular figures only line a quotient up with its dividend while the two
+    // boxes hold their digits the same distance off their shared right edge. A
+    // padding added to one and not the other slides the whole quotient across
+    // by a fraction of a digit — invisible in review, and the one thing the
+    // sheet exists to teach. Asserted rather than trusted.
+    expect(rightInset(css, ".sheet__quotient {")).toBe(
+      rightInset(css, ".sheet__dividend {"),
+    );
   });
 
   it("fills a multiplication grid in only on the key", () => {

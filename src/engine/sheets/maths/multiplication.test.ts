@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import { answerKey, buildSheet, describeSheet, sheetSpec } from "../index";
-import { PROBLEM_GAP } from "../layout";
+import { PROBLEM_GAP, answerLine } from "../layout";
+import { points } from "../paper";
 import type {
   GridSpec,
   MarginSize,
@@ -11,7 +12,7 @@ import type {
   Problem,
 } from "../types";
 
-import { divisionLines, longDigits, partialLines } from "./long";
+import { BRACKET_EMS, divisionLines, longDigits, partialLines } from "./long";
 import {
   MULTIPLICATION_SHEET,
   multiplicationGrid,
@@ -98,8 +99,15 @@ const EVERY_SHAPE: Array<Partial<MultiplicationConfig>> = [
   { style: "long", digits: { into: 3, by: 2 }, count: 6 },
   { style: "long", digits: { into: 2, by: 1 }, count: 6 },
   { style: "long", digits: { into: 4, by: 3 }, count: 4 },
+  // Equal digit counts, which is the case the folding question turns on: it is
+  // the only shape where a sheet can draw both `26 × 47` and `47 × 26`, and
+  // this family says those are two exercises rather than one repetition. Two
+  // digits by two is also the long multiplication most children are set, so
+  // leaving it out left the headline ask of the story untested.
+  { style: "long", digits: { into: 2, by: 2 }, count: 6 },
   { style: "long", operation: "divide", digits: { into: 3, by: 1 }, count: 6 },
   { style: "long", operation: "divide", digits: { into: 3, by: 2 }, count: 6 },
+  { style: "long", operation: "divide", digits: { into: 3, by: 3 }, count: 4 },
   {
     style: "long",
     operation: "divide",
@@ -217,15 +225,26 @@ function sentences(problem: Problem): string[] {
   return [`${problem.prompt} ${problem.answer}`];
 }
 
-/** What makes two problems the same problem, worked out from the page. */
-function factOf(sentence: string): string {
+/**
+ * What makes two problems the same problem, worked out from the page.
+ *
+ * Multiplication folds and division does not — `masteryKey` against
+ * `drillKey`, established here from the printed page rather than from the key
+ * the family happened to compute.
+ *
+ * Except on a long form, where nothing folds. A fact sheet asks for an answer,
+ * and `7 × 8` and `8 × 7` have the same one; a long form asks for a *method*,
+ * and `26 × 47` and `47 × 26` are worked with different partials in different
+ * columns and a different number of them. So they are two exercises, and
+ * `longKey` in long.ts keeps them apart deliberately. A folding key here would
+ * not be a stricter test — it would be a test of a rule the family does not
+ * have, and it would fail the moment a sheet asked for equal digit counts.
+ */
+function factOf(sentence: string, folds: boolean): string {
   const { left, sign, right } = read(sentence);
-  // Multiplication folds and division does not — `masteryKey` against
-  // `drillKey`, established here from the printed page rather than from the
-  // key the family happened to compute.
-  return sign === "×"
+  return sign === "×" && folds
     ? `×:${Math.min(left, right)}:${Math.max(left, right)}`
-    : `÷:${left}:${right}`;
+    : `${sign}:${left}:${right}`;
 }
 
 /* ── The registry ──────────────────────────────────────────────────────── */
@@ -500,9 +519,14 @@ describe("what may be on the page", () => {
 
   it("asks the same question twice on no sheet at all", () => {
     for (const shape of EVERY_SHAPE) {
+      // A long form is an exercise in a method rather than a fact, so its
+      // repetitions are counted without folding — see `factOf`.
+      const folds = shape.style !== "long";
       for (const seed of SEEDS) {
         const problems = problemsOf(shape, seed);
-        const facts = problems.map((problem) => factOf(sentences(problem)[0]));
+        const facts = problems.map((problem) =>
+          factOf(sentences(problem)[0], folds),
+        );
         expect(new Set(facts).size, JSON.stringify(shape)).toBe(
           problems.length,
         );
@@ -540,6 +564,30 @@ describe("what may be on the page", () => {
         ).length,
         `${one.left} × ${one.right} is on the page twice`,
       ).toBe(one.left === one.right ? 1 : 0);
+    }
+  });
+
+  it("counts a long multiplication as an exercise and not as a fact", () => {
+    // The one place the folding rule above is deliberately off, and the reason
+    // `factOf` has to be told. `26 × 47` and `47 × 26` are one product and two
+    // different pieces of written work — different partials, in different
+    // columns — so a long sheet may print both, and folding them would throw
+    // away half the pool of a sheet whose digit counts are equal.
+    //
+    // Only equal digit counts can draw the pair at all: a three-digit-by-two
+    // sheet has nowhere to put `47 × 269`. This uses the smallest such pool, a
+    // single digit each way, because that is where a page is bound to contain
+    // one rather than merely allowed to.
+    for (const seed of SEEDS) {
+      const drawn = problemsOf(
+        { style: "long", digits: { into: 1, by: 1 }, count: 200, columns: 4 },
+        seed,
+      ).map((problem) => (problem.operands ?? []).map(Number));
+      expect(drawn.length).toBeGreaterThan(0);
+      const both = drawn.filter(([into, by]) =>
+        drawn.some(([a, b]) => into !== by && a === by && b === into),
+      );
+      expect(both.length, `seed ${seed}`).toBeGreaterThan(0);
     }
   });
 
@@ -827,14 +875,43 @@ describe("how much fits", () => {
       { into: 3, by: 2 },
       { into: 4, by: 3 },
       { into: 2, by: 1 },
+      { into: 3, by: 3 },
     ]) {
       const over = { style: "long" as const, digits, count: 4 };
-      for (const problem of problemsOf(over, 5)) {
+      const worked = problemsOf(over, 5);
+      expect(worked.length, JSON.stringify(digits)).toBeGreaterThan(0);
+      for (const problem of worked) {
         expect(problem.working?.length ?? 0).toBe(partialLines(digits));
       }
-      for (const problem of problemsOf({ ...over, operation: "divide" }, 5)) {
-        expect(problem.working).toBeUndefined();
-        expect(problem.workspace).toBeGreaterThan(0);
+
+      // A division attaches no lines — its reservation is blank paper under
+      // the bracket — so "the two agree" has to be checked against the number
+      // itself rather than against a count of what was written.
+      for (const remainders of [false, true]) {
+        const divided = { ...over, operation: "divide" as const, remainders };
+        const where = JSON.stringify(divided);
+        const { fontPt } = config(divided);
+        const reserved = divisionLines(digits) * answerLine(fontPt);
+        const divisions = problemsOf(divided, 5);
+        expect(divisions.length, where).toBeGreaterThan(0);
+
+        for (const problem of divisions) {
+          expect(problem.working, where).toBeUndefined();
+          expect(problem.workspace, where).toBe(reserved);
+          // And the row the layout hands the renderer is the bracket plus that
+          // space, so the working a child is promised is inside the cell it is
+          // printed in rather than over the problem below.
+          expect(multiplicationLayout(config(divided)).row, where) //
+            .toBeGreaterThanOrEqual(points(fontPt * BRACKET_EMS) + reserved);
+          // The reservation is two ruled lines per digit of the quotient, on
+          // the bound that a quotient can be no longer than `into − by + 1`
+          // digits — a bound `divisionLines` computes before any division has
+          // been drawn. This is the half of it a drawn quotient can falsify: a
+          // longer one is a child working past the bottom of their own space.
+          const [quotient] = problem.answer.split(" r ");
+          expect(quotient.length, `${where}: ${problem.answer}`) //
+            .toBeLessThanOrEqual(digits.into - digits.by + 1);
+        }
       }
     }
   });
