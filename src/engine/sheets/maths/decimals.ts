@@ -98,6 +98,17 @@ const MULTIPLIER = { min: 2, max: 9 };
 const PERCENTS = [5, 10, 15, 20, 25, 30, 40, 50, 60, 70, 75, 80, 90, 100];
 
 /**
+ * The percentages a sheet takes *of an amount*, which is the list above without
+ * the identity on it.
+ *
+ * "100% of 63" is 63, and a child who has read the question has already written
+ * the answer. It stays in `PERCENTS` because `100% = 1.00` is a fair conversion
+ * to ask for — a whole is a hundred per cent is the thing being converted — and
+ * it comes out here because it is not a calculation to do.
+ */
+const AMOUNT_PERCENTS = PERCENTS.filter((percent) => percent !== 100);
+
+/**
  * The denominators a conversion sheet uses.
  *
  * Only fractions that *stop* — a third is 0.333… and there is no number of
@@ -244,17 +255,34 @@ function written(
   return { key, prompt: `${operands[0]} ${sign} ${operands[1]} =`, answer };
 }
 
-/** "25% of 80 =", and only when the answer comes out whole. */
+/**
+ * "25% of 80 =", with the amount drawn to suit the percent.
+ *
+ * The percent is chosen first and the amount is then walked in the steps that
+ * keep the answer whole, rather than both being drawn freely and the pair
+ * rejected when it isn't. That is not a saving, it is the difference between a
+ * varied page and a page of one question: a percent divides a hundred well or
+ * badly, and 5% comes out whole of one number in twenty while 50% does of one
+ * in two — so a rejecting draw prints the friendliest percents over and over
+ * and leaves the rest of the list off the sheet almost entirely. Choosing the
+ * percent first gives every one of them the same share of the page.
+ */
 function drawPercent(config: DecimalConfig, rand: () => number): Drawn | null {
-  const percent = PERCENTS[Math.floor(rand() * PERCENTS.length)];
+  const percent = AMOUNT_PERCENTS[Math.floor(rand() * AMOUNT_PERCENTS.length)];
   const { min, max } = bounds(config.range);
-  const amount = between(min, max, rand);
-  const part = percent * amount;
-  if (amount <= 0 || part % 100 !== 0) return null;
+  // How far apart the amounts are that this percent comes out whole from: every
+  // fourth number for a quarter, every second for a half, every twentieth for
+  // 5%. A range with none of them in it is a request with no answers in it, and
+  // an empty draw is the honest reply — the miss budget above ends the page.
+  const step = 100 / gcd(100, percent);
+  const first = Math.ceil(Math.max(min, 1) / step);
+  const last = Math.floor(max / step);
+  if (first > last) return null;
+  const amount = between(first, last, rand) * step;
   return {
     key: `percent:${percent}:${amount}`,
     prompt: `${percent}% of ${amount} =`,
-    answer: String(part / 100),
+    answer: String((percent * amount) / 100),
   };
 }
 

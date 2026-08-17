@@ -109,6 +109,15 @@ const pick = <T>(items: readonly T[], rand: () => number): T =>
 const signed = (config: IntegerConfig): boolean => config.negatives !== false;
 
 /**
+ * Whether an order-of-operations sheet may put a square on the page.
+ *
+ * On unless refused, because the rule is taught with powers in it. Turned off
+ * it is the same rule a year earlier — and the sheet says so, because the
+ * instruction line is written from this too.
+ */
+const powered = (config: IntegerConfig): boolean => config.powers !== false;
+
+/**
  * One number of the size the config asked for, with its sign drawn separately.
  *
  * The range counts magnitudes — "numbers to twenty" is what a parent says, and
@@ -274,6 +283,13 @@ type Template = {
   id: string;
   /** How many operations it holds, which is what `terms` chooses between. */
   ops: number;
+  /**
+   * Whether the line it prints has a square in it, which is what `powers`
+   * chooses between. Declared rather than read back off the printed text: the
+   * template knows, and a sheet that decided by looking for a `²` would be one
+   * regex away from a page a child cannot start.
+   */
+  squared?: true;
   draw(pull: () => number, rand: () => number): Expression | null;
 };
 
@@ -351,6 +367,7 @@ const TEMPLATES: Template[] = [
   {
     id: "square-add",
     ops: 2,
+    squared: true,
     draw: (pull, rand) => {
       const [a, b] = [pull(), pull()];
       const plus = rand() < 0.5;
@@ -407,6 +424,7 @@ const TEMPLATES: Template[] = [
   {
     id: "square-times",
     ops: 3,
+    squared: true,
     draw: (pull) => {
       const [a, b, c] = [pull(), pull(), pull()];
       return {
@@ -452,7 +470,13 @@ function drawExpression(
   rand: () => number,
 ): Drawn | null {
   const wanted = termsOf(config);
-  const pool = TEMPLATES.filter((one) => one.ops === wanted);
+  // Filtered before the draw rather than rejected after it, so a sheet with the
+  // squares off is the same page of expressions with two templates fewer rather
+  // than a page that spends its budget printing what it then throws away.
+  const pool = TEMPLATES.filter(
+    (one) => one.ops === wanted && (powered(config) || one.squared !== true),
+  );
+  if (pool.length === 0) return null;
   const template = pick(pool, rand);
   const { min, max } = bounds(config.range);
   // Both ends, because the cap moves the top: a range that started above it
@@ -605,6 +629,23 @@ const INSTRUCTION: Record<IntegerStyle, string> = {
 };
 
 /**
+ * The same line for an order sheet with the squares turned off.
+ *
+ * The instruction has to describe the page it is printed at the top of. A sheet
+ * that told a child to do powers first and then printed none is teaching them
+ * to look for a step that is not there — and one that printed them without
+ * saying so is worse. So `powers` moves both, from here.
+ */
+const ORDER_WITHOUT_POWERS =
+  "Work out each answer. Brackets first, then × and ÷, then + and −.";
+
+/** What the sheet tells a child to do, which is a function of what is on it. */
+function instructionOf(config: IntegerConfig): string {
+  if (config.style === "order" && !powered(config)) return ORDER_WITHOUT_POWERS;
+  return INSTRUCTION[config.style] ?? INSTRUCTION.arithmetic;
+}
+
+/**
  * The header this sheet will actually print.
  *
  * A generated family names its own sheet, so `config.title` is an override and
@@ -618,10 +659,7 @@ function headerOf(config: IntegerConfig): SheetOptions {
     fontPt: config.fontPt,
     fields: config.fields,
     title: config.title ?? titleOf(config),
-    instructions:
-      config.instructions ??
-      INSTRUCTION[config.style] ??
-      INSTRUCTION.arithmetic,
+    instructions: config.instructions ?? instructionOf(config),
   };
 }
 

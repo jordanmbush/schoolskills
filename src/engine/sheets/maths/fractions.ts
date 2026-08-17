@@ -203,7 +203,13 @@ function drawEquivalent(pool: number[], rand: () => number): Drawn | null {
   if (value === null || value.d * by > MAX_SCALED_DENOMINATOR) return null;
   const scaled = { n: value.n * by, d: value.d * by };
   return {
-    key: `equivalent:${value.n}:${value.d}:${by}:${top ? "n" : "d"}`,
+    // Folded on the equivalence rather than on the blank, exactly as an
+    // identifying picture folds on the value it shows: `1/5 = 3/_` and
+    // `1/5 = _/15` are one fact asked from two sides, and a child who has just
+    // worked out that 1/5 is 3/15 does not do the second one again — they copy
+    // it. The engine would not see a repeat; the child does, which is the only
+    // vote that counts.
+    key: `equivalent:${value.n}:${value.d}:${by}`,
     prompt: top
       ? `${value.n}/${value.d} = _/${scaled.d}`
       : `${value.n}/${value.d} = ${scaled.n}/_`,

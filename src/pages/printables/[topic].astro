@@ -1,0 +1,226 @@
+---
+import Content from "@/layouts/Content.astro";
+import AdSlot from "@/components/site/AdSlot.astro";
+import { SheetView } from "@/components/sheet/Sheet";
+import { answerKey, buildSheet } from "@/engine/sheets";
+import {
+  MATHS_SEED,
+  MATHS_SHEETS,
+  builderHref,
+  mathsShelf,
+  pathFor,
+  type MathsSheet,
+} from "./_maths";
+
+/**
+ * One prerendered maths worksheet per topic — and the page is the worksheet.
+ *
+ * The shape §8 describes and the shape `[...slug].astro` already built for
+ * paper, applied to the family that is actually searched for: "free printable
+ * multiplication worksheets" is one of the largest queries in education, and a
+ * parent who lands here gets prose that answers it, the sheet itself directly
+ * under it as HTML, and nothing to click. ⌘P produces usable paper because the
+ * sheet IS the page, not a download link on it.
+ *
+ * **Two sheets, not one.** The worksheet and its answer key print as
+ * consecutive pages, which is what `break-after: page` in sheet.css was written
+ * for — the CSS names "a sheet and its answer key" in as many words. A key is
+ * the single most expected feature of a worksheet site and the most commonly
+ * done badly, and it costs nothing here: `answerKey` prints the answers the
+ * build already computed rather than working them out a second time, so the key
+ * cannot disagree with the sheet it belongs to. The two `<article>`s stay
+ * adjacent siblings on purpose — `print.css` breaks on `.sheet + .sheet` as
+ * well, and an element between them would take that second guarantee away.
+ *
+ * **No client directive on `SheetView`, ever.** `@astrojs/react` renders a
+ * component with no `client:*` to HTML at build time, so these pages ship zero
+ * JavaScript — the whole SEO argument of §2, and the reason a sheet is HTML
+ * rather than a canvas or a PDF. `Sheet.test.tsx` holds every page in this
+ * directory to it, against the source and against `dist/`.
+ *
+ * **Everything that is not a sheet carries `.no-print`.** `@page` cannot be
+ * scoped to a class, so the zeroed page margin a sheet needs applies to the
+ * prose as well and it would print off the edge. Hiding the article is the
+ * right way round rather than merely the easy one: printing this page means
+ * printing the worksheet on it.
+ *
+ * A separate route file from paper's `[...slug].astro` rather than a branch
+ * inside it. The two share a URL prefix and nothing else — a ruling comes on
+ * two stocks and has no answers, a worksheet has answers and one stock — and
+ * the slugs are disjoint, which `_maths.test.ts` asserts so that the two
+ * patterns can never both claim a path.
+ */
+
+type Props = { sheet: MathsSheet };
+
+export function getStaticPaths() {
+  return MATHS_SHEETS.map((sheet) => ({
+    params: { topic: sheet.slug },
+    props: { sheet },
+  }));
+}
+
+const { sheet } = Astro.props;
+
+const printed = buildSheet(sheet.config, MATHS_SEED);
+const key = answerKey(sheet.config, MATHS_SEED);
+
+const title = `${sheet.keyword} | School Skills`;
+const description = `${sheet.summary} Printed straight from this page — free, no account, and no download.`;
+const url = `https://schoolskills.app${pathFor(sheet)}`;
+
+const strands = mathsShelf();
+const strand = strands.find((group) => group.id === sheet.strand)!;
+---
+
+<Content
+  title={title}
+  description={description}
+  world="paper"
+  jsonLd={{
+    "@context": "https://schema.org",
+    "@type": "LearningResource",
+    name: sheet.heading,
+    description,
+    url,
+    learningResourceType: "Worksheet",
+    educationalUse: "Practice",
+    teaches: sheet.teaches,
+    typicalAgeRange: sheet.ages,
+    isAccessibleForFree: true,
+    inLanguage: "en",
+  }}
+>
+  <header class="hero wrap no-print">
+    <p class="hero__eyebrow">
+      <span class="hero__world">The Print Shop</span>
+      {strand.label}
+    </p>
+    <h1 class="hero__title">{sheet.heading}</h1>
+    <p class="hero__lead">{sheet.lead}</p>
+    <p class="aside">
+      The sheet below <strong>is</strong> the printout, and the page behind it is
+      <strong> the answer key</strong>. Press{" "}
+      <strong>&#8984;P</strong> &mdash; <strong>Ctrl+P</strong> on Windows &mdash;
+      and everything but the paper disappears. Nothing here needs choosing first.
+      To keep a copy instead, pick <em>Save as PDF</em> in the print dialog and your
+      browser writes one.
+    </p>
+    <p class="hero__note">Free &middot; no account &middot; no download</p>
+  </header>
+
+  {
+    /*
+      The sheets, outside `.wrap` deliberately. A wrap adds an inline padding
+      that print.css cannot take back off, and a sheet printed a centimetre in
+      from where it says it is has the wrong geometry everywhere at once. The
+      key is a sibling of the sheet, with nothing between them — see the note
+      above on why that adjacency is load-bearing.
+    */
+  }
+  <div class="sheet-frame">
+    <SheetView sheet={printed} />
+    <SheetView sheet={key} />
+  </div>
+
+  <section class="band band--tight wrap no-print">
+    <h2 class="h2">What is on this sheet</h2>
+    <div class="prose">
+      {sheet.notes.map((note) => <p>{note}</p>)}
+      <p>
+        The answers were worked out when the problems were, so the key is the
+        same page with the answers drawn in rather than a second attempt at the
+        same questions &mdash; there is no way for the two to disagree. The
+        number in the footer is the seed the sheet was built from: it is printed
+        so that the identical sheet can be had again next week, rather than one
+        that merely looks like it.
+      </p>
+    </div>
+  </section>
+
+  <section class="band band--tight wrap no-print">
+    <h2 class="h2">Change what is on it</h2>
+    <div class="prose">
+      <p>
+        This page is one sheet out of a family that can print thousands, and the
+        settings behind it &mdash; how many problems, how big the numbers get,
+        how they are laid out, whether there is room to work &mdash; are all
+        switches. The link below carries this sheet&rsquo;s own settings, so the
+        bench opens on exactly the page above rather than on a blank one.
+      </p>
+      <p class="aside">
+        The bench is still being installed. Until it opens, the link is worth
+        having anyway: it holds the whole configuration in the address bar, so
+        it can be bookmarked or sent to somebody now and opened when it lands.
+      </p>
+    </div>
+    <div class="hero__actions">
+      <a class="cta cta--quiet" href={builderHref(sheet)}>
+        Open this sheet in the builder
+      </a>
+    </div>
+  </section>
+
+  <div class="wrap no-print"><AdSlot name="article" /></div>
+
+  <section class="band band--tight wrap no-print">
+    <h2 class="h2">The same facts, on screen</h2>
+    <div class="prose">
+      <p>{sheet.play}</p>
+    </div>
+    <div class="hero__actions">
+      <a class="cta" href="/flash-cards">Race the flash cards</a>
+    </div>
+    {
+      sheet.tables && (
+        <>
+          <h3 class="h2 h2--next">Every table this sheet uses</h3>
+          <p class="h2__sub">
+            One page each, with the full table on it and something true about
+            that number rather than filler.
+          </p>
+          <nav class="stones" aria-label="Times tables">
+            {sheet.tables.map((table) => (
+              <a class="stone" href={`/multiplication/${table}-times-table`}>
+                {table}&times;
+              </a>
+            ))}
+          </nav>
+        </>
+      )
+    }
+  </section>
+
+  <section class="band band--tight wrap no-print">
+    <h2 class="h2">Every maths sheet</h2>
+    <p class="h2__sub">
+      {MATHS_SHEETS.length} topics, each one a page like this one &mdash; the sheet,
+      its answer key, and no account to print either.
+    </p>
+    {
+      strands.map((group) => (
+        <>
+          <h3 class="h2 h2--next">{group.label}</h3>
+          <p class="h2__sub">{group.blurb}</p>
+          <nav class="stones" aria-label={group.label}>
+            {group.sheets.map((candidate) => (
+              <a
+                class="stone"
+                href={pathFor(candidate)}
+                aria-current={
+                  candidate.slug === sheet.slug ? "page" : undefined
+                }
+              >
+                {candidate.short}
+              </a>
+            ))}
+          </nav>
+        </>
+      ))
+    }
+    <div class="hero__actions">
+      <a class="cta cta--quiet" href="/printables/math">All the maths sheets</a>
+      <a class="cta cta--quiet" href="/printables">Back to The Print Shop</a>
+    </div>
+  </section>
+</Content>
