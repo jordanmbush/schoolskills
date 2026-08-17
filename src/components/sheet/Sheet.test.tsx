@@ -11,6 +11,7 @@ import { DEFAULT_PAPER } from "@/engine/sheets/paper";
 import type {
   ArithmeticConfig,
   Block,
+  FractionArt,
   FractionConfig,
   MoneyConfig,
   MultiplicationConfig,
@@ -743,6 +744,26 @@ const named = (over: Partial<FractionConfig> = {}) =>
 const namedKey = (over: Partial<FractionConfig> = {}) =>
   render(answerKey(fractions(over), SEED) as Sheet);
 
+/**
+ * One numeric attribute off the first element carrying `className`.
+ *
+ * Anchored on the space before the name, because `stroke-width` ends in `width`
+ * too — a regex without it would compare the shading against the ink weight and
+ * pass for the wrong reason.
+ */
+function attr(html: string, className: string, name: string): number {
+  const found = new RegExp(`class="${className}"[^>]*? ${name}="(-?\\d+)"`) //
+    .exec(html);
+  if (found === null) throw new Error(`no ${name} on .${className}`);
+  return Number(found[1]);
+}
+
+/** The picture riding on a problem, which a naming problem always has. */
+function artOf(problem: Problem, where: number): FractionArt {
+  if (problem.art === undefined) throw new Error(`problem ${where} has no art`);
+  return problem.art;
+}
+
 describe("a rendered fraction sheet", () => {
   it("draws the picture on the blank sheet, not only on the key", () => {
     // The one drawing on a sheet that is the *question*. A child handed a
@@ -794,6 +815,48 @@ describe("a rendered fraction sheet", () => {
         );
       });
     }
+  });
+
+  it("shades as much of the bar as the answer says is shaded", () => {
+    // The other half of the test above. The cuts say how many parts there are;
+    // this says how many of them are filled — and on a naming sheet the picture
+    // *is* the question, so a bar that disagrees with the key is a page with no
+    // right answer on it, which every other assertion here would let through.
+    const items = itemsOf(fractions({ model: "bar", count: 6 }));
+    const drawn = problems(named({ model: "bar", count: 6 }));
+    expect(items.length).toBeGreaterThan(0);
+    items.forEach((problem, index) => {
+      const art = artOf(problem, index);
+      // Taken off the outline rather than off a constant: the bar is inset by
+      // half its own stroke, and the shading is a fraction of what is left.
+      const span = attr(drawn[index], "sheet__shape", "width");
+      expect(attr(drawn[index], "sheet__shade", "width"), problem.answer) //
+        .toBe(Math.round((art.shaded * span) / art.parts));
+    });
+  });
+
+  it("sweeps as much of the circle as the answer says is shaded", () => {
+    const items = itemsOf(fractions({ model: "circle", count: 6 }));
+    const drawn = problems(named({ model: "circle", count: 6 }));
+    expect(items.length).toBeGreaterThan(0);
+    items.forEach((problem, index) => {
+      const art = artOf(problem, index);
+      const centre = attr(drawn[index], "sheet__shape", "cx");
+      const radius = attr(drawn[index], "sheet__shape", "r");
+      // The wedge starts at twelve o'clock and ends `turn` degrees round from
+      // it: sine east, cosine *up* the page, because y grows downwards.
+      const turn = (art.shaded * 360) / art.parts;
+      const end = [
+        Math.round(centre + radius * Math.sin((turn * Math.PI) / 180)),
+        Math.round(centre - radius * Math.cos((turn * Math.PI) / 180)),
+      ];
+      const wedge = /A \d+ \d+ 0 ([01]) 1 (-?\d+) (-?\d+) Z/.exec(drawn[index]);
+      if (wedge === null) throw new Error(`problem ${index} draws no wedge`);
+      // The large-arc flag is the difference between five sixths and one sixth:
+      // SVG takes the short way round the circle unless it is told not to.
+      expect(wedge[1], problem.answer).toBe(turn > 180 ? "1" : "0");
+      expect([Number(wedge[2]), Number(wedge[3])], problem.answer).toEqual(end);
+    });
   });
 
   it("gives every problem exactly one place to write the answer", () => {

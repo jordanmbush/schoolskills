@@ -28,8 +28,9 @@ import { DECIMALS_SHEET, decimalLayout } from "./decimals";
  *   multiplication `×` is shorthand for, and which no part of `timesWhole`
  *   resembles;
  * - a percent is checked by **cross-multiplication too**: `p% of w` is `x`
- *   exactly when `x × 100` is `p × w`, and there is no division in this file at
- *   all — which is the point, because division is where a float would get in.
+ *   exactly when `x × 100` is `p × w`. No number read off a sheet is divided
+ *   anywhere in this file, bounds included — which is the point, because
+ *   division is where a float would get in.
  *
  * And every printed number is held to its *shape* as well as its value. A sheet
  * set at two places whose key says `0.5`, or `0.30000000000000004`, has printed
@@ -267,6 +268,15 @@ describe("the decimals family", () => {
   it("tells a child what to do with a form they have not met before", () => {
     expect(buildSheet(config({ form: "vertical" }), 1).header.instructions) //
       .toBe("Work out each answer. Keep the points under one another.");
+    // A stacked multiplication has nothing to line the points up on: the
+    // multiplier is a whole number, so the sentence above would send a child
+    // looking for a point that was never printed.
+    expect(
+      buildSheet(config({ form: "vertical", operation: "multiply" }), 1).header
+        .instructions,
+    ).toBe(
+      "Work out each answer. Line the digits up on the right, then put the point back in.",
+    );
     // The conversion sheet's blanks cannot say what they want, so the header
     // does: a child who writes a fraction where a decimal was wanted has
     // answered a question nobody asked and would be marked wrong for it.
@@ -415,8 +425,11 @@ describe("what may be on the page", () => {
             if (!/^\d+\.\d+$/.test(word)) continue;
             const value = readNumber(word);
             expect(value.n).toBeGreaterThan(0);
-            expect(value.n / value.d).toBeGreaterThanOrEqual(range.min);
-            expect(value.n / value.d).toBeLessThanOrEqual(range.max);
+            // Cross-multiplied, like every other claim here: `n/d ≥ min` is
+            // `n ≥ min·d` with both sides whole, and the divided form would put
+            // back the one float this suite exists to keep out.
+            expect(value.n).toBeGreaterThanOrEqual(range.min * value.d);
+            expect(value.n).toBeLessThanOrEqual(range.max * value.d);
           }
         }
       }

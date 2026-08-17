@@ -449,9 +449,15 @@ function instructionOf(config: DecimalConfig): string {
       // asked, and would be marked wrong for it.
       return "Fill in each blank. A blank with a % after it wants a percent; every other blank wants a decimal.";
     default:
-      return stacked(config)
-        ? "Work out each answer. Keep the points under one another."
-        : "Work out each answer.";
+      if (!stacked(config)) return "Work out each answer.";
+      // A stack of sums lines up on the point, because every value on the sheet
+      // is printed to the same number of places. A multiplier is not a decimal
+      // at all — `1.25 × 3` has one point in it — so "keep the points under one
+      // another" describes a column that isn't there, and §10 makes this
+      // sentence the whole of the guidance a child gets.
+      return config.operation === "multiply"
+        ? "Work out each answer. Line the digits up on the right, then put the point back in."
+        : "Work out each answer. Keep the points under one another.";
   }
 }
 

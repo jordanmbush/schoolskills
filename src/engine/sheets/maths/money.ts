@@ -338,9 +338,15 @@ function titleOf(config: MoneyConfig): string {
 }
 
 function instructionOf(config: MoneyConfig): string {
-  return config.form === "vertical"
-    ? "Work out each answer. Keep the points under one another."
-    : "Work out each answer.";
+  if (config.form !== "vertical") return "Work out each answer.";
+  // Stacked amounts line up on the point, because every one of them has two
+  // digits of change. A multiplier does not: `$1.25 × 3` is three of them, and
+  // the `3` has no point to put under anything — so the stacking sentence would
+  // describe a column that isn't there, and §10 makes this line the whole of
+  // the guidance a child gets.
+  return config.operation === "multiply"
+    ? "Work out each answer. Line the digits up on the right, then put the point back in."
+    : "Work out each answer. Keep the points under one another.";
 }
 
 /**

@@ -203,6 +203,14 @@ describe("the money family", () => {
   it("tells a child to keep the points in line when the sums are stacked", () => {
     expect(buildSheet(config({ form: "vertical" }), 1).header.instructions) //
       .toBe("Work out each answer. Keep the points under one another.");
+    // Except on a stacked multiplication, where there is no second point to
+    // line the first one up on — `$1.25 × 3` stacks an amount over a count.
+    expect(
+      buildSheet(config({ form: "vertical", operation: "multiply" }), 1).header
+        .instructions,
+    ).toBe(
+      "Work out each answer. Line the digits up on the right, then put the point back in.",
+    );
   });
 });
 
