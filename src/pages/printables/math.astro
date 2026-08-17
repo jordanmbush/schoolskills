@@ -1,0 +1,182 @@
+---
+import Content from "@/layouts/Content.astro";
+import AdSlot from "@/components/site/AdSlot.astro";
+import { MATHS_SHEETS, mathsShelf, pathFor } from "./_maths";
+
+/**
+ * The maths subject hub — one of the three §8 names, and the first to exist.
+ *
+ * It is a listing rather than a sheet, which makes it the one page in this
+ * corner that isn't itself printable, and that is the right split: nobody
+ * searches for "printable list of maths worksheets". What it is for is the two
+ * jobs a hub does — giving a parent who arrived on `/printables/area-worksheets`
+ * somewhere to go next, and giving the twenty-one topic pages a crawlable
+ * parent that says what they have in common.
+ *
+ * It lists what exists and nothing else. A shelf of links to sheets that
+ * haven't been built is the thin-content pattern `Base.astro`'s `noindex` block
+ * already argues against, and every link here is a page that prints today.
+ *
+ * **"Math" in the URL and the title, "maths" in the copy.** Deliberate, and the
+ * only place on the site the two meet. The route and the `<title>` are read by
+ * a search engine and by somebody typing a query, and that phrase is "math
+ * worksheets" for most of this audience; the prose is written in the same voice
+ * as every other page here. Changing the route later would be the one-way door
+ * §8 warns about, and changing the voice would be a worse trade than the
+ * inconsistency.
+ */
+const title =
+  "Free printable math worksheets, with answer keys | School Skills";
+const description =
+  "Printable maths worksheets with the answer key on the second page: addition, times tables, long division, fractions, decimals, money, time, area, integers and word problems. Free, no account, and nothing to download.";
+
+const strands = mathsShelf();
+---
+
+<Content
+  title={title}
+  description={description}
+  world="paper"
+  jsonLd={{
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name: "Printable math worksheets",
+    description,
+    url: "https://schoolskills.app/printables/math",
+    isAccessibleForFree: true,
+    inLanguage: "en",
+    hasPart: MATHS_SHEETS.map((sheet) => ({
+      "@type": "LearningResource",
+      name: sheet.heading,
+      url: `https://schoolskills.app${pathFor(sheet)}`,
+      learningResourceType: "Worksheet",
+      teaches: sheet.teaches,
+      typicalAgeRange: sheet.ages,
+      isAccessibleForFree: true,
+    })),
+  }}
+>
+  <header class="hero wrap">
+    <p class="hero__eyebrow">
+      <span class="hero__world">The Print Shop</span>
+      Maths
+    </p>
+    <h1 class="hero__title">Printable maths worksheets</h1>
+    <p class="hero__lead">
+      {MATHS_SHEETS.length} sheets, from adding to twenty through to word problems,
+      each one a page that prints as it stands with the answer key behind it. Nothing
+      to download, no account, and no email address for the file.
+    </p>
+    <p class="hero__note">Free &middot; answer keys &middot; no download</p>
+  </header>
+
+  {
+    /*
+      What exists, first — before the page explains itself. Somebody who came
+      looking for long division should be one link from long division, and the
+      argument for how these sheets are made reads better after you have seen
+      one than before.
+    */
+  }
+  <section class="band band--tight wrap">
+    <h2 class="h2">On the shelf now</h2>
+    <p class="h2__sub">
+      Each of these is a page that is itself the worksheet &mdash; open it,
+      press print, and that is the whole of it. The second page out of the
+      printer is the answer key.
+    </p>
+    {
+      strands.map((strand) => (
+        <>
+          <h3 class="h2 h2--next">{strand.label}</h3>
+          <p class="h2__sub">{strand.blurb}</p>
+          <div class="prose">
+            <ul>
+              {strand.sheets.map((sheet) => (
+                <li>
+                  <a href={pathFor(sheet)}>{sheet.name}</a> &mdash;{" "}
+                  {sheet.summary}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </>
+      ))
+    }
+  </section>
+
+  <div class="wrap"><AdSlot name="article" /></div>
+
+  <section class="band band--tight wrap">
+    <h2 class="h2">Every sheet has an answer key</h2>
+    <div class="prose">
+      <p>
+        It is the second page, on every one of these, and it is not a second
+        attempt at the questions. The answers are worked out at the moment the
+        problems are, and the key is the same page with them drawn in &mdash; so
+        a key cannot disagree with the sheet it belongs to, which is the way
+        this most often goes wrong elsewhere.
+      </p>
+      <p>
+        The arithmetic behind them is exact rather than approximate. Decimals
+        and money are added as whole hundredths rather than as floating-point
+        numbers, so no key here has 0.30000000000000004 on it or a rounded last
+        place. Fractions and ratios are reduced with a greatest common divisor,
+        so an answer is in its lowest terms rather than merely equal to the
+        right one. A set of numbers is redrawn until it has a single mode, and
+        an even-sized set gets a median between two values rather than at one of
+        them. Each of those is a way a generated worksheet prints a confident
+        wrong answer, and each of them is a test in this repository.
+      </p>
+      <p>
+        No problem is repeated on a page, either. A sheet drawn at random from a
+        small pool of facts repeats itself surprisingly often, and a child who
+        spots the repeat has been given fewer problems than the page claims to
+        hold.
+      </p>
+    </div>
+  </section>
+
+  <section class="band band--inset">
+    <div class="wrap">
+      <h2 class="h2">A worksheet here is a web page</h2>
+      <p class="h2__sub">
+        Not a PDF, not a picture of a worksheet, and nothing to download.
+      </p>
+      <div class="prose">
+        <p>
+          A sheet is real text and real lines laid out in real inches, so
+          printing one is <em>File &rarr; Print</em> on the page you are already looking
+          at. If you want to keep a copy, choose <em>Save as PDF</em> in the print
+          dialog and your browser writes one for you.
+        </p>
+        <p>
+          That rules out the usual toll gates: no reader to install, no email
+          address for the download, no watermark, no file that turns out to be
+          the first page of twelve. It also means the problems are real text
+          &mdash; they reflow on a phone if you are only checking what is on the
+          sheet, they can be read aloud by a screen reader, and the printer
+          renders them at its own resolution rather than at the screen&rsquo;s.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="band band--tight wrap">
+    <h2 class="h2">The same facts, on screen</h2>
+    <div class="prose">
+      <p>
+        Paper and practice go together here. The times tables on these sheets
+        are the twelve levels of <a href="/flash-cards">The Grid</a>, where the
+        same facts are dealt as timed cards and the ones that come out slow get
+        a practice deck of their own &mdash; and each table has{" "}
+        <a href="/multiplication/7-times-table">a page of its own</a> with the full
+        table on it.
+      </p>
+    </div>
+    <div class="hero__actions">
+      <a class="cta" href="/flash-cards">Race the flash cards</a>
+      <a class="cta cta--quiet" href="/printables">Back to The Print Shop</a>
+    </div>
+  </section>
+</Content>
