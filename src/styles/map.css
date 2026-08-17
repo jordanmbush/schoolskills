@@ -68,18 +68,26 @@
 .map__node[data-world="ice"] {
   --node: var(--w-ice);
 }
+.map__node[data-world="paper"] {
+  --node: var(--w-paper);
+}
 
 @media (width >= 62rem) {
   .map__route {
-    grid-template-columns: repeat(3, 1fr);
+    /* The column count, written once. The dashed path below has to stop at the
+       centre of the first and last node, which is half a column in from each
+       edge — a number only derivable from this one. A fifth world changes this
+       line and nothing else. */
+    --map-cols: 4;
+    grid-template-columns: repeat(var(--map-cols), 1fr);
     padding-left: 0;
     padding-top: var(--node-top);
   }
 
   .map__route::before {
-    /* Between the first and last node centre — a sixth in from each edge. */
-    left: 16.6%;
-    right: 16.6%;
+    /* Between the first and last node centre: half a column in from each edge. */
+    left: calc(100% / var(--map-cols) / 2);
+    right: calc(100% / var(--map-cols) / 2);
     top: var(--path-y);
     bottom: auto;
     width: auto;
@@ -186,10 +194,15 @@
   color: var(--chalk-dim);
 }
 
+/* The viewport step is 2.6vw rather than the 3.4vw three columns could afford:
+   a fourth column takes a quarter off every card, and at the narrow end of the
+   four-across range a display face sized for a third of the row breaks "Word
+   Jungle" across two lines. Both ends of the clamp are unchanged, so a phone
+   and a wide desktop see exactly what they saw before. */
 .world__name {
   font-family: var(--font-display);
   font-weight: 400;
-  font-size: clamp(1.6rem, 3.4vw, 2.1rem);
+  font-size: clamp(1.6rem, 2.6vw, 2.1rem);
   line-height: 1;
   letter-spacing: 0.005em;
 }

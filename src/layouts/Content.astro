@@ -22,9 +22,20 @@ interface Props {
   jsonLd?: Record<string, unknown>;
   /** Which world this page is in. Drives every colour on it. */
   world: World;
+  /**
+   * Keep this page out of search results. See Base.astro for what that means
+   * and what it costs.
+   *
+   * Rare here, and it should stay rare — a content page that isn't worth
+   * indexing usually isn't worth writing. The Print Shop's builder is the
+   * exception that needs it: it is an island, like a game, but unlike a game
+   * it lives behind the site's own chrome, because the print stylesheet hides
+   * the masthead and footer rather than the page having to do without them.
+   */
+  noindex?: boolean;
 }
 
-const { title, description, image, jsonLd, world } = Astro.props;
+const { title, description, image, jsonLd, world, noindex } = Astro.props;
 
 // Line world and Empty world have no scenery, so their pages tighten the
 // measure and drop the display type a size. See content.css.
@@ -37,6 +48,7 @@ const pause = world === "line" || world === "empty";
   image={image}
   jsonLd={jsonLd}
   world={world}
+  noindex={noindex}
 >
   <SiteHeader world={world} />
   <main id="main" class:list={["page", { "page--pause": pause }]}>

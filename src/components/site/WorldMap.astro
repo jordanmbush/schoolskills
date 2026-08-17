@@ -33,16 +33,25 @@ const BADGES: Partial<Record<World, string>> = {
       <path d="M12 3v18M4.2 7.5l15.6 9M19.8 7.5l-15.6 9"/>
       <path d="M12 7.4 9.7 5.2M12 7.4l2.3-2.2M12 16.6l-2.3 2.2M12 16.6l2.3 2.2"/>
     </svg>`,
+  // Crop marks round a registration target: what a press puts on a sheet, and
+  // the same mark the paper world's own ground is drawn out of.
+  paper: `<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none"
+      stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+      <path d="M4 8V4h4M20 8V4h-4M4 16v4h4M20 16v4h-4"/>
+      <circle cx="12" cy="12" r="3.6"/>
+      <path d="M12 6.8v10.4M6.8 12h10.4" stroke-width="1.2" opacity=".55"/>
+    </svg>`,
 };
 ---
 
 <section class="map" aria-labelledby="map-head">
-  <h2 class="h2" id="map-head">Three worlds, and no locked doors</h2>
+  <h2 class="h2" id="map-head">Four worlds, and no locked doors</h2>
   <p class="h2__sub">
-    Each world is one subject and one thing to get good at. Start anywhere, stop
-    anywhere, and switch mid-week &mdash; nothing has to be finished before
-    anything else opens, and the same player carries their records between all
-    three.
+    Three are games, one subject each and one thing to get good at. Start
+    anywhere, stop anywhere, and switch mid-week &mdash; nothing has to be
+    finished before anything else opens, and the same player carries their
+    records between all three. The fourth is The Print Shop, which makes paper
+    rather than points, and is a stop for you rather than for them.
   </p>
 
   {

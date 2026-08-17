@@ -16,12 +16,13 @@ import { DEFAULT_FONT_PT, DEFAULT_PAPER } from "./paper";
  * Which world a sheet prints in — stated, not assumed, exactly as
  * `DeckSpec.world` is.
  *
- * It is `line`, the site's non-game chrome, until the Print Shop's own `paper`
- * world lands with its colours and its place on the map (§9). The engine never
- * interprets the value, so that is a one-line change here and a block of CSS
- * there — which is the whole point of keeping worlds opaque to the model.
+ * It was `line` while the Print Shop had no colours of its own; now that
+ * `paper` exists it is `paper`, and that was the one-line change the note here
+ * promised. Nothing else in the engine moved, because the engine never
+ * interprets the value — a world id is an opaque string to the model, and
+ * everything the change means is a block of CSS in worlds.css (§9).
  */
-export const SHEET_WORLD: World = "line";
+export const SHEET_WORLD: World = "paper";
 
 /** Printed small at the foot of every sheet: free traffic, and true (§16). */
 export const SHEET_URL = "schoolskills.app";

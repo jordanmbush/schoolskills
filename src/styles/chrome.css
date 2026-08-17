@@ -3,8 +3,10 @@
    game there is one exit door in the top bar and nothing else — a nav bar over
    a race is a nav bar in a child's way.
 
-   It reads as a HUD rather than a website header: a flag, three worlds colour-
-   coded to match the map, and one button that plays. The flag's pennant takes
+   It reads as a HUD rather than a website header: a flag, a dot per world
+   colour-coded to match the map, and one button that plays. The header renders
+   one link per entry in the world registry, so the row grows with it rather
+   than with anything written down here. The flag's pennant takes
    the current world's accent, so walking from the jungle to the glacier
    recolours the thing you navigate by. That is the only ornament in here. */
 
@@ -137,6 +139,9 @@
 }
 .mast__link[data-world="ice"] {
   --dot: var(--w-ice);
+}
+.mast__link[data-world="paper"] {
+  --dot: var(--w-paper);
 }
 
 .mast__play {

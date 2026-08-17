@@ -1,0 +1,46 @@
+---
+import Content from "@/layouts/Content.astro";
+
+/**
+ * The sheet builder's route, reserved and wired before the builder exists.
+ *
+ * It is `WorldInfo.island` for the paper world, which is what keeps it out of
+ * the sitemap, and it carries `noindex` for the reason every island does: what
+ * will render here is a `client:only` app, and a near-empty page submitted to
+ * search is a thin-content signal against the whole domain. Both halves of
+ * that have to be true from the first build rather than from the build the app
+ * lands in — a route that is indexed for a month and then hidden is worse than
+ * one that was never offered.
+ *
+ * Content rather than Base, unlike the games. A race must never have site
+ * chrome over it; the builder is the opposite case, because `print.css` hides
+ * the masthead, the footer and everything marked `.no-print` when a sheet goes
+ * to paper. So the builder can keep the site around it and lose it at exactly
+ * the moment it would cost somebody toner.
+ */
+---
+
+<Content
+  title="Build a sheet — The Print Shop | School Skills"
+  description="The sheet builder: choose a family, set the options, and print."
+  world="paper"
+  noindex
+>
+  <header class="hero wrap">
+    <p class="hero__eyebrow">
+      <span class="hero__world">The Print Shop</span>
+      The bench
+    </p>
+    <h1 class="hero__title">The press isn&rsquo;t installed yet</h1>
+    <p class="hero__lead">
+      This is where a sheet gets built: pick a family, set the ruling, the type
+      size and how many problems fit, and watch the page change as you do it. It
+      is being made now, and nothing in The Print Shop will wait on it &mdash; a
+      sheet there is a page that prints as it stands, and the bench only changes
+      what is on one.
+    </p>
+    <div class="hero__actions">
+      <a class="cta" href="/printables">Go to The Print Shop</a>
+    </div>
+  </header>
+</Content>
