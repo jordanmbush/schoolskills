@@ -66,9 +66,31 @@ export const STARTER_WORDS = listWords(WORD_LISTS[0]).slice(0, 12);
  * The second line is there so the box arrives holding two lines: a passage is
  * broken where the paper runs out, and a parent who has never seen that happen
  * would not know a newline of their own is honoured.
+ *
+ * It is what the *paste* box holds rather than what the sheet prints: copywork
+ * opens on a passage out of the library (see below), and `copyworkSource`
+ * prefers the library wherever both are set. Clearing the passage is what
+ * brings this back, which is the point of it being here at all — the box a
+ * parent lands in is never empty.
  */
 const PASSAGE =
   "The quick brown fox jumps over the lazy dog.\nGood handwriting is slow before it is neat.";
+
+/**
+ * The passage the two library families open on.
+ *
+ * Psalm 23 for copywork, because it is the piece of English most likely to be
+ * the reason somebody came looking for a copywork sheet at all, and it is long
+ * enough that the sheet arrives looking like a page of work rather than a
+ * demonstration. John 3:16 for memory work, because a memory sheet wants a
+ * verse somebody would actually set to be learnt by heart, and twenty-five
+ * words is what four rounds of it fit into.
+ *
+ * Both are one entry in the same picker as the Gettysburg Address and "The
+ * Owl and the Pussy-Cat" (§12), and either is replaced in two clicks.
+ */
+const COPYWORK_PASSAGE = "psalm-23";
+const MEMORY_PASSAGE = "for-god-so-loved-the-world";
 
 const DEFAULTS: Record<string, SheetConfig> = {
   blank: { ...BASE, kind: "blank", title: "Blank sheet" },
@@ -222,7 +244,16 @@ const DEFAULTS: Record<string, SheetConfig> = {
     // what puts the whole alphabet on one page at this rule size.
     repeats: 3,
     words: STARTER_WORDS,
+    passage: COPYWORK_PASSAGE,
     text: PASSAGE,
+  },
+  memory: {
+    ...BASE,
+    kind: "memory",
+    passage: MEMORY_PASSAGE,
+    // The whole verse, two rounds with more of it gone, and one with none of
+    // it left — the shortest progression that is still a progression.
+    rounds: 4,
   },
   "word-problems": {
     ...BASE,

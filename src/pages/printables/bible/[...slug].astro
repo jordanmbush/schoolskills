@@ -1,0 +1,229 @@
+---
+import Content from "@/layouts/Content.astro";
+import AdSlot from "@/components/site/AdSlot.astro";
+import { SheetView } from "@/components/sheet/Sheet";
+import { answerKey, buildSheet } from "@/engine/sheets";
+import {
+  BIBLE_SEED,
+  BIBLE_SHEETS,
+  STOCKS,
+  bibleShelf,
+  builderHref,
+  configFor,
+  creditFor,
+  hrefFor,
+  keyed,
+  passageFor,
+  type BibleSheet,
+} from "../_bible";
+import type { Stock } from "../_catalog";
+
+/**
+ * One prerendered Scripture sheet per topic — and the page is the sheet.
+ *
+ * The shape §8 describes and the shape the other three shelves already build,
+ * applied to the passages of §12: "bible verse copywork printable" is a query
+ * with real homeschool volume, and a parent who lands here gets prose that
+ * answers it, the sheet itself directly under it as HTML, and nothing to click.
+ *
+ * **The credit line prints twice, and both are required.** Once at the foot of
+ * the sheet, where the engine puts it, and once in the prose here — this is the
+ * "every catalog page previewing one" half of §12. It is read off the passage
+ * through `creditFor` rather than typed, so the two cannot drift apart and a
+ * page that switched translations cannot keep the old line.
+ *
+ * **Two stocks, two routes — as with paper and handwriting.** Most of this
+ * shelf is ruled and a ⅝ rule scaled to fit A4 is no longer a ⅝ rule, and
+ * `@page` is a document rule, so the two cannot share a page.
+ *
+ * **The answer key prints only where there is one.** A memory sheet's key is
+ * the passage whole and is the most useful page on this shelf; copywork already
+ * has its model on the paper, so its key is its own sheet and printing it twice
+ * would be two identical pages out of the printer.
+ *
+ * **No client directive on `SheetView`, ever**, and **everything that is not
+ * the sheet carries `.no-print`** — the two contracts `Sheet.test.tsx` holds
+ * every page in this directory to.
+ */
+
+type Props = { sheet: BibleSheet; stock: Stock };
+
+export function getStaticPaths() {
+  return BIBLE_SHEETS.flatMap((sheet) =>
+    STOCKS.map((stock) => ({
+      params: { slug: stock.path ? `${sheet.slug}/${stock.path}` : sheet.slug },
+      props: { sheet, stock },
+    })),
+  );
+}
+
+const { sheet, stock } = Astro.props;
+
+const a4 = stock.id === "a4";
+const config = configFor(sheet, stock.id);
+const printed = buildSheet(config, BIBLE_SEED);
+const key = keyed(sheet) ? answerKey(config, BIBLE_SEED) : null;
+const other = STOCKS.find((candidate) => candidate.id !== stock.id)!;
+
+const quoted = passageFor(sheet)!;
+const credit = creditFor(sheet);
+
+const heading = a4 ? `${sheet.heading}, for A4` : sheet.heading;
+const title = `${sheet.keyword}${a4 ? ", A4" : ""} | School Skills`;
+const description = `${sheet.summary} Printed straight from this page on ${stock.label} — free, no account, and no download.`;
+const url = `https://schoolskills.app${hrefFor(sheet, stock)}`;
+
+const groups = bibleShelf();
+const group = groups.find((entry) => entry.id === sheet.group)!;
+---
+
+<Content
+  title={title}
+  description={description}
+  world="paper"
+  jsonLd={{
+    "@context": "https://schema.org",
+    "@type": "LearningResource",
+    name: heading,
+    description,
+    url,
+    learningResourceType: "Worksheet",
+    educationalUse: "Practice",
+    teaches: sheet.teaches,
+    typicalAgeRange: sheet.ages,
+    isAccessibleForFree: true,
+    inLanguage: "en",
+  }}
+>
+  <header class="hero wrap no-print">
+    <p class="hero__eyebrow">
+      <span class="hero__world">The Print Shop</span>
+      Bible &middot; {group.label}
+    </p>
+    <h1 class="hero__title">{heading}</h1>
+    <p class="hero__lead">{sheet.lead}</p>
+    <p class="aside">
+      The sheet below <strong>is</strong> the printout{
+        key ? ", and the page behind it is the answer key" : ""
+      }. Press <strong>&#8984;P</strong> &mdash; <strong>Ctrl+P</strong> on Windows
+      &mdash; and everything but the paper disappears. Nothing here needs choosing
+      first. To keep a copy instead, pick <em>Save as PDF</em> in the print dialog
+      and your browser writes one.
+    </p>
+    <p class="hero__note">Free &middot; no account &middot; no download</p>
+  </header>
+
+  {
+    /*
+      The sheet, outside `.wrap` deliberately. A wrap adds an inline padding
+      that print.css cannot take back off, and a sheet printed a centimetre in
+      from where it says it is has the wrong geometry everywhere at once. The
+      key is a sibling with nothing between them: `print.css` breaks on
+      `.sheet + .sheet`, and an element in between would take that away.
+    */
+  }
+  <div class="sheet-frame">
+    <SheetView sheet={printed} />
+    {key && <SheetView sheet={key} />}
+  </div>
+
+  <section class="band band--tight wrap no-print">
+    <h2 class="h2">What is on this sheet</h2>
+    <div class="prose">
+      {sheet.notes.map((note) => <p>{note}</p>)}
+      <p>
+        The passage is <strong>{quoted.title}</strong>, printed exactly as the
+        translation has it &mdash; the punctuation, the spelling and the
+        capitals are the source&rsquo;s rather than ours, which is a condition
+        of using the name and is also what a child copying it should be copying.
+        {
+          key &&
+            " Where words are left out for the exercise, the sheet says so and the answer key prints the passage whole."
+        }
+      </p>
+      {credit && <p class="aside">{credit}</p>}
+    </div>
+  </section>
+
+  <section class="band band--tight wrap no-print">
+    <h2 class="h2">Any passage, any ruling</h2>
+    <div class="prose">
+      <p>
+        This page is one sheet out of a family that can print thousands.
+        {quoted.title} sits in the same passage picker as the Gettysburg Address and
+        &ldquo;The Owl and the Pussy-Cat&rdquo; &mdash; a few hundred entries, Scripture
+        listed first &mdash; and any of them can be set at any of the twelve rulings,
+        in any of the five trace styles, in print or in cursive. Or paste your own
+        verse and get the same sheet.
+      </p>
+      <p class="aside">
+        The settings travel in the address bar rather than on a server, so the
+        link below opens the bench on exactly the sheet above, and a sheet you
+        make can be sent to another family as it stands. There is nowhere in it
+        to put a child&rsquo;s name &mdash; see{" "}
+        <a href="/privacy">what we don&rsquo;t collect</a>.
+      </p>
+    </div>
+    <div class="hero__actions">
+      <a class="cta cta--quiet" href={builderHref(sheet, stock)}>
+        Open this sheet in the builder
+      </a>
+      <a class="cta cta--quiet" href="/printables/handwriting">
+        Handwriting worksheets
+      </a>
+    </div>
+  </section>
+
+  <section class="band band--tight wrap no-print">
+    <h2 class="h2">Printing it on {other.label}</h2>
+    <div class="prose">
+      <p>
+        This sheet is set for {stock.label} &mdash; {stock.size}. Paper size is
+        not a preference on a ruled sheet: sent to a printer loaded with
+        something else, the browser shrinks the page to fit, and a ruling that
+        has been shrunk is no longer the size it was chosen for. So there is a
+        second copy of this sheet, measured for {other.label}.
+      </p>
+    </div>
+    <div class="hero__actions">
+      <a class="cta" href={hrefFor(sheet, other)}>The {other.label} version</a>
+    </div>
+  </section>
+
+  <div class="wrap no-print"><AdSlot name="article" /></div>
+
+  <section class="band band--tight wrap no-print">
+    <h2 class="h2">Every Scripture sheet</h2>
+    <p class="h2__sub">
+      {BIBLE_SHEETS.length} sheets, each one a page like this one. Nothing is locked
+      and nothing needs an account.
+    </p>
+    {
+      groups.map((entry) => (
+        <>
+          <h3 class="h2 h2--next">{entry.label}</h3>
+          <p class="h2__sub">{entry.blurb}</p>
+          <nav class="stones" aria-label={entry.label}>
+            {entry.sheets.map((candidate) => (
+              <a
+                class="stone"
+                href={hrefFor(candidate, stock)}
+                aria-current={
+                  candidate.slug === sheet.slug ? "page" : undefined
+                }
+              >
+                {candidate.short}
+              </a>
+            ))}
+          </nav>
+        </>
+      ))
+    }
+    <div class="hero__actions">
+      <a class="cta cta--quiet" href="/printables/bible">
+        All the Scripture sheets
+      </a>
+      <a class="cta cta--quiet" href="/printables">Back to The Print Shop</a>
+    </div>
+  </section>
+</Content>

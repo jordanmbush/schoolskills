@@ -1,0 +1,190 @@
+---
+import Content from "@/layouts/Content.astro";
+import AdSlot from "@/components/site/AdSlot.astro";
+import { SCRIPTURE_CREDIT } from "@/engine/sheets/passages";
+import { BIBLE_SHEETS, STOCKS, bibleShelf, hrefFor } from "../_bible";
+
+/**
+ * The Scripture subject hub — the third of the §8 subject names to exist, and
+ * a peer of `/printables/math` and `/printables/handwriting` rather than a
+ * footnote under one of them.
+ *
+ * A listing rather than a sheet, as the other hubs are: nobody searches for
+ * "printable list of Bible copywork worksheets". What it is for is the two jobs
+ * a hub does — giving a parent who arrived on one sheet somewhere to go next,
+ * and giving the topic pages a crawlable parent that says what they have in
+ * common.
+ *
+ * **It says what translation, and it says it plainly.** The one thing a parent
+ * wants to know before printing a verse is which text it is, and the credit
+ * line is the engine's own constant rather than a sentence typed here (§12).
+ */
+const title =
+  "Free printable Bible copywork, handwriting and memory verse worksheets | School Skills";
+const description =
+  "Printable Scripture practice: verses to trace, copywork at every ruling, and memory sheets with progressive blanks and the full verse on the answer key. Public-domain text, free, no account, and nothing to download.";
+
+const groups = bibleShelf();
+const letter = STOCKS[0];
+---
+
+<Content
+  title={title}
+  description={description}
+  world="paper"
+  jsonLd={{
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name: "Printable Bible worksheets",
+    description,
+    url: "https://schoolskills.app/printables/bible",
+    isAccessibleForFree: true,
+    inLanguage: "en",
+    hasPart: BIBLE_SHEETS.map((sheet) => ({
+      "@type": "LearningResource",
+      name: sheet.heading,
+      url: `https://schoolskills.app${hrefFor(sheet, letter)}`,
+      learningResourceType: "Worksheet",
+      teaches: sheet.teaches,
+      typicalAgeRange: sheet.ages,
+      isAccessibleForFree: true,
+    })),
+  }}
+>
+  <header class="hero wrap">
+    <p class="hero__eyebrow">
+      <span class="hero__world">The Print Shop</span>
+      Bible
+    </p>
+    <h1 class="hero__title">Printable Bible copywork and memory verses</h1>
+    <p class="hero__lead">
+      {BIBLE_SHEETS.length} sheets, from a first verse traced on ⅝-inch paper to the
+      whole of Psalm 23 copied out. Every one of them is an ordinary handwriting or
+      memory sheet with a passage on it &mdash; the same sheets, the same rulings,
+      the same builder.
+    </p>
+    <p class="hero__note">Free &middot; two paper sizes &middot; no download</p>
+  </header>
+
+  {
+    /*
+      What exists, first — before the page explains itself. Somebody who came
+      looking for Psalm 23 copywork should be one link from it, and the
+      argument about which translation reads better after you have seen a
+      sheet than before.
+    */
+  }
+  <section class="band band--tight wrap">
+    <h2 class="h2">On the shelf now</h2>
+    <p class="h2__sub">
+      Each of these is a page that is itself the worksheet &mdash; open it,
+      press print, and that is the whole of it. Every sheet comes on US Letter
+      and on A4, because a ⅝-inch rule shrunk to fit whatever is in the tray is
+      no longer a ⅝-inch rule.
+    </p>
+    {
+      groups.map((group) => (
+        <>
+          <h3 class="h2 h2--next">{group.label}</h3>
+          <p class="h2__sub">{group.blurb}</p>
+          <div class="prose">
+            <ul>
+              {group.sheets.map((sheet) => (
+                <li>
+                  <a href={hrefFor(sheet, letter)}>{sheet.name}</a> &mdash;{" "}
+                  {sheet.summary}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </>
+      ))
+    }
+  </section>
+
+  <div class="wrap"><AdSlot name="article" /></div>
+
+  <section class="band band--tight wrap">
+    <h2 class="h2">A verse is one passage among several</h2>
+    <div class="prose">
+      <p>
+        Scripture is not a mode here and there is no separate section for it.
+        The sheets above are the ordinary copywork and handwriting families with
+        a passage chosen, and the picker they were chosen from holds a few
+        hundred entries &mdash; the Psalms, the Gospels and the Proverbs listed
+        first, then the founding documents, the fables, the openings of a dozen
+        novels and the poems. Choosing Psalm 23 and choosing the Gettysburg
+        Address are the same two clicks.
+      </p>
+      <p>
+        So every one of these sheets is also a setting rather than a fixed page.
+        Any passage can be set at any of the twelve rulings, from inch-high
+        kindergarten paper to college ruled; the model can be dotted, dashed,
+        hollow, grey or left off; and the whole thing can be printed in a joined
+        hand instead. Or paste a verse of your own and get the identical sheet.
+      </p>
+    </div>
+    <div class="hero__actions">
+      <a class="cta" href="/printables/make">Open the sheet builder</a>
+      <a class="cta cta--quiet" href="/printables/handwriting">
+        Handwriting worksheets
+      </a>
+      <a class="cta cta--quiet" href="/printables/cursive">
+        Cursive worksheets
+      </a>
+    </div>
+  </section>
+
+  <section class="band band--inset">
+    <div class="wrap">
+      <h2 class="h2">Which translation, and why that one</h2>
+      <p class="h2__sub">
+        The World English Bible Updated, with the King James beside it. Both are
+        public domain; neither costs anybody a licence.
+      </p>
+      <div class="prose">
+        <p>
+          The default is the <strong>World English Bible Updated</strong>: a
+          modern English translation in the public domain, which renders the
+          divine name as <em>LORD</em> rather than transliterating it, and uses American
+          spelling. The <strong>King James Version</strong> is the other option in
+          the builder, switchable on any sheet. There is nothing else on offer, and
+          that is deliberate &mdash; the ESV, NIV, NASB and CSB are licensed texts,
+          and bundling one into a free worksheet site would be a real problem rather
+          than an oversight.
+        </p>
+        <p>
+          The text is printed exactly as the translation has it: the
+          punctuation, the capitals and the spelling are the source&rsquo;s, and
+          nothing is re-wrapped or tidied. That is a condition of using the
+          name, and it is checked against the publisher&rsquo;s own release
+          every time this site is built rather than promised in a comment. Verse
+          numbers are left off, because they are typography rather than text and
+          a child copying &ldquo;1&rdquo; before every clause is copying a
+          printer.
+        </p>
+        <p>
+          Where a sheet deliberately leaves words out &mdash; the memory sheets,
+          which is the whole exercise &mdash; the page says so, and the answer
+          key behind it prints the passage whole.
+        </p>
+        <p class="aside">{SCRIPTURE_CREDIT}</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="band band--tight wrap">
+    <h2 class="h2">Your child&rsquo;s name is not in the file</h2>
+    <div class="prose">
+      <p>
+        The <em>Name:</em> line is printed blank and filled in with a pencil. Nothing
+        is uploaded to make a sheet, no account is needed to print one, and a sheet
+        you share with another family carries the settings you chose and nothing else
+        &mdash; see <a href="/privacy">what we don&rsquo;t collect</a>.
+      </p>
+    </div>
+    <div class="hero__actions">
+      <a class="cta cta--quiet" href="/printables">Back to The Print Shop</a>
+    </div>
+  </section>
+</Content>

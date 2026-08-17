@@ -625,6 +625,28 @@ For anything else, **paste your own verse** covers it — the same move
 small, per-book JSON as static files fetched on demand
 (`/data/bible/webu/john.json`) keeps it static and keeps it out of the bundle.
 
+**What shipped (PRINT18/PRINT19).** 274 entries in the WEBu with the KJV beside
+them, checked character for character against eBible's own release
+(`passages/release/*.vpl.txt`), and thirty public-domain passages around them.
+"Woven through" turned out to be two fields rather than a feature:
+`HandwritingConfig.passage` and `MemoryConfig.passage` are a library id, read in
+one place (`writing/copywork.ts`) which either resolves it or falls back to
+whatever was pasted — so by the time a row is built the sheet cannot tell which
+door the words came in, and an id nine characters long is what makes a copywork
+sheet fit in a `#s=` link where the psalm would not. The picker is one control
+with every collection in it, Scripture first and "your own words" last, and the
+credit travels on the passage rather than beside it: `SheetFooter.source` is a
+field of its own precisely because an answer key has to say _both_ "Answer key"
+and where the passage came from.
+
+Memory work is the second family, and it is the one §12's licence condition
+actually bites on: rounds of the same passage with a growing share of the words
+gone, chosen by the seed, nesting so nothing comes back. The instruction line
+says the words are left out for the exercise and the key prints the passage
+whole — both halves, in the engine, so neither is a page's decision to forget.
+The shelf is `/printables/bible`, a peer of `/printables/math` and
+`/printables/handwriting`; the maths sheets stay clear of it, as above.
+
 ### Scripture on the front door: content, never a credential
 
 The site is Christian-owned and Christian-run. It is not _marketed_ as such,

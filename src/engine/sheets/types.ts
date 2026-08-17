@@ -12,6 +12,7 @@
  * answers the build already computed — `answers: true` and nothing else — so
  * however a key is obtained it can't disagree with the sheet it belongs to.
  */
+import type { TranslationId } from "./passages/types";
 
 /* ── Units ────────────────────────────────────────────────────────────────
    Every length on a sheet is a whole number of thousandths of an inch.
@@ -478,11 +479,27 @@ export type SheetHeader = {
 
 export type SheetFooter = {
   credit: string;
+  /**
+   * The credit the *content* requires, where the words on the page are
+   * somebody else's: "Scripture: World English Bible Updated (public domain) ·
+   * worldenglish.bible" (§12).
+   *
+   * A field of its own rather than a second use of `note` below, because a
+   * sheet often has to say both things at once and they are different claims.
+   * `note` is what this printout *is* — an answer key — and it is set by
+   * `SheetSpec.key` on a sheet that already carries a source; joining the two
+   * into one string would make the key overwrite the credit, which is the one
+   * of the pair we promised to print.
+   *
+   * Absent where the source asks for nothing. An 1885 poem needs no credit
+   * line, and a sheet that printed one anyway would be noise on a child's page.
+   */
+  source?: string;
   /** Short, and pointing back at the game the sheet came from (§16). */
   url?: string;
   /** Printed small, so the same sheet can be had again next week (§7). */
   seed: number;
-  /** "Answer key", or a source credit the sheet's content requires. */
+  /** What this printout is, where it is not simply the sheet: "Answer key". */
   note?: string;
 };
 
@@ -1364,8 +1381,69 @@ export type HandwritingConfig = SheetOptions & {
    * Wrapped to the ruling by the family rather than by the renderer, because
    * there is no DOM to measure in (§4) — a newline here is a line break the
    * author asked for, and everything else breaks where the paper runs out.
+   *
+   * What a parent typed or pasted. `passage` below is the other door, and it
+   * wins where both are set — see `copyworkSource`.
    */
   text?: string;
+  /**
+   * `passage` only: one of the library's passages, by id — Psalm 23, the
+   * Gettysburg Address, a fable (`engine/sheets/passages`).
+   *
+   * An id rather than the words, which is what makes a copywork sheet fit in a
+   * link (§14): "psalm-23" is nine characters where the psalm is seven hundred,
+   * and the sheet built from it carries the provenance the library holds rather
+   * than a quotation with no source attached. A passage this build has never
+   * heard of falls back to `text`, for the same reason `sheetSpec` never throws
+   * — a bookmark outlives the library it was made on.
+   */
+  passage?: string;
+  /**
+   * Which translation a Scripture passage is read in. Ignored by everything
+   * else in the library, which has only the one text.
+   */
+  translation?: TranslationId;
+};
+
+/* ── Memory work ───────────────────────────────────────────────────────────
+   The one family whose exercise is what is *missing* from the page. Every
+   other sheet in the shop either generates its content or prints somebody's
+   words as they stand; this one prints them and then takes them away a few at
+   a time, which is how a verse is learnt by heart and is also the one thing
+   §12's licence condition has something to say about — so the sheet says
+   plainly that words are left out on purpose, and the answer key is the whole
+   passage.                                                                  */
+
+/**
+ * A passage written out several times, with more of it missing each time.
+ *
+ * The oldest memory-work exercise there is, and it is one dial: how many times
+ * the passage is written. The first round is the whole thing to read, the last
+ * has every word gone, and the ones between take out a share of the words that
+ * grows evenly — so a sheet is a progression rather than a difficulty setting,
+ * exactly as a handwriting sheet is.
+ *
+ * Which words go is decided by the seed and nothing else, and the sets nest:
+ * a word missing in round two is missing in round three. A round that gave a
+ * word back would read as a mistake in the printing.
+ *
+ * The text comes from the library or from a paste, the same two doors a
+ * copywork sheet has, and by exactly the same fields — see `copyworkSource`,
+ * which is the one place either is read.
+ */
+export type MemoryConfig = SheetOptions & {
+  kind: "memory";
+  /** A passage from the library, by id. */
+  passage?: string;
+  /** Which translation a Scripture passage is read in. */
+  translation?: TranslationId;
+  /** What a parent typed or pasted. `passage` wins where both are set. */
+  text?: string;
+  /**
+   * How many times the passage is written out, the whole one at the top and
+   * the empty one at the bottom included. Capped at what the page holds.
+   */
+  rounds: number;
 };
 
 /**
@@ -1389,7 +1467,8 @@ export type SheetConfig =
   | StatisticsConfig
   | WordProblemConfig
   | WordsConfig
-  | HandwritingConfig;
+  | HandwritingConfig
+  | MemoryConfig;
 
 /* ── A sheet somebody kept ─────────────────────────────────────────────── */
 

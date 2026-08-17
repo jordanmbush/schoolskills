@@ -34,10 +34,17 @@ import type {
   PassageCollection,
   PassageSource,
   PassageSummary,
+  TranslationId,
 } from "./types";
 
 export { SCRIPTURE_CREDIT };
-export type { Passage, PassageCollection, PassageSource, PassageSummary };
+export type {
+  Passage,
+  PassageCollection,
+  PassageSource,
+  PassageSummary,
+  TranslationId,
+};
 
 /** The words as one block, for the places that want a paragraph. */
 export const passageText = (passage: Passage): string =>
@@ -54,8 +61,6 @@ const summarise = ({ lines, ...rest }: Passage): PassageSummary => ({
    "Yahweh"; the KJV because a good many families want it and it is equally
    free. Never ESV, NIV, NASB or CSB — those are licensed, and bundling one
    would be a genuine problem rather than an oversight.                      */
-
-export type TranslationId = "webu" | "kjv";
 
 export type Translation = {
   id: TranslationId;
@@ -180,14 +185,25 @@ export const listPassageSummaries = (
   translation: TranslationId = DEFAULT_TRANSLATION,
 ): PassageSummary[] => listPassages(translation).map(summarise);
 
+/*
+   Indexed by id, once. `passage()` is called several times per sheet built —
+   the layout, the header, the body and the one-line description each ask —
+   and a linear scan of three hundred entries for each of them is a scan the
+   catalog build repeats a few thousand times. A `Map` also takes an untrusted
+   id safely, which is the same trap `hasOwn` guards above: `OTHERS["toString"]`
+   is a function off the prototype, and `.get("toString")` is nothing.        */
+
+const SCRIPTURE_BY_ID = new Map(SCRIPTURE.map((entry) => [entry.id, entry]));
+const OTHERS_BY_ID = new Map(OTHERS.map((entry) => [entry.id, entry]));
+
 /** One passage, or nothing. See the note at the top on why it never throws. */
 export function passage(
   id: string,
   translation: TranslationId = DEFAULT_TRANSLATION,
 ): Passage | undefined {
-  const entry = SCRIPTURE.find((candidate) => candidate.id === id);
+  const entry = SCRIPTURE_BY_ID.get(id);
   if (entry) return fromScripture(entry, translation);
-  return OTHERS.find((candidate) => candidate.id === id);
+  return OTHERS_BY_ID.get(id);
 }
 
 /** Everything in one collection, for a picker grouped the way §12 groups it. */
