@@ -217,7 +217,8 @@
 }
 
 .sheet__cell,
-.sheet__dot {
+.sheet__dot,
+.sheet__tick {
   fill: currentcolor;
   stroke: none;
 }
@@ -306,13 +307,74 @@
   text-align: center;
 }
 
-.sheet__slot--answered {
+/* An answer, wherever it is written: in the slot at the end of a sum, in the
+   gap inside one, or under the rule of a column. One weight in one place, so
+   a key reads the same however the problem was set. */
+.sheet__slot--answered,
+.sheet__total--answered {
   font-weight: 700;
 }
 
-.sheet__workspace {
+/* ── Column form ────────────────────────────────────────────────────────────
+   The same sum stacked, which is how carrying is taught. `tabular-nums` is not
+   a nicety here: a child shown to line the units up under the units will line
+   them up, and a proportional face puts a 1 half a column left of where a 4
+   goes. The rule under the sum is a border on the answer's own box, so it is
+   exactly as wide as the sum it belongs to whatever the numbers are.        */
+
+.sheet__column {
+  display: inline-flex;
+  flex-direction: column;
+  min-width: 0.85in;
+  font-variant-numeric: tabular-nums;
+}
+
+.sheet__addend {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.14in;
+}
+
+.sheet__total {
+  border-top: 0.75pt solid currentcolor;
+  padding-top: 0.03in;
+  min-height: 1.2em;
+  text-align: right;
+}
+
+/* A number line and a workspace are both a full row of their own under the
+   problem they belong to, rather than something beside it. */
+.sheet__workspace,
+.sheet__number-line {
   display: block;
   flex: 1 0 100%;
+}
+
+/* ── Answers written out ────────────────────────────────────────────────────
+   A fact family asks for four number sentences, so it gets four lines to write
+   them on rather than one slot the size of one of them. These lines *are* the
+   answer place — the prompt above prints no slot — and they divide the height
+   the family reserved between them, which is why `nowrap` is load-bearing and
+   not a nicety: a sentence that wrapped would make the row taller than the
+   layout arithmetic declared, and the bottom row of the page would come out of
+   the printer on a second sheet.                                            */
+
+.sheet__answers {
+  display: flex;
+  flex-direction: column;
+  flex: 1 0 100%;
+}
+
+.sheet__answer-line {
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+  white-space: nowrap;
+  border-bottom: 0.75pt solid currentcolor;
+}
+
+.sheet__answer-line--answered {
+  font-weight: 700;
 }
 
 /* ── The rest of the blocks ─────────────────────────────────────────────── */

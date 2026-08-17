@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { sheetBlockBox } from "../chrome";
 import { answerKey, buildSheet, describeSheet, sheetSpec } from "../index";
 import { contentBox, ruledLines } from "../layout";
 import { RULINGS, inches, rulePitch } from "../paper";
@@ -12,7 +13,7 @@ import type {
   RuleStyle,
 } from "../types";
 
-import { PAPER_SHEET, paperBlockBox } from "./paper";
+import { PAPER_SHEET } from "./paper";
 
 /**
  * The family the geometry is proved on.
@@ -118,7 +119,7 @@ describe("what a ruler would find", () => {
     // Measured against the *block* box, which is the only box that can fail.
     // The content box cannot: `ruleCapacity` floors against a height that is
     // already the content box minus the chrome, so a family that reserved
-    // nothing at all would still satisfy it, and deleting `chrome()` would
+    // nothing at all would still satisfy it, and deleting `chromeHeight()` would
     // leave this test green while every sheet overran its footer.
     for (const size of SIZES) {
       for (const margin of MARGINS) {
@@ -127,7 +128,7 @@ describe("what a ruler would find", () => {
           const over = { paper: paper({ size, margin }), rule };
           const lines = rulesOf(over).lines;
           const pitch = rulePitch(rule);
-          const box = paperBlockBox(config(over));
+          const box = sheetBlockBox(config(over));
 
           expect(lines * pitch).toBeLessThanOrEqual(box.height);
           // ...and one more would not have fitted, which is what makes the
@@ -145,7 +146,7 @@ describe("what a ruler would find", () => {
     // on ⅝ paper a child notices. Name and date, no title, no instructions —
     // the sheet the catalog actually ships — spends under an inch on chrome.
     const bare = config();
-    const spare = contentBox(bare.paper).height - paperBlockBox(bare).height;
+    const spare = contentBox(bare.paper).height - sheetBlockBox(bare).height;
     expect(spare).toBeGreaterThan(0);
     expect(spare).toBeLessThan(inches(0.8));
   });
@@ -159,7 +160,7 @@ describe("what a ruler would find", () => {
     // passes two; reachable from `buildSheet` today and from the builder next.
     const two = config();
     const three = config({ fields: ["name", "date", "class"] });
-    expect(paperBlockBox(three).height).toBeLessThan(paperBlockBox(two).height);
+    expect(sheetBlockBox(three).height).toBeLessThan(sheetBlockBox(two).height);
 
     // The sheet pays for the row by losing a line, rather than by overrunning.
     const rule: Rule = { style: "narrow" };

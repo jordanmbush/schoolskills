@@ -16,12 +16,14 @@
 import type { Sheet, SheetConfig } from "./types";
 
 import { BLANK_SHEET } from "./blank";
+import { ARITHMETIC_SHEET } from "./maths/arithmetic";
 import { UNKNOWN_SHEET, type SheetSpec } from "./spec";
 import { PAPER_SHEET } from "./templates/paper";
 
 const SHEETS: Record<string, SheetSpec> = {
   [BLANK_SHEET.id]: BLANK_SHEET,
   [PAPER_SHEET.id]: PAPER_SHEET,
+  [ARITHMETIC_SHEET.id]: ARITHMETIC_SHEET,
 };
 
 /**
