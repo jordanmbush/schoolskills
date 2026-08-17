@@ -853,8 +853,12 @@ export type PaperConfig = SheetOptions & { kind: "paper"; rule: Rule };
  *
  * Every style-specific field is optional and every one of them is clamped to
  * what the paper holds, because all four arrive from the same places a saved
- * sheet does — a bookmarked link, a config written last term. `chartPlan` in
- * `templates/charts.ts` is the single place they are resolved.
+ * sheet does — a bookmarked link, a config written last term. They resolve in
+ * two places rather than one: `hundredChart`, `lineStrips` and `placeChart` in
+ * `templates/charts.ts` clamp their own fields through `whole()`, while `span`
+ * and `quadrants` go to `planeOf` in `plane.ts`, which guards them itself so
+ * that every sheet drawn on a plane — blank grid or geometry exercise — gets
+ * the same answer to "how far do the axes run".
  */
 export type ChartStyle =
   "hundred" | "number-line" | "coordinate" | "place-value";

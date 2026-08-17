@@ -123,10 +123,11 @@ export const placeName = (power: number): string =>
 /**
  * A number a config asked for, as a whole number inside the bounds.
  *
- * Every field on a `ChartConfig` goes through this, because every one of them
- * can arrive from outside the build — a bookmarked link, a sheet saved last
- * term — and a range of `NaN` to `"lots"` has to produce a chart rather than an
- * exception four modules downstream.
+ * Every `ChartConfig` field resolved in this module goes through it, because
+ * every one of them can arrive from outside the build — a bookmarked link, a
+ * sheet saved last term — and a range of `NaN` to `"lots"` has to produce a
+ * chart rather than an exception four modules downstream. The two that are not
+ * resolved here, `span` and `quadrants`, are guarded the same way by `planeOf`.
  */
 function whole(value: unknown, fallback: number, low: number, high: number) {
   const asked = typeof value === "number" ? Math.round(value) : NaN;

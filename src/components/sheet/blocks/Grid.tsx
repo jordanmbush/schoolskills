@@ -21,9 +21,16 @@ const CELL_TO_EM = 0.5;
  * plain mean is taken over `a`–`z`: that is the distinction that put `Mm` a
  * tenth of an inch into the next cell on a handwriting row.
  *
- * It never fires on the grids that were here first: three characters is the
- * widest thing a hundred chart or a multiplication square puts in a square, and
- * three of them fit at the shared size on every face in the shop.
+ * On the grids that were here first it fires everywhere except the print face.
+ * Three characters is the widest thing a hundred chart or a multiplication
+ * square puts in a square, and only Andika's numerals clear the shared size at
+ * that width: 400 against a shared 375 on the hundred chart's ¾in square, 307
+ * against 288 on the 13×13. The other four faces are all wider per numeral — a
+ * digit is measured at `capAdvance` here, not `advance` — so they are set
+ * smaller, which is the right answer and not a miss: three OpenDyslexic
+ * numerals set at half the square measure 0.89in across a 0.75in square.
+ * Every catalog page is set in the print face, which is why all of them print
+ * at the shared size.
  */
 const CELL_FILL = 0.86;
 
