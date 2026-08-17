@@ -60,6 +60,8 @@
  * `wordlists.test.ts` enforces the mechanical half of that list.
  */
 
+import { BIBLE_LISTS } from "./biblelists";
+
 export type WordEntry = {
   word: string;
   /**
@@ -74,7 +76,10 @@ export type WordEntry = {
 export type WordList = {
   id: string;
   name: string;
-  /** Who it's for, in the terms a parent will pick by. */
+  /**
+   * Who it's for, in the terms a parent will pick by — an age band on a graded
+   * list, and what the list is for on one that isn't graded ("Memory work").
+   */
   group: string;
   blurb: string;
   emoji: string;
@@ -460,7 +465,29 @@ export const WORD_LISTS: WordList[] = [
   },
 ];
 
-export const WORD_LISTS_BY_ID = new Map(WORD_LISTS.map((l) => [l.id, l]));
+/**
+ * Every list this build ships, whatever it teaches.
+ *
+ * `WORD_LISTS` is the graded sight-word set and stays that: the typing pools,
+ * the age lookup below and the spelling shelf all mean *Dolch* when they say
+ * word list, and a Bible book in a "common words" typing level would be a
+ * proper noun in a pool of the hundred commonest words. What every list has in
+ * common is the machinery — one picker, one id space, one sentence per word —
+ * and that is what this is for. The Bible lists are `biblelists.ts`, one source
+ * among several (docs/printables.md §12).
+ */
+export const SHIPPED_LISTS: WordList[] = [...WORD_LISTS, ...BIBLE_LISTS];
+
+/**
+ * By id, across every shipped list.
+ *
+ * The id is what a saved session, a saved sheet and a shared link all carry, so
+ * this is the lookup that decides whether a list is one of ours or one a parent
+ * typed in (`services/decks.ts`). Built from the whole shelf rather than from
+ * Dolch alone: a run saved on a books-of-the-Bible list has to be able to name
+ * itself in the record book.
+ */
+export const WORD_LISTS_BY_ID = new Map(SHIPPED_LISTS.map((l) => [l.id, l]));
 
 /** The list a child of this age is most likely to be working on. */
 export function wordListForAge(age: number): WordList {

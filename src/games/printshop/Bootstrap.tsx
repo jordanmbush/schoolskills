@@ -18,7 +18,7 @@
 import { useEffect, useState } from "react";
 
 import { Button, Field, Select } from "@/components/ui/kit";
-import { WORD_LISTS, listWords } from "@/engine/decks/wordlists";
+import { SHIPPED_LISTS, listWords } from "@/engine/decks/wordlists";
 import { PRACTICE_SEED, wordsSheet } from "@/engine/sheets/practice";
 import type { SheetConfig } from "@/engine/sheets/types";
 import type { CustomDeck } from "@/engine/types";
@@ -61,6 +61,12 @@ type Listed = { id: string; label: string; words: string[] };
  * and are always there, which is the reason this step no longer disappears: the
  * Dolch lists exist whether or not a browser has storage, so the only thing
  * IndexedDB decides is whether a parent's own lists join them.
+ *
+ * Every shipped list, which since PRINT23 means the books of the Bible, the
+ * names, the places and the Bible words as well as Dolch — one control with all
+ * of them in it, exactly as the passage picker has Scripture and the Gettysburg
+ * Address in one list (§12). A parent picking this week's words is not choosing
+ * a subject; they are choosing a list.
  */
 function FromWordList({ onOpen }: { onOpen: Open }) {
   const [decks, setDecks] = useState<CustomDeck[]>([]);
@@ -81,7 +87,7 @@ function FromWordList({ onOpen }: { onOpen: Open }) {
   }, []);
 
   const lists: Listed[] = [
-    ...WORD_LISTS.map((list) => ({
+    ...SHIPPED_LISTS.map((list) => ({
       id: list.id,
       label: `${list.emoji} ${list.name} — ${list.group}`,
       words: listWords(list),
