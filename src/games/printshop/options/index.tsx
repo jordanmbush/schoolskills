@@ -26,6 +26,7 @@ import { GeometryPanel } from "./geometry";
 import { HandwritingPanel } from "./handwriting";
 import { IntegersPanel } from "./integers";
 import { MeasurePanel } from "./measure";
+import { MemoryPanel } from "./memory";
 import { MoneyPanel } from "./money";
 import { MultiplicationPanel } from "./multiplication";
 import { PaperPanel } from "./paper";
@@ -88,6 +89,7 @@ const PANELS: Record<string, FamilyPanel> = {
   "word-problems": panel(WordProblemsPanel),
   words: panel(WordsPanel),
   handwriting: panel(HandwritingPanel),
+  memory: panel(MemoryPanel),
 };
 
 /**

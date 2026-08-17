@@ -29,6 +29,18 @@
 export type PassageKind = "scripture" | "prose" | "poetry" | "document";
 
 /**
+ * Which translation a Scripture passage is read in — the two of §12, and the
+ * reasoning for both is beside the table in index.ts.
+ *
+ * The id lives here rather than there for one practical reason: a sheet config
+ * carries a translation, so `engine/sheets/types.ts` has to be able to name the
+ * type — and a type-only import of this module costs nothing, where an import
+ * of the library's front door would put a hundred kilobytes of verses in front
+ * of every module that so much as mentions a `Sheet`.
+ */
+export type TranslationId = "webu" | "kjv";
+
+/**
  * Where the text came from, and why we may print it.
  *
  * `edition` is the load-bearing one and the one it is tempting to leave vague.

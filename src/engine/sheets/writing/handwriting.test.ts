@@ -9,6 +9,12 @@ import {
 } from "../faces";
 import { ruleCapacity, ruledLines } from "../layout";
 import { RULINGS, inches, rulePitch, toInches, writingSpace } from "../paper";
+import {
+  SCRIPTURE_CREDIT,
+  listPassages,
+  passage,
+  passageText,
+} from "../passages";
 import type {
   HandwritingConfig,
   Rule,
@@ -17,6 +23,7 @@ import type {
   TraceStyle,
 } from "../types";
 
+import { MAX_TEXT, copyworkSource } from "./copywork";
 import {
   DEFAULT_HAND_RULE,
   HANDWRITING_SHEET,
@@ -594,6 +601,153 @@ describe("joined writing", () => {
     expect(
       describeHandwriting(config({ style: "joins", joins: "round" })),
     ).toContain("joins into a round letter");
+  });
+});
+
+/* ── Copywork, from the library or from a paste ────────────────────────────
+   The passage style's other door (§12). Two things have to hold, and the
+   second is a licence condition rather than a nicety: the words that reach the
+   paper are the library's exactly, and the credit its source asks for is on the
+   sheet that quotes it.                                                      */
+
+describe("copywork out of the passage library", () => {
+  const VERSE = "trust-in-the-lord";
+
+  /** Everything a copywork sheet printed, as one string. */
+  const copied = (over: Partial<HandwritingConfig>): string =>
+    written(rowsOf({ style: "passage", trace: "dim", repeats: 2, ...over }))
+      .join(" ")
+      .replace(/\s+/g, " ")
+      .trim();
+
+  it("sets a library passage at every ruling and every trace style", () => {
+    // The story's first line, as an assertion. A passage is not a special kind
+    // of sheet: it is the same rows on the same twelve rulings, so all sixty
+    // combinations have to print something rather than the handful the catalog
+    // happens to use.
+    for (const style of STYLES) {
+      for (const trace of TRACES) {
+        const rows = rowsOf({
+          style: "passage",
+          passage: VERSE,
+          rule: { style },
+          trace,
+          repeats: 2,
+        });
+        expect(rows.length, `${style} / ${trace}`).toBeGreaterThan(0);
+        expect(rows[0].cells.length, `${style} / ${trace}`).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it("prints the passage's own words, not a paraphrase of them", () => {
+    // The line breaks are the family's — a row is one repeat of the ruling —
+    // but nothing between them may change, which for Scripture is the condition
+    // attached to the name (§12).
+    const words = passageText(passage(VERSE)!).replace(/\s+/g, " ");
+    expect(copied({ passage: VERSE, rule: { style: "hand-3-8" } })).toBe(words);
+  });
+
+  it("hands on the longest passage in the library whole, and cuts a paste on a word", () => {
+    /*
+     * The cap on a paste is not a cap on the library, and the difference is a
+     * licence condition rather than a tidiness one (§12). A library passage
+     * travels as its id — nine characters in a `#s=` link — so §14's reason for
+     * capping a config never reaches it; applying the cap there anyway cost the
+     * longest entry its last eight words *and* half of the word before them, and
+     * on a memory sheet that truncated text is what the answer key prints, under
+     * an instruction line promising the passage whole.
+     *
+     * Over the longest entry rather than a named one, so the case cannot quietly
+     * stop being the interesting one when a longer passage is added.
+     */
+    const longest = listPassages().reduce((most, entry) =>
+      passageText(entry).length > passageText(most).length ? entry : most,
+    );
+    expect(passageText(longest).length).toBeGreaterThan(MAX_TEXT);
+    expect(copyworkSource({ passage: longest.id }).text, longest.id) //
+      .toBe(passageText(longest));
+
+    // A paste is still capped, because a config does have to fit in a URL — but
+    // on a boundary its author put there, so nothing reaches the paper as half a
+    // word. Every word of the cut is a whole word of the paste, in order.
+    const paste = `${"seven-letter ".repeat(200)}last`;
+    const cut = copyworkSource({ text: paste }).text;
+    expect(cut.length).toBeLessThanOrEqual(MAX_TEXT);
+    const words = cut.split(/\s+/);
+    expect(words.length).toBeGreaterThan(1);
+    expect(paste.split(/\s+/).slice(0, words.length)).toEqual(words);
+  });
+
+  it("puts the credit its source asks for at the foot of the page", () => {
+    const verse = HANDWRITING_SHEET.build(
+      config({ style: "passage", passage: VERSE }),
+      1,
+    );
+    expect(verse.footer.source).toBe(SCRIPTURE_CREDIT);
+    // And nothing where nothing is asked for. An 1885 poem needs no credit
+    // line, and one printed anyway is noise on a child's page.
+    const poem = HANDWRITING_SHEET.build(
+      config({ style: "passage", passage: "bed-in-summer" }),
+      1,
+    );
+    expect(poem.footer.source).toBeUndefined();
+  });
+
+  it("reads a verse in the translation that was asked for", () => {
+    const webu = copied({ passage: VERSE, rule: { style: "hand-3-8" } });
+    const kjv = copied({
+      passage: VERSE,
+      translation: "kjv",
+      rule: { style: "hand-3-8" },
+    });
+    expect(kjv).not.toBe(webu);
+    expect(kjv).toContain("Trust in the LORD with all thine heart");
+    // Whole, not half: the text and the credit under it come from the same
+    // translation or the page is quoting one edition under another's name.
+    expect(
+      HANDWRITING_SHEET.build(
+        config({ style: "passage", passage: VERSE, translation: "kjv" }),
+        1,
+      ).footer.source,
+    ).toContain("King James");
+  });
+
+  it("names the passage on the paper, so the sheet says what is on it", () => {
+    const sheet = HANDWRITING_SHEET.build(
+      config({ style: "passage", passage: VERSE }),
+      1,
+    );
+    expect(sheet.header.title).toBe("Copywork — Proverbs 3:5-6");
+    expect(
+      describeHandwriting(config({ style: "passage", passage: VERSE })),
+    ).toContain("Proverbs 3:5-6");
+  });
+
+  it("prefers the library to whatever the paste box was holding", () => {
+    // Which way round matters for a shared link: the id is the choice somebody
+    // made in the picker, and the text is what was underneath it beforehand.
+    const both = { passage: VERSE, text: "Something else entirely." };
+    expect(copied({ ...both, rule: { style: "hand-3-8" } })).toBe(
+      passageText(passage(VERSE)!).replace(/\s+/g, " "),
+    );
+    // And clearing the id is how a parent gets their own words back.
+    expect(copied({ text: "Something else entirely." })).toBe(
+      "Something else entirely.",
+    );
+  });
+
+  it("falls back to the paste when the passage has been retired", () => {
+    // A bookmark outlives the library it was made on, the same way a saved
+    // sheet outlives its family — so an id this build never heard of prints
+    // whatever else the config had rather than throwing mid-build.
+    const stale = { passage: "no-such-passage", text: "Still prints." };
+    expect(() => rowsOf({ style: "passage", ...stale })).not.toThrow();
+    expect(copied(stale)).toBe("Still prints.");
+    expect(
+      HANDWRITING_SHEET.build(config({ style: "passage", ...stale }), 1).footer
+        .source,
+    ).toBeUndefined();
   });
 });
 

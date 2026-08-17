@@ -48,6 +48,22 @@ export function gameUrl(world: World): string {
 }
 
 /**
+ * The longest link the foot of a sheet can carry.
+ *
+ * Derived from the registry rather than written out, because it is `chrome.ts`
+ * that reads it: the footer's height is reserved before the sheet is built, so
+ * the reservation has to be made against the widest link a family might choose
+ * rather than against the one it did. A second copy of "schoolskills.app/
+ * spelling/play" would be a second thing to keep in step with `worlds.ts`.
+ */
+export const LONGEST_SHEET_URL: string = WORLDS.map((world) =>
+  gameUrl(world.id),
+).reduce(
+  (longest, url) => (url.length > longest.length ? url : longest),
+  SHEET_URL,
+);
+
+/**
  * `C` is the family's own config, and the registry in index.ts is what ties it
  * back to the union: a spec is only ever handed the config whose `kind` looked
  * it up. Declaring `build` and `describe` as methods rather than as arrow

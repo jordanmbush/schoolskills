@@ -21,6 +21,13 @@
  * same sequence runs *down* the page instead. Nothing else differs between the
  * five styles.
  *
+ * **Copywork is the passage style, and its words come from one of two doors.**
+ * Either the library (`passages/`) by id, or a paste — `copyworkSource` is the
+ * only place either is read, and by the time a row is built the sheet cannot
+ * tell which it got. That is what makes choosing Psalm 23 and choosing the
+ * Gettysburg Address the same interaction (§12); what a library passage adds is
+ * a credit line at the foot of the page, where its source asks for one.
+ *
  * **Cursive is not a sixth style.** A cursive sheet is these same sheets set in
  * a joining face (`SheetOptions.font`), because a letter, a word and a passage
  * are the same exercises whether or not the letters touch — and a cell is one
@@ -65,6 +72,7 @@ import { sheetBlockBox } from "../chrome";
 import { ruleCapacity, type Box } from "../layout";
 import { own, rulePitch, rulingOf, writingSpace } from "../paper";
 import { SHEET_CREDIT, SHEET_URL, SHEET_WORLD, type SheetSpec } from "../spec";
+import { copyworkSource, type CopyworkSource } from "./copywork";
 import { joinFamily, joinPairs } from "./joins";
 
 /* ── What the family will and won't do ─────────────────────────────────── */
@@ -83,16 +91,6 @@ const MAX_WORDS = 200;
 
 /** Long enough for "onomatopoeia" twice over; short enough not to wrap. */
 const MAX_LETTERS = 24;
-
-/**
- * The longest passage worth setting.
- *
- * The smallest ruling here holds about twenty-two lines to a page and about
- * forty-six characters to a line, so a thousand characters is already more than
- * any sheet can print — this is twice that, and still short enough that a config
- * fits in a URL (§14), which is not the place for an essay.
- */
-const MAX_TEXT = 2000;
 
 const clamp = (value: number, low: number, high: number): number =>
   Math.max(low, Math.min(high, Math.floor(value)));
@@ -288,10 +286,16 @@ export function handwritingLayout(
   longest: number,
 ): HandwritingLayout {
   const rule = ruleOf(config);
-  // Against the header the sheet will print rather than the one the config
-  // holds, and with no score box: there is nothing on a handwriting sheet to
-  // mark out of anything.
-  const box = sheetBlockBox(headerOf(config));
+  // Against the header and the footer the sheet will print rather than the ones
+  // the config holds, and with no score box: there is nothing on a handwriting
+  // sheet to mark out of anything. No `note` either — this family's key is the
+  // sheet itself, so nothing is ever added to the foot after the layout.
+  const credit = sourceOf(config)?.credit;
+  const box = sheetBlockBox(
+    headerOf(config),
+    false,
+    credit ? { source: credit } : {},
+  );
   const face = faceOf(fontOf(config));
   const em = glyphEm(writingSpace(rule), face, writtenOf(config));
   const rows = ruleCapacity(box.height, rule);
@@ -359,7 +363,9 @@ export const fontOf = (config: HandwritingConfig): SheetFont | undefined =>
  * order it is joined in and the spaces between are beside the point.
  */
 const writtenOf = (config: HandwritingConfig): string =>
-  config.style === "passage" ? (config.text ?? "") : contentOf(config).join("");
+  config.style === "passage"
+    ? copyworkSource(config).text
+    : contentOf(config).join("");
 
 /** The longest thing on the page, in characters. Never less than one. */
 const longestOf = (things: string[]): number =>
@@ -415,7 +421,7 @@ function bodyOf(config: HandwritingConfig): Block[] {
 
   if (config.style === "passage") {
     const { box, em, face, perPage, rule } = handwritingLayout(config, 1);
-    const text = (config.text ?? "").slice(0, MAX_TEXT);
+    const { text } = copyworkSource(config);
     const lines = wrapPassage(text, fittedCharacters(box.width, em, face));
     return [
       { kind: "trace", rule, rows: rowsDown(lines.slice(0, perPage), styles) },
@@ -500,17 +506,37 @@ export function instructionOf(config: HandwritingConfig): string {
 }
 
 /**
- * What the sheet is called, which depends on the hand it is written in.
+ * The words a copywork sheet is set on, and nothing for the sheets that are
+ * set on an alphabet.
+ *
+ * One function so that the four places that ask — the layout, the header, the
+ * page and the one-line description — cannot disagree about which passage is
+ * on the paper.
+ */
+const sourceOf = (config: HandwritingConfig): CopyworkSource | undefined =>
+  config.style === "passage" ? copyworkSource(config) : undefined;
+
+/**
+ * What the sheet is called, which depends on the hand it is written in and on
+ * what is being copied.
  *
  * Read off the face the sheet will actually be set in rather than off the one
  * the config asked for, so the title and the letterforms can't disagree — a
  * joins sheet whose config says `print` still prints joined, and still says so.
+ *
+ * A passage out of the library names itself in the title: "Copywork" over a
+ * page of Psalm 23 is a sheet that does not say what is on it, and the title is
+ * what somebody reads off the paper on the fridge a week later. A pasted
+ * passage keeps the plain title, because the only name we would have for it is
+ * one we invented.
  */
 function titleOf(config: HandwritingConfig): string {
-  const title = own(TITLE, config.style, TITLE.letters);
-  return isCursive(fontOf(config))
-    ? own(CURSIVE_TITLE, config.style, title)
-    : title;
+  const plain = own(TITLE, config.style, TITLE.letters);
+  const title = isCursive(fontOf(config))
+    ? own(CURSIVE_TITLE, config.style, plain)
+    : plain;
+  const named = sourceOf(config)?.title;
+  return named ? `${title} — ${named}` : title;
 }
 
 /** How the content is described in one phrase, in the terms it was chosen by. */
@@ -527,7 +553,9 @@ function contentLabel(config: HandwritingConfig): string {
       return `${words} ${words === 1 ? "word" : "words"}`;
     }
     case "passage":
-      return "a passage";
+      // The title already names a passage out of the library, so what is left
+      // worth saying is who wrote it — and, for a paste, that nobody knows.
+      return sourceOf(config)?.attribution ?? "a passage";
     default:
       switch (config.letters ?? "both") {
         case "upper":
@@ -576,6 +604,7 @@ export function buildHandwritingSheet(
   seed: number,
 ): Sheet {
   const head = headerOf(config);
+  const credit = sourceOf(config)?.credit;
 
   return {
     paper: config.paper,
@@ -594,7 +623,16 @@ export function buildHandwritingSheet(
     // No game to point at. A handwriting sheet has no race behind it — the
     // words on one may come from the jungle, but what is being practised is the
     // shape of the letters and not the spelling (§16).
-    footer: { credit: SHEET_CREDIT, url: SHEET_URL, seed },
+    //
+    // `source` is where the words came from, on the sheets that quote somebody:
+    // printed on every page that carries a passage the library asks credit for,
+    // which for Scripture is a condition rather than a courtesy (§12).
+    footer: {
+      credit: SHEET_CREDIT,
+      url: SHEET_URL,
+      seed,
+      ...(credit ? { source: credit } : {}),
+    },
     answers: false,
   };
 }

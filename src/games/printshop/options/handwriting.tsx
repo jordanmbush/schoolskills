@@ -17,7 +17,9 @@
  * What is written changes with the style and nothing else does, which is why
  * only one content control is on screen at a time: a word list on a sheet of
  * the alphabet is a box that does nothing, and a box that does nothing is worse
- * than a missing one.
+ * than a missing one. Copywork is the one whose content is a picker rather than
+ * a box — every passage in the library, Scripture first, and "your own words"
+ * as the last entry in the same list (`passages.tsx`).
  *
  * The one thing not on this panel is the hand. Cursive is a *face* rather than a
  * style of handwriting sheet — the letters, words and passages above are the
@@ -35,15 +37,10 @@ import type {
   TraceStyle,
 } from "@/engine/sheets/types";
 
-import {
-  Checkbox,
-  Field,
-  FieldSet,
-  NumberStepper,
-  TextArea,
-} from "@/components/ui/kit";
+import { Checkbox, FieldSet, NumberStepper } from "@/components/ui/kit";
 import { parseWords } from "@/services/decks";
 
+import { PassageControls } from "./passages";
 import {
   Choice,
   RULED_STYLES,
@@ -136,16 +133,12 @@ export function HandwritingPanel({
       )}
 
       {config.style === "passage" && (
-        <Field
-          label="Passage"
-          hint="Broken where the line runs out. A line break of your own is kept."
-        >
-          <TextArea
-            value={config.text ?? ""}
-            rows={4}
-            onChange={(text) => set({ text })}
-          />
-        </Field>
+        <PassageControls
+          passage={config.passage}
+          translation={config.translation}
+          text={config.text}
+          onChange={set}
+        />
       )}
 
       <RulingControls
