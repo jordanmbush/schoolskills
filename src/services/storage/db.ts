@@ -1,6 +1,7 @@
 import { openDB, type DBSchema, type IDBPDatabase } from "idb";
 
 import { readSession, readSessions } from "@/engine/migrate";
+import type { SavedSheet } from "@/engine/sheets/types";
 import type {
   CustomDeck,
   LegacySession,
@@ -24,8 +25,11 @@ import type {
  */
 
 const DB_NAME = "schoolskills";
-/** 2 added `decks` — parent-authored word lists. */
-const DB_VERSION = 2;
+/**
+ * 2 added `decks` — parent-authored word lists.
+ * 3 added `sheets` — worksheets a parent configured in the print shop.
+ */
+const DB_VERSION = 3;
 
 /** Oldest sessions past this count are dropped so a profile stays fast to load. */
 export const MAX_SESSIONS_PER_PROFILE = 2000;
@@ -33,6 +37,13 @@ export const MAX_SESSIONS_PER_PROFILE = 2000;
 interface HubDB extends DBSchema {
   profiles: { key: string; value: Profile };
   decks: { key: string; value: CustomDeck };
+  /**
+   * Keyed by id and nothing else — no `byProfile` index to match the one on
+   * `sessions`, because a saved sheet has no profile to be indexed by. A
+   * worksheet belongs to the household rather than to a child; see `SavedSheet`
+   * for why that is the shape rather than an oversight.
+   */
+  sheets: { key: string; value: SavedSheet };
   sessions: {
     key: string;
     /**
@@ -65,6 +76,9 @@ function db() {
       }
       if (oldVersion < 2) {
         database.createObjectStore("decks", { keyPath: "id" });
+      }
+      if (oldVersion < 3) {
+        database.createObjectStore("sheets", { keyPath: "id" });
       }
     },
   });
@@ -112,6 +126,18 @@ export async function putDeck(deck: CustomDeck): Promise<void> {
  */
 export async function removeDeck(id: string): Promise<void> {
   await (await db()).delete("decks", id);
+}
+
+export async function allSheets(): Promise<SavedSheet[]> {
+  return (await db()).getAll("sheets");
+}
+
+export async function putSheet(sheet: SavedSheet): Promise<void> {
+  await (await db()).put("sheets", sheet);
+}
+
+export async function removeSheet(id: string): Promise<void> {
+  await (await db()).delete("sheets", id);
 }
 
 export async function putProfile(profile: Profile): Promise<void> {
@@ -177,12 +203,27 @@ export async function trimSessions(profileId: string): Promise<number> {
   return doomed.length;
 }
 
+/**
+ * Every store a backup covers, written once.
+ *
+ * The transaction and the `replace` wipe both read it, so a store added to one
+ * can't be missing from the other — which would be a restore that says it
+ * replaced everything and quietly kept the old copy of whatever was forgotten.
+ */
+const BACKUP_STORES = ["profiles", "sessions", "decks", "sheets"] as const;
+
 export type Backup = {
-  /** 2 added `decks`. Files at either version restore. */
-  version: 1 | 2;
+  /** 2 added `decks`, 3 added `sheets`. Files at any of the three restore. */
+  version: 1 | 2 | 3;
   exportedAt: string;
   profiles: Profile[];
   decks?: CustomDeck[];
+  /**
+   * Optional for the same reason `decks` is: a file written before the print
+   * shop existed simply has none, and a backup a parent has been keeping since
+   * the spring must not stop restoring because a later version added a store.
+   */
+  sheets?: SavedSheet[];
   /**
    * Written current, read wide. A file exported today holds widened cards, but
    * one exported last week — or produced by `scripts/convert-legacy-hub.mjs`
@@ -192,16 +233,18 @@ export type Backup = {
 };
 
 export async function exportAll(): Promise<Backup> {
-  const [profiles, sessions, decks] = await Promise.all([
+  const [profiles, sessions, decks, sheets] = await Promise.all([
     allProfiles(),
     allSessions(),
     allDecks(),
+    allSheets(),
   ]);
   return {
-    version: 2,
+    version: 3,
     exportedAt: new Date().toISOString(),
     profiles,
     decks,
+    sheets,
     sessions,
   };
 }
@@ -217,23 +260,27 @@ export async function exportAll(): Promise<Backup> {
 export async function importAll(
   backup: Backup,
   mode: "merge" | "replace" = "merge",
-): Promise<{ profiles: number; sessions: number; decks: number }> {
+): Promise<{
+  profiles: number;
+  sessions: number;
+  decks: number;
+  sheets: number;
+}> {
   const database = await db();
-  const tx = database.transaction(
-    ["profiles", "sessions", "decks"],
-    "readwrite",
-  );
+  const tx = database.transaction(BACKUP_STORES, "readwrite");
   if (mode === "replace") {
-    await Promise.all([
-      tx.objectStore("profiles").clear(),
-      tx.objectStore("sessions").clear(),
-      tx.objectStore("decks").clear(),
-    ]);
+    await Promise.all(BACKUP_STORES.map((s) => tx.objectStore(s).clear()));
   }
   await Promise.all([
     ...backup.profiles.map((p) => tx.objectStore("profiles").put(p)),
     // Absent from a version 1 file, which is fine — there were none.
     ...(backup.decks ?? []).map((d) => tx.objectStore("decks").put(d)),
+    // Likewise absent from anything written before version 3. Restored as
+    // they were saved and not re-validated: the sheet service refuses a family
+    // this build doesn't have, and a backup is the one place that would be the
+    // wrong answer — a file is the only copy there is, so a sheet whose family
+    // was retired has to come back rather than be dropped on the way in.
+    ...(backup.sheets ?? []).map((s) => tx.objectStore("sheets").put(s)),
     // Widened on the way in, so a restored run is stored in the shape a fresh
     // one would be. Reads migrate anyway; this just stops the file's age from
     // outliving the import.
@@ -246,5 +293,6 @@ export async function importAll(
     profiles: backup.profiles.length,
     sessions: backup.sessions.length,
     decks: backup.decks?.length ?? 0,
+    sheets: backup.sheets?.length ?? 0,
   };
 }

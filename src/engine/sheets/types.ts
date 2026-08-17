@@ -1097,3 +1097,38 @@ export type SheetConfig =
   | RatioConfig
   | StatisticsConfig
   | WordProblemConfig;
+
+/* ── A sheet somebody kept ─────────────────────────────────────────────── */
+
+/**
+ * A sheet a parent configured and saved — what the `sheets` store holds (§15).
+ *
+ * A config and the seed that chose which one of the infinitely many sheets it
+ * makes, which together are the whole of it: `buildSheet(config, seed)`
+ * reproduces the page exactly (§7), so none of the paper is stored and a sheet
+ * saved in March prints the same problems in June.
+ *
+ * Declared here rather than in `services/sheets.ts` for the same reason
+ * `CustomDeck` sits in `engine/types.ts`: the model owns the vocabulary and the
+ * service owns the persistence, which is what lets `db.ts` state its schema
+ * without importing a peer service back up the stack.
+ *
+ * `id` is prefixed `sheet-`, the way a custom deck's is prefixed `custom-`, so
+ * the two can never collide wherever they end up side by side — one backup
+ * file, one list of things a parent made.
+ *
+ * There is no `profileId`, and that is a decision rather than an omission. A
+ * worksheet belongs to the household, not to a child (§15): the sheet made for
+ * the eldest is the sheet the next one gets, and scoping it to a profile would
+ * mean building it again for every kid at the table. It is also the one record
+ * here with nowhere to put a child's name, which is not an accident either —
+ * the name line is printed blank and filled in by hand (§1).
+ */
+export type SavedSheet = {
+  id: string;
+  name: string;
+  config: SheetConfig;
+  seed: number;
+  createdAt: string;
+  updatedAt: string;
+};
