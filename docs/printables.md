@@ -301,6 +301,27 @@ manuscript ruling, and the stated tolerance. The dash pitches in the table above
 are the same numbers as multiples of the outline weight, which is what keeps
 dots reading as dots on a ⅜ rule.
 
+**What shipped (PRINT17): three cursives, not one.** The note above about
+regional variants turned out to be the whole story, so the model is a choice.
+**Playwrite US Trad** is the looped traditional hand and stays the `cursive` id
+saved sheets already carry; **Playwrite US Modern** is the same letters unlooped
+and is the one model that lifts the pencil — its `calt` table breaks after
+`b g j p q s y`; **Playwrite GB J** is the fully joined British hand, with a
+lead-in stroke into every letter. All three are measured into `faces.ts` beside
+the other two (ascents 1.019, 0.957 and 0.894, so one shared ratio would print
+two of them through the rule), and only the looped one hangs its descender over
+the tail space.
+
+Which letters join is read out of the font and never written down here: a cell
+is one `<text>` element, so the face's own contextual alternates see the pair
+either side of every join and draw the form that belongs there. That is what
+makes the `joins` style honest in all three models — the same sheet separates
+`ba` in one hand and joins it in another, and both are right — and it is why
+that style resolves its own face rather than trusting a config that says
+`print`: two letters that don't touch are not a join. The families themselves
+are in `engine/sheets/writing/joins.ts`, and the shelf is `/printables/cursive`,
+cross-linked with the print handwriting hub.
+
 ---
 
 ## 7 · Answer keys, seeds and variants

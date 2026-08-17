@@ -6,13 +6,16 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 import {
+  CURSIVE_FACES,
   FACES,
   MAX_OUTLINE,
   MIN_INK,
+  cursiveOf,
   faceOf,
   fittedEm,
   glyphEm,
   glyphHeight,
+  isCursive,
   traceInk,
 } from "./faces";
 import { RULINGS, rulePitch, writingSpace } from "./paper";
@@ -46,10 +49,49 @@ describe("resolving a face", () => {
   });
 });
 
+describe("the cursive models", () => {
+  it("is three of the five, with the looped hand first", () => {
+    // First because it is the default and the id every cursive sheet saved so
+    // far already carries — a picker that reordered these would change what
+    // `cursiveOf` answers for a sheet that never asked for a model.
+    expect(CURSIVE_FACES[0]).toBe("cursive");
+    expect(CURSIVE_FACES).toHaveLength(3);
+    for (const font of CURSIVE_FACES) {
+      expect(isCursive(font), font).toBe(true);
+      expect(faceOf(font).family, font).toContain("Playwrite");
+    }
+    for (const font of ["print", "dyslexic"] as SheetFont[]) {
+      expect(isCursive(font), font).toBe(false);
+    }
+    expect(isCursive(undefined)).toBe(false);
+  });
+
+  it("is three different hands rather than three names for one", () => {
+    // If two of them measured the same, one of them would be a second entry
+    // for a font already in the table and the choice would be a lie.
+    const shapes = CURSIVE_FACES.map((font) => {
+      const face = faceOf(font);
+      return `${face.family}:${face.ascent}:${face.descent}:${face.advance}`;
+    });
+    expect(new Set(shapes).size).toBe(CURSIVE_FACES.length);
+  });
+
+  it("answers with a joining face for anything that has to be joined", () => {
+    // What a joins sheet asks: a print face has no stroke between two letters,
+    // so the content that is only a join resolves to a hand that draws one —
+    // keeping the model that was chosen when one was.
+    expect(cursiveOf("print")).toBe("cursive");
+    expect(cursiveOf(undefined)).toBe("cursive");
+    expect(cursiveOf("dyslexic")).toBe("cursive");
+    expect(cursiveOf("gothic" as SheetFont)).toBe("cursive");
+    for (const font of CURSIVE_FACES) expect(cursiveOf(font)).toBe(font);
+  });
+});
+
 describe("sizing letters to a ruling", () => {
   it("puts the tallest letter on the top line, in every face", () => {
     // The whole reason the proportions are measured rather than shared: the
-    // same rule holds a different em in each of the three, and a capital that
+    // same rule holds a different em in each of the five, and a capital that
     // misses the top line by a tenth is what a teacher notices first.
     for (const face of Object.values(FACES)) {
       for (const rule of HANDWRITING) {
@@ -252,7 +294,7 @@ describe("the faces on disk", () => {
 });
 
 /* ── The licence describes the same files ──────────────────────────────────
-   This repo is public and it redistributes six fonts, so `public/fonts` is a
+   This repo is public and it redistributes eight fonts, so `public/fonts` is a
    distribution and the OFL's conditions are ours to meet — not the CDN's. The
    digests do double duty: they are how a reader checks a file against its
    distributor, and they are the only thing tying the constants above to the

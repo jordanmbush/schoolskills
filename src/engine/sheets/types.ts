@@ -428,12 +428,20 @@ export type Block =
 /**
  * Which face a sheet is set in.
  *
- * Three names rather than a font stack, because the name is the part that has
- * to survive: these ids were system stacks for two stories and are self-hosted
+ * Names rather than font stacks, because the name is the part that has to
+ * survive: these ids were system stacks for two stories and are self-hosted
  * files now (`src/styles/fonts.css`), and not one saved sheet had to change its
  * mind about which face it wanted. Named by shape, never by a teaching model —
  * D'Nealian® and Zaner-Bloser® are trademarks with commercial fonts behind
  * them, and this is a description of letterforms.
+ *
+ * **Three of the five are cursive**, and that is the answer to a question print
+ * never asks: joined writing has no single correct form. The looped hand an
+ * American school teaches, the unlooped one that lifts the pencil after certain
+ * letters, and the fully joined hand a British school teaches disagree about
+ * which letters join at all — so the model is a choice a parent makes rather
+ * than one this repo makes for them. `cursive` is the looped hand and stays
+ * unqualified because it is the id already written into saved sheets (§7).
  *
  * `dyslexic` is an accessibility option and not a style: §17 lists a
  * dyslexia-friendly face beside larger type as a first-class choice rather than
@@ -443,10 +451,11 @@ export type Block =
  * It changes almost no length on the page: every height the layout arithmetic
  * reserves is computed from `fontPt`, in points, so a face swap can't move a
  * ruling or a row. What it does change is how wide a *character* is, and the
- * proportions the three differ by are measured in `faces.ts` rather than
+ * proportions the five differ by are measured in `faces.ts` rather than
  * assumed.
  */
-export type SheetFont = "print" | "cursive" | "dyslexic";
+export type SheetFont =
+  "print" | "cursive" | "cursive-modern" | "cursive-uk" | "dyslexic";
 
 /* ── The sheet ─────────────────────────────────────────────────────────── */
 
@@ -1252,8 +1261,41 @@ export type WordsConfig = SheetOptions & {
  * would be the same function with the same arguments — what makes a sentence
  * sheet a sentence sheet is how many lines are left under it, which is
  * `repeats`.
+ *
+ * `joins` is a style of its own, and it is the one that *is* a different set
+ * rather than a different shape of one: two letters written together are not
+ * two letters, because in a joined hand the stroke between them is a third
+ * thing with a name and a lesson of its own. It is also the only style that
+ * makes no sense in a print face — see `cursiveOf` in `faces.ts`.
  */
-export type HandwritingStyle = "letters" | "numbers" | "words" | "passage";
+export type HandwritingStyle =
+  "letters" | "numbers" | "joins" | "words" | "passage";
+
+/**
+ * Which joins a joins sheet practises, in the order they are taught.
+ *
+ * The four classic joins are named for where the exit stroke leaves the first
+ * letter and how tall the second one is: a *diagonal* join climbs from the
+ * baseline, a *horizontal* one carries across from the x-height, and a tall
+ * second letter changes where the stroke has to arrive. `round` is the fifth
+ * thing every scheme teaches separately — the letters written anticlockwise
+ * (`a c d g o q`) are entered at the top rather than joined into at the
+ * baseline, and a child who joins into them the ordinary way writes `oi` for
+ * `oa`.
+ *
+ * `breaks` is not a join at all: the pairs where a model may lift the pencil.
+ * It is a group here because *whether* it lifts is the model's business and not
+ * ours — the looped and British hands join out of every letter, the unlooped
+ * one stops after `b g j p q s y` — so the sheet prints the pair and the face
+ * answers the question (`writing/joins.ts`).
+ */
+export type JoinFamily =
+  | "diagonal"
+  | "diagonal-tall"
+  | "horizontal"
+  | "horizontal-tall"
+  | "round"
+  | "breaks";
 
 /**
  * Which alphabet a letter sheet writes.
@@ -1300,6 +1342,14 @@ export type HandwritingConfig = SheetOptions & {
   progression?: boolean;
   /** `letters` only. Absent is both cases, which is how letters are taught. */
   letters?: LetterCase;
+  /**
+   * `joins` only: which family of joins to practise.
+   *
+   * Absent is all of them in teaching order, which is the sheet a parent means
+   * by "cursive joins" — the whole progression on one page, the way the letters
+   * sheet is the whole alphabet on one page.
+   */
+  joins?: JoinFamily;
   /**
    * `words` only: the list, in the order it was given.
    *

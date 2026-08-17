@@ -4,51 +4,38 @@ import AdSlot from "@/components/site/AdSlot.astro";
 import { SheetView } from "@/components/sheet/Sheet";
 import { buildSheet } from "@/engine/sheets";
 import {
-  HANDWRITING_SEED,
-  HANDWRITING_SHEETS,
+  CURSIVE_SEED,
+  CURSIVE_SHEETS,
   STOCKS,
   builderHref,
   configFor,
-  handwritingShelf,
+  cursiveShelf,
   hrefFor,
-  type HandwritingSheet,
-} from "../_handwriting";
+  type CursiveSheet,
+} from "../_cursive";
 import type { Stock } from "../_catalog";
 
 /**
- * One prerendered handwriting sheet per topic — and the page is the sheet.
+ * One prerendered cursive sheet per topic — and the page is the sheet.
  *
- * The shape §8 describes, applied to the family where the paper *is* the
- * content: "free printable letter tracing worksheets" is one of the largest
- * queries in this whole section, and a parent who lands here gets prose that
- * answers it, the sheet itself directly under it as HTML, and nothing to click.
+ * The same shape as the handwriting route beside it (§8), for the same reasons:
+ * two stocks and two routes because a ⅝ rule scaled to fit whatever is in the
+ * tray is no longer a ⅝ rule and `@page` is a document rule; a rest pattern
+ * because a two-segment path needs one; no answer key because there is nothing
+ * on a handwriting sheet with a right answer; no `client:*` on `SheetView`,
+ * ever, which is what keeps these pages zero-JavaScript and crawlable.
  *
- * **Two stocks, two routes — as with paper and unlike maths.** A ⅝ rule scaled
- * to fit whatever is in the tray is no longer a ⅝ rule, and `@page` is a
- * document rule, so Letter and A4 cannot share a page. That is also why this
- * route is a rest pattern under `handwriting/` rather than another `[topic]`
- * beside the maths one: a two-segment path needs a rest param, and two dynamic
- * patterns at the same level would be two routes claiming one URL.
- *
- * **No answer key, and no apology for it.** There is nothing on a handwriting
- * sheet with a right answer — the model is already printed, which is the whole
- * exercise — so the family returns its own sheet as the key and the page prints
- * one article rather than two.
- *
- * **No client directive on `SheetView`, ever.** `@astrojs/react` renders a
- * component with no `client:*` to HTML at build time, so these pages ship zero
- * JavaScript — the whole SEO argument of §2. `Sheet.test.tsx` holds every page
- * in this directory to it, against the source and against `dist/`.
- *
- * **Everything that is not the sheet carries `.no-print`.** `@page` cannot be
- * scoped to a class, so the zeroed page margin a sheet needs applies to the
- * prose as well and it would print off the edge.
+ * What is different is what the page has to explain. Cursive has a constraint
+ * print never had — the letters join, and a join is only correct in the company
+ * of the letters either side of it — so the prose says which hand the sheet is
+ * set in and where to get the other two, and every page carries the link back
+ * to its printed equivalent for the child who is not ready to join yet.
  */
 
-type Props = { sheet: HandwritingSheet; stock: Stock };
+type Props = { sheet: CursiveSheet; stock: Stock };
 
 export function getStaticPaths() {
-  return HANDWRITING_SHEETS.flatMap((sheet) =>
+  return CURSIVE_SHEETS.flatMap((sheet) =>
     STOCKS.map((stock) => ({
       params: { slug: stock.path ? `${sheet.slug}/${stock.path}` : sheet.slug },
       props: { sheet, stock },
@@ -59,7 +46,7 @@ export function getStaticPaths() {
 const { sheet, stock } = Astro.props;
 
 const a4 = stock.id === "a4";
-const printed = buildSheet(configFor(sheet, stock.id), HANDWRITING_SEED);
+const printed = buildSheet(configFor(sheet, stock.id), CURSIVE_SEED);
 const other = STOCKS.find((candidate) => candidate.id !== stock.id)!;
 
 const heading = a4 ? `${sheet.heading}, for A4` : sheet.heading;
@@ -67,7 +54,7 @@ const title = `${sheet.keyword}${a4 ? ", A4" : ""} | School Skills`;
 const description = `${sheet.summary} Printed straight from this page on ${stock.label} — free, no account, and no download.`;
 const url = `https://schoolskills.app${hrefFor(sheet, stock)}`;
 
-const groups = handwritingShelf();
+const groups = cursiveShelf();
 const group = groups.find((entry) => entry.id === sheet.group)!;
 ---
 
@@ -92,7 +79,7 @@ const group = groups.find((entry) => entry.id === sheet.group)!;
   <header class="hero wrap no-print">
     <p class="hero__eyebrow">
       <span class="hero__world">The Print Shop</span>
-      Handwriting &middot; {group.label}
+      Cursive &middot; {group.label}
     </p>
     <h1 class="hero__title">{heading}</h1>
     <p class="hero__lead">{sheet.lead}</p>
@@ -125,12 +112,46 @@ const group = groups.find((entry) => entry.id === sheet.group)!;
       <p>
         The rules are drawn as real strokes at real sizes, and what is written
         is set to them: the tallest thing on a line stands on the baseline and
-        reaches the top line, whether that is an ascender, a capital or a
-        numeral. The type size is worked out from the ruling and from the
-        font&rsquo;s own measured proportions rather than picked to look about
-        right. Put a ruler on it. The ruling is the size it says it is.
+        reaches the top line, and the loops below it are drawn full depth rather
+        than clipped where the paper runs out. The type size is worked out from
+        the ruling and from the font&rsquo;s own measured proportions rather
+        than picked to look about right. Put a ruler on it. The ruling is the
+        size it says it is.
       </p>
       {sheet.credit && <p class="aside">{sheet.credit}</p>}
+    </div>
+  </section>
+
+  <section class="band band--tight wrap no-print">
+    <h2 class="h2">Which cursive is this?</h2>
+    <p class="h2__sub">
+      The looped traditional hand &mdash; and the honest answer is that there
+      are three of them.
+    </p>
+    <div class="prose">
+      <p>
+        Joined writing has no single correct form. The hand taught in an
+        American classroom loops its ascenders and joins out of every letter;
+        the unlooped model draws the same letters without the loops and lifts
+        the pencil after <em>b, g, j, p, q, s</em> and <em>y</em>; the hand a
+        British primary school teaches leads into every letter with a stroke
+        from the baseline and joins all twenty-six. This sheet is set in the
+        first of those, because a shelf has to be set in something.
+      </p>
+      <p>
+        If your child is being taught one of the others, the builder prints this
+        same sheet in it &mdash; and the joins change with it, because which
+        letters join is written into the font rather than into the worksheet.
+        That is also why a join is practised as a pair here rather than as a
+        letter with a tail: the stroke between two letters is only correct in
+        the company of both of them.
+      </p>
+    </div>
+    <div class="hero__actions">
+      <a class="cta cta--quiet" href={builderHref(sheet, stock)}>
+        Open this sheet in the builder
+      </a>
+      <a class="cta cta--quiet" href="/printables/cursive">All three models</a>
     </div>
   </section>
 
@@ -139,15 +160,15 @@ const group = groups.find((entry) => entry.id === sheet.group)!;
     <div class="prose">
       <p>
         Every group on this page runs the same three steps: a solid model to
-        look at, a dotted letter to trace over, and an empty space where nobody
-        is helping. That last one is the part that teaches &mdash; tracing
+        look at, a model to trace over, and an empty space where nobody is
+        helping. That last one is the part that teaches &mdash; tracing
         practises following a line, and writing from nothing practises writing.
         A sheet of nothing but dotted letters is a sheet a child can finish
         without ever having made a letter themselves.
       </p>
       <p>
         How far along that progression a sheet sits is a setting rather than a
-        different worksheet. The dotted model can be dashed, hollow, grey or
+        different worksheet. The model can be dotted, dashed, hollow, grey or
         left off entirely; the number of repeats moves between one and eight;
         and every ruling in the shop &mdash; the five handwriting sizes, the
         three notebook rules, squares, dots and triangles &mdash; works with any
@@ -155,11 +176,8 @@ const group = groups.find((entry) => entry.id === sheet.group)!;
       </p>
     </div>
     <div class="hero__actions">
-      <a class="cta cta--quiet" href={builderHref(sheet, stock)}>
-        Open this sheet in the builder
-      </a>
-      <a class="cta cta--quiet" href="/printables/cursive">
-        The same progression in cursive
+      <a class="cta cta--quiet" href="/printables/handwriting">
+        The same progression in print
       </a>
     </div>
   </section>
@@ -185,10 +203,10 @@ const group = groups.find((entry) => entry.id === sheet.group)!;
   <div class="wrap no-print"><AdSlot name="article" /></div>
 
   <section class="band band--tight wrap no-print">
-    <h2 class="h2">Every handwriting sheet</h2>
+    <h2 class="h2">Every cursive sheet</h2>
     <p class="h2__sub">
-      {HANDWRITING_SHEETS.length} sheets, each one a page like this one. Nothing is
-      locked and nothing needs an account.
+      {CURSIVE_SHEETS.length} sheets, each one a page like this one. Nothing is locked
+      and nothing needs an account.
     </p>
     {
       groups.map((entry) => (
@@ -212,8 +230,8 @@ const group = groups.find((entry) => entry.id === sheet.group)!;
       ))
     }
     <div class="hero__actions">
-      <a class="cta cta--quiet" href="/printables/handwriting">
-        All the handwriting sheets
+      <a class="cta cta--quiet" href="/printables/cursive">
+        All the cursive sheets
       </a>
       <a class="cta cta--quiet" href="/printables">Back to The Print Shop</a>
     </div>

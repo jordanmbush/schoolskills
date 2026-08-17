@@ -239,26 +239,49 @@
   overflow: visible;
 }
 
-/* ── The three faces (§17) ──────────────────────────────────────────────────
+/* ── The five faces (§17) ───────────────────────────────────────────────────
    Files now, self-hosted beside the site's own three — see `fonts.css` for
    which face does which job and why none of them is a request to a CDN. What
    is left in here is the part that belongs in a stylesheet: the stack, and the
    fallback each id lands on while its woff2 is in flight or on a page that
    never loaded `fonts.css`.
 
-   The `Sheet` carries the id and never the stack. That is what let these three
-   be system fonts for two stories and files today without a single saved sheet
-   changing its mind about which face it wanted.
+   The `Sheet` carries the id and never the stack. That is what let three of
+   these be system fonts for two stories and files today without a single saved
+   sheet changing its mind about which face it wanted.
 
-   The engine has measured proportions for all three (`faces.ts`) and sizes
+   The engine has measured proportions for all five (`faces.ts`) and sizes
    traced letterforms off them, so **the family named here and the family named
    there have to be the same font**. Changing one alone prints letters through
-   the top rule.                                                              */
+   the top rule.
+
+   Three of them are cursive, because there is no such thing as cursive: the
+   looped hand an American school teaches, the unlooped one that lifts the
+   pencil after `b g j p q s y`, and the fully joined hand a British one teaches
+   are three different models, and picking one would be calling the other two
+   wrong. `cursive` stays unqualified because it is the id saved sheets already
+   carry (§7).
+
+   Their system fallbacks are a courtesy and nothing more. A script face a
+   reader happens to have installed joins where it likes, which on a sheet of
+   joins is the mistake being taught against — hence `font-display: block` on
+   all three, so the fallback is what a printer never sees.                   */
 
 .sheet[data-font="cursive"] {
   --sheet-face:
     "Playwrite US Trad", "Segoe Script", "Bradley Hand", "Snell Roundhand",
     cursive;
+}
+
+.sheet[data-font="cursive-modern"] {
+  --sheet-face:
+    "Playwrite US Modern", "Segoe Script", "Bradley Hand", "Snell Roundhand",
+    cursive;
+}
+
+.sheet[data-font="cursive-uk"] {
+  --sheet-face:
+    "Playwrite GB J", "Segoe Script", "Bradley Hand", "Snell Roundhand", cursive;
 }
 
 /* Comic Sans is still in the stack, on the evidence rather than on taste: it is

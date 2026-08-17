@@ -1,13 +1,14 @@
 /**
- * The three faces a sheet can be set in, measured rather than guessed.
+ * The five faces a sheet can be set in, measured rather than guessed.
  *
  * Tracing is the one place on this site where a font's own proportions are
  * load-bearing arithmetic instead of taste. A ⅝ rule is ⅝ of an inch (§4), the
  * tallest letter has to stand on the baseline and reach the top line, and the
- * em that does that is different in every face: Playwrite's tallest ascender is
- * 1.02 em, Andika's 0.79, OpenDyslexic's 0.85. One shared ratio therefore sets
- * exactly one of them correctly and the other two through the rule — which is
- * the difference between paper a child can write on and paper they can't.
+ * em that does that is different in every face: the looped cursive's tallest
+ * ascender is 1.02 em, Andika's 0.79, OpenDyslexic's 0.85, and the two other
+ * cursive models fall between at 0.96 and 0.89. One shared ratio therefore sets
+ * exactly one of them correctly and the rest through the rule — which is the
+ * difference between paper a child can write on and paper they can't.
  *
  * So each face is measured once, here. Every number below is a share of the em
  * read out of the font file itself with fontTools (the files are in
@@ -114,11 +115,13 @@ export type Face = {
    * next set's top line rather than into clean paper.
    *
    * Andika uses 0.239 of the 0.396 it is given and OpenDyslexic 0.261 of 0.425,
-   * so both print sheets clear it comfortably. Playwrite's descenders are a
-   * whole 0.519 against 0.510, which is the one face that hangs over — by 0.009
-   * of the em, four thousandths of an inch on a ⅝ rule. That is the stated
-   * tolerance and the reason a traced row is not allowed to clip: a joined `g`
-   * with its loop cut off is a worse model than one that crosses a line.
+   * so both print sheets clear it comfortably, and the two unlooped cursive
+   * models clear it as well (0.457 of 0.478, 0.394 of 0.447). The looped hand
+   * is the one face that hangs over: 0.519 against 0.510, by 0.009 of the em,
+   * four thousandths of an inch on a ⅝ rule. That is the stated tolerance and
+   * the reason a traced row is not allowed to clip — a looped `g` with its loop
+   * cut off is a worse model than one that crosses a line, and on a cursive
+   * sheet that loop is also where the join to the next letter starts.
    */
   descent: number;
   /**
@@ -139,11 +142,12 @@ export type Face = {
    * Tuned against the face's own stem — roughly a fifth to a quarter of it, so
    * the white core of a hollow letter stays open and a child can see the shape
    * they are tracing rather than a filled one. Stems scanlined at half the
-   * x-height across `lnioe`: Andika 0.090em, Playwrite 0.088em, OpenDyslexic
-   * 0.099em, which makes these three 24%, 18% and 26% of their stem. The three
-   * stems are within 12% of each other, so the ratios are not: Playwrite takes
-   * the lightest hand, for the reason in its entry below, and OpenDyslexic the
-   * heaviest because its counters are wide enough to take it.
+   * x-height across `lnioe`: Andika 0.090em, the three cursive models 0.088,
+   * 0.086 and 0.086, OpenDyslexic 0.099em — which makes these 24%, 18% and 26%
+   * of their stem. Every stem here is within 15% of every other, so the ratios
+   * are not: a joined script takes the lightest hand, for the reason in the
+   * `cursive` entry below, and OpenDyslexic the heaviest because its counters
+   * are wide enough to take it.
    */
   stroke: number;
   /**
@@ -177,10 +181,19 @@ export const MIN_INK: Mil = points(0.25);
 export const MAX_OUTLINE: Mil = points(0.75);
 
 /**
- * Andika for print, Playwrite for cursive, OpenDyslexic for the accessibility
- * option — chosen in that order for the reasons in §6 and recorded in
- * `public/fonts/LICENSE.md`. The ids are the user's choice; the families are
- * an implementation detail that a saved sheet deliberately does not carry.
+ * Andika for print, three Playwrite models for cursive, OpenDyslexic for the
+ * accessibility option — chosen in that order for the reasons in §6 and
+ * recorded in `public/fonts/LICENSE.md`. The ids are the user's choice; the
+ * families are an implementation detail that a saved sheet deliberately does
+ * not carry.
+ *
+ * Three cursives rather than one because there is no such thing as cursive:
+ * Playwrite's regional families are the handwriting models actually taught, and
+ * they disagree about the two things a cursive sheet is *for* — whether an
+ * ascender loops, and which letters join to the next. Shipping one and calling
+ * it correct would tell a British child their `b` joins wrongly. Which letters
+ * join is the file's own `calt` table and never this repo's opinion; see
+ * `writing/joins.ts`.
  */
 export const FACES: Record<SheetFont, Face> = {
   print: {
@@ -196,6 +209,12 @@ export const FACES: Record<SheetFont, Face> = {
     dotted: [0, 4.5],
     dashed: [6, 4],
   },
+  /**
+   * The looped hand: traditional American cursive, and the id every saved
+   * cursive sheet already carries, so it stays unqualified (§7). Loops on the
+   * ascenders and descenders, and a join out of every letter — its `calt`
+   * table breaks after nothing at all.
+   */
   cursive: {
     id: "cursive",
     family: "Playwrite US Trad",
@@ -205,11 +224,51 @@ export const FACES: Record<SheetFont, Face> = {
     xHeight: 0.519,
     descent: 0.519,
     advance: 0.57,
-    // Finer than the other two, and dotted tighter. A joined script is one
+    // Finer than the print faces, and dotted tighter. A joined script is one
     // continuous stroke, so its outline doubles back on itself down every
     // stem; too heavy a line closes the pair into a solid bar and too loose a
     // dot pitch lands one dot on each side instead of a pair a child can see
-    // is a stem.
+    // is a stem. The three cursive models share these three numbers because
+    // they share a stem: 0.088, 0.086 and 0.086 of the em.
+    stroke: 0.016,
+    dotted: [0, 3.5],
+    dashed: [5, 3.5],
+  },
+  /**
+   * The same letters unlooped, and the model that lifts the pencil: `b g j p
+   * q s y` do not join to what follows them. Shorter ascenders than the looped
+   * hand by 0.06 em and a tail two thirds the depth, both of which follow from
+   * dropping the loops — which is also why this is the one cursive model whose
+   * descender fits inside the room a ⅝ rule gives it.
+   */
+  "cursive-modern": {
+    id: "cursive-modern",
+    family: "Playwrite US Modern",
+    ascent: 0.957,
+    capHeight: 0.953,
+    figure: 0.953,
+    xHeight: 0.517,
+    descent: 0.457,
+    advance: 0.546,
+    stroke: 0.016,
+    dotted: [0, 3.5],
+    dashed: [5, 3.5],
+  },
+  /**
+   * The fully joined hand a British primary school teaches: unlooped like the
+   * modern American model, joined out of every letter like the traditional
+   * one, and with a lead-in stroke from the baseline into each letter — which
+   * is what makes it "continuous cursive" rather than joined print.
+   */
+  "cursive-uk": {
+    id: "cursive-uk",
+    family: "Playwrite GB J",
+    ascent: 0.894,
+    capHeight: 0.89,
+    figure: 0.89,
+    xHeight: 0.517,
+    descent: 0.394,
+    advance: 0.548,
     stroke: 0.016,
     dotted: [0, 3.5],
     dashed: [5, 3.5],
@@ -240,6 +299,36 @@ export const FACES: Record<SheetFont, Face> = {
 export function faceOf(font: SheetFont | undefined): Face {
   return own(FACES, font ?? "print", FACES.print);
 }
+
+/**
+ * The cursive models, in the order a picker offers them: the looped hand
+ * first, because it is the default and the id a saved sheet already carries.
+ *
+ * A list rather than a flag on `Face`, because the order is the whole of what
+ * a caller wants — a builder listing the models, a hub page naming them, and
+ * `cursiveOf` picking one when a sheet has to be joined and isn't.
+ */
+export const CURSIVE_FACES: SheetFont[] = [
+  "cursive",
+  "cursive-modern",
+  "cursive-uk",
+];
+
+/** Whether a face joins its letters. Three of the five do. */
+export const isCursive = (font: SheetFont | undefined): boolean =>
+  font !== undefined && CURSIVE_FACES.includes(font);
+
+/**
+ * The cursive model to set joined writing in — the one asked for, if it joins.
+ *
+ * A sheet of joins set in a print face is two letters standing next to each
+ * other, which is precisely the thing the sheet exists to teach a child not to
+ * write. So the one content style that is *only* a cursive exercise resolves
+ * its own face rather than printing a contradiction, and a parent who has
+ * chosen a model keeps it.
+ */
+export const cursiveOf = (font: SheetFont | undefined): SheetFont =>
+  isCursive(font) ? (font as SheetFont) : "cursive";
 
 /**
  * How tall the tallest thing in `text` is drawn, as a share of the em.

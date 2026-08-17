@@ -53,11 +53,28 @@ const MARGINS = [
  * Named by shape, and never by a teaching model: D'Nealian® and Zaner-Bloser®
  * are trademarks with per-seat fonts behind them, and what a parent is picking
  * here is letterforms — a single-storey `a`, or a joined hand.
+ *
+ * Three of the five are cursive, and describing them by what the pencil does is
+ * the only honest way to offer them: the hands taught in different countries
+ * disagree about whether an ascender loops and about which letters join at all,
+ * so there is no one of them to ship and call correct. Five options is exactly
+ * where `Choice` turns into a dropdown, which is the right control for a list
+ * where two entries differ by a detail worth reading.
  */
 const FONTS = [
-  opt<SheetFont>("print", "Print"),
-  opt<SheetFont>("cursive", "Cursive"),
-  opt<SheetFont>("dyslexic", "Dyslexia"),
+  opt<SheetFont>("print", "Print", "single-storey a and g"),
+  opt<SheetFont>("cursive", "Cursive, looped", "the traditional joined hand"),
+  opt<SheetFont>(
+    "cursive-modern",
+    "Cursive, unlooped",
+    "simpler shapes; the pencil lifts after b, g, j, p, q, s and y",
+  ),
+  opt<SheetFont>(
+    "cursive-uk",
+    "Cursive, fully joined",
+    "lead-in strokes, and a join out of every letter",
+  ),
+  opt<SheetFont>("dyslexic", "Dyslexia", "weighted letters that can't mirror"),
 ];
 
 /** The three blanks a worksheet asks for, and the order they are printed in. */
@@ -120,7 +137,7 @@ export function PageOptions({ config, set }: PanelProps) {
         value={config.font ?? "print"}
         onChange={(font) => set({ font })}
         options={FONTS}
-        hint="Print is a single-storey a and g, cursive is a joined hand, and the dyslexia-friendly face has weighted letters that can't be mirrored. All three come with the sheet."
+        hint="Print is a single-storey a and g, the three cursive models are the joined hands different countries teach, and the dyslexia-friendly face has weighted letters that can't be mirrored. All five come with the sheet."
       />
 
       <Field label="Title">

@@ -19,7 +19,16 @@
  * many of them fit as the paper is wide enough for, which is what puts a whole
  * alphabet on one page. A line of a passage fills the row on its own, so the
  * same sequence runs *down* the page instead. Nothing else differs between the
- * four styles.
+ * five styles.
+ *
+ * **Cursive is not a sixth style.** A cursive sheet is these same sheets set in
+ * a joining face (`SheetOptions.font`), because a letter, a word and a passage
+ * are the same exercises whether or not the letters touch — and a cell is one
+ * `<text>` element, so the face's own `calt` table sees the pair either side of
+ * every join and draws the form that belongs there. What joined writing does
+ * add is a set to practise that print has no use for, and that is `joins`: the
+ * one style that is only a cursive exercise, and the one that resolves its own
+ * face rather than printing two letters standing apart under the word "join".
  *
  * Everything the other families promise holds unchanged: the page comes out of
  * `(config, seed)` and nothing else, and no row is put on the page that the
@@ -28,7 +37,14 @@
  * There are no answers. A key is the same page — see the note on `key` below,
  * which is the same one blank paper makes.
  */
-import { faceOf, fittedCharacters, glyphEm, type Face } from "../faces";
+import {
+  cursiveOf,
+  faceOf,
+  fittedCharacters,
+  glyphEm,
+  isCursive,
+  type Face,
+} from "../faces";
 
 import type {
   Block,
@@ -38,6 +54,7 @@ import type {
   Mil,
   Rule,
   Sheet,
+  SheetFont,
   SheetOptions,
   TraceCell,
   TraceRow,
@@ -48,6 +65,7 @@ import { sheetBlockBox } from "../chrome";
 import { ruleCapacity, type Box } from "../layout";
 import { own, rulePitch, rulingOf, writingSpace } from "../paper";
 import { SHEET_CREDIT, SHEET_URL, SHEET_WORLD, type SheetSpec } from "../spec";
+import { joinFamily, joinPairs } from "./joins";
 
 /* ── What the family will and won't do ─────────────────────────────────── */
 
@@ -272,7 +290,7 @@ export function handwritingLayout(
   // holds, and with no score box: there is nothing on a handwriting sheet to
   // mark out of anything.
   const box = sheetBlockBox(headerOf(config));
-  const face = faceOf(config.font);
+  const face = faceOf(fontOf(config));
   const em = glyphEm(writingSpace(rule), face, writtenOf(config));
   const rows = ruleCapacity(box.height, rule);
   const times = traceStyles(config).length;
@@ -301,6 +319,8 @@ function contentOf(config: HandwritingConfig): string[] {
   switch (config.style) {
     case "numbers":
       return [...NUMERALS];
+    case "joins":
+      return joinPairs(config.joins);
     case "words":
       return handwritingWords(config);
     case "passage":
@@ -309,6 +329,20 @@ function contentOf(config: HandwritingConfig): string[] {
       return own(ALPHABETS, config.letters ?? "both", ALPHABETS.both);
   }
 }
+
+/**
+ * The face the sheet is actually set in, which is the config's own unless the
+ * config asked for something that cannot be drawn.
+ *
+ * The one case is a joins sheet: a join is a stroke between two letters, and a
+ * print face has no such stroke — it would print `in` as an `i` and an `n` with
+ * a gap, under an instruction telling a child to join them. So joined content
+ * resolves to a joining face, keeping whichever cursive model was chosen
+ * (`cursiveOf`). Read by the layout *and* returned on the sheet, so the em the
+ * page reserved room for and the face the renderer sets cannot disagree.
+ */
+export const fontOf = (config: HandwritingConfig): SheetFont | undefined =>
+  config.style === "joins" ? cursiveOf(config.font) : config.font;
 
 /**
  * Every character the sheet will print, as one string.
@@ -400,14 +434,31 @@ function bodyOf(config: HandwritingConfig): Block[] {
 const TITLE: Record<HandwritingStyle, string> = {
   letters: "Letter practice",
   numbers: "Number formation",
+  joins: "Joining letters",
   words: "Handwriting practice",
   passage: "Copywork",
+};
+
+/**
+ * What the same sheet is called when the letters join.
+ *
+ * Only the three that change: a numeral is a numeral in any hand, and a joins
+ * sheet is never anything but cursive. Titles rather than a "(cursive)" suffix
+ * because the title is what somebody reads off the paper on the fridge a week
+ * later, and "Letter practice" on a page of joined letters is a sheet that
+ * doesn't say what it taught.
+ */
+const CURSIVE_TITLE: Record<string, string> = {
+  letters: "Cursive letters",
+  words: "Cursive practice",
+  passage: "Cursive copywork",
 };
 
 /** What one thing on the page is called, in the instruction line. */
 const NOUN: Record<HandwritingStyle, string> = {
   letters: "letter",
   numbers: "number",
+  joins: "join",
   words: "word",
   passage: "line",
 };
@@ -441,11 +492,29 @@ export function instructionOf(config: HandwritingConfig): string {
   return `Write each ${noun}.`;
 }
 
+/**
+ * What the sheet is called, which depends on the hand it is written in.
+ *
+ * Read off the face the sheet will actually be set in rather than off the one
+ * the config asked for, so the title and the letterforms can't disagree — a
+ * joins sheet whose config says `print` still prints joined, and still says so.
+ */
+function titleOf(config: HandwritingConfig): string {
+  const title = own(TITLE, config.style, TITLE.letters);
+  return isCursive(fontOf(config))
+    ? own(CURSIVE_TITLE, config.style, title)
+    : title;
+}
+
 /** How the content is described in one phrase, in the terms it was chosen by. */
 function contentLabel(config: HandwritingConfig): string {
   switch (config.style) {
     case "numbers":
       return "0 to 9";
+    case "joins":
+      return config.joins === undefined
+        ? "the common joins"
+        : joinFamily(config.joins).label.toLowerCase();
     case "words": {
       const words = handwritingWords(config).length;
       return `${words} ${words === 1 ? "word" : "words"}`;
@@ -477,7 +546,7 @@ function headerOf(config: HandwritingConfig): SheetOptions {
     paper: config.paper,
     fontPt: config.fontPt,
     fields: config.fields,
-    title: config.title ?? own(TITLE, config.style, TITLE.letters),
+    title: config.title ?? titleOf(config),
     instructions: config.instructions ?? instructionOf(config),
   };
 }
@@ -486,7 +555,7 @@ function headerOf(config: HandwritingConfig): SheetOptions {
 export function describeHandwriting(config: HandwritingConfig): string {
   const styles = traceStyles(config);
   return [
-    own(TITLE, config.style, TITLE.letters),
+    titleOf(config),
     contentLabel(config),
     rulingOf(ruleOf(config)).label.toLowerCase(),
     `written ${styles.length} ${styles.length === 1 ? "time" : "times"}`,
@@ -504,6 +573,11 @@ export function buildHandwritingSheet(
   return {
     paper: config.paper,
     fontPt: config.fontPt,
+    // The one presentation field a family sets for itself, and the only one it
+    // has a reason to: `present()` in index.ts leaves a family's own answer
+    // alone, so a joins sheet keeps the joining face it has to be drawn in and
+    // every other sheet gets the parent's choice untouched.
+    font: fontOf(config),
     header: {
       title: head.title ?? "",
       instructions: head.instructions,
