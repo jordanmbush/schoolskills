@@ -9,23 +9,27 @@
  * the sheet is set in is the one the child traces.
  *
  * Fill and opacity are CSS, because neither scales. Stroke width and dash
- * pattern are attributes in mil, because both do — see `units.ts`.
+ * pattern are attributes in mil, because both do — see `units.ts`. Which
+ * numbers they take is the face's business: `faces.ts` holds the proportions
+ * measured out of each font file, and this only draws them.
  */
+import {
+  faceOf,
+  fittedEm,
+  glyphEm,
+  traceInk,
+  type TraceInk,
+} from "@/engine/sheets/faces";
 import { ruledLines } from "@/engine/sheets/layout";
 import { rulePitch } from "@/engine/sheets/paper";
 import type { Mil, Rule, TraceStyle } from "@/engine/sheets/types";
 
 import { Ruling } from "./Ruling";
-import { DASH_DASHED, DASH_DOTTED, inch, RULE } from "./units";
+import { inch } from "./units";
 import type { SheetMetrics } from "./metrics";
 
 /** The three styles that are an outline rather than a filled shape. */
 const OUTLINED: TraceStyle[] = ["hollow", "dotted", "dashed"];
-
-const DASHES: Partial<Record<TraceStyle, string>> = {
-  dotted: DASH_DOTTED,
-  dashed: DASH_DASHED,
-};
 
 export function Glyph({
   text,
@@ -33,6 +37,7 @@ export function Glyph({
   y,
   size,
   style,
+  ink,
 }: {
   text: string;
   x: Mil;
@@ -40,20 +45,28 @@ export function Glyph({
   y: Mil;
   size: Mil;
   style: TraceStyle;
+  /** The weight and dash pattern this face wants at this size. */
+  ink: TraceInk;
 }) {
   // The empty space at the end of a trace → copy → write row, where the child
   // is on their own. Nothing is drawn, and the space is still reserved.
   if (style === "none" || text === "") return null;
 
   const outlined = OUTLINED.includes(style);
+  // Solid and dim are filled shapes with no outline to break up, and hollow is
+  // the outline unbroken — so only two of the five carry a pattern.
+  const dashes: Partial<Record<TraceStyle, string>> = {
+    dotted: ink.dotted,
+    dashed: ink.dashed,
+  };
   return (
     <text
       className={`sheet__glyph sheet__glyph--${style}`}
       x={x}
       y={y}
       fontSize={size}
-      strokeWidth={outlined ? RULE : undefined}
-      strokeDasharray={DASHES[style]}
+      strokeWidth={outlined ? ink.width : undefined}
+      strokeDasharray={dashes[style]}
       strokeLinecap={style === "dotted" ? "round" : undefined}
     >
       {text}
@@ -70,27 +83,20 @@ export type TracedCell = { text: string; style: TraceStyle };
  * across one repeat, and a line of copywork is one cell across one repeat.
  *
  * The type size is derived from the ruling rather than from the sheet's body
- * size, because on a handwriting sheet the ruling *is* the type size — a ⅝
- * rule with a midline is asking for letters whose bodies reach that midline.
- * `WRITING_TO_EM` is the em size that puts a capital's height at one writing
- * space — the inverse of a face's cap-height ratio, near enough for the site's
- * own Nunito. Phase 3 replaces the guesswork with the Playwrite Guides family,
- * which draws its own guidelines (§6).
- */
-const WRITING_TO_EM = 1.35;
-
-/**
- * A *declared* average advance width, as a share of the em.
+ * size, because on a handwriting sheet the ruling *is* the type size. How big
+ * an em that takes is the face's own proportion and nothing else's: Playwrite's
+ * tallest ascender is a whole em and Andika's 0.79 of one, so the same rule
+ * holds two quite different type sizes (`faces.ts`).
  *
- * The same bargain as a problem cell in `layout.ts`: state what a character
- * will take rather than measure what it took, because there is no DOM to ask
- * at build time (§4). It is only used to keep letters inside their cell — a
- * family that sized its row properly never reaches it, and one that asked for
- * six repeats of a long word on a ⅝ rule gets small letters instead of letters
- * that run off the paper.
+ * The rule fixed here is the top line: `glyphEm` sizes the em so the tallest
+ * letter stands on the baseline and reaches it. That leaves the midline as a
+ * consequence rather than a second constraint, and letter bodies clear it — by
+ * 0.13 of the writing space in Andika, 0.16 in OpenDyslexic, 0.01 in Playwrite
+ * (`Face.xHeight`, and a test that bounds it). Two lines cannot both be exact
+ * unless the face was drawn to that ruling, and a body that overshoots the
+ * midline is the right way round to miss: the child still has a line to write
+ * up to, which they would not if the model stopped below it.
  */
-const ADVANCE_PER_EM = 0.55;
-
 export function TracedRow({
   rule,
   metrics,
@@ -103,6 +109,7 @@ export function TracedRow({
   const pitch = rulePitch(rule);
   const width = metrics.box.width;
   const lines = ruledLines({ x: 0, y: 0, width, height: pitch }, rule);
+  const face = faceOf(metrics.font);
 
   // Where the letters sit, and how big they are. A handwriting rule states
   // both; a notebook rule states only the line, so the body size fills what is
@@ -114,13 +121,11 @@ export function TracedRow({
     (most, one) => Math.max(most, one.text.length),
     0,
   );
-  const size = Math.max(
-    1,
-    Math.min(
-      Math.round((baseline - top) * WRITING_TO_EM),
-      longest > 0 ? Math.floor(cell / (longest * ADVANCE_PER_EM)) : Infinity,
-    ),
+  const size = Math.min(
+    glyphEm(baseline - top, face),
+    fittedEm(cell, longest, face),
   );
+  const ink = traceInk(size, face);
 
   // Every cell in a row carries the same word — that is what a tracing row is
   // — so the row is announced once rather than four times over.
@@ -144,6 +149,7 @@ export function TracedRow({
           y={baseline}
           size={size}
           style={entry.style}
+          ink={ink}
         />
       ))}
     </svg>

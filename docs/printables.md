@@ -283,6 +283,24 @@ D'Nealian® and Zaner-Bloser® are trademarked models with commercial fonts. We
 describe our styles by shape ("continuous cursive", "slanted print"), never by
 their trademarks.
 
+**What shipped (PRINT15).** Playwrite US Trad for cursive, **Andika** for print
+and OpenDyslexic for the accessibility option, self-hosted in `public/fonts`
+with their provenance in the `LICENSE.md` beside them and the OFL text itself in
+the `OFL.txt` beside that. Andika over ABeeZee on the letterforms a child is
+asked to copy: a straight-stemmed `l` rather than a tailed one, an `I` with
+serifs that can't be read as an `l`, and an x-height that sits nearer the
+midline of primary ruled paper. The proportions each face is sized by are
+measured out of the files themselves and live in `src/engine/sheets/faces.ts` —
+Playwrite's tallest ascender is a whole em against Andika's 0.79, so one shared
+ratio would print two of the three through the top rule. What the em is fixed to
+is that ascender and the top line; the midline follows from it rather than being
+solved for, so letter bodies clear the midline (Andika by 0.13 of the writing
+space, OpenDyslexic 0.16, Playwrite 0.01) and an Andika capital, at 0.71 em,
+stops about a tenth of the writing space below the top line — a text face on a
+manuscript ruling, and the stated tolerance. The dash pitches in the table above
+are the same numbers as multiples of the outline weight, which is what keeps
+dots reading as dots on a ⅜ rule.
+
 ---
 
 ## 7 · Answer keys, seeds and variants
