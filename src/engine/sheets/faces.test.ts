@@ -1,4 +1,5 @@
-import { existsSync, readFileSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -64,6 +65,25 @@ describe("sizing letters to a ruling", () => {
         const em = glyphEm(writing, face);
         expect(Math.abs(em * face.ascent - writing), face.family) //
           .toBeLessThanOrEqual(1);
+      }
+    }
+  });
+
+  it("puts a letter body over the midline, never under it", () => {
+    // The midline sits at exactly half the writing space, and it is the line a
+    // child is told to write their letter bodies up to. The em is fixed to the
+    // top line, so the midline can only follow from it — what is asserted here
+    // is the direction of the miss and its size. Over the line, so there is
+    // always a line to write up to; a model that stopped short would be
+    // teaching them to ignore it. And by no more than a sixth of the writing
+    // space, which is as far as a body can rise before the midline reads as
+    // decoration rather than as the guide it is.
+    for (const face of Object.values(FACES)) {
+      for (const rule of HANDWRITING) {
+        const writing = writingSpace(rule);
+        const over = glyphEm(writing, face) * face.xHeight - writing / 2;
+        expect(over, face.family).toBeGreaterThanOrEqual(0);
+        expect(over / writing, face.family).toBeLessThanOrEqual(1 / 6);
       }
     }
   });
@@ -177,6 +197,55 @@ describe("the faces on disk", () => {
       expect(licence, face.family).toContain(face.family);
     }
     expect(licence).toContain("Open Font License");
+  });
+});
+
+/* ── The licence describes the same files ──────────────────────────────────
+   This repo is public and it redistributes six fonts, so `public/fonts` is a
+   distribution and the OFL's conditions are ours to meet — not the CDN's. The
+   digests do double duty: they are how a reader checks a file against its
+   distributor, and they are the only thing tying the constants above to the
+   bytes they were measured out of.                                          */
+
+describe("the licence beside the files", () => {
+  const dir = join(ROOT, "public/fonts");
+  const licence = read("public/fonts/LICENSE.md");
+  /** Every `<sha256>  <file>.woff2` line `LICENSE.md` records. */
+  const recorded = new Map(
+    [...licence.matchAll(/^([0-9a-f]{64}) {2}(\S+\.woff2)$/gm)] //
+      .map((line) => [line[2], line[1]] as const),
+  );
+
+  it("carries the licence text, not a link to it", () => {
+    // OFL 1.1 condition 2 wants each redistributed copy to contain the licence
+    // — a text file, a readable header or a metadata field. Only OpenDyslexic
+    // has it inside the binary (name ID 13); the rest carry a URL, and a URL
+    // is not a copy. `public/` ships to `dist/`, so this travels with the
+    // fonts on the site as well as in the repo.
+    const ofl = read("public/fonts/OFL.txt");
+    expect(ofl).toContain("SIL OPEN FONT LICENSE Version 1.1");
+    expect(ofl).toContain("PERMISSION & CONDITIONS");
+    expect(licence).toContain("OFL.txt");
+  });
+
+  it("accounts for every font in the directory", () => {
+    const files = readdirSync(dir).filter((name) => name.endsWith(".woff2"));
+    expect(files.length).toBeGreaterThan(0);
+    expect([...recorded.keys()].sort()).toEqual(files.sort());
+  });
+
+  it("is describing the bytes that are actually there", () => {
+    // Nothing else in the suite would notice a woff2 swapped for a different
+    // cut of the same family: the name in the stylesheet wouldn't change, and
+    // the arithmetic would stay self-consistent while printing letters through
+    // the top rule. This is the pin — bytes and constants can only drift
+    // together, and the provenance table stays true with them.
+    for (const [file, digest] of recorded) {
+      const sha = createHash("sha256")
+        .update(readFileSync(join(dir, file)))
+        .digest("hex");
+      expect(sha, file).toBe(digest);
+    }
   });
 });
 

@@ -83,11 +83,19 @@ export type TracedCell = { text: string; style: TraceStyle };
  * across one repeat, and a line of copywork is one cell across one repeat.
  *
  * The type size is derived from the ruling rather than from the sheet's body
- * size, because on a handwriting sheet the ruling *is* the type size — a ⅝
- * rule with a midline is asking for letters whose bodies reach that midline.
- * How big an em that takes is the face's own proportion and nothing else's:
- * Playwrite's capitals are a whole em tall and Andika's 0.79 of one, so the
- * same rule holds two quite different type sizes (`faces.ts`).
+ * size, because on a handwriting sheet the ruling *is* the type size. How big
+ * an em that takes is the face's own proportion and nothing else's: Playwrite's
+ * tallest ascender is a whole em and Andika's 0.79 of one, so the same rule
+ * holds two quite different type sizes (`faces.ts`).
+ *
+ * The rule fixed here is the top line: `glyphEm` sizes the em so the tallest
+ * letter stands on the baseline and reaches it. That leaves the midline as a
+ * consequence rather than a second constraint, and letter bodies clear it — by
+ * 0.13 of the writing space in Andika, 0.16 in OpenDyslexic, 0.01 in Playwrite
+ * (`Face.xHeight`, and a test that bounds it). Two lines cannot both be exact
+ * unless the face was drawn to that ruling, and a body that overshoots the
+ * midline is the right way round to miss: the child still has a line to write
+ * up to, which they would not if the model stopped below it.
  */
 export function TracedRow({
   rule,

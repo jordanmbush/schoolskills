@@ -25,9 +25,10 @@ export type SheetMetrics = {
    * `sheet.css` where it belongs.
    *
    * A fourth fact rather than a third because a traced letterform is sized off
-   * the face's own proportions and not off `fontPt`: a ⅝ rule holds a whole em
-   * of Playwrite and only 0.79 of an em of Andika, so a renderer that couldn't
-   * see the face would draw one of them through the top line (`faces.ts`).
+   * the face's own proportions and not off `fontPt`: the tallest ascender is a
+   * whole em of Playwrite and 0.79 of an em of Andika, so one writing space is
+   * two different type sizes, and a renderer that couldn't see the face would
+   * draw one of them through the top line (`faces.ts`).
    *
    * Absent is the print face, exactly as it is on the `Sheet` this came from —
    * carried through rather than resolved here, so there is one place that

@@ -2,10 +2,10 @@
  * The three faces a sheet can be set in, measured rather than guessed.
  *
  * Tracing is the one place on this site where a font's own proportions are
- * load-bearing arithmetic instead of taste. A ⅝ rule is ⅝ of an inch (§4), a
- * capital has to stand on the baseline and reach the top line, and the em that
- * does that is different in every face: Playwrite draws its capitals a whole em
- * tall, Andika 0.79 of one, OpenDyslexic 0.85. One shared ratio therefore sets
+ * load-bearing arithmetic instead of taste. A ⅝ rule is ⅝ of an inch (§4), the
+ * tallest letter has to stand on the baseline and reach the top line, and the
+ * em that does that is different in every face: Playwrite's tallest ascender is
+ * 1.02 em, Andika's 0.79, OpenDyslexic's 0.85. One shared ratio therefore sets
  * exactly one of them correctly and the other two through the rule — which is
  * the difference between paper a child can write on and paper they can't.
  *
@@ -40,12 +40,37 @@ export type Face = {
    * Baseline up to the top of the tallest letter, as a share of the em.
    *
    * The number that sets the type: a writing space divided by this is the em
-   * that puts `l`, `k` and `T` on the top line. Measured across `bdfhklt` and
-   * `ABEHMT` rather than taken from the `OS/2` cap height, because a real
-   * ascender overshoots a declared one in most faces and it is the ink that
-   * has to fit between the rules.
+   * that puts the tallest of `bdfhklt` and `ABEHMT` on the top line. Measured
+   * off the outlines rather than taken from the `OS/2` cap height, because a
+   * real ascender overshoots a declared one in most faces and it is the ink
+   * that has to fit between the rules.
+   *
+   * It is the *tallest ascender*, which in two of the three is a lower-case
+   * letter rather than a capital. Playwrite and OpenDyslexic draw both to the
+   * same height (caps 1.015 and 0.849 against these), so a capital lands on
+   * the top line in those. Andika's caps are 0.713 — it is a text face, not a
+   * manuscript model drawn to a ruling — so an Andika capital stops about a
+   * tenth of the writing space short of the top line: 0.039in on the default
+   * ⅝ rule with tails, 0.093in on a 1-inch one. That is the accepted
+   * tolerance, not an oversight. Sizing capitals off a per-face cap height
+   * instead would leave a row's `l` and `h` overshooting the rule by the same
+   * tenth, and a row mixing the two cannot satisfy both.
    */
   ascent: number;
+  /**
+   * Baseline up to the top of `x`, as a share of the em.
+   *
+   * Recorded rather than used: nothing sizes type from it, and `faces.test.ts`
+   * is what reads it. A handwriting rule puts its midline at exactly half the
+   * writing space and a child is told to write their letter bodies up to it,
+   * so this is the number that says how close the printed model comes — and
+   * with the em set by `ascent`, a body reaches the midline and then some.
+   * Andika clears it by 0.13 of the writing space and OpenDyslexic by 0.16;
+   * Playwrite, drawn to a ruling, by 0.01. Over rather than under is the right
+   * side to miss on: a model that fell short of the midline would be teaching
+   * the child to ignore the line they are being asked to write to.
+   */
+  xHeight: number;
   /**
    * A *declared* mean advance across `a`–`z` and the space, as a share of the
    * em.
@@ -61,10 +86,14 @@ export type Face = {
   /**
    * The weight of an outlined letterform, as a share of the em.
    *
-   * Tuned against the face's own stem: roughly a third of it, so the white
-   * core of a hollow letter stays open and a child can see the shape they are
-   * tracing rather than a filled one. Andika's stems are 0.073em, Playwrite's
-   * monoline is finer than either, OpenDyslexic's are 0.096em.
+   * Tuned against the face's own stem — roughly a fifth to a quarter of it, so
+   * the white core of a hollow letter stays open and a child can see the shape
+   * they are tracing rather than a filled one. Stems scanlined at half the
+   * x-height across `lnioe`: Andika 0.090em, Playwrite 0.088em, OpenDyslexic
+   * 0.099em, which makes these three 24%, 18% and 26% of their stem. The three
+   * stems are within 12% of each other, so the ratios are not: Playwrite takes
+   * the lightest hand, for the reason in its entry below, and OpenDyslexic the
+   * heaviest because its counters are wide enough to take it.
    */
   stroke: number;
   /**
@@ -108,6 +137,7 @@ export const FACES: Record<SheetFont, Face> = {
     id: "print",
     family: "Andika",
     ascent: 0.791,
+    xHeight: 0.498,
     advance: 0.506,
     stroke: 0.022,
     dotted: [0, 4.5],
@@ -117,6 +147,7 @@ export const FACES: Record<SheetFont, Face> = {
     id: "cursive",
     family: "Playwrite US Trad",
     ascent: 1.019,
+    xHeight: 0.519,
     advance: 0.57,
     // Finer than the other two, and dotted tighter. A joined script is one
     // continuous stroke, so its outline doubles back on itself down every
@@ -131,9 +162,10 @@ export const FACES: Record<SheetFont, Face> = {
     id: "dyslexic",
     family: "OpenDyslexic",
     ascent: 0.85,
+    xHeight: 0.56,
     advance: 0.795,
     // The heaviest of the three, because the face is: weighted bottoms and
-    // 0.096em stems can carry an outline that would fill Andika's counters.
+    // 0.099em stems can carry an outline that would fill Andika's counters.
     stroke: 0.026,
     dotted: [0, 5],
     dashed: [7, 4.5],

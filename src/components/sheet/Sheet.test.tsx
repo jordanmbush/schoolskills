@@ -1357,9 +1357,9 @@ describe("trace styles", () => {
   });
 
   it("sizes the letters to the face, not to a shared guess", () => {
-    // The same ⅝ rule in the three faces is three type sizes, because a
-    // capital is a whole em of Playwrite and 0.79 of one in Andika. A single
-    // ratio here would print two of the three through the top line.
+    // The same ⅝ rule in the three faces is three type sizes, because the
+    // tallest ascender is a whole em of Playwrite and 0.79 of one in Andika. A
+    // single ratio here would print two of the three through the top line.
     const sizes = (["print", "cursive", "dyslexic"] as SheetFont[]).map(
       (font) => Number(drawn(tracedIn("solid", font))?.[2]),
     );
