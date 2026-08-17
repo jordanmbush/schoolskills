@@ -235,6 +235,9 @@ const EVERY_SHAPE: Array<Partial<IntegerConfig>> = [
   { style: "order", terms: 3 },
   { style: "order", negatives: false },
   { style: "order", terms: 3, negatives: false, range: { min: 2, max: 9 } },
+  // The sheet the catalog prints: the rule, a term before exponents.
+  { style: "order", powers: false },
+  { style: "order", terms: 3, negatives: false, powers: false },
   { style: "powers" },
   { style: "powers", negatives: false },
   { style: "powers", range: { min: 2, max: 7 } },
@@ -305,6 +308,43 @@ describe("the integers family", () => {
     expect(buildSheet(config({ style: "order" }), 1).header.instructions).toBe(
       "Work out each answer. Brackets first, then powers, then × and ÷.",
     );
+  });
+
+  it("takes the squares off an order sheet, and says so at the top of it", () => {
+    // Two lessons on one page: a child taught which operation binds tightest is
+    // usually a term away from meeting exponents, and `3² + 10 × 2` is four
+    // problems they cannot start. The instruction line moves with the switch,
+    // because a sheet that told them to do powers first and then printed none
+    // is teaching them to look for a step that is not there.
+    expect(
+      buildSheet(
+        config({ style: "order", powers: false }),
+        1,
+      ) //
+      .header.instructions,
+    ).toBe("Work out each answer. Brackets first, then × and ÷, then + and −.");
+
+    for (const terms of [2, 3]) {
+      for (const seed of SEEDS) {
+        const shape = { style: "order" as const, terms, powers: false };
+        const problems = problemsOf({ ...shape, count: 9 }, seed);
+        expect(problems.length, JSON.stringify(shape)).toBeGreaterThan(0);
+        for (const problem of problems) {
+          expect(problem.prompt, problem.prompt).not.toContain("²");
+        }
+      }
+    }
+
+    // And the sheet that did not ask still has them, at both lengths — the rule
+    // as it is taught is brackets, powers, then × and ÷.
+    const squared = [2, 3]
+      .flatMap((terms) =>
+        SEEDS.flatMap((seed) =>
+          problemsOf({ style: "order", terms, count: 12 }, seed),
+        ),
+      )
+      .filter((problem) => problem.prompt.includes("²"));
+    expect(squared.length).toBeGreaterThan(0);
   });
 });
 

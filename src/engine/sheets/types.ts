@@ -928,6 +928,18 @@ export type IntegerConfig = SheetOptions & {
   negatives?: boolean;
   /** Order of operations only: how many operations the expression holds. */
   terms?: number;
+  /**
+   * Order of operations only: whether an expression may have a square in it.
+   *
+   * On unless turned off, because "brackets, powers, then × and ÷" is the rule
+   * as it is taught. But powers are their own lesson and their own style here,
+   * and a child who has met the rule a term before they meet exponents cannot
+   * start `3² + 10 × 2` — so a sheet that asks for the rule without them is the
+   * same lesson a year earlier, exactly as `negatives` above is. The printed
+   * instruction follows the switch: a sheet with no squares on it does not tell
+   * a child to do powers first.
+   */
+  powers?: boolean;
   /** How many problems to ask for. Capped at what the page holds. */
   count: number;
   columns: number;

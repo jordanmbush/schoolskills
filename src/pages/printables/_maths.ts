@@ -186,7 +186,7 @@ export const MATHS_SHEETS: MathsSheet[] = [
     heading: "Addition with regrouping worksheets",
     keyword: "Free printable addition with regrouping worksheets",
     summary:
-      "Sixteen two-digit sums stacked in columns, every one of them carrying, with room to work and an answer key.",
+      "Sixteen two-digit sums stacked in columns, every one of them carrying, with an answer key on the second page.",
     lead: "Two-digit numbers stacked in columns, with a rule under them and space to write the carry. Every sum on this page regroups — that is the setting, not the luck of the draw.",
     notes: [
       "The week a child learns to carry is the week they need a page where carrying happens every time. A mixed sheet teaches something else by accident: that most sums do not carry, so the ones that do can be treated as the odd case. Here all sixteen carry somewhere — sometimes out of the units, sometimes out of the tens — so the question is never whether to carry but where.",
@@ -572,7 +572,7 @@ export const MATHS_SHEETS: MathsSheet[] = [
     keyword: "Free printable integers worksheets",
     summary:
       "Twenty questions over positive and negative whole numbers, with an answer key that has the signs right.",
-    lead: "Twenty questions where the numbers may be negative and the answer certainly may be — the four operations over the integers, with room to work.",
+    lead: "Twenty questions where the numbers may be negative and the answer certainly may be — the four operations over the integers, mixed rather than blocked, so the sign has to be read every time.",
     notes: [
       "The sign is the whole of what is being taught, so it is the whole of what has to be marked. 7 − 9 is −2, and a key that printed 2 would be read as correct by a parent going quickly down the page. That is the failure this family is written to make impossible: every answer here is checked by an independent path rather than by re-running the arithmetic that produced it.",
       "A minus sign is doing two different jobs here and it is worth naming both while working: it says which side of zero a number is on, and it says take away. Once a child can read −7 as a place rather than as an instruction, subtracting one stops being a rule to memorise.",
@@ -598,10 +598,10 @@ export const MATHS_SHEETS: MathsSheet[] = [
     heading: "Order of operations worksheets",
     keyword: "Free printable order of operations worksheets",
     summary:
-      "Twelve expressions with three operations each, brackets included, and no negative numbers in the way.",
+      "Twelve expressions with three operations each, brackets included, and no negative numbers or powers in the way.",
     lead: "Twelve expressions with three operations in each — brackets, then multiplying and dividing, then adding and taking away — with space to work down the page a step at a time.",
     notes: [
-      "Every number on this sheet is positive, on purpose. Order of operations and negative numbers are two lessons, and a page that asked for both would tell you a child had got it wrong without telling you which of the two they had got wrong. The integers sheet is where the signs come in.",
+      "Every number on this sheet is positive and none of them is squared, on purpose. Order of operations, negative numbers and powers are three lessons, and a page that asked for more than one of them at a time would tell you a child had got it wrong without telling you which of the three they had got wrong. The integers sheet is where the signs come in, and squares and cubes are a setting of their own in the builder.",
       "The rule is not really a rule about left and right; it is about which operations bind their neighbours tightest. Writing each line out underneath the last — one operation resolved per line — is slower and it is what turns this from a page of tricks into a page of arithmetic. That is why there is room under each expression rather than a slot beside it.",
     ],
     teaches: "Order of operations",
@@ -615,6 +615,11 @@ export const MATHS_SHEETS: MathsSheet[] = [
       operation: "both",
       range: { min: 1, max: 12 },
       negatives: false,
+      // The lesson on this page is which operation binds tightest, and the
+      // child who is set it is a term away from meeting exponents. The sheet's
+      // own instruction line follows the switch, so what is printed at the top
+      // of the page and what is on it are one decision.
+      powers: false,
       terms: 3,
       count: 12,
       columns: 2,

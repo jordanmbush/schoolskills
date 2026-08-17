@@ -359,6 +359,36 @@ describe("the answer key", () => {
     }
   });
 
+  it("spreads a page over the percentages rather than over one of them", () => {
+    // The other half of "the answer comes out whole", and the half a draw can
+    // satisfy while printing nonsense: `p% of n` is whole for some pairs and
+    // 100% of *every* number, so a draw that made a pair and then rejected it
+    // put the identity on nearly half the page — and "100% of 63" is a question
+    // a child answers by copying it out. Counted over forty sheets rather than
+    // inside one, because three of a kind on one page is luck and a quarter of
+    // every page is a bias.
+    const seen = new Map<string, number>();
+    let total = 0;
+    for (let seed = 0; seed < 40; seed += 1) {
+      for (const problem of problemsOf(
+        { style: "percent", range: PERCENT_RANGE, count: 12 },
+        seed,
+      )) {
+        const percent = /^(\d+)%/.exec(problem.prompt)?.[1] ?? "";
+        seen.set(percent, (seen.get(percent) ?? 0) + 1);
+        total += 1;
+      }
+    }
+    expect(total).toBeGreaterThan(400);
+    // The identity is not a calculation, so it is not on a sheet of them.
+    expect(seen.has("100")).toBe(false);
+    // Most of the list, rather than the three that divide a hundred best.
+    expect(seen.size).toBeGreaterThan(8);
+    for (const [percent, count] of seen) {
+      expect(count / total, `${percent}%`).toBeLessThan(0.25);
+    }
+  });
+
   it("prints the answers only when the sheet is a key", () => {
     const sheet = buildSheet(config(), 5);
     const key = answerKey(config(), 5);
@@ -645,10 +675,10 @@ const GOLDEN = {
     ["15.09 − 14.63 =", "0.46"],
   ],
   percent: [
-    ["100% of 143 =", "143"],
+    ["5% of 20 =", "1"],
+    ["90% of 140 =", "126"],
+    ["40% of 85 =", "34"],
     ["40% of 55 =", "22"],
-    ["15% of 80 =", "12"],
-    ["25% of 112 =", "28"],
   ],
   convert: [
     ["0.07 = _%", "7"],

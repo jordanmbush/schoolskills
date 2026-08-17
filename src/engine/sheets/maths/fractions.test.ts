@@ -525,6 +525,24 @@ describe("what may be on the page", () => {
     }
   });
 
+  it("asks one equivalence once, whichever side the blank is on", () => {
+    // The repeat the prompt does not show: `1/5 = 3/_` and `1/5 = _/15` are two
+    // sentences and one fact, so a page with both on it has given a child one
+    // problem fewer than it claims to hold — they work the first out and copy
+    // the second. Read off the printed page rather than off the key, which is
+    // where a child reads it.
+    for (const seed of SEEDS) {
+      const problems = problemsOf({ style: "equivalent", count: 12 }, seed);
+      expect(problems.length).toBeGreaterThan(0);
+      const facts = problems.map((problem) => {
+        const [left, right] = problem.prompt.split(" = ");
+        const filled = right.replace("_", problem.answer);
+        return `${left} = ${filled}`;
+      });
+      expect(new Set(facts).size, facts.join(", ")).toBe(facts.length);
+    }
+  });
+
   it("prints the whole small pool rather than repeating itself", () => {
     // Halves and quarters make three naming problems — 1/2, 1/4 and 3/4 — and
     // three is what a parent should get rather than twelve problems with the
