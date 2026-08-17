@@ -260,6 +260,110 @@
   outline-offset: 3px;
 }
 
+/* ── Checkbox ──────────────────────────────────────────────────────────────
+   The native box, resized and recoloured — see Checkbox.tsx for why it isn't
+   redrawn. `accent-color` is doing the theming, which means the tick, the
+   fill, the focus ring and forced-colours mode all remain the platform's job.
+
+   The row is the hit target, not the box: the <input> sits inside the <label>,
+   so 1.35rem of checkbox is backed by a 2.75rem line of clickable label.      */
+
+.checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--gap-2);
+  min-height: 2.75rem;
+  padding: 0.4rem 0;
+  cursor: pointer;
+  user-select: none;
+}
+
+.checkbox__box {
+  flex: none;
+  width: 1.35rem;
+  height: 1.35rem;
+  /* Optically centred against the first line of the label rather than its box,
+     which is what stops a two-line label pushing the tick down with it. */
+  margin-top: 0.15em;
+  accent-color: var(--go);
+  cursor: pointer;
+}
+
+.checkbox:has(.checkbox__box:disabled) {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.checkbox__text {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.checkbox__hint {
+  font-size: var(--step--2);
+  color: var(--chalk-dim);
+}
+
+/* ── Range ─────────────────────────────────────────────────────────────────
+   A slider big enough to grab. The thumb is styled per engine because there is
+   no standard pseudo-element for it yet; both branches say the same thing, and
+   the track heights have to match or the thumb sits off-centre in one of them. */
+
+.range {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-2);
+}
+
+.range__input {
+  flex: 1 1 auto;
+  min-width: 0;
+  /* Tall enough to hit; the visible track is the 0.5rem drawn inside it. */
+  height: 2.2rem;
+  appearance: none;
+  background: none;
+  cursor: pointer;
+}
+
+.range__input::-webkit-slider-runnable-track {
+  height: 0.5rem;
+  border-radius: 999px;
+  background: var(--ink-600);
+}
+
+.range__input::-moz-range-track {
+  height: 0.5rem;
+  border-radius: 999px;
+  background: var(--ink-600);
+}
+
+.range__input::-webkit-slider-thumb {
+  appearance: none;
+  width: 1.6rem;
+  height: 1.6rem;
+  /* (track − thumb) ÷ 2, which is what centres a thumb on a WebKit track. */
+  margin-top: -0.55rem;
+  border-radius: 50%;
+  background: var(--go);
+  border: 2px solid var(--go-ink);
+}
+
+.range__input::-moz-range-thumb {
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 50%;
+  background: var(--go);
+  border: 2px solid var(--go-ink);
+}
+
+.range__value {
+  flex: none;
+  min-width: 3.5ch;
+  text-align: right;
+  font-size: var(--step--1);
+  color: var(--chalk-soft);
+}
+
 /* ── Badges ────────────────────────────────────────────────────────────── */
 
 .badge {

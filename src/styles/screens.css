@@ -448,6 +448,53 @@
   text-align: center;
 }
 
+/* `.stepper__value` is a number you read; `.stepper__field` is the same number
+   in a box you can type into (<NumberStepper>). The buttons either side are the
+   same `.stepper__btn`, so the two forms sit at the same size on a panel.      */
+
+.stepper__btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.stepper__field {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.3rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  border: 1.5px solid var(--hairline);
+  background: var(--ink-900);
+}
+
+.stepper__field:focus-within {
+  border-color: var(--accent);
+}
+
+.stepper__input {
+  /* Fixed at four digits plus a caret, so the row never jumps as it counts. */
+  width: 4.5ch;
+  border: none;
+  background: none;
+  font-size: var(--step-1);
+  font-weight: 700;
+  text-align: center;
+  /* The two buttons are the affordance. The native spinners are three pixels
+     tall, which promises a target that is not one. */
+  appearance: textfield;
+}
+
+.stepper__input::-webkit-outer-spin-button,
+.stepper__input::-webkit-inner-spin-button {
+  appearance: none;
+  margin: 0;
+}
+
+.stepper__unit {
+  font-size: var(--step--1);
+  color: var(--chalk-dim);
+}
+
 /* ── Top bar ───────────────────────────────────────────────────────────── */
 
 .topbar {
