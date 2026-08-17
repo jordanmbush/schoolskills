@@ -67,6 +67,26 @@ const LIST_GAP = inches(0.28);
 const LIST_ROW_GAP = inches(0.06);
 const LIST_MARGIN = inches(0.12);
 
+/** `.sheet__missing`: the italic line that admits a word did not fit. */
+const MISSING_EM = 0.85;
+/** Which is a line box of `0.85 × 1.35` at the sheet's own line height. */
+const MISSING_ROW_EMS = 1.15;
+const MISSING_MARGIN = inches(0.1);
+
+/**
+ * How much of the page the sheet may spend talking about itself.
+ *
+ * Three rows names thirty words at body size, which is the whole list a puzzle
+ * may carry — so on an ordinary sheet the cap is not reached and every missing
+ * word is named. It bites at the far end, where the type is large and the list
+ * is long: at 36pt on a wide margin a single row is a fifth of the writing
+ * space, and thirty words would be nine of them. A puzzle that gave nine rows
+ * to a paragraph about what is *not* on the page would be a page with no puzzle
+ * on it, so past this the line says "… and 22 more" and the count carries what
+ * the names cannot.
+ */
+const MISSING_ROWS = 3;
+
 /** `.sheet__clues`: two columns of clues, and the heading over each. */
 const CLUE_GAP = inches(0.3);
 const CLUE_ROW_GAP = inches(0.05);
@@ -254,6 +274,143 @@ function listHeight(words: string[], head: SheetOptions, width: Mil): Mil {
   );
 }
 
+/* ── The line that admits a word did not fit ──────────────────────────────
+   Declared like every other row on a sheet, which for a while it was not, and
+   this is the one row where that could not come out in the wash: `<Omitted>`
+   renders it *under* a block the trim loops below have just shrunk to exactly
+   the room available, and the trimming is what creates the list it prints. An
+   unreserved line was guaranteed to be there precisely when there was nothing
+   left to put it in. So both halves are here, and they have to agree — what
+   the arithmetic measures and what the renderer sets are the same tokens, out
+   of the same function.                                                      */
+
+/** What `<Omitted>` puts in front of the list. */
+const MISSING_HEAD = "Not in the grid:";
+
+/** As much of the list as the page can hold, and a count of the rest. */
+type Missing = { words: string[]; more: number };
+
+/**
+ * The missing line, as the words it is set from.
+ *
+ * Tokens rather than a sentence because both halves need it in this shape: the
+ * renderer joins them with a space, and the reservation packs them the way a
+ * wrapping line of text packs — by whole words, greedily, exactly as
+ * `packRows` does for the three wrapping rows in the chrome. A copy of the
+ * sentence in `Omitted.tsx` would be a paragraph measured at one length and
+ * printed at another, which on this shelf is a line below the bottom margin.
+ */
+export function missingTokens(words: string[], more: number): string[] {
+  return [
+    MISSING_HEAD,
+    // The last word takes no comma, the tail included: "CAT, DOG … and 3 more"
+    // is a list that ran out, and "DOG, … and 3 more" is a typo.
+    ...words.map((word, at) => (at === words.length - 1 ? word : `${word},`)),
+    ...(more > 0 ? [`… and ${more} more`] : []),
+  ];
+}
+
+/** How many rows those tokens wrap onto, in the room they are given. */
+function missingRowsOf(
+  words: string[],
+  more: number,
+  head: SheetOptions,
+  width: Mil,
+): number {
+  return packRows(
+    missingTokens(words, more).map((token) =>
+      declaredWidth(`${token} `, head, MISSING_EM),
+    ),
+    width,
+    0,
+  );
+}
+
+/** What a line of `rows` rows takes, and nothing at all for none of them. */
+function missingHeight(rows: number, fontPt: number): Mil {
+  return rows === 0 ? 0 : MISSING_MARGIN + em(fontPt, MISSING_ROW_EMS * rows);
+}
+
+/**
+ * How many rows to hold back, before it is known there will be a line at all.
+ *
+ * The two things that put a word on this line are decided at different times,
+ * so the reservation answers them differently. The page's own drops are known
+ * right here — the trim loops below are what create them — and are measured.
+ * The placer's are not known until the grid has been built, by which point the
+ * room is spent, and they get **one row, always**: a sheet where everything
+ * fits gives up a row it will not use, which costs a line of white space, and
+ * the other side of that trade is a paragraph on a second sheet of paper.
+ *
+ * `anyWords` is what distinguishes "nothing could go wrong" from "nothing has
+ * yet": a puzzle with no words at all reserves nothing, because there is
+ * nothing that could fail to be in it.
+ */
+function missingReserve(
+  known: string[],
+  anyWords: boolean,
+  head: SheetOptions,
+  width: Mil,
+): number {
+  if (known.length === 0) return anyWords ? 1 : 0;
+  return Math.min(MISSING_ROWS, missingRowsOf(known, 0, head, width));
+}
+
+/**
+ * The rows the line actually gets: what was reserved, or what is left over.
+ *
+ * The reservation is made against `MISSING_ROWS`, and a page can be too small
+ * to honour it even with the grid at `MIN_GRID` and no word list at all. Then
+ * the line takes what remains rather than what it asked for — never none of it,
+ * because a page whose grid alone overspills has already lost, and the one
+ * thing worse than a line below the bottom margin is a word that vanished
+ * without one.
+ */
+function missingRoom(reserve: number, left: Mil, fontPt: number): number {
+  if (reserve === 0) return 0;
+  const room = Math.floor(
+    Math.max(0, left - MISSING_MARGIN) /
+      Math.max(1, em(fontPt, MISSING_ROW_EMS)),
+  );
+  return Math.max(1, Math.min(reserve, room));
+}
+
+/**
+ * As much of the list as `rows` rows will hold, and a count of the rest.
+ *
+ * Searched downwards from "all of them" rather than solved, because the tail is
+ * part of what has to fit and its own width moves with the number in it — a
+ * word gained is sometimes a digit lost. Naming one fewer word can only ever
+ * help, so the first count that fits is the largest one that does.
+ */
+function packMissing(
+  words: string[],
+  head: SheetOptions,
+  width: Mil,
+  rows: number,
+): Missing {
+  if (words.length === 0 || rows <= 0) return { words: [], more: 0 };
+  if (missingRowsOf(words, 0, head, width) <= rows) return { words, more: 0 };
+  for (let named = words.length - 1; named > 0; named--)
+    if (
+      missingRowsOf(words.slice(0, named), words.length - named, head, width) <=
+      rows
+    )
+      return { words: words.slice(0, named), more: words.length - named };
+  return { words: [], more: words.length };
+}
+
+/** What a block records about the words it could not hold. */
+function omittedOf({ words, more }: Missing): {
+  omitted?: string[];
+  omittedMore?: number;
+} {
+  return {
+    ...(words.length > 0 ? { omitted: words } : {}),
+    ...(more > 0 ? { omittedMore: more } : {}),
+  };
+}
+
 /**
  * The grid, and the words there is room to hunt for in it.
  *
@@ -271,18 +428,38 @@ export function searchLayout(config: PuzzleConfig): {
   cell: Mil;
   words: PuzzleWord[];
   dropped: string[];
+  /** Rows held back for the "not in the grid" line, whether or not there is one. */
+  missingRows: number;
+  /**
+   * Everything the block will take: the grid, the word list, and the line that
+   * admits what is not in either. Inside `box.height` unless the grid alone is
+   * not — the one thing `MIN_GRID` will not give way on.
+   */
+  height: Mil;
 } {
   const head = headerOf(config);
   const box = sheetBlockBox(head, true);
   const { words, unusable } = puzzleWords(config);
 
-  const heightOf = (size: number, some: PuzzleWord[]): Mil =>
-    size * searchCell(box.width, size) +
+  // Measured against the drops *this* step would make, so a page that keeps
+  // every word gives up one row rather than three.
+  const reserveOf = (some: PuzzleWord[]): number =>
+    missingReserve(
+      [...words.slice(some.length).map((word) => word.form), ...unusable],
+      words.length > 0,
+      head,
+      box.width,
+    );
+  const listOf = (some: PuzzleWord[]): Mil =>
     listHeight(
       some.map((word) => word.form),
       head,
       box.width,
     );
+  const heightOf = (size: number, some: PuzzleWord[]): Mil =>
+    size * searchCell(box.width, size) +
+    listOf(some) +
+    missingHeight(reserveOf(some), head.fontPt);
 
   let size = clamp(config.size ?? MIN_GRID, MIN_GRID, MAX_GRID);
   while (size > MIN_GRID && heightOf(size, words) > box.height) size -= 1;
@@ -291,12 +468,21 @@ export function searchLayout(config: PuzzleConfig): {
   while (fit.length > 0 && heightOf(size, fit) > box.height)
     fit = fit.slice(0, -1);
 
+  const cell = searchCell(box.width, size);
+  const above = size * cell + listOf(fit);
+  const missingRows = missingRoom(
+    reserveOf(fit),
+    box.height - above,
+    head.fontPt,
+  );
   return {
     box,
     size,
-    cell: searchCell(box.width, size),
+    cell,
     words: fit,
     dropped: [...words.slice(fit.length).map((word) => word.form), ...unusable],
+    missingRows,
+    height: above + missingHeight(missingRows, head.fontPt),
   };
 }
 
@@ -352,6 +538,10 @@ export function crosswordLayout(config: PuzzleConfig): {
   size: number;
   entries: Clued[];
   dropped: string[];
+  /** Rows held back for the "not in the grid" line, whether or not there is one. */
+  missingRows: number;
+  /** The bound, the clues and the missing line — see `searchLayout.height`. */
+  height: Mil;
 } {
   const head = headerOf(config);
   const box = sheetBlockBox(head, true);
@@ -361,13 +551,23 @@ export function crosswordLayout(config: PuzzleConfig): {
     clue: crosswordClue(word),
   }));
 
-  const heightOf = (size: number, some: Clued[]): Mil =>
-    size * SEARCH_CELL +
+  const reserveOf = (some: Clued[]): number =>
+    missingReserve(
+      [...clued.slice(some.length).map((entry) => entry.word), ...unusable],
+      clued.length > 0,
+      head,
+      box.width,
+    );
+  const cluesOf = (some: Clued[]): Mil =>
     clueHeight(
       some.map((entry) => entry.clue),
       head,
       box.width,
     );
+  const heightOf = (size: number, some: Clued[]): Mil =>
+    size * SEARCH_CELL +
+    cluesOf(some) +
+    missingHeight(reserveOf(some), head.fontPt);
 
   let size = clamp(config.size ?? MIN_GRID, MIN_GRID, MAX_GRID);
   while (size > MIN_GRID && heightOf(size, clued) > box.height) size -= 1;
@@ -376,6 +576,12 @@ export function crosswordLayout(config: PuzzleConfig): {
   while (fit.length > 0 && heightOf(size, fit) > box.height)
     fit = fit.slice(0, -1);
 
+  const above = size * SEARCH_CELL + cluesOf(fit);
+  const missingRows = missingRoom(
+    reserveOf(fit),
+    box.height - above,
+    head.fontPt,
+  );
   return {
     box,
     size,
@@ -384,6 +590,8 @@ export function crosswordLayout(config: PuzzleConfig): {
       ...clued.slice(fit.length).map((entry) => entry.word),
       ...unusable,
     ],
+    missingRows,
+    height: above + missingHeight(missingRows, head.fontPt),
   };
 }
 
@@ -413,7 +621,8 @@ function searchBlocks(
   config: PuzzleConfig,
   seed: number,
 ): { blocks: Block[]; outOf: number } {
-  const { size, words, dropped } = searchLayout(config);
+  const head = headerOf(config);
+  const { box, size, words, dropped, missingRows } = searchLayout(config);
   const puzzle = buildSearch(
     words.map((word) => word.form),
     size,
@@ -423,10 +632,13 @@ function searchBlocks(
         Boolean(config.reverse),
       ),
       overlap: config.overlap !== false,
+      // The words the *page* had no room for. `buildSearch` keeps the filler
+      // off them and then reads the grid to see which are genuinely absent, so
+      // what comes back on `omitted` is both kinds of missing and no lies.
+      avoid: dropped,
     },
     mulberry32(seed),
   );
-  const omitted = [...puzzle.omitted, ...dropped];
   return {
     blocks: [
       {
@@ -434,7 +646,7 @@ function searchBlocks(
         letters: puzzle.letters,
         find: puzzle.find,
         solution: puzzle.solution,
-        ...(omitted.length > 0 ? { omitted } : {}),
+        ...omittedOf(packMissing(puzzle.omitted, head, box.width, missingRows)),
       },
     ],
     // Out of what is findable, never out of what was asked for: a sheet marked
@@ -447,7 +659,8 @@ function crosswordBlocks(
   config: PuzzleConfig,
   seed: number,
 ): { blocks: Block[]; outOf: number } {
-  const { size, entries, dropped } = crosswordLayout(config);
+  const head = headerOf(config);
+  const { box, size, entries, dropped, missingRows } = crosswordLayout(config);
   const puzzle = buildCrossword(entries, size, mulberry32(seed));
   const omitted = [...puzzle.omitted, ...dropped];
   return {
@@ -457,7 +670,7 @@ function crosswordBlocks(
         cells: puzzle.cells,
         across: puzzle.across,
         down: puzzle.down,
-        ...(omitted.length > 0 ? { omitted } : {}),
+        ...omittedOf(packMissing(omitted, head, box.width, missingRows)),
       },
     ],
     outOf: puzzle.across.length + puzzle.down.length,

@@ -5,7 +5,7 @@ import { WORD_LISTS, listWords } from "@/engine/decks/wordlists";
 import { answerKey, buildSheet, describeSheet, sheetSpec } from "../index";
 import type { Block, Paper, PuzzleConfig } from "../types";
 
-import { SEARCH_CELL, searchCell } from "./search";
+import { SEARCH_CELL, findWord, searchCell, searchSteps } from "./search";
 import {
   MAX_GRID,
   MIN_GRID,
@@ -182,14 +182,72 @@ describe("a word the puzzle could not hold", () => {
   it("counts the words the page had no room for as well", () => {
     // Two ways to be missing and one thing the marker needs to know. At the
     // largest type on the smallest usable grid, most of a long list has to go.
+    const over = {
+      words: listWords(WORD_LISTS[2]).slice(0, 30),
+      count: 30,
+      fontPt: 24,
+      paper: paper({ margin: "wide" }),
+    };
+    const block = blockOf("wordsearch", over);
+    expect(block.omitted?.length).toBeGreaterThan(0);
+    expect(block.find.length).toBeGreaterThan(0);
+    // Every word is accounted for: on the list, named, or counted.
+    expect(
+      block.find.length +
+        (block.omitted?.length ?? 0) +
+        (block.omittedMore ?? 0),
+    ).toBe(30);
+  });
+
+  it("counts the ones the page cannot even name", () => {
+    // At the largest type an 8 × 8 grid is nearly the whole writing space, and
+    // naming thirty words under it would be nine rows of italic text on a page
+    // with no puzzle left on it. So the line names what it was reserved room
+    // for and counts the rest. A count is a poor substitute for a name; a
+    // paragraph on a second sheet of paper is worse.
     const block = blockOf("wordsearch", {
       words: listWords(WORD_LISTS[2]).slice(0, 30),
       count: 30,
       fontPt: 36,
       paper: paper({ margin: "wide" }),
     });
-    expect(block.omitted?.length).toBeGreaterThan(0);
-    expect((block.omitted?.length ?? 0) + block.find.length).toBe(30);
+    expect(block.omittedMore ?? 0).toBeGreaterThan(0);
+    expect(
+      block.find.length +
+        (block.omitted?.length ?? 0) +
+        (block.omittedMore ?? 0),
+    ).toBe(30);
+  });
+
+  it("is never named on a sheet whose grid holds it", () => {
+    // The lie the family exists to prevent, at the layout boundary rather than
+    // the placer's: the page trims the word list to what fits, and the filler
+    // was only ever told about the words that survived — so it was free to
+    // spell the rest, and the sheet said "Not in the grid: HAS" over a grid
+    // with HAS in it.
+    const over = {
+      words: listWords(WORD_LISTS[2]).slice(0, 30),
+      count: 30,
+      fontPt: 36,
+      paper: paper({ margin: "wide" }),
+    };
+    const { dropped } = searchLayout(config(over));
+    for (let seed = 1; seed <= 10; seed++) {
+      const block = blockOf("wordsearch", over, seed);
+      for (const word of block.omitted ?? []) {
+        // Not findable the way the sheet says the words run …
+        expect(
+          findWord(block.letters, word, searchSteps("across-down", false)),
+        ).toBeUndefined();
+        // … and a word the *page* dropped is not there in any direction at
+        // all. It is on no list, so a child who spots it running up a diagonal
+        // has found something the sheet just called absent.
+        if (dropped.includes(word))
+          expect(
+            findWord(block.letters, word, searchSteps("all", true)),
+          ).toBeUndefined();
+      }
+    }
   });
 });
 
@@ -226,6 +284,40 @@ describe("what fits on the paper", () => {
       const height = block.cells.length * searchCell(box.width, columns);
       expect(height).toBeLessThanOrEqual(size * SEARCH_CELL);
       expect(height).toBeLessThanOrEqual(box.height);
+    }
+  });
+
+  it("reserves the line that admits a word did not fit", () => {
+    // The line `<Omitted>` prints under the puzzle, which had no reserved
+    // height at all — and it only ever appears on a page the trim loop has just
+    // shrunk to exactly its capacity, because trimming is what creates it. It
+    // was guaranteed to overflow precisely when it was guaranteed to be there.
+    const words = listWords(WORD_LISTS[2]).slice(0, 30);
+    for (const size of ["letter", "a4", "legal"] as const) {
+      for (const margin of ["narrow", "normal", "wide"] as const) {
+        for (const fontPt of [10, 12, 18, 24, 36]) {
+          const over = {
+            words,
+            count: 30,
+            fontPt,
+            paper: paper({ size, margin }),
+            size: MAX_GRID,
+          };
+          for (const layout of [
+            searchLayout(config(over)),
+            crosswordLayout(config({ ...over, style: "crossword" })),
+          ]) {
+            if (layout.height <= layout.box.height) continue;
+            // The one page the arithmetic cannot rescue: at the largest type
+            // the grid at MIN_GRID is already almost the whole writing space,
+            // and the sheet is still not allowed to stay silent about the
+            // twenty-odd words it dropped. Over by that single row, never by
+            // the nine the whole list would have taken.
+            expect(layout.missingRows).toBe(1);
+            expect(fontPt).toBe(36);
+          }
+        }
+      }
     }
   });
 

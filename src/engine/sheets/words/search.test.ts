@@ -169,6 +169,61 @@ describe("a word that cannot be placed", () => {
   });
 });
 
+describe("a word the page had no room to list", () => {
+  const avoided = (avoid: string[], seed: number) =>
+    buildSearch(
+      WORDS,
+      12,
+      { steps: usual, overlap: true, avoid },
+      mulberry32(seed),
+    );
+
+  it("is never spelled out by the filler", () => {
+    // The failure this exists for: the family trims the word list to what the
+    // paper holds, prints "Not in the grid: HAS" under the puzzle, and the
+    // random letters spell HAS three rows down. The filler has to know about
+    // the words it is not being given.
+    const avoid = ["HAS", "BY", "OF", "MAY", "PUT", "OLD"];
+    for (const seed of [1, 2, 3, 8, 9, 99]) {
+      const puzzle = avoided(avoid, seed);
+      for (const word of avoid) {
+        const hits = [];
+        for (let row = 0; row < puzzle.letters.length; row++)
+          for (let column = 0; column < puzzle.letters[row].length; column++)
+            for (const { dx, dy } of every)
+              if (spell(puzzle.letters, { word, column, row, dx, dy }) === word)
+                hits.push({ column, row });
+        expect(hits).toEqual([]);
+      }
+    }
+  });
+
+  it("is named as missing, but never put on the word list", () => {
+    // Two lists and a word may only be on one of them. `find` is what the page
+    // asks a child to hunt for and the page has no room for this word;
+    // `omitted` is what the sheet admits it does not hold.
+    const puzzle = avoided(["HAS", "BY"], 4);
+    expect(puzzle.find).toEqual(WORDS);
+    expect(puzzle.omitted).toEqual(["HAS", "BY"]);
+  });
+
+  it("is not called missing when the grid turns out to hold it", () => {
+    // The filler is not the only way a word can appear: two placed words
+    // crossing spell a third nobody asked for, and no care over the *empty*
+    // squares undoes that. So the claim is read off the finished grid — a word
+    // the letters contain goes on neither list rather than onto a lie.
+    const puzzle = avoided(["BECAUSE", "OUGH"], 1);
+    expect(puzzle.omitted).toEqual([]);
+    expect(puzzle.find).toEqual(WORDS);
+  });
+
+  it("passes through a word with no grid form at all", () => {
+    // `123` off the end of a pasted list. It cannot be in the grid, so it is
+    // named — and nothing here has to special-case it.
+    expect(avoided(["123"], 1).omitted).toEqual(["123"]);
+  });
+});
+
 describe("the grid itself", () => {
   it("is square, and has a letter in every square", () => {
     const puzzle = build(WORDS, 11);

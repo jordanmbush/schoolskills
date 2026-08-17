@@ -32,7 +32,15 @@ export function Crossword({ block, metrics }: BlockProps<"crossword">) {
     (most, row) => Math.max(most, row.length),
     0,
   );
-  if (rows === 0 || columns === 0) return <Omitted words={block.omitted} />;
+  // A grid with nothing in it is still a block: the line under it is the whole
+  // of the sheet's content, and it gets the same air around it as a puzzle
+  // would have had.
+  if (rows === 0 || columns === 0)
+    return (
+      <div className="sheet__block">
+        <Omitted words={block.omitted} more={block.omittedMore} />
+      </div>
+    );
 
   // The same cell size the family reserved the page against — see the note in
   // `WordSearch` for why this is asked of the engine rather than declared here.
@@ -101,7 +109,7 @@ export function Crossword({ block, metrics }: BlockProps<"crossword">) {
         <Clues heading="Down" entries={block.down} />
       </div>
 
-      <Omitted words={block.omitted} />
+      <Omitted words={block.omitted} more={block.omittedMore} />
     </div>
   );
 }

@@ -268,7 +268,16 @@ export type WordSearch = {
   find: string[];
   /** Where each of them is, found by reading the grid. */
   solution: Found[];
-  /** The rest, named on the sheet rather than dropped. */
+  /**
+   * The rest, named on the sheet rather than dropped.
+   *
+   * Read out of the finished grid exactly as `find` is, and for the same
+   * reason: "not in the grid" is a claim about the letters, so the letters are
+   * what settles it. A word the placer could not fit is here; so is a word from
+   * `avoid` the grid turned out not to hold. One it *does* hold is on neither
+   * list — the page has no room to ask for it, and the sheet will not say it is
+   * absent while a child can see it.
+   */
   omitted: string[];
 };
 
@@ -280,11 +289,24 @@ export type WordSearch = {
  * ordering that matters: a nine-letter word has a handful of legal positions
  * and a three-letter word has hundreds, so placing the short ones first is how
  * a generator paints itself into a corner and drops the long ones.
+ *
+ * `avoid` is the other half of the sheet's honesty and it comes from outside,
+ * because it has to. A word the *page* had no room for never reaches the placer
+ * — the family trims the word list to what fits before the grid is built — and
+ * yet it is named on the sheet as missing, in the same sentence as a word the
+ * placer could not fit. So this function is told about it, and does two things
+ * with it. The filler is kept from spelling it, or the sheet would print "Not
+ * in the grid: HAS" over a grid with HAS in it. And the finished grid is then
+ * searched for it anyway, because the filler is not the only way a word can
+ * turn up: two placed words crossing spell a third nobody asked for, and no
+ * amount of care over the *empty* squares can undo that. What the grid holds
+ * goes on neither list; what it does not is named. Either way `find` is
+ * untouched — a word the page cannot list does not get listed.
  */
 export function buildSearch(
   words: string[],
   size: number,
-  options: { steps: Step[]; overlap: boolean },
+  options: { steps: Step[]; overlap: boolean; avoid?: string[] },
   rand: () => number,
 ): WordSearch {
   const cells: Cells = Array.from({ length: size }, () =>
@@ -311,10 +333,12 @@ export function buildSearch(
     if (spot) write(cells, word, spot.x, spot.y, spot.step);
   }
 
-  // Every word, not only the ones that were placed: a word the grid has no room
-  // for must not be spelled out by the filler either, or the sheet would name it
-  // as missing while a child stares straight at it.
-  fill(cells, words, rand);
+  // Every word, not only the ones that were placed, and not only the ones this
+  // grid was given: a word the grid has no room for — or that the page had no
+  // room for, which is what `avoid` carries — must not be spelled out by the
+  // filler either, or the sheet would name it as missing while a child stares
+  // straight at it.
+  fill(cells, [...words, ...(options.avoid ?? [])], rand);
   const letters = cells.map((row) => row.map((letter) => letter ?? "A"));
 
   const find: string[] = [];
@@ -329,6 +353,12 @@ export function buildSearch(
     find.push(word);
     solution.push(found);
   }
+
+  // And the words the page had no room to list, in every direction rather than
+  // this puzzle's own: a child who spots OF running up a diagonal on an
+  // across-only sheet has found something the sheet just called missing.
+  for (const word of options.avoid ?? [])
+    if (!findWord(letters, word, EVERY_STEP)) omitted.push(word);
 
   return { letters, find, solution, omitted };
 }

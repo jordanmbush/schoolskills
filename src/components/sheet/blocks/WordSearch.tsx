@@ -82,7 +82,7 @@ export function WordSearch({ block, metrics }: BlockProps<"wordsearch">) {
         ))}
       </ul>
 
-      <Omitted words={block.omitted} />
+      <Omitted words={block.omitted} more={block.omittedMore} />
     </div>
   );
 }

@@ -12,8 +12,20 @@
  * and it has to be the same sentence: "not in the grid" is the only thing the
  * person marking the sheet needs to know, and it is equally true of a word the
  * placer could not fit and one the page had no room for.
+ *
+ * The sentence itself comes from the engine (`missingTokens`) rather than from
+ * here, for the reason `searchCell` does: the family reserves the page against
+ * the rows this line will wrap onto, and a paragraph measured at one length and
+ * printed at another is the last line of a sheet on a second sheet of paper.
+ * `more` is what the reservation could not name — see `Block.omittedMore`.
  */
-export function Omitted({ words }: { words?: string[] }) {
-  if (!words || words.length === 0) return null;
-  return <p className="sheet__missing">Not in the grid: {words.join(", ")}</p>;
+import { missingTokens } from "@/engine/sheets/words/puzzles";
+
+export function Omitted({ words, more }: { words?: string[]; more?: number }) {
+  const named = words ?? [];
+  const rest = more ?? 0;
+  if (named.length === 0 && rest === 0) return null;
+  return (
+    <p className="sheet__missing">{missingTokens(named, rest).join(" ")}</p>
+  );
 }

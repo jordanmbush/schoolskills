@@ -493,8 +493,22 @@ export type Block =
        * and vanished: the child hunts for something that is not there, and the
        * answer key is wrong about a word it never mentions. A word that could
        * not be placed is not on the `find` list, and it is named here instead.
+       *
+       * Only as many as the family reserved room to print. The line is set
+       * under a block already trimmed to the page, so what it holds is capped —
+       * and the rest are counted in `omittedMore` rather than named.
        */
       omitted?: string[];
+      /**
+       * How many more there were than the page could name.
+       *
+       * A count is a poor substitute for a name and it is only ever reached by
+       * a config at the far end — the largest type, the longest list — where
+       * naming them all would be a page with no puzzle on it. The alternative
+       * is a paragraph below the bottom margin, which names them on a sheet of
+       * paper nobody prints.
+       */
+      omittedMore?: number;
     }
   | {
       kind: "crossword";
@@ -504,6 +518,8 @@ export type Block =
       down: CrosswordEntry[];
       /** Words the grid had no room for — see `wordsearch.omitted`. */
       omitted?: string[];
+      /** And how many more than it could name — see `wordsearch.omittedMore`. */
+      omittedMore?: number;
     }
   | {
       kind: "matching";
