@@ -1,6 +1,7 @@
 ---
 import Content from "@/layouts/Content.astro";
 import { STOCKS, pathFor, shelf } from "./_catalog";
+import { HANDWRITING_SHEETS, handwritingShelf, hrefFor } from "./_handwriting";
 import { MATHS_SHEETS, mathsShelf, pathFor as mathsPath } from "./_maths";
 
 /**
@@ -16,9 +17,10 @@ import { MATHS_SHEETS, mathsShelf, pathFor as mathsPath } from "./_maths";
  * It lists what exists and nothing else. A shelf of links to sheets that
  * haven't been built is the thin-content pattern Base.astro's `noindex` block
  * already argues against, and a catalog page here is meant to BE the worksheet
- * — real prerendered HTML a parent can print without touching anything. Two
- * families fill it: every ruling in §5 on both stocks, and the curated maths
- * topics of §8, each of which prints its own answer key.
+ * — real prerendered HTML a parent can print without touching anything. Three
+ * families fill it: every ruling in §5 on both stocks, the curated maths topics
+ * of §8, each of which prints its own answer key, and the handwriting sheets,
+ * which come on both stocks for the same reason the paper does.
  */
 const title = "Free printable worksheets — The Print Shop | School Skills";
 const description =
@@ -28,6 +30,7 @@ const description =
 const letter = STOCKS[0];
 const groups = shelf();
 const strands = mathsShelf();
+const writing = handwritingShelf();
 ---
 
 <Content
@@ -70,11 +73,12 @@ const strands = mathsShelf();
   <section class="band band--tight wrap">
     <h2 class="h2">On the shelf now</h2>
     <p class="h2__sub">
-      Two families: maths worksheets, each with its answer key on the page
-      behind it, and paper in every ruling. Each of these is a page that is
-      itself the sheet &mdash; open it, press print, and that is the whole of
-      it. The paper comes on both stocks, because a ruling shrunk to fit
-      whatever is in the tray is no longer the ruling you chose.
+      Three families: maths worksheets, each with its answer key on the page
+      behind it, handwriting practice that traces before it copies, and paper in
+      every ruling. Each of these is a page that is itself the sheet &mdash;
+      open it, press print, and that is the whole of it. Handwriting and paper
+      come on both stocks, because a ruling shrunk to fit whatever is in the
+      tray is no longer the ruling you chose.
     </p>
 
     <h3 class="h2 h2--next">Maths worksheets</h3>
@@ -95,6 +99,28 @@ const strands = mathsShelf();
     }
     <div class="hero__actions">
       <a class="cta" href="/printables/math">All the maths sheets</a>
+    </div>
+
+    <h3 class="h2 h2--next">Handwriting</h3>
+    <p class="h2__sub">
+      {HANDWRITING_SHEETS.length} sheets, from the first capital letter to copying
+      out a poem. Each one traces, then copies, then leaves an empty line.
+    </p>
+    {
+      writing.map((group) => (
+        <nav class="stones" aria-label={group.label}>
+          {group.sheets.map((sheet) => (
+            <a class="stone" href={hrefFor(sheet, letter)}>
+              {sheet.short}
+            </a>
+          ))}
+        </nav>
+      ))
+    }
+    <div class="hero__actions">
+      <a class="cta" href="/printables/handwriting">
+        All the handwriting sheets
+      </a>
     </div>
 
     {
@@ -153,15 +179,15 @@ const strands = mathsShelf();
       <h2 class="h2">What the press is being set for</h2>
       <p class="h2__sub">
         The Print Shop is opening a family at a time, and this page lists what
-        exists rather than what is planned. Paper and maths are open.
-        Handwriting is next.
+        exists rather than what is planned. Paper, maths and handwriting are
+        open. Cursive is next.
       </p>
       <div class="prose">
         <p>
-          The order it opens in: the paper and the maths sheets above, then
-          handwriting and copywork &mdash; passages from the public domain,
-          Scripture among them &mdash; then spelling, phonics, and the charts,
-          certificates and planners that are simply blank forms.
+          The order it opens in: the paper, the maths sheets and the handwriting
+          above, then cursive and the wider copywork &mdash; passages from the
+          public domain, Scripture among them &mdash; then spelling, phonics,
+          and the charts, certificates and planners that are simply blank forms.
         </p>
         <p>
           The one it is really being built for comes with the sheet builder:

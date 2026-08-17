@@ -72,6 +72,26 @@ export type Face = {
    */
   xHeight: number;
   /**
+   * Baseline down to the bottom of the deepest tail, as a share of the em —
+   * `p` and `q` in Andika, `g` in the other two.
+   *
+   * Recorded rather than used, exactly as `xHeight` is, and read by
+   * `faces.test.ts`. What it is checked against is the tail space of a
+   * handwriting rule, which is a third of the repeat against a writing space of
+   * two thirds (`DESCENDER_SHARE` in paper.ts) — so the room below the baseline
+   * is half the writing space, and half the writing space is `ascent / 2` of
+   * the em whatever the rule size. A tail deeper than that is drawn through the
+   * next set's top line rather than into clean paper.
+   *
+   * Andika uses 0.239 of the 0.396 it is given and OpenDyslexic 0.261 of 0.425,
+   * so both print sheets clear it comfortably. Playwrite's descenders are a
+   * whole 0.519 against 0.510, which is the one face that hangs over — by 0.009
+   * of the em, four thousandths of an inch on a ⅝ rule. That is the stated
+   * tolerance and the reason a traced row is not allowed to clip: a joined `g`
+   * with its loop cut off is a worse model than one that crosses a line.
+   */
+  descent: number;
+  /**
    * A *declared* mean advance across `a`–`z` and the space, as a share of the
    * em.
    *
@@ -138,6 +158,7 @@ export const FACES: Record<SheetFont, Face> = {
     family: "Andika",
     ascent: 0.791,
     xHeight: 0.498,
+    descent: 0.239,
     advance: 0.506,
     stroke: 0.022,
     dotted: [0, 4.5],
@@ -148,6 +169,7 @@ export const FACES: Record<SheetFont, Face> = {
     family: "Playwrite US Trad",
     ascent: 1.019,
     xHeight: 0.519,
+    descent: 0.519,
     advance: 0.57,
     // Finer than the other two, and dotted tighter. A joined script is one
     // continuous stroke, so its outline doubles back on itself down every
@@ -163,6 +185,7 @@ export const FACES: Record<SheetFont, Face> = {
     family: "OpenDyslexic",
     ascent: 0.85,
     xHeight: 0.56,
+    descent: 0.261,
     advance: 0.795,
     // The heaviest of the three, because the face is: weighted bottoms and
     // 0.099em stems can carry an outline that would fill Andika's counters.
@@ -203,6 +226,21 @@ export function glyphEm(writing: Mil, face: Face): Mil {
 export function fittedEm(width: Mil, characters: number, face: Face): Mil {
   if (characters <= 0) return Infinity;
   return Math.max(1, Math.floor(width / (characters * face.advance)));
+}
+
+/**
+ * How many characters fit across `width` at one type size — `fittedEm` read
+ * the other way round.
+ *
+ * What a passage is wrapped at. The em is fixed by the ruling on a handwriting
+ * sheet, so the question is never "how small must this be to fit" but "where
+ * does the line run out", and answering it needs no DOM: it is the same
+ * declared mean advance, divided rather than multiplied.
+ */
+export function fittedCharacters(width: Mil, em: Mil, face: Face): number {
+  const advance = em * face.advance;
+  if (advance <= 0 || width <= 0) return 1;
+  return Math.max(1, Math.floor(width / advance));
 }
 
 /** What a stroked letterform is drawn with, at one type size. */

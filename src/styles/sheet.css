@@ -220,6 +220,17 @@
   font-family: var(--sheet-face, var(--font-body, system-ui, sans-serif));
 }
 
+/* A traced row is exactly one repeat of its ruling tall, because that is what
+   keeps a ⅝ rule ⅝ of an inch down a page of them. The tail of a `g` does not
+   fit in that box on a ruling with no descender space — and on Playwrite it
+   overhangs by four thousandths of an inch even on one that has (`faces.ts`).
+   An SVG viewport clips by default, so the choice is between a model with its
+   tail cut off at the baseline and one drawn through the line below. A child
+   writes the second of those, so the sheet prints it. */
+.sheet__ink--trace {
+  overflow: visible;
+}
+
 /* ── The three faces (§17) ──────────────────────────────────────────────────
    Files now, self-hosted beside the site's own three — see `fonts.css` for
    which face does which job and why none of them is a request to a CDN. What

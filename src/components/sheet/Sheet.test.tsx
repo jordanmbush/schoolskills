@@ -147,7 +147,16 @@ const EVERY_BLOCK: Block[] = [
   {
     kind: "trace",
     rule: { style: "hand-1", midline: "dashed" },
-    rows: [{ text: "cat", repeats: ["solid", "dotted", "dashed", "none"] }],
+    rows: [
+      {
+        cells: [
+          { text: "cat", style: "solid" },
+          { text: "cat", style: "dotted" },
+          { text: "cat", style: "dashed" },
+          { text: "", style: "none" },
+        ],
+      },
+    ],
   },
   {
     kind: "copywork",
@@ -1308,7 +1317,7 @@ describe("trace styles", () => {
           {
             kind: "trace",
             rule: { style: "hand-5-8", midline: "dashed", descender: true },
-            rows: [{ text: "cat", repeats: [style] }],
+            rows: [{ cells: [{ text: "cat", style }] }],
           },
         ],
       }),

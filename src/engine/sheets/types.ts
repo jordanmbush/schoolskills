@@ -264,13 +264,23 @@ export type Problem = {
   workspace?: Mil;
 };
 
+/** One place on a tracing row: what is written there, and how it is drawn. */
+export type TraceCell = { text: string; style: TraceStyle };
+
 export type TraceRow = {
-  text: string;
   /**
-   * One entry per repeat across the row, left to right. `["solid", "dotted",
-   * "dotted", "none"]` is the trace → copy → write progression on one line.
+   * The cells across one row, left to right. `A` in `["solid", "dotted",
+   * "dotted", "none"]` is the trace → copy → write progression for one letter,
+   * and a row holds as many of those groups as the paper is wide enough for —
+   * which is what puts a whole alphabet on one page rather than the first
+   * thirteen letters of it.
+   *
+   * The text is per cell rather than per row for that reason alone. A row of
+   * one repeated word is the commoner shape and still the easy one to write;
+   * a row that could only say one thing would have made the letters family
+   * choose between a legible rule size and the other half of the alphabet.
    */
-  repeats: TraceStyle[];
+  cells: TraceCell[];
 };
 
 export type GridSpec = {
@@ -1221,6 +1231,93 @@ export type WordsConfig = SheetOptions & {
   columns: number;
 };
 
+/* ── Handwriting ───────────────────────────────────────────────────────────
+   The family where the ruling stops being the paper and becomes the exercise.
+   Every sheet above this line could be printed a thousandth of an inch out and
+   nobody would know; here the child is being taught to write between two lines,
+   so a ⅝ rule that is not ⅝ of an inch teaches the wrong size of letter — and
+   the model they trace has to stand on the baseline and reach the top line in
+   whichever face the sheet is set in (`faces.ts`).                          */
+
+/**
+ * What is written on the sheet.
+ *
+ * `letters` and `numbers` are the two sets the engine owns outright — the
+ * alphabet and the numerals, in the order they are taught. The other two are
+ * content somebody else wrote, and they differ only in how much of it goes on
+ * one line: a word is written several times *across* a row, and a line of a
+ * passage fills the row, so its repeats run *down* the page instead.
+ *
+ * A sentence is a passage of one line. It is not a style of its own because it
+ * would be the same function with the same arguments — what makes a sentence
+ * sheet a sentence sheet is how many lines are left under it, which is
+ * `repeats`.
+ */
+export type HandwritingStyle = "letters" | "numbers" | "words" | "passage";
+
+/**
+ * Which alphabet a letter sheet writes.
+ *
+ * `both` writes each letter as a pair — `A` then `a`, `B` then `b` — rather
+ * than the capitals and then the small letters, because the pair is what a
+ * child is taught as one letter.
+ */
+export type LetterCase = "upper" | "lower" | "both";
+
+export type HandwritingConfig = SheetOptions & {
+  kind: "handwriting";
+  style: HandwritingStyle;
+  /**
+   * The paper it is written on — any ruling in §5, and the whole of what makes
+   * this family physical. Blank paper is the one that cannot work: a
+   * handwriting sheet is rows of a repeating ruling, and a ruling with no pitch
+   * has no rows. See `ruleOf` for what it resolves to instead.
+   */
+  rule: Rule;
+  /**
+   * How a model is drawn — any style in §6. `none` is a sheet with nothing to
+   * trace, which is a real sheet: the model is the solid one at the start of
+   * the row and the rest is the child's own writing.
+   */
+  trace: TraceStyle;
+  /**
+   * How many times each thing is written, the model and the empty space
+   * included.
+   *
+   * Across the row for letters, numbers and words; down the page for a
+   * passage, whose lines are too wide to sit beside each other.
+   */
+  repeats: number;
+  /**
+   * Trace → copy → write: the first is a solid model and the last is left
+   * empty, with everything between drawn in `trace`.
+   *
+   * On unless turned off, because it is what the whole sheet is for — one page
+   * that carries a child from a letter they follow to a letter they make. Off
+   * is every repeat drawn the same way, which is the sheet for a child who is
+   * still tracing and not yet ready to be left on their own.
+   */
+  progression?: boolean;
+  /** `letters` only. Absent is both cases, which is how letters are taught. */
+  letters?: LetterCase;
+  /**
+   * `words` only: the list, in the order it was given.
+   *
+   * There is no name for it here for the reason `WordsConfig.words` gives — a
+   * config travels in a URL, and the one thing that must never be in one is a
+   * child (§1).
+   */
+  words?: string[];
+  /**
+   * `passage` only: what is copied, as it should read on the page.
+   *
+   * Wrapped to the ruling by the family rather than by the renderer, because
+   * there is no DOM to measure in (§4) — a newline here is a line break the
+   * author asked for, and everything else breaks where the paper runs out.
+   */
+  text?: string;
+};
+
 /**
  * Anything a saved sheet can hold. Narrow on `kind` — and only in index.ts,
  * which is the one module that knows the whole union.
@@ -1241,7 +1338,8 @@ export type SheetConfig =
   | RatioConfig
   | StatisticsConfig
   | WordProblemConfig
-  | WordsConfig;
+  | WordsConfig
+  | HandwritingConfig;
 
 /* ── A sheet somebody kept ─────────────────────────────────────────────── */
 

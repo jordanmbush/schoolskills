@@ -14,7 +14,7 @@ import {
   glyphEm,
   traceInk,
 } from "./faces";
-import { RULINGS, rulePitch, ruleLines } from "./paper";
+import { RULINGS, rulePitch, writingSpace } from "./paper";
 import type { Rule, RuleStyle, SheetFont } from "./types";
 
 const ROOT = fileURLToPath(new URL("../../..", import.meta.url));
@@ -27,15 +27,6 @@ const HANDWRITING = Object.values(RULINGS)
     { style: ruling.id, descender: false },
     { style: ruling.id, descender: true },
   ]);
-
-/** The writing space of a rule: the top line down to the baseline. */
-function writingSpace(rule: Rule): number {
-  const lines = ruleLines(rule);
-  const base =
-    lines.find((line) => line.role === "base")?.at ?? rulePitch(rule);
-  const top = lines.find((line) => line.role === "top")?.at ?? 0;
-  return base - top;
-}
 
 describe("resolving a face", () => {
   it("answers with the face that was asked for", () => {
@@ -86,6 +77,28 @@ describe("sizing letters to a ruling", () => {
         expect(over / writing, face.family).toBeLessThanOrEqual(1 / 6);
       }
     }
+  });
+
+  it("keeps a tail in the room the ruling gives it", () => {
+    // The other end of the same question. A handwriting rule with descender
+    // space gives a third of its repeat to the tail against two thirds to the
+    // writing space, so the room below the baseline is half the writing space
+    // — which is `ascent / 2` of the em at every rule size, and the number a
+    // measured `descent` has to be checked against.
+    //
+    // Playwrite is the one face that hangs over, by 0.009 of the em: a joined
+    // script draws its loops to the full descender the file declares. Four
+    // thousandths of an inch on a ⅝ rule is the stated tolerance, and it is
+    // drawn rather than clipped — see `.sheet__ink--trace` in sheet.css.
+    for (const face of Object.values(FACES)) {
+      const room = face.ascent / 2;
+      expect(face.descent, face.family).toBeLessThanOrEqual(room + 0.01);
+      // And deep enough to be a tail at all: a `g` whose loop stopped at a
+      // twentieth of an em would be a face measured off the wrong glyph.
+      expect(face.descent, face.family).toBeGreaterThan(0.15);
+    }
+    expect(FACES.print.descent).toBeLessThan(FACES.print.ascent / 2);
+    expect(FACES.dyslexic.descent).toBeLessThan(FACES.dyslexic.ascent / 2);
   });
 
   it("never returns a size that rounds away to nothing", () => {

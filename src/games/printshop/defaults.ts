@@ -50,6 +50,18 @@ const DENOMINATORS = [2, 3, 4, 5, 6, 8, 10, 12];
  */
 const STARTER_WORDS = listWords(WORD_LISTS[0]).slice(0, 12);
 
+/**
+ * A passage to open the copywork style on.
+ *
+ * A pangram first, because a sentence set for handwriting is chosen for the
+ * letters it uses rather than for what it says, and this one uses all of them.
+ * The second line is there so the box arrives holding two lines: a passage is
+ * broken where the paper runs out, and a parent who has never seen that happen
+ * would not know a newline of their own is honoured.
+ */
+const PASSAGE =
+  "The quick brown fox jumps over the lazy dog.\nGood handwriting is slow before it is neat.";
+
 const DEFAULTS: Record<string, SheetConfig> = {
   blank: { ...BASE, kind: "blank", title: "Blank sheet" },
   paper: { ...BASE, kind: "paper", rule: { style: "wide" } },
@@ -188,6 +200,21 @@ const DEFAULTS: Record<string, SheetConfig> = {
     gaps: 2,
     count: STARTER_WORDS.length,
     columns: 2,
+  },
+  handwriting: {
+    ...BASE,
+    kind: "handwriting",
+    style: "letters",
+    // The ⅝ rule with a tail space, which is what a school means by
+    // "handwriting paper" — and the sheet a parent is likeliest to want first.
+    rule: { style: "hand-5-8", midline: "dashed", descender: true },
+    letters: "both",
+    trace: "dotted",
+    // Three: a model, a trace, and the place where they are on their own. Also
+    // what puts the whole alphabet on one page at this rule size.
+    repeats: 3,
+    words: STARTER_WORDS,
+    text: PASSAGE,
   },
   "word-problems": {
     ...BASE,

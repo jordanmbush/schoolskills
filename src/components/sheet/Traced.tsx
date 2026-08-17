@@ -22,7 +22,7 @@ import {
 } from "@/engine/sheets/faces";
 import { ruledLines } from "@/engine/sheets/layout";
 import { rulePitch } from "@/engine/sheets/paper";
-import type { Mil, Rule, TraceStyle } from "@/engine/sheets/types";
+import type { Mil, Rule, TraceCell, TraceStyle } from "@/engine/sheets/types";
 
 import { Ruling } from "./Ruling";
 import { inch } from "./units";
@@ -74,7 +74,12 @@ export function Glyph({
   );
 }
 
-export type TracedCell = { text: string; style: TraceStyle };
+/**
+ * The engine's own cell, not a second copy of it. A renderer that redeclared
+ * the shape would be a second place to change when a cell learns to say
+ * something new.
+ */
+export type TracedCell = TraceCell;
 
 /**
  * One repeat of a ruling with letterforms written onto it.
@@ -127,18 +132,26 @@ export function TracedRow({
   );
   const ink = traceInk(size, face);
 
-  // Every cell in a row carries the same word — that is what a tracing row is
-  // — so the row is announced once rather than four times over.
-  const said = cells.find((entry) => entry.text !== "")?.text;
+  // A row is usually one word written four times, and sometimes three letters
+  // written four times each. Either way it is announced by what is on it and
+  // not by how many places it is written in.
+  const said = [...new Set(cells.map((entry) => entry.text))]
+    .filter((text) => text !== "")
+    .join(" ");
 
   return (
     <svg
-      className="sheet__ink"
+      // The modifier is what lets a tail out of the box. An SVG viewport
+      // clips by default, and a row is exactly one repeat tall — so on a
+      // ruling with no descender space a `g` would print with its tail cut off
+      // at the baseline, which is a worse model than one drawn through the
+      // line below. See `Face.descent`, and `.sheet__ink--trace` in sheet.css.
+      className="sheet__ink sheet__ink--trace"
       width={inch(width)}
       height={inch(pitch)}
       viewBox={`0 0 ${width} ${pitch}`}
       role="img"
-      aria-label={said ?? "A line to write on"}
+      aria-label={said === "" ? "A line to write on" : said}
     >
       <Ruling rule={rule} box={metrics.box} sets={1} />
       {cells.map((entry, index) => (
