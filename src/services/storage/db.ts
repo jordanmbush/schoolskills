@@ -1,6 +1,7 @@
 import { openDB, type DBSchema, type IDBPDatabase } from "idb";
 
 import { readSession, readSessions } from "@/engine/migrate";
+import type { SavedInventory } from "@/engine/sheets/phonics";
 import type { SavedSheet } from "@/engine/sheets/types";
 import type {
   CustomDeck,
@@ -28,8 +29,9 @@ const DB_NAME = "schoolskills";
 /**
  * 2 added `decks` — parent-authored word lists.
  * 3 added `sheets` — worksheets a parent configured in the print shop.
+ * 4 added `inventories` — the sounds a parent has taught, for phonics sheets.
  */
-const DB_VERSION = 3;
+const DB_VERSION = 4;
 
 /** Oldest sessions past this count are dropped so a profile stays fast to load. */
 export const MAX_SESSIONS_PER_PROFILE = 2000;
@@ -44,6 +46,12 @@ interface HubDB extends DBSchema {
    * for why that is the shape rather than an oversight.
    */
   sheets: { key: string; value: SavedSheet };
+  /**
+   * Keyed by id and nothing else, for the reason `sheets` is: a phonics
+   * programme belongs to the household rather than to a child. See
+   * `services/phonics.ts` for why it is a store rather than a field of a sheet.
+   */
+  inventories: { key: string; value: SavedInventory };
   sessions: {
     key: string;
     /**
@@ -115,6 +123,9 @@ function open(): Promise<IDBPDatabase<HubDB>> {
       }
       if (oldVersion < 3) {
         database.createObjectStore("sheets", { keyPath: "id" });
+      }
+      if (oldVersion < 4) {
+        database.createObjectStore("inventories", { keyPath: "id" });
       }
     },
     // We are the tab asking for the new version and somebody else won't let go.
@@ -198,6 +209,18 @@ export async function removeSheet(id: string): Promise<void> {
   await (await db()).delete("sheets", id);
 }
 
+export async function allInventories(): Promise<SavedInventory[]> {
+  return (await db()).getAll("inventories");
+}
+
+export async function putInventory(saved: SavedInventory): Promise<void> {
+  await (await db()).put("inventories", saved);
+}
+
+export async function removeInventory(id: string): Promise<void> {
+  await (await db()).delete("inventories", id);
+}
+
 export async function putProfile(profile: Profile): Promise<void> {
   await (await db()).put("profiles", profile);
 }
@@ -268,11 +291,20 @@ export async function trimSessions(profileId: string): Promise<number> {
  * can't be missing from the other — which would be a restore that says it
  * replaced everything and quietly kept the old copy of whatever was forgotten.
  */
-const BACKUP_STORES = ["profiles", "sessions", "decks", "sheets"] as const;
+const BACKUP_STORES = [
+  "profiles",
+  "sessions",
+  "decks",
+  "sheets",
+  "inventories",
+] as const;
 
 export type Backup = {
-  /** 2 added `decks`, 3 added `sheets`. Files at any of the three restore. */
-  version: 1 | 2 | 3;
+  /**
+   * 2 added `decks`, 3 added `sheets`, 4 added `inventories`. Files at any of
+   * the four restore.
+   */
+  version: 1 | 2 | 3 | 4;
   exportedAt: string;
   profiles: Profile[];
   decks?: CustomDeck[];
@@ -282,6 +314,8 @@ export type Backup = {
    * the spring must not stop restoring because a later version added a store.
    */
   sheets?: SavedSheet[];
+  /** Optional for the same reason, and for one release longer. */
+  inventories?: SavedInventory[];
   /**
    * Written current, read wide. A file exported today holds widened cards, but
    * one exported last week — or produced by `scripts/convert-legacy-hub.mjs`
@@ -291,18 +325,20 @@ export type Backup = {
 };
 
 export async function exportAll(): Promise<Backup> {
-  const [profiles, sessions, decks, sheets] = await Promise.all([
+  const [profiles, sessions, decks, sheets, inventories] = await Promise.all([
     allProfiles(),
     allSessions(),
     allDecks(),
     allSheets(),
+    allInventories(),
   ]);
   return {
-    version: 3,
+    version: 4,
     exportedAt: new Date().toISOString(),
     profiles,
     decks,
     sheets,
+    inventories,
     sessions,
   };
 }
@@ -323,6 +359,7 @@ export async function importAll(
   sessions: number;
   decks: number;
   sheets: number;
+  inventories: number;
 }> {
   const database = await db();
   const tx = database.transaction(BACKUP_STORES, "readwrite");
@@ -339,6 +376,11 @@ export async function importAll(
     // wrong answer — a file is the only copy there is, so a sheet whose family
     // was retired has to come back rather than be dropped on the way in.
     ...(backup.sheets ?? []).map((s) => tx.objectStore("sheets").put(s)),
+    // Likewise, and likewise not re-validated: a list of sounds a parent spent
+    // a term ticking out is theirs to get back exactly as they left it.
+    ...(backup.inventories ?? []).map((i) =>
+      tx.objectStore("inventories").put(i),
+    ),
     // Widened on the way in, so a restored run is stored in the shape a fresh
     // one would be. Reads migrate anyway; this just stops the file's age from
     // outliving the import.
@@ -352,5 +394,6 @@ export async function importAll(
     sessions: backup.sessions.length,
     decks: backup.decks?.length ?? 0,
     sheets: backup.sheets?.length ?? 0,
+    inventories: backup.inventories?.length ?? 0,
   };
 }
