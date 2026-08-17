@@ -885,6 +885,186 @@ export type GeometryConfig = SheetOptions & {
   workspace?: boolean;
 };
 
+/* ── Integers ──────────────────────────────────────────────────────────────
+   Where a number stops being an amount of something. Everything above this
+   line is a count a child could put on the table; here −7 is a direction as
+   much as a quantity, and the sign is the whole of what is being taught — a
+   key that had 7 − 9 as 2 would be marked right by a parent reading quickly,
+   which is the failure this family has to make impossible.                   */
+
+/**
+ * What the sheet asks for.
+ *
+ * `arithmetic` is the four operations over positive and negative whole numbers;
+ * `order` is one expression with several operations in it and the rule that
+ * decides which is done first; `powers` is exponents and the roots that undo
+ * them.
+ */
+export type IntegerStyle = "arithmetic" | "order" | "powers";
+
+/** Which operations are on the page. `both` shuffles all four together. */
+export type IntegerOperation =
+  "add" | "subtract" | "multiply" | "divide" | "both";
+
+export type IntegerConfig = SheetOptions & {
+  kind: "integers";
+  style: IntegerStyle;
+  /** Ignored by the two styles that have no operation to choose. */
+  operation: IntegerOperation;
+  /**
+   * How big the numbers get, sign aside.
+   *
+   * The *size* of what a child sees, because a range with a minus sign at one
+   * end of it is a range nobody says out loud: a parent asks for "numbers to
+   * twenty", and whether one of them is negative is the switch below rather
+   * than the bottom of the range.
+   */
+  range: { min: number; max: number };
+  /**
+   * Whether a minus sign may appear on a number at all. On unless turned off,
+   * because this is the integers family — but an order-of-operations sheet
+   * without them is a real lesson, and it is the one a year younger.
+   */
+  negatives?: boolean;
+  /** Order of operations only: how many operations the expression holds. */
+  terms?: number;
+  /** How many problems to ask for. Capped at what the page holds. */
+  count: number;
+  columns: number;
+  /** Blank space under every problem, to work in. */
+  workspace?: boolean;
+};
+
+/* ── Pre-algebra ───────────────────────────────────────────────────────────
+   The family where the answer is not a number at all. `x = 5` is a sentence,
+   `x > −4` is every number past a point, and a slope is a pair of numbers that
+   only means something written the smallest way. Which is why nothing here is
+   checked by evaluating the generator's own arithmetic: an equation's answer
+   is checked by putting it back in, and an inequality's by trying numbers.   */
+
+/**
+ * What the sheet asks for.
+ *
+ * `expression` evaluates a rule at a value or collects like terms; `equation`
+ * and `inequality` solve for the letter, in one step or two; `slope` is rise
+ * over run from a pair of written points; `graph` is the same question read off
+ * a coordinate plane, which is where a child meets it first.
+ */
+export type AlgebraStyle =
+  "expression" | "equation" | "inequality" | "slope" | "graph";
+
+export type PreAlgebraConfig = SheetOptions & {
+  kind: "prealgebra";
+  style: AlgebraStyle;
+  /**
+   * Equations and inequalities: one step, or two.
+   *
+   * The switch this family turns on, the way regrouping is the switch on an
+   * addition sheet. `x + 7 = 12` is undone by one move and `3x + 4 = 19` by
+   * two, and they are a term apart in the year rather than a harder version of
+   * the same question.
+   */
+  steps?: number;
+  /** How big the numbers get, sign aside — as on an integers sheet. */
+  range: { min: number; max: number };
+  /**
+   * Whether a negative number may appear, in the question or in the answer.
+   *
+   * More than a difficulty here: dividing an inequality by a negative turns it
+   * round, which is the single most-missed step in the whole of pre-algebra and
+   * the reason this family exists on paper rather than in a race.
+   */
+  negatives?: boolean;
+  /** The graph style only: one quadrant, or all four. */
+  quadrants?: number;
+  /** How many problems to ask for. Capped at what the page holds. */
+  count: number;
+  columns: number;
+  /** Blank space under every problem, to work in. */
+  workspace?: boolean;
+};
+
+/* ── Ratio, proportion and rate ────────────────────────────────────────────
+   Three names for one idea: two numbers whose *relationship* is the answer.
+   `12 : 18` and `2 : 3` are the same ratio and only one of them is marked
+   right, which is the bargain `exact.ts` already struck for fractions — so
+   this family reduces with the same greatest common divisor and never divides
+   a float.                                                                   */
+
+/**
+ * What the sheet asks for. `simplify` writes a ratio the smallest way;
+ * `proportion` fills the gap in a pair that scale together; `rate` is the
+ * amount for one of something, which is the form of it a shopper uses.
+ */
+export type RatioStyle = "simplify" | "proportion" | "rate";
+
+export type RatioConfig = SheetOptions & {
+  kind: "ratio";
+  style: RatioStyle;
+  /** How big the numbers in a ratio get, ends included. */
+  range: { min: number; max: number };
+  /** How many problems to ask for. Capped at what the page holds. */
+  count: number;
+  columns: number;
+  /** Blank space under every problem, to work in. */
+  workspace?: boolean;
+};
+
+/* ── Statistics ────────────────────────────────────────────────────────────
+   The one maths family whose question is a *set* rather than a sum, and the
+   one where the commonest generator bug is invisible: a set with two modes has
+   two right answers, and a set of an even size has a median between two of its
+   numbers rather than at one of them. Both print as a confident wrong key.   */
+
+/**
+ * What the sheet asks for. `all` is the four of them from one set of numbers,
+ * which is how the topic is set in every textbook that teaches it.
+ */
+export type StatisticStyle = "mean" | "median" | "mode" | "range" | "all";
+
+export type StatisticsConfig = SheetOptions & {
+  kind: "statistics";
+  style: StatisticStyle;
+  /**
+   * How many numbers are in each set.
+   *
+   * Not a difficulty dial so much as a choice of question: an even-sized set
+   * has its median between two numbers, which is the lesson a five-number set
+   * cannot teach.
+   */
+  size: number;
+  /** The numbers the set is drawn from, ends included. */
+  range: { min: number; max: number };
+  /** How many problems to ask for. Capped at what the page holds. */
+  count: number;
+  columns: number;
+  /** Blank space under every problem, to work in. */
+  workspace?: boolean;
+};
+
+/* ── Word problems ─────────────────────────────────────────────────────────
+   The one place in the maths set where generated *text* is read by a person.
+   Everywhere else a template failure is a sum that looks odd; here it is a page
+   that reads as machinery, and a parent stops trusting the rest of the shop. So
+   the rule from §11 is the rule here: fewer templates rather than repetitive
+   ones, and the suite counts the variety rather than hoping for it.          */
+
+/** Which lessons the problems are about — a pool, so a page can mix them. */
+export type WordTopic =
+  "integers" | "rate" | "percent" | "equation" | "average";
+
+export type WordProblemConfig = SheetOptions & {
+  kind: "word-problems";
+  topics: WordTopic[];
+  /** How big the numbers in a story get, ends included. */
+  range: { min: number; max: number };
+  /** How many problems to ask for. Capped at what the page holds. */
+  count: number;
+  columns: number;
+  /** Blank space under every problem, to work in. On by default here. */
+  workspace?: boolean;
+};
+
 /**
  * Anything a saved sheet can hold. Narrow on `kind` — and only in index.ts,
  * which is the one module that knows the whole union.
@@ -899,4 +1079,9 @@ export type SheetConfig =
   | MoneyConfig
   | TimeConfig
   | MeasureConfig
-  | GeometryConfig;
+  | GeometryConfig
+  | IntegerConfig
+  | PreAlgebraConfig
+  | RatioConfig
+  | StatisticsConfig
+  | WordProblemConfig;
