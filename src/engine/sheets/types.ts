@@ -99,8 +99,34 @@ export type Rule = {
 export type TraceStyle =
   "solid" | "dim" | "hollow" | "dotted" | "dashed" | "none";
 
+/**
+ * A line to count along, under a problem.
+ *
+ * Two numbers and a tick spacing, which is all a number line is. The width is
+ * declared here rather than measured by the renderer, for the same reason a
+ * problem cell's is (§4): the family already worked out how wide a column is
+ * to decide how many fit, and a second answer discovered in the browser is a
+ * second answer.
+ */
+export type NumberLine = {
+  from: number;
+  to: number;
+  /** A tick every `step`, each one labelled. */
+  step: number;
+  /** How wide it is drawn. */
+  width: Mil;
+};
+
 export type Problem = {
-  /** How it reads on the sheet: "7 × 8 =". */
+  /**
+   * How it reads on the sheet: "7 × 8 =".
+   *
+   * A single `_` marks where the answer goes when it belongs inside the
+   * sentence rather than after it — "7 + _ = 15" — the same convention
+   * `Blank.text` uses. A prompt with no gap gets a ruled slot at the end, so
+   * every problem has exactly one place for an answer and the two forms can't
+   * both apply. Empty when `operands` says the problem is drawn in columns.
+   */
   prompt: string;
   /**
    * Text even when it's a number — "56", not 56 — for the same reason
@@ -108,12 +134,26 @@ export type Problem = {
    */
   answer: string;
   /**
+   * Column form: the numbers stacked top to bottom, right-aligned under one
+   * another with `operator` against the last of them and a rule under the lot.
+   *
+   * Absent for the problems that read across a line, which is most of them.
+   * There is no second field saying which form a problem is in, because a
+   * renderer stacks exactly when there is a stack to draw — a flag beside the
+   * data is a flag that can disagree with it.
+   */
+  operands?: string[];
+  /** The sign printed beside the stack: "+" or "−". Column form only. */
+  operator?: string;
+  /**
    * Which fact this exercises, in the vocabulary the race already uses
    * ("7:8"). Optional, and the whole of what makes "print the facts they keep
    * missing" (§14) possible: the record book hands over fact ids and a family
    * turns them into problems without either side learning the other's shape.
    */
   factId?: string;
+  /** A number line under the problem, to count along. */
+  line?: NumberLine;
   /** Blank height under the problem for working out. Absent means none. */
   workspace?: Mil;
 };
@@ -301,8 +341,63 @@ export type BlankConfig = SheetOptions & { kind: "blank" };
  */
 export type PaperConfig = SheetOptions & { kind: "paper"; rule: Rule };
 
+/* ── Arithmetic ────────────────────────────────────────────────────────────
+   The first *generated* family: the one where a sheet is not a shape to write
+   on but a set of problems that have right answers, and where a wrong answer
+   key is worse than no sheet at all.                                        */
+
+/** Which sums are on the page. `both` shuffles the two together. */
+export type ArithmeticOperation = "add" | "subtract" | "both";
+
+/**
+ * What the problem asks for.
+ *
+ * `standard` gives both numbers and asks for the result; `missing` gives the
+ * result and one number and asks for the other, which is the same fact
+ * approached from the far side; `fact-family` gives the three numbers of a
+ * family and asks for the four sentences they make.
+ */
+export type ArithmeticStyle = "standard" | "missing" | "fact-family";
+
+/** Written across the line, or stacked in columns the way a sum is worked. */
+export type ArithmeticForm = "horizontal" | "vertical";
+
+/**
+ * Whether a column may carry or borrow.
+ *
+ * The single most-asked-for switch on an arithmetic worksheet, because it is
+ * the line between the week a child learns to add and the week they learn to
+ * carry. `either` is the default: whatever the numbers happen to do.
+ */
+export type Regrouping = "either" | "never" | "always";
+
+export type ArithmeticConfig = SheetOptions & {
+  kind: "arithmetic";
+  operation: ArithmeticOperation;
+  style: ArithmeticStyle;
+  form: ArithmeticForm;
+  /**
+   * Where both numbers in a problem come from, ends included.
+   *
+   * The numbers a child *sees*, not the answers they reach: "addition to 20"
+   * with a range of 0–20 puts two numbers up to twenty on the page, and their
+   * sum may run past it. That is what carrying is.
+   */
+  range: { min: number; max: number };
+  /** How many problems to ask for. Capped at what the page holds. */
+  count: number;
+  columns: number;
+  regrouping: Regrouping;
+  /** Whether a subtraction may go below zero. Off unless asked for. */
+  negatives?: boolean;
+  /** A number line under every problem, to count along. */
+  numberLine?: boolean;
+  /** Blank space under every problem, to work in. */
+  workspace?: boolean;
+};
+
 /**
  * Anything a saved sheet can hold. Narrow on `kind` — and only in index.ts,
  * which is the one module that knows the whole union.
  */
-export type SheetConfig = BlankConfig | PaperConfig;
+export type SheetConfig = BlankConfig | PaperConfig | ArithmeticConfig;

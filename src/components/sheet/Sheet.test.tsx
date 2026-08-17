@@ -43,6 +43,16 @@ const EVERY_BLOCK: Block[] = [
     items: [
       { prompt: "7 × 8 =", answer: "56", factId: "7:8" },
       { prompt: "6 × 9 =", answer: "54", workspace: 500 },
+      // The three shapes a problem takes: written along a line, written with
+      // the gap inside the sentence, and stacked in columns.
+      { prompt: "7 + _ = 15", answer: "8", factId: "7:8" },
+      {
+        prompt: "",
+        operands: ["47", "28"],
+        operator: "+",
+        answer: "75",
+        line: { from: 0, to: 20, step: 2, width: 2400 },
+      },
     ],
   },
   { kind: "rules", rule: { style: "hand-5-8", descender: true }, lines: 6 },

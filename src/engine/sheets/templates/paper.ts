@@ -16,111 +16,18 @@
  * chrome leaves, and the renderer draws that many. Nothing measures anything,
  * which is what lets this run at build time on a catalog page (§4).
  */
-import type { Mil, PaperConfig, Sheet } from "../types";
+import type { PaperConfig, Sheet } from "../types";
 
-import {
-  blockBox,
-  contentBox,
-  fitAcross,
-  ruleCapacity,
-  type Box,
-} from "../layout";
-import { inches, points, rulingOf } from "../paper";
+import { sheetBlockBox } from "../chrome";
+import { ruleCapacity } from "../layout";
+import { rulingOf } from "../paper";
 import { SHEET_CREDIT, SHEET_URL, SHEET_WORLD, type SheetSpec } from "../spec";
 
-/* ── What the chrome takes out of the page ────────────────────────────────
-   Declared, not measured — the bargain `blockBox` is built on (§4) — and
-   rounded up, because the two errors are not symmetrical. Reserving a tenth of
-   an inch too much costs one rule line at the bottom of the page. Reserving
-   too little pushes that line onto a second sheet of paper, and print is the
-   whole of the output path here: there is no PDF to notice it in first.
-
-   The numbers trail sheet.css, which sets the header's rows in ems of the body
-   size and its gaps in inches. So these are too: a title is 1.7em over a 1.05
-   line-height, a field line 0.82em over 1.35, an instruction 0.9em, and the
-   footer 0.62em above a rule with 0.18in of air over it.                    */
-
-const HEAD_ROWS = { title: 1.9, fields: 1.2, instructions: 1.3 } as const;
-const FOOT_ROW = 0.9;
-
-/** The gap sheet.css puts between the header's rows. */
-const HEAD_GAP = inches(0.09);
-/** And under the header itself, whatever is in it. */
-const HEAD_MARGIN = inches(0.16);
-/** The footer's rule, its padding, and the air above it. */
-const FOOT_MARGIN = inches(0.23);
-
-/* The name line is not always one row. `.sheet__fields` is a wrapping flex
-   row, so how many rows it takes is a question about the width of the page —
-   three fields ("name", "date", "class" are all legal) measure more than a
-   Letter content width and land on two. A row that was not reserved for is a
-   rule line below the bottom margin, which is a second sheet of paper. */
-
-/** One field: `.sheet__field-rule` at 2.1in, plus its label and their gap. */
-const FIELD_WIDTH = inches(2.5);
-/** `.sheet__fields` sets 0.06in between rows and 0.28in between fields. */
-const FIELD_GAP = inches(0.28);
-const FIELD_ROW_GAP = inches(0.06);
-
-/** A height quoted in ems of the body size, in the unit the page is in. */
-const em = (fontPt: number, rows: number): Mil => points(fontPt * rows);
-
-/** How many rows the name line wraps onto, given the width it has to fill. */
-function fieldRows(config: PaperConfig): number {
-  if (config.fields.length === 0) return 0;
-  const across = fitAcross(
-    contentBox(config.paper).width,
-    FIELD_WIDTH,
-    FIELD_GAP,
-  );
-  // A page too narrow for one whole field still prints one per row rather
-  // than dividing by zero — and the rules then get whatever is left.
-  return Math.ceil(config.fields.length / Math.max(1, across));
-}
-
-/**
- * How much of the page the header and footer will use.
- *
- * Counted from what the header actually holds rather than from a constant: a
- * sheet of lined paper with a name line and no title has an inch more writing
- * space than one with both, and on ⅝ paper an inch is two more lines to write
- * on. A family that reserved for the worst case would throw them away.
- */
-function chrome(config: PaperConfig): { header: Mil; footer: Mil } {
-  const fields = fieldRows(config);
-  const rows = [
-    config.title ? HEAD_ROWS.title : 0,
-    HEAD_ROWS.fields * fields,
-    config.instructions ? HEAD_ROWS.instructions : 0,
-  ].filter((row) => row > 0);
-
-  return {
-    // The margin is there even when the header is empty — SheetHead renders
-    // the element either way, and an empty flex column still takes its gap.
-    header:
-      HEAD_MARGIN +
-      rows.reduce((total, row) => total + em(config.fontPt, row), 0) +
-      HEAD_GAP * Math.max(0, rows.length - 1) +
-      FIELD_ROW_GAP * Math.max(0, fields - 1),
-    footer: FOOT_MARGIN + em(config.fontPt, FOOT_ROW),
-  };
-}
-
-/**
- * What is left for the ruling: the page, less its margins, less the chrome.
- *
- * Exported because it is the reservation itself, and the reservation is the
- * only thing a test can hold `chrome` to. Checking the rules against the
- * *content* box instead cannot fail — `ruleCapacity` floors against this box,
- * which is the content box minus a non-negative number, so any chrome at all
- * satisfies it, including none.
- */
-export function paperBlockBox(config: PaperConfig): Box {
-  return blockBox(config.paper, chrome(config));
-}
-
 export function buildPaperSheet(config: PaperConfig, seed: number): Sheet {
-  const box = paperBlockBox(config);
+  // Whatever the header and footer leave. The reservation is shared with every
+  // other family (chrome.ts) rather than counted again here, because it trails
+  // sheet.css and a second copy of it would drift silently.
+  const box = sheetBlockBox(config);
 
   return {
     paper: config.paper,
