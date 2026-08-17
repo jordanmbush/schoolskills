@@ -150,6 +150,37 @@
   opacity: 0.75;
 }
 
+/* The <SegmentedControl> form of the same row: each pill is a <label> around a
+   radio, so the cursor and the focus ring the browser gives a <button> have to
+   be said out loud. The input is clipped rather than `display: none` — it still
+   has to take focus and answer the arrow keys, which is the whole reason the
+   primitive uses radios (see SegmentedControl.tsx). */
+
+label.segmented__btn {
+  position: relative; /* the clipped radio below is positioned against this */
+  cursor: pointer;
+  user-select: none;
+}
+
+.segmented__radio {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+.segmented__btn:has(.segmented__radio:focus-visible) {
+  outline: 3px solid var(--go);
+  outline-offset: 3px;
+}
+
+.segmented__btn:has(.segmented__radio:disabled) {
+  opacity: 0.4;
+  cursor: default;
+}
+
 .segmented--slim .segmented__btn {
   padding: 0.3em 0.75em;
   font-family: var(--font-mono);
