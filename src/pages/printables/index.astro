@@ -1,5 +1,6 @@
 ---
 import Content from "@/layouts/Content.astro";
+import { STOCKS, pathFor, shelf } from "./_catalog";
 
 /**
  * The Print Shop's front door.
@@ -11,15 +12,19 @@ import Content from "@/layouts/Content.astro";
  * is the largest crawlable surface this site will ever have, and the sitemap
  * filter used to be keyed on the field that would have deleted it.
  *
- * It stays a page of prose until the sheet families land (PRINT04 onwards),
- * because a catalog page here is meant to BE the worksheet — real prerendered
- * HTML a parent can print without touching anything — and a shelf of
- * placeholder links to sheets that don't exist is the thin-content pattern
- * Base.astro's `noindex` block already argues against.
+ * It lists what exists and nothing else. A shelf of links to sheets that
+ * haven't been built is the thin-content pattern Base.astro's `noindex` block
+ * already argues against, and a catalog page here is meant to BE the worksheet
+ * — real prerendered HTML a parent can print without touching anything. The
+ * first family fills it: every ruling in §5, on both stocks.
  */
 const title = "Free printable worksheets — The Print Shop | School Skills";
 const description =
   "Practice sheets you can print at home, free and without an account. Every sheet is an ordinary web page, so printing it needs no download, no reader and no sign-up — and nothing about your child goes into the file.";
+
+/** Listed on the default stock; each sheet page carries the link to its twin. */
+const letter = STOCKS[0];
+const groups = shelf();
 ---
 
 <Content
@@ -43,12 +48,51 @@ const description =
     </p>
     <h1 class="hero__title">Paper, when the screen has had enough</h1>
     <p class="hero__lead">
-      The one corner of School Skills built for the grown-up. Pick a sheet, set
-      it how you want it, and print it &mdash; free, with an answer key, and
-      with your child&rsquo;s name left blank for them to fill in by hand.
+      The one corner of School Skills built for the grown-up. Open a sheet,
+      press print, and that is the whole of it &mdash; free, nothing to
+      download, and your child&rsquo;s name left blank for them to fill in by
+      hand.
     </p>
     <p class="hero__note">Free &middot; no account &middot; no download</p>
   </header>
+
+  {
+    /*
+      What exists, first — before the page explains itself. Somebody who
+      arrived looking for lined paper should be one link from lined paper,
+      and the argument for why a worksheet here is a web page reads better
+      after you have seen one than before.
+    */
+  }
+  <section class="band band--tight wrap">
+    <h2 class="h2">On the shelf now</h2>
+    <p class="h2__sub">
+      Paper, in every ruling. Each of these is a page that is itself the sheet
+      &mdash; open it, press print, and that is the whole of it. Every one comes
+      on both stocks, because a ruling shrunk to fit the paper in the tray is no
+      longer the ruling you chose.
+    </p>
+    {
+      groups.map((group) => (
+        <>
+          <h3 class="h2 h2--next">{group.label}</h3>
+          <p class="h2__sub">{group.blurb}</p>
+          <div class="prose">
+            <ul>
+              {group.sheets.map((sheet) => (
+                <li>
+                  <a href={`/printables/${pathFor(sheet, letter)}`}>
+                    {sheet.name}
+                  </a>{" "}
+                  &mdash; {sheet.summary}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </>
+      ))
+    }
+  </section>
 
   <section class="band band--tight wrap">
     <h2 class="h2">A worksheet here is a web page</h2>
@@ -76,17 +120,16 @@ const description =
       <h2 class="h2">What the press is being set for</h2>
       <p class="h2__sub">
         The Print Shop is opening a family at a time, and this page lists what
-        exists rather than what is planned. Right now that is the shop itself
-        &mdash; the paper, the rulings and the print path &mdash; with the first
-        sheets next.
+        exists rather than what is planned. Paper is open. What is on it is
+        next.
       </p>
       <div class="prose">
         <p>
-          The order it opens in: lined, graph and handwriting paper in every
-          ruling, then the maths sheets with their answer keys, then handwriting
-          and copywork &mdash; passages from the public domain, Scripture among
-          them &mdash; then spelling, phonics, and the charts, certificates and
-          planners that are simply blank forms.
+          The order it opens in: the paper above, then the maths sheets with
+          their answer keys, then handwriting and copywork &mdash; passages from
+          the public domain, Scripture among them &mdash; then spelling,
+          phonics, and the charts, certificates and planners that are simply
+          blank forms.
         </p>
         <p>
           The one it is really being built for comes with the sheet builder:

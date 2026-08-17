@@ -75,6 +75,34 @@
   }
 }
 
+/* ── The frame a sheet is looked at in ──────────────────────────────────────
+   A sheet is 8.5 inches wide and does not negotiate — that is the whole of
+   §4 — and 8.5 inches is wider than a phone. Left in the flow it makes the
+   document itself scroll sideways, which is the one layout failure a reader
+   can't work around.
+
+   So the page that shows a sheet puts it in this: the overflow belongs to the
+   frame, and a reader on a phone drags the paper rather than the article. It
+   lives here rather than in content.css because it arrives with the renderer,
+   the same as everything else in this file — the builder's preview will want
+   the identical frame and must not have to remember to ask for it.
+
+   Print takes it all back off. `overflow` on an ancestor of the page box is
+   another way to lose the bottom of a sheet, and the padding would offset the
+   very geometry the sheet exists to hold. */
+.sheet-frame {
+  overflow: auto;
+  padding-block: 1rem 2.5rem;
+  padding-inline: 1rem;
+}
+
+@media print {
+  .sheet-frame {
+    overflow: visible;
+    padding: 0;
+  }
+}
+
 /* ── Chrome ─────────────────────────────────────────────────────────────── */
 
 .sheet__head {
