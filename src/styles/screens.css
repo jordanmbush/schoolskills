@@ -452,7 +452,12 @@
    in a box you can type into (<NumberStepper>). The buttons either side are the
    same `.stepper__btn`, so the two forms sit at the same size on a panel.      */
 
-.stepper__btn:disabled {
+/* Both spellings dim the same way. <NumberStepper> marks a button that has hit
+   its bound with `aria-disabled` rather than `disabled`, so that the button
+   keeps focus instead of dumping a keyboard user on <body> (see its doc
+   block) — the look must not depend on which of the two it is.              */
+.stepper__btn:disabled,
+.stepper__btn[aria-disabled="true"] {
   opacity: 0.4;
   cursor: default;
 }

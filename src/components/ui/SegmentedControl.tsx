@@ -30,6 +30,14 @@ export type SegmentedOption<T extends string> = {
   /** What sits in the pill. A word, or a symbol like "×". */
   label: string;
   /**
+   * A glyph shown before the label — "×", "÷". Give one and the label becomes
+   * the word that hides under 560px (`.segmented__word`), because the symbol
+   * is still there to identify the pill; without one there is nothing to fall
+   * back to and the label always shows. It is decorative, `aria-hidden`: what
+   * gets announced is `title` if there is one, otherwise the label.
+   */
+  symbol?: string;
+  /**
    * The full name, for when `label` is a symbol. Becomes both the hover
    * tooltip and the announced name — a "×" left to a screen reader's own
    * judgement is read differently by every one of them.
@@ -96,10 +104,15 @@ export function SegmentedControl<T extends string>({
               aria-label={option.title}
               onChange={() => onChange(option.value)}
             />
-            {/* Deliberately unclassed: `.segmented__word` is the word that
-                hides beside a symbol under 560px, which is a decision for the
-                screen that pairs the two, not for every label in the row. */}
-            <span>{option.label}</span>
+            {option.symbol ? (
+              <span aria-hidden="true">{option.symbol}</span>
+            ) : null}
+            {/* `.segmented__word` hides under 560px, so it is worn only when a
+                symbol is there to take the pill's place. A row of words that
+                all vanished at once would be a row of empty pills. */}
+            <span className={option.symbol ? "segmented__word" : undefined}>
+              {option.label}
+            </span>
             {option.hint ? (
               <span className="segmented__hint">{option.hint}</span>
             ) : null}

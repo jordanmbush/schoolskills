@@ -20,10 +20,17 @@ import type { InputHTMLAttributes } from "react";
  * `Field` — so there is no `htmlFor`/`id` pair to keep in step and the hit
  * target is the whole row rather than the box. `hint` sits inside the label
  * too, which makes it part of the announced name: a phrase, not a paragraph.
+ * For the same reason this one does *not* go in a `Field`: that would put a
+ * `<label>` around a `<label>`, and the name a browser then computes is
+ * anyone's guess. It brings its own.
+ *
+ * `className` replaces the default rather than adding to it, matching `Input`
+ * and `Select` — but note that the default is what carries the 44px row, so a
+ * caller who overrides it owns the hit target from then on.
  */
 export interface CheckboxProps extends Omit<
   InputHTMLAttributes<HTMLInputElement>,
-  "onChange" | "checked" | "type"
+  "onChange" | "checked" | "type" | "aria-label" | "aria-labelledby"
 > {
   checked: boolean;
   onChange: (next: boolean) => void;

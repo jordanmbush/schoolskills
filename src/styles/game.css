@@ -157,6 +157,7 @@
    primitive uses radios (see SegmentedControl.tsx). */
 
 label.segmented__btn {
+  position: relative; /* the clipped radio below is positioned against this */
   cursor: pointer;
   user-select: none;
 }

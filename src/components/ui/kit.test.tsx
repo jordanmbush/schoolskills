@@ -2,7 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
 import { Checkbox } from "./Checkbox";
-import { NumberStepper } from "./NumberStepper";
+import { NumberStepper, commitValue } from "./NumberStepper";
 import { Range } from "./Range";
 import { SegmentedControl } from "./SegmentedControl";
 
@@ -94,6 +94,33 @@ describe("SegmentedControl", () => {
     expect(html).toContain('title="Multiplication"');
     expect(html).toContain("×");
   });
+
+  it("only lets the word hide when a symbol is left holding the pill", () => {
+    // `.segmented__word` is the under-560px hide. On its own a label would
+    // leave an empty pill behind, so the class is worn only beside a symbol.
+    const withSymbol = render(
+      <SegmentedControl
+        label="Operation"
+        value="mul"
+        onChange={() => {}}
+        options={[
+          { value: "mul", label: "Multiply", symbol: "×", title: "Multiply" },
+        ]}
+      />,
+    );
+    expect(withSymbol).toContain('<span aria-hidden="true">×</span>');
+    expect(withSymbol).toContain('class="segmented__word">Multiply');
+
+    const wordOnly = render(
+      <SegmentedControl
+        label="Paper"
+        value="a4"
+        onChange={() => {}}
+        options={options}
+      />,
+    );
+    expect(wordOnly).not.toContain("segmented__word");
+  });
 });
 
 describe("Range", () => {
@@ -117,13 +144,31 @@ describe("Range", () => {
     expect(html).toContain("14 pt");
   });
 
-  it("hides the readout from the screen reader that already has it", () => {
-    // A range announces its own value on every change. A live number beside it
-    // is either duplicate speech or speech in the wrong order.
+  it("says the formatted value rather than the number behind it", () => {
+    // The whole reason `format` exists is that 14 reads as "14 pt" and 625 as
+    // "⅝ in". Hiding the readout without this leaves a screen-reader user with
+    // the raw slider number in exactly the case the formatting was for.
+    const html = render(
+      <Range
+        label="Type size"
+        value={14}
+        onChange={() => {}}
+        min={8}
+        max={24}
+        format={(pt) => `${pt} pt`}
+      />,
+    );
+    expect(html).toContain('aria-valuetext="14 pt"');
+  });
+
+  it("hides the readout only because aria-valuetext carries it", () => {
+    // Unformatted, there is nothing to add: the attribute is left off so the
+    // platform's own announcement stands rather than being restated.
     const html = render(
       <Range label="Columns" value={3} onChange={() => {}} min={1} max={6} />,
     );
     expect(html).toContain('aria-hidden="true"');
+    expect(html).not.toContain("aria-valuetext");
   });
 });
 
@@ -151,15 +196,72 @@ describe("NumberStepper", () => {
     expect(html).toContain('aria-label="Increase problems"');
   });
 
-  it("stops offering a direction it can't go", () => {
-    expect(stepper({ value: 5 })).toContain("disabled");
-    expect(stepper({ value: 60 })).toContain("disabled");
-    expect(stepper()).not.toContain("disabled");
+  it("marks the direction it can't go without taking the focus with it", () => {
+    // Which button says it is out of road matters, so the assertion is
+    // positional: disabling both, or the wrong one, would pass a bare
+    // `toContain("disabled")`.
+    const atMin = stepper({ value: 5 });
+    expect(atMin).toMatch(
+      /aria-label="Decrease problems"[^>]*aria-disabled="true"/,
+    );
+    expect(atMin).not.toMatch(
+      /aria-label="Increase problems"[^>]*aria-disabled/,
+    );
+
+    const atMax = stepper({ value: 60 });
+    expect(atMax).toMatch(
+      /aria-label="Increase problems"[^>]*aria-disabled="true"/,
+    );
+    expect(atMax).not.toMatch(
+      /aria-label="Decrease problems"[^>]*aria-disabled/,
+    );
+
+    expect(stepper()).not.toContain("aria-disabled");
+
+    // And never the real attribute for a bound: a browser blurs a disabled
+    // element, so a keyboard user pressing − to the minimum would land on
+    // <body> and Tab would restart at the top of the page. The caller's own
+    // `disabled` is a different thing and stays real.
+    expect(atMin).not.toContain(" disabled");
+    expect(stepper({ disabled: true })).toContain(" disabled");
   });
 
   it("prints a unit without letting it into the value", () => {
     const html = stepper({ label: "Type size in points", unit: "pt" });
     expect(html).toContain(">pt<");
     expect(html).toContain('value="20"');
+  });
+});
+
+/**
+ * The draft/commit rule, tested as a function.
+ *
+ * There is no jsdom here, so the state machine is only reachable as the pure
+ * decision it was extracted into — which is the half worth protecting anyway:
+ * what a box holding "12.5", "abc" or "300" should hand the caller.
+ */
+describe("commitValue", () => {
+  const commit = (draft: string, current = 20, step = 1) =>
+    commitValue(draft, current, 5, 60, step);
+
+  it("keeps what was there when the box says nothing usable", () => {
+    expect(commit("")).toBe(20);
+    expect(commit("   ")).toBe(20);
+    expect(commit("abc")).toBe(20);
+  });
+
+  it("clamps rather than refusing", () => {
+    expect(commit("3")).toBe(5);
+    expect(commit("300")).toBe(60);
+    expect(commit("40")).toBe(40);
+  });
+
+  it("snaps to the step grid, measured from the minimum", () => {
+    // "A small whole number" is the module's first line; 12.5 is not one.
+    expect(commit("12.5")).toBe(13);
+    // Grid of 5 from a minimum of 5: 5, 10, 15 … so 23 is not an option.
+    expect(commit("23", 20, 5)).toBe(25);
+    // Rounding up off the last cell is clamped back inside the bound.
+    expect(commit("59", 20, 5)).toBe(60);
   });
 });
