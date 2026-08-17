@@ -3,6 +3,7 @@ import { defineConfig } from "astro/config";
 import react from "@astrojs/react";
 import sitemap from "@astrojs/sitemap";
 import { WORLDS } from "./src/engine/worlds";
+import { pathOf, sitemapGuard } from "./scripts/sitemap-guard.mjs";
 
 /**
  * Static output, deliberately.
@@ -31,14 +32,23 @@ export default defineConfig({
        * contradiction Search Console reports back at you.
        *
        * Derived from WORLDS rather than written out, so a new world cannot
-       * be added to the map and quietly left in the sitemap — `href` on a
-       * world IS its game route.
+       * be added to the map and quietly left in the sitemap.
+       *
+       * Keyed on `island`, NOT on `href`. For the three game worlds those are
+       * the same string and the distinction looks academic; The Print Shop is
+       * where it stops being academic, because its `href` is a catalog of
+       * prerendered worksheets that has to be indexed and its island is a
+       * builder that must not be. Filtering on `href` would have removed the
+       * catalog silently. sitemapGuard below fails the build if it ever does.
        */
       filter: (page) => {
-        const path = new URL(page).pathname.replace(/\/$/, "");
-        return !WORLDS.some((world) => world.href === path);
+        const path = pathOf(page);
+        return !WORLDS.some((world) => world.island === path);
       },
     }),
+    // After the sitemap integration, deliberately: it reads what that one
+    // wrote. See scripts/sitemap-guard.mjs.
+    sitemapGuard(WORLDS),
   ],
   // Emit `/about/index.html` rather than `/about.html` so CloudFront can serve
   // clean URLs from S3 without a rewrite function.

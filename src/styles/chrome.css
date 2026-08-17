@@ -138,6 +138,9 @@
 .mast__link[data-world="ice"] {
   --dot: var(--w-ice);
 }
+.mast__link[data-world="paper"] {
+  --dot: var(--w-paper);
+}
 
 .mast__play {
   flex: none;

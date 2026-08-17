@@ -15,7 +15,7 @@
 
    The blocks are scoped to `[data-world]` rather than `:root[data-world]` so
    the same declarations can dress a single element. That is what lets the
-   overworld map show three worlds at once: each card carries `data-world` and
+   overworld map show every world at once: each card carries `data-world` and
    is therefore built out of that world's ink, accent and ground, on a page
    standing somewhere else entirely.
 
@@ -29,6 +29,12 @@
              on, the same way graph paper is the substrate of a times table.
      ice     Typing. Speed reads as gliding, so: a glacier, frost cracks, and
              keycap-shaped slabs underfoot.
+     paper   Worksheets. The only world here that isn't outdoors — a press
+             room: warm graphite instead of the cold blues of grid and ice,
+             blueprint cyan to press, and registration marks on non-photo blue
+             for ground. The sheet is white paper floating on that, which is
+             how every layout tool on earth presents a page and is also just
+             true.
      map     The overworld. Not a world — the screen you pick one from. Dusk,
              stars and contour lines, like a map left open on a table.
      line    The pause menu: privacy and terms. Ruled paper, one grey, no
@@ -43,7 +49,7 @@
    `world="…"`. Nothing else needs to know it exists.                       */
 
 /* ── Every world's signature colour, readable from inside any of them ──────
-   The map shows three worlds at once and the masthead shows all of them from
+   The map shows all the worlds at once and so does the masthead, from
    wherever you're standing, so these can't live inside a world block — by
    definition only one of those is ever in scope. Keep them in step with the
    `--accent`/`--go` of the matching world below; they're the same colour seen
@@ -52,6 +58,10 @@
   --w-grid: #c8ff41;
   --w-jungle: #ffb545;
   --w-ice: #7fe8ff;
+  /* The Print Shop's `--go`, not its `--accent`: its accent is a blueprint
+     cyan, and two cyan dots in a nav of four would undo the whole point of
+     the code. Paper white is the one signature no other world can claim. */
+  --w-paper: #f4efe4;
 }
 
 /* ── grid · space, and the default ─────────────────────────────────────────
@@ -222,6 +232,73 @@
       transparent 70%
     );
   --terrain-size: 100% 100%, 100% 100%, 100% 56px, 64px 100%, 100% 100%;
+}
+
+/* ── paper · worksheets to print ─────────────────────────────────────────── */
+[data-world="paper"] {
+  --ink-950: #0b0a09;
+  --ink-900: #131211;
+  --ink-850: #1a1816;
+  --ink-800: #22201d;
+  --ink-700: #2f2b26;
+  --ink-600: #3f3a33;
+  --ink-500: #574f45;
+
+  --chalk: #f6f2ea;
+  --chalk-soft: #cdc4b6;
+  --chalk-dim: #918879;
+
+  --accent: #4fb8d8;
+  --accent-ink: #04171e;
+  /* Press this, and it is a sheet of paper. Every other world's `--go` is a
+     colour; this one is the thing the world makes. */
+  --go: #f4efe4;
+  --go-ink: #17140f;
+
+  /* Non-photo blue, the one line on a page a press deliberately can't see. */
+  --grid-line: rgb(126 206 232 / 7%);
+  --grid-line-strong: rgb(126 206 232 / 11%);
+  --hairline: rgb(246 242 234 / 12%);
+  --world-glow: rgb(79 184 216 / 11%);
+
+  /* A registration target and its crosshair, a second target further down,
+     and a non-photo blue grid under both. The ticks are radial gradients with
+     one tiny radius rather than lines, because a `--terrain` layer has no
+     background-position of its own — the position has to live in the gradient
+     (the same trick the grid world's stars use). */
+  --terrain:
+    radial-gradient(
+      circle 6px at 58px 66px,
+      transparent 0 4px,
+      rgb(126 206 232 / 34%) 4px 5px,
+      transparent 5px
+    ),
+    radial-gradient(
+      0.6px 9px at 58px 66px,
+      rgb(126 206 232 / 34%),
+      transparent 100%
+    ),
+    radial-gradient(
+      9px 0.6px at 58px 66px,
+      rgb(126 206 232 / 34%),
+      transparent 100%
+    ),
+    radial-gradient(
+      circle 5px at 232px 178px,
+      transparent 0 3.4px,
+      rgb(244 239 228 / 20%) 3.4px 4.2px,
+      transparent 4.2px
+    ),
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px),
+    radial-gradient(
+      ellipse 110% 50% at 50% -8%,
+      rgb(79 184 216 / 12%),
+      transparent 70%
+    );
+  --terrain-size:
+    300px 240px, 300px 240px, 300px 240px, 300px 240px, 22px 22px, 22px 22px,
+    100% 100%;
 }
 
 /* ── map · the overworld ─────────────────────────────────────────────────── */
