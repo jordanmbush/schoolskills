@@ -1,8 +1,31 @@
+import { faceOf, glyphAdvance, type Face } from "@/engine/sheets/faces";
+
 import { HAIRLINE, HEAVY, inch } from "../units";
 import type { BlockProps } from "./block";
 
 /** Numerals inside a square, at about half its height. */
 const CELL_TO_EM = 0.5;
+
+/**
+ * How much of a column a word at the head of one may take.
+ *
+ * Half a square is the right size for the numerals a grid was built for, and
+ * far too big for a word: "Hundred thousands" set at half the height of its own
+ * column runs four columns wide, and an `<svg>` clips to its viewBox, so what
+ * prints is a place-value chart with most of its headings sliced off. So a cell
+ * that cannot hold its text at the shared size is set at the size that fits —
+ * measured the only way there is at build time, off the face's own declared
+ * mean advance (`faces.ts`), which is the same bargain `chrome.ts` strikes for
+ * every other run of text on a sheet. Through `glyphAdvance` rather than off
+ * `advance` directly, because every word here starts with a capital and the
+ * plain mean is taken over `a`–`z`: that is the distinction that put `Mm` a
+ * tenth of an inch into the next cell on a handwriting row.
+ *
+ * It never fires on the grids that were here first: three characters is the
+ * widest thing a hundred chart or a multiplication square puts in a square, and
+ * three of them fit at the shared size on every face in the shop.
+ */
+const CELL_FILL = 0.86;
 
 /** How far from its dot a point's letter is set, in squares. */
 const MARK_TO_EM = 0.42;
@@ -32,9 +55,23 @@ export function Grid({ block, metrics }: BlockProps<"grid">) {
   );
   if (cell <= 0) return null;
 
+  // How tall a row is, which is the square unless the grid says otherwise —
+  // and only one grid in the shop does. See `GridSpec.row`: everything a child
+  // measures against leaves it unsaid and gets squares by construction.
+  const rowHeight = Math.max(1, block.grid.row ?? cell);
+
   const width = columns * cell;
-  const height = rows * cell;
-  const size = Math.round(cell * CELL_TO_EM);
+  const height = rows * rowHeight;
+  // One size for every square, and it is the smallest any of them needs. Per
+  // cell would be arithmetically tidier and would print a header row with a
+  // different type size in each column, which reads as a mistake whether or not
+  // it is one.
+  const size = fits(
+    [...(cells ?? []), ...(answers ?? [])],
+    cell,
+    Math.round(Math.min(cell, rowHeight) * CELL_TO_EM),
+    faceOf(metrics.font),
+  );
 
   // How far off the edge of the drawing a numeral and a point's letter have to
   // stay. An `<svg>` clips to its viewBox and the outermost gridline of a plane
@@ -70,14 +107,14 @@ export function Grid({ block, metrics }: BlockProps<"grid">) {
           strokeWidth={HAIRLINE}
         />
       ))}
-      {count(rows + 1).map((row) => (
+      {count(rows + 1).map((line) => (
         <line
-          key={`r${row}`}
+          key={`r${line}`}
           className="sheet__rule sheet__rule--grid"
           x1={0}
           x2={width}
-          y1={row * cell}
-          y2={row * cell}
+          y1={line * rowHeight}
+          y2={line * rowHeight}
           strokeWidth={HAIRLINE}
         />
       ))}
@@ -95,8 +132,8 @@ export function Grid({ block, metrics }: BlockProps<"grid">) {
           <line
             x1={0}
             x2={width}
-            y1={origin.row * cell}
-            y2={origin.row * cell}
+            y1={origin.row * rowHeight}
+            y2={origin.row * rowHeight}
             className="sheet__rule sheet__rule--axis"
             strokeWidth={HEAVY}
           />
@@ -125,19 +162,19 @@ export function Grid({ block, metrics }: BlockProps<"grid">) {
               <Numbered
                 key={`x${column}`}
                 x={within(column * cell, half, width - half)}
-                y={(origin.row + 0.5) * cell}
+                y={(origin.row + 0.5) * rowHeight}
                 value={column - origin.column}
                 axis={axis}
                 size={size}
               />
             ))}
           {origin.column > 0 &&
-            count(rows + 1).map((row) => (
+            count(rows + 1).map((line) => (
               <Numbered
-                key={`y${row}`}
+                key={`y${line}`}
                 x={(origin.column - 0.5) * cell}
-                y={within(row * cell, half, height - half)}
-                value={origin.row - row}
+                y={within(line * rowHeight, half, height - half)}
+                value={origin.row - line}
                 axis={axis}
                 size={size}
               />
@@ -154,7 +191,7 @@ export function Grid({ block, metrics }: BlockProps<"grid">) {
           <circle
             className="sheet__dot"
             cx={mark.column * cell}
-            cy={mark.row * cell}
+            cy={mark.row * rowHeight}
             r={Math.max(1, Math.round(cell * 0.11))}
           />
           {/* Up and to the right of its dot, and turned inward where that would
@@ -164,7 +201,7 @@ export function Grid({ block, metrics }: BlockProps<"grid">) {
           <text
             className="sheet__cell"
             x={within(mark.column * cell + away, away, width - away)}
-            y={within(mark.row * cell - away, away, height - away)}
+            y={within(mark.row * rowHeight - away, away, height - away)}
             fontSize={Math.round(cell * 0.62)}
             textAnchor="middle"
             dominantBaseline="central"
@@ -180,18 +217,42 @@ export function Grid({ block, metrics }: BlockProps<"grid">) {
           second, so the blank grid and the wall chart are one build with
           `answers` flipped — the same mechanism as every ruled slot. */}
       {written(cells).map(([index, text]) => (
-        <Cell key={`c${index}`} {...{ index, text, columns, cell, size }} />
+        <Cell
+          key={`c${index}`}
+          {...{ index, text, columns, cell, rowHeight, size }}
+        />
       ))}
       {metrics.answers &&
         written(answers).map(([index, text]) => (
           <Cell
             key={`a${index}`}
             answered
-            {...{ index, text, columns, cell, size }}
+            {...{ index, text, columns, cell, rowHeight, size }}
           />
         ))}
     </svg>
   );
+}
+
+/**
+ * The size the squares' text is set at: the shared one, or what the widest of
+ * them will fit at.
+ *
+ * Declared rather than measured, the same way every other run of text on a
+ * sheet is (§4) — there is no DOM at build time to ask instead, and a size a
+ * browser worked out is a size no test can check. The mean advance is the
+ * face's own, so a heading that fits in the print face is not clipped in the
+ * dyslexic one.
+ */
+function fits(texts: string[], cell: number, size: number, face: Face): number {
+  return texts.reduce((smallest, text) => {
+    const advance = glyphAdvance(text, face);
+    if (text.length === 0 || advance <= 0) return smallest;
+    return Math.min(
+      smallest,
+      Math.floor((cell * CELL_FILL) / (text.length * advance)),
+    );
+  }, size);
 }
 
 /** The squares of a list that have something in them, with their positions. */
@@ -201,12 +262,13 @@ function written(cells: string[] | undefined): Array<[number, string]> {
   );
 }
 
-/** One numeral in the middle of its square. */
+/** One numeral — or one heading — in the middle of its square. */
 function Cell({
   index,
   text,
   columns,
   cell,
+  rowHeight,
   size,
   answered = false,
 }: {
@@ -214,6 +276,7 @@ function Cell({
   text: string;
   columns: number;
   cell: number;
+  rowHeight: number;
   size: number;
   answered?: boolean;
 }) {
@@ -221,7 +284,7 @@ function Cell({
     <text
       className={`sheet__cell${answered ? " sheet__cell--answered" : ""}`}
       x={((index % columns) + 0.5) * cell}
-      y={(Math.floor(index / columns) + 0.5) * cell}
+      y={(Math.floor(index / columns) + 0.5) * rowHeight}
       fontSize={size}
       textAnchor="middle"
       dominantBaseline="central"

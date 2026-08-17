@@ -563,10 +563,22 @@
 }
 
 /* A number line and a workspace are both a full row of their own under the
-   problem they belong to, rather than something beside it. */
+   problem they belong to, rather than something beside it.
+
+   The growth is scoped to that problem row, and the scoping is load-bearing.
+   `.sheet__problem` is a wrapping flex *row*, where `flex: 1 0 100%` means "a
+   line to yourself"; `.sheet__blocks` is a flex *column*, where the same
+   declaration means "take all the height that is going". A number line is now
+   both — an aid under a sum, and a block of its own on a reference sheet — and
+   unscoped, the reference strips stretched to fill the page and printed at six
+   times the height the layout arithmetic had reserved for them. */
 .sheet__workspace,
 .sheet__number-line {
   display: block;
+}
+
+.sheet__problem > .sheet__workspace,
+.sheet__problem > .sheet__number-line {
   flex: 1 0 100%;
 }
 

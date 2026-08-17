@@ -583,6 +583,33 @@ charts · award certificates · name tags and bookmarks · blank flashcards with
 cut lines · dice and spinner nets · memory-verse cards and a verse-of-the-week
 chart.
 
+**What shipped (PRINT26): the blank maths references.** `templates/charts.ts` —
+hundred charts blank and filled over a configurable range, number lines with the
+interval a parent sets, first- and four-quadrant coordinate grids, and
+place-value charts down to thousandths — on eight pages at `/printables/charts`,
+with the metric squares the paper shelf was missing beside them (1 cm and 5 mm
+graph, 1 cm dots, 1 cm isometric). Two things listed above are deliberately not
+in it: a **multiplication grid** is `/printables/multiplication-chart`, which is
+the times-table family with `style: "grid"` on it, and graph paper is the grid
+end of the paper shelf. Both are linked rather than rebuilt, for the reason a
+sight word to trace is a `HandwritingConfig` — a second family that drew a
+times-table square would be a second answer to what goes in square forty-two.
+
+The tier's own argument is what this family had to be held to. A worksheet can
+be marked, so a mistake on one is found; a reference sheet is counted along and
+trusted, and nothing on the page says when it is wrong. So every count is
+verified off the finished blocks and off the rendered markup rather than off the
+arithmetic that made them, and three of the failures were only visible in a
+browser: `chromeHeight` reserves a title row only if the _options_ it is handed
+carry one — a family that prints a title regardless and passes its config
+straight in builds a page an inch too long, and `.sheet` is `min-height`, so
+nothing overflows on screen; `flex: 1 0 100%` means "a line to yourself" inside
+`.sheet__problem` and "take all the height going" inside `.sheet__blocks`, which
+is a number line at six times its declared height; and a spacer between two
+blocks buys the flex column a second gap to pay for. `GridSpec.row` is the one
+new field, set by the one chart whose rows are not squares — everything a child
+measures against leaves it unsaid and gets squares by construction.
+
 ### Not ours to fake
 
 Science content, social studies content, history, and anything with a scope and

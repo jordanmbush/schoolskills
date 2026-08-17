@@ -2,9 +2,12 @@
  * A line to count along.
  *
  * The first thing a child adds with, before they add: 6 + 3 is six hops and
- * then three more. So it is a drawing aid attached to a problem rather than a
- * block of its own — the problem-grid block is the shared primitive every
- * maths family reuses, and a line under a sum is part of the sum.
+ * then three more. It is that twice over — a drawing aid under a sum, where
+ * the problem grid is the shared primitive and a line under a problem is part
+ * of the problem, and a `numberline` block of its own on a reference sheet,
+ * where the line *is* the paper. One set of numbers either way: the strip a
+ * child cuts out and the line under a sum are drawn by one renderer from one
+ * piece of arithmetic, so a tick lands in the same place on both.
  *
  * Where the ticks go is arithmetic, so it lives here and not in the renderer,
  * for the same reason `ruleLines` does: a spacing that a browser worked out is
@@ -129,7 +132,39 @@ export function numberLine(low: number, high: number, width: Mil): NumberLine {
   return lineAt(low, high, width, STEPS[STEPS.length - 1], 1);
 }
 
-/** Every labelled value on a line, left to right. */
+/**
+ * How many ticks apart the numbers under a line have to be to fit.
+ *
+ * One where every tick can keep its number, which is the answer for every line
+ * `numberLine` above chooses — it picks the spacing against the width for
+ * exactly that reason. A *reference* line is the other way round: the interval
+ * is what a parent asked for and cannot be moved, so a line marked every 1 from
+ * 0 to 100 keeps its hundred and one ticks and thins the numerals out until
+ * they stop touching.
+ *
+ * Only ever a multiple a child would count in, and always a divisor of the
+ * whole run where one will do, so the last tick keeps its number: a line to 100
+ * labelled every 3 would end on 99 with nothing under the end of it.
+ */
+export function labelEvery(line: NumberLine): number {
+  const marks = ticks(line);
+  if (marks.length < 2) return 1;
+  const usable = Math.max(0, line.width - LINE_INSET * 2);
+  const gap = usable / (marks.length - 1);
+  const steps = marks.length - 1;
+
+  for (const every of STEPS) {
+    if (steps % every !== 0) continue;
+    const shown = marks.filter((_, index) => index % every === 0);
+    if (gap * every >= labelRoom(shown)) return every;
+  }
+  // Nothing divides the run and still fits, so keep the two ends and the ticks
+  // between them bare. A number under every tick that overlaps its neighbour is
+  // a line nobody can read; two numbers and a scale is still a number line.
+  return steps;
+}
+
+/** Every value a tick stands at, left to right. */
 export function ticks(line: NumberLine): number[] {
   if (line.step <= 0 || line.to <= line.from) return [];
   const count = Math.floor((line.to - line.from) / line.step) + 1;

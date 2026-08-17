@@ -102,7 +102,7 @@ export type TraceStyle =
   "solid" | "dim" | "hollow" | "dotted" | "dashed" | "none";
 
 /**
- * A line to count along, under a problem.
+ * A line to count along, under a problem — or, on its own, the whole sheet.
  *
  * Two numbers and a tick spacing, which is all a number line is. The width is
  * declared here rather than measured by the renderer, for the same reason a
@@ -113,10 +113,23 @@ export type TraceStyle =
 export type NumberLine = {
   from: number;
   to: number;
-  /** A tick every `step`, each one labelled. */
+  /** A tick every `step`. */
   step: number;
   /** How wide it is drawn. */
   width: Mil;
+  /**
+   * A number under every `label`th tick, the rest left as bare ticks. Absent
+   * means every tick is labelled, which is what a line under a problem does.
+   *
+   * The one thing a *reference* number line needs that a counting aid under a
+   * sum does not. A line marked every 1 from 0 to 100 is the sheet a Year 2
+   * teacher asks for, and a hundred and one numerals across seven and a half
+   * inches is a smudge — so the ticks stay where the interval says and the
+   * numbers thin out to what will fit. Which ticks keep their number is
+   * arithmetic (`labelEvery` in numberline.ts), not a guess made in a browser,
+   * because a spacing a browser worked out is a spacing no test can check.
+   */
+  label?: number;
 };
 
 /**
@@ -320,8 +333,25 @@ export type GridSpec = {
   kind: "graph" | "chart" | "coordinate";
   columns: number;
   rows: number;
-  /** The square. */
+  /** The square: how wide a column is, and how tall a row is. */
   cell: Mil;
+  /**
+   * How tall a row is, where a row is not a square.
+   *
+   * Absent on every grid a child measures against — graph paper, a hundred
+   * chart, a coordinate plane — because a square that is not square is a grid
+   * that lies about its own geometry, and §4 is about nothing else. It is here
+   * for the one chart whose columns are a *heading* rather than a unit: a
+   * place-value chart's columns are as wide as the word "Hundreds" and its rows
+   * are one digit tall, and squaring them would either print a chart three
+   * inches wide on a page eight inches wide or one eight rows long that runs
+   * off the bottom.
+   *
+   * So: stated, and stated only by the family that means it. A renderer reads
+   * `row ?? cell`, which is what keeps every other grid square by construction
+   * rather than by remembering.
+   */
+  row?: Mil;
   /** What's printed in the squares, row-major. Empty for a blank grid. */
   cells?: string[];
   /**
@@ -607,6 +637,18 @@ export type Block =
     }
   | { kind: "clock"; faces: ClockFace[] }
   | { kind: "shapes"; figures: Figure[] }
+  /**
+   * A number line on its own, rather than under a sum.
+   *
+   * A block of its own for the reason `wordshapes` is one: there is no problem
+   * here. A `problems` block numbers what is in it — "1." against a strip a
+   * child is going to cut out and stick on a desk is a question nobody asked —
+   * and a reference line is the sheet rather than an aid beside something else.
+   * The line itself is the same `NumberLine` a problem carries, drawn by the
+   * same renderer, so the ticks on a wall strip land exactly where the ticks
+   * under a sum do.
+   */
+  | { kind: "numberline"; line: NumberLine }
   /** Where to cut, for cards and bookmarks. */
   | { kind: "cutline" }
   | { kind: "spacer"; height: Mil };
@@ -798,6 +840,75 @@ export type BlankConfig = SheetOptions & { kind: "blank" };
  * which midline, whether there is room for a `g`.
  */
 export type PaperConfig = SheetOptions & { kind: "paper"; rule: Rule };
+
+/**
+ * The blank maths references: a hundred chart, a number line, a coordinate
+ * grid, a place-value chart.
+ *
+ * The second family in the "templates" tier (§11) and the second one that is
+ * geometry rather than generation — which is why it sits beside `PaperConfig`
+ * rather than in `maths/`. Nothing here is drawn from a seed and nothing here
+ * has a right answer to check, save the one that does: a hundred chart printed
+ * blank is filled in, and the filled chart is its key.
+ *
+ * Every style-specific field is optional and every one of them is clamped to
+ * what the paper holds, because all four arrive from the same places a saved
+ * sheet does — a bookmarked link, a config written last term. `chartPlan` in
+ * `templates/charts.ts` is the single place they are resolved.
+ */
+export type ChartStyle =
+  "hundred" | "number-line" | "coordinate" | "place-value";
+
+export type ChartConfig = SheetOptions & {
+  kind: "chart";
+  style: ChartStyle;
+  /**
+   * The hundred chart's numbers, ends included.
+   *
+   * Both ends, rather than a count from one, because the two charts a parent
+   * asks for are 1–100 and 0–99 and the argument between them is a real one:
+   * a chart that starts at nought puts every multiple of ten at the end of its
+   * own row, and a chart that starts at one puts them under each other in the
+   * last column. Neither is wrong and a child is usually taught one of them.
+   */
+  range?: { min: number; max: number };
+  /**
+   * Whether the numbers are printed, or left for the child to write in.
+   *
+   * One switch and two sheets: the wall chart, and the exercise whose answer
+   * key is the wall chart. The numbers are computed either way — which is what
+   * makes the pair one build with `answers` flipped rather than two families.
+   */
+  filled?: boolean;
+  /** The number line: how far apart one tick is from the next. */
+  step?: number;
+  /**
+   * The number line: how many strips down the page, to cut apart.
+   *
+   * `strips` rather than the `count` every generating family carries, because
+   * it is not the same question. A count is how many *problems* were asked for
+   * and is the number a sheet is marked out of; this is how many copies of one
+   * line are printed, and there is nothing on any of them to mark.
+   */
+  strips?: number;
+  /** The coordinate grid: how far the axes run from nought. */
+  span?: number;
+  /** And whether it has negative numbers on it: four quadrants, or one. */
+  quadrants?: number;
+  /**
+   * The place-value chart's columns, as powers of ten: 2 is hundreds, 0 is
+   * ones, −2 is hundredths.
+   *
+   * The exponent rather than the name, because the exponent is what the chart
+   * *is*: the columns are consecutive powers of ten, the decimal point goes
+   * between 0 and −1 wherever both are present, and every name printed at the
+   * head of a column is looked up from it. A pair of names would let a chart be
+   * configured with tens beside thousandths.
+   */
+  places?: { largest: number; smallest: number };
+  /** The place-value chart: how many rows there are to write numbers in. */
+  rows?: number;
+};
 
 /* ── Arithmetic ────────────────────────────────────────────────────────────
    The first *generated* family: the one where a sheet is not a shape to write
@@ -1969,6 +2080,7 @@ export type PhonicsConfig = SheetOptions & {
 export type SheetConfig =
   | BlankConfig
   | PaperConfig
+  | ChartConfig
   | ArithmeticConfig
   | MultiplicationConfig
   | FractionConfig

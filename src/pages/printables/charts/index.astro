@@ -1,0 +1,186 @@
+---
+import Content from "@/layouts/Content.astro";
+import AdSlot from "@/components/site/AdSlot.astro";
+import { CHART_SHEETS, chartShelf, pathFor } from "../_charts";
+
+/**
+ * The charts-and-grids hub — a peer of `/printables/math`,
+ * `/printables/spelling`, `/printables/grammar`, `/printables/phonics`,
+ * `/printables/handwriting`, `/printables/cursive` and `/printables/bible`.
+ *
+ * A listing rather than a sheet, like the other hubs, and that is the right
+ * split: nobody searches for "printable list of maths charts". What it is for
+ * is the two jobs a hub does — giving a parent who arrived on
+ * `/printables/charts/hundred-chart` somewhere to go next, and giving the eight
+ * pages a crawlable parent that says what they have in common.
+ *
+ * What they have in common is worth a section of its own here, because it is
+ * the argument for the whole shelf: a reference sheet is the one kind of
+ * printable whose only job is to be *right*. There are no problems on it to get
+ * wrong and no answer key to check — so the hundred squares have to be a
+ * hundred, the ticks have to be evenly spaced, and the heading has to sit over
+ * the column it names.
+ */
+const title =
+  "Free printable maths charts, number lines and grids | School Skills";
+const description =
+  "Printable reference sheets: hundred charts blank and filled, number lines with the interval you choose, first-quadrant and four-quadrant coordinate grids, and place-value charts down to thousandths. Real inches, drawn as ink so they print — free, no account, no download.";
+
+const groups = chartShelf();
+---
+
+<Content
+  title={title}
+  description={description}
+  world="paper"
+  jsonLd={{
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name: "Printable maths charts and grids",
+    description,
+    url: "https://schoolskills.app/printables/charts",
+    isAccessibleForFree: true,
+    inLanguage: "en",
+    hasPart: CHART_SHEETS.map((sheet) => ({
+      "@type": "LearningResource",
+      name: sheet.heading,
+      url: `https://schoolskills.app${pathFor(sheet)}`,
+      learningResourceType: "Reference sheet",
+      teaches: sheet.teaches,
+      typicalAgeRange: sheet.ages,
+      isAccessibleForFree: true,
+    })),
+  }}
+>
+  <header class="hero wrap">
+    <p class="hero__eyebrow">
+      <span class="hero__world">The Print Shop</span>
+      Charts and grids
+    </p>
+    <h1 class="hero__title">The references a lesson is done against</h1>
+    <p class="hero__lead">
+      {CHART_SHEETS.length} sheets with no problems on them: hundred charts blank
+      and filled, number lines at the interval you choose, coordinate grids with and
+      without negative numbers, and place-value columns down to thousandths.
+    </p>
+    <p class="hero__note">Free &middot; no account &middot; no download</p>
+  </header>
+
+  {
+    /*
+      What exists, first — before the page explains itself. Somebody who came
+      looking for a hundred chart should be one link from a hundred chart, and
+      the argument about geometry reads better after you have seen one.
+    */
+  }
+  <section class="band band--tight wrap">
+    <h2 class="h2">On the shelf now</h2>
+    <p class="h2__sub">
+      Each of these is a page that is itself the sheet &mdash; open it, press
+      print, and that is the whole of it. Only the blank hundred chart has a
+      second page, because it is the only one of the eight that withholds
+      anything.
+    </p>
+    {
+      groups.map((group) => (
+        <>
+          <h3 class="h2 h2--next">{group.label}</h3>
+          <p class="h2__sub">{group.blurb}</p>
+          <div class="prose">
+            <ul>
+              {group.sheets.map((sheet) => (
+                <li>
+                  <a href={pathFor(sheet)}>{sheet.name}</a> &mdash;{" "}
+                  {sheet.summary}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </>
+      ))
+    }
+  </section>
+
+  <div class="wrap"><AdSlot name="article" /></div>
+
+  <section class="band band--inset">
+    <div class="wrap">
+      <h2 class="h2">A reference sheet only has to be right</h2>
+      <p class="h2__sub">
+        There is nothing on any of these pages to answer, which means there is
+        nowhere for a mistake in one to hide.
+      </p>
+      <div class="prose">
+        <p>
+          A worksheet can be marked. A chart cannot: a child measures against
+          it, counts along it and trusts it, and if a number line has a hundred
+          intervals and a hundred ticks then the sheet is wrong and nothing on
+          the page will say so. So the counting here is arithmetic rather than
+          appearance &mdash; a line to 20 has twenty-one ticks, a hundred chart
+          has ten rows of ten with nothing missing off the end, a grid that runs
+          to 10 has eleven gridlines each way, and a heading is printed inside
+          the column it names rather than laid out beside it.
+        </p>
+        <p>
+          The lengths are in real units for the same reason. Everything else on
+          this site scales with the age of the child using it; a sheet of paper
+          must not, because three quarters of an inch is three quarters of an
+          inch or it is nothing. And every rule is drawn as ink rather than as a
+          background colour, because browsers throw background colour away when
+          printing unless somebody has ticked a box in the print dialog &mdash;
+          which is how a perfectly good chart comes out of the printer as a page
+          of empty squares.
+        </p>
+        <p>
+          What is a setting is the sheet itself. The range on a chart, the
+          interval on a line, how far the axes run, which places the columns
+          hold: all four are controls in the builder, so a number line every 2
+          to 30 or a chart from 101 to 200 is the same page with one number
+          moved. There are eight pages here rather than eighty because eight is
+          what a parent actually asks for, and the rest is a stepper.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="band band--tight wrap">
+    <h2 class="h2">And the two that live next door</h2>
+    <div class="prose">
+      <p>
+        A <a href="/printables/multiplication-chart">multiplication chart</a> is on
+        the maths shelf, blank with the completed twelve-by-twelve square on the page
+        behind it &mdash; it is the times-table family with the grid switched on rather
+        than a chart of its own.{" "}
+        <a href="/printables/graph-paper">Squared</a>,{" "}
+        <a href="/printables/dot-grid-paper">dotted</a> and{" "}
+        <a href="/printables/isometric-graph-paper">isometric</a> paper is on the
+        paper shelf, where everything comes on both Letter and A4: a quarter-inch
+        square scaled to fit whatever was in the tray is no longer a quarter-inch
+        square.
+      </p>
+    </div>
+    <div class="hero__actions">
+      <a class="cta" href="/printables/math">Maths worksheets</a>
+      <a class="cta cta--quiet" href="/printables/make"
+        >Open the sheet builder</a
+      >
+    </div>
+  </section>
+
+  <section class="band band--tight wrap">
+    <h2 class="h2">Your child&rsquo;s name is not in the file</h2>
+    <div class="prose">
+      <p>
+        Where a sheet here has a <em>Name:</em> line at all, it is printed blank and
+        filled in with a pencil. No account is needed to print anything, nothing is
+        uploaded, and a sheet you send to another family carries the settings you
+        chose and nothing else &mdash; see <a href="/privacy"
+          >what we don&rsquo;t collect</a
+        >.
+      </p>
+    </div>
+    <div class="hero__actions">
+      <a class="cta cta--quiet" href="/printables">Back to The Print Shop</a>
+    </div>
+  </section>
+</Content>
