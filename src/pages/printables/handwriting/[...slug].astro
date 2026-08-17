@@ -123,11 +123,12 @@ const group = groups.find((entry) => entry.id === sheet.group)!;
     <div class="prose">
       {sheet.notes.map((note) => <p>{note}</p>)}
       <p>
-        The rules are drawn as real strokes at real sizes, and the letters are
-        set to them: the tallest letter stands on the baseline and reaches the
-        top line, because the type size is worked out from the ruling and from
-        the font&rsquo;s own measured proportions rather than picked to look
-        about right. Put a ruler on it. The ruling is the size it says it is.
+        The rules are drawn as real strokes at real sizes, and what is written
+        is set to them: the tallest thing on a line stands on the baseline and
+        reaches the top line, whether that is an ascender, a capital or a
+        numeral. The type size is worked out from the ruling and from the
+        font&rsquo;s own measured proportions rather than picked to look about
+        right. Put a ruler on it. The ruling is the size it says it is.
       </p>
       {sheet.credit && <p class="aside">{sheet.credit}</p>}
     </div>

@@ -1375,6 +1375,50 @@ describe("trace styles", () => {
     expect(new Set(sizes).size).toBe(3);
   });
 
+  it("keeps a tail out of the box without letting the ruling out of it", () => {
+    // A trace row is exactly one repeat tall, so `overflow: visible` is what
+    // stops a `g` printing with its loop cut off at the baseline. It also
+    // un-clips the row sideways, which two things rely on: the isometric
+    // ruling draws its diagonals half a side past each edge (`Ruling.tsx`) on
+    // the understanding that a viewport takes them off again, and a word wider
+    // than the declared mean advance would otherwise run past the margin.
+    //
+    // The AC names this combination — every ruling of PRINT04 with every trace
+    // style of PRINT15 — so it is the one drawn here.
+    const row = render(
+      sheet({
+        blocks: [
+          {
+            kind: "trace",
+            rule: { style: "isometric" },
+            rows: [{ cells: [{ text: "gg", style: "dotted" }] }],
+          },
+        ],
+      }),
+    );
+
+    // A second viewport inside the row's own: as wide as the row exactly, and
+    // taller than it at both ends. The overhang is vertical and only vertical.
+    const inner = /<svg x="0" y="(-?\d+)" width="(\d+)" height="(\d+)"/.exec(
+      row,
+    );
+    expect(inner, "the trace row nests a clipping viewport").not.toBeNull();
+    const [, y, width, height] = (inner ?? []).map(Number);
+    expect(y).toBeLessThan(0);
+    expect(height).toBeGreaterThan(-2 * y);
+    // The row's own box, in the same mil the viewBox is written in.
+    const outer = /viewBox="0 0 (\d+) (\d+)"/.exec(
+      row.slice(row.indexOf("sheet__ink--trace")),
+    );
+    expect(width).toBe(Number(outer?.[1]));
+
+    // And the diagonals really do run outside it, which is why the clip is
+    // load-bearing rather than decorative.
+    const diagonals = [...row.matchAll(/<line[^>]*\sx1="(-?\d+)"/g)] //
+      .map((match) => Number(match[1]));
+    expect(Math.min(...diagonals)).toBeLessThan(0);
+  });
+
   it("paints them with ink rather than with a background", () => {
     // The failure this guards is invisible on screen: a style that leaned on
     // `background` looks right in the preview and prints as nothing.

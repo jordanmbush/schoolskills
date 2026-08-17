@@ -4,9 +4,12 @@
  * Four questions, and every one of them is on the page rather than behind a
  * mode: which paper, what is written on it, how the model is drawn, and how
  * many times each thing is written before the child is left on their own. The
- * §17 line "ruling and rule size · line spacing" is the first of those, and it
- * is the same control the paper family uses — on ruled paper the spacing
- * between the lines *is* the ruling.
+ * first of those is `RulingControls`, the same control the paper family uses —
+ * literally the same one, because on ruled paper the spacing between the lines
+ * *is* the ruling and there is no version of that question specific to
+ * handwriting. All it passes is a shorter list: blank paper has no pitch, so it
+ * has no rows to write on, and offering it would name a ruling the sheet then
+ * quietly refuses (`ruleOf`).
  *
  * What is written changes with the style and nothing else does, which is why
  * only one content control is on screen at a time: a word list on a sheet of
@@ -14,13 +17,10 @@
  * than a missing one.
  */
 import { MAX_REPEATS } from "@/engine/sheets/writing/handwriting";
-import { RULINGS, rulingOf } from "@/engine/sheets/paper";
 import type {
   HandwritingConfig,
   HandwritingStyle,
   LetterCase,
-  Midline,
-  RuleStyle,
   TraceStyle,
 } from "@/engine/sheets/types";
 
@@ -33,7 +33,14 @@ import {
 } from "@/components/ui/kit";
 import { parseWords } from "@/services/decks";
 
-import { Choice, WordList, opt, type PanelProps } from "./parts";
+import {
+  Choice,
+  RULED_STYLES,
+  RulingControls,
+  WordList,
+  opt,
+  type PanelProps,
+} from "./parts";
 
 const STYLES = [
   opt<HandwritingStyle>("letters", "Letters"),
@@ -58,24 +65,10 @@ const TRACES = [
   opt<TraceStyle>("none", "None", "a model, then empty lines"),
 ];
 
-const RULES = Object.values(RULINGS).map((ruling) =>
-  opt<RuleStyle>(ruling.id, ruling.label),
-);
-
-const MIDLINES = [
-  opt<Midline>("dashed", "Dashed", "the usual"),
-  opt<Midline>("solid", "Solid", "youngest"),
-  opt<Midline>("none", "None", "oldest"),
-];
-
 export function HandwritingPanel({
   config,
   set,
 }: PanelProps<HandwritingConfig>) {
-  const ruling = rulingOf(config.rule);
-  const rule = (patch: Partial<HandwritingConfig["rule"]>) =>
-    set({ rule: { ...config.rule, ...patch } });
-
   return (
     <>
       <Choice
@@ -116,30 +109,11 @@ export function HandwritingPanel({
         </Field>
       )}
 
-      <Choice
-        label="Ruling and line spacing"
-        value={config.rule.style}
-        onChange={(style) => rule({ style })}
-        options={RULES}
-        hint="Handwriting sizes are named by the space between one set of lines and the next."
+      <RulingControls
+        rule={config.rule}
+        onChange={(patch) => set({ rule: { ...config.rule, ...patch } })}
+        options={RULED_STYLES}
       />
-
-      {ruling.handwriting && (
-        <>
-          <Choice
-            label="Midline"
-            value={config.rule.midline ?? "dashed"}
-            onChange={(midline) => rule({ midline })}
-            options={MIDLINES}
-          />
-          <Checkbox
-            label="Room for descenders"
-            hint="Space below the baseline for the tail of a g."
-            checked={config.rule.descender === true}
-            onChange={(descender) => rule({ descender })}
-          />
-        </>
-      )}
 
       <Choice
         label="How the model is drawn"

@@ -23,7 +23,6 @@
  * `@page` is a document rule, so the two cannot share a page — hence a route
  * each, exactly as `_catalog.ts` argues.
  */
-import { WORD_LISTS, listWords } from "@/engine/decks/wordlists";
 import { DEFAULT_FONT_PT } from "@/engine/sheets/paper";
 import { encodeSharedSheet } from "@/engine/sheets/share";
 import type {
@@ -32,6 +31,9 @@ import type {
   Paper,
   PaperSize,
 } from "@/engine/sheets/types";
+// The same twelve words the bench opens its own sight-word sheet on. Sliced in
+// one place so the catalog page and the builder default cannot drift apart.
+import { STARTER_WORDS } from "@/games/printshop/defaults";
 
 import { STOCKS, type Stock } from "./_catalog";
 
@@ -91,16 +93,6 @@ const paperOf = (size: PaperSize): Paper => ({
  * there is nowhere in a config to put a value for either.
  */
 const FIELDS: HeaderField[] = ["name", "date"];
-
-/**
- * The first sight words, which is what a first handwriting list is made of.
- *
- * Taken from the list the jungle already ships rather than typed out again, so
- * the words a child is racing on screen are the words they are writing on
- * paper — and twelve of them, because a page of forty words written three times
- * each is a page that holds nothing else.
- */
-const STARTER_WORDS = listWords(WORD_LISTS[0]).slice(0, 12);
 
 /**
  * The first verse of "The Star", Jane Taylor, 1806 — the poem everyone knows

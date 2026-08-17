@@ -96,11 +96,14 @@ describe("what goes on a handwriting sheet", () => {
   });
 
   it("writes every numeral from nought to nine", () => {
-    // Ten things at four repeats each is two to a row on inch-high paper —
+    // Ten things at three repeats each is two to a row on inch-high paper —
     // which is the point of checking it rather than assuming it, because one
-    // more repeat drops the last two numerals off the bottom of the page.
+    // more repeat drops the last two numerals off the bottom of the page. A
+    // numeral that fills a 1-inch rule's writing space is 0.47in wide at
+    // Andika's mean advance (`Face.figure`, `Face.advance`), so four of them
+    // and their air is 3.79in and two groups no longer fit across 7.5in.
     const rule: Rule = { style: "hand-1", midline: "solid", descender: true };
-    const drawn = written(rowsOf({ style: "numbers", rule, repeats: 4 }));
+    const drawn = written(rowsOf({ style: "numbers", rule, repeats: 3 }));
     for (const numeral of "0123456789") {
       expect(drawn, numeral).toContain(numeral);
     }
@@ -228,6 +231,12 @@ describe("trace, copy, then write it alone", () => {
     expect(instructionOf(config({ trace: "solid", progression: false }))).toBe(
       "Write each letter.",
     );
+    // Nothing to copy either: `trace: "none"` with the progression off draws
+    // no model anywhere, so the sheet is blank ruled paper and must not tell a
+    // child to copy something that was never printed.
+    expect(instructionOf(config({ trace: "none", progression: false }))).toBe(
+      "Write each letter.",
+    );
     expect(instructionOf(config({ style: "passage", repeats: 3 }))).toBe(
       "Trace each line, then write it on the line below.",
     );
@@ -338,6 +347,54 @@ describe("a ⅝ rule under a ruler", () => {
       sizes.add(em);
     }
     expect(sizes.size).toBe(Object.keys(FACES).length);
+  });
+
+  it("puts a capital on the top line when a capital is the tallest thing", () => {
+    // The claim the capitals page makes and invites a reader to measure. The
+    // em is fixed to the tallest thing the sheet writes, and on a sheet of
+    // nothing but capitals that is a capital rather than an ascender — so
+    // sizing it off `ascent` would leave every capital a tenth of the writing
+    // space short of the line the page says it starts on.
+    const rule: Rule = {
+      style: "hand-3-4",
+      midline: "dashed",
+      descender: true,
+    };
+    const writing = writingSpace(rule);
+    for (const face of Object.values(FACES)) {
+      const { em } = handwritingLayout(
+        config({ rule, font: face.id, letters: "upper" }),
+        1,
+      );
+      expect(Math.abs(em * face.capHeight - writing), face.family) //
+        .toBeLessThanOrEqual(1);
+    }
+
+    // And a numeral on a sheet of nothing but numerals, which is not the same
+    // number: OpenDyslexic's digits are a tenth shorter than its capitals.
+    for (const face of Object.values(FACES)) {
+      const { em } = handwritingLayout(
+        config({ rule, font: face.id, style: "numbers" }),
+        1,
+      );
+      expect(Math.abs(em * face.figure - writing), face.family) //
+        .toBeLessThanOrEqual(1);
+    }
+  });
+
+  it("goes back to the ascender the moment a small letter is on the row", () => {
+    // The other half of it. A row cannot put a capital and an `l` on the same
+    // line, and an ascender through the top rule is the worse of the two
+    // misses — so `Aa` is sized off the ascender and the capital rides low.
+    const rule: Rule = {
+      style: "hand-3-4",
+      midline: "dashed",
+      descender: true,
+    };
+    const both = handwritingLayout(config({ rule, letters: "both" }), 1);
+    const upper = handwritingLayout(config({ rule, letters: "upper" }), 1);
+    expect(both.em * FACES.print.ascent).toBeCloseTo(writingSpace(rule), -1);
+    expect(upper.em).toBeGreaterThan(both.em);
   });
 
   it("fits a wider face on the same line by writing fewer of them", () => {

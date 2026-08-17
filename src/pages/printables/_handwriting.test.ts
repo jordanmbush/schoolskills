@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 
 import { answerKey, buildSheet } from "@/engine/sheets";
 import type { HandwritingConfig, TraceRow } from "@/engine/sheets/types";
+import { MODELLED } from "@/engine/sheets/writing/handwriting";
 
 import { PAPER_SHEETS, STOCKS, pathFor as paperPath } from "./_catalog";
 import { MATHS_SHEETS, pathFor as mathsPath } from "./_maths";
@@ -186,9 +187,7 @@ describe("the sheet on a catalog page", () => {
       expect(styles.has("solid"), `${sheet.slug} has a model`).toBe(true);
       expect(styles.has("none"), `${sheet.slug} has an empty place`).toBe(true);
       expect(
-        [...styles].some((style) =>
-          ["dim", "hollow", "dotted", "dashed"].includes(style),
-        ),
+        [...styles].some((style) => MODELLED.has(style)),
         `${sheet.slug} has something to trace`,
       ).toBe(true);
     }

@@ -42,13 +42,21 @@ const TABLES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 const DENOMINATORS = [2, 3, 4, 5, 6, 8, 10, 12];
 
 /**
- * A list to open the spelling family on, from the shipped sight words.
+ * The first sight words: what a first word list is made of, wherever one is
+ * needed.
  *
- * Twelve rather than the whole list, because the sheet is a starting point
- * somebody replaces rather than the sheet they came for — and a page of forty
- * words written three times each is a page that fits nothing else.
+ * Taken from the list the jungle already ships rather than typed out again, so
+ * the words a child is racing on screen are the words they are writing on
+ * paper. Twelve rather than the whole list, because a page of forty words
+ * written three times each is a page that fits nothing else — and because the
+ * sheet is a starting point somebody replaces rather than the sheet they came
+ * for.
+ *
+ * Exported because the catalog's own sight-word sheet is meant to be the sheet
+ * the bench opens on (`pages/printables/_handwriting.ts`), and two slices of
+ * the same list are two lists that can quietly stop matching.
  */
-const STARTER_WORDS = listWords(WORD_LISTS[0]).slice(0, 12);
+export const STARTER_WORDS = listWords(WORD_LISTS[0]).slice(0, 12);
 
 /**
  * A passage to open the copywork style on.

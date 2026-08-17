@@ -7,8 +7,10 @@
  * they were taught to write between two lines by somebody who will notice. So
  * everything here is geometry: the rows are one repeat of the ruling apart
  * because that is what the ruling says, and the model that sits on them is
- * sized off the face's own measured ascent (`faces.ts`) rather than off the
- * body type.
+ * sized off the face's own measured proportions (`faces.ts`) rather than off
+ * the body type — off whichever of them the tallest thing on the sheet is
+ * drawn to, so a page of capitals reaches the top line as surely as a page of
+ * `Aa` does.
  *
  * **One progression, two directions.** A row is `["solid", "dotted", "none"]` —
  * a model to trace, a trace, and the place where the child is on their own —
@@ -150,8 +152,9 @@ export function handwritingWords(config: HandwritingConfig): string[] {
  * A passage broken into lines that fit the ruling.
  *
  * The family's job rather than the renderer's, because there is nothing to
- * measure in (§4): `Copywork` renders one line of text per repeat of the
- * ruling, so where a verse breaks has to be decided here or not at all. A
+ * measure in (§4): a row is one repeat of the ruling and holds one line of a
+ * passage — `TracedRow` draws what it is handed and never rewraps it — so
+ * where a verse breaks has to be decided here or not at all. A
  * newline in the source is a break the author asked for and is kept; everything
  * else breaks at the last space before the paper runs out. A word longer than a
  * whole line gets one of its own, and `fittedEm` sets it small enough to reach
@@ -180,8 +183,20 @@ export function wrapPassage(text: string, characters: number): string[] {
 
 /* ── The progression ───────────────────────────────────────────────────── */
 
-/** The four styles that are a model to follow rather than the child's own. */
-const OUTLINED = new Set<TraceStyle>(["dim", "hollow", "dotted", "dashed"]);
+/**
+ * The four styles that are a model to follow rather than the child's own.
+ *
+ * Exported because two suites check a sheet against it and a third list would
+ * be a third chance to disagree. Named for what it means here rather than for
+ * how it is drawn: `Traced.tsx` has its own `STROKED`, which is a *different*
+ * set — `dim` is a model but it is a filled shape, not an outline.
+ */
+export const MODELLED = new Set<TraceStyle>([
+  "dim",
+  "hollow",
+  "dotted",
+  "dashed",
+]);
 
 /**
  * How each repeat of one thing is drawn: trace → copy → write.
@@ -241,6 +256,12 @@ export type HandwritingLayout = {
  * mean advance it is counted in is the face's own (`faces.ts`), because
  * OpenDyslexic is half as wide again as Andika and one shared guess would push
  * a word off the end of the line in one of them.
+ *
+ * The em is worked out against everything the sheet writes rather than against
+ * one row, and that is the conservative direction: a page of capitals is set
+ * larger than a page of `Aa` on the same ruling (`glyphHeight`), so measuring
+ * the packing off the whole page can only reserve more room per group than any
+ * one row goes on to need.
  */
 export function handwritingLayout(
   config: HandwritingConfig,
@@ -252,7 +273,7 @@ export function handwritingLayout(
   // mark out of anything.
   const box = sheetBlockBox(headerOf(config));
   const face = faceOf(config.font);
-  const em = glyphEm(writingSpace(rule), face);
+  const em = glyphEm(writingSpace(rule), face, writtenOf(config));
   const rows = ruleCapacity(box.height, rule);
   const times = traceStyles(config).length;
 
@@ -288,6 +309,16 @@ function contentOf(config: HandwritingConfig): string[] {
       return own(ALPHABETS, config.letters ?? "both", ALPHABETS.both);
   }
 }
+
+/**
+ * Every character the sheet will print, as one string.
+ *
+ * Only ever read by `glyphHeight`, which wants to know whether there is a
+ * lower-case letter, a capital or a numeral anywhere on the page — so the
+ * order it is joined in and the spaces between are beside the point.
+ */
+const writtenOf = (config: HandwritingConfig): string =>
+  config.style === "passage" ? (config.text ?? "") : contentOf(config).join("");
 
 /** The longest thing on the page, in characters. Never less than one. */
 const longestOf = (things: string[]): number =>
@@ -389,18 +420,24 @@ const NOUN: Record<HandwritingStyle, string> = {
  * sheet with nothing dotted on it never says "trace", and a sheet with no empty
  * place never promises one. The same rule the integers sheet follows when it
  * decides whether to mention powers.
+ *
+ * "Copy" needs a model as well as an empty place, which is the one that is easy
+ * to get wrong: `trace: "none"` with the progression off draws nothing at all,
+ * and a page of blank ruled lines headed "Copy each letter on your own" is
+ * asking a child to copy something that is not there.
  */
 export function instructionOf(config: HandwritingConfig): string {
   const noun = own(NOUN, config.style, NOUN.letters);
   const styles = traceStyles(config);
-  const traced = styles.some((style) => OUTLINED.has(style));
+  const traced = styles.some((style) => MODELLED.has(style));
+  const model = traced || styles.includes("solid");
   const alone = styles.includes("none");
   const where =
     config.style === "passage" ? "on the line below" : "on your own";
 
   if (traced && alone) return `Trace each ${noun}, then write it ${where}.`;
   if (traced) return `Trace each ${noun}.`;
-  if (alone) return `Copy each ${noun} ${where}.`;
+  if (model && alone) return `Copy each ${noun} ${where}.`;
   return `Write each ${noun}.`;
 }
 

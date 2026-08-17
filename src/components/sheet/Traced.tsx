@@ -21,15 +21,21 @@ import {
   type TraceInk,
 } from "@/engine/sheets/faces";
 import { ruledLines } from "@/engine/sheets/layout";
-import { rulePitch } from "@/engine/sheets/paper";
+import { rulePitch, writingSpace } from "@/engine/sheets/paper";
 import type { Mil, Rule, TraceCell, TraceStyle } from "@/engine/sheets/types";
 
 import { Ruling } from "./Ruling";
 import { inch } from "./units";
 import type { SheetMetrics } from "./metrics";
 
-/** The three styles that are an outline rather than a filled shape. */
-const OUTLINED: TraceStyle[] = ["hollow", "dotted", "dashed"];
+/**
+ * The three styles that are an outline rather than a filled shape.
+ *
+ * Not the same set as `MODELLED` in the handwriting family, and named apart
+ * from it for that reason: `dim` is a model to write over but it is drawn
+ * filled, so it belongs to that set and not to this one.
+ */
+const STROKED: TraceStyle[] = ["hollow", "dotted", "dashed"];
 
 export function Glyph({
   text,
@@ -52,7 +58,7 @@ export function Glyph({
   // is on their own. Nothing is drawn, and the space is still reserved.
   if (style === "none" || text === "") return null;
 
-  const outlined = OUTLINED.includes(style);
+  const outlined = STROKED.includes(style);
   // Solid and dim are filled shapes with no outline to break up, and hollow is
   // the outline unbroken — so only two of the five carry a pattern.
   const dashes: Partial<Record<TraceStyle, string>> = {
@@ -94,13 +100,17 @@ export type TracedCell = TraceCell;
  * holds two quite different type sizes (`faces.ts`).
  *
  * The rule fixed here is the top line: `glyphEm` sizes the em so the tallest
- * letter stands on the baseline and reaches it. That leaves the midline as a
- * consequence rather than a second constraint, and letter bodies clear it — by
- * 0.13 of the writing space in Andika, 0.16 in OpenDyslexic, 0.01 in Playwrite
- * (`Face.xHeight`, and a test that bounds it). Two lines cannot both be exact
- * unless the face was drawn to that ruling, and a body that overshoots the
- * midline is the right way round to miss: the child still has a line to write
- * up to, which they would not if the model stopped below it.
+ * thing *on this row* stands on the baseline and reaches it. Which of the
+ * face's heights that is depends on what is written — a row of capitals is set
+ * off `capHeight` and a row with an `l` on it off `ascent`, because a capital
+ * a tenth under the top line is a smaller error than an ascender through it
+ * (`glyphHeight`). That leaves the midline as a consequence rather than a
+ * second constraint, and letter bodies clear it — by 0.13 of the writing space
+ * in Andika, 0.16 in OpenDyslexic, 0.01 in Playwrite (`Face.xHeight`, and a
+ * test that bounds it). Two lines cannot both be exact unless the face was
+ * drawn to that ruling, and a body that overshoots the midline is the right
+ * way round to miss: the child still has a line to write up to, which they
+ * would not if the model stopped below it.
  */
 export function TracedRow({
   rule,
@@ -116,36 +126,38 @@ export function TracedRow({
   const lines = ruledLines({ x: 0, y: 0, width, height: pitch }, rule);
   const face = faceOf(metrics.font);
 
+  // A row is usually one word written four times, and sometimes three letters
+  // written four times each. Either way it is announced by what is on it and
+  // not by how many places it is written in — and it is sized by what is on it
+  // for the same reason.
+  const said = [...new Set(cells.map((entry) => entry.text))]
+    .filter((text) => text !== "")
+    .join(" ");
+
   // Where the letters sit, and how big they are. A handwriting rule states
   // both; a notebook rule states only the line, so the body size fills what is
-  // left above it.
+  // left above it. The writing space comes from the engine rather than from a
+  // second subtraction here (`writingSpace`), so the size the family reserved
+  // room for and the size that gets drawn cannot drift apart.
   const baseline = lines.find((line) => line.role === "base")?.y ?? pitch;
-  const top = lines.find((line) => line.role === "top")?.y ?? 0;
   const cell = cells.length > 0 ? Math.floor(width / cells.length) : width;
   const longest = cells.reduce(
     (most, one) => Math.max(most, one.text.length),
     0,
   );
   const size = Math.min(
-    glyphEm(baseline - top, face),
+    glyphEm(writingSpace(rule), face, said),
     fittedEm(cell, longest, face),
   );
   const ink = traceInk(size, face);
 
-  // A row is usually one word written four times, and sometimes three letters
-  // written four times each. Either way it is announced by what is on it and
-  // not by how many places it is written in.
-  const said = [...new Set(cells.map((entry) => entry.text))]
-    .filter((text) => text !== "")
-    .join(" ");
-
   return (
     <svg
-      // The modifier is what lets a tail out of the box. An SVG viewport
-      // clips by default, and a row is exactly one repeat tall — so on a
-      // ruling with no descender space a `g` would print with its tail cut off
-      // at the baseline, which is a worse model than one drawn through the
-      // line below. See `Face.descent`, and `.sheet__ink--trace` in sheet.css.
+      // The modifier is what lets a tail out of the box. An SVG viewport clips
+      // by default, and a row is exactly one repeat tall — so on a ruling with
+      // no descender space a `g` would print with its tail cut off at the
+      // baseline, which is a worse model than one drawn through the line
+      // below. See `Face.descent`, and `.sheet__ink--trace` in sheet.css.
       className="sheet__ink sheet__ink--trace"
       width={inch(width)}
       height={inch(pitch)}
@@ -153,18 +165,44 @@ export function TracedRow({
       role="img"
       aria-label={said === "" ? "A line to write on" : said}
     >
-      <Ruling rule={rule} box={metrics.box} sets={1} />
-      {cells.map((entry, index) => (
-        <Glyph
-          key={`${index}-${entry.text}`}
-          text={entry.text}
-          x={index * cell}
-          y={baseline}
-          size={size}
-          style={entry.style}
-          ink={ink}
-        />
-      ))}
+      {/*
+        A second viewport, one em taller than the row at each end and exactly
+        as wide as it.
+
+        Letting the row overflow is the *vertical* concession above, and it has
+        to stay vertical. Two things run off the sides otherwise: the isometric
+        ruling deliberately draws its diagonals half a side past each edge
+        (`Ruling.tsx`) on the understanding that the viewport takes them off
+        again, and `Face.advance` is a declared mean rather than a measurement,
+        so a wide word typed into the builder — `M` is 0.876em against a
+        declared 0.506 — can run past the margin the sheet reserved.
+
+        A nested `<svg>` clips to itself whatever the outer one does, and with
+        the viewBox restating the same rectangle the coordinates inside it are
+        the coordinates outside it, so nothing here has to move. An em of slack
+        clears the deepest tail any of the three faces draws (0.52em) twice
+        over.
+      */}
+      <svg
+        x={0}
+        y={-size}
+        width={width}
+        height={pitch + 2 * size}
+        viewBox={`0 ${-size} ${width} ${pitch + 2 * size}`}
+      >
+        <Ruling rule={rule} box={metrics.box} sets={1} />
+        {cells.map((entry, index) => (
+          <Glyph
+            key={`${index}-${entry.text}`}
+            text={entry.text}
+            x={index * cell}
+            y={baseline}
+            size={size}
+            style={entry.style}
+            ink={ink}
+          />
+        ))}
+      </svg>
     </svg>
   );
 }

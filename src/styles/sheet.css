@@ -226,7 +226,15 @@
    overhangs by four thousandths of an inch even on one that has (`faces.ts`).
    An SVG viewport clips by default, so the choice is between a model with its
    tail cut off at the baseline and one drawn through the line below. A child
-   writes the second of those, so the sheet prints it. */
+   writes the second of those, so the sheet prints it.
+
+   This gives up the clip in BOTH directions, which is not what was wanted:
+   the isometric ruling runs its diagonals off each side on the understanding
+   that something takes them off again, and a word wider than the declared mean
+   advance would print past the margin. So `TracedRow` nests a second `<svg>`
+   inside this one that is exactly as wide as the row and an em taller at each
+   end — a nested viewport clips to itself whatever its parent does, so the
+   overhang stays vertical. Don't add horizontal slack here; add it there. */
 .sheet__ink--trace {
   overflow: visible;
 }
