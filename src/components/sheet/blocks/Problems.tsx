@@ -2,6 +2,8 @@ import type { CSSProperties } from "react";
 
 import type { Problem } from "@/engine/sheets/types";
 
+import { ClockFaceView } from "../ClockFace";
+import { FigureView } from "../Figure";
 import { FractionArtView } from "../FractionArt";
 import { NumberLineView } from "../NumberLine";
 import { inch } from "../units";
@@ -41,10 +43,16 @@ export function Problems({ block, metrics }: BlockProps<"problems">) {
               child is told to "do 4, 7 and 12 of" has to carry its number as
               text anyway. */}
           <span className="sheet__number">{index + 1}.</span>
-          {/* The picture a naming problem asks about, before the blank it is
-              answered in. On the sheet as well as on the key, because it is the
-              question rather than the answer. */}
+          {/* The pictures a problem asks about, before the blank they are
+              answered in. On the sheet as well as on the key, because they are
+              the question rather than the answer. */}
           {problem.art && <FractionArtView art={problem.art} />}
+          {problem.figure && (
+            <FigureView figure={problem.figure} fontPt={metrics.fontPt} />
+          )}
+          {asked(problem) && problem.clock && (
+            <ClockFaceView face={problem.clock} answers={metrics.answers} />
+          )}
           {/* Three drawings and one rule: a problem is set the way the data
               says it is set. A stack when there is a stack, a bracket when
               there is a bracket, and a sentence otherwise — no flag beside the
@@ -55,6 +63,13 @@ export function Problems({ block, metrics }: BlockProps<"problems">) {
             <Stacked problem={problem} answers={metrics.answers} />
           ) : (
             <Written problem={problem} answers={metrics.answers} />
+          )}
+          {/* And the one picture that is the answer rather than the question: a
+              dial with no hands on it, which the key draws them onto. It comes
+              after the time it is drawn from, where the ruled slot would have
+              been on any other sheet — because it is the ruled slot. */}
+          {drawn(problem) && problem.clock && (
+            <ClockFaceView face={problem.clock} answers={metrics.answers} />
           )}
           {problem.line && <NumberLineView line={problem.line} />}
           <Below problem={problem} answers={metrics.answers} />
@@ -74,14 +89,30 @@ const worked = (problem: Problem): boolean =>
   (problem.working?.length ?? 0) > 0;
 
 /**
+ * Whether the problem's own drawing *is* the answer place — a clock face with no
+ * hands on it, which the child draws and the key fills in.
+ *
+ * Read off the face rather than declared beside it, so the two cannot disagree,
+ * and it does the same job `answers` does: it takes the ruled slot away, because
+ * a problem has exactly one place to write the answer and a dial with a blank
+ * beside it is a sheet a child answers twice.
+ */
+const drawn = (problem: Problem): boolean =>
+  problem.clock !== undefined && !problem.clock.hands;
+
+/** And whether it is the question, which is the same face the other way up. */
+const asked = (problem: Problem): boolean =>
+  problem.clock !== undefined && problem.clock.hands;
+
+/**
  * A problem written along a line, with the answer wherever the prompt says.
  *
  * A single `_` in the prompt marks a gap inside the sentence — "7 + _ = 15" —
  * and everything else takes a ruled slot at the end, unless the answer is
- * already going on the lines below. One rule, so a problem can only ever have
- * one place to write the answer: a missing-number sheet that also drew a slot
- * on the end, or a fact family that drew one beside its four ruled lines, is a
- * sheet a child answers twice.
+ * already going on the lines below or onto the face of a clock. One rule, so a
+ * problem can only ever have one place to write the answer: a missing-number
+ * sheet that also drew a slot on the end, or a fact family that drew one beside
+ * its four ruled lines, is a sheet a child answers twice.
  */
 function Written({ problem, answers }: Part) {
   const gap = problem.prompt.indexOf("_");
@@ -97,7 +128,9 @@ function Written({ problem, answers }: Part) {
   return (
     <>
       <span className="sheet__prompt">{problem.prompt}</span>
-      {!ruled(problem) && <Slot answer={problem.answer} answers={answers} />}
+      {!ruled(problem) && !drawn(problem) && (
+        <Slot answer={problem.answer} answers={answers} />
+      )}
     </>
   );
 }

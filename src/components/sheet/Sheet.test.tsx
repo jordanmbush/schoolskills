@@ -6,6 +6,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
 import { answerKey, buildSheet } from "@/engine/sheets";
+import { figureBounds, labelPad } from "@/engine/sheets/figure";
 import { ticks } from "@/engine/sheets/numberline";
 import { DEFAULT_PAPER } from "@/engine/sheets/paper";
 import type {
@@ -13,12 +14,14 @@ import type {
   Block,
   FractionArt,
   FractionConfig,
+  GeometryConfig,
   MoneyConfig,
   MultiplicationConfig,
   Paper,
   Problem,
   Sheet,
   SheetConfig,
+  TimeConfig,
 } from "@/engine/sheets/types";
 
 import { SheetView } from "./Sheet";
@@ -92,6 +95,45 @@ const EVERY_BLOCK: Block[] = [
         answer: "1/6",
         art: { shape: "circle", parts: 6, shaded: 1 },
       },
+      // The two drawings that ride on a problem for the same reason: a shape to
+      // measure, and a dial to read. And the one drawing that is the *answer* —
+      // a dial with no hands on it, which prints no ruled slot at all.
+      {
+        prompt: "",
+        answer: "24 cm²",
+        figure: {
+          shape: "rectangle",
+          points: [
+            { x: 0, y: 0 },
+            { x: 1100, y: 0 },
+            { x: 1100, y: 412 },
+            { x: 0, y: 412 },
+          ],
+          labels: ["8 cm", "3 cm"],
+        },
+      },
+      {
+        prompt: "",
+        answer: "obtuse",
+        figure: {
+          shape: "angle",
+          points: [
+            { x: 1100, y: 550 },
+            { x: 550, y: 550 },
+            { x: 289, y: 74 },
+          ],
+        },
+      },
+      {
+        prompt: "",
+        answer: "3:20",
+        clock: { hour: 3, minute: 20, hands: true },
+      },
+      {
+        prompt: "9:45",
+        answer: "9:45",
+        clock: { hour: 9, minute: 45, hands: false },
+      },
     ],
   },
   { kind: "rules", rule: { style: "hand-5-8", descender: true }, lines: 6 },
@@ -119,6 +161,9 @@ const EVERY_BLOCK: Block[] = [
       rows: 4,
       cell: 250,
       cells: ["1", "2", "", "4"],
+      // A dot where the ruling crosses, which is where a coordinate is — not
+      // in the middle of a square, which is where a cell is.
+      marks: [{ column: 3, row: 1, label: "A" }],
       origin: { column: 2, row: 2 },
     },
   },
@@ -187,6 +232,14 @@ const EVERY_BLOCK: Block[] = [
         points: [
           { x: 400, y: 400 },
           { x: 700, y: 400 },
+        ],
+      },
+      {
+        shape: "angle",
+        points: [
+          { x: 1100, y: 550 },
+          { x: 550, y: 550 },
+          { x: 550, y: 0 },
         ],
       },
     ],
@@ -927,6 +980,279 @@ describe("a rendered money sheet", () => {
     expect(render(buildSheet(money(), SEED) as Sheet)).toContain(
       '<span class="sheet__total"></span>',
     );
+  });
+});
+
+/* ── The sheets whose answer is a drawing ──────────────────────────────────
+   Telling the time and geometry. Two things here exist only once the sheet is
+   drawn, and neither can be seen by reading the engine's output: a clock face
+   whose hands are the answer place rather than a ruled blank, and a shape whose
+   proportions have to be the ones its labels claim.                          */
+
+const clock = (over: Partial<TimeConfig> = {}): TimeConfig => ({
+  kind: "time",
+  paper: DEFAULT_PAPER,
+  fontPt: 12,
+  fields: ["name"],
+  style: "read",
+  step: 5,
+  count: 3,
+  columns: 3,
+  ...over,
+});
+
+const geometry = (over: Partial<GeometryConfig> = {}): GeometryConfig => ({
+  kind: "geometry",
+  paper: DEFAULT_PAPER,
+  fontPt: 12,
+  fields: ["name"],
+  style: "area",
+  system: "metric",
+  range: { min: 2, max: 12 },
+  count: 3,
+  columns: 3,
+  ...over,
+});
+
+/**
+ * The coordinate plane on a rendered sheet: how big the drawing is, and every
+ * glyph inside it with where and how large it was set.
+ *
+ * Read back out of the markup rather than out of the block, because what is
+ * being checked is whether the ink lands on the paper — a letter drawn past the
+ * viewBox is markup that renders and paper that comes out blank.
+ */
+function drawnPlane(html: string): {
+  width: number;
+  height: number;
+  glyphs: Array<{ x: number; y: number; size: number; text: string }>;
+} {
+  const drawing =
+    /<svg[^>]*viewBox="0 0 (\d+) (\d+)"><title>[^<]*coordinate grid<\/title>(.*?)<\/svg>/s.exec(
+      html,
+    );
+  if (drawing === null) throw new Error("no coordinate plane on the sheet");
+  const glyphs = [
+    ...drawing[3].matchAll(
+      /<text class="sheet__cell" x="(-?\d+(?:\.\d+)?)" y="(-?\d+(?:\.\d+)?)" font-size="(\d+)"[^>]*>([^<]*)<\/text>/g,
+    ),
+  ].map((one) => ({
+    x: Number(one[1]),
+    y: Number(one[2]),
+    size: Number(one[3]),
+    text: one[4],
+  }));
+  return {
+    width: Number(drawing[1]),
+    height: Number(drawing[2]),
+    glyphs,
+  };
+}
+
+/** Where the ink says a dial's two hands are pointing, clockwise from twelve. */
+function pointing(html: string): { hour: number; minute: number } {
+  const drawn = /<g class="sheet__hands">(.*?)<\/g>/s.exec(html);
+  if (drawn === null) throw new Error("no hands on the dial");
+  const hands = [
+    ...drawn[1].matchAll(/x1="(\d+)" y1="(\d+)" x2="(\d+)" y2="(\d+)"/g),
+  ].map((hand) => hand.slice(1).map(Number));
+  if (hands.length !== 2) throw new Error(`${hands.length} hands`);
+
+  // The long one is the minute hand, whichever order they were drawn in.
+  const [hour, minute] = hands.sort(
+    (a, b) =>
+      Math.hypot(a[2] - a[0], a[3] - a[1]) -
+      Math.hypot(b[2] - b[0], b[3] - b[1]),
+  );
+  const around = ([x1, y1, x2, y2]: number[]) =>
+    ((Math.atan2(x2 - x1, y1 - y2) * 180) / Math.PI + 360) % 360;
+  return { hour: around(hour), minute: around(minute) };
+}
+
+describe("a rendered time sheet", () => {
+  it("puts the hands where the time says, measured off the ink", () => {
+    // The one answer in the shop that a parent marks by looking at a picture,
+    // so the picture is checked by measuring it: the angles are recovered from
+    // the two lines and compared against the time printed beside them.
+    const html = problems(
+      render(buildSheet(clock({ count: 6 }), SEED) as Sheet),
+    );
+    for (const [where, problem] of itemsOf(clock({ count: 6 })).entries()) {
+      const [, hour, minute] = /^(\d+):(\d\d)$/.exec(problem.answer) ?? [];
+      const drawn = pointing(html[where]);
+      // Within half a degree, because the ends of the hands land on whole
+      // thousandths of an inch — a hand one minute out is six degrees out.
+      expect(drawn.minute, problem.answer).toBeCloseTo(Number(minute) * 6, 0);
+      // The hour hand has moved on by the part of the hour that has gone: at
+      // twenty past three it is a third of the way to four.
+      expect(drawn.hour, problem.answer).toBeCloseTo(
+        ((Number(hour) % 12) * 60 + Number(minute)) / 2,
+        0,
+      );
+    }
+  });
+
+  it("gives a reading problem a blank and a drawing problem the dial", () => {
+    // The rule every family shares, reached from the one sheet whose answer
+    // place is a picture: exactly one place to write the answer. A dial with a
+    // ruled blank beside it is a sheet a child answers twice.
+    for (const item of problems(render(buildSheet(clock(), SEED) as Sheet))) {
+      expect(count(item, 'class="sheet__slot')).toBe(1);
+      expect(count(item, 'class="sheet__hands"')).toBe(1);
+    }
+    for (const item of problems(
+      render(buildSheet(clock({ style: "draw" }), SEED) as Sheet),
+    )) {
+      expect(count(item, 'class="sheet__slot')).toBe(0);
+      expect(count(item, 'class="sheet__hands"')).toBe(0);
+      // The dial is still there — it is the answer place, drawn empty.
+      expect(count(item, 'class="sheet__dial"')).toBe(1);
+    }
+  });
+
+  it("draws the hands in only when a drawing sheet is a key", () => {
+    const key = render(answerKey(clock({ style: "draw" }), SEED) as Sheet);
+    for (const item of problems(key)) {
+      expect(count(item, 'class="sheet__hands"')).toBe(1);
+    }
+    for (const problem of itemsOf(clock({ style: "draw" }))) {
+      // And the time is printed once, as the question — never as an answer in
+      // a blank that isn't there.
+      expect(count(key, `>${problem.answer}</span>`)).toBe(1);
+    }
+  });
+
+  it("draws the dial in mil inside a box measured in inches", () => {
+    // The same correspondence every ruled thing on a sheet rests on: an inch
+    // and a half of paper, whatever the body type is set at (§17).
+    for (const fontPt of [12, 18]) {
+      expect(render(buildSheet(clock({ fontPt }), SEED) as Sheet)).toContain(
+        'width="1.5in" height="1.5in" viewBox="0 0 1500 1500"',
+      );
+    }
+  });
+});
+
+describe("a rendered geometry sheet", () => {
+  it("draws the shape on the blank sheet, not only on the key", () => {
+    // The drawing *is* the question. A child handed an area sheet with no
+    // shapes on it has been handed a page of blanks.
+    for (const style of ["area", "perimeter", "identify", "angles"] as const) {
+      const html = render(buildSheet(geometry({ style }), SEED) as Sheet);
+      expect(count(html, 'class="sheet__ink sheet__figure"'), style).toBe(3);
+      expect(html, style).not.toContain("background");
+    }
+  });
+
+  it("puts the outline on the points the engine gave it", () => {
+    // The renderer scales nothing. A shape drawn to fit its box would be a
+    // shape that can disagree with the numbers written on it, and a rectangle
+    // labelled 8 by 3 and drawn 8 by 4 teaches a child not to trust the
+    // picture.
+    const html = render(buildSheet(geometry(), SEED) as Sheet);
+    for (const [where, problem] of itemsOf(geometry()).entries()) {
+      const figure = problem.figure;
+      if (!figure) throw new Error(`problem ${where} has no figure`);
+      const box = figureBounds(figure);
+      const pad = labelPad(12);
+      const drawn = figure.points
+        .map(
+          (point) => `${point.x - box.minX + pad},${point.y - box.minY + pad}`,
+        )
+        .join(" ");
+      expect(problems(html)[where]).toContain(`points="${drawn}"`);
+    }
+  });
+
+  it("leaves an angle open, and marks which of the two it means", () => {
+    // An angle is not a shape: a triangle drawn where an angle was meant is a
+    // different question. The arc is what says which side of the arms is being
+    // asked about, and it is a stroke rather than a fill so it prints.
+    const html = render(
+      buildSheet(geometry({ style: "angles" }), SEED) as Sheet,
+    );
+    expect(count(html, "<polyline")).toBe(3);
+    expect(count(html, "<polygon")).toBe(0);
+    expect(count(html, "<path")).toBe(3);
+    expect(html).toContain('fill="none"');
+  });
+
+  it("gives every problem exactly one place to write the answer", () => {
+    for (const style of [
+      "area",
+      "volume",
+      "identify",
+      "coordinates",
+    ] as const) {
+      const html = render(buildSheet(geometry({ style }), SEED) as Sheet);
+      for (const item of problems(html)) {
+        expect(count(item, 'class="sheet__slot'), style).toBe(1);
+      }
+    }
+  });
+
+  it("numbers the axes of a plane and dots the points on it", () => {
+    // The numbers are drawn inside the grid, in the squares beside the axes:
+    // the drawing is exactly as wide as its squares say it is (§4), so a
+    // numeral outside it is a numeral that gets clipped.
+    const html = render(
+      buildSheet(geometry({ style: "coordinates", count: 6 }), SEED) as Sheet,
+    );
+    expect(count(html, 'class="sheet__dot"')).toBe(6);
+    expect(html).toContain(">10</text>");
+    expect(html).not.toContain(">0</text>");
+    // And nothing a child has not met. The ruling runs one square past the
+    // axes so the numerals have somewhere to sit, and numbering that square
+    // would put a negative number on the sheet that promised none.
+    expect(html).not.toContain(">-1</text>");
+    const four = render(
+      buildSheet(
+        geometry({ style: "coordinates", quadrants: 4, count: 6 }),
+        SEED,
+      ) as Sheet,
+    );
+    expect(four).toContain(">-8</text>");
+    expect(four).not.toContain(">-9</text>");
+  });
+
+  it("keeps every letter and numeral inside the plane they are drawn on", () => {
+    // An `<svg>` clips to its viewBox and the outermost gridline of a plane is
+    // the edge of it — so a point sitting there gets its letter drawn off the
+    // paper, and the sheet asks "E = ___" with no E next to any dot. Measured
+    // off the ink rather than argued about: every glyph's box has to be inside
+    // the drawing.
+    for (const quadrants of [1, 4]) {
+      const plane = drawnPlane(
+        render(
+          buildSheet(
+            geometry({ style: "coordinates", quadrants, count: 8 }),
+            SEED,
+          ) as Sheet,
+        ),
+      );
+      expect(plane.glyphs.length, `${quadrants} quadrant(s)`) //
+        .toBeGreaterThan(8);
+      for (const glyph of plane.glyphs) {
+        const half = glyph.size / 2;
+        expect(glyph.x - half, glyph.text).toBeGreaterThanOrEqual(0);
+        expect(glyph.x + half, glyph.text).toBeLessThanOrEqual(plane.width);
+        expect(glyph.y - half, glyph.text).toBeGreaterThanOrEqual(0);
+        expect(glyph.y + half, glyph.text).toBeLessThanOrEqual(plane.height);
+      }
+      // The letters are the question, so all eight of them are on the paper.
+      const letters = plane.glyphs.filter((one) => /^[A-Z]$/.test(one.text));
+      expect(letters.length, `${quadrants} quadrant(s)`).toBe(8);
+    }
+  });
+
+  it("prints nothing in the blank until the sheet is a key", () => {
+    const blank = render(buildSheet(geometry(), SEED) as Sheet);
+    expect(blank).not.toContain("--answered");
+    for (const problem of itemsOf(geometry())) {
+      expect(render(answerKey(geometry(), SEED) as Sheet)).toContain(
+        `>${problem.answer}<`,
+      );
+    }
   });
 });
 

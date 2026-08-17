@@ -4,6 +4,9 @@ import type { BlockProps } from "./block";
 /** Numerals inside a square, at about half its height. */
 const CELL_TO_EM = 0.5;
 
+/** How far from its dot a point's letter is set, in squares. */
+const MARK_TO_EM = 0.42;
+
 /**
  * A grid of squares: graph paper inside a box, a hundred chart, a coordinate
  * plane.
@@ -14,7 +17,8 @@ const CELL_TO_EM = 0.5;
  * multiplication grid is the same shape with an axis.
  */
 export function Grid({ block, metrics }: BlockProps<"grid">) {
-  const { columns, rows, cells, answers, origin, kind } = block.grid;
+  const { columns, rows, cells, answers, marks, origin, axis, kind } =
+    block.grid;
   if (columns <= 0 || rows <= 0 || block.grid.cell <= 0) return null;
 
   // Clamped to what the content box actually holds. A grid wider than the box
@@ -31,6 +35,14 @@ export function Grid({ block, metrics }: BlockProps<"grid">) {
   const width = columns * cell;
   const height = rows * cell;
   const size = Math.round(cell * CELL_TO_EM);
+
+  // How far off the edge of the drawing a numeral and a point's letter have to
+  // stay. An `<svg>` clips to its viewBox and the outermost gridline of a plane
+  // *is* the edge of it, so anything centred there loses half of itself — and a
+  // letter drawn a square further out loses all of it, leaving the sheet asking
+  // "E = ___" with no E anywhere on the paper.
+  const half = Math.max(1, Math.round(size * 0.5));
+  const away = Math.max(1, Math.round(cell * MARK_TO_EM));
 
   return (
     <svg
@@ -99,6 +111,69 @@ export function Grid({ block, metrics }: BlockProps<"grid">) {
         </g>
       )}
 
+      {/* What the axes count in, printed in the squares beside them rather than
+          outside the drawing: the grid is exactly as wide as its squares say it
+          is (§4), so a numeral past the edge is a numeral that gets clipped or a
+          drawing that gets rescaled. Nought is left off — where the two heavy
+          rules cross is not something a child needs telling — and so is any
+          gridline the plane does not reach, which is how a first-quadrant sheet
+          numbers its margin square nothing rather than −1. */}
+      {kind === "coordinate" && origin && (
+        <g className="sheet__axis-marks">
+          {origin.row < rows &&
+            count(columns + 1).map((column) => (
+              <Numbered
+                key={`x${column}`}
+                x={within(column * cell, half, width - half)}
+                y={(origin.row + 0.5) * cell}
+                value={column - origin.column}
+                axis={axis}
+                size={size}
+              />
+            ))}
+          {origin.column > 0 &&
+            count(rows + 1).map((row) => (
+              <Numbered
+                key={`y${row}`}
+                x={(origin.column - 0.5) * cell}
+                y={within(row * cell, half, height - half)}
+                value={origin.row - row}
+                axis={axis}
+                size={size}
+              />
+            ))}
+        </g>
+      )}
+
+      {/* The points a coordinate sheet asks about: a dot where the ruling
+          crosses, not a numeral in a square. They are the question rather than
+          the answer, so they print on the blank sheet too — the coordinates are
+          what the child writes. */}
+      {(marks ?? []).map((mark, index) => (
+        <g key={`m${index}-${mark.label}`}>
+          <circle
+            className="sheet__dot"
+            cx={mark.column * cell}
+            cy={mark.row * cell}
+            r={Math.max(1, Math.round(cell * 0.11))}
+          />
+          {/* Up and to the right of its dot, and turned inward where that would
+              be off the paper: the plane puts points on its outermost gridlines,
+              and a letter set outside the viewBox is clipped away entirely —
+              which leaves "E = ___" printed under a plane with no E on it. */}
+          <text
+            className="sheet__cell"
+            x={within(mark.column * cell + away, away, width - away)}
+            y={within(mark.row * cell - away, away, height - away)}
+            fontSize={Math.round(cell * 0.62)}
+            textAnchor="middle"
+            dominantBaseline="central"
+          >
+            {mark.label}
+          </text>
+        </g>
+      ))}
+
       {/* Two lists over the same squares: what is printed whatever the sheet
           is, and what is printed only on a key. A multiplication square's
           headers are the first and its hundred and forty-four products are the
@@ -156,7 +231,49 @@ function Cell({
   );
 }
 
+/**
+ * One number beside an axis, in the square next to the rule it counts.
+ *
+ * Nought is never drawn: the two heavy rules cross there, and a nought printed
+ * on top of them is a nought a child has to read through. Nor is a number the
+ * plane does not run to — a gridline outside `axis` is the margin the numerals
+ * themselves sit in, not the first square of a quadrant the sheet does not have.
+ */
+function Numbered({
+  x,
+  y,
+  value,
+  axis,
+  size,
+}: {
+  x: number;
+  y: number;
+  value: number;
+  axis?: { min: number; max: number };
+  size: number;
+}) {
+  if (value === 0) return null;
+  if (axis && (value < axis.min || value > axis.max)) return null;
+  return (
+    <text
+      className="sheet__cell"
+      x={x}
+      y={y}
+      fontSize={Math.round(size * 0.8)}
+      textAnchor="middle"
+      dominantBaseline="central"
+    >
+      {value}
+    </text>
+  );
+}
+
 /** `0 … n − 1`. */
 function count(n: number): number[] {
   return Array.from({ length: Math.max(0, n) }, (_, index) => index);
+}
+
+/** `value`, moved the shortest distance that puts it between the two bounds. */
+function within(value: number, low: number, high: number): number {
+  return Math.max(low, Math.min(high, value));
 }

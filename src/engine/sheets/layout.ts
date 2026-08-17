@@ -69,6 +69,18 @@ export const PROBLEM_GAP = { x: inches(0.3), y: inches(0.2) };
  */
 export const WRAP_GAP: Mil = inches(0.06);
 
+/**
+ * The air between one block and the next.
+ *
+ * `.sheet__blocks` is a flex column and this is its `gap`, in the unit the
+ * capacity arithmetic works in — the third of these constants to trail
+ * sheet.css, and the first that a family with more than one block has to pay
+ * for. A coordinate sheet is a plane and then the questions about it, and a gap
+ * the layout did not know about is the last row of questions below the bottom
+ * margin.
+ */
+export const BLOCK_GAP: Mil = inches(0.14);
+
 /** The paper minus its margins: everything a sheet is allowed to print in. */
 export function contentBox(paper: Paper): Box {
   const { width, height } = pageSize(paper);

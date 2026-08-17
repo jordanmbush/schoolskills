@@ -234,6 +234,30 @@ export type Problem = {
    * boxes asks a question that isn't there.
    */
   art?: FractionArt;
+  /**
+   * A clock face beside the problem — and, on half of the sheets that carry
+   * one, the place the answer goes.
+   *
+   * `hands` decides which. A dial with hands on it is a question to read, and
+   * the answer is written in a slot like any other; a dial without them is the
+   * answer place itself, so no slot is printed at all and the key draws the
+   * hands in. That is the same rule `answers` follows — a problem has exactly
+   * one place to write the answer — reached from the one family whose answer is
+   * drawn rather than written, and it is derived from the face rather than
+   * declared beside it so the two cannot disagree.
+   */
+  clock?: ClockFace;
+  /**
+   * A shape beside the problem: the figure whose area, perimeter, name or angle
+   * is being asked for.
+   *
+   * The question, always — never the answer — so it prints on the blank sheet as
+   * well as on the key, exactly as a fraction diagram does, and for the same
+   * reason it is drawn in SVG rather than tinted: background paint is what a
+   * browser drops when printing (§5), and a geometry sheet whose shapes came out
+   * as empty boxes asks nothing at all.
+   */
+  figure?: Figure;
   /** A number line under the problem, to count along. */
   line?: NumberLine;
   /** Blank height under the problem for working out. Absent means none. */
@@ -273,7 +297,40 @@ export type GridSpec = {
    * plane's axes, or the line under a multiplication grid's headers.
    */
   origin?: { column: number; row: number };
+  /**
+   * The smallest and largest number written along an axis, counted from the
+   * origin and the same in both directions.
+   *
+   * What the ruling runs to and what the *plane* runs to are two different
+   * numbers: a first-quadrant plane keeps a square of margin outside its axes
+   * for the numerals to sit in, and a gridline in that margin is one square
+   * past nought rather than the first negative one. Without this the renderer
+   * has no way to tell the two apart, and prints a "-1" on a sheet whose whole
+   * promise is that a child who has not met negative numbers can do it.
+   */
+  axis?: { min: number; max: number };
+  /**
+   * Points marked where the ruling crosses, rather than inside the squares:
+   * the lettered dots on a coordinate plane.
+   *
+   * A separate list from `cells` because it is a different place on the paper.
+   * A cell is a box with a number in it and a coordinate is a corner of one, and
+   * a plane whose points were written in the squares would be a plane whose
+   * answers are all half a square out — which is the sort of thing that looks
+   * fine on screen and is marked wrong on paper.
+   */
+  marks?: GridMark[];
 };
+
+/**
+ * A dot at the corner of a square, with a letter beside it.
+ *
+ * Counted in squares from the top-left of the grid, the same way `origin` is,
+ * so that where a point sits and where the axes cross are said in one
+ * vocabulary — which is what lets a reader work out the coordinates of a mark
+ * from the block alone.
+ */
+export type GridMark = { column: number; row: number; label: string };
 
 export type Blank = {
   /** `_` marks each gap, the same convention `Card.clue` already uses. */
@@ -297,11 +354,28 @@ export type ClockFace = {
   label?: string;
 };
 
-/** A shape to measure, name or shade. Points are in mil, within its own box. */
+/** A place on a drawing, in mil within that drawing's own box. */
+export type Point = { x: Mil; y: Mil };
+
+/**
+ * A shape to measure, name or classify.
+ *
+ * The points are the whole of it: how big it is drawn, which way up it sits and
+ * how many corners it has are all in the list, and `shape` only says what sort
+ * of ink it takes — a closed outline, a circle from a centre and a point on it,
+ * or the two open arms of an angle. `figure.ts` is where one is made, and the
+ * note there is the reason a rectangle eight metres across is drawn an inch
+ * across while an angle of forty degrees is drawn at forty degrees.
+ */
 export type Figure = {
-  shape: "rectangle" | "triangle" | "circle" | "polygon";
-  points: Array<{ x: Mil; y: Mil }>;
-  /** Side labels, in the order the points are given. */
+  shape: "rectangle" | "triangle" | "circle" | "polygon" | "angle";
+  points: Point[];
+  /**
+   * Side labels, in the order the points are given: `labels[i]` names the edge
+   * that starts at `points[i]`. An empty string is an edge with nothing to say,
+   * which is how a triangle carries a base and a height without also giving away
+   * the sloping side.
+   */
   labels?: string[];
 };
 
@@ -693,6 +767,124 @@ export type MoneyConfig = SheetOptions & {
   workspace?: boolean;
 };
 
+/* ── Time ──────────────────────────────────────────────────────────────────
+   The maths that isn't arithmetic starts here. Every family above this line is
+   a sentence with a number missing; a clock is a picture with two hands on it,
+   and on half of these sheets the hands are the answer.                      */
+
+/**
+ * What the sheet asks for.
+ *
+ * `read` puts the hands on the dial and asks for the time; `draw` gives the time
+ * and leaves the dial empty; `elapsed` is two times and the space between them,
+ * which is the one of the three that is arithmetic — and the arithmetic nobody
+ * can do in base ten.
+ */
+export type TimeStyle = "read" | "draw" | "elapsed";
+
+export type TimeConfig = SheetOptions & {
+  kind: "time";
+  style: TimeStyle;
+  /**
+   * The minutes a time is allowed to land on, and the whole of what makes a
+   * clock sheet easy or hard: 60 is o'clock, 30 is half past, 15 the quarters,
+   * 5 the numerals a child counts round in fives, and 1 is any minute there is.
+   *
+   * A number rather than a union, because it arrives from outside this build and
+   * a step of seven has to resolve to something rather than throw — see
+   * `TIME_STEPS` in `maths/time.ts` for what it resolves to.
+   */
+  step: number;
+  /**
+   * Elapsed only: how far apart the two times may be, in minutes, ends
+   * included. "Half an hour to two hours" is a different lesson from "five
+   * minutes to twenty", and it is the only thing that decides which.
+   */
+  span?: { min: number; max: number };
+  /** How many problems to ask for. Capped at what the page holds. */
+  count: number;
+  columns: number;
+  /** Blank space under every problem, to work in. */
+  workspace?: boolean;
+};
+
+/* ── Measurement ───────────────────────────────────────────────────────────
+   Two systems, and no conversion between them. A child converting metres into
+   feet is doing a different lesson — an approximate one — and everything here
+   is exact.                                                                  */
+
+/**
+ * Which system the sheet is in.
+ *
+ * A switch rather than a build-time constant, for the same reason the currency
+ * is (§4): a British child converting yards is being asked about a country they
+ * have never measured anything in, and an American child converting millimetres
+ * likewise.
+ */
+export type UnitSystem = "metric" | "imperial";
+
+/** What is being measured. */
+export type Quantity = "length" | "mass" | "capacity";
+
+/**
+ * What the sheet asks for. `convert` writes the same amount in another unit;
+ * `compare` puts two amounts side by side and asks which is the bigger, which
+ * is the same skill with the arithmetic hidden inside it.
+ */
+export type MeasureStyle = "convert" | "compare";
+
+export type MeasureConfig = SheetOptions & {
+  kind: "measure";
+  style: MeasureStyle;
+  system: UnitSystem;
+  /**
+   * Which quantities are on the page — a pool rather than one, for the reason
+   * `tables` is: "millimetres, centimetres and metres" is a lesson somebody
+   * teaches, and "everything measurable" is not.
+   */
+  quantities: Quantity[];
+  /** How many of the unit written on the left, ends included. */
+  range: { min: number; max: number };
+  /** How many problems to ask for. Capped at what the page holds. */
+  count: number;
+  columns: number;
+  /** Blank space under every problem, to work in. */
+  workspace?: boolean;
+};
+
+/* ── Geometry ──────────────────────────────────────────────────────────────
+   Where a worksheet stops being a sentence. Five of the six styles below put a
+   drawing on the page that the question is *about*, so the answer key is only
+   as good as the shape: a rectangle labelled 8 by 3 and drawn 8 by 4 is a sheet
+   that teaches a child not to trust the picture.                             */
+
+/** What the sheet asks for. */
+export type GeometryStyle =
+  "area" | "perimeter" | "volume" | "angles" | "identify" | "coordinates";
+
+export type GeometryConfig = SheetOptions & {
+  kind: "geometry";
+  style: GeometryStyle;
+  /** Which units the measurements are in. Ignored by the three that have none. */
+  system: UnitSystem;
+  /** How big the sides get, ends included. */
+  range: { min: number; max: number };
+  /**
+   * The coordinate plane only: one quadrant, or all four.
+   *
+   * The switch that family turns on. A plane that runs from nought is counting;
+   * a plane with four quadrants is the week negative numbers arrive, and putting
+   * one in front of a child who has not met them is not a harder sheet but an
+   * impossible one.
+   */
+  quadrants?: number;
+  /** How many problems to ask for. Capped at what the page holds. */
+  count: number;
+  columns: number;
+  /** Blank space under every problem, to work in. */
+  workspace?: boolean;
+};
+
 /**
  * Anything a saved sheet can hold. Narrow on `kind` — and only in index.ts,
  * which is the one module that knows the whole union.
@@ -704,4 +896,7 @@ export type SheetConfig =
   | MultiplicationConfig
   | FractionConfig
   | DecimalConfig
-  | MoneyConfig;
+  | MoneyConfig
+  | TimeConfig
+  | MeasureConfig
+  | GeometryConfig;

@@ -19,8 +19,11 @@ import { BLANK_SHEET } from "./blank";
 import { ARITHMETIC_SHEET } from "./maths/arithmetic";
 import { DECIMALS_SHEET } from "./maths/decimals";
 import { FRACTIONS_SHEET } from "./maths/fractions";
+import { GEOMETRY_SHEET } from "./maths/geometry";
+import { MEASURE_SHEET } from "./maths/measure";
 import { MONEY_SHEET } from "./maths/money";
 import { MULTIPLICATION_SHEET } from "./maths/multiplication";
+import { TIME_SHEET } from "./maths/time";
 import { UNKNOWN_SHEET, type SheetSpec } from "./spec";
 import { PAPER_SHEET } from "./templates/paper";
 
@@ -32,6 +35,9 @@ const SHEETS: Record<string, SheetSpec> = {
   [FRACTIONS_SHEET.id]: FRACTIONS_SHEET,
   [DECIMALS_SHEET.id]: DECIMALS_SHEET,
   [MONEY_SHEET.id]: MONEY_SHEET,
+  [TIME_SHEET.id]: TIME_SHEET,
+  [MEASURE_SHEET.id]: MEASURE_SHEET,
+  [GEOMETRY_SHEET.id]: GEOMETRY_SHEET,
 };
 
 /**
