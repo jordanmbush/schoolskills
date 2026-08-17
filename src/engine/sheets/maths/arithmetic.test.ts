@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { answerKey, buildSheet, describeSheet, sheetSpec } from "../index";
+import { PROBLEM_GAP } from "../layout";
 import { LINE_INSET, labelRoom, ticks } from "../numberline";
 import { inches } from "../paper";
 import type {
@@ -11,7 +12,7 @@ import type {
   Problem,
 } from "../types";
 
-import { ARITHMETIC_SHEET, GAP, arithmeticLayout } from "./arithmetic";
+import { ARITHMETIC_SHEET, arithmeticLayout } from "./arithmetic";
 
 /**
  * The first generated family, and the one that sets the bar.
@@ -545,7 +546,7 @@ describe("how much fits", () => {
             const problems = problemsOf({ ...over, count: 200 }, 8);
             const { box, columns, row } = arithmeticLayout(config(over));
             const rows = Math.ceil(problems.length / columns);
-            const used = rows * row + Math.max(0, rows - 1) * GAP.y;
+            const used = rows * row + Math.max(0, rows - 1) * PROBLEM_GAP.y;
             expect(used, `${size}/${margin}/${fontPt}pt`).toBeLessThanOrEqual(
               box.height,
             );
@@ -563,7 +564,7 @@ describe("how much fits", () => {
     // One more row would not have fitted, which is what makes the reservation
     // testable in both directions.
     const rows = perPage / arithmeticLayout(config()).columns;
-    expect((rows + 1) * row + rows * GAP.y).toBeGreaterThan(box.height);
+    expect((rows + 1) * row + rows * PROBLEM_GAP.y).toBeGreaterThan(box.height);
   });
 
   it("honours the count and the columns it was given", () => {

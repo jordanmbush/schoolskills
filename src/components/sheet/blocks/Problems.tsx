@@ -22,8 +22,8 @@ import type { BlockProps } from "./block";
  * rather than adding a block of its own, so the shapes below are the shapes an
  * arithmetic problem takes and not several families' worth of markup: written
  * along a line, written along a line with the gap inside it, stacked in columns
- * the way a sum is worked, or answered on ruled lines underneath when the
- * answer is more than one sentence.
+ * the way a sum is worked, set inside a division bracket, or answered on ruled
+ * lines underneath when the answer is more than one sentence.
  */
 export function Problems({ block, metrics }: BlockProps<"problems">) {
   const columns = Math.max(1, Math.floor(block.columns));
@@ -40,7 +40,13 @@ export function Problems({ block, metrics }: BlockProps<"problems">) {
               child is told to "do 4, 7 and 12 of" has to carry its number as
               text anyway. */}
           <span className="sheet__number">{index + 1}.</span>
-          {problem.operands ? (
+          {/* Three drawings and one rule: a problem is set the way the data
+              says it is set. A stack when there is a stack, a bracket when
+              there is a bracket, and a sentence otherwise — no flag beside the
+              data for either of them to disagree with. */}
+          {problem.bracket ? (
+            <Bracket problem={problem} answers={metrics.answers} />
+          ) : problem.operands ? (
             <Stacked problem={problem} answers={metrics.answers} />
           ) : (
             <Written problem={problem} answers={metrics.answers} />
@@ -57,6 +63,10 @@ type Part = { problem: Problem; answers: boolean };
 
 /** Whether the answer is written on ruled lines under the problem. */
 const ruled = (problem: Problem): boolean => (problem.answers?.length ?? 0) > 0;
+
+/** Whether there is working to write between the problem and its answer. */
+const worked = (problem: Problem): boolean =>
+  (problem.working?.length ?? 0) > 0;
 
 /**
  * A problem written along a line, with the answer wherever the prompt says.
@@ -92,10 +102,14 @@ function Written({ problem, answers }: Part) {
  * paper to work the answer out in — never both, because they are the same
  * paper. A problem whose answer is a list has already had its answer place
  * counted, and `workspace` is the height those lines share.
+ *
+ * A long multiplication has spent it too. Its working goes *inside* the stack,
+ * between the rule and the total, because a partial product written anywhere
+ * else is the mistake the sheet exists to practise out of a child.
  */
 function Below({ problem, answers }: Part) {
   if (ruled(problem)) return <Ruled problem={problem} answers={answers} />;
-  if (problem.workspace === undefined) return null;
+  if (problem.workspace === undefined || worked(problem)) return null;
   return (
     <span
       className="sheet__workspace"
@@ -145,6 +159,7 @@ function Ruled({ problem, answers }: Part) {
  */
 function Stacked({ problem, answers }: Part) {
   const operands = problem.operands ?? [];
+  const working = problem.working ?? [];
   return (
     <span className="sheet__column">
       {operands.map((operand, index) => (
@@ -155,10 +170,62 @@ function Stacked({ problem, answers }: Part) {
           <span>{operand}</span>
         </span>
       ))}
+      {/* The partial products of a long multiplication: ruled lines under the
+          sum and above its total, which is where the algorithm puts them.
+          They divide the height the family reserved rather than adding to it —
+          see `.sheet__work-line` in sheet.css for the other half of that. */}
+      {worked(problem) && (
+        <span className="sheet__work">
+          {working.map((line, index) => (
+            <span
+              className={`sheet__work-line${answers ? " sheet__work-line--answered" : ""}`}
+              key={`${index}-${line}`}
+              style={
+                problem.workspace
+                  ? { height: inch(problem.workspace / working.length) }
+                  : undefined
+              }
+            >
+              {answers ? line : ""}
+            </span>
+          ))}
+        </span>
+      )}
       <span
         className={`sheet__total${answers ? " sheet__total--answered" : ""}`}
       >
         {answers ? problem.answer : ""}
+      </span>
+    </span>
+  );
+}
+
+/**
+ * Long division, in the one shape it has ever been written in: the divisor
+ * outside the bracket, the dividend under the bar, and the quotient along the
+ * top of it.
+ *
+ * The bar and the upright are borders rather than a drawing, for the reason
+ * everything else on a sheet is (§5) — they are foreground paint and always
+ * print. The quotient is right-aligned over the dividend and not centred,
+ * because the two are aligned by place value: the last digit of a quotient
+ * always belongs over the last digit of the dividend, whatever either of them
+ * measures. That is the whole reason for `tabular-nums` here, and it is the
+ * same reason a column sum has it.
+ */
+function Bracket({ problem, answers }: Part) {
+  const bracket = problem.bracket;
+  if (!bracket) return null;
+  return (
+    <span className="sheet__bracket">
+      <span className="sheet__divisor">{bracket.divisor}</span>
+      <span className="sheet__house">
+        <span
+          className={`sheet__quotient${answers ? " sheet__quotient--answered" : ""}`}
+        >
+          {answers ? problem.answer : ""}
+        </span>
+        <span className="sheet__dividend">{bracket.dividend}</span>
       </span>
     </span>
   );
