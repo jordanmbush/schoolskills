@@ -1,22 +1,30 @@
 ---
 import Content from "@/layouts/Content.astro";
+import PrintShopApp from "@/games/printshop/App";
+import "@/styles/index.css";
 
 /**
- * The sheet builder's route, reserved and wired before the builder exists.
+ * The sheet builder's route.
  *
  * It is `WorldInfo.island` for the paper world, which is what keeps it out of
  * the sitemap, and it carries `noindex` for the reason every island does: what
- * will render here is a `client:only` app, and a near-empty page submitted to
- * search is a thin-content signal against the whole domain. Both halves of
- * that have to be true from the first build rather than from the build the app
- * lands in — a route that is indexed for a month and then hidden is worse than
- * one that was never offered.
+ * renders here is a `client:only` app, and a near-empty page submitted to
+ * search is a thin-content signal against the whole domain. The crawlable
+ * surface of The Print Shop is the catalog — every page there *is* a sheet
+ * (§8) — and this is the screen you go to when one of those is nearly right.
  *
  * Content rather than Base, unlike the games. A race must never have site
  * chrome over it; the builder is the opposite case, because `print.css` hides
  * the masthead, the footer and everything marked `.no-print` when a sheet goes
  * to paper. So the builder can keep the site around it and lose it at exactly
  * the moment it would cost somebody toner.
+ *
+ * `index.css` — the island stylesheet — rather than only the content one,
+ * because the option panels are built out of the kit and the kit's rows,
+ * steppers and segmented pills are styled there. That is what finally settled
+ * the `.sheet` name collision recorded in sheet.css: this page is the one that
+ * loads the modal styles *and* the sheet renderer's, so the modal became
+ * `.modal`.
  */
 ---
 
@@ -26,21 +34,25 @@ import Content from "@/layouts/Content.astro";
   world="paper"
   noindex
 >
-  <header class="hero wrap">
+  <header class="hero wrap no-print">
     <p class="hero__eyebrow">
       <span class="hero__world">The Print Shop</span>
       The bench
     </p>
-    <h1 class="hero__title">The press isn&rsquo;t installed yet</h1>
+    <h1 class="hero__title">Build a sheet</h1>
     <p class="hero__lead">
-      This is where a sheet gets built: pick a family, set the ruling, the type
-      size and how many problems fit, and watch the page change as you do it. It
-      is being made now, and nothing in The Print Shop will wait on it &mdash; a
-      sheet there is a page that prints as it stands, and the bench only changes
-      what is on one.
+      Pick what is on it, set the paper, the type size and how many problems
+      fit, and watch the page change as you go. Everything happens in this
+      browser &mdash; the settings live in the address bar, so a sheet can be
+      bookmarked or passed on as an ordinary link, and nothing about your child
+      goes into either.
     </p>
-    <div class="hero__actions">
-      <a class="cta" href="/printables">Go to The Print Shop</a>
-    </div>
   </header>
+
+  <!--
+    client:only rather than client:load: the saved-sheet panel reads IndexedDB
+    on first render, so there is no meaningful server-rendered markup to
+    hydrate, and attempting SSR would throw on `indexedDB`.
+  -->
+  <PrintShopApp client:only="react" />
 </Content>

@@ -49,12 +49,12 @@ try {
     .getByRole("button", { name: /add a player/i })
     .first()
     .click();
-  await page.waitForSelector(".sheet__panel", { timeout: 8000 });
+  await page.waitForSelector(".modal__panel", { timeout: 8000 });
   // The name field carries no explicit type, and age is a −/+ stepper
   // rather than a number input — so target the panel, not input types.
-  await page.locator(".sheet__panel input").first().fill("Smoke");
+  await page.locator(".modal__panel input").first().fill("Smoke");
   await page.getByRole("button", { name: /^add player$/i }).click();
-  await page.waitForSelector(".sheet__panel", {
+  await page.waitForSelector(".modal__panel", {
     state: "detached",
     timeout: 8000,
   });
@@ -178,6 +178,54 @@ try {
     "profile still listed after reload",
     (await page.getByText("Smoke").count()) > 0,
   );
+
+  /*
+   * The second island, and the second thing that writes to that database.
+   *
+   * Worth walking for the same reason the race is: the builder is a config in
+   * the address bar, a sheet built from it in the browser, and a record in the
+   * `sheets` store — three things that type-check perfectly and fail on first
+   * click. The reload at the end is the one that matters, because it proves the
+   * URL is genuinely the save file rather than something that only looks right
+   * while the state is still in memory.
+   */
+  log("\n6. The bench builds a sheet, and the URL is the save file");
+  await page.goto(`${BASE}/printables/make`, { waitUntil: "networkidle" });
+  await page.waitForSelector(".bench", { timeout: 15000 });
+  await page.waitForTimeout(900);
+  check(
+    "a sheet is on the bench",
+    (await page.locator(".preview .sheet__problem").count()) > 0,
+  );
+  check("the config is in the fragment", /#s=/.test(page.url()), page.url());
+
+  await page.locator(".saved input").fill("Smoke sheet");
+  await page.getByRole("button", { name: /save to my sheets/i }).click();
+  await page.waitForTimeout(800);
+  const savedSheets = await page.evaluate(async () => {
+    const db = await new Promise((res) => {
+      const r = indexedDB.open("schoolskills");
+      r.onsuccess = () => res(r.result);
+    });
+    return new Promise((res) => {
+      const tx = db
+        .transaction("sheets", "readonly")
+        .objectStore("sheets")
+        .getAll();
+      tx.onsuccess = () => res(tx.result.map((s) => s.name));
+    });
+  });
+  check(
+    "sheet saved to IndexedDB",
+    savedSheets.includes("Smoke sheet"),
+    JSON.stringify(savedSheets),
+  );
+
+  const shared = page.url();
+  await page.reload({ waitUntil: "networkidle" });
+  await page.waitForSelector(".bench", { timeout: 15000 });
+  await page.waitForTimeout(900);
+  check("the shared link reopens the same sheet", page.url() === shared);
 
   log(
     `\nconsole errors: ${errors.length ? errors.slice(0, 5).join(" | ") : "none"}`,

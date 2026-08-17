@@ -119,6 +119,18 @@ export const DEFAULT_PAPER: Paper = {
  */
 export const DEFAULT_FONT_PT = 12;
 
+/**
+ * How far the body size may be moved, in points.
+ *
+ * Eight is the smallest a child is asked to read on paper and thirty-six is
+ * about one line of a Letter page, so the pair is the honest limit of "larger
+ * type as a first-class option rather than a zoom hack" (§17) rather than a
+ * guess. It lives here beside the default because both the builder's stepper
+ * and the guard on a config arriving from a URL have to agree about it, and two
+ * copies would eventually not.
+ */
+export const FONT_PT = { min: 8, max: 36 } as const;
+
 /** The sheet of paper itself, with landscape already applied. */
 export function pageSize(paper: Paper): { width: Mil; height: Mil } {
   const stock = own(PAPERS, paper.size, PAPERS.letter);

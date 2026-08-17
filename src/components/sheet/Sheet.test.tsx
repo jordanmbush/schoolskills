@@ -1391,24 +1391,45 @@ describe("the zero-JavaScript property", () => {
   /*
    * The same property, against the built output.
    *
-   * Two things would show up in `dist/` if a sheet were ever hydrated: an
-   * `<astro-island>` naming the renderer, and the renderer's own class names
-   * inside a JavaScript chunk. Neither is there while every mount is
-   * directive-free — which is the point, and is why this passes before the
-   * first catalog page exists and keeps passing after PRINT03 adds one.
+   * An `<astro-island>` is the one thing that would show up in `dist/` if a
+   * sheet were ever hydrated, and it is the whole tell: an island is how a
+   * component's JavaScript reaches a page at all, so a page that prints a sheet
+   * and carries no island has shipped no renderer, whatever is in the chunks
+   * beside it.
+   *
+   * This used to scan every JavaScript chunk for the renderer's class names.
+   * That stopped being the property once the builder landed — `/printables/make`
+   * hydrates a `SheetView` on purpose, so the classes are legitimately in a
+   * chunk now — and scanning them would have to grow an exception, which is the
+   * point at which a test stops meaning anything. What matters was never "the
+   * renderer is nowhere in the bundle": it is "no page that IS a sheet needs
+   * JavaScript to be one", which is what this asserts and what §2 claims.
    */
-  it("ships no sheet renderer in the built JavaScript", () => {
+  it("ships no sheet renderer to a page that is a sheet", () => {
     const dist = join(ROOT, "dist");
     if (!existsSync(dist)) return; // `npm run build` hasn't run yet.
 
-    for (const script of filesUnder(join(dist, "_astro"), [".js"])) {
-      expect(read(script)).not.toContain("sheet__glyph");
-      expect(read(script)).not.toContain("sheet__blocks");
-    }
+    let checked = 0;
     for (const page of filesUnder(dist, [".html"])) {
       const html = read(page);
       if (!/class="[^"]*\bsheet\b/.test(html)) continue;
       expect(html).not.toContain("astro-island");
+      checked += 1;
     }
+    // Guards the guard: a rename of `.sheet` would otherwise turn this into a
+    // loop over nothing that passes for the wrong reason.
+    expect(checked).toBeGreaterThan(0);
+  });
+
+  it("is hydrated on the builder, which is why the builder is noindex", () => {
+    const builder = join(ROOT, "dist/printables/make/index.html");
+    if (!existsSync(builder)) return;
+
+    const html = read(builder);
+    // The exception, stated rather than implied. The bench has to run the
+    // renderer — a live preview is the whole feature — and the page pays for it
+    // with `noindex` rather than by pretending to be crawlable content.
+    expect(html).toContain("astro-island");
+    expect(html).toMatch(/<meta name="robots" content="[^"]*noindex/);
   });
 });

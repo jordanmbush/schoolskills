@@ -199,7 +199,7 @@ export function usePrefersReducedMotion() {
 }
 
 /**
- * The dimmed backdrop behind a sheet, as a real control.
+ * The dimmed backdrop behind a modal, as a real control.
  *
  * It was a <div onClick> in the original, which is mouse-only: no focus, no
  * Enter/Space, invisible to a screen reader. Rendering a button gives all of
@@ -216,7 +216,7 @@ export function Scrim({
   return (
     <button
       type="button"
-      className="sheet__scrim"
+      className="modal__scrim"
       aria-label={label}
       onClick={onClose}
     />
