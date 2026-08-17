@@ -159,8 +159,41 @@ export type Problem = {
    * data is a flag that can disagree with it.
    */
   operands?: string[];
-  /** The sign printed beside the stack: "+" or "−". Column form only. */
+  /** The sign printed beside the stack: "+", "−" or "×". Column form only. */
   operator?: string;
+  /**
+   * The working that goes between the stack and its answer, one ruled line
+   * each: the partial products of a long multiplication, one per digit of the
+   * multiplier.
+   *
+   * Blank on the sheet and written in on the key, exactly like every other
+   * answer place — which is the point of carrying the partials rather than a
+   * count of them. A long multiplication is marked on its working as much as on
+   * its total, and a key that showed only the product would leave the parent to
+   * do the sum themselves to find where it went wrong.
+   *
+   * The rule under the problem is drawn above these lines and the total keeps
+   * its own below them, which is the shape the algorithm is taught in. Column
+   * form only, and absent when the multiplier is a single digit: there are no
+   * partials to write, and blank rules over the answer would be a page asking a
+   * child to show working that does not exist.
+   *
+   * `workspace` is the height the lines share, the same bargain `answers`
+   * makes: the family reserved that height, so dividing it between them is what
+   * keeps the row as tall as the layout arithmetic declared.
+   */
+  working?: string[];
+  /**
+   * Long division's tableau: the divisor outside the bracket, the dividend
+   * under the bar, and the quotient written along the top of it.
+   *
+   * A shape of its own rather than a stack with a different sign, because it is
+   * the one arithmetic form that is not a column of numbers — the working
+   * happens under the dividend rather than beside it, and the answer is written
+   * above the problem rather than below. `answer` is the quotient, remainder
+   * and all ("234 r 2").
+   */
+  bracket?: { divisor: string; dividend: string };
   /**
    * Which fact this exercises, in the vocabulary the race already uses
    * ("7:8"). Optional, and the whole of what makes "print the facts they keep
@@ -191,7 +224,21 @@ export type GridSpec = {
   cell: Mil;
   /** What's printed in the squares, row-major. Empty for a blank grid. */
   cells?: string[];
-  /** Coordinate planes only: where the axes cross, counted in squares. */
+  /**
+   * What's printed in the squares only on a key, row-major and alongside
+   * `cells` rather than instead of it.
+   *
+   * A multiplication square is a grid a child fills in, so its headers are on
+   * the sheet from the start and its hundred and forty-four products are the
+   * answer. Two lists rather than one flag, for the reason `operands` is a
+   * stack rather than a boolean: a cell is either always printed or only
+   * printed on the key, and which one it is has to be a fact about the cell.
+   */
+  answers?: string[];
+  /**
+   * Where the two heavier rules cross, counted in squares: a coordinate
+   * plane's axes, or the line under a multiplication grid's headers.
+   */
   origin?: { column: number; row: number };
 };
 
@@ -412,8 +459,76 @@ export type ArithmeticConfig = SheetOptions & {
   workspace?: boolean;
 };
 
+/* ── Multiplication and division ───────────────────────────────────────────
+   The tables the race already drills, on paper — and the two long forms,
+   which are the first sheets where the working is the exercise rather than
+   the answer.                                                              */
+
+/** Which way round the facts are asked. `both` shuffles the two together. */
+export type MultiplicationOperation = "multiply" | "divide" | "both";
+
+/**
+ * What the sheet asks for.
+ *
+ * `standard` gives both numbers and asks for the result; `missing` gives the
+ * result and one number and asks for the other; `grid` is the multiplication
+ * square, a row and a column of headers and a product in every space where
+ * they meet; `long` is the written method — long multiplication, or the
+ * division bracket.
+ */
+export type MultiplicationStyle = "standard" | "missing" | "grid" | "long";
+
+/** Written across the line, or stacked in columns. `long` is always stacked. */
+export type MultiplicationForm = "horizontal" | "vertical";
+
+/**
+ * How many digits each side of a long form has.
+ *
+ * `into` is the number being worked on — the multiplicand, or the dividend —
+ * and `by` the one doing the working: the multiplier, or the divisor. It is
+ * the phrase a teacher already uses ("three-digit by two-digit", "four into
+ * nine hundred"), and it is the only thing that decides how much working space
+ * the row reserves.
+ */
+export type LongDigits = { into: number; by: number };
+
+export type MultiplicationConfig = SheetOptions & {
+  kind: "multiplication";
+  operation: MultiplicationOperation;
+  style: MultiplicationStyle;
+  form: MultiplicationForm;
+  /**
+   * Which tables are on the page. One entry is "the seven times table" and
+   * several is a mixed set, which is the whole of the difference between
+   * learning a table and knowing them.
+   *
+   * A table is the divisor when the sheet divides, so the seven times table
+   * read backwards is dividing by seven — the same pair of facts the record
+   * book folds onto one square and a drill keeps apart.
+   */
+  tables: number[];
+  /** What each table is multiplied by, ends included. */
+  factors: { min: number; max: number };
+  /** How many problems to ask for. Capped at what the page holds. */
+  count: number;
+  columns: number;
+  /** Long forms only; ignored by the fact styles, which draw from `tables`. */
+  digits?: LongDigits;
+  /**
+   * Long division only: whether a division may leave a remainder.
+   *
+   * Off unless asked for, because it is a change of question rather than a
+   * harder version of the same one — a child who has not been taught
+   * remainders and meets one has been set an impossible problem.
+   */
+  remainders?: boolean;
+  /** Blank space under every problem, to work in. */
+  workspace?: boolean;
+};
+
 /**
  * Anything a saved sheet can hold. Narrow on `kind` — and only in index.ts,
  * which is the one module that knows the whole union.
  */
-export type SheetConfig = BlankConfig | PaperConfig | ArithmeticConfig;
+export type SheetConfig =
+  BlankConfig | PaperConfig | ArithmeticConfig | MultiplicationConfig;

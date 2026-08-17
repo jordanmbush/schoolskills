@@ -308,10 +308,14 @@
 }
 
 /* An answer, wherever it is written: in the slot at the end of a sum, in the
-   gap inside one, or under the rule of a column. One weight in one place, so
-   a key reads the same however the problem was set. */
+   gap inside one, under the rule of a column, over a division bracket, on a
+   working line or in a square of a grid. One weight in one place, so a key
+   reads the same however the problem was set. */
 .sheet__slot--answered,
-.sheet__total--answered {
+.sheet__total--answered,
+.sheet__quotient--answered,
+.sheet__work-line--answered,
+.sheet__cell--answered {
   font-weight: 700;
 }
 
@@ -339,6 +343,85 @@
   border-top: 0.75pt solid currentcolor;
   padding-top: 0.03in;
   min-height: 1.2em;
+  text-align: right;
+}
+
+/* ── The long forms ─────────────────────────────────────────────────────────
+   The two sheets where the working is the exercise rather than the answer, and
+   where every rule above is load-bearing twice over. `tabular-nums` is what
+   keeps a partial product in its own column, and a partial written half a
+   column left of where it belongs is the entire mistake these sheets exist to
+   practise out of a child. `nowrap` is what keeps a row the height the layout
+   arithmetic declared, exactly as it is on an answer line.                   */
+
+/* The partial products of a long multiplication. The rule under the sum is
+   this box's top border, each partial gets a line of its own, and the last of
+   those lines is the rule the total is written under — which is the shape of
+   the algorithm, drawn with three borders and no drawing. */
+.sheet__work {
+  display: flex;
+  flex-direction: column;
+  border-top: 0.75pt solid currentcolor;
+  padding-top: 0.03in;
+}
+
+.sheet__work-line {
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  overflow: hidden;
+  white-space: nowrap;
+  border-bottom: 0.75pt solid currentcolor;
+}
+
+/* Two strokes at the same height print as one heavy line, so the total gives
+   up its own rule when the working already drew one. */
+.sheet__work + .sheet__total {
+  border-top: 0;
+  padding-top: 0;
+}
+
+/* Long division: the divisor outside the bracket, the dividend under the bar,
+   and the quotient written along the top of it. The bar and the upright are
+   borders rather than an SVG, because they are exactly a border — and because
+   the digits inside have to stay selectable text (§2). */
+.sheet__bracket {
+  display: inline-flex;
+  align-items: flex-end;
+  font-variant-numeric: tabular-nums;
+}
+
+.sheet__divisor {
+  padding-right: 0.05in;
+  padding-bottom: 0.02in;
+}
+
+.sheet__house {
+  display: flex;
+  flex-direction: column;
+  min-width: 0.7in;
+}
+
+/* Right-aligned over the dividend, not centred: a quotient's last digit
+   belongs over the dividend's last digit, always, whatever either measures.
+
+   Which is why the right inset below is the dividend's own, written out again.
+   Both boxes stretch the full width of `.sheet__house`, so their right *edges*
+   already agree — but a quotient without the padding the dividend holds its
+   digits off by would put its units digit two thirds of a digit clear of the
+   one it is supposed to sit over, and place value is the entire exercise. The
+   two values are asserted equal in Sheet.test.tsx so they cannot drift. */
+.sheet__quotient {
+  min-height: 1.2em;
+  padding-right: 0.06in;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.sheet__dividend {
+  border-top: 0.75pt solid currentcolor;
+  border-left: 0.75pt solid currentcolor;
+  padding: 0.03in 0.06in 0.02in;
   text-align: right;
 }
 

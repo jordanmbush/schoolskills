@@ -16,14 +16,45 @@
 import type { Mil, Paper, Rule } from "./types";
 
 import {
+  inches,
   marginOf,
   pageSize,
+  points,
   ruleLines,
   rulePitch,
   type RuleRole,
 } from "./paper";
 
 export type Box = { x: Mil; y: Mil; width: Mil; height: Mil };
+
+/**
+ * How tall one ruled line for a hand-written answer is.
+ *
+ * A quarter of an inch is what a child writes on, and never less than the body
+ * type needs: at 18pt the type is a quarter inch on its own, and a key printed
+ * onto lines shorter than its own letters is a row taller than was reserved for
+ * — which is the last row of the page on a second sheet of paper.
+ *
+ * Here rather than in the family that first needed it, because it is now the
+ * height of two different things a child writes on: a fact family's four number
+ * sentences, and the partial products of a long multiplication. A second copy
+ * of the number would be a second thing to keep in step with `.sheet__answer-
+ * line`, and the failure is silent — a sheet that looks right on screen and
+ * prints its bottom row on a second page.
+ */
+export const answerLine = (fontPt: number): Mil =>
+  Math.max(inches(0.25), points(fontPt * 1.35));
+
+/**
+ * The air between one problem and the next, down and across.
+ *
+ * `.sheet__problems` in sheet.css is the grid every maths family prints
+ * through, and this is its `gap` written in the unit the capacity arithmetic
+ * works in. Here rather than in a family for the same reason as the line above:
+ * two families now divide a page by it, and a copy that drifted from the
+ * stylesheet would be a row of problems below the bottom margin.
+ */
+export const PROBLEM_GAP = { x: inches(0.3), y: inches(0.2) };
 
 /** The paper minus its margins: everything a sheet is allowed to print in. */
 export function contentBox(paper: Paper): Box {

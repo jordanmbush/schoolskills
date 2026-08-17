@@ -14,7 +14,7 @@ const CELL_TO_EM = 0.5;
  * multiplication grid is the same shape with an axis.
  */
 export function Grid({ block, metrics }: BlockProps<"grid">) {
-  const { columns, rows, cells, origin, kind } = block.grid;
+  const { columns, rows, cells, answers, origin, kind } = block.grid;
   if (columns <= 0 || rows <= 0 || block.grid.cell <= 0) return null;
 
   // Clamped to what the content box actually holds. A grid wider than the box
@@ -70,10 +70,15 @@ export function Grid({ block, metrics }: BlockProps<"grid">) {
         />
       ))}
 
-      {/* A coordinate plane is the same grid with two heavier strokes through
-          it. Where they cross is counted in squares, so the axes land on the
-          ruling rather than near it. */}
-      {kind === "coordinate" && origin && (
+      {/* Two heavier strokes through the ruling, where the grid says they
+          cross — counted in squares, so they land on the ruling rather than
+          near it. A coordinate plane's axes are the first use; a multiplication
+          square's header rules are the second, and they are the same two lines
+          drawn from the same number. Gated on the origin rather than on the
+          kind, because a grid that named where they cross and then didn't get
+          them would be a grid whose data said one thing and whose ink said
+          another. */}
+      {origin && (
         <g className="sheet__axes">
           <line
             x1={0}
@@ -94,22 +99,60 @@ export function Grid({ block, metrics }: BlockProps<"grid">) {
         </g>
       )}
 
-      {cells?.map((text, index) =>
-        text === "" ? null : (
-          <text
-            key={`${index}-${text}`}
-            className="sheet__cell"
-            x={((index % columns) + 0.5) * cell}
-            y={(Math.floor(index / columns) + 0.5) * cell}
-            fontSize={size}
-            textAnchor="middle"
-            dominantBaseline="central"
-          >
-            {text}
-          </text>
-        ),
-      )}
+      {/* Two lists over the same squares: what is printed whatever the sheet
+          is, and what is printed only on a key. A multiplication square's
+          headers are the first and its hundred and forty-four products are the
+          second, so the blank grid and the wall chart are one build with
+          `answers` flipped — the same mechanism as every ruled slot. */}
+      {written(cells).map(([index, text]) => (
+        <Cell key={`c${index}`} {...{ index, text, columns, cell, size }} />
+      ))}
+      {metrics.answers &&
+        written(answers).map(([index, text]) => (
+          <Cell
+            key={`a${index}`}
+            answered
+            {...{ index, text, columns, cell, size }}
+          />
+        ))}
     </svg>
+  );
+}
+
+/** The squares of a list that have something in them, with their positions. */
+function written(cells: string[] | undefined): Array<[number, string]> {
+  return (cells ?? []).flatMap((text, index) =>
+    text === "" ? [] : [[index, text] as [number, string]],
+  );
+}
+
+/** One numeral in the middle of its square. */
+function Cell({
+  index,
+  text,
+  columns,
+  cell,
+  size,
+  answered = false,
+}: {
+  index: number;
+  text: string;
+  columns: number;
+  cell: number;
+  size: number;
+  answered?: boolean;
+}) {
+  return (
+    <text
+      className={`sheet__cell${answered ? " sheet__cell--answered" : ""}`}
+      x={((index % columns) + 0.5) * cell}
+      y={(Math.floor(index / columns) + 0.5) * cell}
+      fontSize={size}
+      textAnchor="middle"
+      dominantBaseline="central"
+    >
+      {text}
+    </text>
   );
 }
 

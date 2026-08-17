@@ -14,6 +14,17 @@ export function mulberry32(seed: number) {
   };
 }
 
+/**
+ * A whole number from `min` to `max`, both ends included.
+ *
+ * Here rather than in the module that first wanted it because three of the
+ * sheet families draw numbers out of a declared range, and an off-by-one in a
+ * bound is a worksheet with a problem on it the parent excluded.
+ */
+export function between(min: number, max: number, rand: () => number): number {
+  return min + Math.floor(rand() * (max - min + 1));
+}
+
 export function shuffled<T>(items: readonly T[], rand: () => number): T[] {
   const out = items.slice();
   for (let i = out.length - 1; i > 0; i--) {

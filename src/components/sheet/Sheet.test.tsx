@@ -11,6 +11,7 @@ import { DEFAULT_PAPER } from "@/engine/sheets/paper";
 import type {
   ArithmeticConfig,
   Block,
+  MultiplicationConfig,
   Paper,
   Problem,
   Sheet,
@@ -61,6 +62,23 @@ const EVERY_BLOCK: Block[] = [
         answer: "75",
         line: { from: 0, to: 20, step: 2, width: 2400 },
       },
+      // And the two long forms: a stack with its partial products between the
+      // rule and the total, and the division bracket, whose answer is written
+      // above the problem rather than under it.
+      {
+        prompt: "",
+        operands: ["347", "26"],
+        operator: "×",
+        working: ["2082", "6940"],
+        workspace: 500,
+        answer: "9022",
+      },
+      {
+        prompt: "",
+        bracket: { divisor: "4", dividend: "938" },
+        answer: "234 r 2",
+        workspace: 1500,
+      },
     ],
   },
   { kind: "rules", rule: { style: "hand-5-8", descender: true }, lines: 6 },
@@ -89,6 +107,20 @@ const EVERY_BLOCK: Block[] = [
       cell: 250,
       cells: ["1", "2", "", "4"],
       origin: { column: 2, row: 2 },
+    },
+  },
+  {
+    kind: "grid",
+    grid: {
+      kind: "chart",
+      columns: 3,
+      rows: 3,
+      cell: 250,
+      // A multiplication square: headers on the sheet from the start, products
+      // only on the key, and the two heavier rules that keep them apart.
+      cells: ["×", "2", "3", "4", "", "", "5", "", ""],
+      answers: ["", "", "", "", "8", "12", "", "10", "15"],
+      origin: { column: 1, row: 1 },
     },
   },
   {
@@ -183,6 +215,27 @@ function filesUnder(dir: string, endings: string[]): string[] {
 }
 
 const read = (path: string) => readFileSync(path, "utf8");
+
+/**
+ * How far a rule holds its text off the right edge of its own box, as written.
+ *
+ * Compared as the source string rather than as a length, because that is all
+ * this can honestly claim without a browser: two rules that declare `0.06in`
+ * agree, and two that declare different things are a question for whoever
+ * changed one of them. Both the longhand and the three-value shorthand are
+ * read, since the two rules this compares are written each way.
+ */
+function rightInset(css: string, rule: string): string {
+  const block = css.slice(css.indexOf(rule));
+  const body = block.slice(0, block.indexOf("}"));
+  const longhand = /padding-right:\s*([^;]+);/.exec(body);
+  if (longhand) return longhand[1].trim();
+  const shorthand = /padding:\s*([^;]+);/.exec(body);
+  if (!shorthand) throw new Error(`${rule} declares no padding at all`);
+  // top | right-and-left | bottom, and the one-value form besides.
+  const parts = shorthand[1].trim().split(/\s+/);
+  return parts.length === 1 ? parts[0] : parts[1];
+}
 
 /**
  * The landmarks a page puts around a sheet: its sections, its page header, and
@@ -449,6 +502,208 @@ describe("a rendered arithmetic sheet", () => {
     }
   });
 });
+
+/* ── The long forms, and the square ────────────────────────────────────────
+   The two sheets where the answer is not the only thing written down. The
+   engine's suite proves the partials and the quotients are right; this is
+   where they have to land in the right place on the paper, which is the whole
+   of what a long form teaches and the one thing no unit test of the engine can
+   see. Built through the real family, so a shape it starts producing is a
+   shape these see.                                                          */
+
+const multiplication = (
+  over: Partial<MultiplicationConfig> = {},
+): MultiplicationConfig => ({
+  kind: "multiplication",
+  paper: DEFAULT_PAPER,
+  fontPt: 12,
+  fields: ["name"],
+  operation: "multiply",
+  style: "standard",
+  form: "horizontal",
+  tables: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+  factors: { min: 0, max: 12 },
+  count: 4,
+  columns: 2,
+  ...over,
+});
+
+const timesTable = (over: Partial<MultiplicationConfig> = {}) =>
+  render(buildSheet(multiplication(over), SEED) as Sheet);
+const timesKey = (over: Partial<MultiplicationConfig> = {}) =>
+  render(answerKey(multiplication(over), SEED) as Sheet);
+
+const LONG_MULTIPLICATION = {
+  style: "long",
+  digits: { into: 3, by: 2 },
+} as const;
+const LONG_DIVISION = {
+  style: "long",
+  operation: "divide",
+  digits: { into: 3, by: 1 },
+  remainders: true,
+} as const;
+
+describe("a rendered multiplication sheet", () => {
+  /** Every shape the family prints a problem in, as the renderer sees them. */
+  const SHAPES: Array<Partial<MultiplicationConfig>> = [
+    {},
+    { form: "vertical" },
+    { operation: "divide" },
+    { operation: "divide", form: "vertical" },
+    { style: "missing" },
+    LONG_MULTIPLICATION,
+    LONG_DIVISION,
+  ];
+
+  it("gives every problem exactly one place to write the answer", () => {
+    // The rule `Problems.tsx` is built around. A long multiplication's working
+    // lines are not one of them — they are working, and they are marked as
+    // working — so what is counted is the four places an *answer* goes.
+    for (const shape of SHAPES) {
+      for (const html of [timesTable(shape), timesKey(shape)]) {
+        const items = problems(html);
+        expect(items.length).toBeGreaterThan(0);
+        for (const item of items) {
+          const places =
+            count(item, 'class="sheet__slot') +
+            count(item, 'class="sheet__total') +
+            count(item, 'class="sheet__quotient') +
+            count(item, 'class="sheet__answers"');
+          expect(places, `${JSON.stringify(shape)}: ${item}`).toBe(1);
+        }
+      }
+    }
+  });
+
+  it("sets a long division in a bracket, with the answer on top of the bar", () => {
+    const [item] = problems(timesKey(LONG_DIVISION));
+    const divisor = item.indexOf('class="sheet__divisor"');
+    const quotient = item.indexOf('class="sheet__quotient');
+    const dividend = item.indexOf('class="sheet__dividend"');
+    // The divisor is outside the bracket, the quotient is written along the
+    // top of the bar, and the dividend is under it. In that order, because
+    // that is the order they are on paper and there is only one of it.
+    expect(divisor).toBeGreaterThanOrEqual(0);
+    expect(quotient).toBeGreaterThan(divisor);
+    expect(dividend).toBeGreaterThan(quotient);
+    expect(item).toMatch(
+      /class="sheet__quotient sheet__quotient--answered">\d+ r \d+</,
+    );
+    // And the blank sheet is the same drawing with nothing written on it.
+    expect(problems(timesTable(LONG_DIVISION))[0]).toContain(
+      '<span class="sheet__quotient"></span>',
+    );
+  });
+
+  it("rules the bracket rather than drawing it, so it always prints", () => {
+    // §5: browsers drop background paint, and a bracket that came out of the
+    // printer as three numbers in a row is not a long division.
+    const css = read(join(ROOT, "src/styles/sheet.css"));
+    const bracket = css.slice(css.indexOf(".sheet__dividend {"));
+    expect(bracket).toContain("border-top");
+    expect(bracket).toContain("border-left");
+  });
+
+  it("writes a long multiplication's partials between the rule and the total", () => {
+    const items = itemsOfMultiplication(LONG_MULTIPLICATION);
+    const partials = items.flatMap((problem) => problem.working ?? []);
+    expect(partials.length).toBe(items.length * 2);
+
+    const sheet = problems(timesTable(LONG_MULTIPLICATION));
+    for (const item of sheet) {
+      expect(count(item, 'class="sheet__work-line')).toBe(2);
+      // Inside the stack and above the total, which is where the algorithm
+      // puts them — under the sheet's own rule, not under the answer.
+      expect(item.indexOf('class="sheet__work"')).toBeLessThan(
+        item.indexOf('class="sheet__total'),
+      );
+      // Each line carries a share of the height the family reserved, so the
+      // row is as tall as the layout arithmetic said it was — and that height
+      // is spent once. Blank paper under the total *as well* would be a row
+      // twice as tall as the reservation, which is the bottom of the page on a
+      // second sheet.
+      expect(item).toContain("height:0.25in");
+      expect(count(item, 'class="sheet__workspace"')).toBe(0);
+    }
+    // Long division does take blank paper under the bracket, which is where a
+    // child works it: the two forms spend the same reservation differently.
+    for (const item of problems(timesTable(LONG_DIVISION))) {
+      expect(count(item, 'class="sheet__workspace"')).toBe(1);
+    }
+
+    const key = timesKey(LONG_MULTIPLICATION);
+    for (const partial of partials) expect(key).toContain(partial);
+  });
+
+  it("keeps the digits in their columns on both long forms", () => {
+    // The whole of what a long form teaches is which column a digit lands in,
+    // and a proportional face puts a 1 half a column left of where a 4 goes.
+    const css = read(join(ROOT, "src/styles/sheet.css"));
+    for (const rule of [".sheet__column {", ".sheet__bracket {"]) {
+      const block = css.slice(css.indexOf(rule));
+      expect(block.slice(0, block.indexOf("}"))).toContain(
+        "font-variant-numeric: tabular-nums",
+      );
+    }
+
+    // Tabular figures only line a quotient up with its dividend while the two
+    // boxes hold their digits the same distance off their shared right edge. A
+    // padding added to one and not the other slides the whole quotient across
+    // by a fraction of a digit — invisible in review, and the one thing the
+    // sheet exists to teach. Asserted rather than trusted.
+    expect(rightInset(css, ".sheet__quotient {")).toBe(
+      rightInset(css, ".sheet__dividend {"),
+    );
+  });
+
+  it("fills a multiplication grid in only on the key", () => {
+    // The square a child fills in: headers from the start, products at the
+    // end, and the same build for both — `answers` flipped and nothing else.
+    const grid = { style: "grid" as const, tables: [2, 3] };
+    const sheet = timesTable(grid);
+    const key = timesKey(grid);
+    for (const header of [">×<", ">2<", ">3<"]) expect(sheet).toContain(header);
+    // Twelve times three and twelve times two, on the key and nowhere else.
+    expect(sheet).not.toContain(">36<");
+    expect(key).toContain(">36<");
+    expect(key).toContain(">24<");
+    expect(count(key, "sheet__cell--answered")).toBe(2 * 13);
+    expect(count(sheet, "sheet__cell--answered")).toBe(0);
+    // And the headers are ruled off from the answers, so a child does not read
+    // the row label as part of the sum.
+    expect(sheet).toContain('class="sheet__axes"');
+  });
+
+  it("prints nothing in any answer place until the sheet is a key", () => {
+    const PLACES = [
+      /<span class="sheet__slot"[^>]*>(.*?)<\/span>/g,
+      /<span class="sheet__total"[^>]*>(.*?)<\/span>/g,
+      /<span class="sheet__quotient"[^>]*>(.*?)<\/span>/g,
+      /<span class="sheet__work-line"[^>]*>(.*?)<\/span>/g,
+    ];
+    for (const shape of SHAPES) {
+      const html = timesTable(shape);
+      const where = JSON.stringify(shape);
+      expect(html, where).not.toContain("--answered");
+      let found = 0;
+      for (const place of PLACES) {
+        for (const [, inside] of html.matchAll(place)) {
+          expect(inside, where).toBe("");
+          found += 1;
+        }
+      }
+      expect(found, where).toBeGreaterThan(0);
+    }
+  });
+});
+
+/** The problems of a built multiplication sheet, narrowed out of the union. */
+function itemsOfMultiplication(over: Partial<MultiplicationConfig>): Problem[] {
+  const block = buildSheet(multiplication(over), SEED).blocks[0];
+  if (block.kind !== "problems") throw new Error(`got ${block.kind}`);
+  return block.items;
+}
 
 /* ── It has to survive the printer ─────────────────────────────────────── */
 

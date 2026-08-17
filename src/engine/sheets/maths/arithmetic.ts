@@ -26,7 +26,7 @@
  * get rather than the same sum three times.
  */
 import { arithmeticFactId } from "@/engine/decks/flashcards";
-import { mulberry32 } from "@/engine/random";
+import { between, mulberry32 } from "@/engine/random";
 
 import type {
   ArithmeticConfig,
@@ -40,18 +40,24 @@ import type {
 } from "../types";
 
 import { sheetBlockBox } from "../chrome";
-import { columnWidth, fitAcross, type Box } from "../layout";
+import {
+  PROBLEM_GAP,
+  answerLine,
+  columnWidth,
+  fitAcross,
+  type Box,
+} from "../layout";
 import { NUMBER_LINE_HEIGHT, numberLine } from "../numberline";
 import { inches, points } from "../paper";
 import { SHEET_CREDIT, SHEET_URL, SHEET_WORLD, type SheetSpec } from "../spec";
 
 /* ── What a problem takes on the page ─────────────────────────────────────
    Declared, not measured (§4), and trailing sheet.css the same way chrome.ts
-   does: `.sheet__problems` sets a 0.2in gap down and 0.3in across, a problem
-   written along a line is one line of the body type with a little air round
-   it, and a column sum is the two numbers, the rule and the answer under it. */
+   does: a problem written along a line is one line of the body type with a
+   little air round it, and a column sum is the two numbers, the rule and the
+   answer under it. The gap between them belongs to the shared problem grid and
+   lives with the rest of its arithmetic, in layout.ts.                       */
 
-export const GAP = { x: inches(0.3), y: inches(0.2) };
 const ROW_EMS = { horizontal: 1.7, vertical: 4.4 } as const;
 
 /** Blank space to work a sum out in, when the config asks for it. */
@@ -59,17 +65,6 @@ const WORKSPACE = inches(0.55);
 
 /** A fact family is four number sentences, and each one gets a line. */
 const FAMILY_LINES = 4;
-
-/**
- * How tall one ruled line for a written answer is.
- *
- * A quarter of an inch is what a child writes on, and never less than the body
- * type needs: at 18pt the type is a quarter inch on its own, and a key printed
- * onto lines shorter than its own letters is a row taller than this reserved
- * for — which is the last row of the page on a second sheet of paper.
- */
-const answerLine = (fontPt: number): Mil =>
-  Math.max(inches(0.25), points(fontPt * 1.35));
 
 /** The room a fact family's four sentences take, lines and all. */
 const familySpace = (fontPt: number): Mil => FAMILY_LINES * answerLine(fontPt);
@@ -138,9 +133,6 @@ type Sum = {
   result: number;
 };
 
-const pick = (min: number, max: number, rand: () => number): number =>
-  min + Math.floor(rand() * (max - min + 1));
-
 /** The range, made safe to draw from whatever a saved config says. */
 function bounds(range: { min: number; max: number }): {
   min: number;
@@ -172,8 +164,8 @@ function drawSum(config: ArithmeticConfig, rand: () => number): Sum | null {
           : "subtract"
         : config.operation;
 
-  const first = pick(min, max, rand);
-  const second = pick(min, max, rand);
+  const first = between(min, max, rand);
+  const second = between(min, max, rand);
 
   if (operation === "add") {
     // A doubles pair has no family: 4 + 4 = 8 turned round is 4 + 4 = 8, and
@@ -371,9 +363,9 @@ export function arithmeticLayout(config: ArithmeticConfig): {
   return {
     box,
     columns,
-    cell: columnWidth(box, columns, GAP.x),
+    cell: columnWidth(box, columns, PROBLEM_GAP.x),
     row,
-    perPage: columns * fitAcross(box.height, row, GAP.y),
+    perPage: columns * fitAcross(box.height, row, PROBLEM_GAP.y),
   };
 }
 
