@@ -7,10 +7,13 @@
  * comes first, and it is the same box the bootstrap pastes into — see
  * `WordList` in parts.tsx for why there is only one of them.
  *
- * Two of the four steppers are conditional, and neither is a nicety. Nothing
- * is written three times on a sheet that is only numbered lines, and nothing
- * has letters taken out of it unless the gaps are the exercise. An option that
- * does nothing teaches a parent that the panel doesn't do what it says.
+ * Two of the steppers are conditional, and neither is a nicety. Nothing is
+ * written three times on a sheet that is only numbered lines, and nothing has
+ * letters taken out of it unless the gaps are the exercise. An option that does
+ * nothing teaches a parent that the panel doesn't do what it says — which is
+ * also why the columns stepper disappears on the two styles that are a list down
+ * the page rather than a grid across it (`wordsLayout` is the half of this that
+ * decides).
  */
 import { FieldSet, NumberStepper } from "@/components/ui/kit";
 import type { WordSheetStyle, WordsConfig } from "@/engine/sheets/types";
@@ -19,13 +22,34 @@ import { parseWords } from "@/services/decks";
 
 import { Choice, Sizing, WordList, opt, type PanelProps } from "./parts";
 
+/**
+ * The seven exercises, in the order a week uses them: look at the word, take it
+ * apart, then be tested on it.
+ */
 const STYLES = [
   opt<WordSheetStyle>("copy", "Write it out"),
+  opt<WordSheetStyle>("shapes", "Word shapes"),
   opt<WordSheetStyle>("missing", "Missing letters"),
+  opt<WordSheetStyle>("find", "Find the word"),
+  opt<WordSheetStyle>("abc", "ABC order"),
+  opt<WordSheetStyle>("sentence", "In a sentence"),
   opt<WordSheetStyle>("test", "Spelling test"),
 ];
 
+/** The styles that put a ruled line under every word, and what to call them. */
+const LINES: Partial<
+  Record<WordSheetStyle, { legend: string; label: string }>
+> = {
+  copy: { legend: "Times each", label: "Times each word is written" },
+  sentence: { legend: "Lines each", label: "Lines to write a sentence on" },
+};
+
+/** The two styles that are one word to a line whatever the config says. */
+const DOWN_THE_PAGE: WordSheetStyle[] = ["missing", "find"];
+
 export function WordsPanel({ config, set }: PanelProps<WordsConfig>) {
+  const lines = LINES[config.style];
+
   return (
     <>
       <WordList
@@ -50,10 +74,10 @@ export function WordsPanel({ config, set }: PanelProps<WordsConfig>) {
         options={STYLES}
       />
 
-      {config.style === "copy" && (
-        <FieldSet legend="Times each">
+      {lines && (
+        <FieldSet legend={lines.legend}>
           <NumberStepper
-            label="Times each word is written"
+            label={lines.label}
             value={config.times}
             min={1}
             max={MAX_TIMES}
@@ -77,12 +101,12 @@ export function WordsPanel({ config, set }: PanelProps<WordsConfig>) {
         </FieldSet>
       )}
 
-      {/* A gapped word is a line of its own, so that sheet has no columns to
-          choose — see `wordsLayout`, which is the half of this that decides. */}
       <Sizing
         label="Words"
         count={config.count}
-        columns={config.style === "missing" ? undefined : config.columns}
+        columns={
+          DOWN_THE_PAGE.includes(config.style) ? undefined : config.columns
+        }
         onCount={(count) => set({ count })}
         onColumns={(columns) => set({ columns })}
         maxColumns={3}

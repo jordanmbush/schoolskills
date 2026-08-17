@@ -70,6 +70,29 @@ export const PROBLEM_GAP = { x: inches(0.3), y: inches(0.2) };
 export const WRAP_GAP: Mil = inches(0.06);
 
 /**
+ * The air between one item of a list and the next.
+ *
+ * `.sheet__blanks` and `.sheet__questions` are both flex columns with this as
+ * their `gap`, which is why it is one constant: a sentence with a gap in it and
+ * a multiple-choice question are the same shape of thing down the page, and two
+ * families now divide a page by it. The fourth of these to trail sheet.css, for
+ * the same reason as the three above — the failure is silent on screen and is
+ * the last question below the bottom margin on paper.
+ */
+export const LIST_GAP: Mil = inches(0.16);
+
+/**
+ * How tall one row of a matching block stands, in ems of the body size.
+ *
+ * `Matching.tsx` draws the block from this and a family reserves the page for
+ * it, so it is declared once here rather than in both: the renderer's own copy
+ * was the number, and a family that guessed a different one would print a
+ * column of pairs off the bottom of the page. Two lines of type — room to draw
+ * a line between two dots, and room to read the words either side of it.
+ */
+export const MATCH_ROW_EMS = 2.4;
+
+/**
  * The air between one block and the next.
  *
  * `.sheet__blocks` is a flex column and this is its `gap`, in the unit the

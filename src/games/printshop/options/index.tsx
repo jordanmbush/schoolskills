@@ -36,6 +36,7 @@ import { StatisticsPanel } from "./statistics";
 import { TimePanel } from "./time";
 import { WordProblemsPanel } from "./wordproblems";
 import { WordsPanel } from "./words";
+import { WordStudyPanel } from "./wordstudy";
 import type { PanelProps } from "./parts";
 
 type FamilyPanel = (props: PanelProps) => ReactNode;
@@ -88,6 +89,7 @@ const PANELS: Record<string, FamilyPanel> = {
   statistics: panel(StatisticsPanel),
   "word-problems": panel(WordProblemsPanel),
   words: panel(WordsPanel),
+  "word-study": panel(WordStudyPanel),
   handwriting: panel(HandwritingPanel),
   memory: panel(MemoryPanel),
 };

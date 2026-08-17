@@ -27,6 +27,7 @@ import { Shapes } from "./Shapes";
 import { Spacer } from "./Spacer";
 import { Trace } from "./Trace";
 import { WordSearch } from "./WordSearch";
+import { WordShapes } from "./WordShapes";
 
 export function BlockView({
   block,
@@ -54,6 +55,8 @@ export function BlockView({
       return <Blanks block={block} metrics={metrics} />;
     case "choice":
       return <Choice block={block} metrics={metrics} />;
+    case "wordshapes":
+      return <WordShapes block={block} metrics={metrics} />;
     case "clock":
       return <Clock block={block} metrics={metrics} />;
     case "shapes":

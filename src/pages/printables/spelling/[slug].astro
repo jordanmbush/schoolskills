@@ -1,0 +1,255 @@
+---
+import Content from "@/layouts/Content.astro";
+import AdSlot from "@/components/site/AdSlot.astro";
+import { SheetView } from "@/components/sheet/Sheet";
+import { answerKey, buildSheet } from "@/engine/sheets";
+import {
+  SPELLING_SEED,
+  SPELLING_SHEETS,
+  builderHref,
+  keyed,
+  pathFor,
+  spellingShelf,
+  type SpellingSheet,
+} from "../_spelling";
+
+/**
+ * One prerendered spelling sheet per topic — and the page is the sheet.
+ *
+ * The shape §8 describes, applied to the shelf where the *content* is the thing
+ * somebody searched for: "free printable rhyming words worksheets" and "plural
+ * nouns worksheets" are queries a parent types, and a page that answers one of
+ * them has prose above the sheet, the sheet itself as HTML under it, and nothing
+ * to click before pressing ⌘P.
+ *
+ * **One stock, as with maths and unlike the ruled shelves.** Nothing on a
+ * spelling sheet is a measurement, so there is no A4 twin to keep in step — the
+ * one ruled page here says so in its own prose and sends a parent to the
+ * handwriting shelf, which has both. That is also why this is a single-segment
+ * `[slug]` under `spelling/` rather than a rest pattern: there is no second
+ * segment to carry.
+ *
+ * **The answer key prints only where there is one.** A copying sheet has the
+ * word at the head of every line already and a sentence sheet has no right
+ * answer at all, so `keyed` decides and those two pages print one article
+ * instead of two identical ones. Where a key does print it is `answerKey` —
+ * `answers` flipped on the same build, so it cannot disagree with the sheet it
+ * belongs to (§7).
+ *
+ * **No client directive on `SheetView`, ever.** `@astrojs/react` renders a
+ * component with no `client:*` to HTML at build time, so these pages ship zero
+ * JavaScript — the whole SEO argument of §2. `Sheet.test.tsx` holds every page in
+ * this directory to it, against the source and against `dist/`.
+ *
+ * **Everything that is not the sheet carries `.no-print`.** `@page` cannot be
+ * scoped to a class, so the zeroed page margin a sheet needs applies to the
+ * prose as well and it would print off the edge.
+ */
+
+type Props = { sheet: SpellingSheet };
+
+export function getStaticPaths() {
+  return SPELLING_SHEETS.map((sheet) => ({
+    params: { slug: sheet.slug },
+    props: { sheet },
+  }));
+}
+
+const { sheet } = Astro.props;
+
+const printed = buildSheet(sheet.config, SPELLING_SEED);
+const key = keyed(sheet) ? answerKey(sheet.config, SPELLING_SEED) : null;
+
+const title = `${sheet.keyword} | School Skills`;
+const description = `${sheet.summary} Printed straight from this page — free, no account, and no download.`;
+const url = `https://schoolskills.app${pathFor(sheet)}`;
+
+const groups = spellingShelf();
+const group = groups.find((entry) => entry.id === sheet.group)!;
+
+/**
+ * Whether the page's words are the engine's rather than a parent's.
+ *
+ * The one thing the prose below cannot say the same way for every page on this
+ * shelf: a spelling sheet is a list somebody can replace with their own, and a
+ * word-study sheet is a bank of authored questions where what a parent changes is
+ * the topic. Offering to refill the box on a homophones page would be offering
+ * something the family does not do.
+ */
+const study = sheet.config.kind === "word-study";
+---
+
+<Content
+  title={title}
+  description={description}
+  world="paper"
+  jsonLd={{
+    "@context": "https://schema.org",
+    "@type": "LearningResource",
+    name: sheet.heading,
+    description,
+    url,
+    learningResourceType: "Worksheet",
+    educationalUse: "Practice",
+    teaches: sheet.teaches,
+    typicalAgeRange: sheet.ages,
+    isAccessibleForFree: true,
+    inLanguage: "en",
+  }}
+>
+  <header class="hero wrap no-print">
+    <p class="hero__eyebrow">
+      <span class="hero__world">The Print Shop</span>
+      Spelling &middot; {group.label}
+    </p>
+    <h1 class="hero__title">{sheet.heading}</h1>
+    <p class="hero__lead">{sheet.lead}</p>
+    <p class="aside">
+      The sheet below <strong>is</strong> the printout{
+        key ? ", and the page behind it is the answer key" : ""
+      }. Press <strong>&#8984;P</strong> &mdash; <strong>Ctrl+P</strong> on Windows
+      &mdash; and everything but the paper disappears. To keep a copy instead, pick
+      <em>Save as PDF</em> in the print dialog and your browser writes one.
+    </p>
+    <p class="hero__note">Free &middot; no account &middot; no download</p>
+  </header>
+
+  {
+    /*
+      The sheets, outside `.wrap` deliberately. A wrap adds an inline padding
+      that print.css cannot take back off, and a sheet printed a centimetre in
+      from where it says it is has the wrong geometry everywhere at once. The
+      key is a sibling of the sheet with nothing between them, because
+      print.css breaks pages on `.sheet + .sheet` as well.
+    */
+  }
+  <div class="sheet-frame">
+    <SheetView sheet={printed} />
+    {key && <SheetView sheet={key} />}
+  </div>
+
+  <section class="band band--tight wrap no-print">
+    <h2 class="h2">What is on this sheet</h2>
+    <div class="prose">
+      {sheet.notes.map((note) => <p>{note}</p>)}
+      {
+        key ? (
+          <p>
+            The answers were decided when the sheet was built, so the key is the
+            same page with them drawn in rather than a second attempt at the
+            same questions &mdash; there is no way for the two to disagree. The
+            number in the footer is the seed the sheet was built from: it is
+            printed so that the identical sheet can be had again next week,
+            rather than one that merely looks like it.
+          </p>
+        ) : (
+          <p>
+            There is no answer key behind this one, and that is the honest
+            answer rather than an omission &mdash; what goes on these lines is
+            the child&rsquo;s own. The number in the footer is the seed the
+            sheet was built from, so the identical sheet can be had again next
+            week.
+          </p>
+        )
+      }
+    </div>
+  </section>
+
+  <section class="band band--tight wrap no-print">
+    <h2 class="h2">
+      {study ? "Change what is on it" : "Your own words on the same sheet"}
+    </h2>
+    <div class="prose">
+      {
+        study ? (
+          <p>
+            This page is one sheet out of a family that can print thousands. The
+            topic is a setting rather than a different worksheet: ten of them
+            &mdash; rhyme, syllables, word families, prefixes and suffixes,
+            plurals, contractions, homophones, synonyms and antonyms &mdash; and
+            each is asked in whichever of the three shapes suits it, written on
+            a ruled line, circled from four, or joined up in two columns. How
+            many questions and how many columns are switches beside them.
+          </p>
+        ) : (
+          <p>
+            This page is one sheet out of a family that can print thousands. The
+            words on it are one of the shipped sight-word lists, and the box
+            that holds them takes a typed or pasted list instead &mdash; this
+            week&rsquo;s spellings off a school letter, or a list you already
+            keep in the game. The same words then print as any of the seven
+            styles: written out, in word shapes, with letters missing, in ABC
+            order, in a sentence, found among near misses, or as a blank test.
+          </p>
+        )
+      }
+      <p class="aside">
+        The settings travel in the link rather than on a server, so a sheet you
+        make can be bookmarked or sent to another family as it stands &mdash;
+        and the <em>Name:</em> line is printed blank, because there is nowhere in
+        a shared link to put a child&rsquo;s name. See{" "}
+        <a href="/privacy">what we don&rsquo;t collect</a>.
+      </p>
+    </div>
+    <div class="hero__actions">
+      <a class="cta cta--quiet" href={builderHref(sheet)}>
+        Open this sheet in the builder
+      </a>
+      <a class="cta cta--quiet" href="/printables/spelling">
+        All the spelling sheets
+      </a>
+    </div>
+  </section>
+
+  <div class="wrap no-print"><AdSlot name="article" /></div>
+
+  <section class="band band--tight wrap no-print">
+    <h2 class="h2">The same words, on screen</h2>
+    <div class="prose">
+      <p>
+        Word Jungle deals the sight-word lists as flash cards: the word is read
+        aloud, in a sentence, and typed back &mdash; which is the half of
+        spelling a worksheet cannot do, because paper cannot say a word out
+        loud. A child who has just worked through a page is the one likeliest to
+        race it, and the record book then knows which words they keep missing,
+        so the next sheet can be exactly those.
+      </p>
+    </div>
+    <div class="hero__actions">
+      <a class="cta" href="/spelling">Spelling and sight words</a>
+      <a class="cta cta--quiet" href="/spelling/play">Start a spelling race</a>
+    </div>
+  </section>
+
+  <section class="band band--tight wrap no-print">
+    <h2 class="h2">Every spelling sheet</h2>
+    <p class="h2__sub">
+      {SPELLING_SHEETS.length} pages, each one a sheet like this one. Nothing is locked
+      and nothing needs an account.
+    </p>
+    {
+      groups.map((entry) => (
+        <>
+          <h3 class="h2 h2--next">{entry.label}</h3>
+          <p class="h2__sub">{entry.blurb}</p>
+          <nav class="stones" aria-label={entry.label}>
+            {entry.sheets.map((candidate) => (
+              <a
+                class="stone"
+                href={pathFor(candidate)}
+                aria-current={
+                  candidate.slug === sheet.slug ? "page" : undefined
+                }
+              >
+                {candidate.short}
+              </a>
+            ))}
+          </nav>
+        </>
+      ))
+    }
+    <div class="hero__actions">
+      <a class="cta cta--quiet" href="/printables">Back to The Print Shop</a>
+    </div>
+  </section>
+</Content>

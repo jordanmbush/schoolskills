@@ -248,6 +248,21 @@ const DEFAULTS: Record<string, SheetConfig> = {
     count: STARTER_WORDS.length,
     columns: 2,
   },
+  "word-study": {
+    ...BASE,
+    kind: "word-study",
+    // Rhyming, circled: the youngest sheet on this shelf and the one that looks
+    // most like a worksheet at a glance, which is what the bench opening on it
+    // has to do. Every other topic is one control away, and the control lists
+    // them in the order they are taught.
+    topic: "rhyming",
+    style: "choose",
+    count: 12,
+    // Only the written topics lay their questions out across the page, and this
+    // is what they get when a parent switches to one — a circle-one sheet is a
+    // list down the page whatever this says (`studyLayout`).
+    columns: 2,
+  },
   handwriting: {
     ...BASE,
     kind: "handwriting",

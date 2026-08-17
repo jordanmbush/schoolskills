@@ -203,6 +203,7 @@
 .sheet__blanks,
 .sheet__questions,
 .sheet__options,
+.sheet__wordshapes,
 .sheet__words {
   list-style: none;
   padding-left: 0;
@@ -627,6 +628,42 @@
   gap: 0.06in 0.28in;
   margin-top: 0.12in;
   font-size: 0.9em;
+}
+
+/* ── Word shapes ────────────────────────────────────────────────────────────
+   The same grid a page of problems is laid out on, and for the same reason: the
+   family decided how many columns fit and reserved the page against it, so the
+   gaps here are the ones `PROBLEM_GAP` names in mil. The boxes themselves are
+   drawn in the block — strokes rather than borders on a `<span>`, because their
+   heights are three bands of one row rather than three sizes of text.        */
+
+.sheet__wordshapes {
+  display: grid;
+  grid-template-columns: repeat(var(--sheet-columns, 2), minmax(0, 1fr));
+  gap: 0.2in 0.3in;
+}
+
+/* The one row on a sheet that may not wrap. Every other flex row here wraps
+   onto a second line and the family reserves for it (`WRAP_GAP`); a row of
+   boxes cannot, because how tall it is was declared before the words were known
+   and a very long word in a narrow column would take a line nobody reserved —
+   which is the last row of the page on a second sheet of paper. `.sheet__ink`
+   is already `max-width: 100%`, so what a word too wide for its column does
+   instead is shrink its own boxes, which is the cheap side to be wrong on. */
+.sheet__wordshape {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 0.06in;
+  break-inside: avoid;
+}
+
+/* A hairline box, never a filled one: a child writes in these, and the ink note
+   above is the other half of it — a tinted box is the one mark a browser drops
+   when printing, which would print a word-shape sheet as a blank page. */
+.sheet__box {
+  fill: none;
+  stroke: currentcolor;
 }
 
 .sheet__faces,

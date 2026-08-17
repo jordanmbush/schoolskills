@@ -515,6 +515,27 @@ contractions · homophones · synonyms and antonyms.
 punctuation · capitalisation. Generatable from a tagged sentence bank, which is
 authored content but small and reusable.
 
+**What shipped (PRINT20).** The words shelf, and it is two families rather than
+one because the two halves are mirror images. `words/spelling.ts` is a list
+somebody else wrote in seven exercises — write it out, word shapes, missing
+letters, find it among its near misses, ABC order, use it in a sentence, and the
+blank test — where the list is the content and the exercise is a setting, so the
+same twelve words are a week's worth of paper from one box. `words/study.ts` is
+the other way round: the exercise is a parent's and the content is ours,
+authored in `words/bank.ts` because **English will not yield to a rule here** —
+a plural is `-s` until it is `-es`, `-ies`, `-ves` or `children`, and a generator
+reaching for the rule prints `mouses` in an answer key. Ten topics, each stating
+which of the three shapes of question it can honestly be asked in, because
+"write a word that rhymes with cat" has a hundred right answers and no key.
+
+Two things were reused rather than rebuilt, and both were nearly free. A "find
+the word" sheet's near misses are `wordDistractors` out of `decks/words.ts` —
+the same three the race's _spot it_ round deals — so a printed sheet and a played
+round ask one question of one list. And a sight word to _trace_ is the
+handwriting family with a word list on it, so the shelf's tracing page is a
+`HandwritingConfig` rather than an eighth spelling style: two families that draw
+letterforms would be one too many. Word search and crossword stay PRINT21.
+
 ### Templates — blank forms, high value, low effort
 
 Genuinely useful and completely honest: they're supposed to be empty.

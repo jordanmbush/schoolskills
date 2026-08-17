@@ -1,10 +1,9 @@
+import { MATCH_ROW_EMS } from "@/engine/sheets/layout";
 import { points } from "@/engine/sheets/paper";
 
 import { HAIRLINE, inch } from "../units";
 import type { BlockProps } from "./block";
 
-/** A row is two lines of type tall: room to draw between, and to write in. */
-const ROW_TO_EM = 2.4;
 /** Big enough for a five-year-old with a pencil to aim a line at. */
 const DOT = points(1.6);
 /** How far in from each edge the dots sit, as a share of the block width. */
@@ -18,6 +17,10 @@ const RIGHT_DOT = 0.56;
  * a middle dot in a font sits at a height that depends on the face. On the key
  * the pairing is a stroke from dot to dot, which is what a marked matching
  * exercise looks like and what a parent checks against.
+ *
+ * A row is `MATCH_ROW_EMS` of the body type tall — two lines, room to draw
+ * between and room to read either side — and that number lives in `layout.ts`
+ * because the family that prints this block reserves the page against it.
  */
 export function Matching({ block, metrics }: BlockProps<"matching">) {
   const rows = Math.max(block.left.length, block.right.length);
@@ -25,7 +28,7 @@ export function Matching({ block, metrics }: BlockProps<"matching">) {
 
   const width = metrics.box.width;
   const size = points(metrics.fontPt);
-  const row = Math.round(size * ROW_TO_EM);
+  const row = Math.round(size * MATCH_ROW_EMS);
   const height = rows * row;
   const leftX = Math.round(width * LEFT_DOT);
   const rightX = Math.round(width * RIGHT_DOT);
