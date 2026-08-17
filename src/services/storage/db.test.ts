@@ -169,6 +169,33 @@ async function seedVersion2(): Promise<IDBPDatabase> {
   return old;
 }
 
+/**
+ * The same, at version 3 — which is what is on production while this ships, so
+ * it is the upgrade every existing parent's browser will actually run. Version
+ * 2 skips two blocks at once and is the harder case in principle; this one is
+ * the only case where `createObjectStore` runs against a database that already
+ * has a store next to the one being added, and a block that forgot its guard
+ * would abort the whole transaction and leave the open rejecting for good.
+ */
+async function seedVersion3(): Promise<IDBPDatabase> {
+  const old = await openDB("schoolskills", 3, {
+    upgrade(database) {
+      database.createObjectStore("profiles", { keyPath: "id" });
+      const sessions = database.createObjectStore("sessions", {
+        keyPath: "id",
+      });
+      sessions.createIndex("byProfile", "profileId");
+      database.createObjectStore("decks", { keyPath: "id" });
+      database.createObjectStore("sheets", { keyPath: "id" });
+    },
+  });
+  await old.put("profiles", profile);
+  await old.put("sessions", session);
+  await old.put("decks", deck);
+  await old.put("sheets", sheet);
+  return old;
+}
+
 describe("upgrading from an older version", () => {
   it("adds the new stores and leaves everything else exactly as it was", async () => {
     freshIndexedDB();
@@ -190,6 +217,30 @@ describe("upgrading from an older version", () => {
 
     // And `sessions` kept its index. Losing it is the quiet failure: every read
     // above still works, and profile deletion and the ghost list stop.
+    const raw = await openDB("schoolskills", 4);
+    expect(await raw.getAllFromIndex("sessions", "byProfile", "kid-1")).toEqual(
+      [session],
+    );
+    raw.close();
+  });
+
+  it("leaves a print shop's saved sheets alone on the way to version 4", async () => {
+    freshIndexedDB();
+    (await seedVersion3()).close();
+
+    const db = await loadDb();
+
+    // The store that already existed comes back untouched. `sheets` is the one
+    // the version 3 block created, so this is the case that proves the guard on
+    // that block is doing its job rather than being skipped by luck.
+    expect(await db.allSheets()).toEqual([sheet]);
+    expect(await db.allProfiles()).toEqual([profile]);
+    expect(await db.allSessions()).toEqual([session]);
+    expect(await db.allDecks()).toEqual([deck]);
+
+    // And the only thing the upgrade added is an empty store.
+    expect(await db.allInventories()).toEqual([]);
+
     const raw = await openDB("schoolskills", 4);
     expect(await raw.getAllFromIndex("sessions", "byProfile", "kid-1")).toEqual(
       [session],
@@ -358,21 +409,29 @@ describe("what the phonics service writes", () => {
     expect(await phonics.all()).toEqual([]);
   });
 
-  it("refuses a list nobody named and one with nothing on it", async () => {
+  it("won't re-tick a list that has been deleted", async () => {
+    // The one refusal that has to read storage to know it is a refusal — the
+    // rest are pure and live in `services/phonics.test.ts`. Two tabs, one of
+    // them holding the edit screen for a list the other just deleted, is the
+    // way a parent reaches it.
     freshIndexedDB();
     await loadDb();
     const phonics = await import("../phonics");
 
+    const saved = await phonics.create({
+      name: "Sounds we know",
+      inventory: { sounds: ["s:s"], tricky: [] },
+    });
+    await phonics.remove(saved.id);
+
     await expect(
-      phonics.create({ name: " ", inventory: { sounds: ["s:s"], tricky: [] } }),
-    ).rejects.toThrow(/name/i);
-    // Held to the engine's reading of an inventory: `ai:e` is in the table so
-    // `said` can be described honestly, and is not something a parent can tick.
-    await expect(
-      phonics.create({
-        name: "Everything",
-        inventory: { sounds: ["ai:e"], tricky: [] },
+      phonics.update(saved.id, {
+        name: "Sounds we know",
+        inventory: { sounds: ["s:s", "a:a"], tricky: [] },
       }),
-    ).rejects.toThrow(/at least one sound/i);
+    ).rejects.toThrow(/no longer exists/i);
+    // And nothing was written on the way out: a failed re-tick must not put
+    // the list back.
+    expect(await phonics.all()).toEqual([]);
   });
 });

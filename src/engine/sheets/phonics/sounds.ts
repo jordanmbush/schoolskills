@@ -72,9 +72,9 @@ export type Phoneme = {
   /**
    * How the varieties in the header differ over this sound, when they do.
    *
-   * Present on six of the forty-five, absent on the rest — which is the point
-   * of writing it down: it makes the six visible instead of leaving a reader to
-   * wonder about all forty-five.
+   * Present on eight of the forty-five, absent on the rest — which is the
+   * point of writing it down: it makes the eight visible instead of leaving a
+   * reader to wonder about all forty-five.
    */
   varies?: string;
 };
@@ -337,6 +337,10 @@ const CONSONANT_SPELLINGS: Correspondence[] = [
   spells("wh", "w", "when", {
     note: "a few speakers say a puff of air first, as if it were hw",
   }),
+  // `who`, `whose`, `whom`, `whole` — four words, so a rule it is not, but
+  // recording it is what lets `who` be cut honestly instead of being cut as
+  // the `wh` of `when` and printed on a blending line as /w/ /oo/.
+  spells("wh", "h", "who", { odd: true }),
   spells("x", "k s", "box", { note: "two sounds in one letter" }),
   spells("y", "y", "yes", { note: "at the start of a word" }),
   spells("t", "-", "castle", { odd: true }),

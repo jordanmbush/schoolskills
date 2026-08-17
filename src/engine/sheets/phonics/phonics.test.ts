@@ -106,10 +106,16 @@ describe("the table of sounds and spellings", () => {
 
   it("says which accents it is describing where they differ", () => {
     // The divergences the header names, spelled out as a test so that a later
-    // edit quietly resolving one in favour of a single accent fails here.
-    for (const id of ["o", "aw", "ah", "ar", "er", "air"]) {
+    // edit quietly resolving one in favour of a single accent fails here. All
+    // eight, including the r-coloured ones the header's rhoticity paragraph
+    // covers as a set rather than one at a time.
+    const varying = ["o", "aw", "ah", "ar", "or", "er", "air", "eer"];
+    for (const id of varying) {
       expect(PHONEME_BY_ID.get(id)?.varies).toBeTruthy();
     }
+    // And no others, so that `Phoneme.varies`' own doc comment cannot drift
+    // away from the count it exists to make visible.
+    expect(PHONEMES.filter((p) => p.varies).map((p) => p.id)).toEqual(varying);
     // And the consonants, which the two varieties agree about completely.
     for (const phoneme of PHONEMES.filter((p) => p.kind === "consonant")) {
       expect(phoneme.varies).toBeUndefined();
@@ -202,6 +208,30 @@ describe("the word bank", () => {
     ]);
     // A silent letter says nothing, and takes up no room in the blend.
     expect(wordSounds(WORD_BY_SPELLING.get("have")!)).toEqual(["h", "a", "v"]);
+    // The same letters, two sounds, and nothing in the spelling to say which.
+    // `respell` cannot see the difference — both cuts put `ow` back — so the
+    // only thing standing between `cow` and a blending line that reads it as
+    // `co` is a case that names the sounds.
+    expect(wordSounds(WORD_BY_SPELLING.get("cow")!)).toEqual(["k", "ow"]);
+    expect(wordSounds(WORD_BY_SPELLING.get("snow")!)).toEqual(["s", "n", "oa"]);
+    expect(wordSounds(WORD_BY_SPELLING.get("who")!)).toEqual(["h", "oo"]);
+    expect(wordSounds(WORD_BY_SPELLING.get("when")!)).toEqual(["w", "e", "n"]);
+  });
+
+  it("has a word behind every spelling a parent can tick", () => {
+    // A tickable correspondence with no word in the bank is a box that can be
+    // ticked and can never produce anything: `pickWords({ focus })` on it comes
+    // back empty, and a wall chart prints a sound the child will never meet.
+    //
+    // It is also the cheapest guard there is against the shorthand resolving to
+    // the wrong row — `cow` was cut as the `ow` of `snow` for exactly as long
+    // as nothing checked that `ow:ow` was used by anything.
+    const used = new Set(WORDS.flatMap((entry) => entry.parts));
+    for (const entry of CORRESPONDENCES.filter(isTeachable)) {
+      expect(used.has(entry.id), `nothing in the bank uses ${entry.id}`).toBe(
+        true,
+      );
+    }
   });
 
   it("marks the words that follow no rule", () => {

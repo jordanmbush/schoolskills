@@ -219,7 +219,10 @@ const SHORT_U: Word[] = [
 /* ── Two letters, one sound ───────────────────────────────────────────────
    The doubles at the end of a short word, and `ck` — a child who has been
    taught `k` has not been taught `duck`, which is why the doubles are their
-   own tick boxes rather than a spelling rule applied quietly.               */
+   own tick boxes rather than a spelling rule applied quietly. The same two
+   letters land in the middle of a longer word for the same reason (`rabbit`
+   keeps its vowel short), so those live here too rather than in a group of
+   their own.                                                                */
 
 const DOUBLED: Word[] = [
   w("duck", "d u ck"),
@@ -251,6 +254,7 @@ const DOUBLED: Word[] = [
   w("buzz", "b u zz"),
   w("fizz", "f i zz"),
   w("egg", "e gg"),
+  w("rabbit", "r a bb i t"),
 ];
 
 /* ── The consonant digraphs ───────────────────────────────────────────────
@@ -574,14 +578,19 @@ const VOWEL_TEAMS: Word[] = [
   w("mouth", "m ou th"),
   w("shout", "sh ou t"),
   w("house", "h ou s e:-"),
-  w("cow", "c ow"),
-  w("how", "h ow"),
-  w("now", "n ow"),
-  w("down", "d ow n"),
-  w("town", "t ow n"),
-  w("brown", "b r ow n"),
-  w("clown", "c l ow n"),
-  w("crown", "c r ow n"),
+  // Both sounds of `ow` are written out in full, here and in the `snow` group
+  // above. The bare shorthand would resolve to whichever row `sounds.ts` lists
+  // first — and `ow` is the one grapheme in the table whose two sounds are both
+  // ordinary, so there is no "commonest" to lean on and no reading of `c ow`
+  // that isn't a guess about the table's order.
+  w("cow", "c ow:ow"),
+  w("how", "h ow:ow"),
+  w("now", "n ow:ow"),
+  w("down", "d ow:ow n"),
+  w("town", "t ow:ow n"),
+  w("brown", "b r ow:ow n"),
+  w("clown", "c l ow:ow n"),
+  w("crown", "c r ow:ow n"),
   w("coin", "c oi n"),
   w("join", "j oi n"),
   w("point", "p oi n t"),
@@ -614,6 +623,11 @@ const VOWEL_TEAMS: Word[] = [
   w("funny", "f u nn y:ee"),
   w("puppy", "p u pp y:ee"),
   w("silly", "s i ll y:ee"),
+  // The doubled `r`, and the one place it can be put without picking an
+  // accent: the vowel of `bed` before it is the same on both sides, where
+  // `sorry` and `carry` are the vowel of `dog` or of `cat` in one place and
+  // something else in the other. See the note at the top of this file.
+  w("cherry", "ch e rr y:ee"),
   w("baby", "b a:ai b y:ee"),
   w("paper", "p a:ai p er"),
   w("hello", "h e ll o:oa"),
@@ -706,9 +720,10 @@ const R_VOWELS: Word[] = [
 ];
 
 /* ── The letters that hide ────────────────────────────────────────────────
-   `kn`, `wr`, `mb`, and the endings that only ever come after a short vowel.
-   All of them are spellings with a rule behind them, so all of them are
-   tickable — the words that follow no rule at all are the next group down.  */
+   `kn`, `gn`, `wr`, `mb`, and the endings that only ever come after a short
+   vowel. All of them are spellings with a rule behind them, so all of them
+   are tickable — the words that follow no rule at all are the next group
+   down.                                                                     */
 
 const QUIET_LETTERS: Word[] = [
   w("knee", "kn ee"),
@@ -716,6 +731,7 @@ const QUIET_LETTERS: Word[] = [
   w("knit", "kn i t"),
   w("knock", "kn o ck"),
   w("knife", "kn i_e f"),
+  w("gnat", "gn a t"),
   w("write", "wr i_e t"),
   w("wrong", "wr o ng"),
   w("wrap", "wr a p"),
@@ -811,7 +827,7 @@ const TRICKY: Word[] = [
   w("two", "t w:- o:oo"),
   w("to", "t o:oo"),
   w("do", "d o:oo"),
-  w("who", "wh o:oo"),
+  w("who", "wh:h o:oo"),
   w("love", "l o:u v e:-"),
   w("come", "c o:u m e:-"),
   w("some", "s o:u m e:-"),
