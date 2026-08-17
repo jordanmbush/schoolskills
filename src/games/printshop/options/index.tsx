@@ -33,6 +33,7 @@ import { RatioPanel } from "./ratio";
 import { StatisticsPanel } from "./statistics";
 import { TimePanel } from "./time";
 import { WordProblemsPanel } from "./wordproblems";
+import { WordsPanel } from "./words";
 import type { PanelProps } from "./parts";
 
 type FamilyPanel = (props: PanelProps) => ReactNode;
@@ -84,6 +85,7 @@ const PANELS: Record<string, FamilyPanel> = {
   ratio: panel(RatioPanel),
   statistics: panel(StatisticsPanel),
   "word-problems": panel(WordProblemsPanel),
+  words: panel(WordsPanel),
 };
 
 /**

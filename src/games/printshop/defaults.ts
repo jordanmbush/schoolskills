@@ -17,6 +17,7 @@
  * below can produce a sheet that fails to fit — the builder never opens on a
  * page it would have to apologise for.
  */
+import { WORD_LISTS, listWords } from "@/engine/decks/wordlists";
 import { DEFAULT_FONT_PT, DEFAULT_PAPER } from "@/engine/sheets/paper";
 import type { SheetConfig, SheetOptions } from "@/engine/sheets/types";
 
@@ -39,6 +40,15 @@ const TABLES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 
 /** Halves through twelfths, skipping the ones a primary child never meets. */
 const DENOMINATORS = [2, 3, 4, 5, 6, 8, 10, 12];
+
+/**
+ * A list to open the spelling family on, from the shipped sight words.
+ *
+ * Twelve rather than the whole list, because the sheet is a starting point
+ * somebody replaces rather than the sheet they came for — and a page of forty
+ * words written three times each is a page that fits nothing else.
+ */
+const STARTER_WORDS = listWords(WORD_LISTS[0]).slice(0, 12);
 
 const DEFAULTS: Record<string, SheetConfig> = {
   blank: { ...BASE, kind: "blank", title: "Blank sheet" },
@@ -164,6 +174,20 @@ const DEFAULTS: Record<string, SheetConfig> = {
     range: { min: 1, max: 20 },
     count: 6,
     columns: 1,
+  },
+  words: {
+    ...BASE,
+    kind: "words",
+    style: "copy",
+    // A spelling family with an empty list is a page with nothing on it, and
+    // the bench's first job is to show a sheet rather than a form. So it opens
+    // on the first shipped sight-word list, which is a worksheet somebody would
+    // print unchanged — and the three bootstraps replace it in one press.
+    words: STARTER_WORDS,
+    times: 3,
+    gaps: 2,
+    count: STARTER_WORDS.length,
+    columns: 2,
   },
   "word-problems": {
     ...BASE,

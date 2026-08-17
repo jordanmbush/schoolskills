@@ -180,6 +180,57 @@
   transform-origin: top center;
 }
 
+/* ── The three bootstraps ───────────────────────────────────────────────────
+   Three sources stacked in one card rather than three cards, because they are
+   one question — what is this sheet about? — asked three ways. The card itself
+   is the same surface `.saved` and `.picker` are; only the steps inside it are
+   new.                                                                       */
+
+.bootstrap {
+  display: grid;
+  gap: var(--gap-3);
+  background: linear-gradient(180deg, var(--ink-800), var(--ink-850));
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-paper);
+  padding: var(--gap-4);
+}
+
+.bootstrap__title {
+  font-size: var(--step-1);
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+  color: var(--chalk);
+}
+
+.bootstrap__lead,
+.bootstrap__note {
+  font-size: var(--step--1);
+  color: var(--chalk-dim);
+}
+
+.bootstrap__step {
+  display: grid;
+  gap: var(--gap-2);
+  justify-items: start;
+  padding-top: var(--gap-2);
+  border-top: 1px solid var(--hairline);
+}
+
+.bootstrap__name {
+  font-size: var(--step-0);
+  color: var(--chalk-soft);
+}
+
+/* The facts themselves, in the deck's own words. A parent should be able to
+   see what is about to be printed before printing it — this is the whole claim
+   the section makes, and it is worth showing rather than counting. */
+.bootstrap__facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gap-1);
+}
+
 /* ── My sheets ──────────────────────────────────────────────────────────── */
 
 .saved {

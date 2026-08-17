@@ -645,3 +645,108 @@ describe("how much fits", () => {
     );
   });
 });
+
+/* ── The facts they keep missing ───────────────────────────────────────────
+   The other way into this family (docs/printables.md §14): the record book
+   hands over the fact ids it already ranked, and the sheet is those facts and
+   nothing else. Every sentence below is still verified by counting, because a
+   practice sheet with a wrong answer on it is worse than no practice sheet. */
+
+describe("the facts they keep missing", () => {
+  /** Three fact ids in the shape `decks/flashcards.ts` writes them. */
+  const MISSED = ["3:5", "7:8", "9:6"];
+
+  it("prints exactly those facts, in the order they were ranked", () => {
+    const items = problemsOf({ facts: MISSED, count: 20 }, 5);
+    expect(items.flatMap(sentences)).toEqual([
+      "3 + 5 = 8",
+      "7 + 8 = 15",
+      "9 + 6 = 15",
+    ]);
+    for (const sentence of items.flatMap(sentences)) {
+      expect(holds(sentence), sentence).toBe(true);
+    }
+  });
+
+  it("carries the id the race files each of them under", () => {
+    // The hand-off in both directions: `troubleFacts` speaks in these strings
+    // and `Problem.factId` answers in them, so neither side has to learn the
+    // other's shape.
+    expect(problemsOf({ facts: MISSED }, 5).map((p) => p.factId)) //
+      .toEqual(MISSED);
+  });
+
+  it("reads a subtraction fact back the way the deck asked it", () => {
+    // `3:5` is the pair the deck builds "8 − 3" from — the number taken away,
+    // then what is left — so the answer is the 5 that was already in the id.
+    // Getting this backwards would print "5 − 3" and drill the wrong fact.
+    const [sentence] = problemsOf(
+      { facts: ["3:5"], operation: "subtract" },
+      1,
+    ).flatMap(sentences);
+    expect(sentence).toBe("8 − 3 = 5");
+    expect(holds(sentence)).toBe(true);
+  });
+
+  it("prints them whatever the range and the regrouping say", () => {
+    // Both describe a pool to draw from, and a named sheet does not draw.
+    // Dropping a fact for carrying, or for sitting outside a range nobody
+    // chose, would print a different list from the one handed over.
+    expect(
+      problemsOf(
+        { facts: ["8:7"], range: { min: 1, max: 3 }, regrouping: "never" },
+        2,
+      ).flatMap(sentences),
+    ).toEqual(["8 + 7 = 15"]);
+  });
+
+  it("scales the number line to the facts rather than to the range", () => {
+    // A line to twenty under a sum whose answer is thirty is worse than no
+    // line: a child counts along it and runs off the end.
+    const [problem] = problemsOf(
+      { facts: ["18:14"], numberLine: true, columns: 1 },
+      3,
+    );
+    expect(problem.line?.to).toBeGreaterThanOrEqual(32);
+  });
+
+  it("says on the page, and in the record, that it is a practice sheet", () => {
+    const practice = config({ facts: MISSED });
+    const sheet = buildSheet(practice, 1);
+    // Not "Addition to 20": the sheet never saw the range, and a title
+    // claiming one would be the only untrue line on the page.
+    expect(sheet.header.title).toBe("Addition practice");
+    expect(sheet.header.score).toEqual({ outOf: 3 });
+    expect(describeSheet(practice)).toBe("Addition practice — 3 tricky facts");
+  });
+
+  it("keys them the way it keys everything else", () => {
+    const practice = config({ facts: MISSED, operation: "both" });
+    const key = answerKey(practice, 9);
+    const block = key.blocks[0];
+    if (block.kind !== "problems") throw new Error("expected problems");
+    expect(key.answers).toBe(true);
+    for (const sentence of block.items.flatMap(sentences)) {
+      expect(holds(sentence), sentence).toBe(true);
+    }
+  });
+
+  it("falls back to the ordinary sheet when nothing is standing out", () => {
+    // A child with nothing in the record book is the commonest case on a
+    // family machine rather than an error, and what they get is the sheet the
+    // range describes — which is a sheet worth printing.
+    expect(problemsOf({ facts: [] }, 4)).toEqual(problemsOf({}, 4));
+    expect(buildSheet(config({ facts: [] }), 4).header.title) //
+      .toBe("Addition to 20");
+  });
+
+  it("never prints more of them than the paper holds", () => {
+    const many: string[] = [];
+    for (let a = 1; a <= 20; a += 1) {
+      for (let b = 1; b <= 10; b += 1) many.push(`${a}:${b}`);
+    }
+    const over = { facts: many, count: many.length };
+    expect(problemsOf(over, 1).length) //
+      .toBe(arithmeticLayout(config(over)).perPage);
+  });
+});

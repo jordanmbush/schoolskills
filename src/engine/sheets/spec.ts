@@ -7,7 +7,7 @@
  * what its answer is, or how to say in one line what the sheet contains. Those
  * three judgements belong to the family, and this is where it states them.
  */
-import type { World } from "@/engine/worlds";
+import { WORLDS, type World } from "@/engine/worlds";
 
 import type { Sheet, SheetConfig } from "./types";
 import { DEFAULT_FONT_PT, DEFAULT_PAPER } from "./paper";
@@ -27,6 +27,25 @@ export const SHEET_WORLD: World = "paper";
 /** Printed small at the foot of every sheet: free traffic, and true (§16). */
 export const SHEET_URL = "schoolskills.app";
 export const SHEET_CREDIT = "Free printables and learning games";
+
+/**
+ * The same URL, pointing at the game this sheet's practice is also a race in
+ * (§16).
+ *
+ * Free traffic and genuinely useful: the child who has just done twenty
+ * problems on paper is the likeliest one to run the race, and the sheet is the
+ * only place that connection can be made — it is what they are holding.
+ *
+ * Only families that *have* a matching game print one. There is no race for
+ * long division or for the area of a trapezium, and a footer that sent a
+ * parent to the times tables from a geometry sheet would be an advert rather
+ * than a route back. The world registry is where a game's route is written
+ * down, so nothing here is a second copy of it.
+ */
+export function gameUrl(world: World): string {
+  const found = WORLDS.find((entry) => entry.id === world);
+  return found ? `${SHEET_URL}${found.href}` : SHEET_URL;
+}
 
 /**
  * `C` is the family's own config, and the registry in index.ts is what ties it

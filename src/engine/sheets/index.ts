@@ -31,6 +31,7 @@ import { TIME_SHEET } from "./maths/time";
 import { WORD_PROBLEMS_SHEET } from "./maths/wordproblems";
 import { UNKNOWN_SHEET, type SheetSpec } from "./spec";
 import { PAPER_SHEET } from "./templates/paper";
+import { WORDS_SHEET } from "./words/spelling";
 
 const SHEETS: Record<string, SheetSpec> = {
   [BLANK_SHEET.id]: BLANK_SHEET,
@@ -48,6 +49,7 @@ const SHEETS: Record<string, SheetSpec> = {
   [RATIO_SHEET.id]: RATIO_SHEET,
   [STATISTICS_SHEET.id]: STATISTICS_SHEET,
   [WORD_PROBLEMS_SHEET.id]: WORD_PROBLEMS_SHEET,
+  [WORDS_SHEET.id]: WORDS_SHEET,
 };
 
 /**

@@ -27,7 +27,7 @@
  * height is decided by how many times a child brings a digit down. Both are in
  * `long.ts` and in `gridOf` below rather than smuggled into the problem shapes.
  */
-import { arithmeticFactId } from "@/engine/decks/flashcards";
+import { arithmeticFactId, factPair } from "@/engine/decks/flashcards";
 import { mulberry32 } from "@/engine/random";
 
 import type {
@@ -44,7 +44,7 @@ import type {
 import { sheetBlockBox } from "../chrome";
 import { PROBLEM_GAP, columnWidth, fitAcross, type Box } from "../layout";
 import { inches, points } from "../paper";
-import { SHEET_CREDIT, SHEET_URL, SHEET_WORLD, type SheetSpec } from "../spec";
+import { SHEET_CREDIT, SHEET_WORLD, gameUrl, type SheetSpec } from "../spec";
 import {
   BRACKET_EMS,
   STACK_EMS,
@@ -139,6 +139,40 @@ function poolOf(config: MultiplicationConfig): Pool {
     divide: tables.filter((table) => table > 0),
     factors: factorsOf(config),
   };
+}
+
+/* ── The facts a child keeps missing ──────────────────────────────────────
+   The other way into this family (§14), and the reason `Problem.factId`
+   exists: the record book hands over the fact ids the race already files runs
+   under, and the pairs behind them are read here exactly as
+   `decks/flashcards.ts` writes them — the table that was picked, then what it
+   was paired with. So the eight facts a child keeps missing print as the eight
+   problems they missed, in the order the record book ranked them, and neither
+   side has learned anything about the other's shape.                       */
+
+/** The named facts as (table, factor) pairs — whole, in range, in order. */
+function namedFacts(config: MultiplicationConfig): Array<[number, number]> {
+  // The two styles with no facts to name: a square is every fact there is, and
+  // a long form's numbers are not one of the twelve tables at all.
+  if (config.style === "grid" || config.style === "long") return [];
+  return (config.facts ?? [])
+    .map(factPair)
+    .filter(([table, factor]) => table >= 0 && factor >= 0)
+    .map(
+      ([table, factor]) =>
+        [Math.min(MAX_FACT, table), Math.min(MAX_FACT, factor)] as [
+          number,
+          number,
+        ],
+    )
+    .filter(
+      // The same judgement `drawFact` makes, reached from the other side: a
+      // blank that any number would fill is not a question, so a fact with a
+      // zero in it is dropped from a missing-number sheet rather than printed
+      // as one a child cannot answer.
+      ([table, factor]) =>
+        config.style !== "missing" || (table !== 0 && factor !== 0),
+    );
 }
 
 /* ── Drawing a fact ────────────────────────────────────────────────────── */
@@ -352,6 +386,29 @@ export function multiplicationProblems(
   const problems: Problem[] = [];
   const extras = config.workspace ? { workspace: WORKSPACE } : {};
 
+  // Named facts are printed, not drawn. The list arrives ranked worst-first and
+  // already folded onto one entry per fact, so there is nothing left to shuffle
+  // or reject — and it runs out where it runs out, exactly as the drawn pool
+  // does: six missed facts are six problems, not the same six twice.
+  const named = namedFacts(config);
+  if (named.length > 0) {
+    for (const [table, factor] of named.slice(0, wanted)) {
+      const asked = operationOf(config.operation, rand);
+      // Nothing is divided by zero, here or anywhere (§20). A zero fact can
+      // only be asked as a multiplication, so that is how it is asked.
+      const operation = asked === "divide" && table === 0 ? "multiply" : asked;
+      const slot = rand() < 0.5 ? 0 : 1;
+      const fact: Fact = {
+        operation,
+        table,
+        factor,
+        product: table * factor,
+      };
+      problems.push(problemOf(fact, config, slot, extras));
+    }
+    return problems;
+  }
+
   let misses = 0;
   while (problems.length < wanted && misses < MISS_BUDGET) {
     const operation = operationOf(config.operation, rand);
@@ -488,6 +545,12 @@ function titleOf(config: MultiplicationConfig): string {
   const top = topOf(config);
   if (config.style === "grid") return `Multiplication grid to ${top}`;
 
+  // A sheet of named facts is not "the 7 times table" and not "multiplication
+  // to 12" either — it is whatever the record book handed over, and a title
+  // claiming a pool it never drew from would be the one untrue line on it.
+  if (namedFacts(config).length > 0)
+    return `${MIXED_NAME[config.operation]} practice`;
+
   const tables = poolOf(config).multiply;
   if (tables.length !== 1) return `${MIXED_NAME[config.operation]} to ${top}`;
   const [table] = tables;
@@ -543,6 +606,14 @@ function headerOf(config: MultiplicationConfig): SheetOptions {
  */
 export function describeMultiplication(config: MultiplicationConfig): string {
   const digits = longDigits(config);
+  // "8 tricky facts" is the race's own phrase for the same list — see
+  // `describeFlashConfig` — so a drill that was printed and one that was raced
+  // read alike wherever the two end up beside each other.
+  const named = namedFacts(config);
+  if (named.length > 0) {
+    const facts = named.length === 1 ? "fact" : "facts";
+    return `${titleOf(config)} — ${named.length} tricky ${facts}`;
+  }
   return [
     titleOf(config),
     config.style === "long"
@@ -602,7 +673,7 @@ export function buildMultiplicationSheet(
       score: { outOf },
     },
     blocks,
-    footer: { credit: SHEET_CREDIT, url: SHEET_URL, seed },
+    footer: { credit: SHEET_CREDIT, url: gameUrl("grid"), seed },
     answers: false,
   };
 }

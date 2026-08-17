@@ -687,8 +687,10 @@ src/games/printshop/
   Preview.tsx        the sheet, scaled, on the press-room ground
   PrintBar.tsx       print · variants · answer key · share
   SavedSheets.tsx    My Sheets, through services/sheets.ts
+  Bootstrap.tsx      the three below — a saved list, and a paste
+  Missed.tsx         practise what they missed, through services/practice.ts
   options/index.tsx  the registry — the one place `kind` is narrowed
-  options/parts.tsx  choice · range · sizing · pool
+  options/parts.tsx  choice · range · sizing · pool · word list
   options/*.tsx      one panel per family
 ```
 
@@ -697,6 +699,13 @@ is `options/*.tsx` alone (there is no `Editor` wrapping it), and what was going
 to be `Editor.tsx` turned out to be `PageOptions.tsx` — the options that belong
 to no family. The reading half of `#s=` lives in `engine/sheets/share.ts` beside
 the encoder rather than in the builder, because the two are one format.
+
+The bootstraps arrived the same way. Which sheet family answers for which deck
+is `engine/sheets/practice.ts` — a mode and a list of fact ids in, a config
+out — because three screens ask for it and a sheet built from the same facts
+has to be the same sheet whichever door it came through. What the record book
+knows is read by `services/practice.ts`, so the island never goes near
+IndexedDB, and a child's name stops at that boundary: what crosses it is facts.
 
 **Live preview**, scaled with `transform: scale()` inside a dark frame. Debounce
 regeneration; a sheet with 200 problems is cheap but not free.

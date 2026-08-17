@@ -25,7 +25,7 @@
  * different sums from 1 to 3": there are six, and six is what a parent should
  * get rather than the same sum three times.
  */
-import { arithmeticFactId } from "@/engine/decks/flashcards";
+import { arithmeticFactId, factPair } from "@/engine/decks/flashcards";
 import { between, mulberry32 } from "@/engine/random";
 
 import type {
@@ -49,7 +49,7 @@ import {
 } from "../layout";
 import { NUMBER_LINE_HEIGHT, numberLine } from "../numberline";
 import { inches, points } from "../paper";
-import { SHEET_CREDIT, SHEET_URL, SHEET_WORLD, type SheetSpec } from "../spec";
+import { SHEET_CREDIT, SHEET_WORLD, gameUrl, type SheetSpec } from "../spec";
 
 /* ── What a problem takes on the page ─────────────────────────────────────
    Declared, not measured (§4), and trailing sheet.css the same way chrome.ts
@@ -140,6 +140,57 @@ function bounds(range: { min: number; max: number }): {
 } {
   const min = Math.max(0, Math.floor(range.min));
   return { min, max: Math.max(min, Math.floor(range.max)) };
+}
+
+/* ── The facts a child keeps missing ──────────────────────────────────────
+   The other way into this family (§14). A named fact is not drawn and not
+   rejected: the record book already decided which ones matter and in what
+   order, so they are printed in that order, and `range` and `regrouping` say
+   nothing about a page they did not choose.
+
+   A pair is read exactly as `decks/flashcards.ts` writes it, which is what
+   makes "print what they missed" a hand-off rather than a translation: added,
+   the two addends; subtracted, the number taken away and what is left, so the
+   fact 3:5 is 8 − 3 and the answer is the 5 that was already in it.        */
+
+/** The named facts as pairs — whole, non-negative, and in the order given. */
+function namedFacts(config: ArithmeticConfig): Array<[number, number]> {
+  return (config.facts ?? [])
+    .map(factPair)
+    .filter(
+      ([a, b]) => Number.isFinite(a) && Number.isFinite(b) && a >= 0 && b >= 0,
+    )
+    .map(([a, b]) => [Math.floor(a), Math.floor(b)] as [number, number]);
+}
+
+/** One named fact, asked the way this config asks its questions. */
+function factSum(
+  [first, second]: [number, number],
+  config: ArithmeticConfig,
+  rand: () => number,
+): Sum {
+  // The same coin the drawn path spends, and spent in the same place: a config
+  // asking for both operations decides per problem which one this is.
+  const operation =
+    config.style === "fact-family"
+      ? "add"
+      : config.operation === "both"
+        ? rand() < 0.5
+          ? "add"
+          : "subtract"
+        : config.operation;
+
+  return operation === "add"
+    ? { operation, left: first, right: second, result: first + second }
+    : // Turned back into the subtraction the fact came from: the pair is what
+      // was taken away and what was left, so the number on the page is their
+      // total. Which is also why it can never go below zero.
+      {
+        operation,
+        left: first + second,
+        right: first,
+        result: second,
+      };
 }
 
 /**
@@ -390,6 +441,20 @@ export function arithmeticProblems(
   const problems: Problem[] = [];
   const extras = sheetExtras(config, cell);
 
+  // Named facts are printed, not drawn: the list is already ranked worst-first
+  // and already de-duplicated, so there is nothing here to shuffle or reject.
+  // It runs out where it runs out, exactly as the drawn pool does — a child who
+  // is missing six facts gets six problems rather than the same six twice.
+  const named = namedFacts(config);
+  if (named.length > 0) {
+    for (const pair of named.slice(0, wanted)) {
+      const sum = factSum(pair, config, rand);
+      const slot = rand() < 0.5 ? 0 : 1;
+      problems.push(problemOf(sum, config, slot, extras));
+    }
+    return problems;
+  }
+
   let misses = 0;
   while (problems.length < wanted && misses < MISS_BUDGET) {
     const sum = drawSum(config, rand);
@@ -425,10 +490,19 @@ function sheetExtras(
   config: ArithmeticConfig,
   cell: Mil,
 ): { line?: NumberLine; workspace?: Mil } {
-  const { max } = bounds(config.range);
+  // A named-fact sheet has no range to read: the facts *are* the pool, so the
+  // line is measured against the largest number any of them puts on the page.
+  // Scaling it to `range` instead would print a line to twenty under a sum
+  // whose answer is thirty-six, which is worse than no line at all.
+  const named = namedFacts(config);
+  const max =
+    named.length > 0
+      ? Math.max(...named.map(([a, b]) => a + b))
+      : bounds(config.range).max;
   // The far end is the largest result the config can reach: two numbers from
   // the range added together, or — where nothing is added — the range itself.
-  const top = config.operation === "subtract" ? max : max * 2;
+  const top =
+    named.length > 0 || config.operation === "subtract" ? max : max * 2;
   const line = hasNumberLine(config)
     ? numberLine(config.negatives ? -max : 0, top, cell)
     : undefined;
@@ -448,6 +522,15 @@ const OPERATION_NAME = {
 
 /** "Addition to 20" — the phrase a parent says, and the one they search. */
 function titleOf(config: ArithmeticConfig): string {
+  // A sheet of named facts is not a sheet "to twenty" — it is whatever the
+  // record book handed over, and a title claiming a range it never drew from
+  // would be the one line on the page that is untrue.
+  if (namedFacts(config).length > 0) {
+    return config.style === "fact-family"
+      ? "Fact family practice"
+      : `${OPERATION_NAME[config.operation]} practice`;
+  }
+
   const { max } = bounds(config.range);
   if (config.style === "fact-family") return `Fact families to ${max}`;
   return `${OPERATION_NAME[config.operation]} to ${max}`;
@@ -496,6 +579,13 @@ export function describeArithmetic(config: ArithmeticConfig): string {
     never: "no regrouping",
     always: "with regrouping",
   };
+  // "8 tricky facts" is the race's own phrase for the same list — see
+  // `describeFlashConfig` — so a printed drill and a raced one read alike in
+  // the record book. Regrouping is left off, because it decided nothing here.
+  const named = namedFacts(config);
+  if (named.length > 0) {
+    return `${titleOf(config)} — ${named.length} tricky ${named.length === 1 ? "fact" : "facts"}`;
+  }
   return [
     titleOf(config),
     config.style === "standard" && config.form === "vertical"
@@ -529,7 +619,7 @@ export function buildArithmeticSheet(
       score: { outOf: items.length },
     },
     blocks: [{ kind: "problems", columns, items }],
-    footer: { credit: SHEET_CREDIT, url: SHEET_URL, seed },
+    footer: { credit: SHEET_CREDIT, url: gameUrl("grid"), seed },
     answers: false,
   };
 }
