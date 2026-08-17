@@ -298,6 +298,18 @@ export type GridSpec = {
    */
   origin?: { column: number; row: number };
   /**
+   * The smallest and largest number written along an axis, counted from the
+   * origin and the same in both directions.
+   *
+   * What the ruling runs to and what the *plane* runs to are two different
+   * numbers: a first-quadrant plane keeps a square of margin outside its axes
+   * for the numerals to sit in, and a gridline in that margin is one square
+   * past nought rather than the first negative one. Without this the renderer
+   * has no way to tell the two apart, and prints a "-1" on a sheet whose whole
+   * promise is that a child who has not met negative numbers can do it.
+   */
+  axis?: { min: number; max: number };
+  /**
    * Points marked where the ruling crosses, rather than inside the squares:
    * the lettered dots on a coordinate plane.
    *

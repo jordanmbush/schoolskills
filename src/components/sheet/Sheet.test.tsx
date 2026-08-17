@@ -1014,6 +1014,41 @@ const geometry = (over: Partial<GeometryConfig> = {}): GeometryConfig => ({
   ...over,
 });
 
+/**
+ * The coordinate plane on a rendered sheet: how big the drawing is, and every
+ * glyph inside it with where and how large it was set.
+ *
+ * Read back out of the markup rather than out of the block, because what is
+ * being checked is whether the ink lands on the paper — a letter drawn past the
+ * viewBox is markup that renders and paper that comes out blank.
+ */
+function drawnPlane(html: string): {
+  width: number;
+  height: number;
+  glyphs: Array<{ x: number; y: number; size: number; text: string }>;
+} {
+  const drawing =
+    /<svg[^>]*viewBox="0 0 (\d+) (\d+)"><title>[^<]*coordinate grid<\/title>(.*?)<\/svg>/s.exec(
+      html,
+    );
+  if (drawing === null) throw new Error("no coordinate plane on the sheet");
+  const glyphs = [
+    ...drawing[3].matchAll(
+      /<text class="sheet__cell" x="(-?\d+(?:\.\d+)?)" y="(-?\d+(?:\.\d+)?)" font-size="(\d+)"[^>]*>([^<]*)<\/text>/g,
+    ),
+  ].map((one) => ({
+    x: Number(one[1]),
+    y: Number(one[2]),
+    size: Number(one[3]),
+    text: one[4],
+  }));
+  return {
+    width: Number(drawing[1]),
+    height: Number(drawing[2]),
+    glyphs,
+  };
+}
+
 /** Where the ink says a dial's two hands are pointing, clockwise from twelve. */
 function pointing(html: string): { hour: number; minute: number } {
   const drawn = /<g class="sheet__hands">(.*?)<\/g>/s.exec(html);
@@ -1166,6 +1201,10 @@ describe("a rendered geometry sheet", () => {
     expect(count(html, 'class="sheet__dot"')).toBe(6);
     expect(html).toContain(">10</text>");
     expect(html).not.toContain(">0</text>");
+    // And nothing a child has not met. The ruling runs one square past the
+    // axes so the numerals have somewhere to sit, and numbering that square
+    // would put a negative number on the sheet that promised none.
+    expect(html).not.toContain(">-1</text>");
     const four = render(
       buildSheet(
         geometry({ style: "coordinates", quadrants: 4, count: 6 }),
@@ -1173,6 +1212,37 @@ describe("a rendered geometry sheet", () => {
       ) as Sheet,
     );
     expect(four).toContain(">-8</text>");
+    expect(four).not.toContain(">-9</text>");
+  });
+
+  it("keeps every letter and numeral inside the plane they are drawn on", () => {
+    // An `<svg>` clips to its viewBox and the outermost gridline of a plane is
+    // the edge of it — so a point sitting there gets its letter drawn off the
+    // paper, and the sheet asks "E = ___" with no E next to any dot. Measured
+    // off the ink rather than argued about: every glyph's box has to be inside
+    // the drawing.
+    for (const quadrants of [1, 4]) {
+      const plane = drawnPlane(
+        render(
+          buildSheet(
+            geometry({ style: "coordinates", quadrants, count: 8 }),
+            SEED,
+          ) as Sheet,
+        ),
+      );
+      expect(plane.glyphs.length, `${quadrants} quadrant(s)`) //
+        .toBeGreaterThan(8);
+      for (const glyph of plane.glyphs) {
+        const half = glyph.size / 2;
+        expect(glyph.x - half, glyph.text).toBeGreaterThanOrEqual(0);
+        expect(glyph.x + half, glyph.text).toBeLessThanOrEqual(plane.width);
+        expect(glyph.y - half, glyph.text).toBeGreaterThanOrEqual(0);
+        expect(glyph.y + half, glyph.text).toBeLessThanOrEqual(plane.height);
+      }
+      // The letters are the question, so all eight of them are on the paper.
+      const letters = plane.glyphs.filter((one) => /^[A-Z]$/.test(one.text));
+      expect(letters.length, `${quadrants} quadrant(s)`).toBe(8);
+    }
   });
 
   it("prints nothing in the blank until the sheet is a key", () => {

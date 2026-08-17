@@ -390,6 +390,13 @@ describe("the answer key", () => {
           expect(problem.answer).toBe(
             equalSided(figure) ? "square" : "rectangle",
           );
+          if (problem.answer === "rectangle") {
+            // And tellable apart by eye, which is the only way it can be told:
+            // there are no labels on this sheet, so a rectangle drawn eight by
+            // seven is a shape a child names "square" and is marked wrong on.
+            expect(spread(drawnSides(figure)), problem.answer) //
+              .toBeGreaterThan(1.35);
+          }
           for (let corner = 0; corner < 4; corner += 1) {
             expect(cornerOf(figure, corner), problem.answer) //
               .toBeCloseTo(90, 0);
@@ -553,6 +560,15 @@ describe("what may be on the page", () => {
       for (const seed of SEEDS) {
         const over = { style: "coordinates" as const, quadrants, count: 8 };
         const grid = gridOf(over, seed);
+        // How far the plane runs, which is not how far the ruling runs: the
+        // squares outside the axes are where the numerals sit, and a plane that
+        // called them part of itself would have the renderer print a "-1" on a
+        // first-quadrant sheet.
+        const axis = grid.axis;
+        expect(axis, "a plane says how far it runs").toBeTruthy();
+        expect(axis!.min).toBe(quadrants === 4 ? -axis!.max : 0);
+        expect(axis!.max).toBe(grid.columns - (grid.origin?.column ?? 0));
+
         for (const mark of grid.marks ?? []) {
           expect(mark.column).toBeGreaterThanOrEqual(0);
           expect(mark.column).toBeLessThanOrEqual(grid.columns);
@@ -560,6 +576,15 @@ describe("what may be on the page", () => {
           expect(mark.row).toBeLessThanOrEqual(grid.rows);
           expect(mark.column).not.toBe(grid.origin?.column);
           expect(mark.row).not.toBe(grid.origin?.row);
+          // And inside the extent the axes are numbered over, or the dot is a
+          // dot whose coordinates are not written anywhere on the paper.
+          for (const at of [
+            mark.column - (grid.origin?.column ?? 0),
+            (grid.origin?.row ?? 0) - mark.row,
+          ]) {
+            expect(at).toBeGreaterThanOrEqual(axis!.min);
+            expect(at).toBeLessThanOrEqual(axis!.max);
+          }
         }
       }
     }

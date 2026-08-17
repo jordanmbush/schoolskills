@@ -132,6 +132,11 @@ export function planeOf(config: GeometryConfig, box: Box): Plane {
       rows,
       cell,
       origin: { column: pad, row: span },
+      // What is on the plane, as against what the ruling runs to. On a
+      // first-quadrant plane the padding square outside the axes is where the
+      // numerals go, not a column of −1: this is what stops one being printed
+      // there, on the sheet that promised no negative numbers at all.
+      axis: { min: negative ? -span : 0, max: span },
     },
   };
 }
@@ -345,6 +350,15 @@ function drawAngle(rand: () => number): Drawn {
   };
 }
 
+/**
+ * How oblong an unlabelled rectangle has to be drawn: seven to five.
+ *
+ * Written as two whole numbers rather than a ratio, so the comparison that uses
+ * them is whole-number arithmetic like everything else in this family.
+ */
+const LONG = 7;
+const SHORT = 5;
+
 /** The shapes a child is asked to name, and how many sides each is drawn with. */
 const NAMED: Array<{ name: string; sides: number }> = [
   { name: "triangle", sides: 3 },
@@ -370,8 +384,13 @@ function drawNamed(config: GeometryConfig, rand: () => number): Drawn | null {
     const { min, max } = bounds(config.range);
     const across = between(min, max, rand);
     const down = between(min, max, rand);
-    // A rectangle whose sides match is the square that is already in the list.
-    if (across === down) return null;
+    // A rectangle whose sides match is the square that is already in the list —
+    // and so, to a child, is one drawn eight by seven. This sheet carries no
+    // labels to read: the whole question is what the shape is *called*, so an
+    // oblong has to look like one beside the square that is also on the page,
+    // or the picture disagrees with the key and the key wins.
+    if (Math.max(across, down) * SHORT < Math.min(across, down) * LONG)
+      return null;
     return {
       key: "shape:rectangle",
       prompt: "",

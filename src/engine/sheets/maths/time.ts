@@ -162,8 +162,9 @@ function drawElapsed(
   // Drawn in whole steps between the two ends rather than drawn and rejected:
   // a span of an hour to three at a step of five minutes would throw away four
   // draws in five, and a thin pool would then run out before the page was full.
-  const lasted =
-    between(Math.ceil(min / step), Math.floor(max / step), rand) * step;
+  // Both ends are whole steps already (`spanOf` snapped them), so this counts
+  // steps exactly and the range it counts over is never empty.
+  const lasted = between(min / step, max / step, rand) * step;
 
   const start = drawTime(step, rand);
   if (start + lasted >= MINUTES_A_TURN) return null;
@@ -179,6 +180,16 @@ function drawElapsed(
  *
  * Bounded above by eleven hours rather than by twelve, because a duration that
  * long leaves no time of day for it to start at.
+ *
+ * **Snapped to the step, not merely clamped.** Both ends of an elapsed problem
+ * land on the step, so the duration does too — and a span of forty to fifty
+ * minutes at the half hour holds no such duration at all. Rounding the ask
+ * inward would leave an empty range and a draw with nothing to pick, so the
+ * floor rises to the next whole step and the ceiling drops to the last one,
+ * then opens back up to the floor if that overshot it. The result is what
+ * `describeTime` prints at the top of the page, which is the point: a sheet
+ * headed "up to 50 min" whose every problem lasts an hour is a sheet lying to
+ * the parent who chose it (§20).
  */
 export function spanOf(
   config: TimeConfig,
@@ -186,9 +197,12 @@ export function spanOf(
 ): { min: number; max: number } {
   const most = MINUTES_A_TURN - MINUTES_AN_HOUR;
   const asked = config.span;
-  const min = Math.max(step, Math.min(most, Math.floor(asked?.min ?? step)));
-  const max = Math.max(min, Math.min(most, Math.floor(asked?.max ?? 180)));
-  return { min, max };
+  const floor = Math.max(step, Math.min(most, Math.floor(asked?.min ?? step)));
+  const ceiling = Math.max(step, Math.min(most, Math.floor(asked?.max ?? 180)));
+  // `most` is eleven hours, which is a whole number of every step there is, so
+  // rounding up cannot climb past it.
+  const min = Math.ceil(floor / step) * step;
+  return { min, max: Math.max(min, Math.floor(ceiling / step) * step) };
 }
 
 /**

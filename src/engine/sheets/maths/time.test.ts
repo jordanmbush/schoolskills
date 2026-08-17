@@ -313,13 +313,13 @@ describe("what may be on the page", () => {
 
   it("keeps an elapsed answer inside the span that was asked for", () => {
     const ASKS = [
-      { min: 5, max: 60 },
-      { min: 60, max: 300 },
-      { min: 1, max: 10 },
+      { step: 1, span: { min: 5, max: 60 } },
+      { step: 1, span: { min: 60, max: 300 } },
+      { step: 1, span: { min: 1, max: 10 } },
     ];
-    for (const span of ASKS) {
+    for (const { step, span } of ASKS) {
       const problems = problemsOf(
-        { style: "elapsed", step: 1, span, count: 12 },
+        { style: "elapsed", step, span, count: 12 },
         9,
       );
       expect(problems.length, JSON.stringify(span)).toBeGreaterThan(0);
@@ -328,6 +328,38 @@ describe("what may be on the page", () => {
         expect(lasted, problem.prompt).toBeGreaterThanOrEqual(span.min);
         expect(lasted, problem.prompt).toBeLessThanOrEqual(span.max);
       }
+    }
+  });
+
+  it("prints the span it says it prints, when the step does not divide it", () => {
+    // Both ends of an elapsed problem land on the step, so the duration does
+    // too — and forty to fifty minutes at the half hour holds no such duration
+    // at all. The span moves to the steps either side of it, and the heading
+    // moves with it: a sheet titled "up to 50 min" whose every problem lasts an
+    // hour is a sheet lying to the parent who chose it.
+    const ASKS = [
+      { step: 30, span: { min: 40, max: 50 } },
+      { step: 15, span: { min: 20, max: 25 } },
+      { step: 60, span: { min: 30, max: 200 } },
+      { step: 5, span: { min: 12, max: 47 } },
+    ];
+    for (const { step, span } of ASKS) {
+      const said = describeSheet(config({ style: "elapsed", step, span }));
+      const printed = problemsOf(
+        { style: "elapsed", step, span, count: 12 },
+        9,
+      ).map((problem) => durationOf(problem.answer));
+      expect(printed.length, JSON.stringify(span)).toBeGreaterThan(0);
+
+      // Read back off the heading, so the two cannot be checked against the
+      // same number twice: "Elapsed time — up to 1 h" is sixty minutes.
+      const ceiling = durationOf(said.replace(/^.*— up to /, ""));
+      for (const lasted of printed) {
+        expect(lasted % step, `${said}: ${lasted}`).toBe(0);
+        expect(lasted, said).toBeGreaterThan(0);
+        expect(lasted, said).toBeLessThanOrEqual(ceiling);
+      }
+      expect(Math.max(...printed), said).toBeLessThanOrEqual(ceiling);
     }
   });
 
