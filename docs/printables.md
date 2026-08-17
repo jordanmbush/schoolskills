@@ -679,13 +679,24 @@ of the 300-line cap — which is the right pressure for a screen like this.
 
 ```
 src/games/printshop/
-  App.tsx            mount, routing between picker and editor
+  App.tsx            mount, and what goes where
+  useBuilder.ts      the config, the seed, and the URL they live in
+  defaults.ts        what the bench opens on, per family
   Picker.tsx         choose a family (the catalog, in-app)
-  Editor.tsx         the option panel for the chosen family
+  PageOptions.tsx    the options every sheet has, whatever is on it
   Preview.tsx        the sheet, scaled, on the press-room ground
-  PrintBar.tsx       print · variants · answer key · save
+  PrintBar.tsx       print · variants · answer key · share
+  SavedSheets.tsx    My Sheets, through services/sheets.ts
+  options/index.tsx  the registry — the one place `kind` is narrowed
+  options/parts.tsx  choice · range · sizing · pool
   options/*.tsx      one panel per family
 ```
+
+Built as it stands, with two names moved from this sketch: the per-family panel
+is `options/*.tsx` alone (there is no `Editor` wrapping it), and what was going
+to be `Editor.tsx` turned out to be `PageOptions.tsx` — the options that belong
+to no family. The reading half of `#s=` lives in `engine/sheets/share.ts` beside
+the encoder rather than in the builder, because the two are one format.
 
 **Live preview**, scaled with `transform: scale()` inside a dark frame. Debounce
 regeneration; a sheet with 200 problems is cheap but not free.

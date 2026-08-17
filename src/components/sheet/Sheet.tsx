@@ -32,7 +32,7 @@ import { BlockView } from "./blocks";
 import type { SheetMetrics } from "./metrics";
 import { SheetFoot } from "./SheetFoot";
 import { SheetHead } from "./SheetHead";
-import { inch, pt } from "./units";
+import { DASH_CUT, HEAVY, inch, pt } from "./units";
 
 export function SheetView({ sheet }: { sheet: Sheet }) {
   const page = pageSize(sheet.paper);
@@ -49,6 +49,12 @@ export function SheetView({ sheet }: { sheet: Sheet }) {
       // rather than a different kind of sheet — and a stylesheet that wants to
       // mark up the answers can reach it either way.
       data-answers={sheet.answers ? "true" : undefined}
+      // The same reasoning twice more. A face and a boxed answer place are how
+      // this sheet is drawn rather than what is on it, so both are one
+      // attribute here and one rule in sheet.css — where a font stack belongs
+      // anyway — instead of a class threaded down through every block.
+      data-font={sheet.font}
+      data-answer-box={sheet.answerBox ? "true" : undefined}
       style={
         {
           "--sheet-w": inch(page.width),
@@ -59,6 +65,7 @@ export function SheetView({ sheet }: { sheet: Sheet }) {
       }
     >
       <PageSize paper={sheet.paper} />
+      {sheet.cutLines && <CutLines paper={sheet.paper} />}
       <SheetHead header={sheet.header} />
       <div className="sheet__blocks">
         {/* Indexed keys: a block has no identity of its own, the list is
@@ -87,6 +94,55 @@ export function SheetView({ sheet }: { sheet: Sheet }) {
  * A `<style>` element, not a script. It costs nothing at run time and keeps the
  * page free of JavaScript.
  */
+/**
+ * Where to cut, drawn over the paper rather than in the flow.
+ *
+ * The `cutline` block is the other way of saying this and the two are not
+ * interchangeable: a block is a row in the document that takes a quarter of an
+ * inch a family had to reserve for it, which is why only a family can emit one.
+ * This is the parent's switch (§17), so it has to cost nothing — an overlay
+ * takes no height at all, which is the only reason `cutLines` can be an option
+ * every family shares without any of them re-doing their capacity arithmetic.
+ *
+ * Both halves of the page, always. Cutting once down the middle and cutting
+ * into quarters are the 2-up and 4-up layouts of §17, and which one a parent
+ * wanted is a decision they make with the scissors — a guide that is not
+ * followed costs nothing, and a guide that is missing costs a re-print.
+ */
+function CutLines({ paper }: { paper: Paper }) {
+  const { width, height } = pageSize(paper);
+  return (
+    <svg
+      className="sheet__ink sheet__cuts"
+      viewBox={`0 0 ${width} ${height}`}
+      role="img"
+      aria-label="Cut along these lines"
+    >
+      {/* HEAVY and the long dash for the same reason `Cutline` uses them: a cut
+          line is read before it is used, and it must not be mistaken for a rule
+          to write on. */}
+      <line
+        className="sheet__rule sheet__rule--cut"
+        x1={0}
+        x2={width}
+        y1={height / 2}
+        y2={height / 2}
+        strokeWidth={HEAVY}
+        strokeDasharray={DASH_CUT}
+      />
+      <line
+        className="sheet__rule sheet__rule--cut"
+        x1={width / 2}
+        x2={width / 2}
+        y1={0}
+        y2={height}
+        strokeWidth={HEAVY}
+        strokeDasharray={DASH_CUT}
+      />
+    </svg>
+  );
+}
+
 function PageSize({ paper }: { paper: Paper }) {
   if (paper.size === "letter" && paper.orientation === "portrait") return null;
   const { width, height } = pageSize(paper);

@@ -413,6 +413,30 @@ export type Block =
   | { kind: "cutline" }
   | { kind: "spacer"; height: Mil };
 
+/* ── Type ──────────────────────────────────────────────────────────────── */
+
+/**
+ * Which face a sheet is set in.
+ *
+ * Three names rather than a font stack, because the name is the part that has
+ * to survive: a sheet saved this term must still open on the face it was set
+ * in after the stacks behind these ids are replaced by self-hosted files
+ * (PRINT15). Until then each id resolves to whatever the reader's machine
+ * already has, which is honest — a parent who asked for a dyslexia-friendly
+ * face and has one installed gets it, and one who hasn't gets the default
+ * rather than a download.
+ *
+ * `dyslexic` is an accessibility option and not a style: §17 lists a
+ * dyslexia-friendly face beside larger type as a first-class choice rather than
+ * a zoom hack, and the reason is the same for both — the sheet stays real
+ * selectable text either way.
+ *
+ * It changes no length on the page. Every height the layout arithmetic
+ * reserves is computed from `fontPt`, in points, so swapping the face cannot
+ * push the last row onto a second sheet of paper.
+ */
+export type SheetFont = "print" | "cursive" | "dyslexic";
+
 /* ── The sheet ─────────────────────────────────────────────────────────── */
 
 /**
@@ -452,6 +476,21 @@ export type Sheet = {
    * to be able to set the type without also being given the config.
    */
   fontPt: number;
+  /**
+   * The three below are the presentation half of `SheetOptions`, carried here
+   * for exactly the reason `fontPt` is: a `Sheet` is the whole hand-off, and a
+   * renderer holding one must not also need the config it came from.
+   *
+   * No family sets them. They are copied on by `buildSheet` at the front door
+   * (index.ts), which is the same bargain `chrome.ts` struck — every family
+   * would otherwise write the same three lines, and the fifteenth one to be
+   * added would be the one that forgot.
+   */
+  font?: SheetFont;
+  /** A box round the answer place rather than a rule under it. */
+  answerBox?: boolean;
+  /** Dashed guides across the page, for a sheet that gets cut up. */
+  cutLines?: boolean;
   header: SheetHeader;
   /**
    * The flow, in order. A sheet is one document that may print over more than
@@ -486,6 +525,31 @@ export type SheetOptions = {
   title?: string;
   instructions?: string;
   fields: HeaderField[];
+  /**
+   * The face the sheet is set in. Absent is the print face, which is what a
+   * worksheet is set in unless somebody says otherwise.
+   */
+  font?: SheetFont;
+  /**
+   * A box round the answer place instead of a rule under it.
+   *
+   * The same slot either way — this decides how it is drawn, not where it is —
+   * so it can be a switch every family shares rather than a shape each one has
+   * to offer. Which is also why it costs no height: a bordered slot is the same
+   * line box as a ruled one, and the capacity arithmetic never learns about it.
+   */
+  answerBox?: boolean;
+  /**
+   * Dashed guides across the middle of the page, for a sheet that gets cut up
+   * into cards.
+   *
+   * Drawn over the paper rather than in the flow, which is the whole reason it
+   * can be a shared option: a `cutline` *block* takes a quarter of an inch the
+   * family reserved for problems, and an overlay takes none. The 2-up and 4-up
+   * card layouts of §17 are a later story; this is the guide you cut along
+   * whichever of them a sheet was laid out for.
+   */
+  cutLines?: boolean;
 };
 
 /**

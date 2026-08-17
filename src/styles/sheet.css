@@ -11,14 +11,14 @@
    and every length in here is an inch, a point, or an em of a size that was
    itself set in points.
 
-   ── One name collision, recorded rather than worked around ──────────────────
-   `screens.css` already has a `.sheet`: the modal panel behind the player
-   editor and the quit confirmation. The two never meet today — that one arrives
-   with `index.css` on the game islands, this one with the renderer that uses it
-   — but `/printables/make` will be an island that loads both, and on that day
-   an 8.5in-wide `position: fixed` modal is what happens. The builder story
-   renames one of them; this note is here so it is a decision rather than a
-   surprise.
+   ── One name collision, settled ─────────────────────────────────────────────
+   `screens.css` used to have a `.sheet` of its own: the modal panel behind the
+   player editor and the quit confirmation. The two never met while this file
+   arrived with the renderer and that one with `index.css` on the game islands —
+   but `/printables/make` is an island that loads both, and on that day an
+   8.5in-wide `position: fixed` modal is what happened. So the modal was renamed
+   to `.modal` when the builder landed, which is the right way round: in a
+   codebase with a print shop in it, a sheet is a piece of paper.
 
    ── The ink ────────────────────────────────────────────────────────────────
    Black on white with no fills, by default and on purpose. A parent printing
@@ -29,6 +29,11 @@
 
 .sheet {
   --ui-scale: 1;
+
+  /* The face everything on the paper is set in, named once so the SVG blocks
+     below can be set in it too. `data-font` swaps it; see the block after the
+     ink section for what each of the three ids resolves to. */
+  --sheet-face: var(--font-body, system-ui, sans-serif);
 
   /* Overwritten inline by the renderer from the sheet's own `paper`. The
      defaults are Letter portrait at half-inch margins, which is what most of
@@ -50,9 +55,12 @@
   margin-inline: auto;
   display: flex;
   flex-direction: column;
+  /* The containing block for the cut guides, which are drawn over the paper
+     rather than in the flow so that switching them on costs no capacity. */
+  position: relative;
   /* The fallbacks are not decoration: this stylesheet arrives with the
      renderer, so it has to stand up on a page that never loaded tokens.css. */
-  font-family: var(--font-body, system-ui, sans-serif);
+  font-family: var(--sheet-face);
   font-size: var(--sheet-pt);
   line-height: 1.35;
   color: #000;
@@ -206,7 +214,48 @@
 .sheet__ink {
   display: block;
   max-width: 100%;
-  font-family: var(--font-body, system-ui, sans-serif);
+  font-family: var(--sheet-face, var(--font-body, system-ui, sans-serif));
+}
+
+/* ── The three faces (§17) ──────────────────────────────────────────────────
+   Stacks rather than files, for now and on purpose. A self-hosted set arrives
+   with the handwriting stories (PRINT15), which need real letterforms to draw
+   the trace styles from; until then each id resolves to whatever the reader's
+   machine already has and falls back to the default when it has none. That is
+   the honest version of the option: a parent who has installed a dyslexia-
+   friendly face gets it, and one who hasn't gets a readable sheet rather than a
+   download and a wait.
+
+   The `Sheet` carries the id and never the stack, so a sheet saved this term
+   opens in the *named* face once the files land, rather than in whatever this
+   list happened to say the week it was saved.                                */
+
+.sheet[data-font="cursive"] {
+  --sheet-face:
+    "Segoe Script", "Bradley Hand", "Snell Roundhand", "Lucida Handwriting",
+    cursive;
+}
+
+/* Comic Sans is in here on the evidence rather than on taste: it is one of the
+   faces dyslexia guidance actually names, for the same reason OpenDyslexic is —
+   letters that can't be mistaken for one another when they are rotated or
+   mirrored. Verdana behind it for its width and its open counters. */
+.sheet[data-font="dyslexic"] {
+  --sheet-face:
+    "OpenDyslexic", "Open Dyslexic", "Comic Sans MS", verdana, sans-serif;
+}
+
+/* ── Where to cut (§17) ─────────────────────────────────────────────────────
+   Over the paper, not in it. The overlay takes no room in the flow, which is
+   what lets a parent switch cut guides on without any family re-doing the
+   arithmetic that decided how many problems fit. `pointer-events` off so the
+   text underneath stays selectable, which is most of what §2 is about.      */
+.sheet__cuts {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
 }
 
 .sheet__rule,
@@ -324,6 +373,19 @@
   min-width: 0.8in;
   border-bottom: 0.75pt solid currentcolor;
   text-align: center;
+}
+
+/* The same slot with a box round it instead of a rule under it (§17) — which
+   is why it is drawn here rather than emitted by a family: a boxed answer is
+   how the answer place looks, not where it is, so nothing about the problem
+   changes and no family has to offer it.
+
+   No padding, deliberately. The border sits on the line box the rule already
+   occupied, so a page of boxed answers is exactly as tall as the same page of
+   ruled ones — and the capacity arithmetic, which reserved the rows before
+   anybody chose, stays right. */
+.sheet[data-answer-box] .sheet__slot {
+  border: 0.75pt solid currentcolor;
 }
 
 /* An answer, wherever it is written: in the slot at the end of a sum, in the

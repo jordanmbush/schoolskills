@@ -1,0 +1,270 @@
+/* ── The bench ──────────────────────────────────────────────────────────────
+   The builder's own layout, and nothing else: the two columns, the option
+   groups down the left, the frame the paper is looked at in on the right, and
+   the print bar over it.
+
+   Not one colour is written down here. Every surface reads `--ink-*`,
+   `--chalk-*`, `--accent` and `--hairline`, which is what makes the whole
+   screen The Print Shop's warm graphite rather than a fifth palette — the
+   `[data-world="paper"]` block in worlds.css is the only place those are said,
+   and this file would follow it into any other world unchanged.
+
+   It arrives with the island (App.tsx imports it) rather than with a layout,
+   the same bargain sheet.css strikes: a page that renders the bench cannot
+   forget to bring the bench's stylesheet.
+
+   Everything in here is screen furniture, and every element that carries it
+   also carries `.no-print` — except the two the print block at the foot of the
+   file deals with: `.print-only`, which is the whole point of the screen, and
+   `.bench` itself, which cannot be hidden because it is what holds it.       */
+
+.bench {
+  display: grid;
+  grid-template-columns: minmax(0, 22rem) minmax(0, 1fr);
+  gap: var(--gap-4);
+  align-items: start;
+  margin-inline: auto;
+  padding: var(--gap-4) var(--gap-3) var(--gap-5);
+  max-width: 78rem;
+}
+
+/* One column under a laptop: the paper first, because it is the thing being
+   made, and the options under it. A sheet squeezed into half of a tablet is a
+   preview nobody can read. */
+@media (width < 62rem) {
+  .bench {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .bench__paper {
+    order: -1;
+  }
+}
+
+.bench__panel {
+  display: grid;
+  gap: var(--gap-4);
+  align-content: start;
+}
+
+.bench__group {
+  display: grid;
+  gap: var(--gap-3);
+  background: linear-gradient(180deg, var(--ink-800), var(--ink-850));
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-paper);
+  padding: var(--gap-4);
+}
+
+.bench__title {
+  font-size: var(--step-1);
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+  color: var(--chalk);
+}
+
+.bench__paper {
+  display: grid;
+  gap: var(--gap-3);
+  position: sticky;
+  /* Under the masthead, which is the one piece of site chrome above it. */
+  top: var(--gap-3);
+}
+
+@media (width < 62rem) {
+  .bench__paper {
+    position: static;
+  }
+}
+
+/* ── The picker ─────────────────────────────────────────────────────────── */
+
+.picker {
+  display: grid;
+  gap: var(--gap-2);
+  background: linear-gradient(180deg, var(--ink-800), var(--ink-850));
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-paper);
+  padding: var(--gap-4);
+}
+
+/* `describeSheet(config)` — the engine's own line about what is set. */
+.picker__line {
+  font-size: var(--step--1);
+  color: var(--chalk-soft);
+}
+
+/* ── Two controls that only exist on this screen ────────────────────────────
+   A range is two steppers with a word between them, and a pool is a wrapped
+   row of checkboxes. Both are compositions of kit primitives rather than new
+   controls, so all that is needed here is how they sit.                     */
+
+.span {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-2);
+  flex-wrap: wrap;
+}
+
+.span__to {
+  font-size: var(--step--1);
+  color: var(--chalk-dim);
+}
+
+.pool {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gap-1) var(--gap-3);
+}
+
+/* ── The print bar ──────────────────────────────────────────────────────── */
+
+.printbar {
+  display: grid;
+  gap: var(--gap-2);
+  background: linear-gradient(180deg, var(--ink-800), var(--ink-850));
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-paper);
+  padding: var(--gap-3) var(--gap-4);
+}
+
+.printbar__row,
+.printbar__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-3);
+  flex-wrap: wrap;
+}
+
+/* The one line §17's output section is really about: print IS the download
+   here, and the words "Save as PDF" are the whole of the instruction. */
+.printbar__hint,
+.printbar__seed {
+  font-size: var(--step--1);
+  color: var(--chalk-soft);
+}
+
+.printbar__seed {
+  color: var(--chalk-dim);
+}
+
+/* ── The frame the paper is looked at in ────────────────────────────────────
+   The stage holds the room the scaled stack takes up, because a transform
+   changes what is painted and not what is laid out. Preview.tsx measures both
+   boxes and sets the height; everything else about it is here.              */
+
+.preview {
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--hairline);
+  background:
+    radial-gradient(120% 90% at 50% 0%, rgb(255 255 255 / 4%), transparent 70%),
+    var(--ink-950);
+  padding: var(--gap-3);
+  overflow: hidden;
+}
+
+.preview__stage {
+  overflow: hidden;
+}
+
+.preview__stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-3);
+  width: max-content;
+  margin-inline: auto;
+  transform: scale(var(--preview-scale, 1));
+  transform-origin: top center;
+}
+
+/* ── My sheets ──────────────────────────────────────────────────────────── */
+
+.saved {
+  display: grid;
+  gap: var(--gap-2);
+  background: linear-gradient(180deg, var(--ink-800), var(--ink-850));
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-paper);
+  padding: var(--gap-4);
+}
+
+.saved__title {
+  font-size: var(--step-1);
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+  color: var(--chalk);
+}
+
+.saved__empty {
+  font-size: var(--step--1);
+  color: var(--chalk-dim);
+}
+
+.saved__list {
+  display: grid;
+  gap: var(--gap-1);
+  list-style: none;
+  padding-left: 0;
+}
+
+.saved__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--gap-2);
+  flex-wrap: wrap;
+  padding-top: var(--gap-1);
+  border-top: 1px solid var(--hairline);
+}
+
+.saved__name {
+  font-size: var(--step--1);
+  color: var(--chalk-soft);
+}
+
+.saved__actions {
+  display: flex;
+  gap: var(--gap-1);
+}
+
+/* ── Paper, and only paper ──────────────────────────────────────────────────
+   The preview is scaled, and a scaled sheet sent to a printer is a sheet at
+   45% of the size it measures — which on ⅝ handwriting paper is not a ⅝ rule
+   any more. So the sheets are rendered twice: the scaled copy for the screen,
+   this one for the printer, and neither has to be undone under pressure.
+   `print.css` hides everything carrying `.no-print`, which is the rest of this
+   file.                                                                     */
+
+.print-only {
+  display: none;
+}
+
+@media print {
+  /* The bench stops being a layout.
+
+     `print.css` hides everything carrying `.no-print`, but a hidden grid item
+     is still nothing laid out in a grid: left as it was, the bench indents the
+     print copy by its own `padding-inline` and drops it a row below the empty
+     column where the preview was. On Letter that is the sheet printed 18px past
+     the right edge of the paper, and a full-page sheet spilling onto a second
+     one — silently, because the two lengths that disagree are on different
+     elements. A catalog page has no bench and prints the same sheet at 0,0.
+
+     The sheet owns its own geometry (§4) and `print.css` zeroes its margin, so
+     the only correct thing between it and the page box is nothing at all. */
+  .bench {
+    display: block;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    gap: 0;
+  }
+
+  .print-only {
+    display: block;
+  }
+}

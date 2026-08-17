@@ -69,13 +69,39 @@ export function listSheets(): SheetSpec[] {
 }
 
 /**
+ * The presentation half of `SheetOptions`, copied onto what a family built.
+ *
+ * Here rather than in fifteen `build` functions for the reason `chrome.ts`
+ * gives for living on its own: every family would otherwise write the same
+ * three lines, and the sixteenth one added would be the one that forgot. It is
+ * safe to do it after the fact because none of the three changes a length —
+ * the face is set in points, a bordered slot is the same line box as a ruled
+ * one, and the cut guides are drawn over the paper rather than in the flow —
+ * so nothing here can make a sheet the layout arithmetic already fitted stop
+ * fitting.
+ *
+ * A family that has already said something wins, which is what keeps this a
+ * default rather than an override: `UNKNOWN_SHEET` sets nothing and gets the
+ * parent's choices, and a family that one day sets its own is not quietly
+ * undone from out here.
+ */
+function present(config: SheetConfig, sheet: Sheet): Sheet {
+  return {
+    ...sheet,
+    font: sheet.font ?? config.font,
+    answerBox: sheet.answerBox ?? config.answerBox,
+    cutLines: sheet.cutLines ?? config.cutLines,
+  };
+}
+
+/**
  * Build a sheet. Deterministic in `(config, seed)`, which is the mechanism
  * behind three of the features in §7 rather than one: an answer key is the
  * same build, "another sheet like this one" is `seed + 1`, and a sheet is
  * reproducible from a shared URL because the seed is in it.
  */
 export function buildSheet(config: SheetConfig, seed: number): Sheet {
-  return sheetSpec(config.kind).build(config, seed);
+  return present(config, sheetSpec(config.kind).build(config, seed));
 }
 
 /**
@@ -87,7 +113,7 @@ export function buildSheet(config: SheetConfig, seed: number): Sheet {
  */
 export function answerKey(config: SheetConfig, seed: number): Sheet {
   const spec = sheetSpec(config.kind);
-  return spec.key(spec.build(config, seed));
+  return present(config, spec.key(spec.build(config, seed)));
 }
 
 /** One line naming what a config prints, for the catalog and the record. */

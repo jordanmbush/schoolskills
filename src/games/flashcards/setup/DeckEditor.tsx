@@ -79,10 +79,10 @@ export function DeckEditor({
   }
 
   return (
-    <div className="sheet">
+    <div className="modal">
       <Scrim onClose={() => onClose(null)} label="Close" />
-      <div className="sheet__panel">
-        <h2 className="sheet__title u-display">
+      <div className="modal__panel">
+        <h2 className="modal__title u-display">
           {deck ? "Edit list" : "New word list"}
         </h2>
 
@@ -138,7 +138,7 @@ export function DeckEditor({
             ` — a list needs at least ${MIN_WORDS}`}
         </p>
 
-        <div className="sheet__actions">
+        <div className="modal__actions">
           <Button variant="ghost" onClick={() => onClose(null)} disabled={busy}>
             Cancel
           </Button>

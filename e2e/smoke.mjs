@@ -49,12 +49,12 @@ try {
     .getByRole("button", { name: /add a player/i })
     .first()
     .click();
-  await page.waitForSelector(".sheet__panel", { timeout: 8000 });
+  await page.waitForSelector(".modal__panel", { timeout: 8000 });
   // The name field carries no explicit type, and age is a −/+ stepper
   // rather than a number input — so target the panel, not input types.
-  await page.locator(".sheet__panel input").first().fill("Smoke");
+  await page.locator(".modal__panel input").first().fill("Smoke");
   await page.getByRole("button", { name: /^add player$/i }).click();
-  await page.waitForSelector(".sheet__panel", {
+  await page.waitForSelector(".modal__panel", {
     state: "detached",
     timeout: 8000,
   });
@@ -178,6 +178,105 @@ try {
     "profile still listed after reload",
     (await page.getByText("Smoke").count()) > 0,
   );
+
+  /*
+   * The second island, and the second thing that writes to that database.
+   *
+   * Worth walking for the same reason the race is: the builder is a config in
+   * the address bar, a sheet built from it in the browser, and a record in the
+   * `sheets` store — three things that type-check perfectly and fail on first
+   * click. The reload at the end is the one that matters, because it proves the
+   * URL is genuinely the save file rather than something that only looks right
+   * while the state is still in memory.
+   */
+  log("\n6. The bench builds a sheet, and the URL is the save file");
+  await page.goto(`${BASE}/printables/make`, { waitUntil: "networkidle" });
+  await page.waitForSelector(".bench", { timeout: 15000 });
+  await page.waitForTimeout(900);
+  check(
+    "a sheet is on the bench",
+    (await page.locator(".preview .sheet__problem").count()) > 0,
+  );
+  check("the config is in the fragment", /#s=/.test(page.url()), page.url());
+
+  await page.locator(".saved input").fill("Smoke sheet");
+  await page.getByRole("button", { name: /save to my sheets/i }).click();
+  await page.waitForTimeout(800);
+  const savedSheets = await page.evaluate(async () => {
+    const db = await new Promise((res) => {
+      const r = indexedDB.open("schoolskills");
+      r.onsuccess = () => res(r.result);
+    });
+    return new Promise((res) => {
+      const tx = db
+        .transaction("sheets", "readonly")
+        .objectStore("sheets")
+        .getAll();
+      tx.onsuccess = () => res(tx.result.map((s) => s.name));
+    });
+  });
+  check(
+    "sheet saved to IndexedDB",
+    savedSheets.includes("Smoke sheet"),
+    JSON.stringify(savedSheets),
+  );
+
+  const shared = page.url();
+  await page.reload({ waitUntil: "networkidle" });
+  await page.waitForSelector(".bench", { timeout: 15000 });
+  await page.waitForTimeout(900);
+  check("the shared link reopens the same sheet", page.url() === shared);
+
+  /*
+   * Where the paper actually lands on the paper.
+   *
+   * Print is the whole output path here (§10) — there is no PDF render to
+   * notice a problem in first — and the failure mode is invisible on screen by
+   * construction: the preview is a separate, scaled copy, so a bench that
+   * indents or offsets the *print* copy looks perfect right up until the
+   * printer runs. It cost 18px off the right edge of Letter and a second sheet
+   * of paper once already.
+   *
+   * The assertion is the whole contract in two numbers. `print.css` zeroes the
+   * `@page` margin because the sheet owns its own geometry, so a correctly
+   * printed sheet starts at 0,0 — the same box a catalog page gives it, which
+   * is measured here too rather than assumed. Anything between the sheet and
+   * the page box shows up as a non-zero offset and nothing else does.
+   */
+  log("\n7. The printed sheet is the paper, not a sheet inside a layout");
+  await page.emulateMedia({ media: "print" });
+  await page.waitForTimeout(400);
+  const benchBox = await page
+    .locator(".print-only .sheet")
+    .first()
+    .boundingBox();
+  check(
+    "the builder's printed sheet starts at the corner of the page",
+    benchBox !== null &&
+      Math.round(benchBox.x) === 0 &&
+      Math.round(benchBox.y) === 0,
+    JSON.stringify(benchBox),
+  );
+  // 8.5in at 96dpi. A sheet that measures anything else has had a transform or
+  // a scale leak onto it, which is a ⅝ rule that prints as something else.
+  check(
+    "and is 8.5in wide, unscaled",
+    benchBox !== null && Math.round(benchBox.width) === 816,
+    JSON.stringify(benchBox),
+  );
+
+  await page.goto(`${BASE}/printables/lined-paper`, {
+    waitUntil: "networkidle",
+  });
+  const catalogBox = await page.locator(".sheet").first().boundingBox();
+  check(
+    "a catalog page puts the same sheet in the same place",
+    catalogBox !== null &&
+      Math.round(catalogBox.x) === 0 &&
+      Math.round(catalogBox.y) === 0,
+    JSON.stringify(catalogBox),
+  );
+  await page.emulateMedia({ media: null });
 
   log(
     `\nconsole errors: ${errors.length ? errors.slice(0, 5).join(" | ") : "none"}`,
