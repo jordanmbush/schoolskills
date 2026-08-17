@@ -1543,6 +1543,67 @@ export type PuzzleConfig = SheetOptions & {
   columns: number;
 };
 
+/* ── Grammar ───────────────────────────────────────────────────────────────
+   The third bank-backed family, and the one where being wrong costs the most.
+   A page of sums is right or wrong and nobody argues; a page of grammar can be
+   *defensibly* answered two ways, and a sheet that marks the second way wrong
+   has taught a child something false. So nothing here parses English. Every
+   sentence is written down once and tagged in `grammar/bank.ts` — what it is
+   for, where it divides, which one word can be named without argument, which
+   word needs its capital back — and the five topics below are five views of
+   those tags rather than five analyses.
+
+   Which is also why there is no `match` style, unlike word study: four kinds of
+   sentence over twelve rows is a matching column with three right answers on
+   every line.                                                               */
+
+/**
+ * Which lesson the sheet is about.
+ *
+ * The five §11 names, and each is one topic rather than several because they
+ * are one week's teaching each: the parts of speech, the two halves of a
+ * sentence, what a sentence is *for*, the mark it ends on, and the word inside
+ * it that takes a capital.
+ */
+export type GrammarTopic =
+  "parts" | "subject" | "types" | "punctuation" | "capitals";
+
+/**
+ * How the question is put.
+ *
+ * `write` gives the sentence and a ruled place to answer; `choose` gives the
+ * sentence and the fixed set of names to circle one of. Both sets are a scale
+ * rather than a draw of near misses — there are five parts of speech and four
+ * kinds of sentence, and those are the options on every line — so unlike word
+ * study a `choose` sheet here never has to be checked for a second right
+ * answer among its distractors: the options are the whole vocabulary.
+ *
+ * A topic states which of the two it can honestly be asked in (`GRAMMAR_TOPICS`
+ * / `grammarStyles`). Three of them are `write` only, because the answer is a
+ * mark, a word out of the sentence, or the sentence itself cut in half — and
+ * none of those is a list of options.
+ */
+export type GrammarStyle = "write" | "choose";
+
+export type GrammarConfig = SheetOptions & {
+  kind: "grammar";
+  topic: GrammarTopic;
+  /**
+   * Resolved against what the topic supports rather than trusted, exactly as
+   * `WordStudyConfig.style` is: a saved sheet outlives the table it was made
+   * from, for the same reason `sheetSpec` never throws.
+   */
+  style: GrammarStyle;
+  /** How many sentences to ask about. Capped at what the page holds. */
+  count: number;
+  /**
+   * How many across. A sentence is a long thing to print, so this caps lower
+   * than the maths families do — and the subject-and-predicate sheet ignores it
+   * entirely, because its answer is two ruled lines the width of the column.
+   */
+  columns: number;
+};
+
 /* ── Handwriting ───────────────────────────────────────────────────────────
    The family where the ruling stops being the paper and becomes the exercise.
    Every sheet above this line could be printed a thousandth of an inch out and
@@ -1755,6 +1816,7 @@ export type SheetConfig =
   | WordsConfig
   | WordStudyConfig
   | PuzzleConfig
+  | GrammarConfig
   | HandwritingConfig
   | MemoryConfig;
 

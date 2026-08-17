@@ -23,6 +23,7 @@ import { ArithmeticPanel } from "./arithmetic";
 import { DecimalsPanel } from "./decimals";
 import { FractionsPanel } from "./fractions";
 import { GeometryPanel } from "./geometry";
+import { GrammarPanel } from "./grammar";
 import { HandwritingPanel } from "./handwriting";
 import { IntegersPanel } from "./integers";
 import { MeasurePanel } from "./measure";
@@ -92,6 +93,7 @@ const PANELS: Record<string, FamilyPanel> = {
   words: panel(WordsPanel),
   "word-study": panel(WordStudyPanel),
   puzzle: panel(PuzzlesPanel),
+  grammar: panel(GrammarPanel),
   handwriting: panel(HandwritingPanel),
   memory: panel(MemoryPanel),
 };
