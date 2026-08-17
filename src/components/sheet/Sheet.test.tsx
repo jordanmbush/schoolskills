@@ -13,6 +13,7 @@ import { SCRIPTURE_CREDIT } from "@/engine/sheets/passages";
 import type {
   ArithmeticConfig,
   Block,
+  ChartConfig,
   FractionArt,
   FractionConfig,
   GeometryConfig,
@@ -289,6 +290,12 @@ const EVERY_BLOCK: Block[] = [
         ],
       },
     ],
+  },
+  {
+    // A number line as the sheet rather than as an aid under a sum: the one
+    // shape of it that thins its own labels out, which is what `label` says.
+    kind: "numberline",
+    line: { from: 0, to: 100, step: 5, width: 7500, label: 2 },
   },
   { kind: "cutline" },
   { kind: "spacer", height: 1200 },
@@ -1424,6 +1431,224 @@ describe("a rendered word-shape sheet", () => {
     expect(blank).not.toContain("sheet__cell--answered");
     expect(count(key, "sheet__cell--answered")).toBe(6);
     expect(key).toContain(">b</text>");
+  });
+});
+
+/* ── The blank references, measured off the ink ────────────────────────── */
+
+const chart = (over: Partial<ChartConfig> = {}): ChartConfig => ({
+  kind: "chart",
+  style: "hundred",
+  paper: DEFAULT_PAPER,
+  fontPt: 12,
+  fields: ["name", "date"],
+  ...over,
+});
+
+/** The gridlines of a drawing, split into the two directions they run in. */
+function ruling(html: string): { down: number[]; across: number[] } {
+  const lines = [
+    ...html.matchAll(
+      /<line class="sheet__rule sheet__rule--grid" x1="(\d+)" x2="(\d+)" y1="(\d+)" y2="(\d+)"/g,
+    ),
+  ].map((line) => line.slice(1).map(Number));
+  return {
+    down: lines.filter(([x1, x2]) => x1 === x2).map(([x1]) => x1),
+    across: lines.filter(([x1, x2]) => x1 !== x2).map(([, , y1]) => y1),
+  };
+}
+
+/** The numerals and headings printed inside squares, with where and how big. */
+function inSquares(html: string) {
+  return [
+    ...html.matchAll(
+      /<text class="sheet__cell(?:[^"]*)" x="(-?[\d.]+)" y="(-?[\d.]+)" font-size="(\d+)"[^>]*>([^<]*)<\/text>/g,
+    ),
+  ].map((one) => ({
+    x: Number(one[1]),
+    y: Number(one[2]),
+    size: Number(one[3]),
+    text: one[4],
+  }));
+}
+
+/** The ticks along a number line, and the numbers written under them. */
+function alongTheLine(html: string) {
+  const ticks = [
+    ...html.matchAll(
+      /<line class="sheet__rule" x1="(\d+)" x2="(\d+)" y1="(\d+)" y2="(\d+)"/g,
+    ),
+  ].map((tick) => ({
+    x: Number(tick[1]),
+    out: Number(tick[4]) - Number(tick[3]),
+  }));
+  const labels = [
+    ...html.matchAll(
+      /<text class="sheet__tick" x="(\d+)" y="\d+" font-size="\d+" text-anchor="middle">([^<]*)<\/text>/g,
+    ),
+  ].map((label) => ({ x: Number(label[1]), text: label[2] }));
+  return { ticks, labels };
+}
+
+/** The distance between one of a list of positions and the next. */
+const gaps = (values: number[]): number[] =>
+  values.slice(1).map((value, index) => value - values[index]);
+
+describe("a rendered hundred chart", () => {
+  it("draws a hundred squares that are actually square", () => {
+    // §4, measured rather than reviewed: the eleven rules each way land on a
+    // repeat of one length, and it is the *same* length in both directions.
+    const html = render(buildSheet(chart({ filled: true }), 1));
+    const { down, across } = ruling(html);
+    expect(down).toHaveLength(11);
+    expect(across).toHaveLength(11);
+    expect(new Set(gaps(down)).size).toBe(1);
+    expect(gaps(down)).toEqual(gaps(across));
+  });
+
+  it("numbers them 1 to 100, each in the middle of its own square", () => {
+    const html = render(buildSheet(chart({ filled: true }), 1));
+    const { down, across } = ruling(html);
+    const squares = inSquares(html);
+    expect(squares).toHaveLength(100);
+
+    const cell = gaps(down)[0];
+    for (const [index, square] of squares.entries()) {
+      // Recovered from where the ink is, not from the block: the number in the
+      // square at row 4, column 7 has to be 48 to a child reading the paper.
+      const column = (square.x - cell / 2) / cell;
+      const row = (square.y - cell / 2) / cell;
+      expect(Number(square.text)).toBe(row * 10 + column + 1);
+      expect(square.text).toBe(String(index + 1));
+    }
+    expect(across.at(-1)).toBe(cell * 10);
+  });
+
+  it("prints nothing in the squares until it is a key", () => {
+    expect(inSquares(render(buildSheet(chart(), 1)))).toHaveLength(0);
+    expect(inSquares(render(answerKey(chart(), 1)))).toHaveLength(100);
+  });
+});
+
+describe("a rendered number line", () => {
+  it("spaces its ticks evenly and ends on one", () => {
+    const html = render(
+      buildSheet(
+        chart({ style: "number-line", range: { min: 0, max: 20 }, step: 1 }),
+        1,
+      ),
+    );
+    const { ticks, labels } = alongTheLine(html);
+    expect(ticks).toHaveLength(21);
+    // Rounded, because the axis is divided rather than accumulated: the ticks
+    // land within a thousandth of an inch of one another's spacing, which is
+    // finer than any printer resolves.
+    expect(new Set(gaps(ticks.map((tick) => tick.x)))).toEqual(new Set([361]));
+    expect(labels.map((label) => label.text)).toEqual(
+      Array.from({ length: 21 }, (_, index) => String(index)),
+    );
+  });
+
+  it("is a block of its own without growing to fill the page", () => {
+    // The one rule a number line brought with it from being an aid under a sum.
+    // `.sheet__problem` is a wrapping flex *row*, where `flex: 1 0 100%` means
+    // "a line to yourself"; `.sheet__blocks` is a flex *column*, where the same
+    // declaration means "take all the height that is going". Unscoped, a
+    // reference strip printed at six times the height the family reserved for
+    // it — and it looked deliberate, because the strips spread evenly down the
+    // page. Only a browser can measure that; this is the line that causes it.
+    const css = read(join(ROOT, "src/styles/sheet.css")).replaceAll(
+      /\/\*[\s\S]*?\*\//g,
+      "",
+    );
+    for (const [, selector, body] of css.matchAll(/([^{}]+)\{([^}]*)\}/g)) {
+      if (!selector.includes(".sheet__number-line")) continue;
+      if (selector.includes(".sheet__problem")) continue;
+      expect(body, selector.trim()).not.toContain("flex:");
+    }
+    expect(css).toContain(".sheet__problem > .sheet__number-line");
+  });
+
+  it("thins the numbers out without moving a tick, and keeps the last one", () => {
+    // A line marked every 1 to 100 keeps all hundred and one ticks; what gives
+    // way is the numerals, and the unnumbered ticks are drawn shorter so they
+    // still read as something to count.
+    const html = render(
+      buildSheet(
+        chart({ style: "number-line", range: { min: 0, max: 100 }, step: 1 }),
+        1,
+      ),
+    );
+    const { ticks, labels } = alongTheLine(html);
+    expect(ticks).toHaveLength(101);
+    expect(labels).toHaveLength(21);
+    expect(labels.map((label) => label.text).at(-1)).toBe("100");
+    expect(new Set(ticks.map((tick) => tick.out)).size).toBe(2);
+    // And every numeral sits over a tick rather than between two.
+    const at = new Set(ticks.map((tick) => tick.x));
+    for (const label of labels) expect(at.has(label.x)).toBe(true);
+  });
+});
+
+describe("a rendered place-value chart", () => {
+  const mat = chart({
+    style: "place-value",
+    places: { largest: 2, smallest: -1 },
+    rows: 6,
+  });
+
+  it("prints every heading over the column it names", () => {
+    // The one thing this sheet has to get right. A heading laid out beside the
+    // drawing would be two things to keep aligned; inside the grid it is one.
+    const html = render(buildSheet(mat, 1));
+    const { down } = ruling(html);
+    const headings = inSquares(html);
+    expect(headings.map((heading) => heading.text)).toEqual([
+      "Hundreds",
+      "Tens",
+      "Ones",
+      "Tenths",
+    ]);
+    for (const [index, heading] of headings.entries()) {
+      expect(heading.x).toBe((down[index] + down[index + 1]) / 2);
+    }
+  });
+
+  it("sets a heading small enough to stay inside its column", () => {
+    // "Hundreds" at half the height of a column two inches wide runs four
+    // columns long, and an `<svg>` clips what leaves its viewBox — so what
+    // prints is a chart with most of its headings sliced off.
+    const html = render(buildSheet(mat, 1));
+    const { down } = ruling(html);
+    const column = down[1] - down[0];
+    for (const heading of inSquares(html)) {
+      expect(heading.text.length * heading.size).toBeLessThanOrEqual(
+        column * 2,
+      );
+    }
+  });
+
+  it("rules its rows at the row's height, not at the column's width", () => {
+    const html = render(buildSheet(mat, 1));
+    const { down, across } = ruling(html);
+    expect(down).toHaveLength(5);
+    // Six rows to write in, and the headings above them.
+    expect(across).toHaveLength(8);
+    expect(new Set(gaps(across)).size).toBe(1);
+    expect(gaps(across)[0]).toBeLessThan(gaps(down)[0]);
+  });
+
+  it("draws the decimal point where a decimal point goes", () => {
+    // Immediately right of the ones column — the third gridline in, on a chart
+    // that runs hundreds, tens, ones, tenths.
+    const html = render(buildSheet(mat, 1));
+    const { down } = ruling(html);
+    const axis =
+      /<line x1="(\d+)" x2="(\d+)" y1="0" y2="\d+" class="sheet__rule sheet__rule--axis"/.exec(
+        html,
+      );
+    expect(axis).not.toBeNull();
+    expect(Number(axis?.[1])).toBe(down[3]);
   });
 });
 

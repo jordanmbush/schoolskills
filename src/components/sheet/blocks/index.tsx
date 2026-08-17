@@ -22,6 +22,7 @@ import { Copywork } from "./Copywork";
 import { Crossword } from "./Crossword";
 import { Cutline } from "./Cutline";
 import { Grid } from "./Grid";
+import { Line } from "./Line";
 import { Matching } from "./Matching";
 import { Problems } from "./Problems";
 import { Rules } from "./Rules";
@@ -49,6 +50,8 @@ export function BlockView({
       return <Copywork block={block} metrics={metrics} />;
     case "grid":
       return <Grid block={block} metrics={metrics} />;
+    case "numberline":
+      return <Line block={block} metrics={metrics} />;
     case "wordsearch":
       return <WordSearch block={block} metrics={metrics} />;
     case "crossword":

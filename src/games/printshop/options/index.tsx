@@ -20,6 +20,7 @@ import type { ReactNode } from "react";
 import type { SheetConfig } from "@/engine/sheets/types";
 
 import { ArithmeticPanel } from "./arithmetic";
+import { ChartsPanel } from "./charts";
 import { DecimalsPanel } from "./decimals";
 import { FractionsPanel } from "./fractions";
 import { GeometryPanel } from "./geometry";
@@ -78,6 +79,7 @@ const NO_OPTIONS: FamilyPanel = () => null;
 const PANELS: Record<string, FamilyPanel> = {
   blank: NO_OPTIONS,
   paper: panel(PaperPanel),
+  chart: panel(ChartsPanel),
   arithmetic: panel(ArithmeticPanel),
   multiplication: panel(MultiplicationPanel),
   fractions: panel(FractionsPanel),

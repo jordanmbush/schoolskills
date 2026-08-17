@@ -32,6 +32,7 @@ import { TIME_SHEET } from "./maths/time";
 import { WORD_PROBLEMS_SHEET } from "./maths/wordproblems";
 import { PHONICS_SHEET } from "./phonics/sheets";
 import { UNKNOWN_SHEET, type SheetSpec } from "./spec";
+import { CHART_SHEET } from "./templates/charts";
 import { PAPER_SHEET } from "./templates/paper";
 import { HANDWRITING_SHEET } from "./writing/handwriting";
 import { MEMORY_SHEET } from "./writing/memory";
@@ -42,6 +43,7 @@ import { WORD_STUDY_SHEET } from "./words/study";
 const SHEETS: Record<string, SheetSpec> = {
   [BLANK_SHEET.id]: BLANK_SHEET,
   [PAPER_SHEET.id]: PAPER_SHEET,
+  [CHART_SHEET.id]: CHART_SHEET,
   [ARITHMETIC_SHEET.id]: ARITHMETIC_SHEET,
   [MULTIPLICATION_SHEET.id]: MULTIPLICATION_SHEET,
   [FRACTIONS_SHEET.id]: FRACTIONS_SHEET,

@@ -9,16 +9,22 @@
  * why: twelve times-table pages work because there are twelve of them and each
  * has something true on it, and five thousand permutations of a config is a
  * doorway-page farm. So the engine can rule paper any way §5 describes, and
- * this file names the eleven a parent actually searches for, each with a note
+ * this file names the fifteen a parent actually searches for, each with a note
  * that is true of that ruling and no other. The rest arrive with the builder,
  * which is where choosing belongs.
+ *
+ * The line that sorts a page from a permutation is whether it is *different
+ * paper*. A quarter-inch square and a centimetre square are two different
+ * things to count on, and both are searched for by name; five millimetres and a
+ * fifth of an inch are the same square to within three thousandths of an inch,
+ * so one of them is a page and the other is a sentence on it.
  *
  * Every entry is printed on both stocks. A sheet is only correct on the paper
  * it was measured for — a Letter sheet sent to an A4 printer is scaled to fit,
  * and a scaled ⅝ rule is not a ⅝ rule — and `@page` is a document rule, so the
  * two cannot share a page. Hence a route each.
  */
-import { DEFAULT_FONT_PT } from "@/engine/sheets/paper";
+import { DEFAULT_FONT_PT, GRID_PITCHES } from "@/engine/sheets/paper";
 import { encodeSharedSheet } from "@/engine/sheets/share";
 import type {
   HeaderField,
@@ -271,6 +277,82 @@ export const PAPER_SHEETS: PaperSheet[] = [
     ages: "Ages 9+",
     group: "grid",
     rule: { style: "isometric" },
+  },
+  /* The metric squares. Everything above this point is a quarter of an inch,
+     which is the paper an American classroom is stocked with and no use at all
+     for work in centimetres: a rectangle 7cm by 4cm drawn on quarter-inch
+     squares has to be measured with a ruler rather than counted, which is most
+     of what squared paper is for. `GRID_PITCHES` already held these three; what
+     was missing was a page a parent could find them on.                      */
+  {
+    slug: "graph-paper-1-cm",
+    name: "Graph paper — 1 cm",
+    short: "1 cm",
+    heading: "Graph paper, 1 cm",
+    keyword: "Free printable 1 cm graph paper",
+    summary: "Centimetre squared paper, ruled edge to edge.",
+    lead: "One centimetre to a square, in both directions. The squared paper a metric classroom works in, where a length in centimetres is a number of squares rather than something to measure.",
+    notes: [
+      "A centimetre square is big enough to write a whole two-digit number into, which makes this the right squared paper for column arithmetic as well as for area. A child who puts one digit in each square keeps the columns lined up without being told to, and a column that drifts is most of what goes wrong in a long sum.",
+      "It is also the paper for area and perimeter the first time either is taught. A rectangle drawn 7 squares by 4 squares has an area a child can count and a perimeter they can walk round with a finger, and both of those are lost the moment the squares are a quarter of an inch and the label says centimetres.",
+    ],
+    teaches: "Area, perimeter and metric measurement",
+    ages: "Ages 7+",
+    group: "grid",
+    rule: { style: "graph", pitch: GRID_PITCHES.centimetre },
+  },
+  {
+    slug: "graph-paper-5-mm",
+    name: "Graph paper — 5 mm",
+    short: "5 mm",
+    heading: "Graph paper, 5 mm",
+    keyword: "Free printable 5 mm graph paper",
+    summary:
+      "Five-millimetre squares — the ruling a school exercise book is printed at.",
+    lead: "Half a centimetre to a square: the squares in a school maths book, and the finest ruling here that is still comfortable to write a digit into.",
+    notes: [
+      "This is what “squared paper” means in most of the world, and a page of it sits beside a torn-out exercise book page without looking like a different thing. Two squares to the centimetre also makes halves obvious, which is worth more than it sounds when a child is first asked to draw a line 3.5 cm long.",
+      "Five millimetres is a hair under a fifth of an inch — three thousandths of an inch smaller, which is finer than a printer resolves — so a sheet of this does duty as the American quad pad as well. If the work is in inches, though, the quarter-inch sheet is the one to print: the squares there are a unit rather than nearly one.",
+    ],
+    teaches: "Graphing and metric measurement",
+    ages: "Ages 9+",
+    group: "grid",
+    rule: { style: "graph", pitch: GRID_PITCHES["half-centimetre"] },
+  },
+  {
+    slug: "dot-grid-paper-1-cm",
+    name: "Dot grid paper — 1 cm",
+    short: "1 cm dots",
+    heading: "Dot grid paper, 1 cm",
+    keyword: "Free printable 1 cm dot grid paper",
+    summary: "Centimetre dot grid — the squares implied rather than drawn.",
+    lead: "A centimetre grid with only the corners printed. Everything the squared sheet gives you to measure against, and nothing crossing what has been drawn on top of it.",
+    notes: [
+      "Dots are the right paper for drawing shapes on. A quadrilateral drawn corner to corner on a centimetre grid has sides a child can count and an area they can work out by cutting it into rectangles — and none of the pencil lines are competing with a printed grid for attention.",
+      "It is also the paper for arrays. Six dots by four dots is a picture of 6 × 4 that a child can circle in rows or in columns, which is commutativity drawn rather than asserted, and it is much harder to see when the dots are a quarter of an inch apart.",
+    ],
+    teaches: "Shapes, arrays and area",
+    ages: "Ages 7+",
+    group: "grid",
+    rule: { style: "dot", pitch: GRID_PITCHES.centimetre },
+  },
+  {
+    slug: "isometric-graph-paper-1-cm",
+    name: "Isometric paper — 1 cm",
+    short: "1 cm triangles",
+    heading: "Isometric graph paper, 1 cm",
+    keyword: "Free printable 1 cm isometric graph paper",
+    summary:
+      "A centimetre triangular grid at 30° — the same paper as the quarter-inch sheet, at a size a whole cube fits on.",
+    lead: "Triangles a centimetre to a side rather than a quarter of an inch. The same three families of lines at sixty degrees to each other, drawn large enough that a solid a few units across takes up a usable part of the page.",
+    notes: [
+      "The larger triangle is the one to print for a first attempt at drawing a cube. Small isometric paper is unforgiving — a line drawn one row out is a corner that does not meet — and a child who has just been shown the trick needs the room before they need the detail.",
+      "The rows are spaced by the height of the triangle rather than by its side, here as on the quarter-inch sheet, which is what makes the grid genuinely thirty degrees rather than a squashed approximation of it. A centimetre triangle is therefore about 8.7 mm from one row to the next, and that number is the whole reason the drawing looks right.",
+    ],
+    teaches: "Three-dimensional shapes and nets",
+    ages: "Ages 9+",
+    group: "grid",
+    rule: { style: "isometric", pitch: GRID_PITCHES.centimetre },
   },
 ];
 

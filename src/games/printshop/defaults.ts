@@ -161,6 +161,17 @@ const MEMORY_TEXT = "A verse is learnt by saying it, not by reading it again.";
 const DEFAULTS: Record<string, SheetConfig> = {
   blank: { ...BASE, kind: "blank", title: "Blank sheet" },
   paper: { ...BASE, kind: "paper", rule: { style: "wide" } },
+  chart: {
+    ...BASE,
+    kind: "chart",
+    // The hundred chart, blank, 1 to 100. The reference a parent recognises
+    // from across the room, and the only one of the four that is an exercise as
+    // well as a wall chart — so the bench opens on a sheet with something to do
+    // on it and a key behind it. The other three are one control away.
+    style: "hundred",
+    range: { min: 1, max: 100 },
+    filled: false,
+  },
   arithmetic: {
     ...BASE,
     kind: "arithmetic",
