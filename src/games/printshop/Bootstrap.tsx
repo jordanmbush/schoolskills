@@ -2,12 +2,13 @@
  * The three ways into a sheet that is already about something (§14).
  *
  * Three buttons and not a wizard, because each one is a source a parent
- * already has: the record book knows what their child keeps missing, the word
- * lists they typed into Word Jungle are sitting in IndexedDB, and this week's
- * spellings are on a letter they can paste. None of the three is a new kind of
- * sheet — they all end at `bench.open(config, seed)` with a config the picker
- * and the panels below can then tune, which is why a bootstrap is a way to
- * start rather than a mode to be in.
+ * already has: the record book knows what their child keeps missing, the sight
+ * words this build ships and the lists they typed into Word Jungle are both a
+ * list already, and this week's spellings are on a letter they can paste. None
+ * of the three is a new kind of sheet — they all end at
+ * `bench.open(config, seed)` with a config the picker and the panels below can
+ * then tune, which is why a bootstrap is a way to start rather than a mode to be
+ * in.
  *
  * Everything here goes through a service. The missed facts come from
  * `services/practice.ts` and the saved lists from `services/decks.ts`; nothing
@@ -17,6 +18,7 @@
 import { useEffect, useState } from "react";
 
 import { Button, Field, Select } from "@/components/ui/kit";
+import { WORD_LISTS, listWords } from "@/engine/decks/wordlists";
 import { PRACTICE_SEED, wordsSheet } from "@/engine/sheets/practice";
 import type { SheetConfig } from "@/engine/sheets/types";
 import type { CustomDeck } from "@/engine/types";
@@ -36,21 +38,31 @@ export function Bootstrap({ onOpen }: { onOpen: Open }) {
         bench, so the style, the paper and the rest are still yours to change.
       </p>
       <Missed onOpen={onOpen} />
-      <FromSavedList onOpen={onOpen} />
+      <FromWordList onOpen={onOpen} />
       <FromPaste onOpen={onOpen} />
     </section>
   );
 }
 
+/** A list to print, whoever wrote it: the id, how it reads, and the words. */
+type Listed = { id: string; label: string; words: string[] };
+
 /**
- * A word list a parent already typed in, as paper.
+ * A word list, as paper — the shipped sight-word lists and every list a parent
+ * has typed in, in one control.
  *
- * Nearly free, and the reason it is here rather than in a later story: the
- * data is in IndexedDB already, parsed already, and a spelling deck is exactly
- * a spelling sheet's content. One press turns this week's list into a
- * worksheet; the style control beside it turns that into three of them.
+ * Nearly free, and the reason it is here rather than in a later story: both
+ * sources are already parsed, and a spelling deck is exactly a spelling sheet's
+ * content. One press turns this week's list into a worksheet; the style control
+ * beside it turns that into seven of them.
+ *
+ * The two are one picker rather than two steps because a parent choosing a list
+ * is not thinking about where it came from. The shipped ones are listed first
+ * and are always there, which is the reason this step no longer disappears: the
+ * Dolch lists exist whether or not a browser has storage, so the only thing
+ * IndexedDB decides is whether a parent's own lists join them.
  */
-function FromSavedList({ onOpen }: { onOpen: Open }) {
+function FromWordList({ onOpen }: { onOpen: Open }) {
   const [decks, setDecks] = useState<CustomDeck[]>([]);
   const [chosen, setChosen] = useState("");
 
@@ -58,9 +70,8 @@ function FromSavedList({ onOpen }: { onOpen: Open }) {
     let live = true;
     deckService
       .all()
-      // Silent on failure, unlike the missed-facts panel above: this is the
-      // one of the three that a parent has no reason to expect, so a browser
-      // with no storage simply doesn't offer it rather than explaining itself
+      // Silent on failure, unlike the missed-facts panel above: a browser with
+      // no storage simply offers the shipped lists rather than explaining itself
       // twice on one screen.
       .then((loaded) => live && setDecks(loaded))
       .catch(() => {});
@@ -69,26 +80,35 @@ function FromSavedList({ onOpen }: { onOpen: Open }) {
     };
   }, []);
 
-  if (decks.length === 0) return null;
-  const deck = decks.find((d) => d.id === chosen) ?? decks[0];
+  const lists: Listed[] = [
+    ...WORD_LISTS.map((list) => ({
+      id: list.id,
+      label: `${list.emoji} ${list.name} — ${list.group}`,
+      words: listWords(list),
+    })),
+    ...decks.map((deck) => ({
+      id: deck.id,
+      label: `${deck.emoji} ${deck.name} — ${deck.words.length} words`,
+      words: deck.words,
+    })),
+  ];
+  const list = lists.find((one) => one.id === chosen) ?? lists[0];
+  if (!list) return null;
 
   return (
     <div className="bootstrap__step">
-      <h3 className="bootstrap__name">A list you saved</h3>
+      <h3 className="bootstrap__name">A word list</h3>
       <Field label="Which list">
         <Select
-          value={deck.id}
+          value={list.id}
           onChange={setChosen}
-          options={decks.map((d) => ({
-            value: d.id,
-            label: `${d.emoji} ${d.name} — ${d.words.length} words`,
-          }))}
+          options={lists.map(({ id, label }) => ({ value: id, label }))}
         />
       </Field>
       <Button
         variant="accent"
         size="sm"
-        onClick={() => onOpen(wordsSheet(deck.words), PRACTICE_SEED)}
+        onClick={() => onOpen(wordsSheet(list.words), PRACTICE_SEED)}
       >
         Make a sheet
       </Button>

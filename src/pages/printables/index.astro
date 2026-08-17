@@ -13,6 +13,11 @@ import {
   hrefFor as handwritingHref,
 } from "./_handwriting";
 import { MATHS_SHEETS, mathsShelf, pathFor as mathsPath } from "./_maths";
+import {
+  SPELLING_SHEETS,
+  pathFor as spellingPath,
+  spellingShelf,
+} from "./_spelling";
 
 /**
  * The Print Shop's front door.
@@ -27,11 +32,13 @@ import { MATHS_SHEETS, mathsShelf, pathFor as mathsPath } from "./_maths";
  * It lists what exists and nothing else. A shelf of links to sheets that
  * haven't been built is the thin-content pattern Base.astro's `noindex` block
  * already argues against, and a catalog page here is meant to BE the worksheet
- * — real prerendered HTML a parent can print without touching anything. Five
+ * — real prerendered HTML a parent can print without touching anything. Six
  * families fill it: every ruling in §5 on both stocks, the curated maths topics
  * of §8, each of which prints its own answer key, the handwriting and cursive
- * sheets, which come on both stocks for the same reason the paper does, and the
- * Scripture shelf, which is those same families with a passage on them.
+ * sheets, which come on both stocks for the same reason the paper does, the
+ * Scripture shelf, which is those same families with a passage on them, and the
+ * spelling shelf, which is the one whose content a parent can replace with their
+ * own list.
  */
 const title = "Free printable worksheets — The Print Shop | School Skills";
 const description =
@@ -44,6 +51,7 @@ const strands = mathsShelf();
 const writing = handwritingShelf();
 const joined = cursiveShelf();
 const scripture = bibleShelf();
+const words = spellingShelf();
 ---
 
 <Content
@@ -86,13 +94,14 @@ const scripture = bibleShelf();
   <section class="band band--tight wrap">
     <h2 class="h2">On the shelf now</h2>
     <p class="h2__sub">
-      Five families: maths worksheets, each with its answer key on the page
+      Six families: maths worksheets, each with its answer key on the page
       behind it, handwriting practice that traces before it copies, the same
-      progression again in cursive, Scripture copywork and memory work, and
-      paper in every ruling. Each of these is a page that is itself the sheet
-      &mdash; open it, press print, and that is the whole of it. Everything
-      ruled comes on both stocks, because a ruling shrunk to fit whatever is in
-      the tray is no longer the ruling you chose.
+      progression again in cursive, Scripture copywork and memory work, spelling
+      and word study on this week&rsquo;s list or your own, and paper in every
+      ruling. Each of these is a page that is itself the sheet &mdash; open it,
+      press print, and that is the whole of it. Everything ruled comes on both
+      stocks, because a ruling shrunk to fit whatever is in the tray is no
+      longer the ruling you chose.
     </p>
 
     <h3 class="h2 h2--next">Maths worksheets</h3>
@@ -177,6 +186,27 @@ const scripture = bibleShelf();
       <a class="cta" href="/printables/bible">All the Scripture sheets</a>
     </div>
 
+    <h3 class="h2 h2--next">Spelling and words</h3>
+    <p class="h2__sub">
+      {SPELLING_SHEETS.length} sheets: a week&rsquo;s list in five shapes, sight words
+      to trace, write and find, and ten pages on how words work. Answer keys where
+      there is an answer.
+    </p>
+    {
+      words.map((group) => (
+        <nav class="stones" aria-label={`Spelling — ${group.label}`}>
+          {group.sheets.map((sheet) => (
+            <a class="stone" href={spellingPath(sheet)}>
+              {sheet.short}
+            </a>
+          ))}
+        </nav>
+      ))
+    }
+    <div class="hero__actions">
+      <a class="cta" href="/printables/spelling">All the spelling sheets</a>
+    </div>
+
     {
       /*
         Paper keeps its groups and its one-line summaries; maths gets a row of
@@ -233,16 +263,16 @@ const scripture = bibleShelf();
       <h2 class="h2">What the press is being set for</h2>
       <p class="h2__sub">
         The Print Shop is opening a family at a time, and this page lists what
-        exists rather than what is planned. Paper, maths, handwriting, cursive
-        and copywork are open. Spelling is next.
+        exists rather than what is planned. Paper, maths, handwriting, cursive,
+        copywork and spelling are open. Phonics is next.
       </p>
       <div class="prose">
         <p>
           The order it opens in: the paper, the maths sheets, the handwriting
           and the cursive above, then the copywork &mdash; a few hundred
-          passages from the public domain, Scripture among them &mdash; then
-          spelling, phonics, and the charts, certificates and planners that are
-          simply blank forms.
+          passages from the public domain, Scripture among them &mdash; then the
+          spelling and word-study shelf, and after that phonics and the charts,
+          certificates and planners that are simply blank forms.
         </p>
         <p>
           The one it is really being built for comes with the sheet builder:

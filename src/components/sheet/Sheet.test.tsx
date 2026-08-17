@@ -25,6 +25,7 @@ import type {
   SheetFont,
   TimeConfig,
   TraceStyle,
+  WordsConfig,
 } from "@/engine/sheets/types";
 
 import { SheetView } from "./Sheet";
@@ -217,6 +218,16 @@ const EVERY_BLOCK: Block[] = [
     kind: "choice",
     questions: [
       { prompt: "How many legs?", options: ["two", "four"], answer: 1 },
+    ],
+  },
+  {
+    // The three bands a word is written in, in one word: a tall letter, a small
+    // one, and one with a tail.
+    kind: "wordshapes",
+    columns: 2,
+    words: [
+      { word: "big", letters: ["tall", "small", "tail"] },
+      { word: "cat", letters: ["small", "small", "tall"] },
     ],
   },
   {
@@ -1297,6 +1308,88 @@ describe("a rendered geometry sheet", () => {
         `>${problem.answer}<`,
       );
     }
+  });
+});
+
+/* ── The sheet whose answer is a box ───────────────────────────────────────
+   Word shapes. The engine's suite proves which band each letter belongs in;
+   this is the half that only exists once it is drawn, and it is the half the
+   exercise is: a tall box has to *look* taller than a small one and a tail box
+   has to hang below it, or the outline a child is being taught to recognise is
+   not on the paper.                                                          */
+
+const spelling = (over: Partial<WordsConfig> = {}): WordsConfig => ({
+  kind: "words",
+  paper: DEFAULT_PAPER,
+  fontPt: 12,
+  fields: ["name"],
+  style: "shapes",
+  words: ["big", "cat"],
+  times: 3,
+  gaps: 2,
+  count: 2,
+  columns: 1,
+  ...over,
+});
+
+/** Every box on the sheet, as the ink says it was drawn. */
+function boxes(html: string): Array<{ y: number; height: number }> {
+  return [
+    ...html.matchAll(
+      /<rect class="sheet__box" x="\d+" y="(\d+)" width="\d+" height="(\d+)"/g,
+    ),
+  ].map((box) => ({ y: Number(box[1]), height: Number(box[2]) }));
+}
+
+describe("a rendered word-shape sheet", () => {
+  it("draws a box per letter, in the band that letter is written in", () => {
+    // "big" is tall, small, tail — three boxes, three different geometries, and
+    // the whole point of the sheet is that they are visibly different.
+    const html = render(
+      buildSheet(spelling({ words: ["big"], count: 1 }), SEED),
+    );
+    const [tall, small, tail] = boxes(html);
+    expect(boxes(html)).toHaveLength(3);
+
+    expect(tall.y).toBeLessThan(small.y);
+    expect(tall.height).toBeGreaterThan(small.height);
+    // A tail starts where a small letter does and finishes below it.
+    expect(tail.y).toBe(small.y);
+    expect(tail.height).toBeGreaterThan(small.height);
+    expect(tail.y + tail.height).toBeGreaterThan(tall.y + tall.height);
+  });
+
+  it("draws the boxes in mil inside a box measured in inches", () => {
+    // The same correspondence every drawn thing on a sheet rests on: the <svg>
+    // is sized in inches while its viewBox counts mil, so one user unit is a
+    // thousandth of an inch. Get it wrong and the boxes are a thousand times the
+    // size they say — which a screen never shows.
+    expect(render(buildSheet(spelling({ words: ["big"], count: 1 }), SEED))) //
+      .toContain('width="0.685in" height="0.434in" viewBox="0 0 685 434"');
+  });
+
+  it("rules the boxes rather than tinting them, so they always print", () => {
+    // §5: a browser drops background paint unless the reader has found the
+    // "Background graphics" checkbox, and a word-shape sheet whose boxes were a
+    // tint comes out of the printer as an empty page.
+    const html = render(buildSheet(spelling(), SEED));
+    expect(html).not.toContain("background");
+    const css = read(join(ROOT, "src/styles/sheet.css"));
+    const box = css.slice(css.indexOf(".sheet__box {"));
+    const rule = box.slice(0, box.indexOf("}"));
+    expect(rule).toContain("fill: none");
+    expect(rule).toContain("stroke: currentcolor");
+  });
+
+  it("writes the letters into the boxes only on the key", () => {
+    const blank = render(buildSheet(spelling(), SEED));
+    const key = render(answerKey(spelling(), SEED));
+    // The word is printed either way — it is the question — so what is counted
+    // is the letters inside the boxes.
+    expect(blank).toContain(">big<");
+    expect(blank).not.toContain("sheet__cell--answered");
+    expect(count(key, "sheet__cell--answered")).toBe(6);
+    expect(key).toContain(">b</text>");
   });
 });
 

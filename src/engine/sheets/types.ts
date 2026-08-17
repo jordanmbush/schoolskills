@@ -265,6 +265,30 @@ export type Problem = {
   workspace?: Mil;
 };
 
+/**
+ * How tall one letter of a word stands — the three bands a word is written in.
+ *
+ * `tall` reaches the top line (an ascender, a capital, a numeral), `small` stops
+ * at the midline, and `tail` drops below the baseline. It is the whole of what a
+ * word-shape box is: `bed` is tall-small-tall and `pig` is tail-small-tail, and
+ * the outline the two make is different enough to tell them apart without
+ * reading either — which is what the exercise is training.
+ *
+ * Punctuation counts as `small`. An apostrophe is not a letter with a body, and
+ * a box drawn for it at any other height would be a shape a child cannot match.
+ */
+export type LetterShape = "tall" | "small" | "tail";
+
+/**
+ * One word as a row of boxes, plus the word those boxes were drawn from.
+ *
+ * Both, because the word is the answer: the boxes are printed empty and the key
+ * writes the letters into them, exactly as a ruled slot works. The shapes are
+ * resolved by the engine rather than by the renderer, so the same word is the
+ * same outline in a unit test, on a catalog page and in the builder (§4).
+ */
+export type WordShape = { word: string; letters: LetterShape[] };
+
 /** One place on a tracing row: what is written there, and how it is drawn. */
 export type TraceCell = { text: string; style: TraceStyle };
 
@@ -418,6 +442,15 @@ export type Block =
     }
   | { kind: "blanks"; sentences: Blank[] }
   | { kind: "choice"; questions: Choice[] }
+  /**
+   * Words as the outline their letters make, one row of boxes each.
+   *
+   * A block of its own rather than a `problems` item with a drawing on it, for
+   * the reason a fraction diagram is not: the boxes *are* the answer place. A
+   * problem may have exactly one of those, and a row of eight boxes with a ruled
+   * slot on the end of it would be a sheet a child answers twice.
+   */
+  | { kind: "wordshapes"; columns: number; words: WordShape[] }
   | { kind: "clock"; faces: ClockFace[] }
   | { kind: "shapes"; figures: Figure[] }
   /** Where to cut, for cards and bookmarks. */
@@ -1226,13 +1259,21 @@ export type WordProblemConfig = SheetOptions & {
 /**
  * What the sheet asks a child to do with the list.
  *
+ * Seven exercises over one list, which is the whole reason this is a union
+ * rather than seven families: none of them changes what the sheet is *about*,
+ * so a parent who has typed in this week's words gets all seven from the one
+ * control beside them.
+ *
  * `copy` is "write it three times", the oldest spelling exercise there is;
  * `missing` takes letters out and leaves the gaps to fill; `test` prints
- * numbered lines and nothing else, for a list read aloud. The wider set —
- * ABC order, word shapes, use it in a sentence — is PRINT20's, and lands here
- * as more of this union rather than as another family.
+ * numbered lines and nothing else, for a list read aloud; `abc` prints the list
+ * as it was given and asks for it back in alphabetical order; `shapes` draws
+ * each word as the outline its letters make; `sentence` asks for the word used
+ * in one; `find` prints the word among the words it is most easily confused
+ * with, which is the same judgement the race's "spot it" round makes.
  */
-export type WordSheetStyle = "copy" | "missing" | "test";
+export type WordSheetStyle =
+  "copy" | "missing" | "test" | "abc" | "shapes" | "sentence" | "find";
 
 export type WordsConfig = SheetOptions & {
   kind: "words";
@@ -1247,13 +1288,89 @@ export type WordsConfig = SheetOptions & {
    * at the top of the page types them into `title` themselves.
    */
   words: string[];
-  /** `copy` only: how many times each word is written out. */
+  /**
+   * How many ruled lines each word gets: the times it is written out on a
+   * `copy` sheet, and the lines left to write a sentence on for `sentence`.
+   *
+   * One field because it is one measurement — the rules under a word — and the
+   * capacity arithmetic multiplies it by `answerLine` either way. Two names for
+   * the same number would be two things a saved config could disagree about.
+   */
   times: number;
   /** `missing` only: how many letters are taken out of each word. */
   gaps: number;
   /** How many words to ask for. Capped at what the page holds. */
   count: number;
-  /** `copy` and `test` only — a gapped word is a line of its own. */
+  /**
+   * How many words across the page.
+   *
+   * Ignored by the two styles that are a list down it: a gapped word and a word
+   * printed among its own near misses are each a line of their own, whatever a
+   * saved config says — see `wordsLayout`.
+   */
+  columns: number;
+};
+
+/* ── Word study ────────────────────────────────────────────────────────────
+   The other half of the words shelf, and the mirror image of the family above:
+   there the content is a parent's and the exercise is ours, here the exercise
+   is a parent's and the *content* is ours. Ten topics somebody teaches in a
+   week each — rhyming, syllables, word families, prefixes and suffixes,
+   plurals, contractions, homophones, synonyms and antonyms — and none of them
+   is generatable from a rule, because English is not. A plural is `-s` until it
+   is `-es`, `-ies`, `-ves` or `children`, and a generator that reached for the
+   rule would print `mouses` in an answer key.
+
+   So the words are authored, in `words/bank.ts`, and this config only says
+   which topic and which of the three shapes of question to ask it in. What that
+   buys is the thing §11 asks for: every answer here is one somebody wrote down
+   on purpose, and the key is right because a person checked it rather than
+   because arithmetic can't be wrong.                                        */
+
+/**
+ * Which lesson the sheet is about.
+ *
+ * One topic to a sheet, never a mix. A page of rhyming and contractions
+ * together is not a harder sheet, it is a sheet nobody set: these are separate
+ * weeks in every scheme there is, and the instruction line can only say one
+ * thing.
+ */
+export type WordStudyTopic =
+  | "rhyming"
+  | "syllables"
+  | "families"
+  | "prefixes"
+  | "suffixes"
+  | "plurals"
+  | "contractions"
+  | "homophones"
+  | "synonyms"
+  | "antonyms";
+
+/**
+ * How the question is put.
+ *
+ * `write` gives the prompt and a ruled slot; `choose` gives four options with
+ * the near misses drawn from the same topic; `match` is two columns to join with
+ * a pencil. Every topic states which of the three it can honestly be asked in
+ * (`STUDY_TOPICS`), because they are not interchangeable — "write a word that
+ * rhymes with cat" has a hundred right answers and no key, and matching a word
+ * to a syllable count is a column of four numbers repeated down the page.
+ */
+export type WordStudyStyle = "write" | "choose" | "match";
+
+export type WordStudyConfig = SheetOptions & {
+  kind: "word-study";
+  topic: WordStudyTopic;
+  /**
+   * Resolved against what the topic supports rather than trusted: a style
+   * saved in March must still print in June if the topic has since dropped it,
+   * for the same reason `sheetSpec` never throws.
+   */
+  style: WordStudyStyle;
+  /** How many questions to ask for. Capped at what the page holds. */
+  count: number;
+  /** `write` only — a choice and a matching column are the width of the page. */
   columns: number;
 };
 
@@ -1467,6 +1584,7 @@ export type SheetConfig =
   | StatisticsConfig
   | WordProblemConfig
   | WordsConfig
+  | WordStudyConfig
   | HandwritingConfig
   | MemoryConfig;
 

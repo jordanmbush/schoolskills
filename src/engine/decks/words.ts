@@ -37,8 +37,17 @@ export const normaliseWord = (input: string) =>
  * Drawn from the same list and biased towards words that look like it —
  * "there" against "their", not against "squirrel". Four random words would
  * make recognition a spotting exercise rather than a reading one.
+ *
+ * Exported for the print shop's "find the word" sheet, which asks exactly this
+ * question on paper: the same list, the same three near misses, so a sheet and a
+ * "spot it" round are one exercise in two places rather than two rules about
+ * what counts as a plausible confusion.
  */
-function wordDistractors(answer: string, pool: string[], rand: () => number) {
+export function wordDistractors(
+  answer: string,
+  pool: string[],
+  rand: () => number,
+): string[] {
   const others = [...new Set(pool)].filter(
     (w) => normaliseWord(w) !== normaliseWord(answer),
   );
