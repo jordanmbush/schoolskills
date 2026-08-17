@@ -511,3 +511,23 @@ export function graphemeParts(grapheme: string): [head: string, tail: string] {
     ? [grapheme, ""]
     : [grapheme.slice(0, split), grapheme.slice(split + 1)];
 }
+
+/**
+ * A split vowel as it is *printed*: `a-e`, not `a_e`.
+ *
+ * Beside `graphemeParts` because the two are the same fact seen twice — the
+ * underscore is the table's notation for "the consonant goes here", and neither
+ * a page nor a tick box may show it. It cannot survive onto a sheet for two
+ * separate reasons: it reads as a blank to fill in, which is the opposite of
+ * what it means, and `Problem.prompt` uses a single `_` to mark where the answer
+ * goes, so a prompt carrying one would have a ruled slot drawn through the
+ * middle of a spelling.
+ *
+ * Here rather than in `sheets.ts` because a sound card is drawn in `cards.ts`,
+ * which the family imports rather than the other way round: a card's big line
+ * needs this, and reaching up to the family for it would be a cycle. Everything
+ * that prints a grapheme — card, chart, blending prompt, matching column, tick
+ * list — goes through it.
+ */
+export const graphemeText = (grapheme: string): string =>
+  grapheme.replace("_", "-");

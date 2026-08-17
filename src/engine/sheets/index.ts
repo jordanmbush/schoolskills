@@ -30,6 +30,7 @@ import { RATIO_SHEET } from "./maths/ratio";
 import { STATISTICS_SHEET } from "./maths/statistics";
 import { TIME_SHEET } from "./maths/time";
 import { WORD_PROBLEMS_SHEET } from "./maths/wordproblems";
+import { PHONICS_SHEET } from "./phonics/sheets";
 import { UNKNOWN_SHEET, type SheetSpec } from "./spec";
 import { PAPER_SHEET } from "./templates/paper";
 import { HANDWRITING_SHEET } from "./writing/handwriting";
@@ -58,6 +59,7 @@ const SHEETS: Record<string, SheetSpec> = {
   [WORD_STUDY_SHEET.id]: WORD_STUDY_SHEET,
   [PUZZLE_SHEET.id]: PUZZLE_SHEET,
   [GRAMMAR_SHEET.id]: GRAMMAR_SHEET,
+  [PHONICS_SHEET.id]: PHONICS_SHEET,
   [HANDWRITING_SHEET.id]: HANDWRITING_SHEET,
   [MEMORY_SHEET.id]: MEMORY_SHEET,
 };
@@ -83,9 +85,9 @@ export function listSheets(): SheetSpec[] {
 /**
  * The presentation half of `SheetOptions`, copied onto what a family built.
  *
- * Here rather than in fifteen `build` functions for the reason `chrome.ts`
+ * Here rather than in every `build` function for the reason `chrome.ts`
  * gives for living on its own: every family would otherwise write the same
- * three lines, and the sixteenth one added would be the one that forgot. It is
+ * three lines, and the next one added would be the one that forgot. It is
  * safe to do it after the fact because none of the three changes a length —
  * the face is set in points, a bordered slot is the same line box as a ruled
  * one, and the cut guides are drawn over the paper rather than in the flow —

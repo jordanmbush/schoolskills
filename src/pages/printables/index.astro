@@ -19,6 +19,11 @@ import {
 } from "./_handwriting";
 import { MATHS_SHEETS, mathsShelf, pathFor as mathsPath } from "./_maths";
 import {
+  PHONICS_SHEETS,
+  pathFor as phonicsPath,
+  phonicsShelf,
+} from "./_phonics";
+import {
   SPELLING_SHEETS,
   pathFor as spellingPath,
   spellingShelf,
@@ -37,14 +42,15 @@ import {
  * It lists what exists and nothing else. A shelf of links to sheets that
  * haven't been built is the thin-content pattern Base.astro's `noindex` block
  * already argues against, and a catalog page here is meant to BE the worksheet
- * — real prerendered HTML a parent can print without touching anything. Seven
+ * — real prerendered HTML a parent can print without touching anything. Eight
  * families fill it: every ruling in §5 on both stocks, the curated maths topics
  * of §8, each of which prints its own answer key, the handwriting and cursive
  * sheets, which come on both stocks for the same reason the paper does, the
  * Scripture shelf, which is those same families with a passage on them, the
  * spelling shelf, which is the one whose content a parent can replace with their
- * own list, and the grammar shelf, which is the one whose answers had to be
- * written down because they cannot be worked out.
+ * own list, the grammar shelf, which is the one whose answers had to be written
+ * down because they cannot be worked out, and the phonics shelf, which is the
+ * one whose content is decided by what a parent says has been taught.
  */
 const title = "Free printable worksheets — The Print Shop | School Skills";
 const description =
@@ -59,6 +65,7 @@ const joined = cursiveShelf();
 const scripture = bibleShelf();
 const words = spellingShelf();
 const sentences = grammarShelf();
+const sounds = phonicsShelf();
 ---
 
 <Content
@@ -101,15 +108,15 @@ const sentences = grammarShelf();
   <section class="band band--tight wrap">
     <h2 class="h2">On the shelf now</h2>
     <p class="h2__sub">
-      Seven families: maths worksheets, each with its answer key on the page
+      Eight families: maths worksheets, each with its answer key on the page
       behind it, handwriting practice that traces before it copies, the same
       progression again in cursive, Scripture copywork and memory work, spelling
       and word study on this week&rsquo;s list or your own, grammar whose
-      answers were written down rather than worked out, and paper in every
-      ruling. Each of these is a page that is itself the sheet &mdash; open it,
-      press print, and that is the whole of it. Everything ruled comes on both
-      stocks, because a ruling shrunk to fit whatever is in the tray is no
-      longer the ruling you chose.
+      answers were written down rather than worked out, phonics built from the
+      sounds you have taught, and paper in every ruling. Each of these is a page
+      that is itself the sheet &mdash; open it, press print, and that is the
+      whole of it. Everything ruled comes on both stocks, because a ruling
+      shrunk to fit whatever is in the tray is no longer the ruling you chose.
     </p>
 
     <h3 class="h2 h2--next">Maths worksheets</h3>
@@ -236,6 +243,27 @@ const sentences = grammarShelf();
       <a class="cta" href="/printables/grammar">All the grammar sheets</a>
     </div>
 
+    <h3 class="h2 h2--next">Phonics</h3>
+    <p class="h2__sub">
+      {PHONICS_SHEETS.length} sheets built from the sounds a child has been taught
+      &mdash; cards, a wall chart, blending, word families, dictation and sentences
+      with nothing untaught in them. Tick the spellings; the words follow.
+    </p>
+    {
+      sounds.map((group) => (
+        <nav class="stones" aria-label={`Phonics — ${group.label}`}>
+          {group.sheets.map((sheet) => (
+            <a class="stone" href={phonicsPath(sheet)}>
+              {sheet.short}
+            </a>
+          ))}
+        </nav>
+      ))
+    }
+    <div class="hero__actions">
+      <a class="cta" href="/printables/phonics">All the phonics sheets</a>
+    </div>
+
     {
       /*
         Paper keeps its groups and its one-line summaries; every subject shelf
@@ -293,16 +321,17 @@ const sentences = grammarShelf();
       <p class="h2__sub">
         The Print Shop is opening a family at a time, and this page lists what
         exists rather than what is planned. Paper, maths, handwriting, cursive,
-        copywork, spelling and grammar are open. Phonics is next.
+        copywork, spelling, grammar and phonics are open. The charts and forms
+        are next.
       </p>
       <div class="prose">
         <p>
-          The order it opens in: the paper, the maths sheets, the handwriting
+          The order it opened in: the paper, the maths sheets, the handwriting
           and the cursive above, then the copywork &mdash; a few hundred
           passages from the public domain, Scripture among them &mdash; then the
-          spelling and word-study shelf and the grammar sheets beside it, and
-          after that phonics and the charts, certificates and planners that are
-          simply blank forms.
+          spelling and word-study shelf, the grammar sheets beside it, and the
+          phonics shelf after them. What is left is the charts, certificates and
+          planners that are simply blank forms.
         </p>
         <p>
           The one it is really being built for comes with the sheet builder:

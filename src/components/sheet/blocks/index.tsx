@@ -15,6 +15,7 @@ import type { Block } from "@/engine/sheets/types";
 
 import type { SheetMetrics } from "../metrics";
 import { Blanks } from "./Blanks";
+import { Cards } from "./Cards";
 import { Choice } from "./Choice";
 import { Clock } from "./Clock";
 import { Copywork } from "./Copywork";
@@ -60,6 +61,8 @@ export function BlockView({
       return <Choice block={block} metrics={metrics} />;
     case "wordshapes":
       return <WordShapes block={block} metrics={metrics} />;
+    case "cards":
+      return <Cards block={block} metrics={metrics} />;
     case "clock":
       return <Clock block={block} metrics={metrics} />;
     case "shapes":

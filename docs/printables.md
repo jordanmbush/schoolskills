@@ -70,7 +70,8 @@ src/engine/sheets/
   maths/*.ts       arithmetic, fractions, geometry, pre-algebra …
   writing/*.ts     tracing, copywork, cursive joins
   words/*.ts       spelling sheets, word search, ABC order, scrambles
-  phonics/*.ts     sound inventories, constrained word generation
+  phonics/*.ts     sound inventories, constrained word generation, the seven
+                   sheets built out of them, and the orthography marking pass
   passages/*.ts    the public-domain text library, Scripture included
   templates/*.ts   lined paper, graph paper, charts, certificates
 
@@ -817,6 +818,48 @@ that is somebody's copyrighted alphabet.
 
 The copy can say, truthfully, that it works alongside DI-style programs. It
 shouldn't use the trademark as a feature name.
+
+**What shipped (PRINT24, PRINT25).** All of it, in that order and in two
+halves. `engine/sheets/phonics/` is the model: a table of correspondences —
+a spelling _and_ the sound it makes there, because `ea` spells three vowels and
+an inventory that could only hold "we've done ea" would put `bread` in front of
+a child who can read `eat` — a hand-cut word bank, and `Inventory`, which is the
+set of correspondences a parent has ticked plus their own list of words taught
+by sight. `phonics/sheets.ts` is the family, and it is seven views of that one
+list: sound cards, the "sounds we know" wall chart, blending lines, word
+families, sound-to-word matching, dictation lines and decodable sentence strips.
+
+The promise is that nothing on any of those pages uses a spelling that has not
+been ticked — with one deliberate exception, the example word printed under a
+sound card, which is the table's own mnemonic ("`sh` as in `ship`") rather than
+a word to decode, and stays put as the inventory grows. Both suites say so where
+they check it. Otherwise it is checked the way the word search's key is:
+`sheets.test.ts` reads the words back off the finished page, looks each one up in
+the bank, and compares its spellings with the inventory the config carried. A
+generator asserting its own output would agree with itself whatever it did.
+
+Two things had to be authored rather than derived. **Sentences** —
+`phonics/sentences.ts` — because a list of readable words is not a sentence and
+no rule turns one into the other; each is written as the words it is made of, so
+a sentence is available exactly when every word in it is. And the **word bank's
+cuts**, which is PRINT24's argument. Word families are then derived from those
+cuts rather than authored, and grouped by the rime's _spellings_ rather than its
+letters: `be` and `the` end in the same letter and not in the same sound.
+
+The three marks are `macron`, `silent` and `joined` on `PhonicsMarking`, each a
+boolean of its own, all three off by default, and every one of them derived from
+the table — there is nowhere in the code for a programme's own spelling of a
+rule to be written down. They apply to the cards, the chart and the strips, and
+deliberately not to the blending lines or the matching sheet: **marking is for a
+word a child reads, not for a word a child is working out**, and a joined `sh`
+inside `shop` on a matching sheet would print the answer beside the question.
+
+Seven catalog pages at `/printables/phonics`, one per kind of sheet — not per
+sound, which is where this shelf would have become a doorway farm fastest. "sh
+worksheets", "short a worksheets" and forty more are all real queries and all of
+them are one of these sheets with one spelling ticked. Each page states the
+spellings its own sheet uses, and says plainly that yours will be different.
+There is no level, stage or lesson number anywhere on the shelf.
 
 ---
 

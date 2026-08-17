@@ -1,0 +1,221 @@
+---
+import Content from "@/layouts/Content.astro";
+import AdSlot from "@/components/site/AdSlot.astro";
+import { SheetView } from "@/components/sheet/Sheet";
+import { answerKey, buildSheet } from "@/engine/sheets";
+import {
+  PHONICS_SEED,
+  PHONICS_SHEETS,
+  builderHref,
+  keyed,
+  pathFor,
+  phonicsShelf,
+  type PhonicsSheet,
+} from "../_phonics";
+
+/**
+ * One prerendered phonics sheet per kind — and the page is the sheet.
+ *
+ * The shape §8 describes, on the shelf where what somebody searched for is the
+ * *exercise*: "cvc words worksheets", "word family worksheets" and "decodable
+ * sentences" are queries a parent types, and a page that answers one of them has
+ * prose above the sheet, the sheet itself as HTML under it, and nothing to click
+ * before pressing ⌘P.
+ *
+ * **Not every page here has a key**, unlike the grammar shelf. Three of the
+ * seven withhold nothing — a pack of cards to cut out, a wall chart and a page
+ * of sentences to read — and printing the same page twice under the word "key"
+ * would be noise on a parent's printer. `keyed` is the engine's own answer to
+ * that (`phonicsKeyed`), so the page and the family cannot disagree.
+ *
+ * **One stock, as with maths, spelling and grammar.** Nothing on a phonics
+ * sheet is a measurement, so there is no A4 twin to keep in step — which is also
+ * why this is a single-segment `[slug]` rather than a rest pattern.
+ *
+ * **No client directive on `SheetView`, ever.** `@astrojs/react` renders a
+ * component with no `client:*` to HTML at build time, so these pages ship zero
+ * JavaScript — the whole SEO argument of §2. `Sheet.test.tsx` holds every page
+ * in this directory to it, against the source and against `dist/`.
+ *
+ * **Everything that is not the sheet carries `.no-print`.** `@page` cannot be
+ * scoped to a class, so the zeroed page margin a sheet needs applies to the
+ * prose as well and it would print off the edge.
+ */
+
+type Props = { sheet: PhonicsSheet };
+
+export function getStaticPaths() {
+  return PHONICS_SHEETS.map((sheet) => ({
+    params: { slug: sheet.slug },
+    props: { sheet },
+  }));
+}
+
+const { sheet } = Astro.props;
+
+const printed = buildSheet(sheet.config, PHONICS_SEED);
+const key = keyed(sheet) ? answerKey(sheet.config, PHONICS_SEED) : null;
+
+const title = `${sheet.keyword} | School Skills`;
+const description = `${sheet.summary} Printed straight from this page — free, no account, and no download.`;
+const url = `https://schoolskills.app${pathFor(sheet)}`;
+
+const groups = phonicsShelf();
+const group = groups.find((entry) => entry.id === sheet.group)!;
+---
+
+<Content
+  title={title}
+  description={description}
+  world="paper"
+  jsonLd={{
+    "@context": "https://schema.org",
+    "@type": "LearningResource",
+    name: sheet.heading,
+    description,
+    url,
+    learningResourceType: "Worksheet",
+    educationalUse: "Practice",
+    teaches: sheet.teaches,
+    typicalAgeRange: sheet.ages,
+    isAccessibleForFree: true,
+    inLanguage: "en",
+  }}
+>
+  <header class="hero wrap no-print">
+    <p class="hero__eyebrow">
+      <span class="hero__world">The Print Shop</span>
+      Phonics &middot; {group.label}
+    </p>
+    <h1 class="hero__title">{sheet.heading}</h1>
+    <p class="hero__lead">{sheet.lead}</p>
+    <p class="aside">
+      The sheet below <strong>is</strong> the printout{
+        keyed(sheet) ? ", and the page behind it is the answer key" : ""
+      }. Press <strong>&#8984;P</strong> &mdash; <strong>Ctrl+P</strong> on Windows
+      &mdash; and everything but the paper disappears. To keep a copy instead, pick
+      <em>Save as PDF</em> in the print dialog and your browser writes one.
+    </p>
+    <p class="hero__note">Free &middot; no account &middot; no download</p>
+  </header>
+
+  {
+    /*
+      The sheets, outside `.wrap` deliberately. A wrap adds an inline padding
+      that print.css cannot take back off, and a sheet printed a centimetre in
+      from where it says it is has the wrong geometry everywhere at once. The
+      key is a sibling of the sheet with nothing between them, because
+      print.css breaks pages on `.sheet + .sheet` as well.
+    */
+  }
+  <div class="sheet-frame">
+    <SheetView sheet={printed} />
+    {key && <SheetView sheet={key} />}
+  </div>
+
+  <section class="band band--tight wrap no-print">
+    <h2 class="h2">What is on this sheet</h2>
+    <div class="prose">
+      {sheet.notes.map((note) => <p>{note}</p>)}
+      <p>
+        Every sheet in this section is built from a list of spellings rather
+        than from a word list, and that is the whole of how it works: the page
+        above uses the sounds named on it and no others, so nothing on it can
+        ask a child to read something they have not been taught. The list is a
+        setting. Open the sheet in the builder, tick the sounds your own child
+        has covered, and the page rebuilds around them &mdash; which is also why
+        there is no level, no stage and no lesson number anywhere here. The
+        number in the footer is the seed the sheet was built from, so the
+        identical sheet can be had again next week.
+      </p>
+    </div>
+  </section>
+
+  <section class="band band--tight wrap no-print">
+    <h2 class="h2">Change what is on it</h2>
+    <div class="prose">
+      <p>
+        This page is one sheet out of a family that prints seven: cards to cut
+        out, a chart for the wall, words cut into their sounds, word families, a
+        spelling matched to a word it is in, dictation lines, and sentences on
+        strips. The sounds are the same tick list on all seven, so a
+        week&rsquo;s worth of sheets comes out of one list ticked once.
+      </p>
+      <p>
+        Three marking conventions are switches beside it, each on its own: a bar
+        over a vowel that says its own name, silent letters printed faintly, and
+        two letters joined where they make one sound. They are shared across
+        many phonics traditions rather than belonging to any one of them, which
+        is exactly why they are switches here and not a named style.
+      </p>
+      <p class="aside">
+        The settings travel in the link rather than on a server, so a sheet you
+        make can be bookmarked or sent to another family as it stands &mdash;
+        and the <em>Name:</em> line is printed blank, because there is nowhere in
+        a shared link to put a child&rsquo;s name. See{" "}
+        <a href="/privacy">what we don&rsquo;t collect</a>.
+      </p>
+    </div>
+    <div class="hero__actions">
+      <a class="cta cta--quiet" href={builderHref(sheet)}>
+        Open this sheet in the builder
+      </a>
+      <a class="cta cta--quiet" href="/printables/phonics">
+        All the phonics sheets
+      </a>
+    </div>
+  </section>
+
+  <div class="wrap no-print"><AdSlot name="article" /></div>
+
+  <section class="band band--tight wrap no-print">
+    <h2 class="h2">And when the words are known</h2>
+    <div class="prose">
+      <p>
+        Phonics is how a word is worked out; spelling is what happens once it no
+        longer has to be. The shelf next door prints this week&rsquo;s list in
+        five shapes, the first sight words to trace and find, and ten pages on
+        how words work. Word Jungle then reads the same lists aloud, which is
+        the one thing paper cannot do &mdash; and the record book keeps track of
+        which words a child keeps missing, so the next sheet can be exactly
+        those.
+      </p>
+    </div>
+    <div class="hero__actions">
+      <a class="cta" href="/printables/spelling">Spelling worksheets</a>
+      <a class="cta cta--quiet" href="/spelling">Spelling and sight words</a>
+    </div>
+  </section>
+
+  <section class="band band--tight wrap no-print">
+    <h2 class="h2">Every phonics sheet</h2>
+    <p class="h2__sub">
+      {PHONICS_SHEETS.length} pages, each one a sheet like this one. Nothing is locked
+      and nothing needs an account.
+    </p>
+    {
+      groups.map((entry) => (
+        <>
+          <h3 class="h2 h2--next">{entry.label}</h3>
+          <p class="h2__sub">{entry.blurb}</p>
+          <nav class="stones" aria-label={entry.label}>
+            {entry.sheets.map((candidate) => (
+              <a
+                class="stone"
+                href={pathFor(candidate)}
+                aria-current={
+                  candidate.slug === sheet.slug ? "page" : undefined
+                }
+              >
+                {candidate.short}
+              </a>
+            ))}
+          </nav>
+        </>
+      ))
+    }
+    <div class="hero__actions">
+      <a class="cta cta--quiet" href="/printables">Back to The Print Shop</a>
+    </div>
+  </section>
+</Content>

@@ -1,0 +1,185 @@
+---
+import Content from "@/layouts/Content.astro";
+import AdSlot from "@/components/site/AdSlot.astro";
+import { PHONICS_SHEETS, pathFor, phonicsShelf } from "../_phonics";
+
+/**
+ * The phonics subject hub — a peer of `/printables/spelling`,
+ * `/printables/grammar`, `/printables/math`, `/printables/handwriting`,
+ * `/printables/cursive` and `/printables/bible`.
+ *
+ * A listing rather than a sheet, like the other hubs, and that is the right
+ * split: nobody searches for "printable list of phonics worksheets". What it is
+ * for is the two jobs a hub does — giving a parent who arrived on
+ * `/printables/phonics/cvc-words-worksheets` somewhere to go next, and giving
+ * the seven pages a crawlable parent that says what they have in common.
+ *
+ * What they have in common is worth a section of its own here, because it is
+ * the argument for the whole shelf: a phonics worksheet is only worth printing
+ * if it is built from the sounds a particular child has been taught, and that
+ * is a thing a parent can state in a minute and no worksheet site has ever
+ * asked them for.
+ */
+const title =
+  "Free printable phonics worksheets — built from the sounds you have taught | School Skills";
+const description =
+  "Printable phonics practice: sound cards, a sounds-we-know wall chart, CVC blending lines, word families, sound-to-word matching, dictation and decodable sentences. Every sheet is built from the spellings you tick, so nothing on it is a sound your child has not met — free, no account, no download.";
+
+const groups = phonicsShelf();
+---
+
+<Content
+  title={title}
+  description={description}
+  world="paper"
+  jsonLd={{
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name: "Printable phonics worksheets",
+    description,
+    url: "https://schoolskills.app/printables/phonics",
+    isAccessibleForFree: true,
+    inLanguage: "en",
+    hasPart: PHONICS_SHEETS.map((sheet) => ({
+      "@type": "LearningResource",
+      name: sheet.heading,
+      url: `https://schoolskills.app${pathFor(sheet)}`,
+      learningResourceType: "Worksheet",
+      teaches: sheet.teaches,
+      typicalAgeRange: sheet.ages,
+      isAccessibleForFree: true,
+    })),
+  }}
+>
+  <header class="hero wrap">
+    <p class="hero__eyebrow">
+      <span class="hero__world">The Print Shop</span>
+      Phonics
+    </p>
+    <h1 class="hero__title">Printable phonics worksheets</h1>
+    <p class="hero__lead">
+      {PHONICS_SHEETS.length} sheets built from the sounds a child has actually been
+      taught: cards to cut out, a chart for the wall, words cut into their sounds,
+      word families, dictation lines and sentences with nothing untaught in them.
+    </p>
+    <p class="hero__note">Free &middot; answer keys &middot; no download</p>
+  </header>
+
+  {
+    /*
+      What exists, first — before the page explains itself. Somebody who came
+      looking for CVC words should be one link from CVC words, and the argument
+      for how these sheets are built reads better after you have seen one than
+      before.
+    */
+  }
+  <section class="band band--tight wrap">
+    <h2 class="h2">On the shelf now</h2>
+    <p class="h2__sub">
+      Each of these is a page that is itself the worksheet &mdash; open it,
+      press print, and that is the whole of it. The four that withhold an answer
+      print their key on the page behind.
+    </p>
+    {
+      groups.map((group) => (
+        <>
+          <h3 class="h2 h2--next">{group.label}</h3>
+          <p class="h2__sub">{group.blurb}</p>
+          <div class="prose">
+            <ul>
+              {group.sheets.map((sheet) => (
+                <li>
+                  <a href={pathFor(sheet)}>{sheet.name}</a> &mdash;{" "}
+                  {sheet.summary}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </>
+      ))
+    }
+  </section>
+
+  <div class="wrap"><AdSlot name="article" /></div>
+
+  <section class="band band--inset">
+    <div class="wrap">
+      <h2 class="h2">Built from your sounds, not from a level</h2>
+      <p class="h2__sub">
+        The one thing a phonics worksheet has to know is where a child has got
+        to. Everything on this shelf asks that and nothing else.
+      </p>
+      <div class="prose">
+        <p>
+          A child who has been taught <em>c</em>, <em>a</em>, <em>t</em> and
+          <em>h</em> can read &ldquo;cat&rdquo; and cannot read &ldquo;chat&rdquo;.
+          That is the whole mechanism behind every systematic phonics programme there
+          is, and it is the reason a worksheet full of words a child has not been
+          shown how to work out does harm rather than nothing: it teaches them that
+          reading is guessing.
+        </p>
+        <p>
+          So the sheets here are generated from a list of spellings you tick.
+          Tick <em>sh</em> and words with <em>sh</em> in them appear; leave it and
+          they never do. The same list builds all seven sheets, so a week&rsquo;s
+          practice comes out of one list ticked once &mdash; and the sheet you make
+          carries the sounds inside it, so the link to it opens on the same list for
+          anybody you send it to, with nothing uploaded and nothing to sign into.
+        </p>
+        <p>
+          There are no levels, no stages and no lesson numbers anywhere in this
+          section, and that is deliberate rather than a gap. Numbering the
+          lessons would mean copying somebody&rsquo;s course, and naming a stage
+          would mean pretending there is one course when the whole point is that
+          every programme orders the sounds differently. Whatever scheme you are
+          using &mdash; a boxed curriculum, a school&rsquo;s own, or a book from
+          the library &mdash; the answer to &ldquo;where are you up to&rdquo; is
+          a list of sounds, and that is what these sheets take.
+        </p>
+        <p>
+          Three typographic switches sit beside the list: a bar over a vowel
+          that says its own name, silent letters printed faintly, and two
+          letters joined where they make one sound. Each is on its own, because
+          each is a convention many traditions share &mdash; and no combination
+          of them ships here under anybody&rsquo;s name.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="band band--tight wrap">
+    <h2 class="h2">And the words once they are known</h2>
+    <div class="prose">
+      <p>
+        Phonics is how a word is worked out; spelling is what happens once it no
+        longer has to be. The shelf next door prints this week&rsquo;s list in
+        five shapes, the first sight words to trace and find, and ten pages on
+        how words work &mdash; rhyme, syllables, prefixes and suffixes, plurals,
+        contractions, homophones, synonyms and antonyms.
+      </p>
+    </div>
+    <div class="hero__actions">
+      <a class="cta" href="/printables/spelling">Spelling and word study</a>
+      <a class="cta cta--quiet" href="/printables/make"
+        >Open the sheet builder</a
+      >
+    </div>
+  </section>
+
+  <section class="band band--tight wrap">
+    <h2 class="h2">Your child&rsquo;s name is not in the file</h2>
+    <div class="prose">
+      <p>
+        The <em>Name:</em> line is printed blank and filled in with a pencil. The
+        sounds you tick are kept in your own browser and are never uploaded, no account
+        is needed to print anything, and a sheet you send to another family carries
+        the settings you chose and nothing else &mdash; see <a href="/privacy"
+          >what we don&rsquo;t collect</a
+        >.
+      </p>
+    </div>
+    <div class="hero__actions">
+      <a class="cta cta--quiet" href="/printables">Back to The Print Shop</a>
+    </div>
+  </section>
+</Content>
