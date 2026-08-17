@@ -14,7 +14,7 @@ const CELL_TO_EM = 0.5;
  * multiplication grid is the same shape with an axis.
  */
 export function Grid({ block, metrics }: BlockProps<"grid">) {
-  const { columns, rows, cells, answers, origin, kind } = block.grid;
+  const { columns, rows, cells, answers, marks, origin, kind } = block.grid;
   if (columns <= 0 || rows <= 0 || block.grid.cell <= 0) return null;
 
   // Clamped to what the content box actually holds. A grid wider than the box
@@ -99,6 +99,61 @@ export function Grid({ block, metrics }: BlockProps<"grid">) {
         </g>
       )}
 
+      {/* What the axes count in, printed in the squares beside them rather than
+          outside the drawing: the grid is exactly as wide as its squares say it
+          is (§4), so a numeral past the edge is a numeral that gets clipped or a
+          drawing that gets rescaled. Nought is left off — where the two heavy
+          rules cross is not something a child needs telling. */}
+      {kind === "coordinate" && origin && (
+        <g className="sheet__axis-marks">
+          {origin.row < rows &&
+            count(columns + 1).map((column) => (
+              <Numbered
+                key={`x${column}`}
+                x={column * cell}
+                y={(origin.row + 0.5) * cell}
+                value={column - origin.column}
+                size={size}
+              />
+            ))}
+          {origin.column > 0 &&
+            count(rows + 1).map((row) => (
+              <Numbered
+                key={`y${row}`}
+                x={(origin.column - 0.5) * cell}
+                y={row * cell}
+                value={origin.row - row}
+                size={size}
+              />
+            ))}
+        </g>
+      )}
+
+      {/* The points a coordinate sheet asks about: a dot where the ruling
+          crosses, not a numeral in a square. They are the question rather than
+          the answer, so they print on the blank sheet too — the coordinates are
+          what the child writes. */}
+      {(marks ?? []).map((mark, index) => (
+        <g key={`m${index}-${mark.label}`}>
+          <circle
+            className="sheet__dot"
+            cx={mark.column * cell}
+            cy={mark.row * cell}
+            r={Math.max(1, Math.round(cell * 0.11))}
+          />
+          <text
+            className="sheet__cell"
+            x={mark.column * cell + Math.round(cell * 0.42)}
+            y={mark.row * cell - Math.round(cell * 0.42)}
+            fontSize={Math.round(cell * 0.62)}
+            textAnchor="middle"
+            dominantBaseline="central"
+          >
+            {mark.label}
+          </text>
+        </g>
+      ))}
+
       {/* Two lists over the same squares: what is printed whatever the sheet
           is, and what is printed only on a key. A multiplication square's
           headers are the first and its hundred and forty-four products are the
@@ -152,6 +207,38 @@ function Cell({
       dominantBaseline="central"
     >
       {text}
+    </text>
+  );
+}
+
+/**
+ * One number beside an axis, in the square next to the rule it counts.
+ *
+ * Nought is never drawn: the two heavy rules cross there, and a nought printed
+ * on top of them is a nought a child has to read through.
+ */
+function Numbered({
+  x,
+  y,
+  value,
+  size,
+}: {
+  x: number;
+  y: number;
+  value: number;
+  size: number;
+}) {
+  if (value === 0) return null;
+  return (
+    <text
+      className="sheet__cell"
+      x={x}
+      y={y}
+      fontSize={Math.round(size * 0.8)}
+      textAnchor="middle"
+      dominantBaseline="central"
+    >
+      {value}
     </text>
   );
 }
