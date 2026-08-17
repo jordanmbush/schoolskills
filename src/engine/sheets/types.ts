@@ -134,6 +134,22 @@ export type Problem = {
    */
   answer: string;
   /**
+   * The answer as more than one thing to write, one ruled line each — a fact
+   * family's four number sentences.
+   *
+   * When it is here it *is* the answer place: the prompt prints no slot on the
+   * end, and `workspace` becomes the height those lines share rather than
+   * blank paper beneath them. A single slot instead would be a blank the size
+   * of one sentence on the sheet and four sentences crammed into it on the key,
+   * which wraps — and a row taller than the layout reserved is the last row of
+   * the page printed on a second sheet.
+   *
+   * `answer` carries the same list joined onto one line, for anything that
+   * wants the answer as a string. Both are built from one array where the
+   * problem is made, so there is no second answer to disagree with the first.
+   */
+  answers?: string[];
+  /**
    * Column form: the numbers stacked top to bottom, right-aligned under one
    * another with `operator` against the last of them and a rule under the lot.
    *

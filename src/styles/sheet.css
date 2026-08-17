@@ -350,6 +350,33 @@
   flex: 1 0 100%;
 }
 
+/* ── Answers written out ────────────────────────────────────────────────────
+   A fact family asks for four number sentences, so it gets four lines to write
+   them on rather than one slot the size of one of them. These lines *are* the
+   answer place — the prompt above prints no slot — and they divide the height
+   the family reserved between them, which is why `nowrap` is load-bearing and
+   not a nicety: a sentence that wrapped would make the row taller than the
+   layout arithmetic declared, and the bottom row of the page would come out of
+   the printer on a second sheet.                                            */
+
+.sheet__answers {
+  display: flex;
+  flex-direction: column;
+  flex: 1 0 100%;
+}
+
+.sheet__answer-line {
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+  white-space: nowrap;
+  border-bottom: 0.75pt solid currentcolor;
+}
+
+.sheet__answer-line--answered {
+  font-weight: 700;
+}
+
 /* ── The rest of the blocks ─────────────────────────────────────────────── */
 
 .sheet__blanks,

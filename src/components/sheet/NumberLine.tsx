@@ -11,34 +11,38 @@
  * happens here is the scaling from the numbers on the line to the mil the
  * viewBox counts in.
  */
-import { NUMBER_LINE_HEIGHT, ticks } from "@/engine/sheets/numberline";
+import {
+  LABEL_SIZE,
+  LINE_INSET,
+  NUMBER_LINE_HEIGHT,
+  ticks,
+} from "@/engine/sheets/numberline";
 import type { NumberLine } from "@/engine/sheets/types";
 
 import { RULE, inch } from "./units";
 
 /**
- * Room at each end for the outermost label, which is centred on its tick and
- * would otherwise be cut in half by the edge of the drawing. Enough for three
- * digits at the size below.
+ * The inset at each end and the size of a label come from the engine, not from
+ * here: they are two of the three numbers it chose the tick spacing with, and
+ * a second copy of either would be a line whose labels overlap on paper while
+ * the engine's own test says they cannot.
  */
-const INSET = 140;
 
 /** The axis, and how far the ticks stand out either side of it. */
 const AXIS = 120;
 const TICK = 32;
 
-/** The labels: their baseline, and the size they are set at (about 9pt). */
+/** The labels' baseline. */
 const LABEL = 290;
-const LABEL_SIZE = 125;
 
 export function NumberLineView({ line }: { line: NumberLine }) {
   const marks = ticks(line);
   const span = line.to - line.from;
   if (marks.length < 2 || span <= 0 || line.width <= 0) return null;
 
-  const usable = Math.max(0, line.width - INSET * 2);
+  const usable = Math.max(0, line.width - LINE_INSET * 2);
   const at = (value: number) =>
-    Math.round(INSET + ((value - line.from) / span) * usable);
+    Math.round(LINE_INSET + ((value - line.from) / span) * usable);
 
   return (
     <svg
@@ -54,8 +58,8 @@ export function NumberLineView({ line }: { line: NumberLine }) {
 
       <line
         className="sheet__rule sheet__rule--axis"
-        x1={INSET}
-        x2={line.width - INSET}
+        x1={LINE_INSET}
+        x2={line.width - LINE_INSET}
         y1={AXIS}
         y2={AXIS}
         strokeWidth={RULE}

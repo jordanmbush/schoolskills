@@ -56,8 +56,23 @@ const ROW_EMS = { horizontal: 1.7, vertical: 4.4 } as const;
 
 /** Blank space to work a sum out in, when the config asks for it. */
 const WORKSPACE = inches(0.55);
-/** A fact family is four sentences to write, so it always gets room for four. */
-const FAMILY_SPACE = inches(1);
+
+/** A fact family is four number sentences, and each one gets a line. */
+const FAMILY_LINES = 4;
+
+/**
+ * How tall one ruled line for a written answer is.
+ *
+ * A quarter of an inch is what a child writes on, and never less than the body
+ * type needs: at 18pt the type is a quarter inch on its own, and a key printed
+ * onto lines shorter than its own letters is a row taller than this reserved
+ * for — which is the last row of the page on a second sheet of paper.
+ */
+const answerLine = (fontPt: number): Mil =>
+  Math.max(inches(0.25), points(fontPt * 1.35));
+
+/** The room a fact family's four sentences take, lines and all. */
+const familySpace = (fontPt: number): Mil => FAMILY_LINES * answerLine(fontPt);
 
 /** More than six columns of sums is a page nobody can read. */
 const MAX_COLUMNS = 6;
@@ -232,18 +247,25 @@ function problemOf(
 
   if (config.style === "fact-family") {
     const { left, right, result } = sum;
+    // One list, printed two ways and built once, so the two cannot disagree:
+    // `answers` is what the sheet rules lines for and the key writes on them,
+    // `answer` the same sentences on one line for anything wanting a string.
+    const written = [
+      `${left} + ${right} = ${result}`,
+      `${right} + ${left} = ${result}`,
+      `${result} − ${left} = ${right}`,
+      `${result} − ${right} = ${left}`,
+    ];
     return {
       prompt: `${left}, ${right}, ${result}`,
-      answer: [
-        `${left} + ${right} = ${result}`,
-        `${right} + ${left} = ${result}`,
-        `${result} − ${left} = ${right}`,
-        `${result} − ${right} = ${left}`,
-      ].join(", "),
+      answer: written.join(", "),
+      answers: written,
       factId,
       ...extras,
-      // Four sentences to write, whatever the config said about workspace.
-      workspace: FAMILY_SPACE,
+      // Four sentences to write, whatever the config said about workspace —
+      // and this is the height those four lines share, not blank paper under
+      // a slot. `rowHeight` reserves exactly the same number.
+      workspace: familySpace(config.fontPt),
     };
   }
 
@@ -290,6 +312,23 @@ function problemOf(
 const clamp = (value: number, low: number, high: number): number =>
   Math.max(low, Math.min(high, Math.floor(value)));
 
+/**
+ * Whether this sheet prints a number line.
+ *
+ * One predicate with four readers — the row height reserves for it, the build
+ * attaches it, the instruction line tells a child to use it and the record line
+ * names it — because the two halves disagreeing is the exact bug the
+ * "declared, not measured" design exists to exclude: reserving for a line the
+ * build never emits throws two problems a page away, and the other way round is
+ * a row below the bottom margin.
+ *
+ * A fact family never gets one however the config asks. Its prompt is three
+ * numbers rather than a sum, so there is nothing on it to count along.
+ */
+function hasNumberLine(config: ArithmeticConfig): boolean {
+  return config.numberLine === true && config.style !== "fact-family";
+}
+
 /** How tall one problem stands, extras included. */
 function rowHeight(config: ArithmeticConfig): Mil {
   const stacked = config.style === "standard" && config.form === "vertical";
@@ -298,11 +337,11 @@ function rowHeight(config: ArithmeticConfig): Mil {
   );
   const workspace =
     config.style === "fact-family"
-      ? FAMILY_SPACE
+      ? familySpace(config.fontPt)
       : config.workspace
         ? WORKSPACE
         : 0;
-  return body + workspace + (config.numberLine ? NUMBER_LINE_HEIGHT : 0);
+  return body + workspace + (hasNumberLine(config) ? NUMBER_LINE_HEIGHT : 0);
 }
 
 /**
@@ -363,8 +402,10 @@ export function arithmeticProblems(
   while (problems.length < wanted && misses < MISS_BUDGET) {
     const sum = drawSum(config, rand);
     // Which side of a missing-number problem is blank. Drawn whatever the
-    // style, so that changing style does not reshuffle every other problem on
-    // a sheet built from the same seed.
+    // style, so that switching between standard, missing and column form does
+    // not reshuffle every other problem on a sheet built from the same seed. A
+    // fact family does reshuffle, because it skips the operation draw that
+    // `operation: "both"` takes — it is both operations by definition.
     const slot = rand() < 0.5 ? 0 : 1;
     const key = sum === null ? null : keyOf(sum, config.style);
     // Not what was asked for, or already on the page. Either way the budget
@@ -396,10 +437,9 @@ function sheetExtras(
   // The far end is the largest result the config can reach: two numbers from
   // the range added together, or — where nothing is added — the range itself.
   const top = config.operation === "subtract" ? max : max * 2;
-  const line =
-    config.numberLine && config.style !== "fact-family"
-      ? numberLine(config.negatives ? -max : 0, top, cell)
-      : undefined;
+  const line = hasNumberLine(config)
+    ? numberLine(config.negatives ? -max : 0, top, cell)
+    : undefined;
   return {
     ...(line ? { line } : {}),
     ...(config.workspace ? { workspace: WORKSPACE } : {}),
@@ -428,8 +468,7 @@ const INSTRUCTION: Record<ArithmeticStyle, string> = {
 };
 
 function instructionOf(config: ArithmeticConfig): string {
-  const line = config.numberLine && config.style !== "fact-family";
-  return line
+  return hasNumberLine(config)
     ? `${INSTRUCTION[config.style]} Use the number line to help.`
     : INSTRUCTION[config.style];
 }
@@ -472,9 +511,7 @@ export function describeArithmetic(config: ArithmeticConfig): string {
       : null,
     config.style === "missing" ? "missing number" : null,
     REGROUPING[config.regrouping],
-    config.numberLine && config.style !== "fact-family"
-      ? "with a number line"
-      : null,
+    hasNumberLine(config) ? "with a number line" : null,
   ]
     .filter((part): part is string => part !== null)
     .join(" — ");

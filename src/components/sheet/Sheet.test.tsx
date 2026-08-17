@@ -5,8 +5,16 @@ import { fileURLToPath } from "node:url";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
+import { answerKey, buildSheet } from "@/engine/sheets";
+import { ticks } from "@/engine/sheets/numberline";
 import { DEFAULT_PAPER } from "@/engine/sheets/paper";
-import type { Block, Paper, Sheet } from "@/engine/sheets/types";
+import type {
+  ArithmeticConfig,
+  Block,
+  Paper,
+  Problem,
+  Sheet,
+} from "@/engine/sheets/types";
 
 import { SheetView } from "./Sheet";
 
@@ -278,6 +286,167 @@ describe("rendering a sheet", () => {
       "7.268",
       7268,
     );
+  });
+});
+
+/* ── The answer key, as a parent receives it ───────────────────────────────
+   The engine's suite proves the answers are right and stops at the edge of the
+   markup — "the renderer's rule, stated here as the engine's half of it". This
+   is the other half, and it is the half a parent actually holds: a key whose
+   answers are correct and printed into a blank built for one of them is still
+   a bad sheet. The sheets below are built through the real family rather than
+   hand-written, so a shape the engine starts producing is a shape these see. */
+
+const arithmetic = (
+  over: Partial<ArithmeticConfig> = {},
+): ArithmeticConfig => ({
+  kind: "arithmetic",
+  paper: DEFAULT_PAPER,
+  fontPt: 12,
+  fields: ["name"],
+  operation: "add",
+  style: "standard",
+  form: "horizontal",
+  range: { min: 1, max: 20 },
+  count: 6,
+  columns: 2,
+  regrouping: "either",
+  ...over,
+});
+
+const SEED = 7;
+
+const blank = (over: Partial<ArithmeticConfig> = {}) =>
+  render(buildSheet(arithmetic(over), SEED) as Sheet);
+const keyed = (over: Partial<ArithmeticConfig> = {}) =>
+  render(answerKey(arithmetic(over), SEED) as Sheet);
+
+/** The problems of a built sheet, narrowed out of the block union. */
+function itemsOf(over: Partial<ArithmeticConfig> = {}): Problem[] {
+  const block = buildSheet(arithmetic(over), SEED).blocks[0];
+  if (block.kind !== "problems") throw new Error(`got ${block.kind}`);
+  return block.items;
+}
+
+/** The markup of each problem, one string per `<li>`. */
+const problems = (html: string): string[] =>
+  html.split('<li class="sheet__problem"').slice(1);
+
+const count = (html: string, needle: string): number =>
+  html.split(needle).length - 1;
+
+describe("a rendered arithmetic sheet", () => {
+  /** Every shape the family prints, as the renderer sees them. */
+  const SHAPES: Array<Partial<ArithmeticConfig>> = [
+    {},
+    { style: "missing" },
+    { form: "vertical" },
+    { style: "fact-family", count: 4 },
+    { numberLine: true },
+    { workspace: true },
+  ];
+
+  it("gives every problem exactly one place to write the answer", () => {
+    // The rule `Problems.tsx` is built around, and the one a sheet is unusable
+    // without: a child handed a ruled blank *and* four ruled lines has been
+    // asked the same question twice and does not know which one counts.
+    for (const shape of SHAPES) {
+      for (const html of [blank(shape), keyed(shape)]) {
+        const items = problems(html);
+        expect(items.length).toBeGreaterThan(0);
+        for (const item of items) {
+          const places =
+            count(item, 'class="sheet__slot') +
+            count(item, 'class="sheet__total') +
+            count(item, 'class="sheet__answers"');
+          expect(places, `${JSON.stringify(shape)}: ${item}`).toBe(1);
+        }
+      }
+    }
+  });
+
+  it("splices a missing number into the sentence, not onto the end of it", () => {
+    const [item] = problems(keyed({ style: "missing" }));
+    const prompt = item.indexOf('<span class="sheet__prompt">');
+    const slot = item.indexOf('<span class="sheet__slot');
+    expect(prompt).toBeGreaterThanOrEqual(0);
+    expect(slot).toBeGreaterThan(prompt);
+    // Nothing closes the prompt before the slot opens, which is the whole
+    // difference between "7 + _ = 15" and "7 + _ = 15 ____".
+    expect(item.slice(prompt, slot)).not.toContain("</span>");
+    // And the ordinary shape does put it after — otherwise the check above
+    // would pass on markup that had lost the distinction entirely.
+    const [plain] = problems(keyed());
+    expect(
+      plain.slice(
+        plain.indexOf('<span class="sheet__prompt">'),
+        plain.indexOf('<span class="sheet__slot'),
+      ),
+    ).toContain("</span>");
+  });
+
+  it("stacks a column sum with its sign and rules the total", () => {
+    const [item] = problems(keyed({ form: "vertical" }));
+    expect(count(item, 'class="sheet__addend"')).toBe(2);
+    expect(item).toContain('class="sheet__operator"');
+    expect(item).toMatch(/class="sheet__total sheet__total--answered">\d+</);
+  });
+
+  it("draws a number line under every problem, ticks and labels included", () => {
+    const items = itemsOf({ numberLine: true });
+    const line = items[0].line;
+    if (!line) throw new Error("no number line was built");
+
+    const html = blank({ numberLine: true });
+    expect(count(html, 'class="sheet__ink sheet__number-line"')).toBe(
+      items.length,
+    );
+    expect(count(html, 'class="sheet__tick"')).toBe(
+      ticks(line).length * items.length,
+    );
+  });
+
+  it("rules a line for each of a fact family's four sentences", () => {
+    const family = { style: "fact-family" as const, count: 4 };
+    const written = itemsOf(family).flatMap((problem) => problem.answers ?? []);
+    expect(written.length).toBe(16);
+
+    const sheet = blank(family);
+    expect(count(sheet, 'class="sheet__answer-line"')).toBe(written.length);
+    // Each line carries a share of the height the family reserved, so the row
+    // is as tall as the layout arithmetic said it was.
+    expect(sheet).toContain("height:0.25in");
+
+    const key = keyed(family);
+    for (const sentence of written) {
+      expect(sheet).not.toContain(sentence);
+      expect(key).toContain(sentence);
+    }
+  });
+
+  it("prints nothing in any answer place until the sheet is a key", () => {
+    // Read off the answer places themselves rather than by hunting the answer
+    // strings in the page: "15" is the answer to one problem and half the
+    // prompt of another, and a test that searched for it would fail on a sheet
+    // that was perfectly blank.
+    const PLACES = [
+      /<span class="sheet__slot"[^>]*>(.*?)<\/span>/g,
+      /<span class="sheet__total"[^>]*>(.*?)<\/span>/g,
+      /<span class="sheet__answer-line"[^>]*>(.*?)<\/span>/g,
+    ];
+    for (const shape of SHAPES) {
+      const html = blank(shape);
+      const where = JSON.stringify(shape);
+      expect(html, where).not.toContain("--answered");
+      let found = 0;
+      for (const place of PLACES) {
+        for (const [, inside] of html.matchAll(place)) {
+          expect(inside, where).toBe("");
+          found += 1;
+        }
+      }
+      expect(found, where).toBeGreaterThan(0);
+    }
   });
 });
 

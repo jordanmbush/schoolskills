@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { answerKey, buildSheet, describeSheet, sheetSpec } from "../index";
+import { LINE_INSET, labelRoom, ticks } from "../numberline";
 import { inches } from "../paper";
 import type {
   ArithmeticConfig,
@@ -70,6 +71,9 @@ const EVERY_SHAPE: Array<Partial<ArithmeticConfig>> = [
   { style: "missing" },
   { style: "missing", operation: "subtract" },
   { style: "fact-family", count: 8 },
+  // A family with the number-line switch on, which it ignores: the combination
+  // is legal, and the layout and the build have to agree that it draws none.
+  { style: "fact-family", numberLine: true, count: 8 },
   {
     operation: "both",
     numberLine: true,
@@ -83,6 +87,9 @@ const EVERY_SHAPE: Array<Partial<ArithmeticConfig>> = [
 ];
 
 const SEEDS = [0, 1, 2, 7, 4242];
+
+/** Every column count the family will lay out — `MAX_COLUMNS` is six. */
+const COLUMN_COUNTS = [1, 2, 3, 4, 5, 6];
 
 /** The one block an arithmetic sheet has, narrowed for the reader. */
 function problemsOf(over: Partial<ArithmeticConfig>, seed: number): Problem[] {
@@ -105,6 +112,9 @@ function problemsOf(over: Partial<ArithmeticConfig>, seed: number): Problem[] {
  * which is four sentences rather than one.
  */
 function sentences(problem: Problem): string[] {
+  // A fact family: the prompt is three numbers, and the answer is the four
+  // sentences they make, each written on a ruled line of its own.
+  if (problem.answers) return problem.answers;
   if (problem.operands) {
     const stack = problem.operands.join(` ${problem.operator} `);
     return [`${stack} = ${problem.answer}`];
@@ -112,12 +122,7 @@ function sentences(problem: Problem): string[] {
   if (problem.prompt.includes("_")) {
     return [problem.prompt.replace("_", problem.answer)];
   }
-  if (problem.prompt.trimEnd().endsWith("=")) {
-    return [`${problem.prompt} ${problem.answer}`];
-  }
-  // A fact family: the prompt is three numbers, the answer is the four
-  // sentences they make.
-  return problem.answer.split(", ");
+  return [`${problem.prompt} ${problem.answer}`];
 }
 
 type Statement = { left: number; sign: string; right: number; result: number };
@@ -282,6 +287,11 @@ describe("the answer key", () => {
     for (const problem of problemsOf({ style: "fact-family", count: 8 }, 3)) {
       const written = sentences(problem);
       expect(written.length).toBe(4);
+      // Carried as a list, which is what makes the sheet rule four lines for
+      // it. Four sentences smuggled through the one-answer field would print a
+      // slot the size of one of them, and a key four times too long for it.
+      expect(problem.answers).toEqual(written);
+      expect(problem.prompt).not.toContain("_");
       // Two sums and two differences, all four true.
       expect(written.filter((line) => read(line).sign === "+").length).toBe(2);
       expect(written.every(holds)).toBe(true);
@@ -431,6 +441,48 @@ describe("(config, seed)", () => {
     expect(buildSheet(config(), 12_345).footer.seed).toBe(12_345);
   });
 
+  it("draws the same problems for a seed as it did the day it shipped", () => {
+    // Building twice in one process only proves the draw is a function of
+    // `(config, seed)`. The promise the footer makes is bigger than that: the
+    // seed is printed on the paper so a parent can have the same sheet again
+    // next week, across a deploy — the same durability constraint `configKey`
+    // is under for saved runs.
+    //
+    // Nothing else in this file would notice a refactor that moved where the
+    // draw consumes `rand()` — the `slot` draw taken whatever the style, or
+    // the `operation` draw taken only when both are asked for. Every seed a
+    // parent had already printed would quietly start producing a different
+    // sheet. These two lists make that a decision somebody has to take rather
+    // than one they can trip over: if they change, the change was deliberate.
+    expect(
+      problemsOf({ count: 6 }, 4242).map((p) => [p.prompt, p.answer]),
+    ).toEqual([
+      ["11 + 6 =", "17"],
+      ["11 + 14 =", "25"],
+      ["6 + 9 =", "15"],
+      ["12 + 15 =", "27"],
+      ["13 + 20 =", "33"],
+      ["16 + 18 =", "34"],
+    ]);
+
+    expect(
+      problemsOf({ style: "fact-family", count: 3 }, 7).map((p) => [
+        p.prompt,
+        p.answers,
+      ]),
+    ).toEqual([
+      ["1, 2, 3", ["1 + 2 = 3", "2 + 1 = 3", "3 − 1 = 2", "3 − 2 = 1"]],
+      [
+        "14, 11, 25",
+        ["14 + 11 = 25", "11 + 14 = 25", "25 − 14 = 11", "25 − 11 = 14"],
+      ],
+      [
+        "10, 5, 15",
+        ["10 + 5 = 15", "5 + 10 = 15", "15 − 10 = 5", "15 − 5 = 10"],
+      ],
+    ]);
+  });
+
   /** The problems of `seed`, `seed + 1` and `seed + 2`, pairwise. */
   function variants(shape: Partial<ArithmeticConfig>, seed: number) {
     // Compared as sentences rather than as prompts, because a column-form
@@ -527,7 +579,7 @@ describe("how much fits", () => {
     // Declared, not measured (§4): the family already worked out how wide a
     // column is to decide how many fit, and a second answer discovered in the
     // browser would be a second answer.
-    for (const columns of [1, 2, 3]) {
+    for (const columns of COLUMN_COUNTS) {
       const over = { columns, numberLine: true, range: { min: 0, max: 10 } };
       const [problem] = problemsOf(over, 2);
       expect(problem.line?.width).toBe(arithmeticLayout(config(over)).cell);
@@ -537,9 +589,58 @@ describe("how much fits", () => {
     }
   });
 
+  it("spaces its labels so they can be read in the narrowest column", () => {
+    // `columns` is a setting a parent picks and six of them is legal, which
+    // leaves a number line about an inch of paper. A tick spacing chosen from
+    // a fixed budget rather than from the width would put nine two-digit
+    // labels across that inch — unreadable paper for a legal config, printed,
+    // with nothing on screen to warn about it first.
+    for (const columns of COLUMN_COUNTS) {
+      for (const range of [
+        { min: 0, max: 10 },
+        { min: 0, max: 20 },
+        { min: 1, max: 20 },
+      ]) {
+        const over = { columns, numberLine: true, range, count: 6 };
+        const [problem] = problemsOf(over, 2);
+        const line = problem.line;
+        if (!line) throw new Error(`no line at ${columns} columns`);
+
+        const marks = ticks(line);
+        expect(marks.length).toBeGreaterThanOrEqual(2);
+        const pitch = (line.width - LINE_INSET * 2) / (marks.length - 1);
+        expect(
+          pitch,
+          `${columns} columns, ${JSON.stringify(range)}: ${marks.join(" ")}`,
+        ).toBeGreaterThanOrEqual(labelRoom(marks));
+      }
+    }
+  });
+
   it("gives a fact family room to write four sentences in", () => {
     for (const problem of problemsOf({ style: "fact-family", count: 6 }, 1)) {
       expect(problem.workspace).toBeGreaterThanOrEqual(inches(1));
+      // The room is shared out between the four lines rather than added under
+      // a slot, so the height reserved is the height rendered.
+      expect(problem.answers?.length).toBe(4);
     }
+  });
+
+  it("reserves room for a number line only where it draws one", () => {
+    // The layout reserves the height and the build attaches the line, and the
+    // two reading the config differently is the bug the whole "declared, not
+    // measured" design exists to exclude. A family asks for four sentences,
+    // not a line to count along, so `numberLine` may not cost it a row.
+    const family = { style: "fact-family", count: 8 } as const;
+    for (const problem of problemsOf({ ...family, numberLine: true }, 3)) {
+      expect(problem.line).toBeUndefined();
+    }
+    expect(arithmeticLayout(config({ ...family, numberLine: true }))).toEqual(
+      arithmeticLayout(config(family)),
+    );
+    // And it does cost one everywhere it is actually drawn.
+    expect(arithmeticLayout(config({ numberLine: true })).row).toBeGreaterThan(
+      arithmeticLayout(config()).row,
+    );
   });
 });
