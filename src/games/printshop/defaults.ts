@@ -283,6 +283,20 @@ const DEFAULTS: Record<string, SheetConfig> = {
     count: STARTER_WORDS.length,
     columns: 2,
   },
+  grammar: {
+    ...BASE,
+    kind: "grammar",
+    // Parts of speech, circled: the topic a parent recognises the name of, and
+    // the one shape of grammar question that looks like a worksheet at a
+    // glance. The other four are one control away, and the control lists them
+    // in the order they are taught.
+    topic: "parts",
+    style: "choose",
+    count: 12,
+    // What the written topics get when a parent switches to one — a circle-one
+    // sheet is a list down the page whatever this says (`grammarLayout`).
+    columns: 1,
+  },
   handwriting: {
     ...BASE,
     kind: "handwriting",

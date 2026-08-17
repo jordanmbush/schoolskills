@@ -16,6 +16,7 @@
 import type { Sheet, SheetConfig } from "./types";
 
 import { BLANK_SHEET } from "./blank";
+import { GRAMMAR_SHEET } from "./grammar/grammar";
 import { ARITHMETIC_SHEET } from "./maths/arithmetic";
 import { DECIMALS_SHEET } from "./maths/decimals";
 import { FRACTIONS_SHEET } from "./maths/fractions";
@@ -56,6 +57,7 @@ const SHEETS: Record<string, SheetSpec> = {
   [WORDS_SHEET.id]: WORDS_SHEET,
   [WORD_STUDY_SHEET.id]: WORD_STUDY_SHEET,
   [PUZZLE_SHEET.id]: PUZZLE_SHEET,
+  [GRAMMAR_SHEET.id]: GRAMMAR_SHEET,
   [HANDWRITING_SHEET.id]: HANDWRITING_SHEET,
   [MEMORY_SHEET.id]: MEMORY_SHEET,
 };
