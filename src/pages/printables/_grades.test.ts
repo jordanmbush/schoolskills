@@ -247,6 +247,32 @@ describe("what a year lists", () => {
       "8th-grade",
     ]);
   });
+
+  it("knows which sheet names collide with a year's own name", () => {
+    // The year prose cannot be built out of `grade.label`. One ruling in the
+    // paper catalog is called "Kindergarten writing paper — 1 inch", after the
+    // size it is conventionally sold at, and its own "Ages 4–6" puts it on both
+    // the Pre-K and the kindergarten page — so a sentence reading "No sheet is
+    // labelled Kindergarten" would ship directly above a link disproving it.
+    //
+    // Pinned rather than forbidden: the sheet's name is right and its ages are
+    // right, and nothing should be renamed to make an assertion easier. What
+    // must not happen quietly is a SECOND such name arriving — a "First grade
+    // writing paper", say — under prose that has been reworded back into
+    // naming years. A new entry here fails this test and sends whoever added
+    // it to `grade/[grade].astro` to check the sentence still holds.
+    const collisions = GRADES.flatMap((grade) =>
+      sheetsForGrade(grade)
+        .filter((sheet) =>
+          sheet.name.toLowerCase().includes(grade.label.toLowerCase()),
+        )
+        .map((sheet) => `${grade.slug} → ${sheet.name}`),
+    );
+
+    expect(collisions).toEqual([
+      "kindergarten → Kindergarten writing paper — 1 inch",
+    ]);
+  });
 });
 
 describe("the three sheets a year opens with", () => {

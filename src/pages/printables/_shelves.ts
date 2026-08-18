@@ -13,11 +13,12 @@
  * which is ten chances to leave one out and no way to notice. Adding a shelf is
  * an entry here, and the grade pages list it without being edited.
  *
- * **The projection is deliberately thin.** A `ShelfSheet` is what a listing
- * needs — a link, the name it is listed under, a sentence, and the ages the
- * sheet's own page states — and nothing else. Configs, seeds, leads and notes
- * stay in the catalog that owns them, so this file cannot quietly become a
- * second place a sheet is described.
+ * **The projection is deliberately thin.** A `ShelfSheet` is the four things a
+ * cross-shelf listing actually reads — where it prints, what to call it, what
+ * it teaches, and the ages the sheet's own page states — and nothing else.
+ * Configs, seeds, leads, blurbs and notes stay in the catalog that owns them,
+ * so this file cannot quietly become a second place a sheet is described, and a
+ * field nobody reads cannot sit here documenting a contract nothing keeps.
  */
 import { BIBLE_SHEETS, hrefFor as bibleHref } from "./_bible";
 import { PAPER_SHEETS, STOCKS, stockHref } from "./_catalog";
@@ -47,12 +48,17 @@ export type ShelfId =
 export type ShelfSheet = {
   /** Where it prints. On the shelves with two stocks, the default one. */
   href: string;
-  /** How it is listed in a sentence. */
+  /**
+   * The sheet's full name, which is what a cross-shelf page links it by.
+   *
+   * The catalogs also carry a `short` — "Equivalent", "Decimals", "1 inch" —
+   * and a shelf's own hub can use it, because everything around it is from the
+   * same shelf and often the same strand. A grade page has no such context:
+   * one row per shelf, ten shelves deep, where "Chart" is a times-table chart
+   * on the maths shelf and "Decimals" is two different sheets on two of them.
+   * So the projection carries the name and not the label, deliberately.
+   */
   name: string;
-  /** How it is labelled in a row of links. A few words. */
-  short: string;
-  /** One sentence of what is on it. */
-  summary: string;
   /** For the `LearningResource` block. */
   teaches: string;
   /**
@@ -102,26 +108,18 @@ const letter = STOCKS[0];
  * The projection every shelf makes onto a listing.
  *
  * Generic over the fields it reads rather than over a sheet type: the ten
- * catalogs agree on these five field names and on nothing else, and this file
+ * catalogs agree on these three field names and on nothing else, and this file
  * has no business knowing what a `PaperSheet` has that a `MathsSheet` doesn't.
+ * The constraint is exactly `ShelfSheet` minus `href`, so widening one widens
+ * the other and a field can't be required here that no listing goes on to read.
  */
-const listing = <
-  Sheet extends {
-    name: string;
-    short: string;
-    summary: string;
-    teaches: string;
-    ages: string;
-  },
->(
+const listing = <Sheet extends Omit<ShelfSheet, "href">>(
   sheets: Sheet[],
   href: (sheet: Sheet) => string,
 ): ShelfSheet[] =>
   sheets.map((sheet) => ({
     href: href(sheet),
     name: sheet.name,
-    short: sheet.short,
-    summary: sheet.summary,
     teaches: sheet.teaches,
     ages: sheet.ages,
   }));

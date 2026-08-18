@@ -36,9 +36,17 @@ import {
  * links.
  *
  * On the grade labels themselves, see the header of `_grades.ts`: no sheet here
- * is labelled "Grade 3", these pages collect what the sheets' own stated ages
- * reach, and the page says so in as many words rather than leaving a parent to
- * assume a standard was consulted.
+ * is assigned to a school year, these pages collect what the sheets' own stated
+ * ages reach, and the page says so in as many words rather than leaving a
+ * parent to assume a standard was consulted.
+ *
+ * That sentence says "assigned", not "labelled", and it names no year — which
+ * is deliberate. A ruling in the paper catalog is called "Kindergarten writing
+ * paper", after the size it is conventionally sold at, and it is listed here on
+ * the two years its own "Ages 4–6" reaches. A sentence built out of
+ * `grade.label` would therefore have shipped "No sheet is labelled Kindergarten"
+ * directly above a link that says otherwise. What is true of every sheet is
+ * that none of them is *filed* by year; the filing is `ages`, and only `ages`.
  */
 
 type Props = { grade: Grade };
@@ -175,8 +183,8 @@ const url = `https://schoolskills.app${gradeHref(grade)}`;
       <div class="prose">
         {grade.notes.map((note) => <p>{note}</p>)}
         <p>
-          No sheet on this site is labelled <em>{grade.label}</em>. Each one
-          states the ages it was drawn for on its own page &mdash; <em
+          No sheet on this site is assigned to a school year. Each one states
+          the ages it was drawn for on its own page &mdash; <em
             >Ages 8&ndash;11</em
           > on the division worksheet, because that is who those numbers suit &mdash;
           and this page collects the sheets whose stated ages reach {younger} or {

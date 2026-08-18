@@ -309,7 +309,7 @@ export const GRADES: Grade[] = [
     lead: "Twelve and thirteen: the maths shelf keeps its top half — fractions, decimals and the pre-algebra sheets — while most of what actually gets printed is paper to work on rather than questions to answer.",
     notes: [
       "By this age the useful printables are mostly blank. Squared paper at five millimetres, the four-quadrant grid, a lab report form, a weekly planner: the work itself comes out of a textbook or a class, and what a home printer is for is the surface it is done on. The paper shelf keeps everything on this page except the primary rulings, while the worksheet shelves have thinned right out.",
-      "Narrow ruled arrives here, and it is a fair-copy paper rather than a practice one — a quarter of an inch between rules and no margin line at all, because at that size there is not much page left to give away. It is the ruling for lists, indexes and notes meant to be kept, and it is the last one this catalog has.",
+      "Narrow ruled is the paper for this end of the catalog, and it is a fair-copy paper rather than a practice one — a quarter of an inch between rules and no margin line at all, because at that size there is not much page left to give away. It is the ruling for lists, indexes and notes meant to be kept, and it is the tightest one here. It says Ages 12+, so it is already on the sixth-grade page for anyone who turned twelve there.",
     ],
     landmarks: [
       {
