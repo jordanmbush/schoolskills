@@ -373,6 +373,43 @@
   color: var(--chalk-soft);
 }
 
+/* The verse under the band, and the styling is most of what keeps it content
+   rather than a credential (docs/printables.md §12). Set as an aside is set —
+   one rule down the left, the body size, the body's colours — so it reads as
+   another line of the argument. Nothing here centres it, enlarges it or gives
+   it a flourish, because all three would make it an announcement. */
+.verse {
+  max-width: 62ch;
+  margin-top: var(--gap-4);
+  padding-left: var(--gap-3);
+  border-left: 2px solid color-mix(in oklab, var(--accent) 45%, transparent);
+}
+
+.verse__text {
+  font-size: var(--step--1);
+  line-height: 1.65;
+  color: var(--chalk-soft);
+}
+
+.verse__ref {
+  margin-top: 0.55rem;
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+/* The credit is required by nothing and printed anyway, on every surface that
+   shows a verse — so it is small, and it is never smaller than the sheet's. */
+.verse__credit {
+  display: block;
+  margin-top: 0.3rem;
+  letter-spacing: 0.03em;
+  text-transform: none;
+  color: var(--chalk-dim);
+}
+
 /* ── The facts table ────────────────────────────────────────────────────
    A real <table> because it IS tabular data — that's what makes it legible to
    a screen reader and eligible for a rich result. Styled as a scoreboard: the

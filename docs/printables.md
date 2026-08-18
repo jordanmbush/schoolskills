@@ -882,16 +882,24 @@ read as evasive.
 | `/about`, under _Why it exists_              | The one page whose entire job is "who is behind this". One plain sentence, not a statement of faith. A parent who cares finds it where they'd look; nobody else trips over it.                                                         |
 
 **Where it does not go, and this is the part that protects the intent.** Any
-`<title>`, `description` or `jsonLd`, on any page — that surface _is_
-marketing. The home page hero, which is the pitch. The `#limits` columns and
-the "What they see, and what you don't" ledger, which are about scope and
-privacy and would take a verse as a non sequitur. And no badge, emblem,
-"faith-based" label, or statement of faith anywhere.
+`<title>`, `description` or `jsonLd` on a page whose subject is _not_ Scripture
+— that surface is marketing, and a marker there is a credential rather than a
+description. A page whose subject **is** Scripture names it in its metadata the
+way every page names its own subject: the `/printables/bible` shelf and the
+sheets under it (`/printables/bible/1-corinthians-13-copywork` opens its
+description with the verse it prints), the three verse templates, and a grade
+hub that lists Bible among its shelves (`/printables/grade/1st-grade`). Those
+are the search surfaces this section asked for a few paragraphs up, and the
+carve-out is exactly as wide as the subject — no wider. Also out: the home page
+hero, which is the pitch; the `#limits` columns and the "What they see, and
+what you don't" ledger, which are about scope and privacy and would take a
+verse as a non sequitur. And no badge, emblem, "faith-based" label, or
+statement of faith anywhere.
 
 **Which verse, which is most of the decision.** Prefer verses apt to the
 _thesis_ over verses apt to the _audience_:
 
-- Zechariah 4:10 — _"who has despised the day of small things?"_ Directly the
+- Zechariah 4:10 — _"who despises the day of small things?"_ Directly the
   site's argument about ten minutes a day.
 - Proverbs 13:11 — _"…but he who gathers by hand makes it grow."_ Incremental
   accumulation, which is the whole product.
@@ -902,6 +910,26 @@ them diligently to your children"_), which are the two most-used verses in
 homeschool marketing. They're apt, but they're apt to _who is reading_, and a
 reader clocks that instantly. The first set says something about the work. The
 second says something about us.
+
+**What shipped (PRINT30).** Four placements, two verses, and neither of them
+typed into a page. Zechariah 4:10 is the footer signature — the reference
+alone, no text, one quiet line under _"Made for four kids, then shared."_ on
+every page. Proverbs 21:5 is the one quotation, in the "Where it fits in a day"
+band, because that band already argues what the verse argues; it is set the way
+an aside is set, with the reference and `SCRIPTURE_CREDIT` underneath it.
+`/about` gets one sentence under _Why it exists_ — a fact, with a link to
+`/printables/bible`, which is the page a reader checks it against. The Print
+Shop's map card needed nothing: its blurb already listed Scripture copywork
+among times tables, handwriting and spelling lists, so `worlds.ts` is
+unchanged.
+
+Both are read through `passage()` rather than inlined, which puts the licence
+condition in code instead of in a reviewer's memory: the words on the home page
+are the release's own, and the credit travels with them exactly as it travels
+onto a sheet. `passage()` answers `undefined` rather than throwing, so either
+surface renders nothing at all if its id is ever retired — which is silent, so
+`passages/index.test.ts` pins both ids to their references and makes a rename
+fail there instead.
 
 ### The same principle extends to the games
 
