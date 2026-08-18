@@ -2,6 +2,7 @@
 import Content from "@/layouts/Content.astro";
 import AdSlot from "@/components/site/AdSlot.astro";
 import { SPELLING_SHEETS, pathFor, spellingShelf } from "../_spelling";
+import HubLinks from "../_HubLinks.astro";
 
 /**
  * The spelling subject hub — a peer of `/printables/math`,
@@ -177,6 +178,8 @@ const groups = spellingShelf();
       </a>
     </div>
   </section>
+
+  <HubLinks shelf="spelling" />
 
   <section class="band band--tight wrap">
     <h2 class="h2">Your child&rsquo;s name is not in the file</h2>

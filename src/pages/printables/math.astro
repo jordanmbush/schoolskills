@@ -2,6 +2,7 @@
 import Content from "@/layouts/Content.astro";
 import AdSlot from "@/components/site/AdSlot.astro";
 import { MATHS_SHEETS, mathsShelf, pathFor } from "./_maths";
+import HubLinks from "./_HubLinks.astro";
 
 /**
  * The maths subject hub — one of the three §8 names, and the first to exist.
@@ -179,4 +180,5 @@ const strands = mathsShelf();
       <a class="cta cta--quiet" href="/printables">Back to The Print Shop</a>
     </div>
   </section>
+  <HubLinks shelf="math" />
 </Content>

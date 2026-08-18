@@ -2,6 +2,7 @@
 import Content from "@/layouts/Content.astro";
 import AdSlot from "@/components/site/AdSlot.astro";
 import { PHONICS_SHEETS, pathFor, phonicsShelf } from "../_phonics";
+import HubLinks from "../_HubLinks.astro";
 
 /**
  * The phonics subject hub — a peer of `/printables/spelling`,
@@ -165,6 +166,8 @@ const groups = phonicsShelf();
       >
     </div>
   </section>
+
+  <HubLinks shelf="phonics" />
 
   <section class="band band--tight wrap">
     <h2 class="h2">Your child&rsquo;s name is not in the file</h2>

@@ -1,0 +1,218 @@
+---
+import Content from "@/layouts/Content.astro";
+import AdSlot from "@/components/site/AdSlot.astro";
+import HubLinks from "../_HubLinks.astro";
+import {
+  GRADES,
+  ageRange,
+  gradeHref,
+  sheetByHref,
+  sheetsForGrade,
+  shelvesForGrade,
+  type Grade,
+} from "../_grades";
+
+/**
+ * One hub per school year, Pre-K through 8th — the other half of §8's browse,
+ * cutting across the shelves rather than along them.
+ *
+ * A parent who knows their child is in third grade does not know that what they
+ * want is on the maths shelf, the cursive shelf and the paperwork shelf at once.
+ * This page is the answer to the question they actually have, and it is written
+ * for the two jobs a hub does: somewhere to go next, and a crawlable parent for
+ * the sheets underneath it.
+ *
+ * **Nothing on it is written twice.** The listing is `shelvesForGrade`, which
+ * reads each catalog's own `ages` string, so a sheet re-aged in the file that
+ * owns it moves between these pages by itself and a sheet added to a shelf
+ * appears on the years it says it is for. The only hand-written parts are the
+ * year's prose and its three landmarks — and a landmark is a *route*, whose
+ * name is read back out of the catalog, so the one thing a person types here
+ * cannot disagree with the sheet it points at.
+ *
+ * **A listing rather than a sheet**, like every other hub in this corner:
+ * nobody prints a list of worksheets. It ships no JavaScript, which is the
+ * whole SEO argument (§2), and it needs none — there is nothing on it but
+ * links.
+ *
+ * On the grade labels themselves, see the header of `_grades.ts`: no sheet here
+ * is labelled "Grade 3", these pages collect what the sheets' own stated ages
+ * reach, and the page says so in as many words rather than leaving a parent to
+ * assume a standard was consulted.
+ */
+
+type Props = { grade: Grade };
+
+export function getStaticPaths() {
+  return GRADES.map((grade) => ({
+    params: { grade: grade.slug },
+    props: { grade },
+  }));
+}
+
+const { grade } = Astro.props;
+
+const shelves = shelvesForGrade(grade);
+const sheets = sheetsForGrade(grade);
+const [younger, older] = grade.ages;
+
+/* The names beside the three landmarks come from the catalogs, so this page
+   holds no second copy of a sheet's name to fall out of step with the first.
+   A route that stopped resolving would be dropped here and caught in
+   `_grades.test.ts`, which is the half of it that must not fail quietly.    */
+const landmarks = grade.landmarks.flatMap((pick) => {
+  const sheet = sheetByHref(pick.href);
+  return sheet ? [{ ...pick, name: sheet.name }] : [];
+});
+
+const title = `${grade.keyword} | School Skills`;
+const description = `${grade.heading} for ages ${younger} and ${older}: ${shelves
+  .map((shelf) => shelf.label)
+  .join(
+    ", ",
+  )}. Every one prints straight from the page — free, no account, and nothing to download.`;
+const url = `https://schoolskills.app${gradeHref(grade)}`;
+---
+
+<Content
+  title={title}
+  description={description}
+  world="paper"
+  jsonLd={{
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name: grade.heading,
+    description,
+    url,
+    typicalAgeRange: ageRange(grade),
+    isAccessibleForFree: true,
+    inLanguage: "en",
+    hasPart: sheets.map((sheet) => ({
+      "@type": "LearningResource",
+      name: sheet.name,
+      url: `https://schoolskills.app${sheet.href}`,
+      learningResourceType: "Worksheet",
+      teaches: sheet.teaches,
+      typicalAgeRange: sheet.ages,
+      isAccessibleForFree: true,
+    })),
+  }}
+>
+  <header class="hero wrap">
+    <p class="hero__eyebrow">
+      <span class="hero__world">The Print Shop</span>
+      {grade.label}
+    </p>
+    <h1 class="hero__title">{grade.heading}</h1>
+    <p class="hero__lead">{grade.lead}</p>
+    <p class="hero__note">
+      Ages {younger} and {older} &middot; {sheets.length} sheets &middot; no account
+    </p>
+  </header>
+
+  {
+    /*
+      Three sheets before the whole shelf. A page that opens with ninety links
+      has answered nothing; the point of a year having prose written for it is
+      that somebody chose what to print first.
+    */
+  }
+  <section class="band band--tight wrap">
+    <h2 class="h2">Where to start</h2>
+    <p class="h2__sub">
+      Three worth printing this week, out of everything below.
+    </p>
+    <div class="prose">
+      <ul>
+        {
+          landmarks.map((sheet) => (
+            <li>
+              <a href={sheet.href}>{sheet.name}</a> &mdash; {sheet.why}
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </section>
+
+  <div class="wrap"><AdSlot name="article" /></div>
+
+  <section class="band band--tight wrap">
+    <h2 class="h2">Everything for ages {younger} and {older}</h2>
+    <p class="h2__sub">
+      {sheets.length} sheets across {shelves.length} shelves, and each of them is
+      a page that is itself the sheet &mdash; open it, press print, and that is the
+      whole of it.
+    </p>
+    {
+      shelves.map((shelf) => (
+        <>
+          <h3 class="h2 h2--next">{shelf.label}</h3>
+          <p class="h2__sub">{shelf.blurb}</p>
+          <nav class="stones" aria-label={`${shelf.label} for ${grade.label}`}>
+            {shelf.sheets.map((sheet) => (
+              <a class="stone" href={sheet.href}>
+                {sheet.name}
+              </a>
+            ))}
+          </nav>
+          <div class="hero__actions">
+            <a class="cta cta--quiet" href={shelf.href}>
+              {shelf.all}
+            </a>
+          </div>
+        </>
+      ))
+    }
+  </section>
+
+  <section class="band band--inset">
+    <div class="wrap">
+      <h2 class="h2">What {grade.phrase} means on this page</h2>
+      <p class="h2__sub">
+        The ages come off each sheet, not off a standard we do not have.
+      </p>
+      <div class="prose">
+        {grade.notes.map((note) => <p>{note}</p>)}
+        <p>
+          No sheet on this site is labelled <em>{grade.label}</em>. Each one
+          states the ages it was drawn for on its own page &mdash; <em
+            >Ages 8&ndash;11</em
+          > on the division worksheet, because that is who those numbers suit &mdash;
+          and this page collects the sheets whose stated ages reach {younger} or {
+            older
+          }, which is where most children are in {grade.phrase}. So the same
+          sheet appears on two or three of these pages, and that is the honest
+          answer rather than a lapse: a sheet for nine to twelve belongs to the
+          fourth-grader and the seventh-grader both.
+        </p>
+        <p>
+          If your child is working a year either side of their class, the
+          neighbouring page is the one to use and nothing here will disagree
+          with you about it. Curriculum and grade levels differ by state, by
+          country and by family, and a worksheet site that told you otherwise
+          would be inventing a standard to sound authoritative.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <HubLinks grade={grade.slug} />
+
+  <section class="band band--tight wrap">
+    <h2 class="h2">Your child&rsquo;s name is not in the file</h2>
+    <div class="prose">
+      <p>
+        Where a sheet has a <em>Name:</em> line at all, it is printed blank and filled
+        in with a pencil. Nothing is uploaded to make one, no account is needed to
+        print one, and a sheet you send to another family carries the settings you
+        chose and nothing else &mdash; see <a href="/privacy"
+          >what we don&rsquo;t collect</a
+        >.
+      </p>
+    </div>
+    <div class="hero__actions">
+      <a class="cta cta--quiet" href="/printables">Back to The Print Shop</a>
+    </div>
+  </section>
+</Content>

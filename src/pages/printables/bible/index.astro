@@ -3,6 +3,7 @@ import Content from "@/layouts/Content.astro";
 import AdSlot from "@/components/site/AdSlot.astro";
 import { SCRIPTURE_CREDIT } from "@/engine/sheets/passages";
 import { BIBLE_SHEETS, STOCKS, bibleShelf, hrefFor } from "../_bible";
+import HubLinks from "../_HubLinks.astro";
 
 /**
  * The Scripture subject hub — the third of the §8 subject names to exist, and
@@ -172,6 +173,8 @@ const letter = STOCKS[0];
       </div>
     </div>
   </section>
+
+  <HubLinks shelf="bible" />
 
   <section class="band band--tight wrap">
     <h2 class="h2">Your child&rsquo;s name is not in the file</h2>

@@ -34,6 +34,7 @@ import {
   pathFor as templatePath,
   templateShelf,
 } from "./_templates";
+import HubLinks from "./_HubLinks.astro";
 
 /**
  * The Print Shop's front door.
@@ -381,7 +382,9 @@ const paperwork = templateShelf();
         exists rather than what is planned. Paper, maths, handwriting, cursive,
         copywork, spelling, grammar, phonics, the blank references and the
         paperwork &mdash; logs, planners, certificates and cards &mdash; are all
-        open. The grade and subject hubs, and a search across the lot, are next.
+        open, and so are the two ways of browsing them: a shelf per subject, and
+        a page per school year from Pre-K to eighth grade. A search across the
+        lot is next.
       </p>
       <div class="prose">
         <p>
@@ -407,6 +410,8 @@ const paperwork = templateShelf();
       </div>
     </div>
   </section>
+
+  <HubLinks />
 
   <section class="band band--tight wrap">
     <h2 class="h2">Your child&rsquo;s name is not in the file</h2>

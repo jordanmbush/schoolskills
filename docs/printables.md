@@ -394,6 +394,23 @@ grade × operation × difficulty is a doorway-page farm, and the `noindex`
 reasoning in `Base.astro` shows this codebase already knows why that's a
 liability. Curate the slugs; generate the sheets.
 
+**What shipped (PRINT28), and the one decision inside it.** Ten year pages,
+Pre-K through 8th, over the nine subject hubs that were already there. The
+decision that made them possible without inventing anything: **a grade is read
+off the sheets, never written onto them.** Every catalog entry already stated
+the ages it was drawn for — `Ages 8–11` on the division worksheet — so a year
+page is the sheets whose stated band reaches the two ages a child is in that
+year, and `_grades.ts` is a parser and an overlap test rather than a second
+table of judgements to keep true. A sheet therefore appears on two or three of
+the ten, which is the honest answer and is what the pages say out loud; the
+alternative, a grade level asserted by a worksheet site, is a guess dressed as
+a standard. `_shelves.ts` is the registry the year pages read, and `hub: false`
+on paper is the only entry whose "all of it" link is the front door: fifteen
+rulings are chosen by reading how one differs from the next, which is what
+`/printables` already sets out. The counts on a hub are computed and its three
+landmarks are routes whose names are read back out of the catalog, so neither a
+number nor a sheet's name exists twice.
+
 ### The sitemap landmine
 
 `astro.config.mjs` filters **every `WORLDS[].href` out of the sitemap**,

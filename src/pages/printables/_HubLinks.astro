@@ -1,0 +1,78 @@
+---
+import { GRADES, gradeHref } from "./_grades";
+import { HUBS, type ShelfId } from "./_shelves";
+
+/**
+ * The two rows every hub in the Print Shop ends with: the other shelves, and
+ * the ten school years.
+ *
+ * Underscored so Astro leaves it out of the routing table — the same trick the
+ * catalogs use, applied to markup rather than to data. It lives beside
+ * `_shelves.ts` and `_grades.ts` rather than in `src/components/` because that
+ * is where the data it reads lives, and a component in the shared directory
+ * would have to import from `src/pages/` to build itself, which is the
+ * dependency direction the layer rules exist to prevent.
+ *
+ * **A page nothing links to is a page nothing ranks**, which is why this is a
+ * component rather than a paragraph typed eleven times. The grade hubs are new
+ * and every one of them is reachable in one click from every other hub here;
+ * the day a shelf is added it appears at the foot of all of them without any
+ * page being edited.
+ *
+ * The current page is marked rather than dropped. A nav that silently omits
+ * where you are is a nav a reader has to count, and `.stone[aria-current]`
+ * already has a look — the same one the neighbouring-sheet rows use.
+ */
+interface Props {
+  /** The shelf this page is, where it is one. */
+  shelf?: ShelfId;
+  /** The year this page is, where it is one. */
+  grade?: string;
+}
+
+const { shelf, grade } = Astro.props;
+---
+
+<section class="band band--tight wrap no-print">
+  <h2 class="h2">The rest of the Print Shop</h2>
+  <p class="h2__sub">
+    Nine shelves and ten school years, over the same sheets. A shelf is what a
+    sheet <em>is</em>; a year is who it was drawn for, which every sheet states
+    on its own page.
+  </p>
+
+  <h3 class="h2 h2--next">By subject</h3>
+  <nav class="stones" aria-label="Printable subjects">
+    {
+      HUBS.map((hub) => (
+        <a
+          class="stone"
+          href={hub.href}
+          aria-current={hub.id === shelf ? "page" : undefined}
+        >
+          {hub.label}
+        </a>
+      ))
+    }
+  </nav>
+
+  <h3 class="h2 h2--next">By grade</h3>
+  <nav class="stones" aria-label="Printables by grade">
+    {
+      GRADES.map((year) => (
+        <a
+          class="stone"
+          href={gradeHref(year)}
+          aria-current={year.slug === grade ? "page" : undefined}
+        >
+          {year.short}
+        </a>
+      ))
+    }
+  </nav>
+  <div class="hero__actions">
+    <a class="cta cta--quiet" href="/printables/grade">
+      What each year is for
+    </a>
+  </div>
+</section>
