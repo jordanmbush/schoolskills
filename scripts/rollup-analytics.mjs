@@ -25,13 +25,7 @@ import { readFile, readdir, writeFile } from "node:fs/promises";
 import { createGunzip } from "node:zlib";
 import { createInterface } from "node:readline";
 import { join } from "node:path";
-
-const [, , LOG_DIR, OUT = "analytics/counts.json"] = process.argv;
-
-if (!LOG_DIR) {
-  console.error("usage: rollup-analytics.mjs <dir-of-gz-logs> [counts.json]");
-  process.exit(2);
-}
+import { pathToFileURL } from "node:url";
 
 /**
  * CloudFront's standard log format, by position.
@@ -51,10 +45,51 @@ const WANTED = [
   "sc-content-type",
 ];
 
-/** Requests that are a person arriving at a page, rather than an asset fetch. */
-const isPageView = (row) =>
-  Number(row["sc-status"]) < 400 &&
-  (row["sc-content-type"] ?? "").startsWith("text/html");
+/**
+ * Does this path name a document rather than an asset?
+ *
+ * Only consulted for 304s, which is the one case where the content-type can't
+ * answer it (see `isPageView`). The rule is the filename: anything with an
+ * extension is an asset, except `.html` itself. `/`, `/spelling/` and
+ * `/printables/templates/chore-chart` are documents; `/sw.js`,
+ * `/icon-192.png`, `/fonts/nunito-latin-var.woff2`, `/robots.txt` and
+ * `/_astro/index.abc123.js` are not.
+ */
+export const isDocumentPath = (path) => {
+  const file = path.slice(path.lastIndexOf("/") + 1);
+  return file === "" || !file.includes(".") || /\.html?$/i.test(file);
+};
+
+/**
+ * Requests that are a person arriving at a page, rather than an asset fetch.
+ *
+ * The two status codes are here for opposite reasons, and an earlier version
+ * of this function — `status < 400 && content-type is text/html` — got both
+ * of them wrong in the same line.
+ *
+ * **200 is the ordinary case** and the content-type settles it.
+ *
+ * **304 is the returning visitor.** HTML ships as
+ * `max-age=3600, must-revalidate` (see `fileOptions` in sst.config.ts), so a
+ * browser that has been here before revalidates and CloudFront answers 304 —
+ * which carries NO content-type at all. The old test therefore threw away
+ * every repeat visit, on top of the service-worker blind spot that
+ * docs/analytics.md already warns about. Since there is no content-type to
+ * read, the path has to decide it.
+ *
+ * **3xx redirects are not page views**, and `< 400` quietly counted them. The
+ * http→https redirect is served as `text/html` with status 301, so every
+ * visitor arriving over http counted twice, and a scanner probing
+ * `/wp-admin/install.php` — which never got a page, only a redirect and then
+ * a 404 — was recorded as a visitor on this pipeline's first day of data.
+ */
+export const isPageView = (row) => {
+  const status = Number(row["sc-status"]);
+  if (status === 200)
+    return (row["sc-content-type"] ?? "").startsWith("text/html");
+  if (status === 304) return isDocumentPath(row["cs-uri-stem"] ?? "");
+  return false;
+};
 
 /**
  * Obvious crawlers.
@@ -86,7 +121,7 @@ async function* lines(file) {
   }
 }
 
-async function tally(dir) {
+export async function tally(dir) {
   const days = new Map();
   const files = (await readdir(dir, { recursive: true })).filter((f) =>
     f.endsWith(".gz"),
@@ -154,7 +189,7 @@ async function tally(dir) {
 const sortObject = (o) =>
   Object.fromEntries(Object.entries(o).sort(([a], [b]) => a.localeCompare(b)));
 
-async function main() {
+async function main(LOG_DIR, OUT) {
   const days = await tally(LOG_DIR);
 
   const existing = existsSync(OUT)
@@ -190,4 +225,24 @@ async function main() {
   );
 }
 
-await main();
+/**
+ * Only bootstrap when run as a script.
+ *
+ * scripts/rollup-analytics.test.mjs imports `tally` and `isPageView` directly,
+ * and a bare `await main()` at module scope would make that import parse argv
+ * and exit(2). The counting logic is the part worth testing, so it has to be
+ * reachable without running the CLI around it.
+ */
+if (
+  process.argv[1] &&
+  import.meta.url === pathToFileURL(process.argv[1]).href
+) {
+  const [, , LOG_DIR, OUT = "analytics/counts.json"] = process.argv;
+
+  if (!LOG_DIR) {
+    console.error("usage: rollup-analytics.mjs <dir-of-gz-logs> [counts.json]");
+    process.exit(2);
+  }
+
+  await main(LOG_DIR, OUT);
+}
