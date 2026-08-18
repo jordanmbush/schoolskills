@@ -126,8 +126,24 @@ export async function tally(dir) {
   const files = (await readdir(dir, { recursive: true })).filter((f) =>
     f.endsWith(".gz"),
   );
+  // Loud, not a warning. An empty directory is indistinguishable from a quiet
+  // month right up until you notice the site has had traffic all along — which
+  // is exactly what happened: CloudFront logging was silently off for a week,
+  // this job ran twice, found nothing, wrote nothing, and reported success
+  // both times. A pipeline whose failure mode is "succeeds over nothing"
+  // cannot be monitored, so this refuses to be that.
+  //
+  // There is no legitimate empty case. CloudFront logs every request including
+  // the crawlers, so zero files means the logs are not arriving, not that
+  // nobody visited.
   if (files.length === 0) {
-    console.error(`no .gz log files under ${dir}`);
+    throw new Error(
+      `No .gz log files under ${dir}.\n\n` +
+        "That is a broken pipeline, not a quiet month — CloudFront logs every\n" +
+        "request, crawlers included. Check that delivery is still switched on:\n" +
+        "  aws cloudfront get-distribution-config --id <id> \\\n" +
+        "    --query DistributionConfig.Logging",
+    );
   }
 
   for (const name of files) {
@@ -244,5 +260,10 @@ if (
     process.exit(2);
   }
 
-  await main(LOG_DIR, OUT);
+  try {
+    await main(LOG_DIR, OUT);
+  } catch (error) {
+    console.error(`\n${error.message}`);
+    process.exit(1);
+  }
 }
