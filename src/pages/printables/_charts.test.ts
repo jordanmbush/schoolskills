@@ -26,6 +26,7 @@ import { HANDWRITING_SHEETS, hrefFor as handwritingHref } from "./_handwriting";
 import { MATHS_SHEETS, pathFor as mathsPath } from "./_maths";
 import { PHONICS_SHEETS, pathFor as phonicsPath } from "./_phonics";
 import { SPELLING_SHEETS, pathFor as spellingPath } from "./_spelling";
+import { TEMPLATE_SHEETS, pathFor as templatePath } from "./_templates";
 
 /**
  * The charts catalog, held to what a catalog page has to be — and to the one
@@ -71,7 +72,7 @@ describe("the charts catalog", () => {
   });
 
   it("never claims a path another shelf already prints on", () => {
-    // Nine route patterns over one prefix. They only coexist because the paths
+    // Ten route patterns over one prefix. They only coexist because the paths
     // they emit are disjoint; the day they are not, Astro has two routes for
     // one URL and picks one of them.
     const taken = new Set<string>([
@@ -91,6 +92,7 @@ describe("the charts catalog", () => {
       ...BIBLE_SHEETS.flatMap((sheet) =>
         STOCKS.map((stock) => bibleHref(sheet, stock)),
       ),
+      ...TEMPLATE_SHEETS.map((sheet) => templatePath(sheet)),
     ]);
     for (const sheet of CHART_SHEETS) {
       expect(taken.has(pathFor(sheet)), sheet.slug).toBe(false);

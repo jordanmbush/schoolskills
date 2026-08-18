@@ -24,19 +24,37 @@ const nextId = () =>
   `custom-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
 
 /**
- * Splits whatever a parent pasted into words.
+ * What counts as a word in whatever a parent pasted, and nothing else.
  *
  * Newlines, commas, tabs and semicolons all work, because the list is coming
  * off a school letter or an email and nobody should have to reformat it. Order
- * is kept — a spelling list is often taught in order — but duplicates go,
- * comparing the way the marker will.
+ * is kept — a spelling list is often taught in order — and every entry survives,
+ * duplicates included.
+ *
+ * Separate from `parseWords` because one caller genuinely wants the repeats: a
+ * page of name tags for two children called Sam is two name tags, and a page of
+ * flashcards with a word written twice is two cards. The *splitting* is still
+ * one rule in one place, which is the invariant `WordList` states — two copies
+ * would be two answers to what a word is.
+ */
+export function splitWords(input: string): string[] {
+  return input
+    .split(/[\n,;\t]+/)
+    .map((raw) => raw.trim().replace(/\s+/g, " "))
+    .filter((word) => word !== "");
+}
+
+/**
+ * Splits whatever a parent pasted into the words of a deck.
+ *
+ * `splitWords` less the duplicates, compared the way the marker will: a race
+ * that dealt the same word twice would ask one question twice and score it as
+ * two.
  */
 export function parseWords(input: string): string[] {
   const seen = new Set<string>();
   const out: string[] = [];
-  for (const raw of input.split(/[\n,;\t]+/)) {
-    const word = raw.trim().replace(/\s+/g, " ");
-    if (!word) continue;
+  for (const word of splitWords(input)) {
     const key = normaliseWord(word);
     if (seen.has(key)) continue;
     seen.add(key);

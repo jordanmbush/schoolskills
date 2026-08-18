@@ -38,6 +38,27 @@ export const RULE: Mil = points(0.75);
 /** Axes, cut lines, the outside of a box — anything read before it's used. */
 export const HEAVY: Mil = points(1.25);
 
+/**
+ * A stroke on the very edge of a viewBox, moved half its width inside it.
+ *
+ * An `<svg>` clips to its box, so a line drawn at x=0 loses the outer half of
+ * itself and prints lighter than the identical line two columns along — most
+ * visibly on the sheets whose entire job is to say where the scissors go.
+ *
+ * The price is stated rather than hidden: an outer stroke ends up half its own
+ * weight inside the shape, where every interior one is exactly on the boundary.
+ * At `HEAVY` that is eight thousandths of an inch, a fifteenth of the eighth of
+ * an inch a card is sized in and well under what a pair of scissors resolves —
+ * and it is the cheaper of the two errors, because a trim line printed at half
+ * the weight of the cuts beside it is one a reader can see.
+ *
+ * Here rather than in a block, because four of them now need it: the cut guides
+ * over a page of cards, a table's outside ruling, and the two nets, whose
+ * outlines touch all four sides of their own box.
+ */
+export const inside = (at: Mil, extent: Mil, weight: Mil): Mil =>
+  at <= 0 ? weight / 2 : at >= extent ? extent - weight / 2 : at;
+
 /* ── Dashes ────────────────────────────────────────────────────────────────
    `stroke-dasharray` in mil, for the same reason the weights are. Each pair is
    ink-then-gap, and each is tuned to what it marks rather than shared: a
@@ -53,3 +74,10 @@ export const HEAVY: Mil = points(1.25);
 export const DASH_MIDLINE = `${inches(0.09)} ${inches(0.07)}`;
 /** Cut here. Long enough to read as scissors rather than as a faint rule. */
 export const DASH_CUT = `${inches(0.12)} ${inches(0.08)}`;
+/**
+ * Fold here. The same instruction one step down, and it has to *look* one step
+ * down: a net whose folds and cuts were drawn alike is a cube cut into six
+ * squares. Half the pitch of a cut and set at `RULE` rather than `HEAVY`, which
+ * is the pair of differences a reader takes in without reading a legend.
+ */
+export const DASH_FOLD = `${inches(0.06)} ${inches(0.04)}`;

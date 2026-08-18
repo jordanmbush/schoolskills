@@ -610,6 +610,83 @@ blocks buys the flex column a second gap to pay for. `GridSpec.row` is the one
 new field, set by the one chart whose rows are not squares — everything a child
 measures against leaves it unsaid and gets squares by construction.
 
+**What shipped (PRINT27): the rest of the paperwork.** Four families, and what
+they have in common is the tier's own argument — **they are supposed to be
+empty**, which is what makes them cheap and honest at the same time. Nobody has
+to check whether the science on a lab report sheet is right, because there
+isn't any: the _paperwork round_ a science lesson is ours to print and the
+science is not, which is §11's third tier said from the other side.
+`templates/forms.ts` is nine sets of headings with room to answer under each —
+reading log, book report, story map, paragraph frame, writing prompt, lab
+report, the scientific method, an observation journal and a timeline;
+`templates/planner.ts` is five views of a week; `templates/cards.ts` is the
+paper that gets cut up; and `templates/nets.ts` is two things that are objects
+rather than pages. Twenty-two catalog pages at `/printables/templates`.
+
+Three things on the shelf can be _wrong_, and all three are verified by a path
+that does not go through the code that made them:
+
+- **A calendar's weekdays.** `weekday` is Sakamoto's algorithm — integer
+  arithmetic with no ambient state, so a catalog built in one timezone prints
+  the same month as one built in another — and the suite checks twenty years of
+  it against the platform's own `Date`. The dates are then read back off the
+  finished cells rather than off the offset that placed them.
+- **A die's faces.** Which two squares end up opposite each other is a fact
+  about _folding_, not about the drawing, so `nets.test.ts` folds the net: it
+  walks the squares carrying an orientation, works out where each one points in
+  three dimensions, and checks that every opposite pair adds to seven. The seven
+  glue tabs fall out of the same walk — a cube has twelve edges, five are folds
+  in this net, and two tabs on one join is a lump that stops it closing.
+- **A spinner's sectors.** Equal by construction rather than by arithmetic: the
+  block carries a radius and a list of labels and _no angles at all_, so there
+  is nowhere for a longer word to have bought itself a wider slice. "Do you
+  think this is fair?" is the question the object exists to answer.
+
+**The cut geometry is the story of the cards.** Cut lines on every card
+boundary, the outside trim included, because a sheet whose outer edge is
+unmarked is a sheet cut freehand. **No gutter** — two cards share one edge and
+one pass of a trimmer makes both — and what is left over goes _round_ the block,
+split evenly left and right, which is the mirrored-margin failure this is
+guarding against and is invisible on screen either way. The card is rounded down
+to a whole number of eighths of an inch so the dimension the page quotes is one a
+ruler can settle: eight flashcards to a page are 3¾ by 2¼ inches, and the test
+holds the prose to the block.
+
+**A printed back is deliberately absent, and a fold is offered instead.**
+Duplexing on a home printer lands within about an eighth of an inch at best and
+lands there _asymmetrically_, so a back page with its columns flipped to
+compensate would still print a verse cut through its own reference on half the
+sheet. The two panels of a tent are the same piece of paper and cannot be out of
+register with each other; the upper one is printed upside down because folding it
+back and down turns it round. That is the honest version of "front and back line
+up".
+
+Two things had to give way to keep a page a page, and both were found by a test
+rather than by looking. A form declares _shares_ of the writing height rather
+than line counts, takes a line each before anything is shared out, and drops the
+rows the page cannot hold — reserving for all five rows of a paragraph frame at
+36pt produced a sheet 35 thousandths of an inch too tall, which `.sheet` hides
+because it is `min-height`. And a verse-of-the-week chart _sizes its verse to the
+room_: capping the reservation does not make the block smaller, it moves the
+overflow somewhere nobody looks, so the size is searched down until the words fit
+and the week always keeps a heading row and a line to write on.
+
+**Dropping a row is only honest where a row is a request.** It is on a chore
+chart — four jobs and a growing list is what a family with four jobs wants — and
+it is not on the three sheets whose row count is arithmetic: a dated month has
+the rows the month has, a week has seven days, and the verse chart counts three
+things. Those refuse the sheet rather than print part of one, which is what
+`cardGrid` already did for a card too small to cut, and the line naming the
+sheet is computed off the same fit the blocks were, so a chart with four rows
+can no longer describe itself as six. Reachable at 36pt on a landscape page,
+invisible on screen, and found on the wall.
+
+Scripture is woven through here exactly as §12 asks: memory-verse cards and
+Scripture bookmarks are the card family with a passage on it, resolved through
+the same `copyworkSource` door as copywork, and the verse-of-the-week chart is
+the planner family with one. They sit in the same template list as the chore
+chart.
+
 ### Not ours to fake
 
 Science content, social studies content, history, and anything with a scope and

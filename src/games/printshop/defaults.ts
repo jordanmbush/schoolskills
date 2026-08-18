@@ -172,6 +172,44 @@ const DEFAULTS: Record<string, SheetConfig> = {
     range: { min: 1, max: 100 },
     filled: false,
   },
+  form: {
+    ...BASE,
+    kind: "form",
+    // The reading log, because it is the sheet on this shelf a parent
+    // recognises from across the room and the one that looks most like a thing
+    // to print at a glance. The other eight are one control away, and the
+    // control lists them in the order a week uses them.
+    style: "reading-log",
+    rows: 14,
+  },
+  planner: {
+    ...BASE,
+    kind: "planner",
+    // A blank month, undated. The dates are a tick box away, and a calendar
+    // with no year on it is the one a family pins up and keeps.
+    style: "calendar",
+    rows: 5,
+    // No name line: a wall chart is not handed in.
+    fields: [],
+  },
+  cards: {
+    ...BASE,
+    kind: "cards",
+    // Eight blank flashcards, which is the plainest thing this shelf makes and
+    // the thing "blank flashcards" is a query for. Words, verses, tags and
+    // certificates are all one control away.
+    style: "flashcard",
+    up: 8,
+    fields: [],
+  },
+  net: {
+    ...BASE,
+    kind: "net",
+    // The die, because it is an object rather than a page and that is the point
+    // of the pair. The spinner is one control away.
+    style: "dice",
+    fields: [],
+  },
   arithmetic: {
     ...BASE,
     kind: "arithmetic",

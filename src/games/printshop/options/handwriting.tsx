@@ -41,14 +41,8 @@ import { Checkbox, FieldSet, NumberStepper } from "@/components/ui/kit";
 import { parseWords } from "@/services/decks";
 
 import { PassageControls } from "./passages";
-import {
-  Choice,
-  RULED_STYLES,
-  RulingControls,
-  WordList,
-  opt,
-  type PanelProps,
-} from "./parts";
+import { Choice, WordList, opt, type PanelProps } from "./parts";
+import { RULED_STYLES, RulingControls } from "./ruling";
 
 const STYLES = [
   opt<HandwritingStyle>("letters", "Letters"),

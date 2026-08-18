@@ -33,7 +33,7 @@
 import { sheetBlockBox } from "../chrome";
 import { BLOCK_GAP, answerLine, fitAcross, type Box } from "../layout";
 import { NUMBER_LINE_HEIGHT, labelEvery, ticks } from "../numberline";
-import { inches, own } from "../paper";
+import { inches, own, whole } from "../paper";
 import { planeOf } from "../plane";
 import { SHEET_CREDIT, SHEET_URL, SHEET_WORLD, type SheetSpec } from "../spec";
 import type {
@@ -120,20 +120,13 @@ const SMALLEST_PLACE = LARGEST_PLACE - (PLACE_NAMES.length - 1);
 export const placeName = (power: number): string =>
   PLACE_NAMES[LARGEST_PLACE - power] ?? "";
 
-/**
- * A number a config asked for, as a whole number inside the bounds.
- *
- * Every `ChartConfig` field resolved in this module goes through it, because
- * every one of them can arrive from outside the build — a bookmarked link, a
- * sheet saved last term — and a range of `NaN` to `"lots"` has to produce a
- * chart rather than an exception four modules downstream. The two that are not
- * resolved here, `span` and `quadrants`, are guarded the same way by `planeOf`.
- */
-function whole(value: unknown, fallback: number, low: number, high: number) {
-  const asked = typeof value === "number" ? Math.round(value) : NaN;
-  const chosen = Number.isFinite(asked) ? asked : fallback;
-  return Math.max(low, Math.min(high, chosen));
-}
+/* Every `ChartConfig` field resolved in this module goes through `whole`,
+   because every one of them can arrive from outside the build — a bookmarked
+   link, a sheet saved last term — and a range of `NaN` to `"lots"` has to
+   produce a chart rather than an exception four modules downstream. The two
+   that are not resolved here, `span` and `quadrants`, are guarded the same way
+   by `planeOf`. It lives in paper.ts beside `own` now that five families in
+   this tier ask the same question of their configs.                         */
 
 /* ── The hundred chart ─────────────────────────────────────────────────── */
 
