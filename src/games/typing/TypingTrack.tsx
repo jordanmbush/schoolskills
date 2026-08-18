@@ -3,6 +3,7 @@ import { Navigate, useNavigate, useParams } from "react-router-dom";
 import { useHub, usePlayer } from "@/components/state/HubContext";
 import { useRace } from "@/components/state/RaceContext";
 import { buildDeck, configKey, deckSpec, modeOf } from "@/engine/decks";
+import { levelCredit } from "@/engine/decks/typing";
 import { cardXp } from "@/engine/progress";
 import {
   WRONG_ANSWER_PENALTY_MS,
@@ -263,7 +264,12 @@ function Track({
         note="Space moves you on"
       />
 
-      <Passage deck={deck} results={results.current} entry={entry} />
+      <Passage
+        deck={deck}
+        results={results.current}
+        entry={entry}
+        credit={levelCredit(config.levelId)}
+      />
 
       <TypeField
         value={entry}
