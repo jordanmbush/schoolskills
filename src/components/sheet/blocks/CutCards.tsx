@@ -2,7 +2,7 @@ import type { CSSProperties } from "react";
 
 import type { CardFace, Mil } from "@/engine/sheets/types";
 
-import { DASH_CUT, DASH_FOLD, HEAVY, RULE, inch } from "../units";
+import { DASH_CUT, DASH_FOLD, HEAVY, RULE, inch, inside } from "../units";
 import type { BlockProps } from "./block";
 
 /** How many rules a face gets when it asks for more than a card can hold. */
@@ -203,20 +203,3 @@ function Guides({
     </svg>
   );
 }
-
-/**
- * A stroke on the very edge of a viewBox, moved half its width inside it.
- *
- * An `<svg>` clips to its box, so the outer trim line drawn at x=0 would lose
- * half of itself and print lighter than the identical line between two cards —
- * on the sheet whose entire job is to say where the scissors go.
- *
- * The price is stated rather than hidden: the four trim lines end up eight
- * thousandths of an inch inside the card, where every interior cut is exactly on
- * the boundary. That is a fifteenth of the eighth-inch step the card is sized in
- * and well under what a pair of scissors resolves — and it is the cheaper of the
- * two errors, because a trim line printed at half the weight of the cuts beside
- * it is one a reader can see.
- */
-const inside = (at: Mil, extent: Mil, weight: Mil): Mil =>
-  at <= 0 ? weight / 2 : at >= extent ? extent - weight / 2 : at;

@@ -92,9 +92,15 @@ const CARD_LAYOUTS: Record<string, Layout[]> = {
     { up: 6, columns: 2, rows: 3 },
     { up: 8, columns: 2, rows: 4 },
   ],
+  // One to a page is the certificate somebody frames, and it is the default.
+  // The other two are award slips — the four-up is half a Letter page each way,
+  // which is what a class set of "well done" cards is — and the four-up is
+  // there because §17 asks every card for one and a certificate is cut out like
+  // any other card. `cards.test.ts` holds the table to that.
   certificate: [
     { up: 1, columns: 1, rows: 1 },
     { up: 2, columns: 1, rows: 2 },
+    { up: 4, columns: 2, rows: 2 },
   ],
 };
 

@@ -1270,12 +1270,18 @@ export type PlannerConfig = SheetOptions & {
   /** Whether the week is drawn starting on Sunday or on Monday. */
   weekStart?: "sunday" | "monday";
   /**
-   * The rows: the jobs on a chore chart, the goals on a behaviour chart, the
-   * parts of the day on a planner.
+   * A parent's own headings: the jobs down a chore chart, the goals down a
+   * behaviour chart — and, on a planner, the parts of the day *across* it.
    *
-   * A parent's own words, always, and empty is a legitimate answer — a chart
-   * with blank row labels is one to fill in by hand, which is what a family
-   * whose jobs change weekly actually wants.
+   * Rows on two of the styles and columns on the third, which is not an
+   * inconsistency but the shape of the sheet: a week is seven days whatever the
+   * columns are called, so a planner's fixed axis is its rows and the named one
+   * runs the other way. The builder labels the control "Columns" there and
+   * "Rows" on the charts for the same reason.
+   *
+   * Empty is a legitimate answer, always — a chart with blank row labels is one
+   * to fill in by hand, which is what a family whose jobs change weekly
+   * actually wants.
    */
   labels?: string[];
   /** How many rows, where the labels do not decide it. */

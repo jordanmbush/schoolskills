@@ -547,6 +547,13 @@ export function describeForm(config: FormConfig, seed = 0): string {
         : `${name}, one of ${WRITING_PROMPTS.length} drawn from the seed, and a page of lines`;
     default: {
       const fields = formFields(config, box);
+      // The same refusal `describeCards` makes when a card comes out too small
+      // to cut, and for the same condition: `formBlocks` draws no block at all
+      // where not one question fits, and a line reading "0 things to fill in
+      // over 0 lines" would be naming a sheet that is a header, a footer and
+      // blank paper as though it were a form.
+      if (fields.length === 0)
+        return `${name} — no room for a question at this size`;
       const lines = fields.reduce((total, field) => total + field.lines, 0);
       return `${name}, ${fields.length} things to fill in over ${lines} lines`;
     }

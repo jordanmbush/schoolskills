@@ -416,6 +416,20 @@ describe("a spinner", () => {
       "4 equal sectors of 90°",
     );
   });
+
+  it("quotes no angle where a whole turn does not divide into the count", () => {
+    // Rounded, seven sectors read as "7 equal sectors of 51°" — a sum that
+    // comes to 357, on the one object whose whole purpose is "do you think this
+    // is fair?". Every count on offer either names an angle that multiplies
+    // back to a whole turn, or names none.
+    for (let sectors = SECTORS.min; sectors <= SECTORS.max; sectors++) {
+      const said = describeSheet(config({ style: "spinner", sectors }));
+      expect(said, `${sectors}`).toContain(`${sectors} equal sectors`);
+      const quoted = /of (\d+)°/.exec(said);
+      if (quoted) expect(Number(quoted[1]) * sectors, `${sectors}`).toBe(360);
+      else expect(360 % sectors, `${sectors}`).not.toBe(0);
+    }
+  });
 });
 
 /* ── The promises every family makes ───────────────────────────────────── */

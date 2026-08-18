@@ -332,8 +332,16 @@ export function describeNet(config: NetConfig): string {
   if (config.style === "spinner") {
     const net = spinnerNet(config, box);
     if (net.shape !== "spinner") return TITLE.spinner;
-    const degrees = Math.round(360 / net.sectors.length);
-    return `Spinner cut into ${net.sectors.length} equal sectors of ${degrees}°`;
+    const count = net.sectors.length;
+    // The angle only where a whole turn divides into the count. Rounded, seven
+    // sectors print as "7 equal sectors of 51°", which is a sum that comes to
+    // 357 — on the one object whose entire purpose is "do you think this is
+    // fair?", an angle a child can add up and find short is the worst possible
+    // line to put under it. Two of the eleven counts on offer divide 360
+    // unevenly — seven and eleven — and those two say what is true instead.
+    return 360 % count === 0
+      ? `Spinner cut into ${count} equal sectors of ${360 / count}°`
+      : `Spinner cut into ${count} equal sectors, a whole turn divided ${count} ways`;
   }
   const edge = cubeEdge(box);
   return `A die to cut out and fold, ${inchLabel(edge)} inches on a side, opposite faces adding to ${DICE_PAIR}`;

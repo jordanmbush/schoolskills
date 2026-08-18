@@ -31,7 +31,7 @@ import type {
 
 import type { BlockOf } from "./blocks/block";
 import { SheetView } from "./Sheet";
-import { HEAVY } from "./units";
+import { HAIRLINE, HEAVY } from "./units";
 
 /**
  * The properties a printable sheet lives or dies by.
@@ -377,9 +377,12 @@ const EVERY_BLOCK: Block[] = [
   {
     kind: "net",
     net: {
+      // Six, which is what the catalog prints, and not four: at four sectors
+      // every spoke lands on an axis and "equal" is arithmetically trivial —
+      // a sixth of a turn is the count that can actually come out uneven.
       shape: "spinner",
       radius: 2800,
-      sectors: ["1", "2", "3", "4"],
+      sectors: ["1", "2", "3", "4", "5", "6"],
       pointer: { length: 2520, width: 616 },
     },
   },
@@ -1968,6 +1971,80 @@ describe("a rendered table", () => {
       />,
     );
 
+  /**
+   * A table whose columns are deliberately *unequal*, which is what a real one
+   * is: a reading log's "What I read" is as wide as a title and its "Pages" is
+   * as wide as three numerals. 1000 + 4000 + 800 across, three rows of 1000.
+   */
+  const uneven = (over: Partial<BlockOf<"table">> = {}): BlockOf<"table"> => ({
+    kind: "table",
+    columns: [
+      { label: "Date", width: 1000 },
+      { label: "What I read", width: 4000 },
+      { label: "Pages", width: 800 },
+    ],
+    head: true,
+    rows: 3,
+    cells: [],
+    row: 1000,
+    headRow: 317,
+    ...over,
+  });
+
+  const drawn = (block: BlockOf<"table">) =>
+    renderToStaticMarkup(<SheetView sheet={sheet({ blocks: [block] })} />);
+
+  it("closes its outer border on all four sides, heading or no heading", () => {
+    // The top edge is the one that went missing. With a heading the body starts
+    // partway down the block, and a rule list counted from *there* draws a
+    // left, a right and a bottom and no top — which printed the heading row of
+    // all seven table sheets in the catalog open at the edge of the paper. The
+    // `head: false` path was right, which is exactly why nobody saw it.
+    for (const head of [true, false]) {
+      const markup = drawn(uneven({ head }));
+      const width = 5800;
+      const height = (head ? 317 : 0) + 3 * 1000;
+      const across = [
+        ...markup.matchAll(/<line[^>]*x1="0"[^>]*y1="([\d.]+)"/g),
+      ].map(([, y]) => Number(y));
+      const down = [
+        ...markup.matchAll(/<line[^>]*x1="([\d.]+)"[^>]*y1="0"/g),
+      ].map(([, x]) => Number(x));
+
+      // Half a hairline in from each edge, which is `inside` — see units.ts.
+      const where = `head: ${head}`;
+      expect(Math.min(...across), `top, ${where}`).toBe(HAIRLINE / 2);
+      expect(Math.max(...across), `bottom, ${where}`).toBe(
+        height - HAIRLINE / 2,
+      );
+      expect(Math.min(...down), `left, ${where}`).toBe(HAIRLINE / 2);
+      expect(Math.max(...down), `right, ${where}`).toBe(width - HAIRLINE / 2);
+
+      // One rule per boundary and no more: the heading's own line is the
+      // heavier `--axis` stroke, and a hairline under it would print as one
+      // thicker line whose weight nothing chose.
+      expect(new Set(across).size, `rules, ${where}`).toBe(head ? 5 : 4);
+    }
+  });
+
+  it("sizes each heading against its own column, not the narrowest one", () => {
+    // A table's columns are unequal on purpose — that is what `width` is for —
+    // so one width for every label measures the longest heading against the
+    // narrowest column and shrinks the whole row to a size no column needed.
+    // It set a behaviour chart's headings at 52 mil, under four points, beside
+    // a twelve-point body.
+    const markup = drawn(uneven());
+    const sizes = [
+      ...markup.matchAll(
+        /<text class="sheet__cell" [^>]*font-size="([\d.]+)"/g,
+      ),
+    ].map(([, size]) => Number(size));
+    // 12pt at 0.82 em is 137 mil, and all three of these fit their own column
+    // at it. Under one shared width "What I read" against the 800-mil "Pages"
+    // column gave 121.
+    expect(sizes).toEqual([137, 137, 137]);
+  });
+
   it("draws one stroke per boundary, not a border per cell", () => {
     // Two adjacent cells with a border each print a rule twice as heavy as the
     // outside of the table, on a device pixel the pair do not always agree
@@ -2137,30 +2214,84 @@ describe("a rendered net", () => {
   });
 
   it("cuts a spinner into equal sectors, from twelve o'clock", () => {
-    // Four sectors is four spokes at a quarter turn each, and the first of them
+    // Six sectors is six spokes a sixth of a turn apart, and the first of them
     // points straight up. Measured off the ink, because "equal" is the only
     // thing the object is for.
+    //
+    // The middle is read off where the spokes *start* rather than worked back
+    // from where the first one ends. Reconstructing it as "one radius above the
+    // first endpoint" puts the centre directly under that endpoint by
+    // construction, which makes the first angle zero however the drawing was
+    // done — an assertion that cannot fail is not one.
     const markup = built("spinner");
     const spokes = [
-      ...markup.matchAll(/<line[^>]*x2="([-\d.]+)"[^>]*y2="([-\d.]+)"/g),
-    ].map((match) => [Number(match[1]), Number(match[2])] as const);
-    expect(spokes).toHaveLength(4);
-    const middle = [spokes[0][0], spokes[0][1] + 2800] as const;
+      ...markup.matchAll(
+        /<line[^>]*x1="([-\d.]+)"[^>]*x2="([-\d.]+)"[^>]*y1="([-\d.]+)"[^>]*y2="([-\d.]+)"/g,
+      ),
+    ].map((match) => match.slice(1, 5).map(Number));
+    expect(spokes).toHaveLength(6);
+
+    // Every spoke starts at the same point, which is the other half of "equal":
+    // six radii from one centre rather than six lines that happen to fan out.
+    expect(new Set(spokes.map(([x1, , y1]) => `${x1},${y1}`)).size).toBe(1);
+    const [x1, , y1] = spokes[0];
     const angles = spokes.map(
-      ([x, y]) =>
-        Math.round(
-          (Math.atan2(x - middle[0], middle[1] - y) * 180) / Math.PI + 360,
-        ) % 360,
+      ([, x2, , y2]) =>
+        Math.round((Math.atan2(x2 - x1, y1 - y2) * 180) / Math.PI + 360) % 360,
     );
-    expect(angles).toEqual([0, 90, 180, 270]);
+    expect(angles).toEqual([0, 60, 120, 180, 240, 300]);
+
+    // And each is the same length, so no sector is a longer wedge than another.
+    const reach = spokes.map(([sx, ex, sy, ey]) =>
+      Math.round(Math.hypot(ex - sx, ey - sy)),
+    );
+    expect(new Set(reach)).toEqual(new Set([2800]));
   });
 
   it("marks where the pin goes, and gives it a pointer to turn", () => {
     const markup = built("spinner");
     expect([...markup.matchAll(/<polygon/g)]).toHaveLength(1);
     expect(markup).toContain(
-      'aria-label="A spinner cut into 4 equal sectors, with a pointer to cut out"',
+      'aria-label="A spinner cut into 6 equal sectors, with a pointer to cut out"',
     );
+  });
+
+  it("keeps every cut line inside the box it is drawn in", () => {
+    // The silhouette of a net touches all four sides of its own viewBox — the
+    // die's top tab and its two side tabs, the last face's bottom edge, the
+    // spinner's pointer — and an `<svg>` clips to its box, so each of those
+    // would print at half the weight of the identical cut two inches away, on
+    // a drawing whose whole content is where to cut.
+    for (const shape of ["cube", "spinner"] as const) {
+      const markup = built(shape);
+      const box = /viewBox="0 0 (\d+) (\d+)"/.exec(markup);
+      const [width, height] = [Number(box?.[1]), Number(box?.[2])];
+      expect(width, shape).toBeGreaterThan(0);
+
+      const corners = [...markup.matchAll(/points="([^"]+)"/g)].flatMap(
+        ([, list]) => list.split(" "),
+      );
+      expect(corners.length, shape).toBeGreaterThan(0);
+      for (const corner of corners) {
+        const [x, y] = corner.split(",").map(Number);
+        expect(x, `${shape} ${corner}`).toBeGreaterThan(0);
+        expect(x, `${shape} ${corner}`).toBeLessThan(width);
+        expect(y, `${shape} ${corner}`).toBeGreaterThan(0);
+        expect(y, `${shape} ${corner}`).toBeLessThan(height);
+      }
+    }
+  });
+
+  it("draws the die's last face inside the paper too", () => {
+    // The bottom of the net is a `<rect>` rather than a polygon, and it sat on
+    // the boundary for the same reason the tabs did.
+    const markup = built("cube");
+    const height = Number(/viewBox="0 0 \d+ (\d+)"/.exec(markup)?.[1]);
+    const bottoms = [
+      ...markup.matchAll(/<rect[^>]*y="([\d.]+)"[^>]*height="([\d.]+)"/g),
+    ].map(([, y, tall]) => Number(y) + Number(tall));
+    expect(bottoms).not.toHaveLength(0);
+    expect(Math.max(...bottoms)).toBeLessThan(height);
   });
 });
 

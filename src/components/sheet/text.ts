@@ -18,12 +18,20 @@ import { glyphAdvance, type Face } from "@/engine/sheets/faces";
 import type { Mil } from "@/engine/sheets/types";
 
 /**
- * The largest of `size` and what the widest of `texts` will fit at.
+ * `size`, or the largest every one of `texts` fits `width` at — whichever is
+ * smaller.
  *
  * One size for every item rather than one each, and it is the smallest any of
- * them needs. Per item would be arithmetically tidier and would print a heading
- * row with a different type size in every column, which reads as a mistake
- * whether or not it is one.
+ * them needs: the widest text is the one that decides, and `size` is a ceiling
+ * rather than a floor, so a run of short words is set at the size asked for and
+ * never larger. Per item would be arithmetically tidier and would print a
+ * heading row with a different type size in every column, which reads as a
+ * mistake whether or not it is one.
+ *
+ * `texts` is therefore a set of things sharing **one** width. A caller whose
+ * boxes are different widths — a table's columns, a form's fields — asks once
+ * per box and takes the minimum itself, because one width for all of them
+ * measures the longest text against the narrowest box.
  *
  * `fill` is how much of the box the text may take, which is never all of it:
  * something has to hold the letters off the rule beside them.

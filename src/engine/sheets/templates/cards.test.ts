@@ -63,6 +63,18 @@ function cardsOf(sheet: Sheet) {
 /* ── The geometry ──────────────────────────────────────────────────────── */
 
 describe("a page of cards", () => {
+  it("offers 2-up and 4-up on every style, which is the acceptance criterion", () => {
+    // §17 asks for both wherever the template is a card, and every style here
+    // is cut out. Read off `layoutsFor`, which is what the builder's control
+    // offers and what `layoutOf` resolves against — so a style that lost one
+    // fails here rather than in a comment claiming otherwise.
+    for (const style of STYLES) {
+      const up = layoutsFor(style).map((layout) => layout.up);
+      expect(up, style).toContain(2);
+      expect(up, style).toContain(4);
+    }
+  });
+
   it("measures a whole number of eighths of an inch, both ways", () => {
     // The dimension is quoted on the catalog page and printed in the sheet's
     // own description, so it has to be a number somebody can hold a ruler
@@ -137,6 +149,26 @@ describe("a page of cards", () => {
           box.width - block.columns * block.card.width,
           `${style} ${layout.up}-up`,
         ).toBeLessThan(block.columns * CARD_STEP);
+      }
+    }
+  });
+
+  it("wastes no more down the page than it does across it", () => {
+    // The same bound the other way up, and it is not the same test: a family
+    // that divided the available *height* by the column count would print short
+    // cards and pass every claim above, because nothing there reads the height
+    // against the page. The bookmark is out because its height is deliberately
+    // capped at seven and a half inches — see the test that pins the ceiling.
+    for (const style of STYLES) {
+      if (style === "bookmark") continue;
+      for (const layout of layoutsFor(style)) {
+        const sheet = buildSheet(config({ style, up: layout.up }), 1);
+        const block = cardsOf(sheet);
+        const box = printedBlockBox(sheet);
+        expect(
+          box.height - block.rows * block.card.height,
+          `${style} ${layout.up}-up`,
+        ).toBeLessThan(block.rows * CARD_STEP);
       }
     }
   });

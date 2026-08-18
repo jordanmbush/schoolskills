@@ -38,6 +38,7 @@ import type {
   Sheet,
   SheetOptions,
   TableCell,
+  TableColumn,
 } from "../types";
 
 import { copyworkSource } from "../writing/copywork";
@@ -47,6 +48,7 @@ import {
   tableColumns,
   tableShape,
   type ColumnShare,
+  type TableShape,
 } from "./table";
 
 /* ── The calendar's arithmetic ────────────────────────────────────────────
@@ -340,7 +342,7 @@ function wantedRows(config: PlannerConfig): number {
     case "calendar":
       return monthGrid(config).rows;
     case "week":
-      return 7;
+      return weekDays(config).length;
     case "verse-week":
       return VERSE_ROWS.length;
     default:
@@ -348,6 +350,39 @@ function wantedRows(config: PlannerConfig): number {
         labelsOf(config).length,
         whole(config.rows, PLANNER_ROWS.fallback, 1, PLANNER_ROWS.max),
       );
+  }
+}
+
+/**
+ * And how many it cannot print fewer of.
+ *
+ * Three of the five have a row count that is arithmetic rather than a
+ * preference: a dated month has the rows the month has, a week has seven days,
+ * and the verse chart counts three things. A chore chart's ten rows are a
+ * request — a family with four jobs and a growing list wants a short chart —
+ * so the two charts are absent here and take whatever fits.
+ *
+ * What it buys is a sheet that refuses rather than one that lies. `tableShape`
+ * caps the rows at what the page holds, and the row labels are then cut to
+ * match, so without this a weekly planner at a large type size prints Sunday to
+ * Thursday under a heading that says the week, and a dated May prints up to the
+ * twenty-third — both of which look finished on screen and are found on the
+ * wall. `cardGrid` refuses a card too small to cut for exactly this reason, and
+ * `formBlocks` returns no block rather than half a form.
+ *
+ * An *undated* calendar is not in the list, which is the same distinction the
+ * module header draws: five rows or six is what a parent asked for there, and
+ * four is a smaller chart rather than a wrong one. The description says which.
+ */
+function fixedRows(config: PlannerConfig): number | undefined {
+  switch (config.style) {
+    case "calendar":
+      return monthOf(config) ? monthGrid(config).rows : undefined;
+    case "week":
+    case "verse-week":
+      return wantedRows(config);
+    default:
+      return undefined;
   }
 }
 
@@ -419,9 +454,15 @@ export type VerseFit = { ems: number; height: Mil };
  * A search rather than algebra, and it is worth saying why the algebra is not
  * obvious: the size decides how many lines the verse wraps onto *and* how tall
  * each of those lines is, so the height goes up with the square of it. Walking
- * down in twentieths is a couple of dozen divisions, is exact at every step,
- * and is the same answer on every machine — which the closed form, with a square
- * root in it, would not be.
+ * down in twentieths is a couple of dozen divisions and lands on the same
+ * number on every machine — which the closed form, with a square root in it,
+ * would not.
+ *
+ * It is not *exact*: repeated `ems -= 0.05` accumulates the usual binary
+ * fraction drift, which is why the loop cannot be trusted to reach
+ * `MIN_VERSE_EMS` on its nose and why the fallback below exists. Deterministic
+ * is the claim that is load-bearing here, and IEEE-754 arithmetic is the reason
+ * it holds: every machine drifts by the same amount in the same direction.
  *
  * The alternative was a fixed size and a cap on the reservation, and that is
  * what shipped first. It is wrong in the way this whole shelf is wrong when it
@@ -508,9 +549,30 @@ const plannerBox = (config: PlannerConfig): Box => {
 /** Nothing on this shelf withholds anything — see `formKeyed`. */
 export const plannerKeyed = (): boolean => false;
 
-function plannerBlocks(config: PlannerConfig, box: Box): Block[] {
-  const verse = config.style === "verse-week" ? verseOf(config) : undefined;
-  const verseText = verse?.text.replaceAll("\n", " ").trim() ?? "";
+export type PlannerFit = {
+  columns: TableColumn[];
+  shape: TableShape;
+  /** The verse and the size it fitted at, on the one style that has one. */
+  verse?: { text: string; title?: string; fit: VerseFit };
+  /** Whether the page held the rows the style has to have — see `fixedRows`. */
+  fits: boolean;
+};
+
+/**
+ * The table this page can actually hold, and whether that is the table the
+ * style needs.
+ *
+ * One function because the blocks and the description must not work it out
+ * separately. They used to: the blocks were built off `tableShape`, which caps
+ * the rows at what fits, and the line naming the sheet was written off
+ * `monthGrid`, which says what the month wants — so a chart with four rows on
+ * it was described as "31 days over 6 rows". A page that quotes a number is
+ * quoting the paper under it (§11), and the only way to keep that true is for
+ * there to be one answer.
+ */
+export function plannerFit(config: PlannerConfig, box: Box): PlannerFit {
+  const source = config.style === "verse-week" ? verseOf(config) : undefined;
+  const verseText = source?.text.replaceAll("\n", " ").trim() ?? "";
 
   // The verse takes its height out of the page before the table is fitted, and
   // the gap between the two blocks is charged for as well — `.sheet__blocks` is
@@ -538,12 +600,36 @@ function plannerBlocks(config: PlannerConfig, box: Box): Block[] {
   const head = fit ? fit.height + BLOCK_GAP : 0;
   const room = { ...box, height: Math.max(0, box.height - head) };
 
-  const shares = columnShares(config, room);
-  const columns = tableColumns(shares, room.width);
   const shape = tableShape(room, config.fontPt, wantedRows(config), true);
+  const need = fixedRows(config);
+
+  return {
+    columns: tableColumns(columnShares(config, room), room.width),
+    shape,
+    ...(fit
+      ? {
+          verse: {
+            text: verseText,
+            ...(source?.title ? { title: source.title } : {}),
+            fit,
+          },
+        }
+      : {}),
+    fits: need === undefined || shape.rows >= need,
+  };
+}
+
+function plannerBlocks(config: PlannerConfig, box: Box): Block[] {
+  const held = plannerFit(config, box);
+  // Nothing at all rather than most of a week — see `fixedRows`. The header and
+  // the footer still print, exactly as they do on a page of cards too small to
+  // cut, so what comes out of the printer is honestly blank.
+  if (!held.fits) return [];
+
+  const { columns, shape, verse } = held;
 
   return [
-    ...(verseText === ""
+    ...(verse === undefined
       ? []
       : [
           {
@@ -555,14 +641,14 @@ function plannerBlocks(config: PlannerConfig, box: Box): Block[] {
             // there is no box to cut round.
             cards: [
               {
-                big: [{ text: verseText }],
-                ...(verse?.title ? { small: [{ text: verse.title }] } : {}),
+                big: [{ text: verse.text }],
+                ...(verse.title ? { small: [{ text: verse.title }] } : {}),
               },
             ],
             // The size the page could actually hold, not the size the family
             // would like. A block whose declared height and drawn height
             // disagree is the whole failure this shelf is guarding against.
-            bigEms: fit?.ems ?? VERSE_EMS,
+            bigEms: verse.fit.ems,
             boxed: false,
           },
         ]),
@@ -603,28 +689,42 @@ export function buildPlannerSheet(config: PlannerConfig, seed: number): Sheet {
   };
 }
 
-/** One line naming the sheet, in the words a parent says out loud. */
+/**
+ * One line naming the sheet, in the words a parent says out loud.
+ *
+ * Every number in it comes off `plannerFit` — the same call that built the
+ * blocks — so the line describes the paper rather than the request. Where the
+ * paper could not hold the style at all it says so, which is the refusal
+ * `describeCards` makes in the same words.
+ */
 export function describePlanner(config: PlannerConfig): string {
-  const box = plannerBox(config);
+  const held = plannerFit(config, plannerBox(config));
+  const name = own(TITLE, config.style, TITLE.calendar);
+  const days = weekDays(config).length;
+
   switch (config.style) {
     case "calendar": {
       const grid = monthGrid(config);
-      return grid.month
-        ? `${MONTH_NAMES[grid.month.month - 1]} ${grid.month.year}, ${grid.days} days over ${grid.rows} rows`
-        : `Blank calendar, seven columns and ${grid.rows} rows`;
+      if (!grid.month)
+        return `Blank calendar, ${days} columns and ${held.shape.rows} rows`;
+      const month = `${MONTH_NAMES[grid.month.month - 1]} ${grid.month.year}`;
+      return held.fits
+        ? `${month}, ${grid.days} days over ${held.shape.rows} rows`
+        : `${month} — too small to print the whole month on this paper`;
     }
     case "week":
-      return `Weekly planner, seven days and ${columnShares(config, box).length - 1} columns a day`;
+      return held.fits
+        ? `${name}, ${days} days and ${held.columns.length - 1} columns a day`
+        : `${name} — too small for a week on this paper`;
     case "verse-week": {
+      if (!held.fits) return `${name} — too small for a week on this paper`;
       const verse = verseOf(config);
       return verse.title
         ? `Verse of the week: ${verse.title}`
         : "Verse of the week, with the verse you paste in";
     }
-    default: {
-      const rows = tableShape(box, config.fontPt, wantedRows(config), true);
-      return `${own(TITLE, config.style, TITLE.chores)}, ${rows.rows} rows across the week`;
-    }
+    default:
+      return `${own(TITLE, config.style, TITLE.chores)}, ${held.shape.rows} rows across the week`;
   }
 }
 

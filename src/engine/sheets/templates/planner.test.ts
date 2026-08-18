@@ -141,11 +141,17 @@ describe("the calendar's arithmetic", () => {
   });
 
   it("counts the days of every month", () => {
-    for (let month = 1; month <= 12; month++) {
-      // The last day of a month is the day before the first of the next, which
-      // `Date` will work out for us — and it is not how `daysInMonth` does it.
-      const last = new Date(2027, month, 0).getDate();
-      expect(daysInMonth(2027, month)).toBe(last);
+    // Across a leap year and the three around it, because 2027 alone is a
+    // non-leap year and February is the only month whose length is arguable —
+    // a cross-check that never sees a leap February is checking eleven months.
+    for (let year = 2024; year <= 2028; year++) {
+      for (let month = 1; month <= 12; month++) {
+        // The last day of a month is the day before the first of the next,
+        // which `Date` will work out for us — and it is not how `daysInMonth`
+        // does it.
+        const last = new Date(year, month, 0).getDate();
+        expect(daysInMonth(year, month), `${year}-${month}`).toBe(last);
+      }
     }
   });
 });
@@ -374,29 +380,83 @@ describe("a verse of the week", () => {
 /* ── The promises every family makes ───────────────────────────────────── */
 
 describe("the planner family", () => {
-  it("closes the page at every size, on every stock", () => {
-    for (const style of STYLES) {
-      for (const size of ["letter", "a4", "legal"] as PaperSize[]) {
-        for (const margin of Object.keys(MARGINS) as MarginSize[]) {
-          for (const fontPt of [8, 12, 18, 36]) {
-            const sheet = buildSheet(
-              config({
+  /**
+   * Every combination the page panel actually offers: three stocks, four
+   * margins, four sizes and — the one this sweep was missing — both
+   * orientations. Landscape is where a Letter page loses two and a half inches
+   * of height, which is exactly where a chart runs out of rows.
+   */
+  const everyPage = function* () {
+    for (const style of STYLES)
+      for (const size of ["letter", "a4", "legal"] as PaperSize[])
+        for (const margin of Object.keys(MARGINS) as MarginSize[])
+          for (const orientation of ["portrait", "landscape"] as const)
+            for (const fontPt of [8, 12, 18, 36])
+              yield {
                 style,
-                fontPt,
-                paper: { size, orientation: "portrait", margin },
-                ...(style === "verse-week"
-                  ? { passage: "for-god-so-loved-the-world" }
-                  : {}),
-              }),
-              1,
-            );
-            expect(
-              used(sheet),
-              `${style} at ${fontPt}pt on ${size}/${margin}`,
-            ).toBeLessThanOrEqual(printedBlockBox(sheet).height);
-          }
-        }
+                where: `${style} at ${fontPt}pt on ${size}/${margin}/${orientation}`,
+                built: config({
+                  style,
+                  fontPt,
+                  paper: { size, orientation, margin },
+                  ...(style === "verse-week"
+                    ? { passage: "for-god-so-loved-the-world" }
+                    : {}),
+                  ...(style === "calendar" ? { year: 2026, month: 5 } : {}),
+                }),
+              };
+  };
+
+  it("closes the page at every size, on every stock", () => {
+    for (const { where, built } of everyPage()) {
+      const sheet = buildSheet(built, 1);
+      expect(used(sheet), where).toBeLessThanOrEqual(
+        printedBlockBox(sheet).height,
+      );
+    }
+  });
+
+  it("prints the whole week, or refuses the sheet — never part of one", () => {
+    // The rows a calendar, a planner and a verse chart need are arithmetic
+    // rather than a preference, and `tableShape` caps them at what fits. Left
+    // there, a Letter landscape at 36pt printed Sunday to Thursday under a
+    // heading that says the week, and a May whose last eight dates were not on
+    // the paper: sheets that look finished and are found on the wall.
+    for (const { style, where, built } of everyPage()) {
+      const sheet = buildSheet(built, 1);
+      const table = sheet.blocks.find((block) => block.kind === "table");
+      if (!table) {
+        // A refusal is honest only if it is total: half a chart with the verse
+        // still over it would be the same lie with a nicer heading.
+        expect(sheet.blocks, where).toHaveLength(0);
+        continue;
       }
+      if (style === "week") expect(table.rows, where).toBe(7);
+      if (style === "verse-week") expect(table.rows, where).toBe(3);
+      if (style === "calendar")
+        expect(table.rows, where).toBe(monthGrid(built).rows);
+    }
+  });
+
+  it("never says the sheet holds more than it does", () => {
+    // The line naming a sheet is what the catalog page and the record book both
+    // quote, so it has to come off the same fit the blocks came off. It did
+    // not: a chart with four rows described itself as "31 days over 6 rows".
+    for (const { style, where, built } of everyPage()) {
+      const sheet = buildSheet(built, 1);
+      const table = sheet.blocks.find((block) => block.kind === "table");
+      const said = describeSheet(built);
+      if (!table) {
+        expect(said, where).toMatch(/too small/);
+        continue;
+      }
+      const quoted = /(\d+) rows/.exec(said);
+      if (quoted)
+        expect(Number(quoted[1]), `${where}: ${said}`).toBe(table.rows);
+      if (style === "week")
+        expect(said, where).toBe(
+          `Weekly planner, 7 days and ${table.columns.length - 1} columns a day`,
+        );
     }
   });
 

@@ -426,3 +426,29 @@ describe("the pages themselves", () => {
     expect(html).not.toContain("astro-island");
   });
 });
+
+describe("the sitemap", () => {
+  /*
+   * A URL missing from the sitemap is the failure nobody notices — nothing
+   * breaks, the page is simply never submitted. `scripts/sitemap-guard.mjs`
+   * audits the world-level routes and not the catalog slugs, so twenty-two of
+   * them were covered by nothing. Skipped when there is no `dist/`, exactly as
+   * the other catalogs' are; CI builds before it runs the suite.
+   */
+  it("carries every template slug and the hub", () => {
+    const file = `${ROOT}/dist/sitemap-0.xml`;
+    if (!existsSync(file)) return; // `npm run build` hasn't run yet.
+
+    const xml = readFileSync(file, "utf8");
+    const found = new Set(
+      [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) =>
+        new URL(match[1]).pathname.replace(/\/$/, ""),
+      ),
+    );
+
+    expect(found.has("/printables/templates")).toBe(true);
+    for (const sheet of TEMPLATE_SHEETS) {
+      expect(found.has(pathFor(sheet)), sheet.slug).toBe(true);
+    }
+  });
+});

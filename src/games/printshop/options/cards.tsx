@@ -18,6 +18,7 @@ import { Checkbox, Field, Input } from "@/components/ui/kit";
 import { canFold, layoutsFor } from "@/engine/sheets/templates/cards";
 import { MAX_TITLE } from "@/engine/sheets/share";
 import type { CardStyle, CardsConfig } from "@/engine/sheets/types";
+import { splitWords } from "@/services/decks";
 
 import { PassageControls } from "./passages";
 import { Choice, WordList, opt, type PanelProps } from "./parts";
@@ -75,15 +76,13 @@ export function CardsPanel({ config, set }: PanelProps<CardsConfig>) {
           // second copy of the list would be the one the sheet was not built
           // from. Leaving it empty is what "blank flashcards" means.
           text={(config.words ?? []).join("\n")}
-          onChange={(text) =>
-            set({
-              words: text
-                .split(/[\n,;\t]+/)
-                .map((word) => word.trim())
-                .filter((word) => word !== ""),
-            })
-          }
-          hint="One a line. Leave it empty for blank cards."
+          // `splitWords` rather than `parseWords`, and the difference is the
+          // dedupe: a deck asks one question of each word, and a page of cards
+          // prints one card per line somebody typed. Two children called Sam
+          // need two name tags. What is *not* forked is the splitting rule —
+          // see the note on `splitWords`.
+          onChange={(text) => set({ words: splitWords(text) })}
+          hint="One a line — repeats get a card each. Leave it empty for blank cards."
         />
       )}
 

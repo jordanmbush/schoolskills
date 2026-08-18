@@ -3,7 +3,7 @@ import { points } from "@/engine/sheets/paper";
 import type { Mil, TableCell, TableColumn } from "@/engine/sheets/types";
 
 import { fitText } from "../text";
-import { HAIRLINE, HEAVY, RULE, inch } from "../units";
+import { HAIRLINE, HEAVY, RULE, inch, inside } from "../units";
 import type { BlockProps } from "./block";
 
 /** The share of the body size a heading and a corner numeral are set at. */
@@ -46,16 +46,27 @@ export function Table({ block, metrics }: BlockProps<"table">) {
   if (width <= 0 || height <= 0) return null;
 
   const face = faceOf(metrics.font);
-  const narrowest = columns.reduce(
-    (least, column) => Math.min(least, column.width),
-    columns[0].width,
-  );
-  const headSize = fitText(
-    columns.map((column) => column.label),
-    narrowest,
+
+  // One size for every heading and it is the smallest any of them needs — but
+  // measured **column by column**, the way `Form.tsx` measures a field. A
+  // table's columns are deliberately unequal; that is what `TableColumn.width`
+  // is for. Handing `fitText` one width for every label measures the longest
+  // heading against the narrowest column and shrinks the whole row to a size no
+  // column actually needs — which set a behaviour chart's headings at under
+  // four points beside a twelve-point body.
+  const headSize = columns.reduce(
+    (smallest, column) =>
+      Math.min(
+        smallest,
+        fitText(
+          [column.label],
+          column.width,
+          points(metrics.fontPt * HEAD_EM),
+          face,
+          FILL,
+        ),
+      ),
     points(metrics.fontPt * HEAD_EM),
-    face,
-    FILL,
   );
   const cellSize = points(metrics.fontPt);
   const pad = Math.round(row * PAD);
@@ -67,6 +78,22 @@ export function Table({ block, metrics }: BlockProps<"table">) {
     (at, column) => [...at, at[at.length - 1] + column.width],
     [0],
   );
+
+  // Every horizontal boundary, top edge included. `top` is where the *body*
+  // starts, which on a table with a heading is the bottom of the heading row
+  // and not the top of the table — so the first rule is `0` rather than `top`,
+  // and the rest hang off `top` one row at a time. Counting from `top` alone
+  // drew a table with a left, a right and a bottom and no top: the heading row
+  // printed open at the very edge of the paper, which reads as a page that has
+  // been cropped. With no heading `top` is zero and this is the same list.
+  //
+  // The boundary at `top` itself is deliberately absent: the heavier `--axis`
+  // rule below is already there, and a hairline under it prints as one thicker
+  // line whose weight nothing chose.
+  const rules: Mil[] = [
+    0,
+    ...Array.from({ length: rows }, (_, index) => top + (index + 1) * row),
+  ];
 
   return (
     <svg
@@ -84,27 +111,24 @@ export function Table({ block, metrics }: BlockProps<"table">) {
         <line
           className="sheet__rule sheet__rule--grid"
           key={`v${index}`}
-          x1={inside(x, width)}
-          x2={inside(x, width)}
+          x1={inside(x, width, HAIRLINE)}
+          x2={inside(x, width, HAIRLINE)}
           y1={0}
           y2={height}
           strokeWidth={HAIRLINE}
         />
       ))}
-      {Array.from({ length: rows + 1 }, (_, index) => {
-        const y = top + index * row;
-        return (
-          <line
-            className="sheet__rule sheet__rule--grid"
-            key={`h${index}`}
-            x1={0}
-            x2={width}
-            y1={inside(y, height)}
-            y2={inside(y, height)}
-            strokeWidth={HAIRLINE}
-          />
-        );
-      })}
+      {rules.map((y, index) => (
+        <line
+          className="sheet__rule sheet__rule--grid"
+          key={`h${index}`}
+          x1={0}
+          x2={width}
+          y1={inside(y, height, HAIRLINE)}
+          y2={inside(y, height, HAIRLINE)}
+          strokeWidth={HAIRLINE}
+        />
+      ))}
 
       {/* The rule under the headings, heavier than the ruling it crosses: it is
           the line between what is printed and what is written, and a reader
@@ -139,8 +163,8 @@ export function Table({ block, metrics }: BlockProps<"table">) {
         <g className="sheet__spine">
           <line
             className="sheet__rule sheet__rule--axis"
-            x1={inside(edges[spine], width)}
-            x2={inside(edges[spine], width)}
+            x1={inside(edges[spine], width, HEAVY)}
+            x2={inside(edges[spine], width, HEAVY)}
             y1={top}
             y2={height}
             strokeWidth={HEAVY}
@@ -259,14 +283,3 @@ function Cell({
     </>
   );
 }
-
-/**
- * A stroke on the very edge of a viewBox, moved half its width inside it.
- *
- * An `<svg>` clips to its box, so a hairline drawn at x=0 loses the outer half
- * of itself and prints lighter than the identical rule two columns along. Half
- * a hairline is a fortieth of a millimetre and the difference is plainly
- * visible, because the eye compares it with the rule beside it.
- */
-const inside = (at: Mil, extent: Mil): Mil =>
-  at <= 0 ? HAIRLINE / 2 : at >= extent ? extent - HAIRLINE / 2 : at;

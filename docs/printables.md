@@ -671,6 +671,16 @@ room_: capping the reservation does not make the block smaller, it moves the
 overflow somewhere nobody looks, so the size is searched down until the words fit
 and the week always keeps a heading row and a line to write on.
 
+**Dropping a row is only honest where a row is a request.** It is on a chore
+chart — four jobs and a growing list is what a family with four jobs wants — and
+it is not on the three sheets whose row count is arithmetic: a dated month has
+the rows the month has, a week has seven days, and the verse chart counts three
+things. Those refuse the sheet rather than print part of one, which is what
+`cardGrid` already did for a card too small to cut, and the line naming the
+sheet is computed off the same fit the blocks were, so a chart with four rows
+can no longer describe itself as six. Reachable at 36pt on a landscape page,
+invisible on screen, and found on the wall.
+
 Scripture is woven through here exactly as §12 asks: memory-verse cards and
 Scripture bookmarks are the card family with a passage on it, resolved through
 the same `copyworkSource` door as copywork, and the verse-of-the-week chart is

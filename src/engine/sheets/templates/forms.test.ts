@@ -193,6 +193,27 @@ describe("a form", () => {
       }
     }
   });
+
+  it("draws nothing where not one question fits, and says as much", () => {
+    // Inside the shipped bounds: 36pt is `FONT_PT.max`, landscape and wide
+    // margins are both on the page panel, and the instruction is a textarea a
+    // parent types into. The block is right to be absent — the honest answer to
+    // that config is a header, a footer and blank paper — but the line naming
+    // the sheet used to read "0 things to fill in over 0 lines", which names a
+    // form that is not there. `describeCards` refuses in the same words when a
+    // card comes out too small to cut.
+    const tiny = config({
+      style: "book-report",
+      fontPt: 36,
+      paper: { size: "letter", orientation: "landscape", margin: "wide" },
+      instructions:
+        "Write down everything you noticed today, in as much detail as you can manage, and then read it back to somebody else before you put your pencil down.",
+    });
+    expect(buildSheet(tiny, 1).blocks).toHaveLength(0);
+    expect(describeSheet(tiny)).toBe(
+      "Book report — no room for a question at this size",
+    );
+  });
 });
 
 /* ── The two lists ─────────────────────────────────────────────────────── */
