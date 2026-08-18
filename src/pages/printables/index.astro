@@ -35,6 +35,8 @@ import {
   templateShelf,
 } from "./_templates";
 import HubLinks from "./_HubLinks.astro";
+import Find from "@/games/printshop/Find";
+import "@/styles/search.css";
 
 /**
  * The Print Shop's front door.
@@ -61,6 +63,15 @@ import HubLinks from "./_HubLinks.astro";
  * shelf, which is the one with no questions on it at all, and the paperwork —
  * forms, planners, cards and nets — which is the one that is supposed to be
  * empty and is the more useful for it.
+ *
+ * **The search is an island on top of the page, never instead of it.** Every
+ * sheet the search can reach is listed below it in prerendered HTML, and the
+ * two ways of browsing them — a shelf per subject, a page per school year — are
+ * their own crawlable pages. So the whole catalog works with JavaScript turned
+ * off, a crawler reads the page that was written to be read, and the search box
+ * is the shortcut a parent gets for having a browser. `client:only` is what
+ * guarantees it: there is no server-rendered search field to sit there looking
+ * live and doing nothing.
  */
 const title = "Free printable worksheets — The Print Shop | School Skills";
 const description =
@@ -108,6 +119,19 @@ const paperwork = templateShelf();
     </p>
     <p class="hero__note">Free &middot; no account &middot; no download</p>
   </header>
+
+  {
+    /*
+      client:only for the reason the builder is, arrived at from the opposite
+      end: there is nothing here worth prerendering, and something worth NOT
+      prerendering. A search field in the static HTML would be a control that
+      looks live to a visitor with no JavaScript and takes a keystroke without
+      answering — and everything it could have shown them is already on this
+      page. The index it reads is fetched, so none of those bytes are in the
+      HTML a parent downloads before they have asked for anything.
+    */
+  }
+  <Find client:only="react" />
 
   {
     /*
@@ -382,9 +406,9 @@ const paperwork = templateShelf();
         exists rather than what is planned. Paper, maths, handwriting, cursive,
         copywork, spelling, grammar, phonics, the blank references and the
         paperwork &mdash; logs, planners, certificates and cards &mdash; are all
-        open, and so are the two ways of browsing them: a shelf per subject, and
-        a page per school year from Pre-K to eighth grade. A search across the
-        lot is next.
+        open, and so are the three ways of finding a sheet among them: the
+        search at the top of this page, a shelf per subject, and a page per
+        school year from Pre-K to eighth grade.
       </p>
       <div class="prose">
         <p>

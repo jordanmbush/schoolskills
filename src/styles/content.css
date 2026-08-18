@@ -503,7 +503,13 @@
   background: color-mix(in oklab, var(--accent) 14%, transparent);
 }
 
-.stone[aria-current="page"] {
+/* Two ways of being the chosen one, and they look identical on purpose: a
+   stone that is a link says `aria-current` ("you are here"), and a stone that
+   is a filter chip on the Print Shop's search says `aria-pressed` ("this is
+   on"). They sit in rows under each other on /printables, so a reader who has
+   learned one has learned the other. */
+.stone[aria-current="page"],
+.stone[aria-pressed="true"] {
   border-color: var(--accent);
   background: color-mix(in oklab, var(--accent) 22%, transparent);
   color: var(--accent);

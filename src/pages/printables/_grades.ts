@@ -378,8 +378,16 @@ export function ageBand(ages: string): [number, number] {
   );
 }
 
-/** Whether a sheet's stated ages reach any part of this year. */
-const fits = (grade: Grade, sheet: ShelfSheet): boolean => {
+/**
+ * Whether a sheet's stated ages reach any part of this year.
+ *
+ * Exported because the search index answers the same question about the same
+ * sheets, and a second overlap test written in the file that builds the index
+ * is how a filter comes to disagree with the page it filters — the search would
+ * offer a sheet for third grade that the third-grade hub doesn't list, and
+ * neither would be wrong about anything except each other.
+ */
+export const reaches = (grade: Grade, sheet: ShelfSheet): boolean => {
   const [from, to] = ageBand(sheet.ages);
   return from <= grade.ages[1] && to >= grade.ages[0];
 };
@@ -394,7 +402,7 @@ const fits = (grade: Grade, sheet: ShelfSheet): boolean => {
 export function shelvesForGrade(grade: Grade): Shelf[] {
   return SHELVES.map((shelf) => ({
     ...shelf,
-    sheets: shelf.sheets.filter((sheet) => fits(grade, sheet)),
+    sheets: shelf.sheets.filter((sheet) => reaches(grade, sheet)),
   })).filter((shelf) => shelf.sheets.length > 0);
 }
 

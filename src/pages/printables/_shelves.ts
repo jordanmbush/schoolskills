@@ -13,15 +13,24 @@
  * which is ten chances to leave one out and no way to notice. Adding a shelf is
  * an entry here, and the grade pages list it without being edited.
  *
- * **The projection is deliberately thin.** A `ShelfSheet` is the four things a
+ * **The projection is deliberately thin.** A `ShelfSheet` is the six things a
  * cross-shelf listing actually reads — where it prints, what to call it, what
- * it teaches, and the ages the sheet's own page states — and nothing else.
- * Configs, seeds, leads, blurbs and notes stay in the catalog that owns them,
- * so this file cannot quietly become a second place a sheet is described, and a
- * field nobody reads cannot sit here documenting a contract nothing keeps.
+ * it teaches, the ages the sheet's own page states, what kind of page it is and
+ * which ruling it is on — and nothing else. Configs, seeds, leads, blurbs and
+ * notes stay in the catalog that owns them, so this file cannot quietly become
+ * a second place a sheet is described, and a field nobody reads cannot sit here
+ * documenting a contract nothing keeps.
+ *
+ * The last two arrived with the search index (§18 phase 7), and neither is a
+ * new judgement: both are read off the config the catalog already builds the
+ * sheet from, so a facet cannot say one thing while the paper under it says
+ * another.
  */
+import { typeOf, ruleOf, type SheetType } from "@/engine/sheets/search";
+import type { RuleStyle, SheetConfig } from "@/engine/sheets/types";
+
 import { BIBLE_SHEETS, hrefFor as bibleHref } from "./_bible";
-import { PAPER_SHEETS, STOCKS, stockHref } from "./_catalog";
+import { PAPER_SHEETS, STOCKS, paperConfig, stockHref } from "./_catalog";
 import { CHART_SHEETS, pathFor as chartPath } from "./_charts";
 import { CURSIVE_SHEETS, hrefFor as cursiveHref } from "./_cursive";
 import { GRAMMAR_SHEETS, pathFor as grammarPath } from "./_grammar";
@@ -69,6 +78,19 @@ export type ShelfSheet = {
    * why a shape it cannot read fails the build rather than emptying a page.
    */
   ages: string;
+  /**
+   * What kind of page it is — a worksheet, a reference, a form, and so on.
+   *
+   * The second axis the search box filters on, crossing the shelf rather than
+   * repeating it: tracing and copying a model is the same job on the
+   * handwriting, cursive, Bible and spelling shelves, and a parent looking for
+   * it is not looking for a subject. Folded from the config's family, so adding
+   * a family without saying what kind of page it makes fails type-checking —
+   * see `TYPE_OF` in `@/engine/sheets/search`.
+   */
+  type: SheetType;
+  /** The ruling it is printed on, on the two families that have one. */
+  rule?: RuleStyle;
 };
 
 export type Shelf = {
@@ -105,15 +127,26 @@ export type Shelf = {
 const letter = STOCKS[0];
 
 /**
+ * What a catalog entry has to state before it can be listed here.
+ *
+ * Exactly `ShelfSheet` minus the two fields this file works out for itself —
+ * where the sheet prints, which is the shelf's own route helper, and the two
+ * facets, which are read off the config. Widening `ShelfSheet` therefore
+ * widens this, and a field can't be required here that no listing goes on to
+ * read.
+ */
+type Listed = Omit<ShelfSheet, "href" | "type" | "rule"> & {
+  config: SheetConfig;
+};
+
+/**
  * The projection every shelf makes onto a listing.
  *
  * Generic over the fields it reads rather than over a sheet type: the ten
- * catalogs agree on these three field names and on nothing else, and this file
+ * catalogs agree on these four field names and on nothing else, and this file
  * has no business knowing what a `PaperSheet` has that a `MathsSheet` doesn't.
- * The constraint is exactly `ShelfSheet` minus `href`, so widening one widens
- * the other and a field can't be required here that no listing goes on to read.
  */
-const listing = <Sheet extends Omit<ShelfSheet, "href">>(
+const listing = <Sheet extends Listed>(
   sheets: Sheet[],
   href: (sheet: Sheet) => string,
 ): ShelfSheet[] =>
@@ -122,6 +155,8 @@ const listing = <Sheet extends Omit<ShelfSheet, "href">>(
     name: sheet.name,
     teaches: sheet.teaches,
     ages: sheet.ages,
+    type: typeOf(sheet.config),
+    rule: ruleOf(sheet.config),
   }));
 
 export const SHELVES: Shelf[] = [
@@ -225,8 +260,19 @@ export const SHELVES: Shelf[] = [
     all: "All the paper and rulings",
     blurb:
       "Ruled paper by the sheet: notebook rules, the five handwriting sizes, and squares, dots and triangles.",
-    sheets: listing(PAPER_SHEETS, (sheet) =>
-      stockHref("/printables", sheet.slug, letter),
+    /*
+      The one shelf whose entries state a ruling rather than a config, because
+      a `PaperConfig` *is* a ruling and nothing else — so the config is made
+      here, at the stock the front door lists. Which stock is immaterial to
+      both facets: a ⅝ rule is a ⅝ rule on Letter and on A4, which is the whole
+      reason each ruling comes on both.
+    */
+    sheets: listing(
+      PAPER_SHEETS.map((sheet) => ({
+        ...sheet,
+        config: paperConfig(sheet, letter.id),
+      })),
+      (sheet) => stockHref("/printables", sheet.slug, letter),
     ),
   },
 ];
