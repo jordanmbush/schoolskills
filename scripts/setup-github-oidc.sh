@@ -28,11 +28,14 @@
 #   4. The `AWS_DEPLOY_ROLE_ARN` repo VARIABLE (not a secret — role ARNs
 #      aren't sensitive) that deploy.yml reads.
 #
-# Scope note: this is a STATIC site — S3 + CloudFront + ACM and nothing else.
-# The allowlist is correspondingly small. ⚠️ Adding a component that reaches a
-# NEW AWS service means adding that service here and re-running. A local
-# `sst deploy` will NOT catch the gap, because the local profile is Admin —
-# the AccessDenied would surface for the first time in the production deploy.
+# Scope note: this is a STATIC site — S3 + CloudFront + ACM, plus a CloudWatch
+# dashboard to look at the traffic. The allowlist is correspondingly small.
+# ⚠️ Adding a component that reaches a NEW AWS service means adding that
+# service here and re-running. A local `sst deploy` will NOT catch the gap,
+# because the local profile is Admin — the AccessDenied surfaces for the first
+# time in the production deploy. That is not hypothetical: the traffic
+# dashboard was written, type-checked, validated against CloudWatch and merged
+# before anyone discovered the deploy role could not call PutDashboard.
 #
 # Requires admin credentials for the School Skills account.
 # Usage: bash scripts/setup-github-oidc.sh
@@ -49,8 +52,27 @@ REPO="$(gh repo view --json nameWithOwner --jq .nameWithOwner)"
 # another repo's trust. Both forms are trusted below so the role keeps working
 # whichever one GitHub presents; `sub` is matched with StringEquals against
 # exact strings, never a wildcard.
-REPO_ID="$(gh repo view --json id --jq .databaseId 2>/dev/null || gh api "repos/${REPO}" --jq .id)"
+# ⚠️ `gh repo view --json id` returns the GraphQL NODE id ("R_kgDO…"), not the
+# numeric database id, so `--jq .databaseId` yields an EMPTY string rather than
+# failing — which means a `||` fallback never fires. That silently produced
+# `repo:owner@34669268/schoolskills@:ref:refs/heads/main`, a trust policy that
+# applies cleanly and then denies every deploy with an error that names no
+# claim. Test for emptiness, not for exit status.
+REPO_ID="$(gh api "repos/${REPO}" --jq .id)"
 OWNER_ID="$(gh api "repos/${REPO}" --jq .owner.id)"
+
+# Both ids are interpolated into a `sub` matched with StringEquals, so a blank
+# or non-numeric value cannot fail loudly later — it just builds a subject that
+# nothing will ever present. Refuse to write the trust policy at all.
+for pair in "REPO_ID=${REPO_ID}" "OWNER_ID=${OWNER_ID}"; do
+  case "${pair#*=}" in
+    "" | *[!0-9]*)
+      echo "Refusing to write a trust policy: ${pair%%=*} is not numeric (\"${pair#*=}\")." >&2
+      echo "Without it the subject silently loses its id and every deploy is denied." >&2
+      exit 1
+      ;;
+  esac
+done
 REPO_IMMUTABLE="${REPO%%/*}@${OWNER_ID}/${REPO##*/}@${REPO_ID}"
 ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text)"
 ROLE_NAME="github-actions-schoolskills-deploy"
@@ -140,6 +162,11 @@ IAM_RESOURCE_PATTERNS="$(
 JSON
 )"
 
+# The cloudwatch entries are named actions rather than `cloudwatch:*` on
+# purpose: the only thing deployed here is one dashboard, and the wildcard
+# would also hand the deploy role every alarm and metric in the account.
+# Dashboard actions take no resource ARN, so "*" is the only resource they can
+# have — the narrowing has to happen on the action.
 DEPLOY_POLICY="$(
   cat <<JSON
 {
@@ -152,6 +179,10 @@ DEPLOY_POLICY="$(
         "acm:*",
         "cloudfront:*",
         "cloudfront-keyvaluestore:*",
+        "cloudwatch:DeleteDashboards",
+        "cloudwatch:GetDashboard",
+        "cloudwatch:ListDashboards",
+        "cloudwatch:PutDashboard",
         "lambda:*",
         "logs:*",
         "s3:*",
