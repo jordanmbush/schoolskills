@@ -75,6 +75,41 @@ function useIndex(): { index: SheetIndex | null; failed: boolean } {
 }
 
 /**
+ * Which of the three things the island can be doing.
+ *
+ * The box is typeable from the first paint and the index arrives after it, so
+ * "nothing matched" and "nothing has arrived yet" are different states that
+ * would otherwise render as the same sentence — and the wrong one is the one
+ * that costs. A parent on the slow phone this search exists for can out-type
+ * the fetch, and "0 sheets" for a shop that has their sheet reads as a shop
+ * that has nothing, which is the exact failure `useIndex` above says it is
+ * there to prevent.
+ */
+type Status = "loading" | "failed" | "ready";
+
+/**
+ * The line in the live region.
+ *
+ * A count is a claim about the catalog, so it is only made once the catalog is
+ * here. Before that the region says what is actually true — it is still
+ * loading — and after a failure it says nothing at all, because the note below
+ * has already said the catalog didn't load and a polite region would otherwise
+ * repeat that once per keystroke.
+ *
+ * Exported for the suite: this is the whole of the decision, and testing it as
+ * a function is cheaper and stricter than driving a `client:only` island.
+ */
+export function countNote(
+  status: Status,
+  narrowed: boolean,
+  hits: number,
+): string {
+  if (!narrowed || status === "failed") return "";
+  if (status === "loading") return "Still loading the catalog…";
+  return hits === 1 ? "1 sheet" : `${hits} sheets`;
+}
+
+/**
  * One facet, as a row of chips.
  *
  * The same `.stones` row the hub already sets its subjects and its ten years
@@ -150,6 +185,7 @@ export default function Find() {
     );
   }, [index, query]);
 
+  const status: Status = failed ? "failed" : index ? "ready" : "loading";
   const narrowed = !isIdle(query);
   const hits = index && narrowed ? findSheets(index, query) : [];
   const set = (part: Partial<Query>) => setQuery({ ...query, ...part });
@@ -215,11 +251,7 @@ export default function Find() {
       {/* Polite rather than assertive: the count changes on every keystroke,
           and an assertive region would interrupt the word being typed. */}
       <p className="find__count" aria-live="polite">
-        {narrowed
-          ? hits.length === 1
-            ? "1 sheet"
-            : `${hits.length} sheets`
-          : ""}
+        {countNote(status, narrowed, hits.length)}
       </p>
 
       {narrowed && hits.length > 0 && (
@@ -235,7 +267,11 @@ export default function Find() {
         </div>
       )}
 
-      {narrowed && hits.length === 0 && (
+      {/* Only once the catalog is here to be searched: an empty result before
+          then would be a sentence about a shop nobody has looked in yet, and on
+          the failure path it would sit directly under the note above and
+          contradict it. */}
+      {status === "ready" && narrowed && hits.length === 0 && (
         <p className="find__note">
           Nothing in the shop matches that. Try fewer words, or clear the rows
           &mdash; the whole catalog is set out below either way.

@@ -14,11 +14,12 @@ import { searchIndex } from "./_search";
  * `dist/printables/search-index.json`; nothing runs at request time, here or
  * anywhere else on this site.
  *
- * It is fetched by the island on the front door the first time a parent
- * actually reaches for the search, so the page itself carries none of these
- * bytes — see `Find.tsx`. `scripts/search-index-guard.mjs` reads the file back
- * off disk after the build and fails it if a single sheet in `dist/` is missing
- * from it.
+ * It is fetched by the island on the front door when that island mounts, which
+ * is after the page has loaded and painted, so the page itself carries none of
+ * these bytes — see `Find.tsx`, which argues there for why it is on mount and
+ * not on the first keystroke. `scripts/search-index-guard.mjs` reads the file
+ * back off disk after the build and fails it if a single sheet in `dist/` is
+ * missing from it.
  *
  * `JSON.stringify` without an indent, deliberately: it lands on a phone, and
  * pretty-printing a hundred and nineteen rows would add a fifth to it for the
