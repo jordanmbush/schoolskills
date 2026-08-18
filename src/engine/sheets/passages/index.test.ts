@@ -148,6 +148,25 @@ describe("the front door", () => {
     expect(passage("the-swing", "kjv")).toEqual(passage("the-swing"));
   });
 
+  it("still holds the two passages the site's own chrome quotes", () => {
+    // The footer's signature (`components/site/SiteFooter.astro`) and the
+    // verse under "Where it fits in a day" (`pages/index.astro`) both read
+    // through this door, and both render nothing when it answers `undefined`
+    // — by design, because a chrome element is not worth a failed build.
+    // Which means renaming either id would quietly drop a reference from
+    // every page on the site, and a verse from the home page, with the types,
+    // the build and the rest of this suite all green. This is what fails
+    // instead, and it names the two surfaces so the reason arrives with it.
+    expect(passage("the-day-of-small-things")?.title).toBe("Zechariah 4:10");
+
+    const band = passage("the-plans-of-the-diligent");
+    expect(band?.title).toBe("Proverbs 21:5");
+    // The home page prints this under the verse. A passage that arrived
+    // without it would be quoted on the front door saying nothing about where
+    // the words came from, which is the one condition §12 accepts.
+    expect(band?.credit).toBe(SCRIPTURE_CREDIT);
+  });
+
   it("groups by collection, and every collection has something in it", () => {
     for (const collection of PASSAGE_COLLECTIONS) {
       expect(passagesIn(collection.id).length, collection.id).toBeGreaterThan(
