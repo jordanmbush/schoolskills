@@ -51,6 +51,22 @@ const count = async (rows) => {
   return days.get("2026-08-18");
 };
 
+describe("an empty log directory", () => {
+  // The failure this is built from: logging was off for a week, the job ran
+  // twice over nothing and reported success both times. Silence there is
+  // indistinguishable from a quiet month, and it is not recoverable — the raw
+  // lines a fix would need have a 90-day clock on them.
+  it("is a hard failure, not a quiet month", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "rollup-empty-"));
+    await expect(tally(dir)).rejects.toThrow(/No \.gz log files/);
+  });
+
+  it("says what to check, since the cause is never in this repo", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "rollup-empty-"));
+    await expect(tally(dir)).rejects.toThrow(/DistributionConfig\.Logging/);
+  });
+});
+
 describe("isDocumentPath", () => {
   it.each([
     "/",

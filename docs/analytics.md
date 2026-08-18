@@ -58,7 +58,17 @@ without ceremony and cannot go up without editing that page in the same PR.
 no IP and no identifier, so the counts are what get kept — permanently, in this
 repo, at `analytics/counts.json`. `.github/workflows/analytics.yml` runs on the
 2nd of each month, reduces whatever is in the bucket to per-day totals, and
-commits the result.
+opens a PR with the result that merges itself once CI is green.
+
+It opens a PR rather than pushing because `develop` requires the CI check and
+a direct push from Actions carries none — the protected-branch hook declines
+it. If a rollup PR is ever sitting open, CI failed on it; the numbers are
+waiting, not lost.
+
+If the bucket is empty the job now **fails** rather than quietly counting
+nothing. CloudFront logs every request including crawlers, so zero files means
+delivery has stopped, never that nobody visited — and a job that succeeds over
+nothing cannot be monitored at all.
 
 So the numbers you can look back on are bounded by _that job having run_, not by
 the retention window. Retention only governs how far back a forgotten number can
