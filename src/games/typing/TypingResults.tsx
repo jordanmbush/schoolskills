@@ -3,7 +3,8 @@ import { usePlayer } from "@/components/state/HubContext";
 import { useRace } from "@/components/state/RaceContext";
 import TopBar from "@/components/TopBar";
 import { Button, Confetti } from "@/components/ui/kit";
-import { wordsPerMinute } from "@/engine/decks/typing";
+import { isTyping } from "@/engine/decks";
+import { levelCredit, wordsPerMinute } from "@/engine/decks/typing";
 import { clock, delta, percent } from "@/engine/format";
 import { cumulativeSplits, raceTimeMs } from "@/engine/records";
 import { randomSeed } from "@/engine/random";
@@ -44,6 +45,11 @@ export default function TypingResults() {
   const { session, ghost, personalRecord, previousBest, newBadges, bonuses } =
     outcome;
   const wpm = wordsPerMinute(session.cards, session.durationMs);
+  // Through the deck registry's own guard rather than reading `kind` here:
+  // narrowing the config union is `decks/index.ts`'s job and nowhere else's.
+  const credit = isTyping(session.config)
+    ? levelCredit(session.config.levelId)
+    : undefined;
   const accuracy =
     session.correct / Math.max(1, session.correct + session.incorrect);
   const previousWpm = previousBest
@@ -169,6 +175,9 @@ export default function TypingResults() {
         mySplits={cumulativeSplits(session)}
         ghostSplits={ghost ? cumulativeSplits(ghost.session) : null}
       />
+      {/* The splits list every word of the passage back, one to a row, so
+          this screen shows the text as surely as the race did. */}
+      {credit && <p className="passage__credit">{credit}</p>}
     </main>
   );
 }

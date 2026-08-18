@@ -950,6 +950,33 @@ places are nearly free:
 
 Neither is a phase-0 concern; both belong with the passage library in phase 3.
 
+**What shipped (PRINT31).** A fifth typing level — _Verses_, thirty-three of
+the library's verses from Psalms, Proverbs, the Gospels and the letters — and
+the whole shipped shelf in Word Jungle's picker rather than Dolch alone, which
+is a one-word change because PRINT23 authored the Bible lists as ordinary
+`WordList`s. Nothing was renamed and `configKey` is untouched, so every saved
+run still resolves and still races its own ghosts.
+
+Two rules picked the thirty-three, and the second was the surprise: no divine
+name, as above — and nothing but keys a plain keyboard has. The release sets
+quoted speech in curly quotation marks and typing marks **exactly**, so a verse
+carrying one would be unpassable rather than hard. That rules out the narrative
+and every quoted saying, and leaves the sayings themselves, which is the right
+shape for a level anyway.
+
+The verses are written out in `decks/typing.ts` rather than read through
+`passage()`, and that is the one place this epic paid for "authored once".
+Every island imports the deck registry, the print shop uses the whole library,
+and a module is assigned to a chunk whole — so an import of the library from
+that file moved all of it into the chunk the flash cards, the spelling mount
+and the record book load: 46KB of shared chunk became 222KB, measured on the
+way past. `typing.test.ts` pins every line to the library character for
+character instead, which is the arrangement `scripture.ts` already has with its
+release file. `SCRIPTURE_CREDIT` moved to a leaf module (`passages/credit.ts`)
+so a game can carry the credit without carrying the verses, and it is printed
+on all three screens that show the words: the setup that names the level, the
+race, and the results that list every word back.
+
 ---
 
 ## 13 · Phonics — and why it isn't called DISTAR

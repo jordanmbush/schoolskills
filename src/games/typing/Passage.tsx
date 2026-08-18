@@ -19,20 +19,23 @@ export function Passage({
   deck,
   results,
   entry,
+  credit,
 }: {
   deck: Card[];
   results: CardResult[];
   /** What's been typed of the current word. */
   entry: string;
+  /** What the words are quoted from, where the source asks to be named. */
+  credit?: string;
 }) {
   const at = results.length;
   const from = Math.max(0, at - BEHIND);
-  const window = deck.slice(from, at + AHEAD);
+  const visible = deck.slice(from, at + AHEAD);
 
   return (
     <section className="passage" aria-label="Passage to type">
       <p className="passage__text">
-        {window.map((card, offset) => {
+        {visible.map((card, offset) => {
           const i = from + offset;
           if (i < at) {
             const done = results[i];
@@ -79,6 +82,7 @@ export function Passage({
           );
         })}
       </p>
+      {credit && <p className="passage__credit">{credit}</p>}
     </section>
   );
 }

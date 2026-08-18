@@ -49,12 +49,11 @@
 import type { PassageCollection } from "./types";
 
 /**
- * The credit line. One constant, so the sheet footer and the catalog page can't
- * drift apart — required by nothing (a public-domain text needs no attribution)
- * and printed anyway, on every sheet and every page that shows one.
+ * The credit line, re-exported from the leaf module that holds it so this file
+ * still names its own attribution. It lives in `credit.ts` because the games
+ * need the line without needing the verses — see the note there.
  */
-export const SCRIPTURE_CREDIT =
-  "Scripture: World English Bible Updated (public domain) · worldenglish.bible";
+export { SCRIPTURE_CREDIT } from "./credit";
 
 /**
  * One curated entry: a contiguous run of verses in one chapter.
