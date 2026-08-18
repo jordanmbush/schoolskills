@@ -2,6 +2,7 @@
 import Content from "@/layouts/Content.astro";
 import AdSlot from "@/components/site/AdSlot.astro";
 import WorldMap from "@/components/site/WorldMap.astro";
+import { passage, passageText } from "@/engine/sheets/passages";
 
 /**
  * The overworld.
@@ -23,6 +24,26 @@ const title =
   "School Skills — free homeschool practice games for times tables, spelling and typing";
 const description =
   "Three free practice games for homeschool and after-school: times tables, sight words and touch typing. No account, no tracking, no personalised ads. A supplement to your lessons, not a curriculum.";
+
+/**
+ * The one verse on this page, and the band it sits in is why it is allowed to
+ * be here at all (docs/printables.md §12).
+ *
+ * "Where it fits in a day" already argues that short and frequent beats long
+ * and rare, and Proverbs 21:5 argues the same thing about the same work — so
+ * it reads as the section's own point stated older, rather than as a badge
+ * saying which team the site is on. That rule puts it here and keeps it out of
+ * the hero, the `#limits` columns and the ledger, which are the pitch, the
+ * scope and the privacy ledger and would each take a verse as a non sequitur.
+ * The title, the description and the jsonLd above are marketing surfaces and
+ * carry nothing of the sort, on this page or on any other.
+ *
+ * Read out of the passage library rather than typed here: the condition on the
+ * translation's name is that the text is not altered, and quoting it through
+ * the same door a copywork sheet quotes it from means the words are the
+ * release's own and the credit line travels with them.
+ */
+const verse = passage("the-plans-of-the-diligent");
 ---
 
 <Content
@@ -185,6 +206,21 @@ const description =
         </p>
       </div>
     </div>
+    {
+      verse && (
+        <figure class="verse">
+          {/* Nothing is added around the text and nothing is re-wrapped: the
+              passage is set as the release has it, the same as it would be on
+              a sheet. The reference and the credit go underneath, where a
+              source line belongs. */}
+          <blockquote class="verse__text">{passageText(verse)}</blockquote>
+          <figcaption class="verse__ref">
+            {verse.title}
+            {verse.credit && <span class="verse__credit">{verse.credit}</span>}
+          </figcaption>
+        </figure>
+      )
+    }
   </section>
 
   <section class="band band--inset">

@@ -2,12 +2,15 @@
 /**
  * The footer, and the site's internal-linking backbone.
  *
- * The twelve times-table pages are the main organic-search surface, and they
- * are listed here rather than only on the home page so every page links to
- * every one of them — which is the cheap half of making a set of pages
- * crawlable from any entry point. As a row of number chips it costs one line
- * of vertical space instead of twelve.
+ * The twelve times-table pages are the site's oldest organic-search surface,
+ * and they are listed here rather than only on the home page so every page
+ * links to every one of them — which is the cheap half of making a set of
+ * pages crawlable from any entry point. As a row of number chips it costs one
+ * line of vertical space instead of twelve. (The Print Shop's catalog is the
+ * larger surface now, and it links its own sheets from its own hubs, so a
+ * single link to its front door in the worlds column is all it wants here.)
  */
+import { passage } from "@/engine/sheets/passages";
 import { WORLDS } from "@/engine/worlds";
 
 const tables = Array.from({ length: 12 }, (_, i) => i + 1);
@@ -16,6 +19,21 @@ const tables = Array.from({ length: 12 }, (_, i) => i + 1);
 // and needs its own, or it's a page nothing points at. Only some worlds have
 // one, so this renders nothing when none do.
 const guides = WORLDS.flatMap((w) => (w.guide ? [w.guide] : []));
+
+/**
+ * The signature under the fine print — a reference, and deliberately not a
+ * verse (docs/printables.md §12).
+ *
+ * This is the author's own voice already ("Made for four kids, then shared"),
+ * which is the whole reason it is the one piece of chrome a reference belongs
+ * in: it reads as a signature rather than a banner, and it is on every page
+ * without being on any one page's pitch. Nothing is quoted, so nothing needs
+ * crediting — but the reference is still read out of the passage library
+ * rather than typed here, so the footer cannot name a passage the site does
+ * not actually hold. `passage()` answers `undefined` rather than throwing, and
+ * a footer that lost its signature is a footer, so this renders nothing.
+ */
+const signature = passage("the-day-of-small-things")?.title;
 ---
 
 <footer class="foot">
@@ -68,5 +86,6 @@ const guides = WORLDS.flatMap((w) => (w.guide ? [w.guide] : []));
     nowhere else &mdash; which also means clearing site data clears it, so
     there&rsquo;s a <strong>Back up progress</strong> button on the player screen
     that writes a file you keep.
+    {signature && <span class="foot__sign">{signature}</span>}
   </p>
 </footer>
