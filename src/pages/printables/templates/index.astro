@@ -2,6 +2,7 @@
 import Content from "@/layouts/Content.astro";
 import AdSlot from "@/components/site/AdSlot.astro";
 import { TEMPLATE_SHEETS, pathFor, templateShelf } from "../_templates";
+import HubLinks from "../_HubLinks.astro";
 
 /**
  * The forms-and-templates hub — a peer of `/printables/math`,
@@ -185,6 +186,8 @@ const groups = templateShelf();
       <a class="cta cta--quiet" href="/printables/lined-paper">Lined paper</a>
     </div>
   </section>
+
+  <HubLinks shelf="templates" />
 
   <section class="band band--tight wrap no-print">
     <h2 class="h2">Your child&rsquo;s name is not in the file</h2>

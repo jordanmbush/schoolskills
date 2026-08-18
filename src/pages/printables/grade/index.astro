@@ -1,0 +1,157 @@
+---
+import Content from "@/layouts/Content.astro";
+import AdSlot from "@/components/site/AdSlot.astro";
+import HubLinks from "../_HubLinks.astro";
+import { GRADES, gradeHref, sheetsForGrade } from "../_grades";
+
+/**
+ * The parent of the ten year pages — the second axis the Print Shop is
+ * browsable on, and the page that explains what a grade means here.
+ *
+ * It exists for two reasons and neither is decorative. A crawler that finds
+ * `/printables/grade/3rd-grade` will ask for `/printables/grade`, and a
+ * directory that 404s on a static host is a dead end rather than a redirect.
+ * And the ten pages each carry two sentences about how their ages were arrived
+ * at; this is where the argument is made once, at length, so those two
+ * sentences are a summary of something rather than the whole of it.
+ *
+ * The counts on it are computed, never typed. A hub whose prose says "twelve
+ * sheets" is one catalog edit away from lying to a reader who can see the list
+ * underneath, and this whole section is meant to survive shelves being added
+ * to it.
+ */
+const years = GRADES.map((grade) => ({
+  grade,
+  sheets: sheetsForGrade(grade).length,
+}));
+
+const title = "Printable worksheets by grade, Pre-K to 8th | School Skills";
+const description =
+  "Ten pages, one per school year: what a child that age can print, drawn from every shelf in the Print Shop at once. Free, no account, and nothing to download — and the ages come off each sheet rather than off a standard.";
+---
+
+<Content
+  title={title}
+  description={description}
+  world="paper"
+  jsonLd={{
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name: "Printable worksheets by grade",
+    description,
+    url: "https://schoolskills.app/printables/grade",
+    isAccessibleForFree: true,
+    inLanguage: "en",
+    hasPart: GRADES.map((grade) => ({
+      "@type": "CollectionPage",
+      name: grade.heading,
+      url: `https://schoolskills.app${gradeHref(grade)}`,
+      isAccessibleForFree: true,
+    })),
+  }}
+>
+  <header class="hero wrap">
+    <p class="hero__eyebrow">
+      <span class="hero__world">The Print Shop</span>
+      By grade
+    </p>
+    <h1 class="hero__title">Printables by school year</h1>
+    <p class="hero__lead">
+      Pre-K through eighth grade, a page each. A shelf answers &ldquo;what kind
+      of sheet is this&rdquo;; a year answers the question a parent actually
+      arrives with, which is what a six-year-old can be handed on a wet
+      Wednesday.
+    </p>
+    <p class="hero__note">Free &middot; no account &middot; no download</p>
+  </header>
+
+  <section class="band band--tight wrap">
+    <h2 class="h2">The ten years</h2>
+    <p class="h2__sub">
+      Each one lists every sheet in the shop whose own stated ages reach it
+      &mdash; maths, handwriting, cursive, spelling, grammar, phonics, Scripture
+      copywork, the blank references, the paperwork and the paper.
+    </p>
+    {
+      years.map(({ grade, sheets }) => (
+        <>
+          <h3 class="h2 h2--next">
+            <a href={gradeHref(grade)}>{grade.heading}</a>
+          </h3>
+          <p class="h2__sub">
+            Ages {grade.ages[0]} and {grade.ages[1]} &middot; {sheets} sheets
+          </p>
+          <div class="prose">
+            <p>{grade.lead}</p>
+          </div>
+        </>
+      ))
+    }
+  </section>
+
+  <div class="wrap"><AdSlot name="article" /></div>
+
+  <section class="band band--inset">
+    <div class="wrap">
+      <h2 class="h2">Where the grade comes from</h2>
+      <p class="h2__sub">
+        Off the sheet, and nowhere else. There is no standard behind these pages
+        and none is implied.
+      </p>
+      <div class="prose">
+        <p>
+          Every sheet in the Print Shop states the ages it was drawn for, on its
+          own page &mdash; <em>Ages 8&ndash;11</em> on the division worksheet, <em
+            >Ages 4&ndash;6</em
+          > on the sound cards. That judgement is made once, beside the sheet, by
+          whoever chose the numbers that go on it. A year page here collects the sheets
+          whose stated ages reach the ages most children are in that year, and that
+          is the whole of the mechanism.
+        </p>
+        <p>
+          It is deliberately the weakest claim that is still useful. A
+          grade-level label invented by a worksheet site is a guess dressed up
+          as a standard: curriculum differs by state, by country and by family,
+          and the parent reading it can already see their own child. So a sheet
+          for nine to twelve is listed on the fourth-grade page and on the
+          seventh-grade page both, because a nine-year-old and a twelve-year-old
+          are each in one of them, and withholding it from either to make the
+          categories look tidy would help nobody.
+        </p>
+        <p>
+          Two years to a page, rather than one age. A first-grader is six in the
+          autumn and seven by the spring, and a page that only reached the
+          younger of those would drop half of what a parent needs by February.
+          If your child is working a year either side of their class, print from
+          the neighbouring page &mdash; nothing here will disagree with you
+          about which one that is.
+        </p>
+        <p>
+          Every shelf is listed the same way, Scripture included. A copywork
+          sheet with a psalm on it is a copywork sheet: it appears under its own
+          heading in the year its ages say, beside the maths and the reading
+          logs, rather than in a section off to one side.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <HubLinks />
+
+  <section class="band band--tight wrap">
+    <h2 class="h2">Your child&rsquo;s name is not in the file</h2>
+    <div class="prose">
+      <p>
+        Nothing on these pages knows anything about your child &mdash; not their
+        age, not their year, and certainly not their name, which is printed as a
+        blank line and filled in with a pencil. Choosing a year here is choosing
+        which list to look at, and it is not recorded anywhere &mdash; see <a
+          href="/privacy">what we don&rsquo;t collect</a
+        >.
+      </p>
+    </div>
+    <div class="hero__actions">
+      <a class="cta cta--quiet" href="/printables">Back to The Print Shop</a>
+    </div>
+  </section>
+</Content>

@@ -10,6 +10,7 @@ import {
   cursiveShelf,
   hrefFor,
 } from "../_cursive";
+import HubLinks from "../_HubLinks.astro";
 
 /**
  * The cursive subject hub — the third of the §8 names to exist, beside paper,
@@ -264,4 +265,5 @@ const joins = CURSIVE_SHEETS.find((sheet) => sheet.config.style === "joins")!;
       <a class="cta" href="/printables/make">Open the sheet builder</a>
     </div>
   </section>
+  <HubLinks shelf="cursive" />
 </Content>

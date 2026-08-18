@@ -2,6 +2,7 @@
 import Content from "@/layouts/Content.astro";
 import AdSlot from "@/components/site/AdSlot.astro";
 import { GRAMMAR_SHEETS, grammarShelf, pathFor } from "../_grammar";
+import HubLinks from "../_HubLinks.astro";
 
 /**
  * The grammar subject hub — a peer of `/printables/spelling`,
@@ -160,6 +161,8 @@ const groups = grammarShelf();
       >
     </div>
   </section>
+
+  <HubLinks shelf="grammar" />
 
   <section class="band band--tight wrap">
     <h2 class="h2">Your child&rsquo;s name is not in the file</h2>

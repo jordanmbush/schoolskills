@@ -2,11 +2,14 @@
 import Content from "@/layouts/Content.astro";
 import AdSlot from "@/components/site/AdSlot.astro";
 import { CHART_SHEETS, chartShelf, pathFor } from "../_charts";
+import HubLinks from "../_HubLinks.astro";
 
 /**
- * The charts-and-grids hub — a peer of `/printables/math`,
- * `/printables/spelling`, `/printables/grammar`, `/printables/phonics`,
- * `/printables/handwriting`, `/printables/cursive` and `/printables/bible`.
+ * The charts-and-grids hub — a peer of the other eight shelves, which are
+ * listed in `_shelves.ts` and printed at the foot of this page from it. They
+ * were named here one by one until the paperwork shelf landed and this sentence
+ * was quietly wrong about how many there are; a registry cannot go stale that
+ * way, so it is the registry that says who the peers are.
  *
  * A listing rather than a sheet, like the other hubs, and that is the right
  * split: nobody searches for "printable list of maths charts". What it is for
@@ -166,6 +169,8 @@ const groups = chartShelf();
       >
     </div>
   </section>
+
+  <HubLinks shelf="charts" />
 
   <section class="band band--tight wrap">
     <h2 class="h2">Your child&rsquo;s name is not in the file</h2>
