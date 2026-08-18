@@ -411,6 +411,22 @@ rulings are chosen by reading how one differs from the next, which is what
 landmarks are routes whose names are read back out of the catalog, so neither a
 number nor a sheet's name exists twice.
 
+**What shipped (PRINT29), and why it added no routes at all.** The search is a
+build-time index (`/printables/search-index.json`, a projection of `_shelves.ts`
+and nothing else) read by a `client:only` island on `/printables`. The decision
+worth recording is where the facets live: **in the URL fragment, never in a
+query string.** `?grade=3rd-grade&type=worksheet` is a distinct URL to a
+crawler, and four facets crossed over a hundred and nineteen sheets is several
+thousand of them, each a near-duplicate of a page that is already indexed —
+this section's doorway-page rule arrived at from the other direction. A
+fragment is never sent anywhere, so a search is still shareable and
+bookmarkable while the indexable set stays exactly the nineteen curated pages:
+nine subject hubs and ten school years. The hub itself is unchanged HTML, so a
+crawler and a visitor with no JavaScript get the whole catalog and no dead
+search box. `scripts/search-index-guard.mjs` fails the build if a row points at
+a page `dist/` doesn't have, or if a page `dist/` has is reachable from
+neither the index nor a hub.
+
 ### The sitemap landmine
 
 `astro.config.mjs` filters **every `WORLDS[].href` out of the sitemap**,
@@ -1167,7 +1183,9 @@ marking.
 flashcards, logs, memory-verse cards. Grade and subject hub pages.
 
 **Phase 7 · Search.** Build-time index as a static JSON, a small island on the
-hub, faceted by grade, subject, type and ruling. Everything client-side.
+hub, faceted by grade, subject, type and ruling. Everything client-side, and
+everything in the fragment — see §8 for why that last part is the whole SEO
+decision.
 
 ---
 

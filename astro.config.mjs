@@ -3,7 +3,9 @@ import { defineConfig } from "astro/config";
 import react from "@astrojs/react";
 import sitemap from "@astrojs/sitemap";
 import { WORLDS } from "./src/engine/worlds";
+import { catalogAudit } from "./src/pages/printables/_search";
 import { pathOf, sitemapGuard } from "./scripts/sitemap-guard.mjs";
+import { searchIndexGuard } from "./scripts/search-index-guard.mjs";
 
 /**
  * Static output, deliberately.
@@ -49,6 +51,15 @@ export default defineConfig({
     // After the sitemap integration, deliberately: it reads what that one
     // wrote. See scripts/sitemap-guard.mjs.
     sitemapGuard(WORLDS),
+    /*
+     * The same trick again, over the Print Shop's search index: the catalog is
+     * read once to write the index and once, after the build, to hold it to
+     * what actually landed in dist/. The audit is computed here rather than
+     * inside the guard because the guard is a Node script that reads a
+     * directory, and the catalog it is checking is TypeScript — the same split
+     * sitemapGuard(WORLDS) makes one line up.
+     */
+    searchIndexGuard(catalogAudit()),
   ],
   // Emit `/about/index.html` rather than `/about.html` so CloudFront can serve
   // clean URLs from S3 without a rewrite function.
