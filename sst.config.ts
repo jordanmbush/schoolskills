@@ -352,12 +352,117 @@ export default $config({
       },
     });
 
+    /**
+     * A traffic pulse, for the questions that shouldn't need a log query.
+     *
+     * CloudFront publishes these metrics to CloudWatch for free and whether or
+     * not anyone looks, so this dashboard costs nothing to feed — it is three
+     * widgets over data AWS is already keeping. Retention is 15 months, which
+     * is longer than the raw logs live (90 days) and shorter than
+     * analytics/counts.json, which is forever.
+     *
+     * It deliberately does NOT try to be the analytics. `Requests` counts every
+     * HTTP request — assets, fonts, beacons, bots, the deploy's own smoke
+     * checks — so it is roughly an order of magnitude above page views and can
+     * never be broken down by URL. What it is good for is the shape of things:
+     * whether traffic moved, whether errors appeared, whether the site went
+     * quiet. For "which pages, how many people", the rollup is the only answer.
+     *
+     * Production only, because the metrics are per-distribution and a dev stage
+     * has nobody on it.
+     *
+     * ⚠️ CloudFront metrics live in **us-east-1** regardless of where anything
+     * else is, and they carry a `Region: Global` dimension. Both are stated per
+     * widget below; get either wrong and the graph renders empty rather than
+     * failing, which is the worst way for a dashboard to be broken.
+     */
+    if (production) {
+      const distributionId = site.nodes.cdn!.nodes.distribution.id;
+
+      const widget = (
+        x: number,
+        y: number,
+        title: string,
+        metrics: unknown[],
+      ) => ({
+        type: "metric",
+        x,
+        y,
+        width: 12,
+        height: 6,
+        properties: {
+          title,
+          view: "timeSeries",
+          stacked: false,
+          region: "us-east-1",
+          period: 3600,
+          metrics,
+        },
+      });
+
+      new aws.cloudwatch.Dashboard("TrafficDashboard", {
+        // Fixed name so a bookmark keeps working across deploys.
+        dashboardName: "schoolskills-traffic",
+        dashboardBody: distributionId.apply((id) =>
+          JSON.stringify({
+            widgets: [
+              widget(0, 0, "Requests (all HTTP, not page views)", [
+                [
+                  "AWS/CloudFront",
+                  "Requests",
+                  "Region",
+                  "Global",
+                  "DistributionId",
+                  id,
+                  { stat: "Sum", label: "requests" },
+                ],
+              ]),
+              widget(12, 0, "Error rate (%)", [
+                [
+                  "AWS/CloudFront",
+                  "4xxErrorRate",
+                  "Region",
+                  "Global",
+                  "DistributionId",
+                  id,
+                  { stat: "Average", label: "4xx" },
+                ],
+                [
+                  "AWS/CloudFront",
+                  "5xxErrorRate",
+                  "Region",
+                  "Global",
+                  "DistributionId",
+                  id,
+                  { stat: "Average", label: "5xx" },
+                ],
+              ]),
+              widget(0, 6, "Bytes downloaded", [
+                [
+                  "AWS/CloudFront",
+                  "BytesDownloaded",
+                  "Region",
+                  "Global",
+                  "DistributionId",
+                  id,
+                  { stat: "Sum", label: "bytes" },
+                ],
+              ]),
+            ],
+          }),
+        ),
+      });
+    }
+
     return {
       url: site.url,
       stage: $app.stage,
       // Named in the outputs so docs/analytics.md doesn't have to hardcode a
       // generated bucket name that changes if the stack is ever rebuilt.
       logs: logs?.bucket ?? "none (production only)",
+      dashboard: production
+        ? "https://us-west-1.console.aws.amazon.com/cloudwatch/home#dashboards/dashboard/schoolskills-traffic"
+        : "none (production only)",
     };
   },
 });
