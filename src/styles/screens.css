@@ -237,9 +237,15 @@
   line-height: 1;
 }
 
-/* ── Sheet (modal) ─────────────────────────────────────────────────────── */
+/* ── Modal ──────────────────────────────────────────────────────────────────
+   The panel behind the player editor, the deck editor and the quit
+   confirmation. It was `.sheet` until The Print Shop arrived, and the rename is
+   recorded in the header of sheet.css: `/printables/make` is an island that
+   loads this file *and* the sheet renderer's, and two `.sheet` rules meeting
+   means an 8.5-inch-wide `position: fixed` modal. In a codebase with a print
+   shop in it, a sheet is a piece of paper.                                   */
 
-.sheet {
+.modal {
   position: fixed;
   inset: 0;
   z-index: 50;
@@ -250,8 +256,8 @@
 
 /* A real <button> (see the Scrim primitive) so the backdrop is reachable by
    keyboard, not just by mouse. These resets strip the UA button chrome so it
-   still renders as a plain dimmed sheet. */
-.sheet__scrim {
+   still renders as a plain dimmed backdrop. */
+.modal__scrim {
   position: absolute;
   inset: 0;
   display: block;
@@ -264,12 +270,12 @@
   backdrop-filter: blur(3px);
 }
 
-.sheet__scrim:focus-visible {
+.modal__scrim:focus-visible {
   outline: 2px solid var(--accent, #38bdf8);
   outline-offset: -4px;
 }
 
-.sheet__panel {
+.modal__panel {
   position: relative;
   width: min(30rem, 100%);
   max-height: 90dvh;
@@ -278,7 +284,7 @@
   gap: var(--gap-3);
 }
 
-.sheet__actions {
+.modal__actions {
   display: flex;
   gap: var(--gap-2);
   justify-content: flex-end;
@@ -288,7 +294,7 @@
   border-top: 1px solid var(--hairline);
 }
 
-.sheet__confirm {
+.modal__confirm {
   display: flex;
   align-items: center;
   gap: var(--gap-2);
@@ -446,6 +452,58 @@
   font-weight: 700;
   min-width: 2ch;
   text-align: center;
+}
+
+/* `.stepper__value` is a number you read; `.stepper__field` is the same number
+   in a box you can type into (<NumberStepper>). The buttons either side are the
+   same `.stepper__btn`, so the two forms sit at the same size on a panel.      */
+
+/* Both spellings dim the same way. <NumberStepper> marks a button that has hit
+   its bound with `aria-disabled` rather than `disabled`, so that the button
+   keeps focus instead of dumping a keyboard user on <body> (see its doc
+   block) — the look must not depend on which of the two it is.              */
+.stepper__btn:disabled,
+.stepper__btn[aria-disabled="true"] {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.stepper__field {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.3rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  border: 1.5px solid var(--hairline);
+  background: var(--ink-900);
+}
+
+.stepper__field:focus-within {
+  border-color: var(--accent);
+}
+
+.stepper__input {
+  /* Fixed at four digits plus a caret, so the row never jumps as it counts. */
+  width: 4.5ch;
+  border: none;
+  background: none;
+  font-size: var(--step-1);
+  font-weight: 700;
+  text-align: center;
+  /* The two buttons are the affordance. The native spinners are three pixels
+     tall, which promises a target that is not one. */
+  appearance: textfield;
+}
+
+.stepper__input::-webkit-outer-spin-button,
+.stepper__input::-webkit-inner-spin-button {
+  appearance: none;
+  margin: 0;
+}
+
+.stepper__unit {
+  font-size: var(--step--1);
+  color: var(--chalk-dim);
 }
 
 /* ── Top bar ───────────────────────────────────────────────────────────── */

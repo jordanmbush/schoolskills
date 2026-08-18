@@ -5,8 +5,12 @@ import type { CustomDeck } from "@/engine/types";
 
 /**
  * The pure half of the deck service — parsing what a parent pasted, and
- * refusing a file that isn't ours. Everything that writes needs IndexedDB and
- * is covered in the browser instead.
+ * refusing a file that isn't ours.
+ *
+ * `create`, `update` and `remove` are not exercised here or anywhere else: they
+ * need IndexedDB, and the browser suite drives profiles and races rather than
+ * decks. The store underneath them — the upgrade that added `decks`, and its
+ * place in a backup — is covered in `storage/db.test.ts`.
  */
 
 describe("parseWords", () => {

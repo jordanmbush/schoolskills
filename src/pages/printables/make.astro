@@ -1,0 +1,58 @@
+---
+import Content from "@/layouts/Content.astro";
+import PrintShopApp from "@/games/printshop/App";
+import "@/styles/index.css";
+
+/**
+ * The sheet builder's route.
+ *
+ * It is `WorldInfo.island` for the paper world, which is what keeps it out of
+ * the sitemap, and it carries `noindex` for the reason every island does: what
+ * renders here is a `client:only` app, and a near-empty page submitted to
+ * search is a thin-content signal against the whole domain. The crawlable
+ * surface of The Print Shop is the catalog — every page there *is* a sheet
+ * (§8) — and this is the screen you go to when one of those is nearly right.
+ *
+ * Content rather than Base, unlike the games. A race must never have site
+ * chrome over it; the builder is the opposite case, because `print.css` hides
+ * the masthead, the footer and everything marked `.no-print` when a sheet goes
+ * to paper. So the builder can keep the site around it and lose it at exactly
+ * the moment it would cost somebody toner.
+ *
+ * `index.css` — the island stylesheet — rather than only the content one,
+ * because the option panels are built out of the kit and the kit's rows,
+ * steppers and segmented pills are styled there. That is what finally settled
+ * the `.sheet` name collision recorded in sheet.css: this page is the one that
+ * loads the modal styles *and* the sheet renderer's, so the modal became
+ * `.modal`.
+ */
+---
+
+<Content
+  title="Build a sheet — The Print Shop | School Skills"
+  description="The sheet builder: choose a family, set the options, and print."
+  world="paper"
+  noindex
+>
+  <header class="hero wrap no-print">
+    <p class="hero__eyebrow">
+      <span class="hero__world">The Print Shop</span>
+      The bench
+    </p>
+    <h1 class="hero__title">Build a sheet</h1>
+    <p class="hero__lead">
+      Pick what is on it, set the paper, the type size and how many problems
+      fit, and watch the page change as you go. Everything happens in this
+      browser &mdash; the settings live in the address bar, so a sheet can be
+      bookmarked or passed on as an ordinary link, and nothing about your child
+      goes into either.
+    </p>
+  </header>
+
+  <!--
+    client:only rather than client:load: the saved-sheet panel reads IndexedDB
+    on first render, so there is no meaningful server-rendered markup to
+    hydrate, and attempting SSR would throw on `indexedDB`.
+  -->
+  <PrintShopApp client:only="react" />
+</Content>

@@ -20,7 +20,8 @@
     "test:unit": "vitest run",
     "test:e2e": "playwright test",
     "prepare": "husky",
-    "test:smoke": "node e2e/smoke.mjs"
+    "test:smoke": "node e2e/smoke.mjs",
+    "scripture:pull": "node scripts/pull-scripture.mjs"
   },
   "dependencies": {
     "@astrojs/react": "^6.0.2",
@@ -44,6 +45,7 @@
     "eslint-plugin-astro": "^3.1.0",
     "eslint-plugin-jsx-a11y": "^6.10.2",
     "eslint-plugin-react-hooks": "^7.1.1",
+    "fake-indexeddb": "^6.2.5",
     "husky": "^9.1.7",
     "lint-staged": "^16.4.0",
     "prettier": "^3.9.6",

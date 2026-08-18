@@ -40,7 +40,7 @@
 
 import { OPERATION_ORDER } from "@/engine/decks/flashcards";
 import { TYPING_LEVELS, typingMode } from "@/engine/decks/typing";
-import { WORD_LISTS } from "@/engine/decks/wordlists";
+import { SHIPPED_LISTS } from "@/engine/decks/wordlists";
 import { wordMode } from "@/engine/decks/words";
 
 /** Where the beacon lands. Excluded from the service worker — see `public/sw.js`. */
@@ -85,10 +85,16 @@ export type Beacon =
  * written: it listed the six graded Dolch lists and not the nouns list, so a
  * real shipped deck was being reported as somebody's private one. A list that
  * has to be kept in step with another list won't be.
+ *
+ * `SHIPPED_LISTS` and not `WORD_LISTS`, for the same reason: `WORD_LISTS` is
+ * Dolch alone — the typing pools, the age lookup and the spelling shelf all
+ * legitimately mean that — while the shelf a child can actually pick from is
+ * the whole of it, Bible lists included. Reading the narrower one here would
+ * log a public list as somebody's private one all over again.
  */
 const SHIPPED: ReadonlySet<string> = new Set<string>([
   ...OPERATION_ORDER,
-  ...WORD_LISTS.map((list) => wordMode(list.id)),
+  ...SHIPPED_LISTS.map((list) => wordMode(list.id)),
   ...TYPING_LEVELS.map((level) => typingMode(level.id)),
 ]);
 

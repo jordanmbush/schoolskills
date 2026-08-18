@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { beaconUrl, deckLabel } from "./analytics";
-import { WORD_LISTS } from "@/engine/decks/wordlists";
+import { SHIPPED_LISTS } from "@/engine/decks/wordlists";
 import { wordMode } from "@/engine/decks/words";
 
 /**
@@ -16,7 +16,9 @@ describe("what a beacon is allowed to say", () => {
   it("names a shipped deck, because a shipped deck is a public list", () => {
     // Knowing that someone practised "dolch-1" says something about the site,
     // not about them: everyone who picks that list produces the same string.
-    for (const list of WORD_LISTS) {
+    // The whole shelf, not Dolch alone — a Bible list is just as public, and
+    // reporting one as "custom" is the mistake this file exists to prevent.
+    for (const list of SHIPPED_LISTS) {
       expect(deckLabel(wordMode(list.id))).toBe(`words:${list.id}`);
     }
     for (const op of ["add", "subtract", "multiply", "divide"]) {

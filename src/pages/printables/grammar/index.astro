@@ -1,0 +1,181 @@
+---
+import Content from "@/layouts/Content.astro";
+import AdSlot from "@/components/site/AdSlot.astro";
+import { GRAMMAR_SHEETS, grammarShelf, pathFor } from "../_grammar";
+import HubLinks from "../_HubLinks.astro";
+
+/**
+ * The grammar subject hub — a peer of `/printables/spelling`,
+ * `/printables/math`, `/printables/handwriting`, `/printables/cursive` and
+ * `/printables/bible`.
+ *
+ * A listing rather than a sheet, like the other hubs, and that is the right
+ * split: nobody searches for "printable list of grammar worksheets". What it is
+ * for is the two jobs a hub does — giving a parent who arrived on
+ * `/printables/grammar/punctuation-worksheets` somewhere to go next, and giving
+ * the five topic pages a crawlable parent that says what they have in common.
+ *
+ * What they have in common is worth a section of its own here, because it is
+ * the argument for the whole shelf being small: grammar answers are judgements
+ * in a way arithmetic is not, so the sentences are written down and tagged and
+ * the questions are views of those tags. A page that says so is a page a parent
+ * can decide to trust.
+ */
+const title =
+  "Free printable grammar worksheets — parts of speech, sentences and punctuation | School Skills";
+const description =
+  "Printable grammar practice: parts of speech, subject and predicate, statements and questions and commands, end punctuation and capital letters. Every sheet prints its answer key on the page behind — free, no account, no download.";
+
+const groups = grammarShelf();
+---
+
+<Content
+  title={title}
+  description={description}
+  world="paper"
+  jsonLd={{
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name: "Printable grammar worksheets",
+    description,
+    url: "https://schoolskills.app/printables/grammar",
+    isAccessibleForFree: true,
+    inLanguage: "en",
+    hasPart: GRAMMAR_SHEETS.map((sheet) => ({
+      "@type": "LearningResource",
+      name: sheet.heading,
+      url: `https://schoolskills.app${pathFor(sheet)}`,
+      learningResourceType: "Worksheet",
+      teaches: sheet.teaches,
+      typicalAgeRange: sheet.ages,
+      isAccessibleForFree: true,
+    })),
+  }}
+>
+  <header class="hero wrap">
+    <p class="hero__eyebrow">
+      <span class="hero__world">The Print Shop</span>
+      Grammar
+    </p>
+    <h1 class="hero__title">Printable grammar worksheets</h1>
+    <p class="hero__lead">
+      {GRAMMAR_SHEETS.length} sheets on how a sentence is put together: what each
+      word is doing, where the sentence divides, what it is for, and the two marks
+      that finish it. Every one of them prints its answer key on the page behind.
+    </p>
+    <p class="hero__note">Free &middot; answer keys &middot; no download</p>
+  </header>
+
+  {
+    /*
+      What exists, first — before the page explains itself. Somebody who came
+      looking for punctuation should be one link from punctuation, and the
+      argument for how these sheets are built reads better after you have seen
+      one than before.
+    */
+  }
+  <section class="band band--tight wrap">
+    <h2 class="h2">On the shelf now</h2>
+    <p class="h2__sub">
+      Each of these is a page that is itself the worksheet &mdash; open it,
+      press print, and that is the whole of it. The answer key is the page
+      behind the sheet, on every one of them.
+    </p>
+    {
+      groups.map((group) => (
+        <>
+          <h3 class="h2 h2--next">{group.label}</h3>
+          <p class="h2__sub">{group.blurb}</p>
+          <div class="prose">
+            <ul>
+              {group.sheets.map((sheet) => (
+                <li>
+                  <a href={pathFor(sheet)}>{sheet.name}</a> &mdash;{" "}
+                  {sheet.summary}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </>
+      ))
+    }
+  </section>
+
+  <div class="wrap"><AdSlot name="article" /></div>
+
+  <section class="band band--inset">
+    <div class="wrap">
+      <h2 class="h2">Five lessons, and a smaller shelf than it could be</h2>
+      <p class="h2__sub">
+        Grammar answers are judgements in a way that arithmetic answers are not,
+        and that decided the size of this section.
+      </p>
+      <div class="prose">
+        <p>
+          Seven times eight is fifty-six wherever you ask it. Whether a word is
+          an adverb, whether a comma is needed, which half of a sentence is the
+          subject &mdash; every one of those is decidable in a particular
+          sentence and arguable in general. A worksheet that marks a defensible
+          answer wrong does more harm than a worksheet that was never printed,
+          because a child learns from it that they were wrong when they were
+          not.
+        </p>
+        <p>
+          So the sentences on these five pages are written down and tagged, one
+          at a time, and every question is a view of a tag rather than a piece
+          of parsing. The rules that decide what may be tagged are strict on
+          purpose: no article or possessive, because the schemes disagree about
+          what those are; no word that is a noun in one line and a verb in the
+          next; and no exclamation mark asked for, because whether a sentence
+          deserves one is a question about tone rather than about grammar.
+        </p>
+        <p>
+          The same rules are why there are five pages rather than fifty.
+          &ldquo;Noun worksheets&rdquo;, &ldquo;verb worksheets&rdquo; and
+          &ldquo;adjective worksheets&rdquo; are all things people look for, and
+          all of them would be this same sheet with a filter on it. Five
+          lessons, each one a week&rsquo;s teaching, and everything else through
+          the builder &mdash; which is where choosing belongs.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="band band--tight wrap">
+    <h2 class="h2">And the words the sentences are made of</h2>
+    <div class="prose">
+      <p>
+        Grammar is what a sentence does with words; spelling is the words
+        themselves. The shelf next door prints this week&rsquo;s list in five
+        shapes, the first sight words to trace and find, and ten pages on how
+        words work &mdash; rhyme, syllables, prefixes and suffixes, plurals,
+        contractions, homophones, synonyms and antonyms. It is the same bargain
+        as this one: the answers are written by a person, because English will
+        not yield to a rule.
+      </p>
+    </div>
+    <div class="hero__actions">
+      <a class="cta" href="/printables/spelling">Spelling and word study</a>
+      <a class="cta cta--quiet" href="/printables/make"
+        >Open the sheet builder</a
+      >
+    </div>
+  </section>
+
+  <HubLinks shelf="grammar" />
+
+  <section class="band band--tight wrap">
+    <h2 class="h2">Your child&rsquo;s name is not in the file</h2>
+    <div class="prose">
+      <p>
+        The <em>Name:</em> line is printed blank and filled in with a pencil. Nothing
+        is uploaded to make a sheet, no account is needed to print one, and a sheet
+        you send to another family carries the settings you chose and nothing else
+        &mdash; see <a href="/privacy">what we don&rsquo;t collect</a>.
+      </p>
+    </div>
+    <div class="hero__actions">
+      <a class="cta cta--quiet" href="/printables">Back to The Print Shop</a>
+    </div>
+  </section>
+</Content>

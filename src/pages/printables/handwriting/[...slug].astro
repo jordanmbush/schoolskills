@@ -1,0 +1,221 @@
+---
+import Content from "@/layouts/Content.astro";
+import AdSlot from "@/components/site/AdSlot.astro";
+import { SheetView } from "@/components/sheet/Sheet";
+import { buildSheet } from "@/engine/sheets";
+import {
+  HANDWRITING_SEED,
+  HANDWRITING_SHEETS,
+  STOCKS,
+  builderHref,
+  configFor,
+  handwritingShelf,
+  hrefFor,
+  type HandwritingSheet,
+} from "../_handwriting";
+import type { Stock } from "../_catalog";
+
+/**
+ * One prerendered handwriting sheet per topic — and the page is the sheet.
+ *
+ * The shape §8 describes, applied to the family where the paper *is* the
+ * content: "free printable letter tracing worksheets" is one of the largest
+ * queries in this whole section, and a parent who lands here gets prose that
+ * answers it, the sheet itself directly under it as HTML, and nothing to click.
+ *
+ * **Two stocks, two routes — as with paper and unlike maths.** A ⅝ rule scaled
+ * to fit whatever is in the tray is no longer a ⅝ rule, and `@page` is a
+ * document rule, so Letter and A4 cannot share a page. That is also why this
+ * route is a rest pattern under `handwriting/` rather than another `[topic]`
+ * beside the maths one: a two-segment path needs a rest param, and two dynamic
+ * patterns at the same level would be two routes claiming one URL.
+ *
+ * **No answer key, and no apology for it.** There is nothing on a handwriting
+ * sheet with a right answer — the model is already printed, which is the whole
+ * exercise — so the family returns its own sheet as the key and the page prints
+ * one article rather than two.
+ *
+ * **No client directive on `SheetView`, ever.** `@astrojs/react` renders a
+ * component with no `client:*` to HTML at build time, so these pages ship zero
+ * JavaScript — the whole SEO argument of §2. `Sheet.test.tsx` holds every page
+ * in this directory to it, against the source and against `dist/`.
+ *
+ * **Everything that is not the sheet carries `.no-print`.** `@page` cannot be
+ * scoped to a class, so the zeroed page margin a sheet needs applies to the
+ * prose as well and it would print off the edge.
+ */
+
+type Props = { sheet: HandwritingSheet; stock: Stock };
+
+export function getStaticPaths() {
+  return HANDWRITING_SHEETS.flatMap((sheet) =>
+    STOCKS.map((stock) => ({
+      params: { slug: stock.path ? `${sheet.slug}/${stock.path}` : sheet.slug },
+      props: { sheet, stock },
+    })),
+  );
+}
+
+const { sheet, stock } = Astro.props;
+
+const a4 = stock.id === "a4";
+const printed = buildSheet(configFor(sheet, stock.id), HANDWRITING_SEED);
+const other = STOCKS.find((candidate) => candidate.id !== stock.id)!;
+
+const heading = a4 ? `${sheet.heading}, for A4` : sheet.heading;
+const title = `${sheet.keyword}${a4 ? ", A4" : ""} | School Skills`;
+const description = `${sheet.summary} Printed straight from this page on ${stock.label} — free, no account, and no download.`;
+const url = `https://schoolskills.app${hrefFor(sheet, stock)}`;
+
+const groups = handwritingShelf();
+const group = groups.find((entry) => entry.id === sheet.group)!;
+---
+
+<Content
+  title={title}
+  description={description}
+  world="paper"
+  jsonLd={{
+    "@context": "https://schema.org",
+    "@type": "LearningResource",
+    name: heading,
+    description,
+    url,
+    learningResourceType: "Worksheet",
+    educationalUse: "Practice",
+    teaches: sheet.teaches,
+    typicalAgeRange: sheet.ages,
+    isAccessibleForFree: true,
+    inLanguage: "en",
+  }}
+>
+  <header class="hero wrap no-print">
+    <p class="hero__eyebrow">
+      <span class="hero__world">The Print Shop</span>
+      Handwriting &middot; {group.label}
+    </p>
+    <h1 class="hero__title">{heading}</h1>
+    <p class="hero__lead">{sheet.lead}</p>
+    <p class="aside">
+      The sheet below <strong>is</strong> the printout. Press{" "}
+      <strong>&#8984;P</strong> &mdash; <strong>Ctrl+P</strong> on Windows &mdash;
+      and everything but the paper disappears. Nothing here needs choosing first.
+      To keep a copy instead, pick <em>Save as PDF</em> in the print dialog and your
+      browser writes one.
+    </p>
+    <p class="hero__note">Free &middot; no account &middot; no download</p>
+  </header>
+
+  {
+    /*
+      The sheet, outside `.wrap` deliberately. A wrap adds an inline padding
+      that print.css cannot take back off, and a sheet printed a centimetre in
+      from where it says it is has the wrong geometry everywhere at once —
+      which on this family is the whole content of the page.
+    */
+  }
+  <div class="sheet-frame">
+    <SheetView sheet={printed} />
+  </div>
+
+  <section class="band band--tight wrap no-print">
+    <h2 class="h2">What is on this sheet</h2>
+    <div class="prose">
+      {sheet.notes.map((note) => <p>{note}</p>)}
+      <p>
+        The rules are drawn as real strokes at real sizes, and what is written
+        is set to them: the tallest thing on a line stands on the baseline and
+        reaches the top line, whether that is an ascender, a capital or a
+        numeral. The type size is worked out from the ruling and from the
+        font&rsquo;s own measured proportions rather than picked to look about
+        right. Put a ruler on it. The ruling is the size it says it is.
+      </p>
+      {sheet.credit && <p class="aside">{sheet.credit}</p>}
+    </div>
+  </section>
+
+  <section class="band band--tight wrap no-print">
+    <h2 class="h2">Trace it, copy it, then write it alone</h2>
+    <div class="prose">
+      <p>
+        Every group on this page runs the same three steps: a solid model to
+        look at, a dotted letter to trace over, and an empty space where nobody
+        is helping. That last one is the part that teaches &mdash; tracing
+        practises following a line, and writing from nothing practises writing.
+        A sheet of nothing but dotted letters is a sheet a child can finish
+        without ever having made a letter themselves.
+      </p>
+      <p>
+        How far along that progression a sheet sits is a setting rather than a
+        different worksheet. The dotted model can be dashed, hollow, grey or
+        left off entirely; the number of repeats moves between one and eight;
+        and every ruling in the shop &mdash; the five handwriting sizes, the
+        three notebook rules, squares, dots and triangles &mdash; works with any
+        of them.
+      </p>
+    </div>
+    <div class="hero__actions">
+      <a class="cta cta--quiet" href={builderHref(sheet, stock)}>
+        Open this sheet in the builder
+      </a>
+      <a class="cta cta--quiet" href="/printables/cursive">
+        The same progression in cursive
+      </a>
+    </div>
+  </section>
+
+  <section class="band band--tight wrap no-print">
+    <h2 class="h2">Printing it on {other.label}</h2>
+    <div class="prose">
+      <p>
+        This sheet is set for {stock.label} &mdash; {stock.size}. Paper size is
+        not a preference on a handwriting sheet: sent to a printer loaded with
+        something else, the browser shrinks the page to fit, and a ruling that
+        has been shrunk is no longer the size it was chosen for. So there is a
+        second copy of this sheet, ruled identically and measured for {
+          other.label
+        }.
+      </p>
+    </div>
+    <div class="hero__actions">
+      <a class="cta" href={hrefFor(sheet, other)}>The {other.label} version</a>
+    </div>
+  </section>
+
+  <div class="wrap no-print"><AdSlot name="article" /></div>
+
+  <section class="band band--tight wrap no-print">
+    <h2 class="h2">Every handwriting sheet</h2>
+    <p class="h2__sub">
+      {HANDWRITING_SHEETS.length} sheets, each one a page like this one. Nothing is
+      locked and nothing needs an account.
+    </p>
+    {
+      groups.map((entry) => (
+        <>
+          <h3 class="h2 h2--next">{entry.label}</h3>
+          <p class="h2__sub">{entry.blurb}</p>
+          <nav class="stones" aria-label={entry.label}>
+            {entry.sheets.map((candidate) => (
+              <a
+                class="stone"
+                href={hrefFor(candidate, stock)}
+                aria-current={
+                  candidate.slug === sheet.slug ? "page" : undefined
+                }
+              >
+                {candidate.short}
+              </a>
+            ))}
+          </nav>
+        </>
+      ))
+    }
+    <div class="hero__actions">
+      <a class="cta cta--quiet" href="/printables/handwriting">
+        All the handwriting sheets
+      </a>
+      <a class="cta cta--quiet" href="/printables">Back to The Print Shop</a>
+    </div>
+  </section>
+</Content>

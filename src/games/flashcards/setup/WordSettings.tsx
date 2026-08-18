@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button, FilePicker } from "@/components/ui/kit";
 import { useHub } from "@/components/state/HubContext";
-import { WORD_LISTS } from "@/engine/decks/wordlists";
+import { SHIPPED_LISTS } from "@/engine/decks/wordlists";
 import { wordsOf } from "@/engine/decks/words";
 import { readDeckFile } from "@/services/decks";
 import { sfx } from "@/services/sound";
@@ -18,6 +18,12 @@ import type { CustomDeck, WordConfig } from "@/engine/types";
  * A parent's own lists sit above the shipped ones, because someone who has
  * typed in this week's spellings is here for those and not for Dolch. They
  * carry an Edit button; the shipped lists don't, and can't be deleted.
+ *
+ * The shipped half is the whole shelf — `SHIPPED_LISTS`, so the books of the
+ * Bible and the other memory-work lists sit here with Dolch rather than being
+ * a printables-only thing a child can't play (docs/printables.md §12). Dolch
+ * leads it, because that is the order the shelf is built in and the graded
+ * lists are what most people came for.
  *
  * A drill arrives with its words already chosen, so it replaces the list
  * exactly as an arithmetic drill replaces the number grids.
@@ -132,7 +138,7 @@ export function WordSettings({
         {decks.map((deck) =>
           row(deck, `Yours · ${deck.words.length} words`, null, deck),
         )}
-        {WORD_LISTS.map((list) =>
+        {SHIPPED_LISTS.map((list) =>
           row(
             list,
             `${list.group} · ${list.entries.length} words`,
@@ -179,7 +185,7 @@ export function WordSettings({
               config.listId === editing.id &&
               !decks.some((d) => d.id === editing.id)
             ) {
-              onChange({ ...config, listId: WORD_LISTS[0].id });
+              onChange({ ...config, listId: SHIPPED_LISTS[0].id });
             }
           }}
         />

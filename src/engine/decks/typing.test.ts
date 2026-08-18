@@ -6,6 +6,7 @@ import {
   buildTypingDeck,
   buildTypingDrill,
   describeTypingConfig,
+  levelCredit,
   passageFor,
   typingConfigKey,
   typingDeckSpec,
@@ -13,6 +14,7 @@ import {
   typingMode,
   wordsPerMinute,
 } from "./typing";
+import { SCRIPTURE_CREDIT, listPassages } from "@/engine/sheets/passages";
 import { buildDeck, configKey, deckSpec, isTyping, modeOf } from "./index";
 import type { TypingConfig } from "@/engine/types";
 
@@ -67,6 +69,79 @@ describe("the levels", () => {
   it("gives every age a level", () => {
     for (const age of [4, 5, 6, 7, 8, 9, 10, 11, 14]) {
       expect(typingLevelForAge(age).pool.length).toBeGreaterThan(0);
+    }
+  });
+});
+
+/**
+ * The Scripture level, held to the licence rather than to a promise.
+ *
+ * eBible.org's one condition on the World English Bible is that a *modified*
+ * text may not carry the name, and `passages/scripture.test.ts` enforces that
+ * for the library by comparing it to the release file it was pulled from. The
+ * typing pool is a second copy of thirty-three of those verses (typing.ts says
+ * why it is a copy), so it gets the same treatment one link further along: the
+ * pool is compared to the library, which is compared to the release. Edit a
+ * verse here and it stops matching; edit both and the release check catches it.
+ */
+describe("the Scripture level", () => {
+  const pool = TYPING_LEVELS_BY_ID.get("scripture")!.pool;
+
+  /** Every verse this build ships, in the translation the pool quotes. */
+  const library = new Map<string, string>(
+    listPassages()
+      .filter((entry) => entry.kind === "scripture")
+      .flatMap((entry) =>
+        entry.lines.map((line): [string, string] => [line, entry.title]),
+      ),
+  );
+
+  it("quotes the library character for character", () => {
+    for (const line of pool) {
+      expect(library.has(line), line).toBe(true);
+    }
+  });
+
+  it("avoids the divine name", () => {
+    // "LORD" and "GOD" render the divine name in small caps. They are a
+    // nuisance to type with the shift key held and read as shouting to a
+    // seven-year-old, so the psalms and proverbs here are the ones without.
+    for (const line of pool) {
+      expect(line, library.get(line)).not.toMatch(/\b(LORD|GOD)\b/);
+    }
+  });
+
+  it("uses only keys a plain keyboard has", () => {
+    // The release sets quoted speech in curly quotation marks, and marking
+    // here is exact — so a verse carrying one would be unpassable rather than
+    // hard. This is the rule that decided which verses could be quoted at all.
+    for (const line of pool) {
+      expect(line, library.get(line)).toMatch(/^[A-Za-z ,.;]+$/);
+    }
+  });
+
+  it("quotes whole sentences, never a fragment of one", () => {
+    // A sentence level splits on spaces and never on meaning, so a verse that
+    // trails off mid-list would arrive as a fragment with a comma hanging off
+    // it — which is unfair to type and worse to read.
+    for (const line of pool) {
+      expect(line[0], library.get(line)).toBe(line[0].toUpperCase());
+      expect(line, library.get(line)).toMatch(/[.!?]$/);
+    }
+  });
+
+  it("carries the credit line wherever its words are shown", () => {
+    // One constant, so the race, the setup screen and the results can't drift
+    // apart from the sheet footer and the catalog page.
+    expect(levelCredit("scripture")).toBe(SCRIPTURE_CREDIT);
+    expect(levelCredit("sentences")).toBeUndefined();
+    expect(levelCredit("no-such-level")).toBeUndefined();
+  });
+
+  it("is chosen and never assigned", () => {
+    // A source, not a step in the progression: no age lands on it.
+    for (const age of [4, 6, 8, 10, 12, 16]) {
+      expect(typingLevelForAge(age).id).not.toBe("scripture");
     }
   });
 });

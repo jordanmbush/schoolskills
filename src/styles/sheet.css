@@ -1,0 +1,942 @@
+/* ── The sheet's own geometry ───────────────────────────────────────────────
+   A worksheet is HTML laid out in real inches (docs/printables.md §2), and
+   this is the file where that stops being a claim.
+
+   ── Why nothing here is in `rem` ────────────────────────────────────────────
+   The rest of the app sizes everything in `rem × --ui-scale`, so a five-year-
+   old's screen is physically bigger than a ten-year-old's. A worksheet must not
+   do that. A ⅝-inch handwriting rule is ⅝ of an inch or it is wrong, and a
+   child who has been taught to write between two lines notices before an adult
+   does. So the subtree opts out — `--ui-scale: 1` below is set, not inherited —
+   and every length in here is an inch, a point, or an em of a size that was
+   itself set in points.
+
+   ── One name collision, settled ─────────────────────────────────────────────
+   `screens.css` used to have a `.sheet` of its own: the modal panel behind the
+   player editor and the quit confirmation. The two never met while this file
+   arrived with the renderer and that one with `index.css` on the game islands —
+   but `/printables/make` is an island that loads both, and on that day an
+   8.5in-wide `position: fixed` modal is what happened. So the modal was renamed
+   to `.modal` when the builder landed, which is the right way round: in a
+   codebase with a print shop in it, a sheet is a piece of paper.
+
+   ── The ink ────────────────────────────────────────────────────────────────
+   Black on white with no fills, by default and on purpose. A parent printing
+   thirty pages a week is paying for this in toner, so ink-saving is a feature
+   rather than an accident (§5) — and it composes with the fact that browsers
+   drop background paint when printing anyway. Everything a child writes on is
+   a stroke or a border, both of which are foreground and always print.       */
+
+.sheet {
+  --ui-scale: 1;
+
+  /* The face everything on the paper is set in, named once so the SVG blocks
+     below can be set in it too. `data-font` swaps it; see the block after the
+     ink section for what each of the three ids resolves to. Andika is the
+     print face and therefore the default, because a worksheet is set in print
+     unless somebody says otherwise — with the site's own body face behind it
+     while the file is in flight. */
+  --sheet-face: "Andika", var(--font-body, system-ui, sans-serif);
+
+  /* Overwritten inline by the renderer from the sheet's own `paper`. The
+     defaults are Letter portrait at half-inch margins, which is what most of
+     this audience prints on. */
+  --sheet-w: 8.5in;
+  --sheet-h: 11in;
+  --sheet-margin: 0.5in;
+  --sheet-pt: 12pt;
+
+  /* Set here rather than inherited from `base.css`: width plus padding only
+     add up to the paper size under `border-box`, and under the initial
+     `content-box` an 8.5in sheet is 9.5in wide and every print silently scales
+     or clips. Same reason as the font fallbacks below — this file has to hold
+     on a page that never loaded the rest of the app's CSS. */
+  box-sizing: border-box;
+  width: var(--sheet-w);
+  min-height: var(--sheet-h);
+  padding: var(--sheet-margin);
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  /* The containing block for the cut guides, which are drawn over the paper
+     rather than in the flow so that switching them on costs no capacity. */
+  position: relative;
+  /* The fallbacks are not decoration: this stylesheet arrives with the
+     renderer, so it has to stand up on a page that never loaded tokens.css. */
+  font-family: var(--sheet-face);
+  font-size: var(--sheet-pt);
+  line-height: 1.35;
+  color: #000;
+  background: #fff;
+
+  /* Consecutive sheets — variants A/B/C, or a sheet and its answer key — are
+     one page each. The last one doesn't push a blank page after itself. */
+  break-after: page;
+}
+
+.sheet:last-of-type {
+  break-after: auto;
+}
+
+/* On screen the sheet is white paper floating on the world's own ground, which
+   is how every layout tool on earth presents a page and is also just true. */
+@media screen {
+  .sheet {
+    box-shadow: 0 24px 60px -30px rgb(0 0 0 / 90%);
+  }
+}
+
+/* ── The frame a sheet is looked at in ──────────────────────────────────────
+   A sheet is 8.5 inches wide and does not negotiate — that is the whole of
+   §4 — and 8.5 inches is wider than a phone. Left in the flow it makes the
+   document itself scroll sideways, which is the one layout failure a reader
+   can't work around.
+
+   So the page that shows a sheet puts it in this: the overflow belongs to the
+   frame, and a reader on a phone drags the paper rather than the article. It
+   lives here rather than in content.css because it arrives with the renderer,
+   the same as everything else in this file — the builder's preview will want
+   the identical frame and must not have to remember to ask for it.
+
+   Print takes it all back off. `overflow` on an ancestor of the page box is
+   another way to lose the bottom of a sheet, and the padding would offset the
+   very geometry the sheet exists to hold. */
+.sheet-frame {
+  overflow: auto;
+  padding-block: 1rem 2.5rem;
+  padding-inline: 1rem;
+}
+
+@media print {
+  .sheet-frame {
+    overflow: visible;
+    padding: 0;
+  }
+}
+
+/* ── Chrome ─────────────────────────────────────────────────────────────── */
+
+.sheet__head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.09in;
+  margin-bottom: 0.16in;
+}
+
+.sheet__title {
+  font-family: var(--font-display, system-ui, sans-serif);
+  font-size: 1.7em;
+  font-weight: 400;
+  line-height: 1.05;
+}
+
+.sheet__fields {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.06in 0.28in;
+  font-size: 0.82em;
+}
+
+.sheet__field,
+.sheet__score {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.06in;
+}
+
+.sheet__score {
+  margin-left: auto;
+}
+
+/* A border, not a row of underscores: underscores set in a proportional face
+   are a ragged line whose length depends on how many the generator wrote, and
+   a child needs the same room whatever they are writing. */
+.sheet__field-rule {
+  display: inline-block;
+  width: 2.1in;
+  border-bottom: 0.75pt solid currentcolor;
+}
+
+.sheet__field-rule--short {
+  width: 0.7in;
+}
+
+.sheet__instructions {
+  font-size: 0.9em;
+}
+
+.sheet__blocks {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.14in;
+}
+
+.sheet__block {
+  display: flex;
+  flex-direction: column;
+}
+
+.sheet__foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.04in 0.16in;
+  margin-top: 0.18in;
+  padding-top: 0.05in;
+  border-top: 0.5pt solid currentcolor;
+  font-size: 0.62em;
+}
+
+.sheet__seed {
+  margin-left: auto;
+  font-family: var(--font-mono, ui-monospace, monospace);
+}
+
+/* Every list on a sheet numbers itself in `<span class="sheet__number">`
+   rather than with a marker: `base.css` strips markers site-wide and this
+   file has to hold on a page that never loaded it, a problem a child is told
+   to "do 4, 7 and 12 of" needs its number as selectable text anyway, and a
+   marker outside the box is a marker outside the margin. */
+.sheet__problems,
+.sheet__blanks,
+.sheet__questions,
+.sheet__options,
+.sheet__wordshapes,
+.sheet__cards,
+.sheet__clue-list,
+.sheet__words {
+  list-style: none;
+  padding-left: 0;
+}
+
+/* ── Ink ────────────────────────────────────────────────────────────────────
+   Colour and font family only. Stroke widths and dash patterns are attributes
+   in mil, set by the renderer — see src/components/sheet/units.ts for why a
+   `stroke-width` declared here would come out about a thousandth of the size
+   it says.                                                                  */
+
+.sheet__ink {
+  display: block;
+  max-width: 100%;
+  font-family: var(--sheet-face, var(--font-body, system-ui, sans-serif));
+}
+
+/* A traced row is exactly one repeat of its ruling tall, because that is what
+   keeps a ⅝ rule ⅝ of an inch down a page of them. The tail of a `g` does not
+   fit in that box on a ruling with no descender space — and on Playwrite it
+   overhangs by four thousandths of an inch even on one that has (`faces.ts`).
+   An SVG viewport clips by default, so the choice is between a model with its
+   tail cut off at the baseline and one drawn through the line below. A child
+   writes the second of those, so the sheet prints it.
+
+   This gives up the clip in BOTH directions, which is not what was wanted:
+   the isometric ruling runs its diagonals off each side on the understanding
+   that something takes them off again, and a word wider than the declared mean
+   advance would print past the margin. So `TracedRow` nests a second `<svg>`
+   inside this one that is exactly as wide as the row and an em taller at each
+   end — a nested viewport clips to itself whatever its parent does, so the
+   overhang stays vertical. Don't add horizontal slack here; add it there. */
+.sheet__ink--trace {
+  overflow: visible;
+}
+
+/* ── The five faces (§17) ───────────────────────────────────────────────────
+   Files now, self-hosted beside the site's own three — see `fonts.css` for
+   which face does which job and why none of them is a request to a CDN. What
+   is left in here is the part that belongs in a stylesheet: the stack, and the
+   fallback each id lands on while its woff2 is in flight or on a page that
+   never loaded `fonts.css`.
+
+   The `Sheet` carries the id and never the stack. That is what let three of
+   these be system fonts for two stories and files today without a single saved
+   sheet changing its mind about which face it wanted.
+
+   The engine has measured proportions for all five (`faces.ts`) and sizes
+   traced letterforms off them, so **the family named here and the family named
+   there have to be the same font**. Changing one alone prints letters through
+   the top rule.
+
+   Three of them are cursive, because there is no such thing as cursive: the
+   looped hand an American school teaches, the unlooped one that lifts the
+   pencil after `b f g j p q s y`, and the fully joined hand a British one
+   teaches
+   are three different models, and picking one would be calling the other two
+   wrong. `cursive` stays unqualified because it is the id saved sheets already
+   carry (§7).
+
+   Their system fallbacks are a courtesy and nothing more. A script face a
+   reader happens to have installed joins where it likes, which on a sheet of
+   joins is the mistake being taught against — hence `font-display: block` on
+   all three, so the fallback is what a printer never sees.                   */
+
+.sheet[data-font="cursive"] {
+  --sheet-face:
+    "Playwrite US Trad", "Segoe Script", "Bradley Hand", "Snell Roundhand",
+    cursive;
+}
+
+.sheet[data-font="cursive-modern"] {
+  --sheet-face:
+    "Playwrite US Modern", "Segoe Script", "Bradley Hand", "Snell Roundhand",
+    cursive;
+}
+
+.sheet[data-font="cursive-uk"] {
+  --sheet-face:
+    "Playwrite GB J", "Segoe Script", "Bradley Hand", "Snell Roundhand", cursive;
+}
+
+/* Comic Sans is still in the stack, on the evidence rather than on taste: it is
+   one of the faces dyslexia guidance actually names, for the same reason
+   OpenDyslexic is — letters that can't be mistaken for one another when they
+   are rotated or mirrored. Verdana behind it for its width and open counters.
+
+   OpenDyslexic is half as wide again as the other two, so a page of word
+   problems set in it can push its last row onto a second sheet. That is the
+   honest price of the option and a better answer than not offering it. */
+.sheet[data-font="dyslexic"] {
+  --sheet-face:
+    "OpenDyslexic", "Open Dyslexic", "Comic Sans MS", verdana, sans-serif;
+}
+
+/* ── Where to cut (§17) ─────────────────────────────────────────────────────
+   Over the paper, not in it. The overlay takes no room in the flow, which is
+   what lets a parent switch cut guides on without any family re-doing the
+   arithmetic that decided how many problems fit. `pointer-events` off so the
+   text underneath stays selectable, which is most of what §2 is about.      */
+.sheet__cuts {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.sheet__rule,
+.sheet__dial,
+.sheet__shape {
+  stroke: currentcolor;
+  fill: none;
+}
+
+.sheet__cell,
+.sheet__dot,
+.sheet__tick {
+  fill: currentcolor;
+  stroke: none;
+}
+
+/* The shaded parts of a fraction bar or circle.
+
+   The one place a sheet paints inside a shape rather than only round it, and
+   the ink note above is exactly why it is a `fill`: the shading is the question
+   on a naming sheet, so it has to survive a printer with background graphics
+   switched off, and only foreground paint does. A fraction of the ink, because
+   a solid quarter-circle thirty times a week is a cartridge. */
+.sheet__shade {
+  fill: currentcolor;
+  stroke: none;
+  opacity: 22%;
+}
+
+/* The picture sits in the row with the number and the blank, and gives itself a
+   little air rather than butting against either. */
+.sheet__art {
+  margin-right: 0.06in;
+}
+
+/* The solution stroke on a word search. Lighter than the letters it crosses,
+   so the key is still readable underneath it. */
+.sheet__found {
+  stroke: currentcolor;
+  fill: none;
+  opacity: 45%;
+}
+
+.sheet__cell--start {
+  text-anchor: start;
+}
+
+.sheet__cell--end {
+  text-anchor: end;
+}
+
+/* ── Letterforms, from an ordinary font (§6) ─────────────────────────────── */
+
+.sheet__glyph--solid {
+  fill: currentcolor;
+  stroke: none;
+}
+
+.sheet__glyph--dim {
+  fill: currentcolor;
+  stroke: none;
+  opacity: 28%;
+}
+
+.sheet__glyph--hollow,
+.sheet__glyph--dotted,
+.sheet__glyph--dashed {
+  fill: none;
+  stroke: currentcolor;
+}
+
+/* ── Problems ───────────────────────────────────────────────────────────────
+   `break-inside: avoid` here and on every other row-shaped thing below is not
+   a nicety. Print is the whole of the output path (§10), so the preview has to
+   be right the first time — a problem split across two pages is a problem a
+   child can't answer, and there is no PDF to fall back on.                   */
+
+.sheet__problems {
+  display: grid;
+  grid-template-columns: repeat(var(--sheet-columns, 2), minmax(0, 1fr));
+  gap: 0.2in 0.3in;
+}
+
+.sheet__problem,
+.sheet__row,
+.sheet__sentence,
+.sheet__question,
+.sheet__face,
+.sheet__figure {
+  break-inside: avoid;
+}
+
+.sheet__problem {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.06in;
+}
+
+.sheet__number,
+.sheet__mark {
+  font-variant-numeric: tabular-nums;
+  margin-right: 0.06in;
+}
+
+.sheet__mark {
+  font-weight: 700;
+  margin-right: 0.05in;
+}
+
+/* Where the answer goes: a ruled slot when the sheet is blank, the answer
+   itself on the key. Same element either way, so the two can't drift apart. */
+.sheet__slot {
+  display: inline-block;
+  min-width: 0.8in;
+  border-bottom: 0.75pt solid currentcolor;
+  text-align: center;
+}
+
+/* The same slot with a box round it instead of a rule under it (§17) — which
+   is why it is drawn here rather than emitted by a family: a boxed answer is
+   how the answer place looks, not where it is, so nothing about the problem
+   changes and no family has to offer it.
+
+   No padding, deliberately. The border sits on the line box the rule already
+   occupied, so a page of boxed answers is exactly as tall as the same page of
+   ruled ones — and the capacity arithmetic, which reserved the rows before
+   anybody chose, stays right. */
+.sheet[data-answer-box] .sheet__slot {
+  border: 0.75pt solid currentcolor;
+}
+
+/* An answer, wherever it is written: in the slot at the end of a sum, in the
+   gap inside one, under the rule of a column, over a division bracket, on a
+   working line or in a square of a grid. One weight in one place, so a key
+   reads the same however the problem was set. */
+.sheet__slot--answered,
+.sheet__total--answered,
+.sheet__quotient--answered,
+.sheet__work-line--answered,
+.sheet__cell--answered {
+  font-weight: 700;
+}
+
+/* ── Column form ────────────────────────────────────────────────────────────
+   The same sum stacked, which is how carrying is taught. `tabular-nums` is not
+   a nicety here: a child shown to line the units up under the units will line
+   them up, and a proportional face puts a 1 half a column left of where a 4
+   goes. The rule under the sum is a border on the answer's own box, so it is
+   exactly as wide as the sum it belongs to whatever the numbers are.        */
+
+.sheet__column {
+  display: inline-flex;
+  flex-direction: column;
+  min-width: 0.85in;
+  font-variant-numeric: tabular-nums;
+}
+
+.sheet__addend {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.14in;
+}
+
+.sheet__total {
+  border-top: 0.75pt solid currentcolor;
+  padding-top: 0.03in;
+  min-height: 1.2em;
+  text-align: right;
+}
+
+/* ── The long forms ─────────────────────────────────────────────────────────
+   The two sheets where the working is the exercise rather than the answer, and
+   where every rule above is load-bearing twice over. `tabular-nums` is what
+   keeps a partial product in its own column, and a partial written half a
+   column left of where it belongs is the entire mistake these sheets exist to
+   practise out of a child. `nowrap` is what keeps a row the height the layout
+   arithmetic declared, exactly as it is on an answer line.                   */
+
+/* The partial products of a long multiplication. The rule under the sum is
+   this box's top border, each partial gets a line of its own, and the last of
+   those lines is the rule the total is written under — which is the shape of
+   the algorithm, drawn with three borders and no drawing. */
+.sheet__work {
+  display: flex;
+  flex-direction: column;
+  border-top: 0.75pt solid currentcolor;
+  padding-top: 0.03in;
+}
+
+.sheet__work-line {
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  overflow: hidden;
+  white-space: nowrap;
+  border-bottom: 0.75pt solid currentcolor;
+}
+
+/* Two strokes at the same height print as one heavy line, so the total gives
+   up its own rule when the working already drew one. */
+.sheet__work + .sheet__total {
+  border-top: 0;
+  padding-top: 0;
+}
+
+/* Long division: the divisor outside the bracket, the dividend under the bar,
+   and the quotient written along the top of it. The bar and the upright are
+   borders rather than an SVG, because they are exactly a border — and because
+   the digits inside have to stay selectable text (§2). */
+.sheet__bracket {
+  display: inline-flex;
+  align-items: flex-end;
+  font-variant-numeric: tabular-nums;
+}
+
+.sheet__divisor {
+  padding-right: 0.05in;
+  padding-bottom: 0.02in;
+}
+
+.sheet__house {
+  display: flex;
+  flex-direction: column;
+  min-width: 0.7in;
+}
+
+/* Right-aligned over the dividend, not centred: a quotient's last digit
+   belongs over the dividend's last digit, always, whatever either measures.
+
+   Which is why the right inset below is the dividend's own, written out again.
+   Both boxes stretch the full width of `.sheet__house`, so their right *edges*
+   already agree — but a quotient without the padding the dividend holds its
+   digits off by would put its units digit two thirds of a digit clear of the
+   one it is supposed to sit over, and place value is the entire exercise. The
+   two values are asserted equal in Sheet.test.tsx so they cannot drift. */
+.sheet__quotient {
+  min-height: 1.2em;
+  padding-right: 0.06in;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.sheet__dividend {
+  border-top: 0.75pt solid currentcolor;
+  border-left: 0.75pt solid currentcolor;
+  padding: 0.03in 0.06in 0.02in;
+  text-align: right;
+}
+
+/* A number line and a workspace are both a full row of their own under the
+   problem they belong to, rather than something beside it.
+
+   The growth is scoped to that problem row, and the scoping is load-bearing.
+   `.sheet__problem` is a wrapping flex *row*, where `flex: 1 0 100%` means "a
+   line to yourself"; `.sheet__blocks` is a flex *column*, where the same
+   declaration means "take all the height that is going". A number line is now
+   both — an aid under a sum, and a block of its own on a reference sheet — and
+   unscoped, the reference strips stretched to fill the page and printed at six
+   times the height the layout arithmetic had reserved for them. */
+.sheet__workspace,
+.sheet__number-line {
+  display: block;
+}
+
+.sheet__problem > .sheet__workspace,
+.sheet__problem > .sheet__number-line {
+  flex: 1 0 100%;
+}
+
+/* ── Answers written out ────────────────────────────────────────────────────
+   A fact family asks for four number sentences, so it gets four lines to write
+   them on rather than one slot the size of one of them. These lines *are* the
+   answer place — the prompt above prints no slot — and they divide the height
+   the family reserved between them, which is why `nowrap` is load-bearing and
+   not a nicety: a sentence that wrapped would make the row taller than the
+   layout arithmetic declared, and the bottom row of the page would come out of
+   the printer on a second sheet.                                            */
+
+.sheet__answers {
+  display: flex;
+  flex-direction: column;
+  flex: 1 0 100%;
+}
+
+.sheet__answer-line {
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+  white-space: nowrap;
+  border-bottom: 0.75pt solid currentcolor;
+}
+
+.sheet__answer-line--answered {
+  font-weight: 700;
+}
+
+/* ── The rest of the blocks ─────────────────────────────────────────────── */
+
+.sheet__blanks,
+.sheet__questions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.16in;
+}
+
+.sheet__sentence,
+.sheet__ask {
+  display: block;
+}
+
+.sheet__options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.06in 0.3in;
+  padding-left: 0.3in;
+}
+
+/* A rule under the right answer, never a tint behind it — see the ink note. */
+.sheet__option--answer {
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+.sheet__words {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.06in 0.28in;
+  margin-top: 0.12in;
+  font-size: 0.9em;
+}
+
+/* ── Puzzles ────────────────────────────────────────────────────────────────
+   Every number here is trailed by `words/puzzles.ts`, which reserves the page
+   against it before the puzzle exists — the same bargain `chrome.ts` and
+   `layout.ts` strike, and the same silent failure when it is broken: a clue
+   list an eighth of an inch taller than the room made for it looks perfect on
+   screen and prints its last clue on a second sheet of paper.               */
+
+.sheet__clues {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.05in 0.3in;
+  margin-top: 0.12in;
+  font-size: 0.9em;
+  /* A clue list splits between two columns and a column may not split between
+     two pages: half a crossword's clues overleaf is a puzzle nobody can do. */
+  break-inside: avoid;
+}
+
+.sheet__clue-head {
+  font-weight: 700;
+}
+
+.sheet__clue-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.05in;
+}
+
+/* The line that admits a word did not fit. Set apart from the puzzle it is
+   about — italic and a size down — because it is the sheet talking about
+   itself rather than something a child is asked to do. */
+.sheet__missing {
+  margin-top: 0.1in;
+  font-size: 0.85em;
+  font-style: italic;
+}
+
+/* ── Word shapes ────────────────────────────────────────────────────────────
+   The same grid a page of problems is laid out on, and for the same reason: the
+   family decided how many columns fit and reserved the page against it, so the
+   gaps here are the ones `PROBLEM_GAP` names in mil. The boxes themselves are
+   drawn in the block — strokes rather than borders on a `<span>`, because their
+   heights are three bands of one row rather than three sizes of text.        */
+
+.sheet__wordshapes {
+  display: grid;
+  grid-template-columns: repeat(var(--sheet-columns, 2), minmax(0, 1fr));
+  gap: 0.2in 0.3in;
+}
+
+/* The one row on a sheet that may not wrap. Every other flex row here wraps
+   onto a second line and the family reserves for it (`WRAP_GAP`); a row of
+   boxes cannot, because how tall it is was declared before the words were known
+   and a very long word in a narrow column would take a line nobody reserved —
+   which is the last row of the page on a second sheet of paper. `.sheet__ink`
+   is already `max-width: 100%`, so what a word too wide for its column does
+   instead is shrink its own boxes, which is the cheap side to be wrong on. */
+.sheet__wordshape {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 0.06in;
+  break-inside: avoid;
+}
+
+/* A hairline box, never a filled one: a child writes in these, and the ink note
+   above is the other half of it — a tinted box is the one mark a browser drops
+   when printing, which would print a word-shape sheet as a blank page. */
+.sheet__box {
+  fill: none;
+  stroke: currentcolor;
+}
+
+/* ── Sound cards, wall charts and sentence strips (§13) ─────────────────────
+   The same grid again, and the same bargain: the family decided how many
+   columns fit and how tall a card stands, so the gaps here are the ones
+   `PROBLEM_GAP` names in mil and every type size on a card is set inline from
+   `phonics/cards.ts`. Nothing about a card's size is decided in this file.   */
+
+.sheet__cards {
+  display: grid;
+  grid-template-columns: repeat(var(--sheet-columns, 3), minmax(0, 1fr));
+  gap: 0.2in 0.3in;
+}
+
+.sheet__card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  break-inside: avoid;
+}
+
+/* A real border rather than a tint, for the reason the ink note above gives: a
+   printer with "Background graphics" unticked drops paint and keeps strokes,
+   and a page of cards to cut out whose boxes vanished is a page nobody can cut
+   out. The wall chart has no box at all — it is read, not cut. */
+.sheet__cards--boxed .sheet__card {
+  border: 0.75pt solid currentcolor;
+}
+
+/* A strip is a whole sentence at nearly twice the body size, and the family
+   reserved for it wrapping (`stripRows`). Breaking inside a word rather than
+   overflowing the column is what keeps that reservation honest at the far end,
+   where the type is large and the column is narrow. */
+.sheet__card-big,
+.sheet__card-small {
+  overflow-wrap: break-word;
+}
+
+/* ── The three marks (§13) ──────────────────────────────────────────────────
+   Independent switches, never a preset, and each one a convention shared by
+   many phonics traditions rather than owned by any: a bar over a vowel saying
+   its own name, a letter that says nothing set faintly, and two letters saying
+   one sound tied underneath. All three are foreground ink — an overline, an
+   underline and a lighter weight of the same colour — so all three print. */
+
+.sheet__part--macron {
+  text-decoration: overline;
+  text-decoration-thickness: 0.06em;
+}
+
+.sheet__part--silent {
+  opacity: 40%;
+}
+
+.sheet__part--joined {
+  text-decoration: underline;
+  text-decoration-thickness: 0.06em;
+  text-underline-offset: 0.1em;
+}
+
+/* ── The paperwork (§11's templates tier) ───────────────────────────────────
+   A form, a table, a page of cards to cut out, and a net. Every length here is
+   either an inch set inline by the renderer from what the engine worked out, or
+   an em of the body size that `engine/sheets/templates/` reserved the page
+   against — the same bargain the rest of this file strikes, and the same silent
+   failure when it is broken.                                                */
+
+/* A wrapping row rather than a grid, because a field's width is already a
+   length: the family divided the page into columns and told each field how wide
+   it is (`FormField.width`), so all this has to do is put them next to each
+   other and break where they run out. The gap is `FIELD_GAP` in forms.ts. */
+.sheet__form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.14in;
+}
+
+.sheet__form-field {
+  display: flex;
+  flex-direction: column;
+  break-inside: avoid;
+}
+
+/* 0.85em over 1.4, which is the pair `templates/forms.ts` reserves a label row
+   at. The renderer may set the size smaller inline where a long heading would
+   not otherwise fit its own box; smaller is always safe, because the
+   reservation was made at the larger of the two. `nowrap` for the same reason
+   a word-shape row may not wrap — a second line is height nobody reserved. */
+.sheet__form-label {
+  font-size: 0.85em;
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.sheet__table {
+  break-inside: avoid;
+}
+
+/* ── Cards to cut out ───────────────────────────────────────────────────────
+   The block is exactly as wide as its cards and centred, which is the half of
+   §17's cut-line promise that nothing draws: whatever the cards did not use is
+   split evenly left and right, so a stack of cut sheets is square with itself.
+   An uneven margin is how this goes wrong and it cannot be seen on screen.  */
+
+.sheet__cut {
+  position: relative;
+  margin-inline: auto;
+  break-inside: avoid;
+}
+
+.sheet__cut-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--sheet-columns, 2), var(--card-w));
+  grid-auto-rows: var(--card-h);
+  list-style: none;
+  padding-left: 0;
+}
+
+/* No gutter, deliberately: two cards share one edge and one cut makes both of
+   them (see `CutCards.tsx`). The guides are drawn over the top rather than as
+   borders here, so there is one line per boundary and it is the boundary. */
+.sheet__cut-card {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.sheet__cut-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.05in;
+  padding: 0.12in;
+  text-align: center;
+  overflow: hidden;
+}
+
+/* The upper half of a tent. Folded back and down it faces the other way, so it
+   is printed the other way up — which is what makes a name tag readable from
+   both sides of a desk rather than upside down from one of them. */
+.sheet__cut-panel--flipped {
+  transform: rotate(180deg);
+}
+
+/* A certificate's double rule, held off the cut so that a trim a
+   thirty-second of an inch out does not slice through it. A border rather than
+   a tint, for the reason every other box on a sheet is one. */
+.sheet__cut-panel--award {
+  margin: 0.14in;
+  padding: 0.1in;
+  border: 3pt double currentcolor;
+}
+
+.sheet__cut-eyebrow,
+.sheet__cut-for {
+  font-size: 0.7em;
+}
+
+.sheet__cut-heading {
+  line-height: 1.1;
+  overflow-wrap: break-word;
+}
+
+.sheet__cut-body {
+  font-size: 0.82em;
+  line-height: 1.3;
+  overflow-wrap: break-word;
+}
+
+/* A rule to write on, and what it is for set under it rather than beside it:
+   on a certificate the name is written along the line, and a label to the left
+   of it would take a third of the room the name has. */
+.sheet__cut-field {
+  display: flex;
+  flex-direction: column;
+  align-self: stretch;
+}
+
+.sheet__cut-rule {
+  align-self: stretch;
+  min-height: 0.24in;
+  border-bottom: 0.75pt solid currentcolor;
+}
+
+.sheet__cut-guides {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* ── Nets ───────────────────────────────────────────────────────────────────
+   A fold is a rule and a cut is heavy, which is the pair of differences a
+   reader takes in without being given a legend. Both are strokes, so both
+   print — a net whose fold lines were a background would come out of the
+   printer as six squares and no instructions.                              */
+
+.sheet__net {
+  margin-inline: auto;
+  break-inside: avoid;
+}
+
+.sheet__faces,
+.sheet__figures {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.24in;
+}
+
+.sheet__face {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.04in;
+}
+
+.sheet__caption {
+  font-size: 0.8em;
+}

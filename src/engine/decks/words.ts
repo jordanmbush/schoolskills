@@ -1,7 +1,7 @@
 import type { Card, WordConfig } from "@/engine/types";
 
 import { mulberry32, shuffled } from "@/engine/random";
-import { WORD_LISTS_BY_ID } from "./wordlists";
+import { SHIPPED_LISTS, WORD_LISTS_BY_ID } from "./wordlists";
 import type { DeckSpec } from "./spec";
 
 /**
@@ -37,8 +37,17 @@ export const normaliseWord = (input: string) =>
  * Drawn from the same list and biased towards words that look like it —
  * "there" against "their", not against "squirrel". Four random words would
  * make recognition a spotting exercise rather than a reading one.
+ *
+ * Exported for the print shop's "find the word" sheet, which asks exactly this
+ * question on paper: the same list, the same three near misses, so a sheet and a
+ * "spot it" round are one exercise in two places rather than two rules about
+ * what counts as a plausible confusion.
  */
-function wordDistractors(answer: string, pool: string[], rand: () => number) {
+export function wordDistractors(
+  answer: string,
+  pool: string[],
+  rand: () => number,
+): string[] {
   const others = [...new Set(pool)].filter(
     (w) => normaliseWord(w) !== normaliseWord(answer),
   );
@@ -105,6 +114,39 @@ export function clueParts(clue: string): [string, string] {
   const at = clue.indexOf(CLUE_SLOT);
   return at < 0 ? [clue, ""] : [clue.slice(0, at), clue.slice(at + 1)];
 }
+
+/**
+ * Every sentence this build ships, by the word it is about.
+ *
+ * Indexed across all the lists at once rather than looked up inside one,
+ * because the caller that needs it doesn't have a list to look in: the Print
+ * Shop's crossword is set on whatever words a parent pasted into a box, and if
+ * `because` happens to be one of the words the jungle already teaches then the
+ * sentence somebody wrote for it is the clue that crossword should use. Which
+ * is the whole of "clues from the list's own definitions where available" —
+ * available means somebody wrote one, and this is where they are.
+ *
+ * Normalised on the way in and on the way out, so a list typed in capitals
+ * still finds its sentence. A few hundred entries, built once at load.
+ *
+ * Across every shipped list rather than the graded ones, for the same reason:
+ * a parent who pasted the books of the Bible into the box gets the sentences
+ * `biblelists.ts` wrote for them. No word is in two shipped lists — the rule is
+ * that file's, and `biblelists.test.ts` holds the whole shelf to it — so this
+ * map has one sentence per word rather than whichever list was registered last.
+ */
+const SHIPPED_CLUES = new Map<string, string>(
+  SHIPPED_LISTS.flatMap((list) =>
+    list.entries.map((entry): [string, string] => [
+      normaliseWord(entry.word),
+      entry.clue,
+    ]),
+  ),
+);
+
+/** The sentence a shipped list gives this word, if any list gives it one. */
+export const shippedClue = (word: string): string | undefined =>
+  SHIPPED_CLUES.get(normaliseWord(word));
 
 /**
  * What the voice says for a card: the word, then the word in a sentence.

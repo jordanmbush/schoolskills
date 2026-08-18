@@ -1,6 +1,7 @@
 import type { Card, TypingConfig } from "@/engine/types";
 
 import { mulberry32, shuffled } from "@/engine/random";
+import { SCRIPTURE_CREDIT } from "@/engine/sheets/passages/credit";
 import { WORD_LISTS, listWords } from "./wordlists";
 import type { DeckSpec } from "./spec";
 
@@ -34,6 +35,13 @@ export type TypingLevel = {
   /** Whole sentences, or a bag of words to shuffle. */
   kind: "words" | "sentences";
   pool: string[];
+  /**
+   * The line this level's source asks to be printed under its words, if it
+   * asks for one. The same field `Passage.credit` is, and for the same
+   * reason: attribution travels *with* the text rather than beside it, so a
+   * screen that shows the passage cannot show it uncredited.
+   */
+  credit?: string;
 };
 
 /** Home row only: a s d f g — h j k l ;. Every word below uses nothing else. */
@@ -141,6 +149,113 @@ const SENTENCES = [
   "My brother is learning to play the piano.",
 ];
 
+/**
+ * Scripture, as a typing pool — one source among several, and nothing more
+ * than that (docs/printables.md §12).
+ *
+ * Thirty-three verses from Psalms, Proverbs, the Gospels and the letters, in
+ * the World English Bible Updated. Three rules picked them, and all three are
+ * about the exercise rather than about the text:
+ *
+ *   - **No divine name.** `LORD` in small caps is a nuisance to type and
+ *     reads as shouting to a seven-year-old, so the psalms and proverbs here
+ *     are the ones that don't carry it.
+ *   - **Nothing but keys a child can find.** Typing marks exactly — case and
+ *     punctuation are the whole exercise at this level — and the release sets
+ *     quoted speech in curly quotation marks, which a plain keyboard does not
+ *     produce. A verse containing one would be unpassable rather than hard.
+ *     That rules out most of the narrative and every quoted saying, which is
+ *     why these are sayings and not stories. Only `.`, `,` and `;` survive.
+ *   - **Whole sentences.** A capital at the front and a full stop at the end.
+ *     The sentence levels split on spaces and never on meaning, so a verse
+ *     that trails off mid-list would arrive as a fragment with a comma on it.
+ *
+ * ── Why the words are written out here ──────────────────────────────────────
+ * Because `decks/index.ts` is the front door for every island — the flash
+ * cards, the spelling mount, the record book, the print shop — and a module is
+ * assigned to a chunk whole. An import of the passage library from this file
+ * puts all of it into all of them: the WEBu, the KJV beside it and thirty
+ * other passages, shipped to every game to type thirty-three verses in one of
+ * them. It was measured on the way past — 46KB of shared chunk became 222KB —
+ * which is also why the credit comes from `passages/credit.ts` and not from
+ * the file the verses are in.
+ *
+ * So the text is repeated, and `typing.test.ts` pins every line of it to
+ * `passage()` character for character. That is the arrangement `scripture.ts`
+ * already has with `release/engwebu.vpl.txt`: two files that would have to be
+ * edited identically, in one commit, for the text to drift — which is the
+ * point at which it stops being an accident. The reference above each line is
+ * where it came from, and is what the test reads when one of them fails.
+ */
+const SCRIPTURE_PASSAGES = [
+  // Psalm 23
+  "He makes me lie down in green pastures. He leads me beside still waters.",
+  // Psalm 34:13-14
+  "Keep your tongue from evil, and your lips from speaking lies.",
+  // Psalm 51:10
+  "Create in me a clean heart, O God. Renew a right spirit within me.",
+  // Psalm 56:3
+  "When I am afraid, I will put my trust in you.",
+  // Psalm 90:12
+  "So teach us to count our days, that we may gain a heart of wisdom.",
+  // Psalm 119:9-11
+  "I have hidden your word in my heart, that I might not sin against you.",
+  // Psalm 119:105
+  "Your word is a lamp to my feet, and a light for my path.",
+  // Psalm 121
+  "Behold, he who keeps Israel will neither slumber nor sleep.",
+  // Psalm 147:3
+  "He heals the broken in heart, and binds up their wounds.",
+  // Proverbs 3:5-6
+  "In all your ways acknowledge him, and he will make your paths straight.",
+  // Proverbs 4:23
+  "Keep your heart with all diligence, for out of it is the wellspring of life.",
+  // Proverbs 10:12
+  "Hatred stirs up strife, but love covers all wrongs.",
+  // Proverbs 11:2
+  "When pride comes, then comes shame, but with humility comes wisdom.",
+  // Proverbs 13:20
+  "One who walks with wise men grows wise, but a companion of fools suffers harm.",
+  // Proverbs 15:1
+  "A gentle answer turns away wrath, but a harsh word stirs up anger.",
+  // Proverbs 16:24
+  "Pleasant words are a honeycomb, sweet to the soul, and health to the bones.",
+  // Proverbs 17:17
+  "A friend loves at all times; and a brother is born for adversity.",
+  // Proverbs 17:22
+  "A cheerful heart makes good medicine, but a crushed spirit dries up the bones.",
+  // Proverbs 21:5
+  "The plans of the diligent surely lead to profit; and everyone who is hasty surely rushes to poverty.",
+  // Proverbs 25:11
+  "A word fitly spoken is like apples of gold in settings of silver.",
+  // Matthew 5:3-12
+  "Blessed are the peacemakers, for they shall be called children of God.",
+  // Matthew 6:9-13
+  "Give us today our daily bread.",
+  // Luke 2:52
+  "And Jesus increased in wisdom and stature, and in favor with God and men.",
+  // John 1:1-5
+  "In him was life, and the life was the light of men.",
+  // Romans 12:9-13
+  "Let love be without hypocrisy. Abhor that which is evil. Cling to that which is good.",
+  // 1 Corinthians 16:13-14
+  "Let all that you do be done in love.",
+  // Ephesians 4:32
+  "And be kind to one another, tender hearted, forgiving each other, just as God also in Christ forgave you.",
+  // Philippians 4:13
+  "I can do all things through Christ who strengthens me.",
+  // 1 Thessalonians 5:16-18
+  "In everything give thanks, for this is the will of God in Christ Jesus toward you.",
+  // Hebrews 11:1
+  "Now faith is assurance of things hoped for, proof of things not seen.",
+  // Hebrews 13:8
+  "Jesus Christ is the same yesterday, today, and forever.",
+  // James 1:22
+  "But be doers of the word, and not only hearers, deluding your own selves.",
+  // 1 John 4:19
+  "We love him, because he first loved us.",
+];
+
 export const TYPING_LEVELS: TypingLevel[] = [
   {
     id: "home-row",
@@ -182,17 +297,44 @@ export const TYPING_LEVELS: TypingLevel[] = [
     kind: "sentences",
     pool: SENTENCES,
   },
+  {
+    id: "scripture",
+    name: "Verses",
+    group: "Ages 9+",
+    blurb: "Psalms, Proverbs and the letters, punctuated exactly as written.",
+    emoji: "📖",
+    keys: "shift, comma, semicolon",
+    kind: "sentences",
+    pool: SCRIPTURE_PASSAGES,
+    credit: SCRIPTURE_CREDIT,
+  },
 ];
 
 export const TYPING_LEVELS_BY_ID = new Map(TYPING_LEVELS.map((l) => [l.id, l]));
 
-/** Where a child of this age is likely to be starting. */
+/**
+ * Where a child of this age is likely to be starting.
+ *
+ * The four-level progression, and only that. The Scripture level is a *source*
+ * rather than a step — it is the sentence level's marking rule over somebody
+ * else's words — so nobody is landed on it by an age; it is chosen or it isn't.
+ */
 export function typingLevelForAge(age: number): TypingLevel {
   if (age <= 7) return TYPING_LEVELS[0];
   if (age <= 8) return TYPING_LEVELS[1];
   if (age <= 10) return TYPING_LEVELS[2];
   return TYPING_LEVELS[3];
 }
+
+/**
+ * The credit line to print under this level's words, if its source asks for
+ * one. Every screen that shows the passage asks — the setup that names the
+ * level, the race that shows the words, the results that lists them back —
+ * because a credit that appears on one of the three is a credit that a reader
+ * can be shown the text without.
+ */
+export const levelCredit = (levelId: string): string | undefined =>
+  TYPING_LEVELS_BY_ID.get(levelId)?.credit;
 
 /**
  * The words of a passage, in the order they'll be typed.

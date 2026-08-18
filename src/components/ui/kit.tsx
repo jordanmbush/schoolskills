@@ -17,6 +17,14 @@ export { Input, type InputProps } from "./Input";
 export { TextArea, type TextAreaProps } from "./TextArea";
 export { Field, FieldSet } from "./Field";
 export { Select, type SelectOption, type SelectProps } from "./Select";
+export { Checkbox, type CheckboxProps } from "./Checkbox";
+export {
+  SegmentedControl,
+  type SegmentedControlProps,
+  type SegmentedOption,
+} from "./SegmentedControl";
+export { Range, type RangeProps } from "./Range";
+export { NumberStepper, type NumberStepperProps } from "./NumberStepper";
 
 export function Avatar({
   profile,
@@ -87,6 +95,13 @@ export function Stat({ value, label }: { value: ReactNode; label: string }) {
   );
 }
 
+/**
+ * A switch: one setting, on or off, acting the moment it moves.
+ *
+ * `Checkbox` is the other half of this pair and the choice between them is
+ * about consequence, not looks — see its doc block. A switch that only takes
+ * effect when something else is pressed is lying about itself.
+ */
 export function Toggle({
   checked,
   onChange,
@@ -184,7 +199,7 @@ export function usePrefersReducedMotion() {
 }
 
 /**
- * The dimmed backdrop behind a sheet, as a real control.
+ * The dimmed backdrop behind a modal, as a real control.
  *
  * It was a <div onClick> in the original, which is mouse-only: no focus, no
  * Enter/Space, invisible to a screen reader. Rendering a button gives all of
@@ -201,7 +216,7 @@ export function Scrim({
   return (
     <button
       type="button"
-      className="sheet__scrim"
+      className="modal__scrim"
       aria-label={label}
       onClick={onClose}
     />

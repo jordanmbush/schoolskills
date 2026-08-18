@@ -49,12 +49,12 @@ try {
     .getByRole("button", { name: /add a player/i })
     .first()
     .click();
-  await page.waitForSelector(".sheet__panel", { timeout: 8000 });
+  await page.waitForSelector(".modal__panel", { timeout: 8000 });
   // The name field carries no explicit type, and age is a −/+ stepper
   // rather than a number input — so target the panel, not input types.
-  await page.locator(".sheet__panel input").first().fill("Smoke");
+  await page.locator(".modal__panel input").first().fill("Smoke");
   await page.getByRole("button", { name: /^add player$/i }).click();
-  await page.waitForSelector(".sheet__panel", {
+  await page.waitForSelector(".modal__panel", {
     state: "detached",
     timeout: 8000,
   });
@@ -178,6 +178,194 @@ try {
     "profile still listed after reload",
     (await page.getByText("Smoke").count()) > 0,
   );
+
+  /*
+   * The second island, and the second thing that writes to that database.
+   *
+   * Worth walking for the same reason the race is: the builder is a config in
+   * the address bar, a sheet built from it in the browser, and a record in the
+   * `sheets` store — three things that type-check perfectly and fail on first
+   * click. The reload at the end is the one that matters, because it proves the
+   * URL is genuinely the save file rather than something that only looks right
+   * while the state is still in memory.
+   */
+  log("\n6. The bench builds a sheet, and the URL is the save file");
+  await page.goto(`${BASE}/printables/make`, { waitUntil: "networkidle" });
+  await page.waitForSelector(".bench", { timeout: 15000 });
+  await page.waitForTimeout(900);
+  check(
+    "a sheet is on the bench",
+    (await page.locator(".preview .sheet__problem").count()) > 0,
+  );
+  check("the config is in the fragment", /#s=/.test(page.url()), page.url());
+
+  await page.locator(".saved input").fill("Smoke sheet");
+  await page.getByRole("button", { name: /save to my sheets/i }).click();
+  await page.waitForTimeout(800);
+  const savedSheets = await page.evaluate(async () => {
+    const db = await new Promise((res) => {
+      const r = indexedDB.open("schoolskills");
+      r.onsuccess = () => res(r.result);
+    });
+    return new Promise((res) => {
+      const tx = db
+        .transaction("sheets", "readonly")
+        .objectStore("sheets")
+        .getAll();
+      tx.onsuccess = () => res(tx.result.map((s) => s.name));
+    });
+  });
+  check(
+    "sheet saved to IndexedDB",
+    savedSheets.includes("Smoke sheet"),
+    JSON.stringify(savedSheets),
+  );
+
+  const shared = page.url();
+  await page.reload({ waitUntil: "networkidle" });
+  await page.waitForSelector(".bench", { timeout: 15000 });
+  await page.waitForTimeout(900);
+  check("the shared link reopens the same sheet", page.url() === shared);
+
+  /*
+   * The headline of the whole section, walked end to end (§14).
+   *
+   * It is the one feature that crosses every layer in the app — the record
+   * book computes it, a service reads it out of the same IndexedDB the race
+   * just wrote to, the engine turns it into a sheet, and the bench prints it —
+   * so it is exactly the kind of thing that type-checks and fails on first
+   * click. The smoke player answers correctly and quickly, so what this
+   * usually exercises is the *other* path: a child with nothing standing out
+   * still gets a sheet worth printing rather than an empty page.
+   */
+  log("\n6b. The bench starts from what the record book knows");
+  const steps = await page.locator(".bootstrap__step").count();
+  // Two at least — the missed facts and a paste. The saved-list step only
+  // appears for a household that has typed one in, which this one has not.
+  check("the bootstraps are offered", steps >= 2, `${steps} steps`);
+
+  const beforeBootstrap = page.url();
+  await page
+    .locator(".bootstrap__step")
+    .first()
+    .getByRole("button")
+    .first()
+    .click();
+  await page.waitForTimeout(900);
+  check(
+    "pressing one puts a printable sheet on the bench",
+    page.url() !== beforeBootstrap &&
+      (await page.locator(".preview .sheet__problem").count()) > 0,
+    page.url().slice(0, 60),
+  );
+
+  /*
+   * Where the paper actually lands on the paper.
+   *
+   * Print is the whole output path here (§10) — there is no PDF render to
+   * notice a problem in first — and the failure mode is invisible on screen by
+   * construction: the preview is a separate, scaled copy, so a bench that
+   * indents or offsets the *print* copy looks perfect right up until the
+   * printer runs. It cost 18px off the right edge of Letter and a second sheet
+   * of paper once already.
+   *
+   * The assertion is the whole contract in two numbers. `print.css` zeroes the
+   * `@page` margin because the sheet owns its own geometry, so a correctly
+   * printed sheet starts at 0,0 — the same box a catalog page gives it, which
+   * is measured here too rather than assumed. Anything between the sheet and
+   * the page box shows up as a non-zero offset and nothing else does.
+   */
+  log("\n7. The printed sheet is the paper, not a sheet inside a layout");
+  await page.emulateMedia({ media: "print" });
+  await page.waitForTimeout(400);
+  const benchBox = await page
+    .locator(".print-only .sheet")
+    .first()
+    .boundingBox();
+  check(
+    "the builder's printed sheet starts at the corner of the page",
+    benchBox !== null &&
+      Math.round(benchBox.x) === 0 &&
+      Math.round(benchBox.y) === 0,
+    JSON.stringify(benchBox),
+  );
+  // 8.5in at 96dpi. A sheet that measures anything else has had a transform or
+  // a scale leak onto it, which is a ⅝ rule that prints as something else.
+  check(
+    "and is 8.5in wide, unscaled",
+    benchBox !== null && Math.round(benchBox.width) === 816,
+    JSON.stringify(benchBox),
+  );
+
+  await page.goto(`${BASE}/printables/lined-paper`, {
+    waitUntil: "networkidle",
+  });
+  const catalogBox = await page.locator(".sheet").first().boundingBox();
+  check(
+    "a catalog page puts the same sheet in the same place",
+    catalogBox !== null &&
+      Math.round(catalogBox.x) === 0 &&
+      Math.round(catalogBox.y) === 0,
+    JSON.stringify(catalogBox),
+  );
+
+  /*
+   * And where the scissors go.
+   *
+   * The card shelf makes the one claim on this site that a reader settles with
+   * a ruler: a blank flashcard is three and three quarter inches by two and a
+   * quarter, and the cut lines are the edges of it. Neither half of that can be
+   * checked without a browser — the engine's numbers are in mil, and what
+   * reaches paper is whatever the box model and the grid did with them.
+   *
+   * The third measurement is the one that would go wrong silently. The block is
+   * exactly as wide as its cards, so what the page did not use sits outside it,
+   * and `margin-inline: auto` is the only thing making the left of that equal
+   * the right. A block flushed to one side prints a stack of cut sheets that are
+   * not square with each other, and looks identical in every preview.
+   */
+  log("\n8. A card measures what the page says it measures");
+  await page.goto(`${BASE}/printables/templates/blank-flashcards`, {
+    waitUntil: "networkidle",
+  });
+  const face = await page.locator(".sheet__cut-card").first().boundingBox();
+  check(
+    "a blank flashcard is 3.75in by 2.25in on the paper",
+    face !== null &&
+      Math.round(face.width) === Math.round(3.75 * 96) &&
+      Math.round(face.height) === Math.round(2.25 * 96),
+    JSON.stringify(face),
+  );
+
+  const cutBlock = await page.locator(".sheet__cut").boundingBox();
+  const cardPage = await page.locator(".sheet").first().boundingBox();
+  const left = cutBlock.x - cardPage.x;
+  const right = cardPage.x + cardPage.width - (cutBlock.x + cutBlock.width);
+  check(
+    "and what is left over is split evenly either side of it",
+    Math.round(left) === Math.round(right),
+    `left ${left}, right ${right}`,
+  );
+
+  // The vertical guides, in order. Two columns is three of them, and the middle
+  // one has to land on the boundary the two cards share — a guide near the cut
+  // rather than on it is the sliver down one side of every other card.
+  const guides = await page
+    .locator(".sheet__cut-guides line")
+    .evaluateAll((lines) =>
+      lines
+        .map((line) => line.getBoundingClientRect())
+        .filter((box) => box.width < 1)
+        .map((box) => Math.round(box.x)),
+    );
+  check(
+    "the cut lines are the card boundaries, trim edge included",
+    guides.length === 3 &&
+      Math.abs(guides[1] - (Math.round(cutBlock.x) + Math.round(3.75 * 96))) <=
+        1,
+    JSON.stringify(guides),
+  );
+  await page.emulateMedia({ media: null });
 
   log(
     `\nconsole errors: ${errors.length ? errors.slice(0, 5).join(" | ") : "none"}`,

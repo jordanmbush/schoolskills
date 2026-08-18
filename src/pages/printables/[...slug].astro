@@ -1,0 +1,181 @@
+---
+import Content from "@/layouts/Content.astro";
+import AdSlot from "@/components/site/AdSlot.astro";
+import { SheetView } from "@/components/sheet/Sheet";
+import { buildSheet } from "@/engine/sheets";
+import {
+  PAPER_SHEETS,
+  STOCKS,
+  paperConfig,
+  pathFor,
+  shelf,
+  type PaperSheet,
+  type Stock,
+} from "./_catalog";
+
+/**
+ * One prerendered sheet of paper per ruling — and the page is the sheet.
+ *
+ * This is the shape every catalog page in §8 takes, and the first one built.
+ * A parent arriving from a search for "printable wide ruled paper" gets real
+ * prose answering the query, the paper itself directly under it as HTML, and
+ * nothing to click: ⌘P produces usable paper because the sheet IS the page,
+ * not a download link on it.
+ *
+ * **No client directive on `SheetView`, ever.** `@astrojs/react` renders a
+ * component with no `client:*` to HTML at build time, so these pages ship zero
+ * JavaScript — which is the whole SEO argument of §2 and the reason a sheet is
+ * HTML rather than a canvas or a PDF. Sheet.test.tsx holds every page in this
+ * directory to it, against the source and against `dist/`.
+ *
+ * **Everything that is not the sheet carries `.no-print`.** print.css records
+ * this as the open question the routes story had to settle: `@page` cannot be
+ * scoped to a class, so on a page that is both prose and paper the zeroed page
+ * margin applies to the prose as well and it would print off the edge. Hiding
+ * the prose is the right way round rather than merely the easy one — printing
+ * this page means printing the sheet on it, and a parent who wanted the
+ * article would not be reaching for the printer.
+ *
+ * Two stocks, two routes. A sheet is only correct on the paper it was measured
+ * for, and `@page` is a document rule, so Letter and A4 cannot share a page —
+ * see `_catalog.ts` for the whole of that reasoning.
+ */
+
+type Props = { sheet: PaperSheet; stock: Stock };
+
+export function getStaticPaths() {
+  return PAPER_SHEETS.flatMap((sheet) =>
+    STOCKS.map((stock) => ({
+      params: { slug: pathFor(sheet, stock) },
+      props: { sheet, stock },
+    })),
+  );
+}
+
+const { sheet, stock } = Astro.props;
+
+const a4 = stock.id === "a4";
+const printed = buildSheet(paperConfig(sheet, stock.id), 0);
+const other = STOCKS.find((candidate) => candidate.id !== stock.id)!;
+
+const heading = a4 ? `${sheet.heading}, for A4` : sheet.heading;
+const title = `${sheet.keyword}${a4 ? ", A4" : ""} | School Skills`;
+const description = `${sheet.summary} Printed straight from this page on ${stock.label} — free, no account, and no download.`;
+const url = `https://schoolskills.app/printables/${pathFor(sheet, stock)}`;
+
+const siblings = shelf();
+---
+
+<Content
+  title={title}
+  description={description}
+  world="paper"
+  jsonLd={{
+    "@context": "https://schema.org",
+    "@type": "LearningResource",
+    name: heading,
+    description,
+    url,
+    learningResourceType: "Printable",
+    educationalUse: "Practice",
+    teaches: sheet.teaches,
+    typicalAgeRange: sheet.ages,
+    isAccessibleForFree: true,
+    inLanguage: "en",
+  }}
+>
+  <header class="hero wrap no-print">
+    <p class="hero__eyebrow">
+      <span class="hero__world">The Print Shop</span>
+      {stock.label} &middot; {stock.size}
+    </p>
+    <h1 class="hero__title">{heading}</h1>
+    <p class="hero__lead">{sheet.lead}</p>
+    <p class="aside">
+      The sheet below <strong>is</strong> the printout. Press{" "}
+      <strong>&#8984;P</strong> &mdash; <strong>Ctrl+P</strong> on Windows &mdash;
+      and everything but the paper disappears. Nothing here needs choosing first.
+      To keep a copy instead, pick <em>Save as PDF</em> in the print dialog and your
+      browser writes one.
+    </p>
+    <p class="hero__note">Free &middot; no account &middot; no download</p>
+  </header>
+
+  {
+    /*
+      The sheet, outside `.wrap` deliberately. A wrap adds an inline padding
+      that print.css cannot take back off, and a sheet printed a centimetre in
+      from where it says it is has the wrong geometry everywhere at once.
+    */
+  }
+  <div class="sheet-frame">
+    <SheetView sheet={printed} />
+  </div>
+
+  <section class="band band--tight wrap no-print">
+    <h2 class="h2">What is on this sheet</h2>
+    <div class="prose">
+      {sheet.notes.map((note) => <p>{note}</p>)}
+      <p>
+        The rules are drawn as real strokes at real sizes &mdash; not a picture
+        of lines, and not a background tint. That matters more than it sounds:
+        browsers drop background graphics when printing unless the reader has
+        gone looking for the setting, so ruled paper made the obvious way looks
+        perfect on screen and comes out of the printer blank. Put a ruler on
+        this one. It is the size it says it is.
+      </p>
+    </div>
+  </section>
+
+  <section class="band band--tight wrap no-print">
+    <h2 class="h2">Printing it on {other.label}</h2>
+    <div class="prose">
+      <p>
+        This sheet is set for {stock.label} &mdash; {stock.size}. Paper size is
+        not a preference here: sent to a printer loaded with something else, the
+        browser shrinks the page to fit, and a ruling that has been shrunk is no
+        longer the size it was chosen for. So there is a second copy of this
+        sheet, ruled identically and measured for {other.label}.
+      </p>
+    </div>
+    <div class="hero__actions">
+      <a class="cta" href={`/printables/${pathFor(sheet, other)}`}>
+        The {other.label} version
+      </a>
+    </div>
+  </section>
+
+  <div class="wrap no-print"><AdSlot name="article" /></div>
+
+  <section class="band band--tight wrap no-print">
+    <h2 class="h2">Every ruling</h2>
+    <p class="h2__sub">
+      {PAPER_SHEETS.length} sheets, each one a page like this one. Nothing is locked
+      and nothing needs an account.
+    </p>
+    {
+      siblings.map((group) => (
+        <>
+          <h3 class="h2 h2--next">{group.label}</h3>
+          <p class="h2__sub">{group.blurb}</p>
+          <nav class="stones" aria-label={group.label}>
+            {group.sheets.map((candidate) => (
+              <a
+                class="stone"
+                href={`/printables/${pathFor(candidate, stock)}`}
+                aria-current={
+                  candidate.slug === sheet.slug ? "page" : undefined
+                }
+              >
+                {candidate.short}
+              </a>
+            ))}
+          </nav>
+        </>
+      ))
+    }
+    <div class="hero__actions">
+      <a class="cta cta--quiet" href="/printables">Back to The Print Shop</a>
+    </div>
+  </section>
+</Content>

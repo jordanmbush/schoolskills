@@ -7,7 +7,6 @@ import {
   useSubject,
 } from "@/components/state/SubjectContext";
 import TopBar from "@/components/TopBar";
-import { Button } from "@/components/ui/kit";
 import { BADGES } from "@/engine/progress";
 import {
   bestRun,
@@ -28,12 +27,14 @@ import { buildDrill, deckSpec } from "@/engine/decks";
 import { WORD_MODE_PREFIX, listIdOf } from "@/engine/decks/words";
 import { TYPING_MODE_PREFIX } from "@/engine/decks/typing";
 import { WORD_LISTS_BY_ID, listWords } from "@/engine/decks/wordlists";
+import { practiceSheet } from "@/engine/sheets/practice";
 import { WORLDS } from "@/engine/worlds";
 import { sfx } from "@/services/sound";
 import { DeckSwitch, type DeckChoice } from "./progress/DeckSwitch";
 import { FactMap } from "./progress/FactMap";
 import { WordMap } from "./progress/WordMap";
 import { RecordBook, RunList } from "./progress/RecordBook";
+import { TroubleSpots } from "./progress/TroubleSpots";
 import { duration, percent } from "@/engine/format";
 
 export default function Progress() {
@@ -118,6 +119,36 @@ export default function Progress() {
   const spec = deckSpec(mode);
   /** Which world this deck is played in — and so where a drill of it starts. */
   const owner = WORLDS.find((w) => w.id === spec.world);
+  /**
+   * The same facts as a worksheet, or null where this build has no sheet for
+   * them — a typing passage is not a page of problems (§14).
+   */
+  const printable = practiceSheet(
+    mode,
+    trouble.map((fact) => fact.factId),
+  );
+  /**
+   * Race the same facts, where this app is the one they are played in. Built
+   * here beside `switcher` rather than inline in the panel below, because both
+   * are a piece of behaviour the screen hands down rather than markup.
+   */
+  const drill = ownsMode(subject, mode)
+    ? () => {
+        sfx.select();
+        navigate(`/p/${profile.id}/race`, {
+          state: {
+            config: buildDrill(
+              trouble.map((fact) => fact.factId),
+              mode,
+              {
+                inputMode: profile.age <= 6 ? "choose" : "type",
+                timeLimitMs: timeLimitForAge(profile.age),
+              },
+            ),
+          },
+        });
+      }
+    : null;
   const switcher = (
     <DeckSwitch
       choices={decks}
@@ -185,85 +216,13 @@ export default function Progress() {
         />
       )}
 
-      <section className="panel anim-rise">
-        <div className="panel__head">
-          <h2 className="panel__title">Trouble spots</h2>
-          {trouble.length > 0 &&
-            (!ownsMode(subject, mode) ? (
-              // This deck belongs to another world. The record book spans all
-              // of them, but a drill can only start where the deck lives, and
-              // handing a built config across a page load would need somewhere
-              // to put it — a link is worth more than that machinery, and the
-              // facts are listed right below either way.
-              <a className="btn btn--accent btn--sm" href={owner?.href ?? "/"}>
-                Open {owner?.name ?? "the map"}
-              </a>
-            ) : (
-              <Button
-                variant="accent"
-                size="sm"
-                onClick={() => {
-                  sfx.select();
-                  navigate(`/p/${profile.id}/race`, {
-                    state: {
-                      config: buildDrill(
-                        trouble.map((fact) => fact.factId),
-                        mode,
-                        {
-                          inputMode: profile.age <= 6 ? "choose" : "type",
-                          timeLimitMs: timeLimitForAge(profile.age),
-                        },
-                      ),
-                    },
-                  });
-                }}
-              >
-                Drill these
-              </Button>
-            ))}
-        </div>
-        {trouble.length === 0 ? (
-          <p className="muted">
-            Nothing standing out in {spec.label.toLowerCase()}. Facts land here
-            when the clock beats them, when they come out wrong, or when they
-            take longer than recall should.
-          </p>
-        ) : (
-          <>
-            <p className="muted">
-              Worst first. Answering one quickly and correctly takes it back off
-              the list.
-            </p>
-            <ul className="trouble">
-              {trouble.map((fact) => (
-                <li key={fact.factId} className="trouble__item">
-                  <span className="trouble__fact u-mono">
-                    {spec.factLabel(fact.factId)}
-                  </span>
-                  <span className="trouble__why">
-                    {fact.timeouts > 0 && (
-                      <span className="chip chip--late">
-                        ⏳ {fact.timeouts} out of time
-                      </span>
-                    )}
-                    {fact.wrong > 0 && (
-                      <span className="chip chip--wrong">
-                        ✕ {fact.wrong} wrong
-                      </span>
-                    )}
-                    {fact.slow > 0 && (
-                      <span className="chip">🐢 {fact.slow} slow</span>
-                    )}
-                  </span>
-                  <span className="trouble__avg u-mono">
-                    {(fact.avgMs / 1000).toFixed(1)}s
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </>
-        )}
-      </section>
+      <TroubleSpots
+        trouble={trouble}
+        spec={spec}
+        drill={drill}
+        elsewhere={owner}
+        printable={printable}
+      />
 
       <div className="progress__columns">
         {/* Times tables only — a spelling list has no twelve of anything. */}

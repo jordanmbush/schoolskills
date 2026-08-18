@@ -15,16 +15,16 @@ export function QuitSheet({
 }) {
   return (
     <div
-      className="sheet"
+      className="modal"
       role="dialog"
       aria-modal="true"
       aria-label="Quit the race"
     >
       <Scrim onClose={onKeepRacing} label="Keep racing" />
-      <div className="sheet__panel panel anim-pop">
+      <div className="modal__panel panel anim-pop">
         <h2 className="panel__title">Quit this race?</h2>
         <p className="muted">It won&apos;t be saved and no XP is earned.</p>
-        <div className="sheet__actions">
+        <div className="modal__actions">
           <Button variant="danger" size="sm" onClick={onQuit}>
             Quit
           </Button>

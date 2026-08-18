@@ -1,0 +1,209 @@
+---
+import Content from "@/layouts/Content.astro";
+import AdSlot from "@/components/site/AdSlot.astro";
+import { TEMPLATE_SHEETS, pathFor, templateShelf } from "../_templates";
+import HubLinks from "../_HubLinks.astro";
+
+/**
+ * The forms-and-templates hub — a peer of `/printables/math`,
+ * `/printables/spelling`, `/printables/grammar`, `/printables/phonics`,
+ * `/printables/handwriting`, `/printables/cursive`, `/printables/bible` and
+ * `/printables/charts`.
+ *
+ * A listing rather than a sheet, like the other hubs, and that is the right
+ * split: nobody searches for "printable list of blank forms". What it is for is
+ * the two jobs a hub does — giving a parent who arrived on
+ * `/printables/templates/chore-chart` somewhere to go next, and giving the
+ * twenty-two pages a crawlable parent that says what they have in common.
+ *
+ * What they have in common is worth a section of its own here, because it is
+ * the argument for the whole shelf and it is an unusual one: these sheets are
+ * valuable *because* they are blank. There is no content on them to be wrong
+ * about, which is exactly why a lab report form is honest and a page of
+ * generated science would not be (§11). The three things on the shelf that are
+ * worked out rather than left empty — a calendar's weekdays, a die's faces and a
+ * spinner's sectors — are worked out because each is a claim a child could catch
+ * us being wrong about.
+ *
+ * `<title>`, `description` and `jsonLd` name the shelf rather than the three
+ * sheets on it that carry a verse. §12 is explicit that those surfaces are
+ * marketing and that Scripture belongs in the body as content: it is listed
+ * below with everything else, in the group it belongs to.
+ */
+const title =
+  "Free printable forms, planners, charts and templates | School Skills";
+const description =
+  "Printable blank templates: reading logs and book report forms, lab report and scientific method sheets, blank calendars, weekly planners, chore and behaviour charts, blank flashcards, name tags, bookmarks, award certificates, and dice and spinner nets. Real inches and cut lines on every boundary — free, no account, no download.";
+
+const groups = templateShelf();
+---
+
+<Content
+  title={title}
+  description={description}
+  world="paper"
+  jsonLd={{
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name: "Printable forms, planners and templates",
+    description,
+    url: "https://schoolskills.app/printables/templates",
+    isAccessibleForFree: true,
+    inLanguage: "en",
+    hasPart: TEMPLATE_SHEETS.map((sheet) => ({
+      "@type": "LearningResource",
+      name: sheet.heading,
+      url: `https://schoolskills.app${pathFor(sheet)}`,
+      learningResourceType: "Printable template",
+      teaches: sheet.teaches,
+      typicalAgeRange: sheet.ages,
+      isAccessibleForFree: true,
+    })),
+  }}
+>
+  <header class="hero wrap no-print">
+    <p class="hero__eyebrow">
+      <span class="hero__world">The Print Shop</span>
+      Forms and templates
+    </p>
+    <h1 class="hero__title">The paperwork, with nothing written on it</h1>
+    <p class="hero__lead">
+      {TEMPLATE_SHEETS.length} sheets that are supposed to be empty: logs and report
+      forms, a blank calendar and a week to plan, chore and behaviour charts, cards
+      and bookmarks to cut out, certificates, and a die and a spinner to make.
+    </p>
+    <p class="hero__note">Free &middot; no account &middot; no download</p>
+  </header>
+
+  {
+    /*
+      What exists, first — before the page explains itself. Somebody who came
+      looking for a chore chart should be one link from a chore chart, and the
+      argument about why a blank sheet is the honest one reads better after you
+      have seen the shelf it is about.
+    */
+  }
+  <section class="band band--tight wrap no-print">
+    <h2 class="h2">On the shelf now</h2>
+    <p class="h2__sub">
+      Each of these is a page that is itself the sheet &mdash; open it, press
+      print, and that is the whole of it. None of them has an answer key,
+      because none of them asks a question.
+    </p>
+    {
+      groups.map((group) => (
+        <>
+          <h3 class="h2 h2--next">{group.label}</h3>
+          <p class="h2__sub">{group.blurb}</p>
+          <div class="prose">
+            <ul>
+              {group.sheets.map((sheet) => (
+                <li>
+                  <a href={pathFor(sheet)}>{sheet.name}</a> &mdash;{" "}
+                  {sheet.summary}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </>
+      ))
+    }
+  </section>
+
+  <div class="wrap no-print"><AdSlot name="article" /></div>
+
+  <section class="band band--inset no-print">
+    <div class="wrap no-print">
+      <h2 class="h2">They are supposed to be empty</h2>
+      <p class="h2__sub">
+        There is no content on any of these pages, which is the whole reason
+        they can be trusted.
+      </p>
+      <div class="prose">
+        <p>
+          A reading log is a reading log whoever printed it, and there is
+          nothing on one that could be wrong. That is not true of everything a
+          worksheet site offers: generated &ldquo;5th grade science
+          worksheets&rdquo; with nobody editing them produce plausible nonsense,
+          and a wrong fact on a page a child trusts is worse than no page at
+          all. So what is here is a lab report <em>form</em> and a scientific method
+          <em>sheet</em> &mdash; the paperwork round an experiment, which is ours
+          to print &mdash; and the experiment itself is yours.
+        </p>
+        <p>
+          Three things on the shelf are worked out rather than left blank, and
+          each of them is worked out because getting it wrong would be a sheet
+          that lies. A dated calendar&rsquo;s weekdays are arithmetic with a
+          right answer, and a first of the month under the wrong day is a sheet
+          somebody plans a term around. A die&rsquo;s faces have to come out
+          opposite in threes adding to seven, which is a fact about the folding
+          rather than about the drawing, so the numbering is derived from the
+          folds. And a spinner&rsquo;s sectors are equal, because &ldquo;do you
+          think this is fair?&rdquo; is the question a spinner exists to answer.
+          Everything else here is a heading, a rule and a box.
+        </p>
+        <p>
+          On the pages that get cut up, the geometry is the difficulty. The cut
+          lines sit on the boundaries between the cards and the outside trim is
+          one of them, so nothing is cut freehand; there is no gutter, so one
+          pass of a trimmer makes two cards rather than two cuts and a strip of
+          waste; and whatever paper is left over is split evenly round the block
+          instead of between the cards, so a stack of cut sheets is square with
+          itself. Every card is a whole number of eighths of an inch, which is
+          what lets a page say its cards are 3&frac34; by 2&frac14; inches and
+          be held to it with a ruler.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="band band--tight wrap no-print">
+    <h2 class="h2">Every page here is a setting</h2>
+    <div class="prose">
+      <p>
+        Four families print these twenty-two sheets, and what makes one of them
+        the page you wanted is a handful of numbers: how many rows a chart has,
+        how many cards there are to a page, how much room each answer gets,
+        whether a name tag folds, how many sectors a spinner is cut into. All of
+        them are controls in the builder, so a chore chart with six rows or a
+        dated calendar for next March is the same sheet with one number moved
+        rather than a page somebody has to have written first.
+      </p>
+      <p>
+        The three sheets that carry a verse work the same way. A memory-verse
+        card, a Scripture bookmark and the verse-of-the-week chart are the
+        ordinary card and chart families with a passage chosen, from the same
+        picker the copywork sheets use &mdash; which is why they are listed
+        above beside the flashcards and the chore chart rather than in a section
+        of their own. Any passage in the library, or a verse pasted in, gives
+        the identical sheet, and the credit line at the foot of the paper
+        travels with the words.
+      </p>
+    </div>
+    <div class="hero__actions">
+      <a class="cta" href="/printables/make">Open the sheet builder</a>
+      <a class="cta cta--quiet" href="/printables/charts">Charts and grids</a>
+      <a class="cta cta--quiet" href="/printables/lined-paper">Lined paper</a>
+    </div>
+  </section>
+
+  <HubLinks shelf="templates" />
+
+  <section class="band band--tight wrap no-print">
+    <h2 class="h2">Your child&rsquo;s name is not in the file</h2>
+    <div class="prose">
+      <p>
+        Where a sheet here has a <em>Name:</em> line at all, it is printed blank and
+        filled in with a pencil &mdash; a wall chart and a page about to be cut into
+        six do not have one. No account is needed to print anything, nothing is uploaded,
+        and a sheet you send to another family carries the settings you chose and
+        nothing else &mdash; see <a href="/privacy"
+          >what we don&rsquo;t collect</a
+        >.
+      </p>
+    </div>
+    <div class="hero__actions">
+      <a class="cta cta--quiet" href="/printables">Back to The Print Shop</a>
+    </div>
+  </section>
+</Content>

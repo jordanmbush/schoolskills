@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/kit";
 import { configKey, describeConfig } from "@/engine/decks";
 import {
   TYPING_LEVELS,
+  levelCredit,
   typingLevelForAge,
   wordsPerMinute,
 } from "@/engine/decks/typing";
@@ -53,6 +54,7 @@ export default function TypingSetup() {
 
   if (!profile) return <Navigate to="/" replace />;
 
+  const credit = levelCredit(config.levelId);
   const mine = sessionsFor(sessions, profile.id, key);
   const best = bestRun(mine);
   const bestWpm = best ? wordsPerMinute(best.cards, best.durationMs) : null;
@@ -114,6 +116,10 @@ export default function TypingSetup() {
                 </li>
               ))}
             </ul>
+            {/* Under the list rather than in the row that carries it: the
+                credit belongs to the words a player is about to be shown, so
+                it appears when that level is the one chosen. */}
+            {credit && <p className="passage__credit">{credit}</p>}
           </div>
 
           <div className="control">

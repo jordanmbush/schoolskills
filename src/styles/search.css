@@ -1,0 +1,88 @@
+/* ── The search box on the front door of the Print Shop ────────────────────
+   Loaded by /printables and nowhere else, which is why it is its own file
+   rather than more of content.css: one page in the site has a search on it.
+
+   It is built almost entirely out of what that page already loads. The chips
+   are `.stone`, the same row of them the hub sets its subjects and its ten
+   school years out in — base.css has already stripped a button back to nothing,
+   so a `.stone` on a <button> and a `.stone` on an <a> are the same object. The
+   results are `.prose`. What is left is the field, the four captions and the
+   pressed state, which is all that is below.
+
+   The field restates `.field__input` rather than reusing it, and that is the
+   cheaper of the two trades: that class lives in screens.css, which content
+   pages deliberately do not load (see site.css against index.css), and pulling
+   the whole game's component sheet onto the largest crawlable page on the site
+   to style one input would cost far more than eight declarations.            */
+
+.find__field {
+  width: 100%;
+  max-width: 34rem;
+  margin-top: var(--gap-3);
+  padding: 0.7em 0.9em;
+  border-radius: var(--radius);
+  border: 1.5px solid var(--hairline);
+  background: var(--ink-900);
+  color: var(--chalk);
+}
+
+.find__field:focus-visible {
+  border-color: var(--accent);
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 30%, transparent);
+}
+
+.find__facet {
+  margin-top: var(--gap-3);
+}
+
+.find__legend {
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--chalk-dim);
+}
+
+/* The `.stones` row inside a facet is tighter than the one under a heading:
+   four of them stack, and the row's own caption is already the separation. */
+.find__facet .stones {
+  margin-top: var(--gap-2);
+}
+
+.find__count {
+  margin-top: var(--gap-3);
+  font-family: var(--font-display);
+  font-size: var(--step-1);
+  color: var(--chalk);
+}
+
+/* Empty until something has been asked for, and a live region that reserves a
+   line of blank page is a gap nobody can explain. */
+.find__count:empty {
+  display: none;
+}
+
+.find__hits {
+  margin-top: var(--gap-2);
+}
+
+.find__ages {
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  color: var(--chalk-dim);
+  white-space: nowrap;
+}
+
+.find__note {
+  margin-top: var(--gap-3);
+  max-width: 60ch;
+  color: var(--chalk-soft);
+  line-height: 1.7;
+}
+
+.find__note a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}

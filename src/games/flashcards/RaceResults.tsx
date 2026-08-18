@@ -16,6 +16,7 @@ import { useWorld } from "@/components/state/useWorld";
 import { buildDrill, deckSpec, describeConfig, isTyping } from "@/engine/decks";
 import { clock, delta as formatDelta, plural } from "@/engine/format";
 import { randomSeed } from "@/engine/random";
+import { practiceHref, practiceSheet } from "@/engine/sheets/practice";
 import { sfx } from "@/services/sound";
 import { Rewards } from "@/games/race";
 import { Scoreline } from "./results/Scoreline";
@@ -135,6 +136,14 @@ export default function RaceResults() {
 
   const selfGhost = { session, profile: outcome.profileAfter, isSelf: true };
   const practiceFirst = missedFacts.length > 0;
+  /**
+   * The same facts as a worksheet (§14) — the one thing no other worksheet
+   * site can print, offered at the moment it is most obviously wanted. Null
+   * for a deck this build has no sheet family for.
+   */
+  const printable = practiceFirst
+    ? practiceSheet(session.mode, missedFacts)
+    : null;
 
   return (
     <main className="results">
@@ -216,6 +225,22 @@ export default function RaceResults() {
           <Button variant="go" onClick={practise}>
             Practise {plural(missedFacts.length, "fact")}
           </Button>
+        )}
+        {/* A new tab, which is the one place on the site that earns one: this
+            screen is the run, held in memory and gone the moment the browser
+            leaves it, so a parent who opened the print shop in it would take
+            the child's "race again" with them. The link carries the sheet in
+            its fragment — nothing is stored, and nothing about the child is in
+            it. */}
+        {printable && (
+          <a
+            className="btn btn--accent"
+            href={practiceHref(printable)}
+            target="_blank"
+            rel="noreferrer"
+          >
+            Print these
+          </a>
         )}
         <Button
           variant={practiceFirst ? "accent" : "go"}

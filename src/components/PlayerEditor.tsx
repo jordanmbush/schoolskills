@@ -76,7 +76,10 @@ export default function PlayerEditor({ profile, onClose, onDeleted }: Props) {
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  async function save(event: React.FormEvent) {
+  // `SyntheticEvent` rather than `FormEvent`, which React's own types now mark
+  // deprecated on the grounds that it "doesn't actually exist" — a submit is a
+  // plain synthetic event, and that is all this needs from it.
+  async function save(event: React.SyntheticEvent) {
     event.preventDefault();
     if (!name.trim() || saving) return;
     setSaving(true);
@@ -120,14 +123,14 @@ export default function PlayerEditor({ profile, onClose, onDeleted }: Props) {
 
   return (
     <div
-      className="sheet"
+      className="modal"
       role="dialog"
       aria-modal="true"
       aria-label={isNew ? "Add a player" : `Edit ${profile.name}`}
     >
       <Scrim onClose={onClose} label="Close without saving" />
       <form
-        className="sheet__panel panel anim-pop"
+        className="modal__panel panel anim-pop"
         onSubmit={save}
         style={{ "--accent": color } as React.CSSProperties}
       >
@@ -215,10 +218,10 @@ export default function PlayerEditor({ profile, onClose, onDeleted }: Props) {
           </div>
         </FieldSet>
 
-        <div className="sheet__actions">
+        <div className="modal__actions">
           {!isNew &&
             (confirmingDelete ? (
-              <div className="sheet__confirm">
+              <div className="modal__confirm">
                 <span>Remove {profile.name} and all their races?</span>
                 <Button
                   variant="danger"
