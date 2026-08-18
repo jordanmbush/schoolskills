@@ -3,17 +3,22 @@
   "days": {
     "2026-08-18": {
       "visitors": 5,
-      "pageViews": 9,
+      "pageViews": 11,
       "pages": {
-        "/": 6,
+        "/": 7,
         "/multiplication/10-times-table/": 1,
         "/printables/templates/book-report/": 1,
+        "/spelling/play": 1,
         "/typing": 1
       },
       "events": {
-        "profile_added": 1
+        "profile_added": 2,
+        "race_end:quit": 1,
+        "race_start": 2
       },
-      "decks": {}
+      "decks": {
+        "words%3Adolch-1": 2
+      }
     }
   }
 }
