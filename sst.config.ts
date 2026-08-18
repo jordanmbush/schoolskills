@@ -292,11 +292,37 @@ export default $config({
           // request lines CloudFront was already generating, kept somewhere we
           // can count them. `includeCookies` stays false because we set none
           // and logging them would be a way to start.
+          //
+          // It has to go through `transform.distribution`, NOT straight onto
+          // `args`. This callback receives the Cdn component's own `CdnArgs`,
+          // which exposes a curated subset of the distribution — `domain`,
+          // `origins`, `customErrorResponses` and friends — and `loggingConfig`
+          // is not among them. An earlier version assigned it directly, which
+          // Pulumi then dropped on the floor: no error, no warning, just a
+          // distribution that never logged and a bucket that stayed empty from
+          // the day analytics shipped. The monthly rollup compounded it by
+          // "succeeding" over zero files, so the alarm built for exactly this
+          // could never fire either.
+          //
+          // TypeScript does catch it — `Property 'loggingConfig' does not
+          // exist on type 'CdnArgs'` — but nothing type-checks this file:
+          // tsconfig.json excludes it (see the note there) and SST bundles it
+          // with esbuild, which strips types without checking them. So the
+          // compiler is not a backstop here; this comment is.
+          //
+          // The `assets` transform below nests the same way for the same
+          // reason. If you add a distribution-level setting and it appears to
+          // do nothing, this is why — check CdnArgs first.
           if (logs) {
-            args.loggingConfig = {
-              bucket: logs.bucketDomainName,
-              prefix: "cf/",
-              includeCookies: false,
+            args.transform = {
+              ...args.transform,
+              distribution: (distributionArgs) => {
+                distributionArgs.loggingConfig = {
+                  bucket: logs.bucketDomainName,
+                  prefix: "cf/",
+                  includeCookies: false,
+                };
+              },
             };
           }
         },
