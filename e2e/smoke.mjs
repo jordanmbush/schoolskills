@@ -466,6 +466,56 @@ try {
     `${fall.pending} pending`,
   );
 
+  /*
+   * The shield, measured against the board it is defending.
+   *
+   * "Segments align with the finger zones of the keyboard beneath them" is an
+   * acceptance criterion with a number behind it, and this is the only place
+   * that number exists. `StormField.test.tsx` runs game.css's arithmetic in
+   * key units, which is the right altitude for the claim but resolves no
+   * `--key` and lays out no boxes; only a browser turns both into pixels at a
+   * viewport and can be asked whether one is actually over the other.
+   *
+   * Each segment is compared with the HOME-ROW keycaps of its own finger,
+   * because the home row is where the zones are cut (docs/typing.md §8.5,
+   * decision 41) — `a` and Caps under the left pinky's segment, `f` and `g`
+   * under the left index's. Half a pixel of tolerance, which is a rounding
+   * error and not room for a segment to have drifted a key.
+   */
+  const shield = await page.evaluate(() => {
+    const home = document.querySelector(".keyboard__row:nth-child(3)");
+    return [...document.querySelectorAll(".storm__zone")].map((zone) => {
+      const box = zone.getBoundingClientRect();
+      const caps = [
+        ...home.querySelectorAll(
+          `.keyboard__key[data-finger="${zone.dataset.finger}"]`,
+        ),
+      ].map((cap) => cap.getBoundingClientRect());
+      return {
+        finger: zone.dataset.finger,
+        left: box.left,
+        right: box.right,
+        capLeft: Math.min(...caps.map((cap) => cap.left)),
+        capRight: Math.max(...caps.map((cap) => cap.right)),
+        keys: caps.length,
+      };
+    });
+  });
+  check(
+    "each segment covers the home keys of its own finger, edge to edge",
+    shield.length === 8 &&
+      shield.every(
+        (zone, i) =>
+          zone.keys > 0 &&
+          zone.left <= zone.capLeft + 0.5 &&
+          zone.right >= zone.capRight - 0.5 &&
+          (i === 0 || Math.abs(zone.left - shield[i - 1].right) < 0.5),
+      ),
+    shield
+      .map((z) => `${z.finger} ${z.left.toFixed(1)}→${z.right.toFixed(1)}`)
+      .join(" "),
+  );
+
   // Leaving is what quitting is on this screen (there is no quit control until
   // the HUD lands), and it has to take the loop with it.
   await page.evaluate((id) => (location.hash = `#/p/${id}`), player);
@@ -474,6 +524,36 @@ try {
     "leaving mid-run cancels it",
     (await page.evaluate(() => window.__pendingFrames())) === 0,
   );
+
+  /*
+   * Damage is ONE tint, and the count is the proof.
+   *
+   * "No strobe, in any mode" (§8.10) is a safety constraint — a hail of red
+   * flashes at 60fps is a photosensitivity risk and the youngest player here
+   * is five — so it is measured rather than asserted about the stylesheet. The
+   * animation being 150ms says nothing on its own: what would strobe is an
+   * animation RESTARTED every frame, which reads identically in the CSS and
+   * would fire `animationstart` sixty times a second. So the events are
+   * counted over a whole run, and against the only number they may equal —
+   * one per letter that lands, twelve for this wave, since nothing can be shot
+   * yet and each is drawn by a counter that only moves when a letter reaches
+   * that zone.
+   */
+  await page.evaluate(() => {
+    window.__tints = [];
+    document.addEventListener(
+      "animationstart",
+      (event) => {
+        if (!event.animationName.startsWith("storm-")) return;
+        window.__tints.push({
+          name: event.animationName,
+          finger: event.target.closest(".storm__zone")?.dataset.finger,
+          at: Math.round(window.performance.now()),
+        });
+      },
+      true,
+    );
+  });
 
   // And a run that reaches its end stops itself. The stand-in wave is twelve
   // letters over 7.3s, none of which anything can shoot yet, so this waits out
@@ -493,6 +573,47 @@ try {
     "a finished wave stops its own loop, on screen and still mounted",
     ended.pending === 0 && ended.stones === 0 && ended.onScreen === 1,
     JSON.stringify(ended),
+  );
+
+  // The last letter lands on the frame the loop stops, so its tint is still a
+  // style change the browser has not run yet when `__pendingFrames` hits zero.
+  // A tint is 150ms; this waits out two of them before counting.
+  await page.waitForTimeout(300);
+  const damage = await page.evaluate(() => ({
+    tints: window.__tints,
+    zones: [...document.querySelectorAll(".storm__zone")].map((zone) => ({
+      finger: zone.dataset.finger,
+      hp: Number(window.getComputedStyle(zone).getPropertyValue("--hp")),
+      hole: zone.hasAttribute("data-hole"),
+    })),
+  }));
+  // The closest two tints on any one segment. A flash sequence is two of them
+  // inside the 150ms one is on screen for; this wave lands a letter every
+  // 300ms, so the honest answer here is about 300 and never below 150.
+  const closest = Math.min(
+    ...damage.tints.map((tint, i, all) => {
+      const previous = all
+        .slice(0, i)
+        .findLast((t) => t.finger === tint.finger);
+      return previous ? tint.at - previous.at : Infinity;
+    }),
+  );
+  check(
+    "damage tints once per landing, and never twice inside one tint",
+    damage.tints.length === 12 &&
+      damage.tints.every((tint) => tint.name === "storm-hit" && tint.finger) &&
+      closest >= 150,
+    `${damage.tints.length} tints, closest pair on one zone ${closest}ms apart`,
+  );
+  // Three zones took three letters each in this wave, and a zone at zero is a
+  // hole — drawn as one, off the same number the reducer holds.
+  const holes = damage.zones.filter((zone) => zone.hole);
+  check(
+    "a zone the storm emptied is drawn as a hole",
+    holes.length === 3 &&
+      holes.every((zone) => zone.hp === 0) &&
+      holes.map((zone) => zone.finger).join() === "l-index,r-index,r-middle",
+    damage.zones.map((z) => `${z.finger}:${z.hp.toFixed(2)}`).join(" "),
   );
 
   log(

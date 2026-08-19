@@ -2,6 +2,8 @@ import { isAirborne, progressAt, targetIndex } from "@/engine/typing/storm";
 
 import { LiveKeyboard } from "../keyboard/LiveKeyboard";
 
+import { StormShield } from "./StormShield";
+
 import type { StormState } from "@/engine/typing/storm";
 import type { CSSProperties } from "react";
 
@@ -50,9 +52,13 @@ import type { CSSProperties } from "react";
  * which letter each one is. A rendered index rather than the loop counting
  * children, for the same reason the React key is the index (§8.3): a filtered
  * list renumbers itself the instant something in the middle of it is shot.
+ * The shield is in the sky beside them and carries no such attribute, which is
+ * what makes the loop skip it: `Number(undefined)` is `NaN`, which indexes no
+ * letter. An EMPTY one would not — `Number("")` is `0` — and the shield would
+ * be written the first letter's fall, sixty times a second, as though it were
+ * the stone.
  *
- * The shield is STM05, and the eight segments belong on the line the letters
- * land on; firing and its reticle are STM06.
+ * Firing and its reticle are STM06.
  */
 
 /**
@@ -152,6 +158,12 @@ export function StormField({
             </span>
           );
         })}
+
+        {/* Last in the sky, so a letter reaching the bottom passes BEHIND the
+            wall it is breaking rather than in front of it — the only place the
+            two ever overlap, and the last frame of a fall is exactly where it
+            should read as a stone hitting something. */}
+        <StormShield state={state} />
       </div>
 
       <LiveKeyboard mode="keys" next={aimedAt(state)} />

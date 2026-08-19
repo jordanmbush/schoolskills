@@ -221,6 +221,78 @@ export function keyX(code: string): number | null {
   return key ? key.x + (key.width ?? 1) / 2 : null;
 }
 
+/**
+ * The board's home row: the eight keys the hands rest on, plus the keys
+ * outboard of them that the two pinkies also cover.
+ *
+ * A row index rather than `KeyDef.home`, which marks only the eight resting
+ * keys and the space bar — `Caps`, `'` and `Enter` are on this row and belong
+ * to a pinky, and a zone drawn without them would stop short of the edge of
+ * the board it is supposed to span.
+ */
+const HOME_ROW: KeyDef["row"] = 2;
+
+/** A stretch of the board, in the key units everything else here is in. */
+export type FingerZone = {
+  /** Left edge in key units, from the left edge of the board. */
+  x: number;
+  /** Width in key units. The board is 15 of them wide. */
+  width: number;
+};
+
+/**
+ * How much of the board each finger is responsible for, in key units.
+ *
+ * The second thing Hailstorm needs from this table, after the lane: its shield
+ * is eight segments across the bottom of the field, one per finger, and each
+ * one has to sit over the keys whose misses break it (docs/typing.md §8.5).
+ * Here rather than in the component that draws it for the same reason `keyX`
+ * is here — it is a fact about the plastic, and a second opinion about which
+ * keys the right ring finger covers would put the hole over the wrong hand.
+ *
+ * ── The home row is the zone ────────────────────────────────────────────────
+ * The eight spans are the home row's keys grouped by finger, and that is a
+ * choice between four rows rather than a derivation. Every row divides into
+ * eight runs — no row hands a key back to a finger it has already passed — but
+ * the four rows do not agree about WHERE the divisions fall, because the rows
+ * are staggered. The left pinky gives way to the left ring at 2 on the number
+ * row, at 2.5 on the top row, at 2.75 on the home row and at 3.25 on the
+ * bottom row. A vertical seam can honour one of those four, so the question
+ * is which row's seams the shield is drawn on.
+ *
+ * The home row, because it is the row the hands are literally on: `a s d f`
+ * and `j k l ;` is where a touch typist's fingers rest and what every reach
+ * returns to, so "your right ring finger" and "the column over `l`" are the
+ * same statement to the child being told it. The other rows are then off by
+ * the stagger and no more — a key never sits further than a quarter unit
+ * outside its own finger's zone, which is `keyboard.test.ts`'s to pin.
+ *
+ * The thumbs have no zone. Nothing falls on the space bar (§8.3), so the eight
+ * here are exactly the eight the shield is divided into, and the home row
+ * carries no thumb key for the cast below to have to exclude.
+ */
+export const FINGER_ZONES: Readonly<
+  Record<Exclude<Finger, "thumb">, FingerZone>
+> = (() => {
+  const zones: Partial<Record<Finger, FingerZone>> = {};
+
+  for (const key of KEYS) {
+    if (key.row !== HOME_ROW) continue;
+    const right = key.x + (key.width ?? 1);
+    const seen = zones[key.finger];
+    const left = seen ? Math.min(seen.x, key.x) : key.x;
+    zones[key.finger] = {
+      x: left,
+      width: (seen ? Math.max(seen.x + seen.width, right) : right) - left,
+    };
+  }
+
+  // Eight, because the home row carries no thumb key and every other finger
+  // has at least one on it. Both halves are the table's to keep and the
+  // board tests' to check, so this asserts rather than proves.
+  return zones as Record<Exclude<Finger, "thumb">, FingerZone>;
+})();
+
 export type Stroke = {
   /** The letter key. */
   code: string;

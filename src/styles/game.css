@@ -2169,15 +2169,14 @@ label.segmented__btn {
    shared width is the alignment, and it is why the sky is not simply the full
    width of the field.
 
-   The bottom border is the line the letters land on. STM05 replaces it with
-   the eight shield segments, one per finger; until then it is what makes the
-   fall legible — a stone at the bottom of the sky is a stone that got
-   through. */
+   The line the letters land on is the shield, at the bottom of this box and
+   inside it (below). It replaced a `border-bottom` here, and had to: a border
+   is one line where the thing a child has to read is eight, and the eight
+   have to be able to break one at a time. */
 .storm__sky {
   position: relative;
   width: calc(15 * var(--key));
   margin-inline: auto;
-  border-bottom: 1px solid var(--hairline);
 
   /* A size container, so the fall below can be written in the height of the
      sky. It has to be: the fall is a transform, and a percentage inside a
@@ -2259,4 +2258,190 @@ label.segmented__btn {
   font-size: calc(var(--key) * 0.6);
   line-height: 1;
   color: var(--chalk);
+}
+
+/* ── Hailstorm: the shield ───────────────────────────────────────────────
+   The eight segments the letters land on, one per finger (docs/typing.md
+   §8.5, decisions 21 and 41).
+
+   **A segment sits over its own finger's keys.** `--zone-x` and `--zone-w`
+   are `FINGER_ZONES` — the home row grouped by finger, in the same key units
+   as a lane and a keycap, off the same one `--key`. So the shield, the board
+   and the falling letters are three readings of one table, and there is no
+   arithmetic here for them to disagree about. The whole rail is 15 units,
+   which is the width of the sky and of the board.
+
+   The half `--key-gap` is the lane's correction (§8.2, decision 36) applied
+   to a span instead of a point, and for the same reason: a keycap is drawn
+   inset inside its slot, so the gutter a child sees between `s` and `d` is
+   half a gap to the left of the slot boundary between them. Stepping the
+   whole rail back by that puts every seam in a gutter rather than down the
+   middle of a cap, and — because both the lane and the segment step back by
+   the same amount — a letter is over its own segment exactly when its key is
+   in its own zone, with the correction cancelling out of the comparison.
+
+   Colour is the other half of "over its own finger": a segment is the hue of
+   the keys beneath it, out of the same eight `--finger-*` tokens the board
+   uses, so the sage block over `h` and `j` is the sage keys' block and
+   nothing has to be counted to see it. Two of the telemetry five are here and no
+   others, both meaning what they mean everywhere else on this site: `--flare`
+   for damage and for a hole, which are the two wrongs this game has, and
+   `--lime` for a repair, which is paid for by a run of right answers.    */
+
+/* The rail: the bottom of the sky, and never more than a fifth of it.
+
+   The `cqh` term is not defensive. The sky is a `minmax(0, 1fr)` track (see
+   `.storm` above) and it is what gives when the viewport is short: about 78px
+   of sky at 1280×360 and about 21px at 1280×250. A shield in key units alone
+   would be a fixed slab of a field that had almost nothing left, so it is the
+   smaller of the two — a third of a key where there is room, and a fifth of
+   the sky where there is not. */
+.storm__shield {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: min(calc(var(--key) * 0.34), 20cqh);
+}
+
+/* One finger's segment: the socket, which is what a zone at zero is reduced
+   to, and the armour drawn inside it below. */
+.storm__zone {
+  /* Overwritten per finger below. The neutral is never drawn — every zone
+     carries a `data-finger` and the thumbs have no zone — but a segment with
+     no hue at all would be invisible rather than obviously wrong. */
+  --finger: var(--chalk-dim);
+  /* Hit points left, as a fraction of the level's own `shield`. The component
+     divides, so nothing here knows how deep this wave's shield is. */
+  --hp: 1;
+
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(var(--zone-x) * var(--key) - var(--key-gap) / 2);
+  width: calc(var(--zone-w) * var(--key));
+
+  border: 1px solid color-mix(in oklab, var(--hairline) 85%, transparent);
+  border-radius: calc(var(--key) * 0.09);
+  background: color-mix(in oklab, var(--ink-900) 60%, transparent);
+}
+
+/* The armour. Its height IS the hit points — a skyline of eight blocks, which
+   is a quantity a five-year-old can read across a field without counting
+   anything, and which goes to nothing at zero and leaves the socket empty.
+
+   `height` rather than a transform, unlike the stones above: this changes when
+   a letter lands or a repair pays out, not sixty times a second, so the layout
+   property is the honest one and costs nothing. The transition is what makes a
+   repair visible as a repair — the block grows back where damage drops it —
+   and it ends where `--hp` says either way, so `prefers-reduced-motion`
+   clamping every transition to 0.001ms (base.css) loses the movement and none
+   of the reading. */
+.storm__zone::before {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: calc(var(--hp) * 100%);
+
+  border-radius: inherit;
+  background: color-mix(in oklab, var(--finger) 62%, var(--ink-800));
+  box-shadow: 0 0 calc(var(--key) * 0.2)
+    color-mix(in oklab, var(--finger) 30%, transparent);
+
+  transition: height 200ms var(--ease-out);
+}
+
+/* A hole: no armour left, and the next letter down this column ends the run.
+   The socket stays — it is what keeps the eight readable, so a child can still
+   see WHICH finger the gap belongs to — but it goes to `--flare`, which is
+   what a wrong reads as everywhere else on this site. Faint on purpose: this
+   sits on screen for the rest of the run, and it must not compete with the
+   150ms tint of something actually happening. */
+.storm__zone[data-hole] {
+  border-color: color-mix(in oklab, var(--flare) 38%, transparent);
+  background: color-mix(in oklab, var(--flare) 10%, transparent);
+}
+
+/* ── One tint, once ──────────────────────────────────────────────────────
+   Damage is a single ~150ms wash of `--flare` over the segment that took it,
+   and a repair a slightly longer one of `--lime`. Neither is a flash sequence
+   and neither can become one: the animation is a single pass — no
+   `alternate`, nothing infinite — and the element it runs on is mounted by
+   `StormShield` from a counter that only goes up, so it exists exactly once
+   per landing and once per repair. Two letters landing on one zone inside a
+   single `tick` move that counter by two, which is still one element and
+   therefore still one tint (§8.10).
+
+   Both rest at `opacity: 0` and animate down to it, so the animation adds
+   nothing to the picture once it is over and `prefers-reduced-motion` — which
+   clamps every animation to one 0.001ms pass — leaves the segment exactly as
+   it would have found it. What a child who asked for less motion still gets
+   is the block's own height, which is the damage itself rather than a report
+   of it.                                                                  */
+.storm__hit,
+.storm__mend {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  opacity: 0;
+}
+
+.storm__hit {
+  background: var(--flare);
+  animation: storm-hit 150ms var(--ease-out);
+}
+
+.storm__mend {
+  background: var(--lime);
+  animation: storm-mend 240ms var(--ease-out);
+}
+
+@keyframes storm-hit {
+  from {
+    opacity: 0.85;
+  }
+}
+
+@keyframes storm-mend {
+  from {
+    opacity: 0.7;
+  }
+}
+
+/* The same eight hues the keycaps carry, on the same closed set of fingers —
+   see the board's block above, and tokens.css for why none of them is one of
+   the telemetry five. There is no thumb segment: nothing falls on the space
+   bar (§8.3). */
+.storm__zone[data-finger="l-index"] {
+  --finger: var(--finger-l-index);
+}
+
+.storm__zone[data-finger="l-middle"] {
+  --finger: var(--finger-l-middle);
+}
+
+.storm__zone[data-finger="l-ring"] {
+  --finger: var(--finger-l-ring);
+}
+
+.storm__zone[data-finger="l-pinky"] {
+  --finger: var(--finger-l-pinky);
+}
+
+.storm__zone[data-finger="r-index"] {
+  --finger: var(--finger-r-index);
+}
+
+.storm__zone[data-finger="r-middle"] {
+  --finger: var(--finger-r-middle);
+}
+
+.storm__zone[data-finger="r-ring"] {
+  --finger: var(--finger-r-ring);
+}
+
+.storm__zone[data-finger="r-pinky"] {
+  --finger: var(--finger-r-pinky);
 }

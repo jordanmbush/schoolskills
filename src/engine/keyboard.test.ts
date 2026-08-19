@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { KEYS, KEY_ROWS, keyX, reachable, strokeFor } from "./keyboard";
+import {
+  FINGER_ZONES,
+  KEYS,
+  KEY_ROWS,
+  keyX,
+  reachable,
+  strokeFor,
+} from "./keyboard";
 import type { Finger, KeyDef } from "./keyboard";
 import { TYPING_LEVELS } from "./decks/typing";
 
@@ -312,5 +319,97 @@ describe("the board", () => {
     for (const key of KEYS) {
       expect(key.finger, key.code).toBe(expected.get(key.code));
     }
+  });
+});
+
+describe("FINGER_ZONES", () => {
+  /** The eight, left to right — which is the order the shield is drawn in. */
+  const ordered = Object.entries(FINGER_ZONES).sort(
+    ([, a], [, b]) => a.x - b.x,
+  );
+
+  it("gives each of the eight the span its home keys occupy", () => {
+    // Written out rather than derived, for the reason `FINGERS` above is: this
+    // is the expected value, and a table edit that moved a seam would have to
+    // disagree with it here rather than quietly move the shield.
+    expect(FINGER_ZONES).toEqual({
+      "l-pinky": { x: 0, width: 2.75 }, // Caps and `a`
+      "l-ring": { x: 2.75, width: 1 }, // `s`
+      "l-middle": { x: 3.75, width: 1 }, // `d`
+      "l-index": { x: 4.75, width: 2 }, // `f` and `g`
+      "r-index": { x: 6.75, width: 2 }, // `h` and `j`
+      "r-middle": { x: 8.75, width: 1 }, // `k`
+      "r-ring": { x: 9.75, width: 1 }, // `l`
+      "r-pinky": { x: 10.75, width: 4.25 }, // `;`, `'` and Enter
+    });
+  });
+
+  it("tiles the whole board, with no gap and no overlap", () => {
+    // What makes eight segments a shield rather than eight bars: every column
+    // of the field is over exactly one finger, so a letter that gets through
+    // has exactly one zone to have got through, and a hole is a real gap in a
+    // wall rather than a dark patch beside one.
+    let edge = 0;
+    for (const [finger, zone] of ordered) {
+      expect(zone.x, finger).toBe(edge);
+      edge += zone.width;
+    }
+    expect(edge, "as wide as the board").toBe(15);
+    expect(ordered).toHaveLength(8);
+  });
+
+  it("has no zone for the thumbs", () => {
+    // Nothing falls on the space bar (§8.3), so the shield has no segment for
+    // it — and the home row this is grouped from carries no thumb key, which
+    // is what lets the record be exactly the eight without excluding one.
+    expect(Object.keys(FINGER_ZONES)).not.toContain("thumb");
+    expect(KEYS.filter((k) => k.row === 2 && k.finger === "thumb")).toEqual([]);
+  });
+
+  it("holds every one of a finger's home keys inside its own zone", () => {
+    for (const key of KEYS) {
+      if (key.row !== 2) continue;
+      const zone = FINGER_ZONES[key.finger as keyof typeof FINGER_ZONES];
+      expect(zone.x, key.code).toBeLessThanOrEqual(key.x);
+      expect(zone.x + zone.width, key.code).toBeGreaterThanOrEqual(
+        key.x + (key.width ?? 1),
+      );
+    }
+  });
+
+  it("keeps every other row within a quarter unit of it", () => {
+    // The cost of cutting the seams on one row. The rows are staggered, so a
+    // finger's keys are a slanted column and no vertical segment covers all of
+    // it: a bottom-row key lands exactly on its zone's right-hand seam, and the
+    // leftmost key of a finger's number-row column lands a quarter unit outside
+    // it. This pins both — which keys, and how far — because "a quarter of a
+    // key" is the claim the whole choice of row rests on, and a change that
+    // made it worse has to come here and say so.
+    const strays = KEYS.filter(
+      (key) => key.cap[0].length === 1 && key.finger !== "thumb",
+    ).map((key) => {
+      const zone = FINGER_ZONES[key.finger as keyof typeof FINGER_ZONES];
+      const lane = keyX(key.code)!;
+      return {
+        code: key.code,
+        out: Math.max(zone.x - lane, lane - (zone.x + zone.width), 0),
+      };
+    });
+
+    const outside = strays.filter((stray) => stray.out > 0);
+    // Seven keys, every one of them on the number row, every one of them a
+    // quarter unit LEFT of its own segment — so each is drawn over the segment
+    // of the finger next to it, on the inboard side. `6` is the one to know:
+    // right index, over the left index's block by a quarter of a key.
+    expect(outside.map((stray) => stray.code)).toEqual([
+      "Digit2",
+      "Digit3",
+      "Digit4",
+      "Digit6",
+      "Digit8",
+      "Digit9",
+      "Digit0",
+    ]);
+    expect(Math.max(...outside.map((stray) => stray.out))).toBe(0.25);
   });
 });
