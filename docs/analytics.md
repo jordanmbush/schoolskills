@@ -137,6 +137,16 @@ npm run analytics:geoip           # rebuild and upload
 npm run analytics:geoip -- --dry  # build locally, upload nothing
 ```
 
+**How these scripts authenticate**, because it differs by where they run and
+getting it wrong is invisible until it isn't. `scripts/aws.mjs` decides: an
+explicit `AWS_PROFILE` always wins; otherwise, if credentials are already in
+the environment — which is what `aws-actions/configure-aws-credentials` leaves
+behind after the OIDC exchange — **no `--profile` is passed at all**; and
+failing both, it falls back to the local `schoolskills` profile. A runner has
+no `~/.aws/config`, so naming a profile there replaces working credentials with
+a pointer to a file that does not exist. The first scheduled refresh failed on
+exactly that, after building a perfectly good artifact it then discarded.
+
 **Latitude, longitude and postcode are in the source and are deliberately not
 in the artifact.** Do not add them. A coordinate is a different kind of fact
 about a child than a city name, and the accuracy is not there to justify it:

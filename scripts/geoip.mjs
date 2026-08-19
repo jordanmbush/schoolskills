@@ -52,6 +52,8 @@ import { gunzipSync } from "node:zlib";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
+import { awsAuthHint, awsIdentityLabel, awsProfileArgs } from "./aws.mjs";
+
 /** Bumped when the binary layout changes; the reader refuses anything else. */
 export const VERSION = 1;
 export const MAGIC = "SSG1";
@@ -70,8 +72,6 @@ export const cacheDir = () => join(tmpdir(), "schoolskills-geoip");
  * and somebody needs to know. See scripts/build-geoip.mjs.
  */
 const STALE_DAYS = 45;
-
-const PROFILE = process.env.AWS_PROFILE ?? "schoolskills";
 
 /**
  * A dotted quad as a number. `null` for anything that isn't one.
@@ -214,16 +214,15 @@ function ensureArtifact({ maxAgeMs }) {
         "Account",
         "--output",
         "text",
-        "--profile",
-        PROFILE,
+        ...awsProfileArgs(),
       ],
       { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] },
     ).trim();
   } catch (error) {
     throw new Error(
-      `Could not reach AWS as profile "${PROFILE}".\n` +
+      `Could not reach AWS as ${awsIdentityLabel()}.\n` +
         `${String(error.stderr ?? error.message).trim()}\n` +
-        `If the session has expired: aws sso login --profile ${PROFILE}`,
+        awsAuthHint(),
       { cause: error },
     );
   }
@@ -233,7 +232,7 @@ function ensureArtifact({ maxAgeMs }) {
   try {
     execFileSync(
       "aws",
-      ["s3", "cp", source, packed, "--profile", PROFILE, "--only-show-errors"],
+      ["s3", "cp", source, packed, ...awsProfileArgs(), "--only-show-errors"],
       {
         encoding: "utf8",
         stdio: ["ignore", "pipe", "pipe"],
