@@ -55,10 +55,17 @@ function validate(input: Partial<NewProfile>, partial: boolean) {
 /**
  * The three modes, as a runtime check.
  *
- * The type stops a caller in this codebase writing "gide"; nothing stops a
- * restored backup or a hand-edited record, and this is the layer that turns bad
- * input into no change rather than a corrupt profile. Absent is a legal state
- * (it reads as "guide"), so failing the check simply leaves the field alone.
+ * This is `soundOn`'s coercion held to a union instead of to `Boolean`: it
+ * covers an in-app patch, which is the only thing that reaches `update`.
+ * Absent is a legal state (it reads as "guide"), so failing the check simply
+ * leaves the field alone.
+ *
+ * It is *not* a defence against a corrupt record, and shouldn't be read as
+ * one. A restored backup goes into the store whole and never passes through
+ * here, and a hand-edited record is already in the store — the `...existing`
+ * spread below copies it back out untouched. That case is defended where such
+ * a value is actually seen: `games/typing/keyboard/KeyboardSetting.tsx`
+ * resolves anything that isn't one of the three to "guide" on read.
  */
 const isKeyboardMode = (value: unknown): value is KeyboardMode =>
   value === "off" || value === "keys" || value === "guide";
@@ -113,9 +120,8 @@ export async function update(
       : {}),
     // Same reasoning as `soundOn`: a setting, not text. Only the three modes
     // are written, so a patch carrying anything else leaves the profile on
-    // whatever it was on — a bad value here would otherwise sit in storage
-    // until a child chose again, and the read site would have to defend
-    // against it forever.
+    // whatever it was on rather than parking a bad value in storage until a
+    // child chooses again.
     ...(isKeyboardMode(patch.keyboard) ? { keyboard: patch.keyboard } : {}),
   };
   await store.putProfile(updated);

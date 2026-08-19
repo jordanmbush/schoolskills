@@ -11,9 +11,10 @@ import { KeyboardSetting } from "./KeyboardSetting";
  * `Profile.keyboard` is optional and gets no migration on purpose
  * (docs/typing.md §10): profiles are read straight out of IndexedDB, unlike
  * sessions, and the only copy of a child's record book is the one on their
- * device. The price of that decision is that "the field isn't there" is a
- * state the UI meets forever, not a state that gets tidied up one release
- * later — so it is pinned here, in the file that resolves it.
+ * device. The price of that decision is that "the field isn't there" — and
+ * "the field says something else", since a restored backup is stored whole and
+ * unchecked — are states the UI meets forever, not states that get tidied up
+ * one release later. So both are pinned here, in the file that resolves them.
  *
  * The other assertion is that this is a control. The board it governs is sixty
  * inert spans and must stay that way (§4.5); the thing that shows and hides it
@@ -54,6 +55,22 @@ describe("KeyboardSetting", () => {
     // setting that claims not to be on any of its three settings.
     expect(chosen(html)).toEqual(["guide"]);
     expect(html).toContain("Show the next key");
+  });
+
+  it("renders an unrecognised keyboard value on guide", () => {
+    // What restore can hand back: `services/hub.ts#importAll` puts a profile
+    // into the store exactly as the file had it, so a hand-edited backup
+    // reaches this component carrying a value the type says cannot exist. The
+    // cast is the point of the test — no in-app path can produce this.
+    const restored = { ...legacy, keyboard: "gide" } as unknown as Profile;
+
+    const html = renderToStaticMarkup(
+      <KeyboardSetting mode={restored.keyboard} onChange={() => {}} />,
+    );
+
+    // One pill, the default one — the same requirement as the missing field.
+    // A `??` fallback would pass "gide" through and check none of the three.
+    expect(chosen(html)).toEqual(["guide"]);
   });
 
   it("shows the mode a player has chosen", () => {
