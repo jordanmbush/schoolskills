@@ -75,14 +75,14 @@ import {
 /**
  * Characters in a drill group: `ffjj`, `QWER`, `4545`.
  *
- * Four, not the three §5.1 prints, and the reason is arithmetic rather than
- * taste. `strikesFor` in `lessons.ts` sizes the new-key gate against
- * `wordCount × 5` characters — the words-per-minute convention, five keys to a
- * word, the space included. Groups of three would make a lesson a fifth
- * shorter than the gate assumes, and lesson 67 (six new symbols, ten strikes
- * apiece) would need 60 of its 139 characters to be new: 43%, well over
- * §5.2's ceiling, with the generator doing nothing wrong. Four plus a space is
- * five, so the two halves of the ladder agree about how long a lesson is.
+ * Four, as §5.1 prints, and the reason is arithmetic rather than taste.
+ * `strikesFor` in `lessons.ts` sizes the new-key gate against `wordCount × 5`
+ * characters — the words-per-minute convention, five keys to a word, the space
+ * included. Groups of three would make a lesson a fifth shorter than the gate
+ * assumes, and lesson 67 (six new symbols, ten strikes apiece) would need 60
+ * of its 139 characters to be new: 43%, well over §5.2's ceiling, with the
+ * generator doing nothing wrong. Four plus a space is five, so the two halves
+ * of the ladder agree about how long a lesson is.
  */
 const GROUP = 4;
 
