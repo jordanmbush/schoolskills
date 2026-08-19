@@ -1,4 +1,4 @@
-import type { Profile } from "@/engine/types";
+import type { KeyboardMode, Profile } from "@/engine/types";
 
 import * as store from "./storage/db";
 
@@ -52,6 +52,17 @@ function validate(input: Partial<NewProfile>, partial: boolean) {
   return out;
 }
 
+/**
+ * The three modes, as a runtime check.
+ *
+ * The type stops a caller in this codebase writing "gide"; nothing stops a
+ * restored backup or a hand-edited record, and this is the layer that turns bad
+ * input into no change rather than a corrupt profile. Absent is a legal state
+ * (it reads as "guide"), so failing the check simply leaves the field alone.
+ */
+const isKeyboardMode = (value: unknown): value is KeyboardMode =>
+  value === "off" || value === "keys" || value === "guide";
+
 /** Names are the only thing players use to tell each other apart on the picker. */
 async function assertNameFree(name: string, exceptId?: string) {
   const existing = await store.allProfiles();
@@ -100,6 +111,12 @@ export async function update(
     ...(Object.hasOwn(patch, "soundOn")
       ? { soundOn: Boolean(patch.soundOn) }
       : {}),
+    // Same reasoning as `soundOn`: a setting, not text. Only the three modes
+    // are written, so a patch carrying anything else leaves the profile on
+    // whatever it was on — a bad value here would otherwise sit in storage
+    // until a child chose again, and the read site would have to defend
+    // against it forever.
+    ...(isKeyboardMode(patch.keyboard) ? { keyboard: patch.keyboard } : {}),
   };
   await store.putProfile(updated);
   return updated;

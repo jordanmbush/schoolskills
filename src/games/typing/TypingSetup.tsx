@@ -15,7 +15,8 @@ import { bestRun, ghostsFor, sessionsFor } from "@/engine/records";
 import { randomSeed } from "@/engine/random";
 import { RivalList } from "@/games/race";
 import { sfx } from "@/services/sound";
-import type { TypingConfig } from "@/engine/types";
+import { KeyboardSetting } from "./keyboard/KeyboardSetting";
+import type { KeyboardMode, TypingConfig } from "@/engine/types";
 
 const LENGTHS = [20, 30, 50, 80];
 
@@ -28,7 +29,7 @@ const LENGTHS = [20, 30, 50, 80];
  */
 export default function TypingSetup() {
   const { profileId } = useParams();
-  const { profiles, sessions } = useHub();
+  const { profiles, sessions, updateProfile, notify } = useHub();
   const profile = usePlayer(profileId);
   const { start } = useRace();
   const navigate = useNavigate();
@@ -58,6 +59,23 @@ export default function TypingSetup() {
   const mine = sessionsFor(sessions, profile.id, key);
   const best = bestRun(mine);
   const bestWpm = best ? wordsPerMinute(best.cards, best.durationMs) : null;
+
+  /**
+   * Saved to the profile the moment it moves, unlike everything else on this
+   * screen: a level and a length describe one run, but how much of the
+   * keyboard you need is about the child, and it should still be true next
+   * week without being chosen again. Same shape as the sound toggle in
+   * `TopBar` — write, and say so if the write didn't land, because the pills
+   * are drawn from the profile and would otherwise silently spring back.
+   */
+  async function chooseKeyboard(next: KeyboardMode) {
+    sfx.tap();
+    try {
+      await updateProfile(profile!.id, { keyboard: next });
+    } catch {
+      notify("Could not save the keyboard setting", "bad");
+    }
+  }
 
   function launch() {
     const ghost = rivals.find((g) => g.session.id === rivalId) ?? null;
@@ -141,6 +159,11 @@ export default function TypingSetup() {
               ))}
             </div>
           </div>
+
+          <KeyboardSetting
+            mode={profile.keyboard}
+            onChange={(next) => void chooseKeyboard(next)}
+          />
 
           <p className="numbers__note">
             {bestWpm === null
