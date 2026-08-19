@@ -113,6 +113,17 @@ export type WordConfig = {
 export type TypingConfig = {
   kind: "typing";
   levelId: string;
+  /**
+   * Set when this run is a lesson from the ladder (docs/typing.md §5.4).
+   *
+   * The discriminator for a ladder run, and the one field `Session.mode` and
+   * the ghost key prefer when it is there — a lesson is the identity, not the
+   * passage. Every run of lesson 7 generates its own words, so a key built
+   * from them would file each run in a bucket of one and a child would never
+   * be shown their own best. Optional, because every run saved before the
+   * ladder existed is a level and must key exactly as it always has.
+   */
+  lessonId?: string;
   /** An explicit set, for a drill of the words a player keeps fumbling. */
   words?: string[];
   wordCount: number;

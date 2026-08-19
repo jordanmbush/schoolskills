@@ -263,6 +263,40 @@ describe("configKey", () => {
   it("never collides with a word or arithmetic key", () => {
     expect(typingConfigKey(config())).toMatch(/^typing\|/);
   });
+
+  it("keys a lesson on the lesson and not on its passage", () => {
+    // Lesson 7 generates its own words every time it is run, so a key that
+    // folded them in would file every attempt in a bucket of one — a child
+    // would run the lesson twenty times and never be shown their own best.
+    const monday = config({
+      lessonId: "L07",
+      words: ["all", "dad", "flash"],
+      wordCount: 25,
+    });
+    const tuesday = config({
+      lessonId: "L07",
+      words: ["gala", "sash", "half"],
+      wordCount: 25,
+    });
+    expect(typingConfigKey(monday)).toBe("typing|L07|25");
+    expect(typingConfigKey(tuesday)).toBe(typingConfigKey(monday));
+  });
+
+  it("still separates lengths within a lesson", () => {
+    // The one thing about a lesson run that can differ and still matter: a
+    // 25-word run and a 50-word one are not the same race.
+    expect(typingConfigKey(config({ lessonId: "L07", wordCount: 50 }))).toBe(
+      "typing|L07|50",
+    );
+  });
+
+  it("still folds a drill's words in, which is what makes it that drill", () => {
+    // No lesson id, so nothing changed: a parent's five tricky words are the
+    // identity of the run, and two different fives are two different races.
+    expect(
+      typingConfigKey(config({ words: ["ask", "add"], wordCount: 10 })),
+    ).toBe("typing|home-row|10|wadd,ask");
+  });
 });
 
 describe("the deck registry", () => {
@@ -272,6 +306,19 @@ describe("the deck registry", () => {
 
   it("still answers for a level this build has never heard of", () => {
     expect(deckSpec(typingMode("retired")).label).toBe("Typing");
+  });
+
+  it("names the lesson a ladder run was played at", () => {
+    // What a record book two years from now reads, long after the ladder has
+    // been re-tuned: the lesson by number and title, not "Typing".
+    expect(deckSpec("typing:L07").label).toBe("Lesson 7 · Home-row words");
+    expect(deckSpec("typing:L100").label).toBe("Lesson 100 · The Ice Exam");
+  });
+
+  it("files a lesson run under its lesson id, not its level", () => {
+    expect(modeOf(config({ lessonId: "L07", words: ["all", "dad"] }))).toBe(
+      "typing:L07",
+    );
   });
 
   it("dispatches build, key and description on the config's shape", () => {

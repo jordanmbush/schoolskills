@@ -56,7 +56,11 @@ export const isTyping = (config: RaceConfig): config is TypingConfig =>
 /** Which deck a config will file its run under — the value of `Session.mode`. */
 export function modeOf(config: RaceConfig): string {
   if (isWords(config)) return wordMode(config.listId);
-  if (isTyping(config)) return typingMode(config.levelId);
+  // A lesson wins over the level it was played at, so a ladder run files
+  // itself as `typing:L07` and stays that in the record book (docs/typing.md
+  // §5.4). Absent on every run saved before the ladder, which is why the level
+  // is still what a config without one is filed under.
+  if (isTyping(config)) return typingMode(config.lessonId ?? config.levelId);
   return config.operation;
 }
 
