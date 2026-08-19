@@ -197,9 +197,17 @@ const BY_CODE = new Map(KEYS.map((k) => [k.code, k]));
  * which is the point. Hailstorm's lanes are this function (docs/typing.md §8.2,
  * decision 19): a letter falls down the column of the key that produces it, so
  * `keyX("KeyF")` is where `f` falls and `keyX("KeyY")` lands between `g` and
- * `h` because that is where `y` is. The field and the drawn board reading one
- * number is what stops them disagreeing about where a key is, and a lane half a
- * unit out is a spatial hint that teaches the wrong thing.
+ * `h` because that is where `y` is.
+ *
+ * The field and the drawn board cannot disagree about where a key is because
+ * both read the same `KEY_ROWS` table and both measure in key units off that
+ * one `--key`. It is one *table*, not one function: `keyX` is the field's
+ * convenience for the centre of a key's slot, while the board wants a left
+ * edge and a width and takes `KeyDef.x` / `KeyDef.width` straight from the
+ * same rows without calling this. A lane half a unit out would be a spatial
+ * hint that teaches the wrong thing, and the shared table is what rules that
+ * out. The keycap drawn inside a slot is inset by `--key-gap`, so a slot's
+ * centre and a cap's centre are 0.045 units apart — §8.2 has that number.
  *
  * The **middle** rather than the left edge, because a falling glyph is centred
  * on its column and the wide keys are where the difference shows: the space bar

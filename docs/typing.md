@@ -167,10 +167,13 @@ in, row 2 a little further, row 3 further still. Storing it means one number
 per key and no arithmetic anybody has to trust.
 
 `keyX(code)` is `x` plus half the key's width — the **middle** of the key, which
-is the lane its letter falls down (§8.2). One function rather than the same
-arithmetic in the field and in the drawn board, because a lane half a unit out
-is a spatial hint that teaches the wrong thing, and two copies of a sum are how
-that happens. It returns `null` for a code this board does not carry.
+is the lane its letter falls down (§8.2). The field and the drawn board cannot
+disagree about where a key is because both read this same table and both measure
+in key units off the same `--key` — one _table_, not one function. `keyX` is the
+field's convenience for the centre of a key's slot; the board wants a left edge
+and a width, and takes `x` and `width` directly. A lane half a unit out is a
+spatial hint that teaches the wrong thing, and the shared table is what rules
+that out. It returns `null` for a code this board does not carry.
 
 ### 3.3 · `keyFor`, and why shift is two keys
 
@@ -959,6 +962,19 @@ The keyboard component sits at the bottom of the field, lit by the same
 
 Lanes are key units, not pixels, so the field and the board scale together off
 one `--key` custom property.
+
+They scale off it differently, though, and the difference is worth writing down
+before the field is built. `keyX` returns the centre of a key's **slot**, while
+the drawn keycap is inset inside that slot: `game.css` gives it
+`width: calc(var(--w) * var(--key) - var(--key-gap))`, with `--key-gap` set to
+`calc(var(--key) * 0.09)`. So a cap's visual centre is `--key * (x + w/2 -
+0.045)` while its lane is `--key * (x + w/2)` — a letter placed at
+`left: calc(var(--lane) * var(--key))` and centred with `translateX(-50%)` sits
+**0.045 key units right of the centre of the cap it names**, about 1.7px at the
+2.4rem ceiling of `--key` and about 0.8px at the 1.05rem floor. Whether the
+field subtracts that half-gap is the field's own call to make deliberately
+(§13, item 18); it is recorded here so that it is neither inherited unknowingly
+nor "corrected" into a real misalignment.
 
 ### 8.3 · A wave, from a seed
 

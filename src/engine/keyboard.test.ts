@@ -221,10 +221,12 @@ describe("the board", () => {
   });
 
   it("puts a key's lane in the middle of it", () => {
-    // `keyX` is Hailstorm's lane (§8.2): the letter and the picture of the key
-    // it falls onto read the same number, so a field drawn from it cannot
-    // disagree with the board about where a key is. Middle rather than left
-    // edge, which is only visible on the keys that are not one unit wide.
+    // `keyX` is Hailstorm's lane (§8.2), and what this pins is its agreement
+    // with the layout table: every lane is `x` plus half the key's width, so a
+    // field drawn from it and a board drawn from `KEY_ROWS` are reading the
+    // same rows. Nothing here reads the board's CSS, so nothing here is a
+    // claim about the drawn keycaps. Middle rather than left edge, which is
+    // only visible on the keys that are not one unit wide.
     expect(keyX("KeyF")).toBe(5.25);
     expect(
       keyX("Space"),
