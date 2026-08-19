@@ -1,8 +1,10 @@
+import { comboMultiplier } from "@/engine/combo";
 import { OPERATION_ORDER } from "@/engine/decks/flashcards";
 import { isFlash, isTyping, isWords } from "@/engine/decks";
 import { ladderProgress } from "@/engine/typing/ladder";
 import { forcedKeyboard, lessonById } from "@/engine/typing/lessons";
 import { verdictFor } from "@/engine/typing/verdict";
+import type { StormState } from "@/engine/typing/storm";
 import type { Session } from "@/engine/types";
 
 /* ── Levels ──────────────────────────────────────────────────────────────
@@ -40,7 +42,6 @@ export function levelFromXp(xp: number): LevelInfo {
 /* ── Race scoring ───────────────────────────────────────────────────────── */
 
 const SPEED_TARGET_MS = 4000;
-const MAX_COMBO_STEPS = 10;
 
 /** XP for one correct card. Wrong cards score nothing but cost no XP either. */
 export function cardXp(ms: number, streakAfter: number) {
@@ -48,12 +49,61 @@ export function cardXp(ms: number, streakAfter: number) {
     0,
     Math.min(15, Math.round((SPEED_TARGET_MS - ms) / 200)),
   );
-  const multiplier = 1 + Math.min(streakAfter, MAX_COMBO_STEPS) / 10;
-  return Math.round((10 + speed) * multiplier);
+  return Math.round((10 + speed) * comboMultiplier(streakAfter));
 }
 
-export function comboMultiplier(streak: number) {
-  return 1 + Math.min(streak, MAX_COMBO_STEPS) / 10;
+/**
+ * What a Hailstorm run pays into the profile (docs/typing.md §8.6).
+ *
+ * ── Score can fall; XP cannot ────────────────────────────────────────────
+ * The storm's own score goes DOWN on a wrong key, because losing points has
+ * to be visible and immediate or it is not a consequence. This number is the
+ * other one, and it is floored at zero on purpose: XP is cumulative across
+ * years and across four games, and it is what a child's level ring is drawn
+ * from. A mechanic that could take XP away would mean a level going BACKWARDS
+ * because they had a bad five minutes in a shooter — a punishment that
+ * outlives the run it was earned in, aimed at the youngest player on the site.
+ * So the run's misses cost score and nothing else, and the two numbers are
+ * kept apart at exactly this line.
+ *
+ * **The `max(0, …)` is deliberate and must not be removed.** It cannot bite as
+ * the sum stands — every term below is a `cardXp`, which is never negative —
+ * so no input can drive it, no test can pin it, and deleting it leaves the
+ * suite entirely green. That is the reason it is written down here rather than
+ * left to be rediscovered: it guards the NEXT term somebody adds, not today's.
+ * A penalty per miss, or a charge for a letter that got through, would look
+ * local and correct at the fold below and would be a child's level ring
+ * running backwards on their profile. Nothing in the tooling can say that to
+ * whoever adds one, so this paragraph does; unreachable is not unnecessary.
+ *
+ * ── Computed once, at the end, from the run's hits ───────────────────────
+ * Not accumulated frame by frame: `resolved` already says which letters were
+ * shot, when, and on what streak, so this is a fold over a finished run rather
+ * than a second tally kept in step with the reducer sixty times a second.
+ *
+ * `cardXp` is reused UNCHANGED, and that is the point of it. It already
+ * rewards a hit under four seconds and a streak up to ×2, which is the shape a
+ * shooter wants — and using it means a Hailstorm level and a flash-card race
+ * pay out on the same scale, which they must, because it is one profile and
+ * one level ring. `ms` is how long the letter was in the air (§8.7) and the
+ * streak is the combo the shot landed on, so both arguments mean here what
+ * they mean on a card.
+ */
+export function stormXp(state: StormState): number {
+  return Math.max(
+    0,
+    state.resolved.reduce<number>(
+      (sum, outcome, index) =>
+        outcome?.outcome === "shot"
+          ? sum +
+            cardXp(
+              outcome.atMs - state.wave.letters[index].spawnMs,
+              outcome.combo,
+            )
+          : sum,
+      0,
+    ),
+  );
 }
 
 export type FinishBonuses = {

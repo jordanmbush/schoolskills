@@ -372,12 +372,13 @@ describe("StormField", () => {
 
   it("borrows exactly the two telemetry colours it has something to say with", () => {
     // The field itself borrows none of the five — a hailstone in `--lime`
-    // would be saying something was right about it. The shield borrows two,
-    // and only where they already mean what they mean everywhere else on this
-    // site: `--flare` is a wrong, and damage and a hole are the two wrongs
-    // this game has; `--lime` is a right, and a repair is bought with a run of
-    // them (§8.5). The other three would each be a lie about what happened —
-    // nothing on this screen is a ghost, a record or a badge.
+    // would be saying something was right about it. The shield and the HUD
+    // borrow two, and only where they already mean what they mean everywhere
+    // else on this site: `--flare` is a wrong, and damage, a hole and a wrong
+    // key are the three wrongs this game has; `--lime` is a right, and both a
+    // repair and a live combo are bought with a run of them (§8.5, §8.6). The
+    // other three would each be a lie about what happened — nothing on this
+    // screen is a ghost, a record or a badge.
     const rules = [...storm.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map(
       ([, selector, body]) => ({ selector: selector.trim(), body }),
     );
@@ -389,9 +390,13 @@ describe("StormField", () => {
 
     expect(drawnWith("--flare")).toEqual([
       ".storm__hit",
+      ".storm__miss",
       ".storm__zone[data-hole]",
     ]);
-    expect(drawnWith("--lime")).toEqual([".storm__mend"]);
+    expect(drawnWith("--lime")).toEqual([
+      ".storm__combo[data-hot]",
+      ".storm__mend",
+    ]);
     for (const name of ["--sky", "--gold", "--grape"])
       expect(storm).not.toContain(`var(${name})`);
   });

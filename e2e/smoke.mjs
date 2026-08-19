@@ -15,6 +15,50 @@ const log = (...a) => console.log(...a);
 
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1280, height: 1000 } });
+
+/*
+ * `SMOKE_CPU=4` runs the whole walk on a quarter of this machine's processor.
+ *
+ * Every timing-sensitive thing below is timing-sensitive *because a CI runner
+ * is slower than a laptop*, and a check that only ever runs at full speed is a
+ * check whose margins nobody has measured. This is the knob that measures
+ * them: a hailstorm flake that took a run of CI to see reproduces here in
+ * thirty seconds at `SMOKE_CPU=10`, and a fix for one is not demonstrated
+ * until it has been run under it.
+ *
+ * Off by default, because the point of the ordinary run is to be fast.
+ */
+const CPU = Number(process.env.SMOKE_CPU ?? 1);
+if (CPU > 1) {
+  const cdp = await page.context().newCDPSession(page);
+  await cdp.send("Emulation.setCPUThrottlingRate", { rate: CPU });
+  log(`(processor throttled ${CPU}×)`);
+}
+
+/*
+ * `SMOKE_LAG=300` puts 300ms between deciding on a key and pressing it.
+ *
+ * The other half of a slow runner, and the half `SMOKE_CPU` cannot show. CPU
+ * throttling slows the *page*, and the hailstorm's clock slows with it
+ * (`MAX_STEP_MS` caps how much wave time one frame may be worth), so the game
+ * politely waits for a throttled driver. What a loaded CI box actually does is
+ * the opposite: the browser keeps its frames while the node process driving it
+ * is starved, so the wave falls at full speed into a hand that has gone slow.
+ *
+ * That gap is where a shot at "the lowest letter" turns into a shot at the
+ * letter that used to be lowest, and it is the whole of the flake this knob
+ * exists to reproduce. Anything below that reads the field and then acts on it
+ * must survive `SMOKE_LAG=500`.
+ */
+const LAG = Number(process.env.SMOKE_LAG ?? 0);
+if (LAG) log(`(${LAG}ms of driver lag before every keypress)`);
+
+/** A keystroke, taken as slowly as `SMOKE_LAG` says a starved driver takes it. */
+const press = async (key) => {
+  if (LAG) await page.waitForTimeout(LAG);
+  await page.keyboard.press(key);
+};
+
 const errors = [];
 page.on("pageerror", (e) => errors.push(`pageerror: ${e.message}`));
 page.on(
@@ -285,9 +329,27 @@ try {
     JSON.stringify(benchBox),
   );
 
+  /*
+   * Print media, said again — and it has to be said again after every one of
+   * these navigations.
+   *
+   * The emulation does not reliably survive a cross-document load: the page
+   * comes back with `matchMedia("print")` false, the masthead laid out and the
+   * sheet where the *screen* puts it, which measures as a sheet indented 232px
+   * into a page it should start at the corner of. That is not a settling race
+   * — it does not resolve at 1.4s, throttled or not — so waiting cannot fix
+   * it; it can only decide the checks below are measuring the screen and
+   * saying "print".
+   *
+   * It stayed hidden because a laptop happened to keep the emulation across
+   * this hop and a throttled run did not. Restating it costs one call and
+   * makes the media the measurement's own, rather than something inherited
+   * from whatever ran before it.
+   */
   await page.goto(`${BASE}/printables/lined-paper`, {
     waitUntil: "networkidle",
   });
+  await page.emulateMedia({ media: "print" });
   const catalogBox = await page.locator(".sheet").first().boundingBox();
   check(
     "a catalog page puts the same sheet in the same place",
@@ -316,6 +378,9 @@ try {
   await page.goto(`${BASE}/printables/templates/blank-flashcards`, {
     waitUntil: "networkidle",
   });
+  // Again, for the reason above. Every measurement in this section says "on the
+  // paper", and only this line makes that true of the page it just loaded.
+  await page.emulateMedia({ media: "print" });
   const face = await page.locator(".sheet__cut-card").first().boundingBox();
   check(
     "a blank flashcard is 3.75in by 2.25in on the paper",
@@ -402,6 +467,12 @@ try {
   // Nothing links to the storm until the ladder grows its tiles, so the URL is
   // the only way in — which is what the route is for at this stage.
   const storm = async () => {
+    // Out to the ladder first, so this is a fresh mount every time it is
+    // called: a hash set to the one it already holds fires no navigation, and
+    // the run below it would be whatever the last one finished as. Leaving is
+    // also the only way out of the storm there is, so this is the same exit a
+    // child takes between two goes at it.
+    await page.evaluate((id) => (location.hash = `#/p/${id}`), player);
     await page.evaluate((id) => (location.hash = `#/p/${id}/storm`), player);
     await page.waitForSelector(".storm__letter", { timeout: 8000 });
   };
@@ -516,8 +587,9 @@ try {
       .join(" "),
   );
 
-  // Leaving is what quitting is on this screen (there is no quit control until
-  // the HUD lands), and it has to take the loop with it.
+  // Leaving is what quitting is on this screen (there is no quit control), and
+  // it has to take the loop with it — and, since the gun landed, the keydown
+  // listener beside it.
   await page.evaluate((id) => (location.hash = `#/p/${id}`), player);
   await page.waitForTimeout(500);
   check(
@@ -535,9 +607,16 @@ try {
    * animation RESTARTED every frame, which reads identically in the CSS and
    * would fire `animationstart` sixty times a second. So the events are
    * counted over a whole run, and against the only number they may equal —
-   * one per letter that lands, twelve for this wave, since nothing can be shot
-   * yet and each is drawn by a counter that only moves when a letter reaches
-   * that zone.
+   * one per letter that lands, twelve for this wave, because **this run is
+   * played with nothing pressed** and each tint is drawn by a counter that
+   * only moves when a letter reaches that zone.
+   *
+   * Nothing pressed is now a choice rather than a fact about the game: keys
+   * fire (§8.6), and the run below this one plays the same wave with a child's
+   * hands on it. Twelve landings is the densest this wave gets, so it is the
+   * right run to measure a strobe in — and it is measured here at every storm
+   * animation there is, not only the shield's, which is what makes "no miss
+   * flashed" a claim of this run rather than an absence nobody looked for.
    */
   await page.evaluate(() => {
     window.__tints = [];
@@ -564,8 +643,8 @@ try {
   });
 
   // And a run that reaches its end stops itself. The stand-in wave is twelve
-  // letters over 7.3s, none of which anything can shoot yet, so this waits out
-  // a whole storm.
+  // letters over 7.3s, and nothing is pressed at it, so this waits out a whole
+  // storm and every letter of it lands.
   await storm();
   await page
     .waitForFunction(() => window.__pendingFrames() === 0, null, {
@@ -595,26 +674,50 @@ try {
       hole: zone.hasAttribute("data-hole"),
     })),
   }));
-  // The closest two tints on any one segment. A flash sequence is two of them
-  // inside the 150ms one is on screen for; this wave lands a letter every
-  // 300ms, so the honest answer here is about 300 and never below 150.
-  const closest = Math.min(
-    ...damage.tints.map((tint, i, all) => {
-      const previous = all
-        .slice(0, i)
-        .findLast((t) => t.finger === tint.finger);
-      return previous ? tint.at - previous.at : Infinity;
-    }),
-  );
+  /**
+   * The closest two of these animations that belong to the same thing, in ms —
+   * `Infinity` where nothing lit twice. `keyOf` says what "the same thing" is:
+   * a shield segment for damage, the HUD for a miss.
+   *
+   * This is the whole no-strobe measurement. A flash sequence is two events
+   * inside the ~150ms one pass is on screen for, so the number below the
+   * duration is the failure and the number above it is the hand or the wave
+   * moving. Written once because both halves of §8.10 are measured with it.
+   */
+  const rhythm = (tints, keyOf) =>
+    Math.min(
+      ...tints.map((tint, i, all) => {
+        const previous = all
+          .slice(0, i)
+          .findLast((t) => keyOf(t) === keyOf(tint));
+        return previous ? tint.at - previous.at : Infinity;
+      }),
+    );
+  const shieldTints = damage.tints.filter((tint) => tint.name === "storm-hit");
+  const closest = rhythm(shieldTints, (tint) => tint.finger);
   check(
     "damage tints once per landing, and never twice inside one tint",
     damage.tints.length === 12 &&
-      damage.tints.every((tint) => tint.name === "storm-hit" && tint.finger) &&
+      shieldTints.length === 12 &&
+      shieldTints.every((tint) => tint.finger) &&
       closest >= 150,
-    `${damage.tints.length} tints, closest pair on one zone ${closest}ms apart`,
+    `${damage.tints.length} storm animations, all shield damage, ` +
+      `closest pair on one zone ${closest}ms apart`,
+  );
+  // Twelve is the whole census and not only the shield's share of it: no key
+  // was pressed at this wave, so the HUD's `--flare` (one per wrong key) and
+  // the shield's `--lime` mend (this spec repairs at nothing) each drew none.
+  // Counting them here is what stops a run of the game flashing something a
+  // check aimed only at zones would never have looked at.
+  check(
+    "and nothing else on the screen animated at all",
+    damage.tints.filter((tint) => tint.name !== "storm-hit").length === 0,
+    [...new Set(damage.tints.map((tint) => tint.name))].join() || "none",
   );
   // Three zones took three letters each in this wave, and a zone at zero is a
-  // hole — drawn as one, off the same number the reducer holds.
+  // hole — drawn as one, off the same number the reducer holds. Twelve
+  // landings is what the numbers below are of: shoot one of those letters and
+  // its zone keeps the point, which the run after this one does.
   const holes = damage.zones.filter((zone) => zone.hole);
   check(
     "a zone the storm emptied is drawn as a hole",
@@ -622,6 +725,413 @@ try {
       holes.every((zone) => zone.hp === 0) &&
       holes.map((zone) => zone.finger).join() === "l-index,r-index,r-middle",
     damage.zones.map((z) => `${z.finger}:${z.hp.toFixed(2)}`).join(" "),
+  );
+
+  /*
+   * The same wave again, with a child's hands on it: the gun, the combo and
+   * what a wrong key costs (docs/typing.md §8.6).
+   *
+   * A real browser is the only place this can be asked. The rules are pure and
+   * `storm.test.ts` proves every one of them in a millisecond — a hit is ten
+   * points times the streak it lands on, a wrong key is ten off and the streak
+   * gone — but "the key a child presses reaches those rules, and the number
+   * they are looking at is the one that came back" is a claim about a window
+   * listener, a rAF loop and a React tree, and none of the three exist in the
+   * unit suite. What is measured here is the join: press a key, read the HUD.
+   *
+   * Every press is deterministic without knowing the wave, because the target
+   * is the lowest letter and this stand-in falls every letter at one speed —
+   * so the lowest is the earliest still on the field, and its own character
+   * shoots it.
+   *
+   * ── Nothing here may read the field and then act on the reading ───────────
+   * The reducer marks a key against the target it holds **when the key
+   * arrives**, and the target moves on its own: the letter that was lowest
+   * lands, and the one behind it inherits the gun. So a shot chosen from a
+   * reading is a shot at where the wave *was*, and every millisecond between
+   * the two is a millisecond that reading has to stay true for. On this
+   * machine that gap is a few ms and nothing ever moved inside it; on a runner
+   * with a starved driver it is long enough for a letter to land, and the run
+   * that found this connected four times out of five and then failed three
+   * assertions that all presupposed the fifth (`SMOKE_LAG` reproduces it).
+   *
+   * Two rules keep the presses below true whatever the gap is, and they are
+   * the reason there is no timing anywhere in this section:
+   *
+   *   - **Aim only where a keypress can still land.** `armed()` refuses a
+   *     letter in the last of its fall, so the shot has a second of wave time
+   *     in hand — and wave time never runs faster than the clock, so that
+   *     second is a second on any hardware.
+   *   - **Miss with a key nothing in the sky is wearing.** Whichever letter
+   *     inherits the gun, it is one that was already airborne when the sky was
+   *     read (a spawn arrives at the top and cannot be the lowest), so a key
+   *     that matched none of them cannot turn into a hit in flight.
+   *
+   * And what cannot be guaranteed is checked rather than assumed: every press
+   * below is confirmed against the HUD before the next one is taken, so a shot
+   * that did not connect is named where it happened instead of surfacing as
+   * arithmetic three checks later.
+   */
+  await page.evaluate(() => {
+    window.__tints = [];
+    // Every cap that goes red, kept rather than caught: `useKeyEcho` releases
+    // a key 120ms after the press (§4.3), and a check that read the DOM after
+    // a round trip would be racing that timer for its evidence.
+    window.__flares = [];
+    new window.MutationObserver((records) => {
+      for (const record of records)
+        if (record.target.classList.contains("is-wrong"))
+          window.__flares.push(record.target.textContent);
+    }).observe(document.body, {
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+  });
+
+  /**
+   * What is in the sky, and which of it the gun is on: every character up
+   * there, plus the lowest stone and how far down it is. Read as one snapshot
+   * because the two are only usable together — a key is chosen against the
+   * whole sky and aimed at the lowest of it.
+   */
+  const read = () =>
+    page.evaluate(() => {
+      const stones = [...document.querySelectorAll(".storm__letter")];
+      // Lowest is the earliest spawn here, and `data-stone` is the letter's
+      // index in the wave, which is spawn order (§8.3).
+      let low = null;
+      for (const stone of stones)
+        if (
+          low === null ||
+          Number(stone.dataset.stone) < Number(low.dataset.stone)
+        )
+          low = stone;
+      return {
+        chars: stones.map((stone) => stone.textContent.toLowerCase()),
+        index: low && Number(low.dataset.stone),
+        ch: low && low.textContent,
+        drop:
+          low &&
+          Number(window.getComputedStyle(low).getPropertyValue("--drop")),
+      };
+    });
+
+  /**
+   * The same reading, but only once the lowest letter is one a keypress can
+   * still reach. `null` if the field offered no such letter inside `budgetMs`.
+   *
+   * The wait runs **in the page**, on the same frames the game is drawn on,
+   * which is what makes this a fix rather than a wider margin: a driver-side
+   * poll pays a round trip for every look and then another to press, so its
+   * reading is at best one round trip stale. This pays one, and the answer is
+   * a frame old.
+   *
+   * `0.7` is the last drop it will aim at. `--drop` is the 0→1 the renderer
+   * writes on each stone (STM03), the stand-in's fall is four seconds of wave
+   * time, and wave time only ever runs slower than the clock — so leaving the
+   * last three tenths of a fall unshot leaves at least 1.2s of real time for
+   * the press to arrive in. Waiting is the ordinary case and not a slow
+   * machine: a letter spawns every 300ms, this shoots faster than that, and
+   * the sky between a shot and the next spawn is genuinely empty.
+   *
+   * **The budget is short on purpose.** There are only two reasons to wait —
+   * the next spawn (300ms) and, at the very start, a first letter that was
+   * already too low when the driver arrived. Neither takes 2.5s, and past that
+   * the wave has simply outrun the hand: from the first landing onwards the
+   * lowest letter is always in the last tenth of its fall, so there is no
+   * letter left that a press can be promised to reach and no amount of further
+   * waiting will produce one. A fresh wave is the only way back, which is what
+   * `cleanRun` does with this `null`.
+   */
+  const armed = async (budgetMs = 2500) => {
+    const handle = await page
+      .waitForFunction(
+        (room) => {
+          const stones = [...document.querySelectorAll(".storm__letter")];
+          if (stones.length === 0) return null;
+          let low = stones[0];
+          for (const stone of stones)
+            if (Number(stone.dataset.stone) < Number(low.dataset.stone))
+              low = stone;
+          const drop = Number(
+            window.getComputedStyle(low).getPropertyValue("--drop"),
+          );
+          if (!(drop <= room)) return null;
+          return {
+            chars: stones.map((stone) => stone.textContent.toLowerCase()),
+            index: Number(low.dataset.stone),
+            ch: low.textContent,
+            drop,
+          };
+        },
+        0.7,
+        { timeout: budgetMs },
+      )
+      .catch(() => null);
+    return handle && (await handle.jsonValue());
+  };
+
+  /**
+   * A key that would miss whatever happens next: one no letter in `chars` is
+   * wearing. See the header — the gun can only ever pass to a letter that was
+   * already in that reading, so a key none of them answers to stays a miss
+   * however long the press takes to arrive.
+   *
+   * The order is the rarest keys first, which is only so the flare in the
+   * check below reads as a wrong key rather than as a near miss.
+   */
+  const missKey = (chars) =>
+    [..."qzxjvkbpygwmcfhdlrsnoaietu"].find((ch) => !chars.includes(ch));
+
+  /** The HUD as a child reads it, plus what the field has left. */
+  const hud = () =>
+    page.evaluate(() => {
+      const combo = document.querySelector(".storm__combo");
+      return {
+        score: Number(document.querySelector(".storm__score").textContent),
+        combo: combo.textContent,
+        hot: combo.hasAttribute("data-hot"),
+        stones: document.querySelectorAll(".storm__letter").length,
+        xp: document.querySelector(".storm__xp")?.textContent ?? null,
+        flares: window.__flares,
+      };
+    });
+
+  /**
+   * The score the HUD settles on after a press, or `null` if it never moved.
+   *
+   * Waiting on the *change* rather than on a value is what makes this usable
+   * as a verdict: every stroke the reducer accepts moves the score — up by the
+   * hit's worth, down by `MISS_POINTS` — and nothing else moves it at all,
+   * because a letter reaching the shield costs a shield point and no points
+   * (§8.4). So the sign of the move says which of the two happened, and no
+   * move inside the budget says the stroke reached nothing — a run that had
+   * already ended, or a screen that has stopped listening.
+   */
+  const scored = async (before, budgetMs = 8000) => {
+    const handle = await page
+      .waitForFunction(
+        (was) => {
+          const now = Number(
+            document.querySelector(".storm__score")?.textContent,
+          );
+          return Number.isFinite(now) && now !== was ? { now } : null;
+        },
+        before,
+        { timeout: budgetMs },
+      )
+      .catch(() => null);
+    return handle ? (await handle.jsonValue()).now : null;
+  };
+
+  /**
+   * One go at a clean run: a fresh wave, then `HITS` shots that each connect —
+   * or the first one that did not, said out loud.
+   *
+   * A fresh wave per go rather than a recovery, because there is no recovering
+   * a streak: the thing being measured is five hits *in a row*, and a shot
+   * that missed has already reset the multiplier every later hit would be paid
+   * at. Restarting is also free and honest here — `storm()` is the same exit
+   * and re-entry a child takes between two goes, the wave is replayed from its
+   * seed, and the counters below are of whatever the last go left behind.
+   */
+  const HITS = 5;
+  const cleanRun = async () => {
+    await page.evaluate(() => {
+      window.__tints = [];
+      window.__flares = [];
+    });
+    await storm();
+
+    const shot = [];
+    let score = 0;
+    while (shot.length < HITS) {
+      const target = await armed();
+      if (!target) return { shot, missed: "the sky never offered a target" };
+      await press(target.ch);
+      const after = await scored(score);
+      if (after === null)
+        return {
+          shot,
+          missed: `"${target.ch}" (letter ${target.index}) drew no answer at all`,
+        };
+      if (after < score)
+        return {
+          shot,
+          missed:
+            `"${target.ch}" was aimed at letter ${target.index} ` +
+            `${target.drop.toFixed(2)} of the way down and missed ` +
+            `(${score} → ${after})`,
+        };
+      shot.push(target.index);
+      score = after;
+    }
+    return { shot, missed: null };
+  };
+
+  // Five clean hits, each fired at the letter nearest the shield as it comes.
+  let run = await cleanRun();
+  const restarts = [];
+  for (let go = 1; go < 3 && run.missed !== null; go++) {
+    restarts.push(run.missed);
+    run = await cleanRun();
+  }
+  const shot = run.shot;
+  check(
+    // Named apart from the arithmetic below it on purpose. "The gun connected
+    // five times" and "five hits are worth 65" are two different claims, and a
+    // wave that outran the driver is a fact about this harness where a 65 that
+    // came back 50 is a fact about the reducer. Reported as one, a short count
+    // reads as a scoring bug — which is exactly how this cost an afternoon.
+    "the gun connected five times running",
+    run.missed === null && shot.length === HITS,
+    run.missed
+      ? `${shot.length} of ${HITS} — ${run.missed}`
+      : `shot ${shot.join()}` +
+          (restarts.length
+            ? ` (after ${restarts.length}: ${restarts[0]})`
+            : ""),
+  );
+  const combo = await hud();
+  check(
+    "a run of clean hits climbs, and the multiplier climbs with it",
+    // 11 + 12 + 13 + 14 + 15: ten points a hit, at the multiplier the hit
+    // itself lands on. The fifth is ×1.5 and the HUD says so.
+    //
+    // The indices are asked to ascend rather than to be `0,1,2,3,4`: the gun
+    // takes the lowest letter, so a run that started a letter or two into the
+    // wave — the driver was slow to arrive, and `armed()` let the first letter
+    // land rather than shoot at one it could not reach — walked down the wave
+    // exactly as correctly. What ascending forbids is the thing that would be
+    // a bug: a letter shot twice, or the gun going back up the field.
+    shot.length === HITS &&
+      shot.every((index, i) => i === 0 || index > shot[i - 1]) &&
+      combo.score === 65 &&
+      combo.combo === "×1.5" &&
+      combo.hot,
+    `shot ${shot.join()} → ${combo.score} at ${combo.combo}`,
+  );
+
+  // And a wrong key, against a letter that is really there: the one case that
+  // is not a shot at an empty sky, so it takes the target's own neighbours out
+  // of the argument.
+  //
+  // Which has to be *waited* for and then *checked*, neither of which it used
+  // to be — five hits land inside one spawn gap, so at full speed the sky
+  // directly after them is empty and this was quietly the empty-sky case it
+  // says it is not. A letter, not a shootable letter: what the stroke needs is
+  // something up there to be refused by, and waiting for one the gun could
+  // have hit would spend wave time the misses below still need.
+  await page
+    .waitForSelector(".storm__letter", { timeout: 2000 })
+    .catch(() => {});
+  const aimedAt = await read();
+  const wrongKey = missKey(aimedAt.chars);
+  await press(wrongKey);
+  await scored(combo.score);
+  const missed = await hud();
+  check(
+    "a wrong key costs a hit's worth, breaks the combo, and flares the board",
+    aimedAt.chars.length > 0 &&
+      missed.score === combo.score - 10 &&
+      missed.combo === "×1.0" &&
+      !missed.hot &&
+      missed.flares.length === 1 &&
+      missed.flares[0].toLowerCase() === wrongKey,
+    `"${wrongKey}" into a sky of ${aimedAt.chars.join("")}: ` +
+      `${combo.score} → ${missed.score} at ${missed.combo}, ` +
+      `flared ${JSON.stringify(missed.flares)}`,
+  );
+
+  // Seven more, at a rate a child could actually hammer at. The point of them
+  // is the score going under: it is the run's own number and it is allowed to.
+  //
+  // The 200ms is spacing, not patience, and it is what the flash count at the
+  // bottom of this section depends on: the HUD's `--flare` is an element keyed
+  // by the miss counter, so misses landing inside one frame replace the element
+  // before its animation has started, and the listener on `document` sees ONE
+  // `animationstart` for all of them — the same under-count the shield's tint
+  // has for two landings in one tick (§8.10, and the note above the damage run
+  // in this file), and the same safe direction. It is not a one-in-eight
+  // rounding error. Measured on this build: eight wrong keys pressed back to
+  // back land inside 10ms, mount eight elements and draw ONE flash; thirty
+  // inside 21ms also draw one. The 200ms is what buys each flash a frame of
+  // its own, and at that cadence all eight are counted.
+  const MISSES = 8;
+  // Presses the HUD never answered. Each one would be a miss the flash count
+  // at the bottom is short by, and the reason is worth carrying to the check
+  // rather than leaving as a number that is ten out.
+  const unanswered = [];
+  let running = missed.score;
+  for (let i = 1; i < MISSES; i++) {
+    await page.waitForTimeout(200);
+    // The plain reading, not `armed()`: a miss needs a key nothing in the sky
+    // is wearing, which every reading gives, and waiting for a *shootable*
+    // letter here would spend wave time this run does not have to spare.
+    await press(missKey((await read()).chars));
+    const after = await scored(running);
+    if (after === null) unanswered.push(i);
+    else running = after;
+  }
+  const sunk = await hud();
+  check(
+    "the score goes negative, and is drawn negative",
+    // Off `combo.score` and not off 65. The claim is that eight wrong keys
+    // cost eight hits' worth and take the run under, which is a statement
+    // about the run that was actually played — and a run that scored something
+    // else has a scoring bug to report on its own line above, not an
+    // arithmetic mismatch on this one.
+    sunk.score === combo.score - MISSES * 10 && sunk.score < 0,
+    `${combo.score} → ${sunk.score} after ${MISSES} wrong keys` +
+      (unanswered.length ? `, ${unanswered.length} unanswered` : ""),
+  );
+
+  // Then the rest of the wave lands and the run ends itself, exactly as the
+  // untouched one did.
+  await page
+    .waitForFunction(() => window.__pendingFrames() === 0, null, {
+      timeout: 15000,
+    })
+    .catch(() => {});
+  await page.waitForTimeout(300);
+  const paid = await hud();
+  const earned = Number(/\+(\d+) XP/.exec(paid.xp ?? "")?.[1]);
+  check(
+    "score can fall; XP cannot — a negative run still pays what it hit",
+    paid.score < 0 && paid.xp !== null && earned > 0,
+    `score ${paid.score}, ${paid.xp}`,
+  );
+
+  const played = await page.evaluate(() => window.__tints);
+  const hits = played.filter((tint) => tint.name === "storm-hit");
+  const flashes = played.filter((tint) => tint.name === "storm-miss");
+  check(
+    // Twelve is the wave and `shot.length` is what the gun took out of it, so
+    // this is "every letter is accounted for exactly once" — a shot letter or
+    // a damaged zone, never both and never neither. Counted off the shots that
+    // actually connected rather than off `HITS`, because a short run is a
+    // failure the check above has already named: repeating it here as a tint
+    // census would say "the shield is drawing the wrong number of hits", which
+    // is a different and much more alarming bug than the one that happened.
+    "letters shot are letters that never reached the shield",
+    hits.length === 12 - shot.length && hits.every((tint) => tint.finger),
+    `${hits.length} damage tints for ${12 - shot.length} landings ` +
+      `after ${shot.length} shot`,
+  );
+  check(
+    "one flash of red per wrong key, and never two inside one flash",
+    // The HUD's flare is mounted from the miss counter exactly as the shield's
+    // tint is from the landing counter (§8.10, decision 42), so the same
+    // measurement holds it: one element per event, and no element restarted.
+    // 220ms is the flash; the presses above are 200ms apart on purpose, so a
+    // pair closer than that would be the animation restarting rather than the
+    // hand moving.
+    flashes.length === MISSES &&
+      flashes.every((tint) => tint.finger === undefined) &&
+      rhythm(flashes, () => "hud") >= 150,
+    `${flashes.length} flashes for ${MISSES} wrong keys, ` +
+      `closest pair ${rhythm(flashes, () => "hud")}ms apart`,
   );
 
   log(

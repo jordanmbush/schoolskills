@@ -12,12 +12,11 @@ import type { WaveSpec } from "@/engine/typing/storm";
 /**
  * The Hailstorm route (docs/typing.md §9), playing one wave.
  *
- * The screen is two things joined: a field that draws a `StormState`, and a
- * clock that produces one per animation frame. It is still deliberately not a
- * whole game — nothing fires, so every letter lands, and when the last one has
- * the field simply empties and the loop stops. STM05 draws the shield on the
- * line they land on, STM06 gives the screen its trigger, its HUD and its way
- * out, STM07 the death screen, and STM10 replaces this stand-in wave with the
+ * The screen is three things joined: a field that draws a `StormState`, a
+ * clock that produces one per animation frame, and a keyboard that shoots. It
+ * is still not a whole game — a run that ends leaves the field standing with
+ * its score on it, because STM07 owns the death screen, the finger it names
+ * and the drill it offers, and STM10 replaces this stand-in wave with the
  * twenty the ladder actually names.
  *
  * Unlinked on purpose. Nothing on the ladder points here until STM10 puts the
