@@ -139,6 +139,13 @@ jobs:
             esac
           fi
 
+          # Give the PR a check to satisfy. Nothing starts CI on its own here:
+          # events raised with GITHUB_TOKEN don't trigger workflows, so this PR
+          # would otherwise sit blocked forever waiting for a required "CI"
+          # context that never appears. Dispatching it runs the real suite
+          # against this branch's head commit.
+          gh workflow run ci.yml --ref "$BRANCH"
+
           gh pr merge "$BRANCH" --auto --squash --delete-branch
 
       - name: Say so if this stopped working
