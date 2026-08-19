@@ -81,7 +81,7 @@ export function KeyboardSetting({
    * `Profile.keyboard` as it comes out of storage — absent on every profile
    * made before this shipped, and on every one whose player hasn't chosen.
    * Typed as the union, but storage is the one place that promise isn't kept;
-   * `selected` is what makes it true again.
+   * `keyboardMode` is what makes it true again.
    */
   mode?: KeyboardMode;
   onChange: (next: KeyboardMode) => void;

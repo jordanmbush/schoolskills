@@ -111,6 +111,26 @@ describe("createKeyEcho", () => {
     expect(missed.wrong()).toEqual(["Digit5"]);
   });
 
+  it("does not blame the space that commits a word", () => {
+    // The keystroke a child makes most often and the one this got backwards:
+    // a finished word expects SPACE, so the space bar is the RIGHT key here.
+    // It flared for a while because the echo read the expectation after the
+    // commit had already advanced it — see the capture-phase note in
+    // `useKeyEcho`. The machine's half of that contract is this assertion.
+    const keys = board();
+    keys.press("Space", " ");
+    expect(keys.down()).toEqual(["Space"]);
+    expect(keys.wrong()).toEqual([]);
+  });
+
+  it("does blame a space struck in the middle of a word", () => {
+    // The other half: space is not exempt from marking, it is only correct
+    // when it is what the passage was waiting for.
+    const keys = board();
+    keys.press("Space", "e");
+    expect(keys.wrong()).toEqual(["Space"]);
+  });
+
   it("calls CapsLock what it is", () => {
     const keys = board();
     keys.press("CapsLock", "a");

@@ -3,7 +3,7 @@ import { Navigate, useNavigate, useParams } from "react-router-dom";
 import { useHub, usePlayer } from "@/components/state/HubContext";
 import { useRace } from "@/components/state/RaceContext";
 import { buildDeck, configKey, deckSpec, modeOf } from "@/engine/decks";
-import { levelCredit } from "@/engine/decks/typing";
+import { levelCredit, nextChar } from "@/engine/decks/typing";
 import { cardXp } from "@/engine/progress";
 import {
   WRONG_ANSWER_PENALTY_MS,
@@ -227,26 +227,17 @@ function Track({
   /**
    * The character the passage is waiting on — the whole input to the board.
    *
-   * The letter at the cursor of the live word, and once every letter of it is
-   * typed, the SPACE that commits it. Space is a key like any other here and
-   * the most-missed one on the board: a child who can spell "because" and
-   * cannot find the space bar without looking types at half speed, and the
-   * thumb is the only finger the passage never names.
-   *
-   * Anything typed past the end of the word also asks for space, because space
-   * is what gets out of it — the extra letters are already marked wrong in the
-   * passage above and the run does not stop to be told twice.
-   *
-   * `null` whenever nothing is expected: during the 3·2·1, while the quit
-   * sheet is up, and once the last word is in and the run is saving. `live` is
-   * the flag `TypeField` is disabled on rather than a second reading of the
+   * WHICH character that is, space bar included once a word is fully typed, is
+   * `nextChar`'s to say. What is decided here is when the passage is waiting on
+   * nothing at all: `null` during the 3·2·1, while the quit sheet is up, and
+   * once the last word is in and the run is saving. That comes off `live`, the
+   * same flag `TypeField` is disabled on rather than a second reading of the
    * same two pieces of state, because the two have to agree — a key pressed at
    * a disabled field that the board marked wrong would be blaming a child for
    * a keystroke the game had already thrown away.
    */
   const live = phase === "racing" && !quitting;
-  const word = deck[index]?.answer ?? "";
-  const next = live ? (word[entry.length] ?? " ") : null;
+  const next = live ? nextChar(deck[index]?.answer ?? "", entry) : null;
 
   /**
    * How much of the board this player asked for. Resolved by the same function
