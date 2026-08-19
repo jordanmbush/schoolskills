@@ -69,11 +69,18 @@ const STORAGE_BAN =
 const FRAMEWORK_BAN =
   "This layer must stay framework-agnostic so it can be reused by a build-time script, a test, or a future native app. Don't import React or Astro here — return plain data and let the view render it.";
 
+// The typing corpus, banned from the one layer every island imports. This is
+// the only boundary here that was drawn by a measurement rather than by a
+// principle, so the measurement is in the message: a reader who deletes the
+// rule should have to argue with the number.
+const CORPUS_BAN =
+  "The typing corpus and its generator must not be reachable from src/engine/decks/. decks/index.ts is the front door for every island — flash cards, spelling, the record book, the print shop — and a module in its import graph ships to all of them: an import of the passage library from decks/typing.ts took the shared chunk from 46 KB to 222 KB once already, which is why thirty-three verses are written out by hand in that file today. Generate the words inside the typing island and hand them over in TypingConfig.words — the deck layer builds cards from config.words and never has to know where they came from (docs/typing.md §5.3, decision 7).";
+
 /**
  * Local rules, defined ONCE and registered in a single global block below.
  *
  * They cannot be declared inline on the blocks that use them: a plugin
- * namespace may be defined only once per file, and these two rules apply to
+ * namespace may be defined only once per file, and these rules apply to
  * overlapping file sets (`src/components/**\/*.tsx` matches both the storage
  * ban and the button ban). Declaring `plugins: { local }` in each block makes
  * ESLint fail hard with `Cannot redefine plugin "local"` for exactly the files
@@ -134,6 +141,49 @@ const localPlugin = {
           "JSXAttribute[name.name='role'][value.value='button']"(node) {
             context.report({ node, messageId: "preferButton" });
           },
+        };
+      },
+    },
+    // The corpus ban (CORPUS_BAN above), which has to be a local rule rather
+    // than another `no-restricted-imports` block: block A already spends the
+    // `@typescript-eslint` id over `src/engine/**` and block D spends the base
+    // id over everything, and `src/engine/decks/**` sits inside both. A third
+    // block over either id would silently switch one of them off for exactly
+    // the deck layer — trading the boundary that keeps React out of the model
+    // for the one that keeps the corpus out of the bundle (see the header).
+    "no-corpus-in-decks": {
+      meta: {
+        type: "problem",
+        docs: {
+          description:
+            "Ban the typing corpus and generator from src/engine/decks/, which every island imports.",
+        },
+        schema: [],
+        messages: { banned: CORPUS_BAN },
+      },
+      create(context) {
+        // `@/engine/typing/lexicon`, `../typing/generate`, with or without an
+        // extension. The `typing/` segment is required rather than optional so
+        // a deck module importing its own `./generate` one day is not reported
+        // for a file that has nothing to do with this.
+        const BANNED = /(^|\/)typing\/(lexicon|generate)(\.[jt]s)?$/;
+        // Every way a module can end up in the graph: the import, the
+        // re-export — which bloats the chunk exactly as an import does — and
+        // the dynamic form, which would get its own chunk but cannot be read
+        // from a synchronous `deckSpec` anyway, so reaching for it is a sign
+        // the words are being fetched from the wrong side of the wall.
+        const check = (node) => {
+          const source = node.source;
+          if (source?.type !== "Literal") return;
+          if (typeof source.value !== "string") return;
+          if (BANNED.test(source.value))
+            context.report({ node: source, messageId: "banned" });
+        };
+        return {
+          ImportDeclaration: check,
+          ImportExpression: check,
+          ExportNamedDeclaration: check,
+          ExportAllDeclaration: check,
         };
       },
     },
@@ -207,6 +257,17 @@ export default defineConfig([
         },
       ],
     },
+  },
+
+  // ── A2 · The deck layer's bundle boundary ──────────────────────────────────
+  // Inside the model, and about size rather than about direction. Every island
+  // on the site imports `decks/index.ts`, so what the deck layer imports, all
+  // of them download — and the typing corpus is the largest thing in the
+  // codebase that only one screen needs. See CORPUS_BAN for the number this
+  // was learnt from, and `local/no-corpus-in-decks` for why it is a local rule.
+  {
+    files: ["src/engine/decks/**/*.{ts,tsx}"],
+    rules: { "local/no-corpus-in-decks": "error" },
   },
 
   // ── B · CONTROLLER boundary ─────────────────────────────────────────────────
