@@ -117,6 +117,12 @@ describe("unlockedAt", () => {
     expect(chars(unlockedAt(101))).toBe(chars(unlockedAt(100)));
     expect(chars(unlockedAt(1e6))).toBe(chars(unlockedAt(100)));
     expect(chars(unlockedAt(10.9))).toBe(chars(unlockedAt(10)));
+    // Off the end is off the end however far off it is, which is what the doc
+    // block says and what `NaN` — a mode string that did not parse — is not.
+    expect(chars(unlockedAt(Number.POSITIVE_INFINITY))).toBe(
+      chars(unlockedAt(100)),
+    );
+    expect(chars(unlockedAt(Number.NEGATIVE_INFINITY))).toBe(" ");
   });
 });
 
