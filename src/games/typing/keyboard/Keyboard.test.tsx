@@ -40,7 +40,24 @@ const css = (name: string) =>
 
 /** Where the board's own rules start in the game stylesheet, and where they end. */
 const KEYBOARD_BLOCK = "/* ── Typing: the keyboard on screen";
+const HINT_BLOCK = "/* ── Typing: the next-key hint";
 const ECHO_BLOCK = "/* ── Typing: press echo";
+
+/**
+ * Which key codes the hint lights for a character, in board order.
+ *
+ * The board draws `KEY_ROWS` flattened, which is `KEYS`, so the nth rendered
+ * cap is the nth key in the table — the codes never reach the markup (they
+ * would be sixty attributes nothing reads), and this is how a class gets named
+ * back to the key that wears it.
+ */
+const hinted = (next: string | null) => {
+  const lit = renderToStaticMarkup(<Keyboard next={next} />);
+  const classes = [...lit.matchAll(/class="(keyboard__key[^"]*)"/g)];
+  return KEYS.filter((_, index) => classes[index][1].includes("is-next")).map(
+    (key) => key.code,
+  );
+};
 
 /** The five that mean something everywhere, by name and by value. */
 const TELEMETRY = {
@@ -108,10 +125,11 @@ describe("Keyboard", () => {
     const game = css("game.css");
     const block = game.slice(
       game.indexOf(KEYBOARD_BLOCK),
-      game.indexOf(ECHO_BLOCK),
+      game.indexOf(HINT_BLOCK),
     );
 
     expect(game).toContain(KEYBOARD_BLOCK);
+    expect(game).toContain(HINT_BLOCK);
     expect(game).toContain(ECHO_BLOCK);
     for (const name of Object.keys(TELEMETRY))
       expect(block).not.toContain(`var(${name})`);
@@ -147,8 +165,59 @@ describe("Keyboard", () => {
     expect(lit.match(/is-wrong/g)).toHaveLength(1);
   });
 
+  it("points at the next key in `--go`, and not in a press colour", () => {
+    const game = css("game.css");
+    const hint = game.slice(game.indexOf(HINT_BLOCK), game.indexOf(ECHO_BLOCK));
+
+    // `--go` is per-world and already means "press this" — the button that
+    // started the run is the same colour. A hint drawn in `--lime` would be
+    // indistinguishable from the flash that says "you just pressed that".
+    expect(hint).toMatch(/\.is-next\s*{/);
+    expect(hint).toContain("var(--go)");
+    for (const name of Object.keys(TELEMETRY))
+      expect(hint).not.toContain(`var(${name})`);
+
+    // And the hint is written ABOVE the echo, so a hinted key that is struck
+    // flashes rather than staying dressed as an instruction.
+    expect(game.indexOf(HINT_BLOCK)).toBeLessThan(game.indexOf(ECHO_BLOCK));
+  });
+
+  it("lights the single key a plain character is typed with", () => {
+    expect(hinted("f")).toEqual(["KeyF"]);
+    expect(hinted(" ")).toEqual(["Space"]);
+  });
+
+  it("lights a shifted character's letter AND the shift on the other hand", () => {
+    // The whole point of the hint. Left-pinky shift plus left-pinky `a` is
+    // physically impossible, so `A` is right-shift-plus-left-`a` — and which
+    // hand takes the shift is what typing courses for children skip.
+    expect(hinted("A")).toEqual(["KeyA", "ShiftRight"]);
+
+    // The mirror, so this can't pass by always naming the right shift: `?` is
+    // the right pinky's, so the LEFT shift is the reachable one.
+    expect(hinted("?")).toEqual(["ShiftLeft", "Slash"]);
+  });
+
+  it("lights nothing for no expectation, or a key this board hasn't got", () => {
+    // Nothing expected: the run hasn't started, or has finished.
+    expect(hinted(null)).toEqual([]);
+
+    // A curly quote that survived the passage filter. `strokeFor` answers
+    // null, and null lights nothing rather than throwing (§3.3).
+    expect(hinted("“")).toEqual([]);
+  });
+
+  it("keeps the hint on the key being struck, and stacks it under the flash", () => {
+    const lit = renderToStaticMarkup(
+      <Keyboard next="f" down={new Set(["KeyF"])} />,
+    );
+
+    expect(lit).toContain("keyboard__key is-home is-next is-down");
+  });
+
   it("draws a resting board when nobody is typing", () => {
     expect(html).not.toContain("is-down");
     expect(html).not.toContain("is-wrong");
+    expect(html).not.toContain("is-next");
   });
 });
