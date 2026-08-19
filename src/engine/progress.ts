@@ -66,11 +66,15 @@ export function cardXp(ms: number, streakAfter: number) {
  * So the run's misses cost score and nothing else, and the two numbers are
  * kept apart at exactly this line.
  *
- * The floor is unreachable today and is kept anyway: every term below is a
- * `cardXp`, which is never negative, so the `max` cannot bite as the sum
- * stands. What it defends is the next term somebody adds — a penalty per miss,
- * a charge for a letter that got through — which would look local and correct
- * here and would be a level ring running backwards on a profile.
+ * **The `max(0, …)` is deliberate and must not be removed.** It cannot bite as
+ * the sum stands — every term below is a `cardXp`, which is never negative —
+ * so no input can drive it, no test can pin it, and deleting it leaves the
+ * suite entirely green. That is the reason it is written down here rather than
+ * left to be rediscovered: it guards the NEXT term somebody adds, not today's.
+ * A penalty per miss, or a charge for a letter that got through, would look
+ * local and correct at the fold below and would be a child's level ring
+ * running backwards on their profile. Nothing in the tooling can say that to
+ * whoever adds one, so this paragraph does; unreachable is not unnecessary.
  *
  * ── Computed once, at the end, from the run's hits ───────────────────────
  * Not accumulated frame by frame: `resolved` already says which letters were

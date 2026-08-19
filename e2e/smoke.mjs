@@ -776,11 +776,15 @@ try {
   //
   // The 200ms is spacing, not patience, and it is what the flash count at the
   // bottom of this section depends on: the HUD's `--flare` is an element keyed
-  // by the miss counter, so two misses inside one frame replace it before its
-  // animation has started and draw ONE flash between them — the same
-  // under-count the shield's tint has for two landings in one tick (§8.10),
-  // and the same safe direction. Pressed back to back, eight wrong keys drew
-  // seven flashes.
+  // by the miss counter, so misses landing inside one frame replace the element
+  // before its animation has started, and the listener on `document` sees ONE
+  // `animationstart` for all of them — the same under-count the shield's tint
+  // has for two landings in one tick (§8.10, and the note above the damage run
+  // in this file), and the same safe direction. It is not a one-in-eight
+  // rounding error. Measured on this build: eight wrong keys pressed back to
+  // back land inside 10ms, mount eight elements and draw ONE flash; thirty
+  // inside 21ms also draw one. The 200ms is what buys each flash a frame of
+  // its own, and at that cadence all eight are counted.
   const MISSES = 8;
   for (let i = 1; i < MISSES; i++) {
     await page.waitForTimeout(200);

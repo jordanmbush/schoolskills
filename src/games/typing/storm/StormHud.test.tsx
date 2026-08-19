@@ -10,8 +10,8 @@ import { StormHud } from "./StormHud";
 import type { StormState, WaveSpec } from "@/engine/typing/storm";
 
 /**
- * The HUD, as a child reads it: what the run is worth, what the next hit is
- * worth, and one flash of red when a wrong key takes points off
+ * The HUD, as a child reads it: what the run is worth, what the last clean hit
+ * was paid at, and one flash of red when a wrong key takes points off
  * (docs/typing.md §8.6).
  *
  * Everything here is a rendering of numbers the reducer already holds, and
@@ -61,10 +61,13 @@ describe("StormHud", () => {
     expect(readOut(sprayed)).toContain(String(sprayed.score));
   });
 
-  it("shows the multiplier the next hit will be paid at", () => {
-    // The same `comboMultiplier` that scales the score and `cardXp` — one
-    // streak, one multiplier, so the figure a child watches climb is the
-    // figure their XP is worth.
+  it("shows the multiplier the last hit was paid at", () => {
+    // `comboMultiplier(state.combo)`: what the hit that just landed was paid
+    // at — the third hit paid 13 and the HUD reads ×1.3 — which is also the
+    // streak the next hit builds on, so a fourth would pay ×1.4. A run with
+    // nothing shot yet rests at ×1.0. The same `comboMultiplier` scales the
+    // score and `cardXp`: one streak, one multiplier, so the figure a child
+    // watches climb is the figure their XP is worth.
     expect(readOut(played(0))).toContain("×1.0");
     expect(readOut(played(3))).toContain("×1.3");
     expect(readOut(played(3))).toContain(

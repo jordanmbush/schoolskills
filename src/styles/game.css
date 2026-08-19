@@ -2261,8 +2261,9 @@ label.segmented__btn {
 }
 
 /* ── Hailstorm: the HUD ──────────────────────────────────────────────────
-   The two numbers a run keeps: the score, and the multiplier the next hit
-   will be paid at (docs/typing.md §8.6, decision 45).
+   The two numbers a run keeps: the score, and the multiplier the last clean
+   hit was paid at — which is also the streak the next one builds on
+   (docs/typing.md §8.6, decision 45).
 
    **It is drawn inside the sky, and takes none of it.** `.storm` is a
    two-track grid — a sky that gives and a board that never does — and the sky
@@ -2338,11 +2339,11 @@ label.segmented__btn {
   }
 }
 
-/* The multiplier, and the prominent half of the HUD on purpose: a score is a
-   number about what has happened, and `×1.7` is a number about the next
-   letter. Bigger than the score for that reason, and green only while there is
-   a streak to be paid for — at ×1 it is a fact about the rules, at ×1.6 it is
-   a thing a child earned.
+/* The multiplier, and the prominent half of the HUD on purpose: the score is a
+   running total, and `×1.7` is the streak behind it — what the last clean hit
+   was paid at, and the step the next one builds on. Bigger than the score for
+   that reason, and green only while there is a streak to be paid for — at ×1
+   it is a fact about the rules, at ×1.6 it is a thing a child earned.
 
    The step up is a transition and not an animation: it happens when a combo
    starts and when one breaks, which is twice a run and not once a hit, so

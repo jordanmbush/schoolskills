@@ -8,13 +8,21 @@ import type { StormState } from "@/engine/typing/storm";
  * (docs/typing.md §8.6).
  *
  * ── Score, and the multiplier it is paid at ──────────────────────────────────
- * The multiplier is the prominent half on purpose. A score is a number that
- * has already happened; `×1.7` is a number about the NEXT letter, and it is
- * the whole of what this screen is trying to teach — that a run of clean hits
- * is worth more than the same hits scattered. It is `comboMultiplier`, the
- * same curve `cardXp` pays a flash card at, so the figure a child watches
- * climb here is the figure their XP is worth (`stormXp`). One streak, one
- * multiplier, two currencies.
+ * `comboMultiplier(state.combo)` is the multiplier the hit that JUST LANDED
+ * was paid at, and not a forecast for the next one. `fire` sets `combo` to
+ * `state.combo + 1` and pays that hit at the streak it lands on, so this is
+ * the figure the score has already moved by — measured in a browser, the HUD
+ * reads ×1.4 the instant after a fourth clean hit, and that hit paid 14. The
+ * next one is a step higher, ×0.1 more until the ×2 cap, which is the same
+ * fact said forwards: this is the streak the next hit builds on.
+ *
+ * It is the prominent half on purpose all the same. The score is a running
+ * total and says nothing about how the run is going now; `×1.7` says seven
+ * clean hits in a row and still climbing, and that is the whole of what this
+ * screen is trying to teach — that a run of clean hits is worth more than the
+ * same hits scattered. It is `comboMultiplier`, the same curve `cardXp` pays a
+ * flash card at, so the figure a child watches climb here is the figure their
+ * XP is worth (`stormXp`). One streak, one multiplier, two currencies.
  *
  * Nothing here decides any of that. `score`, `combo` and `misses` are read off
  * the reducer, which is where every rule about them lives (§8.9): a HUD that
