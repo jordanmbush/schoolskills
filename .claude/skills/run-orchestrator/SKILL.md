@@ -180,8 +180,11 @@ Launch each with the **Agent** tool (`subagent_type: general-purpose`).
 >    `npm run build`, then the browser smoke test — `npm run preview &` and
 >    `npm run test:smoke`. If anything fails, stop and report `❌`.
 > 2. Push; open a PR **targeting `<BASE>`**: `gh pr create --base <BASE>`.
-> 3. Merge: `gh pr merge <PR> --squash --delete-branch`, then
->    `git checkout <BASE> && git pull --ff-only`.
+> 3. Merge: `gh pr merge <PR> --auto --squash`. `--auto` queues the merge
+>    behind the required check and fires the moment it goes green. Never
+>    `--admin`, which bypasses CI. `--delete-branch` does not fire through the
+>    auto-merge path, so delete the branch locally and on the remote afterwards
+>    and verify. Then `git checkout <BASE> && git pull --ff-only`.
 > 4. Tick issue #N's checkbox in the epic body (`gh issue edit <EPIC>`).
 > 5. **Report exactly one line:** `✅ #N done — PR #<num> merged into <BASE>` or
 >    `❌ #N blocked — <reason>`.
@@ -212,8 +215,14 @@ ships to production on the next `develop` → `main` release merge.
 - **`preflight` fails on untracked files too** — a stray scratch file blocks the
   next issue. That's intentional; clean or commit it.
 - **The checkbox is the progress source of truth**, not issue open/closed state.
-- **CI is a required check on `develop`** here (unlike monilibrium, where the
-  repo is private and protection isn't available), so Wrap-up's `gh pr merge`
-  waits for CI. That's expected — don't retry it as though it hung.
+- **`gh pr merge` does NOT wait for CI — always pass `--auto`.** CI is a
+  required check on `develop` here (unlike monilibrium, where the repo is
+  private and protection isn't available). A bare `gh pr merge --squash` calls
+  the merge API immediately and is rejected with "base branch policy prohibits
+  the merge" whenever the check is still pending — which looks like a flaky
+  branch-protection rule and is really a race the caller lost. This text used
+  to claim the merge waits; it does not, and two of the six PRs in epic #157
+  were rejected on that advice before it was measured. `--auto` is
+  deterministic: it queues and merges the instant CI is green.
 - **Never mark a stage from expectation.** Record `ok` only after the agent
   actually returned its line.
