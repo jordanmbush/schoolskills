@@ -1346,6 +1346,250 @@ label.segmented__btn {
   color: var(--flare);
 }
 
+/* ── Typing: the ladder ─────────────────────────────────────────────────
+   The ice world's own overworld (docs/typing.md §9). A hundred lessons as
+   ten rows of ten, so a course reads as a map rather than a syllabus: what
+   is behind you, the rung you are on, and the checkpoint at the end of the
+   row you are in, all at one glance.
+
+   Every colour here is a world token — `--accent` for ground already
+   covered, `--go` for "press this" — so the map re-skins with `data-world`
+   and not one rule borrows from the telemetry five (tokens.css). Shape does
+   the work colour cannot: a checkpoint is a circle and a Hailstorm level a
+   diamond, because a child who cannot tell cyan from gold still has to be
+   able to tell an exam from a lesson.                                    */
+
+.ladder__lede {
+  max-width: 46rem;
+}
+
+.ladder__blocks {
+  display: grid;
+  gap: var(--gap-2);
+  margin-top: var(--gap-3);
+}
+
+/* The name down the side and ten tiles across it. A fixed name column rather
+   than `auto`, so all ten rows start at the same x and the hundred read as
+   one grid instead of ten ragged rows. */
+.ladder__block {
+  display: grid;
+  grid-template-columns: 8.5rem minmax(0, 1fr);
+  align-items: center;
+  gap: var(--gap-2);
+}
+
+.ladder__name {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  font-size: var(--step--1);
+  font-weight: 700;
+  color: var(--chalk-soft);
+  line-height: 1.2;
+}
+
+.ladder__blocknum {
+  font-size: var(--step--2);
+  color: var(--chalk-dim);
+}
+
+.ladder__row {
+  display: grid;
+  grid-template-columns: repeat(10, minmax(0, 1fr));
+  gap: 0.3rem;
+  /* Capped, because a tile that grows with the panel stops being a map: at
+     1180px the ten would be 86px apiece and the hundred a page and a half of
+     scrolling. Held to a size a child can take in at a glance, and left to
+     fill the width on a phone, where the cap never binds. */
+  max-width: 32rem;
+}
+
+.ladder__tile {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  aspect-ratio: 1;
+  /* A floor under the tap target. Ten across is the shape of the ladder and
+     is not negotiable, and ten 44px tiles do not fit across a 390px phone —
+     so what gives is the square: below `560px` the tiles stop shrinking and
+     grow taller than they are wide, which buys back the height of the target
+     without either scrolling the map sideways or breaking the row. */
+  min-height: 2.1rem;
+  border-radius: 9px;
+  border: 1.5px solid var(--hairline);
+  background: rgb(255 255 255 / 3%);
+  color: var(--chalk-soft);
+  font-size: var(--step--2);
+  font-weight: 700;
+  transition:
+    transform 0.14s var(--ease-spring),
+    background-color 0.14s ease,
+    border-color 0.14s ease;
+}
+
+.ladder__tile:not([aria-disabled]):hover {
+  transform: scale(1.12);
+}
+
+/* Locked, and the storms until #159 gives them a wave to be. Dim rather than
+   hidden: the point of a map is that it shows you the ground you have not
+   walked yet. */
+.ladder__tile[aria-disabled] {
+  cursor: default;
+}
+
+.ladder__tile.is-locked {
+  color: var(--chalk-dim);
+  opacity: 0.45;
+}
+
+.ladder__tile.is-open {
+  color: var(--chalk);
+  border-color: color-mix(in oklab, var(--chalk) 20%, transparent);
+}
+
+/* Filled: this one is behind you. */
+.ladder__tile.is-cleared {
+  background: color-mix(in oklab, var(--accent) 85%, transparent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+
+/* Lit: this one is next. `--go` is the world's "press this", so the one tile
+   a child is being pointed at is the same colour as every other button on the
+   site that means go. */
+.ladder__tile.is-next {
+  background: var(--go);
+  border-color: var(--go);
+  color: var(--go-ink);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--go) 32%, transparent);
+  /* A slow breath, and the keyframe ends where it starts — so
+     `prefers-reduced-motion`, which clamps every animation to one 0.001ms
+     pass (base.css), leaves the static ring above untouched and the hint
+     survives with only its motion gone. Same trick as the keyboard's. */
+  animation: tile-hint 1.9s var(--ease-out) infinite;
+}
+
+@keyframes tile-hint {
+  50% {
+    box-shadow: 0 0 0 7px color-mix(in oklab, var(--go) 5%, transparent);
+  }
+}
+
+/* A checkpoint is a different rung, so it is a different shape: the tenth of
+   every block, and the only tile a child may press forty rungs above their
+   own (§6.6). The ring is on it in every state, because "always open" is the
+   fact about it that has to be legible from across the room. */
+.ladder__tile.is-checkpoint {
+  border-radius: 50%;
+  border-width: 2px;
+  border-color: color-mix(in oklab, var(--accent) 60%, transparent);
+}
+
+.ladder__tile.is-checkpoint.is-cleared,
+.ladder__tile.is-checkpoint.is-next {
+  border-color: currentcolor;
+}
+
+/* A Hailstorm level is not on the ladder so much as beside it (§8.8), and a
+   diamond is what says so without a word. Rotated rather than clipped, so the
+   tile keeps its border and its focus ring; the number inside turns back. */
+.ladder__tile.is-storm {
+  transform: rotate(45deg) scale(0.82);
+  border-radius: 5px;
+  color: var(--chalk-dim);
+}
+
+.ladder__tile.is-storm .ladder__n {
+  transform: rotate(-45deg);
+}
+
+.ladder__tile.is-storm:not([aria-disabled]):hover {
+  transform: rotate(45deg) scale(0.9);
+}
+
+.ladder__key {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+  gap: 0.5rem var(--gap-3);
+  margin-top: var(--gap-3);
+  padding-top: var(--gap-3);
+  border-top: 1px dashed var(--hairline);
+  font-size: var(--step--2);
+  color: var(--chalk-dim);
+  line-height: 1.35;
+}
+
+.ladder__keyitem {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* The swatches are the same tiles at a fixed size — one set of rules for what
+   a state looks like, so a legend cannot drift from the map above it. */
+.ladder__keyitem .ladder__tile {
+  flex: none;
+  width: 1.4rem;
+  min-height: 0;
+  animation: none;
+}
+
+/* Wide enough for the map and its key side by side: the row is capped, so on
+   a laptop the panel would otherwise be half ladder and half nothing. */
+@media (width >= 1000px) {
+  .ladder {
+    display: grid;
+    grid-template-columns: minmax(0, auto) minmax(13rem, 1fr);
+    column-gap: var(--gap-5);
+    align-items: start;
+  }
+
+  .ladder .panel__head,
+  .ladder__lede {
+    grid-column: 1 / -1;
+  }
+
+  .ladder__blocks {
+    grid-column: 1;
+    grid-row: 3;
+  }
+
+  .ladder__key {
+    grid-column: 2;
+    grid-row: 3;
+    grid-template-columns: minmax(0, 1fr);
+    align-self: center;
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
+  }
+}
+
+@media (width < 760px) {
+  .ladder__block {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.35rem;
+  }
+}
+
+/* The panel's own padding is worth more as tile than as margin once ten
+   across is the constraint. */
+@media (width < 560px) {
+  .ladder {
+    padding-inline: var(--gap-2);
+  }
+
+  .ladder__row {
+    gap: 0.18rem;
+  }
+
+  .ladder__tile {
+    min-height: 2.4rem;
+  }
+}
+
 /* ── Typing: the passage and the line you type on ──────────────────────── */
 
 .typing .passage {
