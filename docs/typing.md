@@ -335,7 +335,7 @@ lesson declares what it is _for_, and the words are produced from that:
 
 ```ts
 export type LessonKind =
-  | { type: "keys" } // letter groups: fff jjj fjf jfj
+  | { type: "keys" } // letter groups: ffff jjjj fjfj jfjf
   | { type: "words" } // words from the unlocked alphabet
   | { type: "bigrams"; focus: string[] } // words chosen to drill sequences
   | { type: "sentences" }
@@ -366,6 +366,16 @@ export type Lesson = {
 The **unlocked alphabet** at lesson _n_ is the union of `introduces` over
 lessons 1…_n_, plus space. It is computed, never written down, so moving a
 lesson moves its words with it.
+
+A drill group is **four** characters, not three, and that is arithmetic rather
+than taste: four plus the space that follows it is five, which is the
+words-per-minute convention `wordCount` is counted in, so a `keys` lesson runs
+to `wordCount × 5` characters like every other kind. That is the same figure
+`strikesFor` sizes the new-key gate against, and at three the two would
+disagree. Lesson 67 hands over six symbols and asks ten strikes of each: 60
+new characters out of the 174 that 35 groups of four and their spaces come to
+is 34%, inside §5.2's 15–35% band; out of the 139 that groups of three would
+leave, it is 43%, above the band with the generator blameless.
 
 ### 5.2 · The invariant that makes a hundred lessons safe
 

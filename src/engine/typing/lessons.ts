@@ -41,7 +41,7 @@ import type { KeyboardMode } from "@/engine/types";
  * that as data.
  */
 export type LessonKind =
-  /** Letter groups: `fff jjj fjf jfj`. What a new key is met as. */
+  /** Letter groups: `ffff jjjj fjfj jfjf`. What a new key is met as. */
   | { type: "keys" }
   /** Words drawn from the alphabet unlocked so far. */
   | { type: "words" }
