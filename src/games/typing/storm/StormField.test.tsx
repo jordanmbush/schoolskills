@@ -4,12 +4,18 @@ import { fileURLToPath } from "node:url";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
-import { KEYS, keyX, strokeFor } from "@/engine/keyboard";
-import { buildWave, fire, startStorm, tick } from "@/engine/typing/storm";
+import { FINGER_ZONES, KEYS, keyX, strokeFor } from "@/engine/keyboard";
+import {
+  SHIELD_FINGERS,
+  buildWave,
+  fire,
+  startStorm,
+  tick,
+} from "@/engine/typing/storm";
 
 import { StormField, aimedAt } from "./StormField";
 
-import type { KeyDef } from "@/engine/keyboard";
+import type { FingerZone, KeyDef } from "@/engine/keyboard";
 import type { StormState, WaveSpec } from "@/engine/typing/storm";
 
 /**
@@ -206,17 +212,40 @@ const stoneCentre = (lane: number) =>
  * compensates for. Reading the declarations means a change to either half
  * moves one side of the comparison and not the other.
  */
-const capCentre = (key: KeyDef) => {
+const capSpan = (key: KeyDef): [number, number] => {
   const vars = {
     "--key": 1,
     "--key-gap": GAP,
     "--x": key.x,
     "--w": key.width ?? 1,
   };
-  return (
-    unitsOf(declaration(".keyboard__key", "left"), vars) +
-    unitsOf(declaration(".keyboard__key", "width"), vars) / 2
-  );
+  const left = unitsOf(declaration(".keyboard__key", "left"), vars);
+  return [left, left + unitsOf(declaration(".keyboard__key", "width"), vars)];
+};
+
+const capCentre = (key: KeyDef) => {
+  const [left, right] = capSpan(key);
+  return (left + right) / 2;
+};
+
+/**
+ * Where a shield segment starts and ends, in the same units and out of the
+ * same sheet — `FINGER_ZONES` through the field's own `left` and `width`.
+ *
+ * A span rather than a centre, because a zone is a group of keys and the claim
+ * being checked is that it covers them: `l-index` is `f` and `g` together, and
+ * a segment centred on the pair while too narrow for it would put half of `g`
+ * over the right hand's shield.
+ */
+const zoneSpan = (zone: FingerZone): [number, number] => {
+  const vars = {
+    "--key": 1,
+    "--key-gap": GAP,
+    "--zone-x": zone.x,
+    "--zone-w": zone.width,
+  };
+  const left = unitsOf(declaration(".storm__zone", "left"), vars);
+  return [left, left + unitsOf(declaration(".storm__zone", "width"), vars)];
 };
 
 const cap = (code: string) => KEYS.find((k) => k.code === code)!;
@@ -318,8 +347,8 @@ describe("StormField", () => {
   });
 
   it("is drawn out of ice tokens, with no colour of its own", () => {
-    // Every colour is a world token, and none of the five is borrowed: a
-    // hailstone in `--lime` would be saying something was right about it.
+    // Every colour is a world token or a finger hue: a hailstone with a
+    // literal in it would be a stone that stayed the same in the next world.
     expect(storm).not.toMatch(/#[0-9a-f]{3}/i);
     expect(storm).not.toMatch(
       /\b(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch|color)\(/,
@@ -330,7 +359,7 @@ describe("StormField", () => {
     // plumbing and there is nothing left to read. `color: rebeccapurple`
     // leaves a word, and so would any notation the list above forgets.
     const PLUMBING =
-      /var\(--[\w-]+\)|color-mix|calc|in oklab|solid|dashed|dotted|none|inset|transparent|currentcolor|[\d.]+(?:px|%|em|rem|ms|s)?|[-*,()/\s]/gi;
+      /var\(--[\w-]+\)|color-mix|calc|in oklab|solid|dashed|dotted|none|inherit|inset|transparent|currentcolor|[\d.]+(?:px|%|em|rem|ms|s)?|[-*,()/\s]/gi;
     const literals = [
       ...storm.matchAll(
         /(?:^|[;{])\s*([\w-]*(?:color|background|border|shadow|fill|stroke)[\w-]*)\s*:\s*([^;]+)/g,
@@ -339,8 +368,122 @@ describe("StormField", () => {
     expect(
       literals.map(([, prop, value]) => `${prop}: ${value.trim()}`),
     ).toEqual([]);
-    for (const name of ["--lime", "--flare", "--sky", "--gold", "--grape"])
+  });
+
+  it("borrows exactly the two telemetry colours it has something to say with", () => {
+    // The field itself borrows none of the five — a hailstone in `--lime`
+    // would be saying something was right about it. The shield borrows two,
+    // and only where they already mean what they mean everywhere else on this
+    // site: `--flare` is a wrong, and damage and a hole are the two wrongs
+    // this game has; `--lime` is a right, and a repair is bought with a run of
+    // them (§8.5). The other three would each be a lie about what happened —
+    // nothing on this screen is a ghost, a record or a badge.
+    const rules = [...storm.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map(
+      ([, selector, body]) => ({ selector: selector.trim(), body }),
+    );
+    const drawnWith = (token: string) =>
+      rules
+        .filter((rule) => rule.body.includes(`var(${token})`))
+        .map((rule) => rule.selector)
+        .sort();
+
+    expect(drawnWith("--flare")).toEqual([
+      ".storm__hit",
+      ".storm__zone[data-hole]",
+    ]);
+    expect(drawnWith("--lime")).toEqual([".storm__mend"]);
+    for (const name of ["--sky", "--gold", "--grape"])
       expect(storm).not.toContain(`var(${name})`);
+  });
+
+  it("puts each shield segment over the keys of its own finger", () => {
+    // The other half of §8.2's claim, for the other end of the fall: a letter
+    // is over the cap that types it, and the segment it lands on is over the
+    // whole column of keys that finger is responsible for. Both are read out
+    // of the stylesheet in key units, so a change to the board's inset moves
+    // the caps and the segments together or fails here.
+    for (const finger of SHIELD_FINGERS) {
+      const [left, right] = zoneSpan(FINGER_ZONES[finger]);
+      const home = KEYS.filter((k) => k.row === 2 && k.finger === finger);
+
+      expect(home.length, finger).toBeGreaterThan(0);
+      for (const key of home) {
+        const [capLeft, capRight] = capSpan(key);
+        expect(left, `${finger} ⊃ ${key.code}`).toBeLessThanOrEqual(capLeft);
+        expect(right, `${finger} ⊃ ${key.code}`).toBeGreaterThanOrEqual(
+          capRight,
+        );
+      }
+    }
+  });
+
+  it("tiles the bottom of the sky in eight, centred on the plastic", () => {
+    const spans = SHIELD_FINGERS.map((finger) =>
+      zoneSpan(FINGER_ZONES[finger]),
+    );
+
+    // Edge to edge, in board order: a hole has to be a gap in a wall, and a
+    // wall with slack between its blocks would have holes in it already.
+    expect(spans).toHaveLength(8);
+    for (let i = 1; i < spans.length; i++)
+      expect(spans[i][0], SHIELD_FINGERS[i]).toBeCloseTo(spans[i - 1][1], 10);
+
+    // And the rail as a whole is centred on the DRAWN board rather than on the
+    // grid of slots behind it — which is what the half-gap step-back buys, and
+    // the reason a segment is allowed to overhang the DRAWN BOARD by the same
+    // half gap at each end. The board, not the sky: the step-back moves the
+    // whole rail left, so measured against the sky it hangs half a gap past
+    // the left edge and stops half a gap short of the right. The caps are the
+    // frame that matters — they are what the assertion below compares against,
+    // and what a child aims at. Take the correction out and this fails by a
+    // whole gap on one side.
+    const board: [number, number] = [
+      capSpan(cap("CapsLock"))[0],
+      capSpan(cap("Enter"))[1],
+    ];
+    expect((spans[0][0] + spans[7][1]) / 2).toBeCloseTo(
+      (board[0] + board[1]) / 2,
+      10,
+    );
+  });
+
+  it("drops every letter within a quarter unit of its own segment", () => {
+    // What a vertical seam can and cannot do. The rows are staggered, so a
+    // finger's keys are a slanted column and no straight segment covers all of
+    // it: `6` is typed by the right index and its lane is a quarter unit left
+    // of where the right index's segment starts, because `6` really does sit
+    // that far left of `h` and `j` (§8.5, decision 41). The home row — the row
+    // the segments are drawn on, and the row the hands rest on — is always
+    // strictly inside. A quarter unit is the whole of the error, and this is
+    // where a change that made it worse would have to be argued for.
+    const strays = [];
+    for (const key of KEYS) {
+      const finger = key.finger;
+      // Only the keys a letter can fall from: no word legends, and no thumb —
+      // the space bar has no segment to fall on (§8.3).
+      if (key.cap[0].length !== 1 || finger === "thumb") continue;
+
+      const [left, right] = zoneSpan(FINGER_ZONES[finger]);
+      const centre = stoneCentre(keyX(key.code)!);
+      strays.push({ key, out: Math.max(left - centre, centre - right, 0) });
+    }
+
+    for (const { key, out } of strays) expect(out, key.code).toBeLessThan(0.26);
+    for (const { key, out } of strays)
+      if (key.row === 2) expect(out, key.code).toBe(0);
+    expect(Math.max(...strays.map((s) => s.out))).toBeCloseTo(0.25, 10);
+  });
+
+  it("keeps the shield inside a sky that has almost no height left", () => {
+    // The sky is the `minmax(0, 1fr)` track and it is what gives on a short
+    // viewport — about 78px at 1280×360 and about 21px at 1280×250. A shield
+    // in key units alone would be a fixed slab of a field with nothing left,
+    // so it is the smaller of a third of a key and a fifth of the sky. `cqh`
+    // is a length only because the sky is a size container, which the fall
+    // above already depends on.
+    expect(declaration(".storm__shield", "height")).toBe(
+      "min(calc(var(--key) * 0.34), 20cqh)",
+    );
   });
 
   it("draws what is in the air, and nothing that is spent", () => {
