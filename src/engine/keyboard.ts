@@ -186,6 +186,41 @@ export const KEY_ROWS: KeyDef[][] = [
 /** Every key on the board, rows flattened. Row order is left-to-right, top-down. */
 export const KEYS: KeyDef[] = KEY_ROWS.flat();
 
+/** `code` → its key. Built once; the table above is a constant. */
+const BY_CODE = new Map(KEYS.map((k) => [k.code, k]));
+
+/**
+ * Where a key sits across the board: the middle of it, in key units.
+ *
+ * The board is 15 units wide, so this is a number from 0 to 15 that scales off
+ * the same single `--key` custom property the picture of the keyboard does —
+ * which is the point. Hailstorm's lanes are this function (docs/typing.md §8.2,
+ * decision 19): a letter falls down the column of the key that produces it, so
+ * `keyX("KeyF")` is where `f` falls and `keyX("KeyY")` lands between `g` and
+ * `h` because that is where `y` is.
+ *
+ * The field and the drawn board cannot disagree about where a key is because
+ * both read the same `KEY_ROWS` table and both measure in key units off that
+ * one `--key`. It is one *table*, not one function: `keyX` is the field's
+ * convenience for the centre of a key's slot, while the board wants a left
+ * edge and a width and takes `KeyDef.x` / `KeyDef.width` straight from the
+ * same rows without calling this. A lane half a unit out would be a spatial
+ * hint that teaches the wrong thing, and the shared table is what rules that
+ * out. The keycap drawn inside a slot is inset by `--key-gap`, so a slot's
+ * centre and a cap's centre are 0.045 units apart — §8.2 has that number.
+ *
+ * The **middle** rather than the left edge, because a falling glyph is centred
+ * on its column and the wide keys are where the difference shows: the space bar
+ * is 6.25 units, so its edge and its middle are three keys apart.
+ *
+ * `null` for a code this board does not carry — a numpad key, a media key, or
+ * anything from a layout that is not US ANSI (§3.4).
+ */
+export function keyX(code: string): number | null {
+  const key = BY_CODE.get(code);
+  return key ? key.x + (key.width ?? 1) / 2 : null;
+}
+
 export type Stroke = {
   /** The letter key. */
   code: string;

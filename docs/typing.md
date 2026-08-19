@@ -166,6 +166,15 @@ from anything — it is a fact about the plastic. Row 1 starts a third of a unit
 in, row 2 a little further, row 3 further still. Storing it means one number
 per key and no arithmetic anybody has to trust.
 
+`keyX(code)` is `x` plus half the key's width — the **middle** of the key, which
+is the lane its letter falls down (§8.2). The field and the drawn board cannot
+disagree about where a key is because both read this same table and both measure
+in key units off the same `--key` — one _table_, not one function. `keyX` is the
+field's convenience for the centre of a key's slot; the board wants a left edge
+and a width, and takes `x` and `width` directly. A lane half a unit out is a
+spatial hint that teaches the wrong thing, and the shared table is what rules
+that out. It returns `null` for a code this board does not carry.
+
 ### 3.3 · `keyFor`, and why shift is two keys
 
 ```ts
@@ -954,6 +963,19 @@ The keyboard component sits at the bottom of the field, lit by the same
 Lanes are key units, not pixels, so the field and the board scale together off
 one `--key` custom property.
 
+They scale off it differently, though, and the difference is worth writing down
+before the field is built. `keyX` returns the centre of a key's **slot**, while
+the drawn keycap is inset inside that slot: `game.css` gives it
+`width: calc(var(--w) * var(--key) - var(--key-gap))`, with `--key-gap` set to
+`calc(var(--key) * 0.09)`. So a cap's visual centre is `--key * (x + w/2 -
+0.045)` while its lane is `--key * (x + w/2)` — a letter placed at
+`left: calc(var(--lane) * var(--key))` and centred with `translateX(-50%)` sits
+**0.045 key units right of the centre of the cap it names**, about 1.7px at the
+2.4rem ceiling of `--key` and about 0.8px at the 1.05rem floor. Whether the
+field subtracts that half-gap is the field's own call to make deliberately
+(§13, item 18); it is recorded here so that it is neither inherited unknowingly
+nor "corrected" into a real misalignment.
+
 ### 8.3 · A wave, from a seed
 
 ```ts
@@ -984,6 +1006,52 @@ within the level" means. Early levels set `gap` wider than `fall`, so there is
 never more than one letter on screen and the game is pure reaction. Later
 levels overlap them, so two or three are falling at once and you have to work
 bottom-up — which is reading ahead, which is the thing that makes a fast typist.
+
+What it emits is the storm, decided:
+
+```ts
+export function buildWave(spec: WaveSpec, seed: number): Wave;
+
+export type StormLetter = {
+  /** The character, as it is drawn. */
+  ch: string;
+  /** The key that produces it — what a press is matched against. */
+  code: string;
+  /** The finger that types it: the shield segment it lands on (§8.5). */
+  finger: ShieldFinger;
+  /** `keyX(code)` — the column it falls down, in key units (§8.2). */
+  lane: number;
+  /** ms from the start of the wave. */
+  spawnMs: number;
+  /** ms to cross the field. */
+  fallMs: number;
+  /** `spawnMs + fallMs` — when it reaches the shield. */
+  landMs: number;
+};
+```
+
+Every letter is resolved against the keyboard **once, up front**: `strokeFor`
+gives the key and the finger, `keyX` gives the lane. So the reducer never asks
+the layout a question mid-run, the renderer does no arithmetic to place a
+letter, and the finger the death screen names cannot disagree with the column
+the letter fell down. `letters` is in spawn order and the index is a letter's
+identity — the wave is built once and never grows, so nothing can shift under a
+reducer's "which are in the air" or under a React key.
+
+A letter is on the field over the **half-open** interval `[spawnMs, landMs)`:
+there the instant it spawns, gone the instant it lands, because landing is the
+tick that turns it into shield damage. That is what makes the early levels'
+guarantee `gap[0] >= fall[1]` rather than `>` — at exactly equal, the outgoing
+letter lands on the same millisecond the next one spawns, which is a handover
+and not two letters on screen.
+
+Two characters never fall, whatever `spec.keys` says: one this board cannot
+produce (§3.3's null), because it could never be shot, and one typed with a
+thumb — the unlocked alphabet always carries a space and the shield has no
+thumb segment for it to damage (§8.5). A spec left with nothing to draw from
+builds an **empty wave rather than throwing**, the same habit as `deckSpec`
+never throwing: a storm with nothing in it is a screen that ends, and a throw
+is a game loop that dies holding a child's run.
 
 ### 8.4 · The lowest letter is the target
 
@@ -1196,6 +1264,8 @@ first when either optional field is added.
 | 27  | A lesson's keyboard seeds; it does not overrule         | All hundred name a mode, so an override beats the player's own setting on every rung                     |
 | 28  | `eyes-up` reads the board the run was typed under       | Checkpoints force it off, so the resolved mode alone awards it for the ten where it was compulsory       |
 | 29  | `unbroken` is gated on the wave having a length         | "The wave exists" retires itself when STM10 lands; "no screen starts one" is a line someone must delete  |
+| 30  | A falling letter is on the field on `[spawn, land)`     | Landing is the tick that resolves a letter, so `gap` exactly equal to `fall` is a handover, not two      |
+| 31  | A letter carries its key, finger and lane               | Resolved against the layout once, so the lane, the shot and the finger named at death cannot drift       |
 
 ---
 
