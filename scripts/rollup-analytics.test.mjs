@@ -5,7 +5,13 @@ import { gzipSync } from "node:zlib";
 
 import { describe, expect, it } from "vitest";
 
-import { isDocumentPath, isPageView, tally } from "./rollup-analytics.mjs";
+import {
+  edgeAirport,
+  isDocumentPath,
+  isPageView,
+  referrerHost,
+  tally,
+} from "./rollup-analytics.mjs";
 
 /**
  * The rollup is the only record of the site's history that outlives the logs,
@@ -23,7 +29,7 @@ import { isDocumentPath, isPageView, tally } from "./rollup-analytics.mjs";
 
 /** CloudFront writes tab-separated rows under a `#Fields:` header. */
 const FIELDS =
-  "date time c-ip cs-uri-stem cs-uri-query sc-status cs(User-Agent) sc-content-type";
+  "date time c-ip cs-uri-stem cs-uri-query sc-status cs(User-Agent) sc-content-type cs(Referer) x-edge-location";
 
 const HUMAN = "Mozilla/5.0%20(Macintosh;%20Intel%20Mac%20OS%20X%2010_15_7)";
 const GOOGLEBOT =
@@ -37,7 +43,12 @@ const row = ({
   status,
   ua = HUMAN,
   type = "-",
-}) => [date, "22:30:00", ip, uri, query, String(status), ua, type].join("\t");
+  ref = "-",
+  edge = "SEA19-C1",
+}) =>
+  [date, "22:30:00", ip, uri, query, String(status), ua, type, ref, edge].join(
+    "\t",
+  );
 
 /** Write one gzipped log file and count it, the way the real job would. */
 const count = async (rows) => {
@@ -118,6 +129,49 @@ describe("isPageView", () => {
     expect(isPageView(at(200, "image/png", "/icon-192.png"))).toBe(false));
 });
 
+describe("referrerHost", () => {
+  // The reason this function exists. A search referrer must not carry the
+  // search out of the log line — and a shared link can carry worse than a
+  // search. Where the output later goes is not this function's business;
+  // that is exactly why the reduction happens here.
+  it("keeps the site and throws away the path and query", () =>
+    expect(
+      referrerHost("https://www.google.com/search?q=7%20times%20table"),
+    ).toBe("google.com"));
+
+  it("folds www. into the bare host, since they are one site", () =>
+    expect(referrerHost("https://www.reddit.com/r/Teachers/")).toBe(
+      "reddit.com",
+    ));
+
+  it("undoes CloudFront's field encoding first", () =>
+    expect(referrerHost("https%3A%2F%2Ft.co%2FabC123")).toBe("t.co"));
+
+  it("names the absent referrer rather than dropping it", () =>
+    expect(referrerHost("-")).toBe("(none)"));
+
+  // Internal navigation is every click anyone makes. Counting it would bury
+  // the handful of inbound links that are the actual question.
+  it.each(["https://schoolskills.app/typing", "https://www.schoolskills.app/"])(
+    "does not count %s, which is us",
+    (url) => expect(referrerHost(url)).toBeNull(),
+  );
+
+  it("drops junk rather than inventing a host for it", () =>
+    expect(referrerHost("not a url")).toBeNull());
+});
+
+describe("edgeAirport", () => {
+  it.each([
+    ["SEA19-C1", "SEA"],
+    ["LHR3-C2", "LHR"],
+    ["MRS52-P1", "MRS"],
+  ])("reduces %s to %s", (pop, code) => expect(edgeAirport(pop)).toBe(code));
+
+  it("drops a missing location rather than counting one", () =>
+    expect(edgeAirport("-")).toBeNull());
+});
+
 describe("tally, over the first real hour of logs", () => {
   const FIRST_HOUR = [
     // A person, back for a second visit: three revalidated page loads and the
@@ -190,10 +244,64 @@ describe("tally, over the first real hour of logs", () => {
     expect(day.pages["/wp-admin/install.php"]).toBeUndefined();
   });
 
+  // Assets carry a referrer too — the page that asked for them — so counting
+  // every request would measure how many images a page has.
+  it("reads referrer and edge off page views only", async () => {
+    const day = await count(FIRST_HOUR);
+    expect(day.referrers).toEqual({ "(none)": 4 });
+    expect(day.edges).toEqual({ SEA: 4 });
+  });
+
   it("still records beacons, which are exempt from the page-view test", async () => {
     const day = await count(FIRST_HOUR);
     expect(day.events).toEqual({ race_start: 1 });
     expect(day.decks).toEqual({ multiply: 1 });
+  });
+});
+
+describe("an arrival from a link somewhere else", () => {
+  const social = (ref, edge) =>
+    row({
+      ip: "98.168.10.1",
+      uri: "/spelling/",
+      status: 200,
+      type: "text/html;charset=UTF-8",
+      ref,
+      edge,
+    });
+
+  it("is filed under the site that sent them, and where it landed", async () => {
+    const day = await count([
+      social("https://t.co/abC123", "LHR3-C2"),
+      social("https://t.co/abC123", "LHR62-P2"),
+      social("https://www.facebook.com/", "SEA19-C1"),
+      social("-", "SEA19-C1"),
+    ]);
+    expect(day.referrers).toEqual({
+      "(none)": 1,
+      "facebook.com": 1,
+      "t.co": 2,
+    });
+    // Two London PoPs are one place; the server within them is not a fact
+    // about anybody.
+    expect(day.edges).toEqual({ LHR: 2, SEA: 2 });
+  });
+
+  // Referrers are read off page views, so each is a share of that day — but
+  // they do NOT sum to `pageViews`, because our own pages are dropped. The
+  // first week bore this out: 11 views on 2026-08-18, 4 referrers, and the
+  // missing 7 were a visitor clicking around the site. `edges` is the one
+  // that reconciles, since nothing is dropped from it.
+  it("leaves referrers short of pageViews by the internal navigation", async () => {
+    const day = await count([
+      social("https://t.co/abC123", "LHR3-C2"),
+      social("https://schoolskills.app/", "LHR3-C2"),
+    ]);
+    expect(day.pageViews).toBe(2);
+    expect(day.referrers).toEqual({ "t.co": 1 });
+    expect(Object.values(day.edges).reduce((a, b) => a + b, 0)).toBe(
+      day.pageViews,
+    );
   });
 });
 
