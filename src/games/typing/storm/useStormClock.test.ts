@@ -1,0 +1,194 @@
+import { describe, expect, it } from "vitest";
+
+import { keyX, strokeFor } from "@/engine/keyboard";
+import { buildWave, fire, startStorm, tick } from "@/engine/typing/storm";
+
+import { MAX_STEP_MS, redrawn, stepMs } from "./useStormClock";
+
+import type {
+  ShieldFinger,
+  StormLetter,
+  StormState,
+  Wave,
+  WaveSpec,
+} from "@/engine/typing/storm";
+
+/**
+ * The two decisions the clock makes, without a browser to make them in.
+ *
+ * The loop itself is four lines around `tick` and cannot be interesting in a
+ * unit test — what a `requestAnimationFrame` does and when it is cancelled is
+ * a question for a real browser, and `e2e/smoke.mjs` counts the outstanding
+ * frames there. What IS answerable here is everything the loop decides before
+ * it touches the DOM: how long a frame is allowed to be, and when the picture
+ * has changed enough to be worth re-rendering.
+ */
+
+const spec: WaveSpec = {
+  keys: ["f"],
+  count: 4,
+  gap: [300, 300],
+  fall: [1000, 1000],
+  shield: 3,
+  repairAt: 0,
+};
+
+const run = (atMs: number): StormState =>
+  tick(startStorm(buildWave(spec, 7)), atMs);
+
+describe("stepMs", () => {
+  it("is nothing on the first frame of a run", () => {
+    // There is no interval before the first timestamp. Measuring one against
+    // zero would hand the storm however long the page had been open.
+    expect(stepMs(9_000, null)).toBe(0);
+  });
+
+  it("is the wall clock for any frame a game could be played at", () => {
+    expect(stepMs(1016.7, 1000)).toBeCloseTo(16.7, 10);
+    expect(stepMs(1033, 1000)).toBe(33);
+    expect(stepMs(1000 + MAX_STEP_MS, 1000)).toBe(MAX_STEP_MS);
+  });
+
+  it("floors a rewind, and a delta that is not a number at all", () => {
+    expect(stepMs(1000, 1016)).toBe(0);
+    expect(stepMs(Number.NaN, 1000)).toBe(0);
+    expect(stepMs(1000, Number.NaN)).toBe(0);
+    // Not clamped to the cap: an infinite reading is not a long frame, it is
+    // not a reading, and the same answer as a `NaN` is the honest one.
+    expect(stepMs(Number.POSITIVE_INFINITY, 1000)).toBe(0);
+  });
+
+  it("does not fast-forward the wave through a backgrounded tab", () => {
+    // `requestAnimationFrame` is suspended while a tab is hidden, so coming
+    // back is one frame carrying however long the child was away. Unclamped,
+    // the twenty seconds below would land every letter of the wave at once —
+    // `tick` resolves every landing inside the interval it is given, honestly
+    // and by design (decision 35), which is exactly why the clamp is here and
+    // not there.
+    const away = 20_000;
+    const back = tick(run(0), stepMs(away, 0));
+
+    expect(back.timeMs).toBeLessThanOrEqual(MAX_STEP_MS);
+    expect(back.resolved.filter((outcome) => outcome !== null)).toHaveLength(0);
+
+    // And the unclamped comparison, so the test fails if the clamp is removed
+    // rather than merely if the number changes.
+    expect(
+      tick(run(0), away).resolved.filter((outcome) => outcome !== null),
+    ).toHaveLength(spec.count);
+  });
+});
+
+/** A letter of the given character, falling in its own key's column. */
+const letterOf = (ch: string, spawnMs: number, fallMs: number): StormLetter => {
+  const stroke = strokeFor(ch)!;
+  return {
+    ch,
+    code: stroke.code,
+    finger: stroke.finger as ShieldFinger,
+    lane: keyX(stroke.code)!,
+    spawnMs,
+    fallMs,
+    landMs: spawnMs + fallMs,
+  };
+};
+
+/**
+ * Two letters whose paths cross: a slow `f` from the start, and a `j` that
+ * spawns half a second later and lands first.
+ *
+ * Hand-built rather than seeded, because the crossing is the point and
+ * `buildWave` samples both fall times from one range — a seed that produced
+ * this today would be a seed, not a fixture.
+ */
+const crossing: Wave = {
+  spec: { ...spec, keys: ["f", "j"], count: 2 },
+  seed: 0,
+  letters: [letterOf("f", 0, 2000), letterOf("j", 500, 500)],
+  durationMs: 2000,
+};
+
+describe("redrawn", () => {
+  it("says no to a frame that only moved the stones", () => {
+    // The whole reason the loop needs this. Sixty times a second `tick`
+    // returns a new object with a new `timeMs` and an identical picture; a
+    // clock that re-rendered on that would be rendering the field per frame,
+    // which is the thing §8.9 says not to do.
+    const at = run(120);
+    expect(redrawn(at, tick(at, 16))).toBe(false);
+  });
+
+  it("says yes when a letter appears", () => {
+    // A spawn is a time crossing and nothing else: no field of a `StormState`
+    // records it, so identity on the state cannot find it and neither can any
+    // comparison of the reducer's own bookkeeping.
+    const before = run(299);
+    const after = tick(before, 2);
+
+    expect(after.resolved).toBe(before.resolved);
+    expect(redrawn(before, after)).toBe(true);
+  });
+
+  it("says yes when a letter lands, and when one is shot", () => {
+    const before = run(999);
+    expect(redrawn(before, tick(before, 2))).toBe(true);
+    expect(redrawn(before, fire(before, "KeyF"))).toBe(true);
+  });
+
+  it("says yes when a miss breaks a streak, and no when there was none", () => {
+    const hit = fire(run(999), "KeyF");
+    expect(hit.combo).toBe(1);
+    expect(redrawn(hit, fire(hit, "KeyQ"))).toBe(true);
+
+    // A miss on an unbroken nothing changes nothing a screen can see — and
+    // `fire` still hands back a different object, which is the trap.
+    const cold = run(120);
+    expect(fire(cold, "KeyQ")).not.toBe(cold);
+    expect(redrawn(cold, fire(cold, "KeyQ"))).toBe(false);
+  });
+
+  it("says yes when the target changes mid-air with nothing else", () => {
+    // Two letters at different speeds cross (decision 32), and from that
+    // instant the board is marked against a different key. Nothing is
+    // resolved, nothing spawns, and the count of stones on the field is the
+    // same on both sides of it.
+    const before = tick(startStorm(crossing), 600);
+    const after = tick(before, 200);
+
+    expect(after.resolved).toBe(before.resolved);
+    expect(redrawn(before, after)).toBe(true);
+  });
+});
+
+describe("the shape the clock is watching", () => {
+  /**
+   * Every field a `StormState` declares, written as a value.
+   *
+   * The type is what makes this catch an OPTIONAL field. `Object.keys` of a
+   * fresh run can only see what `startStorm` actually sets, so a
+   * `readonly score?: number` added for STM06 would be invisible to a list of
+   * key strings — and `redrawn` would go on never comparing it. A
+   * `Record<keyof StormState, true>` will not compile without a line for that
+   * field, and being an object literal it will not compile with a line for one
+   * that has been removed either.
+   */
+  const FIELDS: Record<keyof StormState, true> = {
+    combo: true,
+    ending: true,
+    resolved: true,
+    shield: true,
+    timeMs: true,
+    wave: true,
+  };
+
+  it("pins the shape of a StormState, so a new field is decided about here", () => {
+    // `redrawn` compares four of these by identity, derives two more from the
+    // clock, and leaves `wave` out because a run's wave is fixed. A story that
+    // adds a seventh — STM06's score, STM07's tally — has to come here and say
+    // which of those three it is; the alternative is finding out from a HUD
+    // that quietly stopped updating.
+    expect(Object.keys(startStorm(buildWave(spec, 7))).sort()).toEqual(
+      Object.keys(FIELDS).sort(),
+    );
+  });
+});

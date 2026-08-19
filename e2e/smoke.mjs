@@ -28,6 +28,31 @@ const check = (label, ok, detail = "") => {
   if (!ok) failures++;
 };
 
+/**
+ * Everything in one of the app's object stores, read from the page.
+ *
+ * Three sections below check that something reached IndexedDB, and the same
+ * dozen lines of open-transaction-getAll were written out once per store —
+ * three places for the database name to be wrong, and three chances for one of
+ * them to forget that a failed open should fail the run rather than hang it.
+ */
+const readStore = (store) =>
+  page.evaluate(
+    (name) =>
+      new Promise((res, rej) => {
+        const open = indexedDB.open("schoolskills");
+        open.onerror = () => rej(open.error);
+        open.onsuccess = () => {
+          const all = open.result
+            .transaction(name, "readonly")
+            .objectStore(name)
+            .getAll();
+          all.onsuccess = () => res(all.result);
+        };
+      }),
+    store,
+  );
+
 try {
   log("\n1. The island boots and reaches the profile picker");
   await page.goto(`${BASE}/flash-cards`, { waitUntil: "networkidle" });
@@ -60,20 +85,7 @@ try {
   });
   await page.waitForTimeout(600);
 
-  const stored = await page.evaluate(async () => {
-    const db = await new Promise((res, rej) => {
-      const r = indexedDB.open("schoolskills");
-      r.onsuccess = () => res(r.result);
-      r.onerror = () => rej(r.error);
-    });
-    return new Promise((res) => {
-      const tx = db
-        .transaction("profiles", "readonly")
-        .objectStore("profiles")
-        .getAll();
-      tx.onsuccess = () => res(tx.result.map((p) => p.name));
-    });
-  });
+  const stored = (await readStore("profiles")).map((p) => p.name);
   check(
     "profile persisted to IndexedDB",
     stored.includes("Smoke"),
@@ -153,19 +165,7 @@ try {
   );
 
   log("\n5. The run survives a reload (the whole point of the storage swap)");
-  const savedRuns = await page.evaluate(async () => {
-    const db = await new Promise((res) => {
-      const r = indexedDB.open("schoolskills");
-      r.onsuccess = () => res(r.result);
-    });
-    return new Promise((res) => {
-      const tx = db
-        .transaction("sessions", "readonly")
-        .objectStore("sessions")
-        .getAll();
-      tx.onsuccess = () => res(tx.result.length);
-    });
-  });
+  const savedRuns = (await readStore("sessions")).length;
   check(
     "session written to IndexedDB",
     savedRuns >= 1,
@@ -202,19 +202,7 @@ try {
   await page.locator(".saved input").fill("Smoke sheet");
   await page.getByRole("button", { name: /save to my sheets/i }).click();
   await page.waitForTimeout(800);
-  const savedSheets = await page.evaluate(async () => {
-    const db = await new Promise((res) => {
-      const r = indexedDB.open("schoolskills");
-      r.onsuccess = () => res(r.result);
-    });
-    return new Promise((res) => {
-      const tx = db
-        .transaction("sheets", "readonly")
-        .objectStore("sheets")
-        .getAll();
-      tx.onsuccess = () => res(tx.result.map((s) => s.name));
-    });
-  });
+  const savedSheets = (await readStore("sheets")).map((s) => s.name);
   check(
     "sheet saved to IndexedDB",
     savedSheets.includes("Smoke sheet"),
@@ -366,6 +354,146 @@ try {
     JSON.stringify(guides),
   );
   await page.emulateMedia({ media: null });
+
+  /*
+   * The one thing in this app that runs sixty times a second.
+   *
+   * Hailstorm moves its letters by writing a custom property straight onto
+   * them from a `requestAnimationFrame` loop (docs/typing.md §8.9), and both
+   * halves of that are invisible to every other kind of test. A unit test has
+   * no rAF and no layout, so it can neither see a stone move nor see a frame
+   * outlive the screen that asked for it — and an orphaned rAF is the classic
+   * way an animation loop passes every gate and then burns a phone battery
+   * behind a screen the child has already left.
+   *
+   * So the browser is asked directly, in two ways. The write half is measured
+   * by how MANY distinct positions a single stone occupies across a window
+   * several spawns long — a number a re-render cannot reach and only a frame
+   * loop can. The lifetime half is a ledger of every frame handle requested
+   * and not yet delivered or cancelled, which two numbers settle: one frame in
+   * flight while the storm is running, and none at all once the run is over or
+   * the screen is gone.
+   */
+  log("\n9. The hailstorm falls, and its loop dies with the screen");
+  await page.addInitScript(() => {
+    const raf = window.requestAnimationFrame.bind(window);
+    const caf = window.cancelAnimationFrame.bind(window);
+    const live = new Set();
+    window.__pendingFrames = () => live.size;
+    window.requestAnimationFrame = (cb) => {
+      let id = 0;
+      id = raf((t) => {
+        live.delete(id);
+        cb(t);
+      });
+      live.add(id);
+      return id;
+    };
+    window.cancelAnimationFrame = (id) => {
+      live.delete(id);
+      caf(id);
+    };
+  });
+
+  await page.goto(`${BASE}/typing`, { waitUntil: "networkidle" });
+  await page.getByText("Smoke", { exact: false }).first().click();
+  await page.waitForTimeout(700);
+  const player = (await page.evaluate(() => location.hash)).replace("#/p/", "");
+  // Nothing links to the storm until the ladder grows its tiles, so the URL is
+  // the only way in — which is what the route is for at this stage.
+  const storm = async () => {
+    await page.evaluate((id) => (location.hash = `#/p/${id}/storm`), player);
+    await page.waitForSelector(".storm__letter", { timeout: 8000 });
+  };
+
+  await storm();
+  /*
+   * Thirty-six readings across 900ms, rather than two readings 300ms apart —
+   * and the difference is the entire value of the check.
+   *
+   * The stand-in wave spawns a letter every 300ms and every spawn is a redraw,
+   * so React rewrites each stone's inline `--drop` from `state.timeMs` at
+   * least once inside any 300ms window. Two readings that far apart therefore
+   * move whether or not the rAF loop writes anything at all: delete the loop's
+   * only side effect and the pair still differs, because the re-render alone
+   * carried the stone. What the re-render cannot fake is the SHAPE of the
+   * motion — without the loop the stone climbs a 300ms staircase, three or
+   * four distinct positions across this window, where the loop gives one per
+   * frame. So the assertion is on the count of distinct positions, which is
+   * the one number a staircase and a fall cannot both satisfy.
+   *
+   * The element is held rather than re-queried between readings: React keys
+   * the sky by wave index, so this node survives every re-render for as long
+   * as its letter is airborne — and the wave's first letter falls for four
+   * seconds, comfortably longer than this samples for.
+   */
+  const fall = await page.evaluate(async () => {
+    // The first stone in DOM order, which is wave-index (spawn) order because
+    // the sky renders `wave.letters` in place — NOT lane order, and the lanes
+    // in DOM order are not sorted. All this relies on is that the wave never
+    // reorders, so it is the same element on every reading below.
+    const stone = document.querySelector(".storm__letter");
+    const tops = [];
+    for (let i = 0; i < 36; i++) {
+      tops.push(stone.getBoundingClientRect().top);
+      await new Promise((done) => window.setTimeout(done, 25));
+    }
+    return {
+      // Rounded to whole pixels so sub-pixel noise cannot be counted as
+      // movement. A frame of this wave is several pixels, so nothing real is
+      // rounded away, and a 300ms step is roughly fifty.
+      distinct: new Set(tops.map((top) => Math.round(top))).size,
+      samples: tops.length,
+      // The loop and the render must never disagree about `--drop`, so the
+      // stone may not rewind on any frame — including the ones React commits.
+      forwards: tops.every((top, i) => i === 0 || top >= tops[i - 1]),
+      travelled: Math.round(tops[tops.length - 1] - tops[0]),
+      // A detached node reads all-zero rects, which would be 1 distinct
+      // position and a false failure rather than a false pass — but say so.
+      attached: stone.isConnected,
+      pending: window.__pendingFrames(),
+    };
+  });
+  check(
+    "a stone moves on every frame, not once per spawn",
+    fall.distinct >= 12 && fall.forwards && fall.attached,
+    `${fall.distinct} distinct positions in ${fall.samples} readings over 900ms, ` +
+      `${fall.travelled}px travelled (a per-spawn staircase gives 3)`,
+  );
+  check(
+    "the loop has exactly one frame in flight while it runs",
+    fall.pending === 1,
+    `${fall.pending} pending`,
+  );
+
+  // Leaving is what quitting is on this screen (there is no quit control until
+  // the HUD lands), and it has to take the loop with it.
+  await page.evaluate((id) => (location.hash = `#/p/${id}`), player);
+  await page.waitForTimeout(500);
+  check(
+    "leaving mid-run cancels it",
+    (await page.evaluate(() => window.__pendingFrames())) === 0,
+  );
+
+  // And a run that reaches its end stops itself. The stand-in wave is twelve
+  // letters over 7.3s, none of which anything can shoot yet, so this waits out
+  // a whole storm.
+  await storm();
+  await page
+    .waitForFunction(() => window.__pendingFrames() === 0, null, {
+      timeout: 15000,
+    })
+    .catch(() => {});
+  const ended = await page.evaluate(() => ({
+    pending: window.__pendingFrames(),
+    stones: document.querySelectorAll(".storm__letter").length,
+    onScreen: document.querySelectorAll(".storm").length,
+  }));
+  check(
+    "a finished wave stops its own loop, on screen and still mounted",
+    ended.pending === 0 && ended.stones === 0 && ended.onScreen === 1,
+    JSON.stringify(ended),
+  );
 
   log(
     `\nconsole errors: ${errors.length ? errors.slice(0, 5).join(" | ") : "none"}`,
