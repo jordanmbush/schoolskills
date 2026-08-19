@@ -1,7 +1,7 @@
 import type { Session } from "@/engine/types";
 
 import { typingMode } from "@/engine/decks/typing";
-import { LESSONS } from "./lessons";
+import { LESSONS, lessonNumbered } from "./lessons";
 import { verdictFor } from "./verdict";
 
 /**
@@ -73,9 +73,6 @@ const BY_MODE = new Map(
   LESSONS.map((lesson) => [typingMode(lesson.id), lesson]),
 );
 
-/** The same hundred by the number a child sees, for walking up the ladder. */
-const BY_NUMBER = new Map(LESSONS.map((lesson) => [lesson.n, lesson]));
-
 /** The top of the ladder — a hundred today, and read off it rather than typed. */
 const LAST = LESSONS.reduce((top, lesson) => Math.max(top, lesson.n), 0);
 
@@ -95,7 +92,7 @@ const LAST = LESSONS.reduce((top, lesson) => Math.max(top, lesson.n), 0);
  */
 function carriedOverStorms(best: number): number {
   let next = best + 1;
-  while (BY_NUMBER.get(next)?.kind.type === "storm") next += 1;
+  while (lessonNumbered(next)?.kind.type === "storm") next += 1;
   return Math.min(next, LAST);
 }
 
