@@ -19,11 +19,11 @@ import type { KeyboardMode } from "@/engine/types";
  *
  * ── Its own component, and its own defaulting ─────────────────────────────
  * `mode` is the profile's raw optional field, not a resolved one, so the
- * fallback to "guide" lives here — one read site rather than one at each
- * caller. That is also what makes the cases that matter testable without a
- * database or a router: a profile saved before this shipped has no `keyboard`
- * key at all, and a restored backup can carry a value no version of this app
- * ever wrote. Either one must land on "guide" rather than on nothing
+ * fallback to "guide" lives here — one resolver, exported, rather than a copy
+ * of it at each caller. That is also what makes the cases that matter testable
+ * without a database or a router: a profile saved before this shipped has no
+ * `keyboard` key at all, and a restored backup can carry a value no version of
+ * this app ever wrote. Either one must land on "guide" rather than on nothing
  * selected. `KeyboardSetting.test.tsx` is that test.
  */
 
@@ -49,7 +49,8 @@ const OPTIONS: SegmentedOption<KeyboardMode>[] = [
 ];
 
 /**
- * Which pill is on, for a field that may hold something else entirely.
+ * What a profile's `keyboard` field actually means, for a field that may hold
+ * something else entirely.
  *
  * Not `mode ?? DEFAULT_KEYBOARD_MODE`, because `??` only catches an absent
  * field and absent is not the only bad state. `Profile` is deliberately not
@@ -62,8 +63,13 @@ const OPTIONS: SegmentedOption<KeyboardMode>[] = [
  *
  * Resolved against `OPTIONS` rather than against a second copy of the three
  * mode names, so what comes back is by construction a pill that exists.
+ *
+ * Exported because the race reads the same field to decide what to draw
+ * (`TypingTrack`, #134), and the two must agree: a setting whose pills say
+ * "guide" over a run with no board is worse than either alone. One resolver,
+ * so there is nothing for a second read site to disagree with.
  */
-const selected = (mode?: KeyboardMode): KeyboardMode =>
+export const keyboardMode = (mode?: KeyboardMode): KeyboardMode =>
   OPTIONS.find((option) => option.value === mode)?.value ??
   DEFAULT_KEYBOARD_MODE;
 
@@ -88,7 +94,7 @@ export function KeyboardSetting({
       <span className="control__label">Keyboard</span>
       <SegmentedControl
         label="Keyboard"
-        value={selected(mode)}
+        value={keyboardMode(mode)}
         onChange={onChange}
         options={OPTIONS}
       />
