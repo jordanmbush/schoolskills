@@ -156,11 +156,14 @@ const STORM_ACCURACY = NEW_KEY_ACCURACY;
  *
  * Twelve (§6.4) wherever twelve fits, which is every lesson that arrives two
  * keys at a time: 24 strikes in a 24-word lesson is a fifth of the characters,
- * comfortably inside §5.2's band. Three lessons hand over more than a pair at
- * once and cannot also ask twelve of each — lesson 31 introduces fifteen
- * capitals, and 15 × 12 is 180 strikes in 150 characters — so there the demand
- * is divided between them instead of being made unreachable. Two is the floor:
- * below it the gate cannot tell a typist from a lucky guess.
+ * comfortably inside §5.2's band. Four lessons hand over more than a pair at
+ * once — 31, 32, 67 and 68 — and three of them cannot also ask twelve of each:
+ * lesson 31 introduces fifteen capitals, and 15 × 12 is 180 strikes in 150
+ * characters, so there the demand is divided between them instead of being made
+ * unreachable. Lesson 68's four keys still fit twelve apiece inside its 175,
+ * which is why the ceiling is a `min` against the room rather than a rule about
+ * how many keys arrived. Two is the floor: below it the gate cannot tell a
+ * typist from a lucky guess.
  */
 function strikesFor(introduces: string[], wordCount: number): number {
   if (introduces.length === 0) return NEW_KEY_STRIKES;
@@ -377,9 +380,12 @@ const ROWS: readonly Row[] = [
   [70, "Checkpoint · Punctuated", "", "passage", "off!", 55, 24, 97],
 
   // ── Block 8 · Endurance ────────────────────────────────────────────────────
-  // Length is the variable. The accuracy bar moves to 96% for the block, which
-  // is the one place §6.2's flat line bends: holding a rate over a hundred
-  // words is a different thing from holding it over thirty.
+  // Length is the variable. The accuracy bar moves to 96% for the block — the
+  // first of several places §6.2's flat 95/97 line bends: holding a rate over
+  // a hundred words is a different thing from holding it over thirty. Block
+  // 9's checkpoint (90) bends the same way, so does block 10's prose (91–96),
+  // and lesson 97 bends the other way at 99%. An accuracy column "corrected"
+  // back to a flat 95/97 would be wrong from here to the end of the ladder.
   [71, "Sixty words", "", "passage", "off", 60, 22, 96],
   [72, "A whole paragraph", "", "passage", "off", 70, 23, 96],
   [73, "Hailstorm · The long wave", "", "storm", "off"],
