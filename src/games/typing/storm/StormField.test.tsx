@@ -26,8 +26,9 @@ import type { StormState, WaveSpec } from "@/engine/typing/storm";
  *
  * So the geometry is checked in KEY UNITS, end to end: the lane the component
  * writes, against the cap the board draws, through the arithmetic game.css
- * actually performs. No pixels are involved on either side, which is the
- * property being defended.
+ * actually performs — both sides read out of the stylesheet rather than
+ * restated here, for the reason `capCentre` gives. No pixels are involved on
+ * either side, which is the property being defended.
  */
 
 const css = readFileSync(
@@ -50,15 +51,100 @@ const storm = css
   .replace(/\/\*[\s\S]*?\*\//g, "");
 
 /**
+ * The whole stylesheet with its prose taken out, so a declaration is read from
+ * the rule that ships and never from a comment describing it.
+ */
+const sheet = css.replace(/\/\*[\s\S]*?\*\//g, "");
+
+/**
+ * The one value game.css declares for `prop` on exactly `selector`.
+ *
+ * Exactly one, deliberately. A second declaration of the cap's width in a
+ * later block is the drift this whole file is about, and read leniently it
+ * would shadow the rule below without failing anything.
+ */
+const declaration = (selector: string, prop: string): string => {
+  const found = [...sheet.matchAll(/([^{}]+)\{([^{}]*)\}/g)]
+    .filter(([, list]) => list.trim() === selector)
+    .map(([, , body]) =>
+      new RegExp(`(?:^|;)\\s*${prop}:\\s*([^;]+)`).exec(body),
+    )
+    .filter((match) => match !== null)
+    .map((match) => match[1].trim());
+
+  if (found.length !== 1)
+    throw new Error(
+      `expected one \`${prop}\` on \`${selector}\`, found ${found.length}`,
+    );
+  return found[0];
+};
+
+/**
+ * `a * b - c / 2`, the way a browser reads it: multiply and divide first, then
+ * add and subtract, left to right. Parentheses are already flattened out by
+ * `unitsOf`, which is the only caller.
+ */
+const arithmetic = (expr: string): number => {
+  const tokens = expr
+    .trim()
+    .split(/\s*([+\-*/])\s*/)
+    .filter((token) => token !== "");
+  if (tokens[0] === "+" || tokens[0] === "-") tokens.unshift("0");
+
+  const terms = [Number(tokens[0])];
+  const signs: string[] = [];
+  for (let i = 1; i < tokens.length; i += 2) {
+    const value = Number(tokens[i + 1]);
+    if (tokens[i] === "*") terms[terms.length - 1] *= value;
+    else if (tokens[i] === "/") terms[terms.length - 1] /= value;
+    else {
+      signs.push(tokens[i]);
+      terms.push(value);
+    }
+  }
+
+  const total = signs.reduce(
+    (sum, sign, i) => (sign === "+" ? sum + terms[i + 1] : sum - terms[i + 1]),
+    terms[0],
+  );
+  if (Number.isNaN(total))
+    throw new Error(`not an expression in key units: ${expr}`);
+  return total;
+};
+
+/**
+ * A CSS length expression, evaluated in key units — `--key` is 1, and every
+ * other custom property is supplied by the caller.
+ *
+ * Enough of `calc()` to run the four declarations this file reads, and no
+ * more: an expression naming a property the caller did not supply throws,
+ * rather than quietly evaluating as though it were nothing.
+ */
+const unitsOf = (expr: string, vars: Record<string, number>): number => {
+  const filled = expr.replace(/var\((--[\w-]+)\)/g, (_, name: string) => {
+    if (!(name in vars))
+      throw new Error(
+        `\`${expr}\` reads ${name}, which this test does not model`,
+      );
+    return `(${vars[name]})`;
+  });
+
+  let flat = filled.replace(/\bcalc\b/g, "");
+  while (flat.includes("("))
+    flat = flat.replace(/\(([^()]*)\)/, (_, inner: string) =>
+      String(arithmetic(inner)),
+    );
+  return arithmetic(flat);
+};
+
+/**
  * The keycap inset, as the fraction of a key unit game.css sets it to.
  *
  * Read out of the stylesheet rather than written down here, because the whole
  * point of the arithmetic below is that one number governs both the cap and
  * the lane. A test carrying its own copy could agree with neither.
  */
-const GAP = Number(
-  /--key-gap:\s*calc\(var\(--key\)\s*\*\s*([\d.]+)\)/.exec(css)![1],
-);
+const GAP = unitsOf(declaration(":root", "--key-gap"), { "--key": 1 });
 
 /** A wave of nothing but `ch`, so which letter falls is not left to a seed. */
 const only = (ch: string, count = 1, fallMs = 1000): WaveSpec => ({
@@ -91,19 +177,42 @@ const stones = (state: StormState) =>
 /**
  * Where a falling letter's middle lands, in key units.
  *
- * `left: calc(var(--lane) * var(--key) - var(--key-gap) / 2)` with
- * `translate: -50% 0` — the stylesheet's arithmetic, done in units.
+ * The field's own `left` declaration, run rather than restated. `translate:
+ * -50% 0` — pinned below, because this depends on it — centres the stone on
+ * that point, so what comes back is the middle and not the left edge.
  */
-const stoneCentre = (lane: number) => lane - GAP / 2;
+const stoneCentre = (lane: number) =>
+  unitsOf(declaration(".storm__letter", "left"), {
+    "--key": 1,
+    "--key-gap": GAP,
+    "--lane": lane,
+  });
 
 /**
- * Where a drawn keycap's middle sits, in the same units.
+ * Where a drawn keycap's middle sits, in the same units — from the board's own
+ * `left` and `width`, which is where the inset the lane compensates for is
+ * actually written down.
  *
- * `left: calc(var(--x) * var(--key))` and
- * `width: calc(var(--w) * var(--key) - var(--key-gap))` — so the cap starts at
- * its slot's left edge and is a whole gap narrower than the slot is.
+ * Both sides coming out of the sheet is the whole point. Two hand-written
+ * models would each carry the half-gap term they were meant to be checking,
+ * and it would cancel across the assertion: subtract half a gap from the lane,
+ * fold half a gap into the cap, and the two agree for ANY gap — including
+ * none, and including a board that insets its caps by twice what the field
+ * compensates for. Reading the declarations means a change to either half
+ * moves one side of the comparison and not the other.
  */
-const capCentre = (key: KeyDef) => key.x + ((key.width ?? 1) - GAP) / 2;
+const capCentre = (key: KeyDef) => {
+  const vars = {
+    "--key": 1,
+    "--key-gap": GAP,
+    "--x": key.x,
+    "--w": key.width ?? 1,
+  };
+  return (
+    unitsOf(declaration(".keyboard__key", "left"), vars) +
+    unitsOf(declaration(".keyboard__key", "width"), vars) / 2
+  );
+};
 
 const cap = (code: string) => KEYS.find((k) => k.code === code)!;
 
@@ -151,6 +260,10 @@ describe("StormField", () => {
     expect(rule).toContain(
       "left: calc(var(--lane) * var(--key) - var(--key-gap) / 2)",
     );
+    // And that `left` is the letter's CENTRE rather than its left edge, which
+    // is what `stoneCentre` above reads it as. Lose the translate and every
+    // letter moves half a stone right of the key it names.
+    expect(rule).toContain("translate: -50% 0");
     // No length in this block is absolute except a hairline border: a field
     // measured in pixels would come apart from the board the moment `--key`
     // moved, which is at every viewport width.
@@ -180,7 +293,24 @@ describe("StormField", () => {
     // Every colour is a world token, and none of the five is borrowed: a
     // hailstone in `--lime` would be saying something was right about it.
     expect(storm).not.toMatch(/#[0-9a-f]{3}/i);
-    expect(storm).not.toMatch(/\brgba?\(/);
+    expect(storm).not.toMatch(
+      /\b(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch|color)\(/,
+    );
+
+    // Notations can be listed; the named colours cannot, so they are caught
+    // from the other end: strip a colour-bearing value of its tokens and its
+    // plumbing and there is nothing left to read. `color: rebeccapurple`
+    // leaves a word, and so would any notation the list above forgets.
+    const PLUMBING =
+      /var\(--[\w-]+\)|color-mix|calc|in oklab|solid|dashed|dotted|none|inset|transparent|currentcolor|[\d.]+(?:px|%|em|rem|ms|s)?|[-*,()/\s]/gi;
+    const literals = [
+      ...storm.matchAll(
+        /(?:^|[;{])\s*([\w-]*(?:color|background|border|shadow|fill|stroke)[\w-]*)\s*:\s*([^;]+)/g,
+      ),
+    ].filter(([, , value]) => /[a-z]/i.test(value.replace(PLUMBING, "")));
+    expect(
+      literals.map(([, prop, value]) => `${prop}: ${value.trim()}`),
+    ).toEqual([]);
     for (const name of ["--lime", "--flare", "--sky", "--gold", "--grape"])
       expect(storm).not.toContain(`var(${name})`);
   });

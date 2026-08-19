@@ -996,9 +996,14 @@ be remembered.
 
 Sub-pixel, and therefore worth being explicit about what it is not: this is not
 a fudge factor found by nudging until it looked right. It is the difference
-between two positions the stylesheet computes, and the same subtraction makes
-`stoneCentre` and `capCentre` equal to ten decimal places in
-`StormField.test.tsx` — in key units, so the test cannot be satisfied by a
+between two positions the stylesheet computes, and `StormField.test.tsx`
+computes both of them the way a browser would — reading the field's `left` and
+the board's `left` and `width` out of `game.css` and evaluating them with
+`--key` as the unit. `stoneCentre` and `capCentre` come out equal to ten
+decimal places, and stop being equal the moment either declaration moves
+without the other: inset the caps by `var(--key-gap) * 2` and the test fails by
+the half gap the lane no longer matches, rather than the board quietly drifting
+1.7px off every letter. In key units, so nothing here can be satisfied by a
 pixel that happened to round the right way at one size.
 
 ### 8.3 · A wave, from a seed
