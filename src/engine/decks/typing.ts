@@ -376,6 +376,28 @@ export function passageFor(config: TypingConfig, seed: number): string[] {
   return words.slice(0, config.wordCount);
 }
 
+/**
+ * The character a typist is waiting on, given the live word and what they have
+ * typed of it so far.
+ *
+ * The letter at the cursor, and once every letter of the word is in, the SPACE
+ * that commits it. Space is a key like any other here and the most-missed one
+ * on the board: a child who can spell "because" and cannot find the space bar
+ * without looking types at half speed, and the thumb is the only finger the
+ * passage never names.
+ *
+ * Anything typed PAST the end of the word also asks for space, because space is
+ * what gets out of it — the extra letters are already marked wrong in the
+ * passage above and the run does not stop to be told twice.
+ *
+ * Here rather than inline in `TypingTrack` because this is the expectation the
+ * keyboard's red is decided against (docs/typing.md §4.3), and it is text in,
+ * text out — so the boundary that matters, a full word wanting a space next,
+ * can be pinned without a race running around it.
+ */
+export const nextChar = (word: string, entry: string): string =>
+  word[entry.length] ?? " ";
+
 export function buildTypingDeck(config: TypingConfig, seed: number): Card[] {
   return passageFor(config, seed).map((word) => ({
     prompt: word,

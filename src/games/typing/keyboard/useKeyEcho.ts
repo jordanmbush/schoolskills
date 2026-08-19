@@ -172,6 +172,14 @@ export function useKeyEcho({ expect }: { expect: string | null }): KeyEcho {
    * listener binds once — a fresh binding per character would be a listener
    * churned on every keystroke, and a stale closure would judge this key
    * against the last one.
+   *
+   * A ref has the opposite hazard, and it is the one that actually bit: an
+   * expectation too FRESH for the key being judged. The keystroke that commits
+   * a word is the keystroke that moves this ref, so anything reading it after
+   * the commit has re-rendered is asking "was SPACE the right key for the NEXT
+   * word's first letter?" — and telling a child in red that they finished a
+   * word correctly. The capture flag below is what keeps the read in front of
+   * the write.
    */
   const expected = useRef(expect);
   expected.current = expect;
@@ -181,9 +189,24 @@ export function useKeyEcho({ expect }: { expect: string | null }): KeyEcho {
     const onKeyDown = (event: KeyboardEvent) =>
       board.press(event.code, expected.current);
 
-    window.addEventListener("keydown", onKeyDown);
+    // Capture, not bubble — the third argument is load-bearing.
+    //
+    // §4.3 asks for the key to be judged ON THE PRESS, before anything has
+    // re-rendered, and bubbling does not deliver that. React delegates
+    // `TypeField`'s `onKeyDown` at the island root, which is inside `window`,
+    // so it runs first; on SPACE it commits the word, queueing `setEntry("")`
+    // and `setIndex(i + 1)`. React flushes a discrete update in a microtask,
+    // and a microtask checkpoint runs BETWEEN two listeners of one real event
+    // — so by the time a bubble-phase echo saw the SPACE, the track had already
+    // re-rendered and the expectation had already advanced to the next word.
+    // Every correctly finished word flared red on the space bar.
+    //
+    // Capture runs at the very start of propagation, ahead of every handler
+    // that could move the expectation. It also survives a `stopPropagation()`
+    // anywhere between the field and the window, which bubbling would not.
+    window.addEventListener("keydown", onKeyDown, true);
     return () => {
-      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("keydown", onKeyDown, true);
       // Unmounting mid-chord is one of the ways a `keyup` goes missing. There
       // is no state left to strand, but a timer that outlives the component
       // would call `setEcho` on it.

@@ -3,7 +3,7 @@ import { Navigate, useNavigate, useParams } from "react-router-dom";
 import { useHub, usePlayer } from "@/components/state/HubContext";
 import { useRace } from "@/components/state/RaceContext";
 import { buildDeck, configKey, deckSpec, modeOf } from "@/engine/decks";
-import { levelCredit } from "@/engine/decks/typing";
+import { levelCredit, nextChar } from "@/engine/decks/typing";
 import { cardXp } from "@/engine/progress";
 import {
   WRONG_ANSWER_PENALTY_MS,
@@ -24,6 +24,8 @@ import {
 import { sfx } from "@/services/sound";
 import { Passage } from "./Passage";
 import { TypeField } from "./TypeField";
+import { keyboardMode } from "./keyboard/KeyboardSetting";
+import { LiveKeyboard } from "./keyboard/LiveKeyboard";
 import type {
   CardResult,
   Profile,
@@ -222,6 +224,29 @@ function Track({
     [deck, spec, onCard, bank, startCard, total, hasFinished],
   );
 
+  /**
+   * The character the passage is waiting on — the whole input to the board.
+   *
+   * WHICH character that is, space bar included once a word is fully typed, is
+   * `nextChar`'s to say. What is decided here is when the passage is waiting on
+   * nothing at all: `null` during the 3·2·1, while the quit sheet is up, and
+   * once the last word is in and the run is saving. That comes off `live`, the
+   * same flag `TypeField` is disabled on rather than a second reading of the
+   * same two pieces of state, because the two have to agree — a key pressed at
+   * a disabled field that the board marked wrong would be blaming a child for
+   * a keystroke the game had already thrown away.
+   */
+  const live = phase === "racing" && !quitting;
+  const next = live ? nextChar(deck[index]?.answer ?? "", entry) : null;
+
+  /**
+   * How much of the board this player asked for. Resolved by the same function
+   * that draws the pills on the setup screen, so the two can't disagree about
+   * a profile whose field is absent — which is every profile made before the
+   * setting shipped.
+   */
+  const board = keyboardMode(profile.keyboard);
+
   if (saveError) {
     return (
       <SaveFailed
@@ -274,10 +299,16 @@ function Track({
       <TypeField
         value={entry}
         index={index}
-        disabled={phase !== "racing" || quitting}
+        disabled={!live}
         onChange={setEntry}
         onCommit={commit}
       />
+
+      {/* Under the line being typed on, and after it in the DOM as well as on
+          screen — the board is a map of the keyboard, so it reads last, and
+          `TypeField` keeps the tab order's first and only stop. Rendered
+          nothing at all on "off": see `LiveKeyboard`. */}
+      {board !== "off" && <LiveKeyboard mode={board} next={next} />}
 
       {quitting && (
         <QuitSheet

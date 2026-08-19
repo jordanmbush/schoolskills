@@ -1269,6 +1269,39 @@ label.segmented__btn {
   max-width: 46rem;
   margin-inline: auto;
   width: 100%;
+
+  /* The passage is the row of the race grid that gives — `.race` makes it
+     `minmax(0, 1fr)` while every other row is `auto`, and the keyboard below
+     the input is one of those. But a grid item still refuses to be shorter
+     than its own content unless it is told it may, so without these two a
+     short screen with the board on would grow the page instead of the row:
+     the line you type on, and then the board, would slide under the fold.
+
+     Clipping is the right end to lose. `Passage` is already a window on the
+     deck — six words behind, fourteen ahead — so what goes is more read-ahead,
+     and the live word sits near the top of it either way. */
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* A viewport too short to hold both, where the board is what goes.
+   `.race` is `min-height: calc(100dvh - var(--ad-h))` so that a race never
+   scrolls under a child's thumb, and five rows of keys are 45% of a phone
+   held in landscape — enough to break that on its own. What they would be
+   taking the height from is the passage and the line you type on, which are
+   the game; the board is the aid. So below the height at which it stops
+   fitting it isn't drawn, and it is back the moment there is room.
+
+   Nothing is written and the setting doesn't move: this is the same profile
+   in the same mode, on a screen that can't show it. Turning the pill off for
+   them would be answering a question about their eyes with a fact about
+   their window. The number is measured rather than guessed: a portrait phone
+   keeps the board and about two lines of passage down to here, and below it
+   the words are down to one line before the keys have cost anything.       */
+@media (max-height: 520px) {
+  .typing .keyboard {
+    display: none;
+  }
 }
 
 /* Generous line height and a fixed-width font: the eye is tracking one word

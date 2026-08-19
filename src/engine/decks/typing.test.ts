@@ -7,6 +7,7 @@ import {
   buildTypingDrill,
   describeTypingConfig,
   levelCredit,
+  nextChar,
   passageFor,
   typingConfigKey,
   typingDeckSpec,
@@ -303,5 +304,49 @@ describe("buildTypingDrill", () => {
       "The",
       "the",
     ]);
+  });
+});
+
+describe("nextChar", () => {
+  /*
+   * The expectation the keyboard's red is judged against (docs/typing.md
+   * §4.3), so every case below is a case where a child either does or does not
+   * get told they made a mistake. The word boundary is the one that has been
+   * wrong in production: a fully typed word wants SPACE, and a board that
+   * wanted the next word's first letter instead flared the space bar on every
+   * word a child got right.
+   */
+
+  it("wants the first letter before anything is typed", () => {
+    expect(nextChar("three", "")).toBe("t");
+  });
+
+  it("wants the letter under the cursor mid-word", () => {
+    expect(nextChar("three", "th")).toBe("r");
+    expect(nextChar("three", "thre")).toBe("e");
+  });
+
+  it("wants the SPACE that commits a finished word", () => {
+    // The buffer is exactly the word: there is no letter left, and the only
+    // key that gets out of it is the space bar.
+    expect(nextChar("three", "three")).toBe(" ");
+  });
+
+  it("still wants SPACE once the word has been over-typed", () => {
+    // The extra letters are already red in the passage above. Asking for a
+    // letter that cannot be reached would flare the way out of the word too.
+    expect(nextChar("three", "threee")).toBe(" ");
+    expect(nextChar("three", "threexyz")).toBe(" ");
+  });
+
+  it("wants SPACE for a word that isn't there at all", () => {
+    // `TypingTrack` passes "" for an index past the end of the deck.
+    expect(nextChar("", "")).toBe(" ");
+  });
+
+  it("does not fold a word's own punctuation away", () => {
+    // A sentence level types the comma, so it is a character like any other.
+    expect(nextChar("hand,", "hand")).toBe(",");
+    expect(nextChar("hand,", "hand,")).toBe(" ");
   });
 });
