@@ -491,6 +491,10 @@ export function startStorm(wave: Wave): StormState {
  * (§8.3): the same wave replayed resolves the same dead heat the same way. A
  * replay that diverged on a rounding difference would be a worse bug than
  * either answer to the tie.
+ *
+ * It does not read `state.ending`. A run that ended mid-wave still has letters
+ * in the air, so this still names one; `fire` asks only after its own guard,
+ * and a screen painting a reticle from it (STM03, STM06) has to guard too.
  */
 export function targetIndex(state: StormState): number | null {
   const { letters } = state.wave;
@@ -566,7 +570,11 @@ function repaired(shield: Shield, spec: WaveSpec, combo: number): Shield {
  * at is a different question, and it belongs to the clock (STM03): clamping
  * the delta, or pausing on `visibilitychange`, is a decision the loop can only
  * make deliberately because the rules underneath it are honest about the whole
- * interval they were given.
+ * interval they were given. Two things that loop cannot lean on: a `NaN` delta
+ * poisons `timeMs` for the rest of the run and ends nothing — no delta between
+ * two real clock readings is one, and clamping is STM03's — and neither a tick
+ * with no landing nor a missed `fire` returns the object it was handed, so
+ * identity is not a "nothing changed" signal.
  */
 export function tick(state: StormState, dtMs: number): StormState {
   if (state.ending !== null) return state;
@@ -605,7 +613,10 @@ export function tick(state: StormState, dtMs: number): StormState {
       // and the storm is through. The clock stops at that landing rather than
       // at the end of the tick: the rest of this interval never happened, and
       // the letters still due inside it stay unresolved rather than being
-      // charged to a shield the child no longer had.
+      // charged to a shield the child no longer had. That includes a letter
+      // tying this exact `landMs` from a higher index, which `hasLanded` now
+      // reads true of — so "got through" (STM07) counts `resolved`, never
+      // `hasLanded`.
       ending = { kind: "breached", finger: letter.finger, index };
       clock = letter.landMs;
       break;
@@ -628,7 +639,16 @@ export function tick(state: StormState, dtMs: number): StormState {
  * the score congratulates them for it. Firing has to be able to be *wrong*
  * before hitting can mean anything, and the only sense of "wrong" a
  * falling-letter game can defend is out of order: the bottom letter is the one
- * about to cost a shield point, so it is the one that is actually urgent.
+ * nearest the shield *on screen*, which is the one a child can see is most
+ * urgent and can aim at without knowing anything the field is not showing
+ * them.
+ *
+ * Nearest is not soonest. Letters fall at different speeds, so the letter due
+ * to land first may be a different one, visibly higher up the screen, from the
+ * moment two paths cross until one of them lands (decision 32, and
+ * `targetIndex`). The rule follows the field and not the schedule on purpose:
+ * a target picked by `landMs` would refuse the letter the child is watching
+ * drop and demand one they have no way to know was closer in time.
  *
  * That is also what makes the difference between one letter in the air and
  * three a difference in kind. With one, target and only letter are the same

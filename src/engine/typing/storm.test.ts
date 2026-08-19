@@ -869,6 +869,44 @@ describe("repairs are the comeback path", () => {
     expect(state.shield["l-index"], "no repair").toBe(0);
   });
 
+  it("mends the weakest zone, not the first one it finds", () => {
+    // Every other case here damages exactly one zone, which makes "weakest",
+    // "last damaged" and "first not full" the same answer — so none of them
+    // pins the rule §8.5 actually states. Here two zones are damaged unequally
+    // and the weaker one is *later* in `SHIELD_FINGERS`: `a` takes one point
+    // off the left pinky, two `f`s take both points off the left index, and
+    // the clean shot on `j` offers a single repair. It has to go to the hole.
+    const letters = [
+      at("a", 0, 100),
+      at("f", 100, 100),
+      at("f", 200, 100),
+      at("j", 400, 200),
+    ];
+    let state = to(runOf(letters, { shield: 2, repairAt: 1 }), 300);
+    expect(state.shield["l-pinky"], "grazed").toBe(1);
+    expect(state.shield["l-index"], "a hole").toBe(0);
+
+    state = fire(to(state, 500), "KeyJ");
+    expect(state.shield["l-index"], "the hole is mended").toBe(1);
+    expect(state.shield["l-pinky"], "and the grazed zone is left alone").toBe(
+      1,
+    );
+  });
+
+  it("gives two equally weak zones to the earlier one on the board", () => {
+    // Nothing about the shield makes one of them the better answer, so the
+    // rule is the drawing order: the segment that lights up is one a child
+    // could in principle have predicted, and a replay mends the same one.
+    const letters = [at("f", 0, 100), at("j", 100, 100), at("k", 300, 200)];
+    let state = to(runOf(letters, { shield: 2, repairAt: 1 }), 400);
+    expect(state.shield["l-index"], "both zones down one").toBe(1);
+    expect(state.shield["r-index"]).toBe(1);
+
+    state = fire(state, "KeyK");
+    expect(state.shield["l-index"], "the earlier of the two is mended").toBe(2);
+    expect(state.shield["r-index"], "the later one waits its turn").toBe(1);
+  });
+
   it("repairs to exactly the cap and no further", () => {
     // A wave whose repairs outran its damage would hand a strong player a
     // shield deeper than the level ever wrote down — and "untouched" would
@@ -958,7 +996,14 @@ describe("the rules are pure, and they do not mutate what they are given", () =>
   it("returns new state rather than editing the state it was handed", () => {
     // A reducer that mutated would pass every other test in this file — the
     // returned state would be right, and only the caller holding the old one
-    // would ever find out. Freezing the input turns that into a throw.
+    // would ever find out. Freezing turns that into a throw.
+    //
+    // Every state the run passes through is frozen, not only the one it starts
+    // from, because `tick` copies the shield exactly when a letter landed. A
+    // repair that wrote through the shield it was handed would hide behind
+    // that copy for the whole of a run that only ever fires after a landing —
+    // so the fire that repairs, below, is given a shield an earlier state is
+    // still holding.
     const deepFreeze = <T>(value: T): T => {
       if (value && typeof value === "object") {
         Object.values(value).forEach(deepFreeze);
@@ -966,24 +1011,47 @@ describe("the rules are pure, and they do not mutate what they are given", () =>
       }
       return value;
     };
+    const tickTo = (state: StormState, ms: number) => deepFreeze(to(state, ms));
+    const shoot = (state: StormState, code: string) =>
+      deepFreeze(fire(state, code));
 
     const start = deepFreeze(
-      runOf([at("f", 0, 1000), at("j", 300, 1000)], { shield: 2, repairAt: 2 }),
+      runOf([at("f", 0, 100), at("j", 200, 400), at("k", 700, 300)], {
+        shield: 2,
+        repairAt: 1,
+      }),
     );
-    const fired = fire(to(start, 400), "KeyF");
-    const ticked = to(fired, 1400);
 
-    expect(fired.resolved[0]?.outcome).toBe("shot");
-    expect(ticked.shield["r-index"], "the second letter got through").toBe(1);
+    const damaged = tickTo(start, 100);
+    expect(damaged.shield["l-index"], "the f got through").toBe(1);
+
+    // Nothing lands between 100 and 300, so this tick hands `damaged`'s own
+    // shield straight on — and the hit on `j` repairs at `repairAt: 1`.
+    const mended = shoot(tickTo(damaged, 300), "KeyJ");
+    expect(mended.resolved[1]?.outcome, "a hit").toBe("shot");
+    expect(mended.shield["l-index"], "and the repair path ran").toBe(2);
+
+    const missed = shoot(mended, "KeyZ");
+    const ended = tickTo(missed, 1000);
+    expect(ended.resolved.map((r) => r?.outcome)).toEqual([
+      "landed",
+      "shot",
+      "landed",
+    ]);
 
     expect(start.timeMs, "the state we started from is untouched").toBe(0);
-    expect(start.resolved).toEqual([null, null]);
+    expect(start.resolved).toEqual([null, null, null]);
     expect(start.combo).toBe(0);
     expect(start.shield).toEqual(evenShield(2));
     expect(start.ending).toBeNull();
 
+    expect(damaged.shield["l-index"], "and so is the damaged one").toBe(1);
+    expect(damaged.resolved[1], "which never saw the shot").toBeNull();
+    expect(mended.combo, "and the miss did not reach back into it").toBe(1);
+
     // And the whole run again from the frozen start, which must come out the
     // same: a reducer that mutated its input would have spent it.
-    expect(to(fire(to(start, 400), "KeyF"), 1400)).toEqual(ticked);
+    const again = to(fire(fire(to(to(start, 100), 300), "KeyJ"), "KeyZ"), 1000);
+    expect(again).toEqual(ended);
   });
 });
