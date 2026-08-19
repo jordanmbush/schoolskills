@@ -20,6 +20,37 @@
   --gold: #ffc53d; /* records and trophies */
   --grape: #a78bfa; /* badges */
 
+  /* ── The eight fingers ─────────────────────────────────────────────────
+     Which finger presses a key, on the keyboard picture in the typing world
+     (docs/typing.md §4.6). Here rather than in a world block because the
+     finger that types `f` is the same finger in every biome, and because
+     Hailstorm colours a falling letter by the finger that stops it — the two
+     halves have to agree or the shield is teaching a different lesson than
+     the board.
+
+     None of the eight is one of the five above, and that is the constraint,
+     not a coincidence: a board that used --lime for "left index finger" would
+     spend a hundred lessons teaching a child to unlearn the one signal this
+     site is consistent about. They are deliberately DESATURATED for the same
+     reason — the board is scenery a child glances at, and a keyboard as loud
+     as a correct answer would win every fight for attention it entered.
+
+     The pattern is a temperature and a walk. The left hand is warm and the
+     right hand is cool, so the hand a key belongs to is legible before any
+     individual colour is — which is the half of the split that matters, and
+     the half a child gets wrong at `g` and `h`. Within a hand the hue walks
+     outward from the index finger, so neighbouring columns never share a
+     family. There is no ninth: the space bar is pressed by EITHER thumb, and
+     a colour there would be naming a choice the technique does not make.  */
+  --finger-l-index: #c2a276; /* sand */
+  --finger-l-middle: #c08d76; /* clay */
+  --finger-l-ring: #bb8686; /* rose */
+  --finger-l-pinky: #b3849f; /* mauve */
+  --finger-r-index: #8db77f; /* sage */
+  --finger-r-middle: #71b0aa; /* teal */
+  --finger-r-ring: #7fa3c6; /* steel */
+  --finger-r-pinky: #9490c8; /* periwinkle */
+
   /* ── Type ──────────────────────────────────────────────────────────────
      See fonts.css for why these three and why they're self-hosted. Lilita
      One has no weight axis on purpose; `font-weight` on a display element is

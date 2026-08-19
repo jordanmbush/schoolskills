@@ -1369,3 +1369,128 @@ label.segmented__btn {
   color: var(--accent);
   text-align: center;
 }
+
+/* ── Typing: the keyboard on screen ──────────────────────────────────────
+   A picture of the board, drawn from the layout in engine/keyboard.ts so a
+   child never has to look down at the real one (docs/typing.md §4).
+
+   Every colour here is a world token or a finger token mixed into one, which
+   is what lets the same board sit in the glacier without a single `[data-
+   world="ice"]` rule underneath it. The keycaps are the world's ink, the
+   legends are its chalk, and the eight hues on top are the same in all of
+   them because a finger doesn't change biome.                             */
+
+.keyboard {
+  /* The one dial. The board is fifteen key units wide and every key knows its
+     own left edge in those units, so a key is a fifteenth of the room there
+     is — floored so it stays legible on a narrow phone, capped so it doesn't
+     become furniture on a desktop. The dvh term is what makes a phone in
+     landscape work: five rows and the passage above them are sharing about
+     390px of height, and width alone would happily spend all of it. */
+  --key: clamp(1.05rem, min(5.6vw, 9dvh), 2.4rem);
+  --key-gap: calc(var(--key) * 0.09);
+
+  display: grid;
+  gap: var(--key-gap);
+  width: calc(15 * var(--key));
+  margin-inline: auto;
+
+  /* Never tappable, on any device (§4.5). There is no handler on any of these
+     spans to fire; `pointer-events` is what stops one added later from having
+     anywhere to fire, and stops the board eating a tap meant for the field
+     underneath it. `user-select` is the other half — a long press on a phone
+     should not offer to copy the letter `f`. */
+  pointer-events: none;
+  user-select: none;
+}
+
+.keyboard__row {
+  position: relative;
+  height: var(--key);
+}
+
+/* Positioned off the `x` the engine writes down rather than laid out by flex,
+   because the row stagger is a fact about the plastic and not something gap
+   arithmetic arrives at: the home row starts 1.75 units in, the top row 1.5,
+   and no rule relates the two. */
+.keyboard__key {
+  /* The thumb has no hue of its own — see tokens.css. Its keys inherit this
+     neutral, which is the world's own quiet grey. */
+  --finger: var(--chalk-dim);
+
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(var(--x) * var(--key));
+  width: calc(var(--w) * var(--key) - var(--key-gap));
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 1px solid color-mix(in oklab, var(--finger) 38%, transparent);
+  border-radius: calc(var(--key) * 0.2);
+  background: color-mix(in oklab, var(--finger) 13%, var(--ink-800));
+  box-shadow: inset 0 -0.1em 0 rgb(0 0 0 / 22%);
+
+  font-family: var(--font-mono);
+  font-size: calc(var(--key) * 0.42);
+  line-height: 1;
+  color: color-mix(in oklab, var(--finger) 45%, var(--chalk));
+}
+
+/* Modifiers and the ones that do something rather than type something carry a
+   word — "Shift", "Bksp", "Caps" — which has to fit the same cap as one
+   letter without shrinking the letters a child is actually reading. */
+.keyboard__key.is-word {
+  font-size: calc(var(--key) * 0.26);
+  color: var(--chalk-dim);
+}
+
+/* Where the hands rest. On real plastic only `f` and `j` are ridged; here all
+   eight home keys and the space bar carry the bar, because on screen the
+   thing being shown is the whole resting position rather than the two keys
+   you find it by touch with. */
+.keyboard__key.is-home::after {
+  content: "";
+  position: absolute;
+  bottom: calc(var(--key) * 0.11);
+  width: calc(var(--key) * 0.34);
+  height: max(1.5px, calc(var(--key) * 0.06));
+  border-radius: 2px;
+  background: color-mix(in oklab, var(--finger) 70%, var(--chalk));
+}
+
+/* The eight hues, attached to the closed set of fingers the engine assigns.
+   `thumb` is absent on purpose and falls through to the neutral above. */
+.keyboard__key[data-finger="l-index"] {
+  --finger: var(--finger-l-index);
+}
+
+.keyboard__key[data-finger="l-middle"] {
+  --finger: var(--finger-l-middle);
+}
+
+.keyboard__key[data-finger="l-ring"] {
+  --finger: var(--finger-l-ring);
+}
+
+.keyboard__key[data-finger="l-pinky"] {
+  --finger: var(--finger-l-pinky);
+}
+
+.keyboard__key[data-finger="r-index"] {
+  --finger: var(--finger-r-index);
+}
+
+.keyboard__key[data-finger="r-middle"] {
+  --finger: var(--finger-r-middle);
+}
+
+.keyboard__key[data-finger="r-ring"] {
+  --finger: var(--finger-r-ring);
+}
+
+.keyboard__key[data-finger="r-pinky"] {
+  --finger: var(--finger-r-pinky);
+}
