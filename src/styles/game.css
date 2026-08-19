@@ -1410,11 +1410,10 @@ label.segmented__btn {
   place-items: center;
   width: 100%;
   aspect-ratio: 1;
-  /* A floor under the tap target. Ten across is the shape of the ladder and
-     is not negotiable, and ten 44px tiles do not fit across a 390px phone —
-     so what gives is the square: below `560px` the tiles stop shrinking and
-     grow taller than they are wide, which buys back the height of the target
-     without either scrolling the map sideways or breaking the row. */
+  /* A floor under the tap target, for the widths where ten across still fits.
+     Ten 44px tiles do not fit across a 390px phone at all, and what gives
+     there is ten rather than the square — see the `560px` block at the end of
+     this section, which redraws a block as five and five. */
   min-height: 2.1rem;
   border-radius: 9px;
   border: 1.5px solid var(--hairline);
@@ -1574,20 +1573,134 @@ label.segmented__btn {
   }
 }
 
-/* The panel's own padding is worth more as tile than as margin once ten
-   across is the constraint. */
+/* ── The phone: five across, and the tile gets its 44px back ─────────────
+   Ten across is the shape of the ladder on a laptop and it does not survive a
+   390px phone: ten tiles across 336px of content is 31px apiece, and the
+   guidance — and CLAUDE.md, which is blunter about it, because the youngest
+   player is five — puts a tap target at 44. Growing the tiles taller than they
+   are wide bought some of that back and cost the shapes, which are the half of
+   the legend colour cannot carry: an ellipse is not a circle and a squashed
+   diamond is not a diamond.
+
+   So what gives at this width is TEN, not the square. A block is still ten
+   lessons; it is drawn five and five, and twenty rows of five is still a
+   ladder. The tiles come out square and around 65px, the checkpoint is a
+   circle again, and the map is taller — which on a phone is what scrolling is
+   for. `min-height` stays as a floor for the narrowest phones, where five
+   across is itself under 44. */
 @media (width < 560px) {
   .ladder {
     padding-inline: var(--gap-2);
   }
 
   .ladder__row {
-    gap: 0.18rem;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 0.3rem;
   }
 
   .ladder__tile {
-    min-height: 2.4rem;
+    min-height: 2.75rem;
   }
+}
+
+/* ── Typing: the lesson brief ──────────────────────────────────────────────
+   What is written on the door before a child goes through it (§9): the new
+   keys, the three bars, their best, and how much of the keyboard will be up.
+   Built out of the modal the quit sheet already uses, so there is one thing on
+   this site that means "read this, then choose". */
+
+.brief {
+  gap: var(--gap-2);
+}
+
+.brief .panel__title {
+  margin-top: -0.15rem;
+}
+
+/* The keys as keys, on one line with their label. They are what the child is
+   about to go looking for, and fifteen of them at lesson 31 is a row rather
+   than a sentence. */
+.brief__new {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0;
+}
+
+.brief__newlabel {
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--chalk-dim);
+  margin-right: 0.15rem;
+}
+
+.brief__key {
+  display: grid;
+  place-items: center;
+  min-width: 1.8rem;
+  padding: 0.25rem 0.4rem;
+  border: 1.5px solid var(--hairline);
+  border-bottom-width: 3px;
+  border-radius: 7px;
+  background: rgb(255 255 255 / 4%);
+  color: var(--chalk);
+  font-size: var(--step--1);
+  font-weight: 700;
+  line-height: 1;
+}
+
+.brief__askshead {
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--chalk-dim);
+  margin-bottom: 0.4rem;
+}
+
+.brief__asks ul {
+  display: grid;
+  gap: 0.3rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--step--1);
+  color: var(--chalk-soft);
+  line-height: 1.4;
+}
+
+.brief__asks b {
+  color: var(--chalk);
+}
+
+.brief__best {
+  margin: 0;
+  font-size: var(--step--1);
+  color: var(--chalk-soft);
+}
+
+/* The one line on this panel that is answering "why can't I press Start". It
+   sits where the button would be, so it is read instead of it and not after
+   a hunt for it. */
+.brief__locked {
+  margin: 0;
+  padding-left: 0.7rem;
+  border-left: 3px solid var(--hairline);
+  font-size: var(--step--1);
+  color: var(--chalk-dim);
+  line-height: 1.4;
+}
+
+/* Why a disabled control is disabled — see `KeyboardSetting`. Quiet, because
+   it is an explanation and not a warning: nothing has gone wrong. */
+.control__why {
+  margin: 0;
+  font-size: var(--step--2);
+  line-height: 1.4;
 }
 
 /* ── Typing: the passage and the line you type on ──────────────────────── */

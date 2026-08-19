@@ -250,6 +250,22 @@ never seen a keyboard cannot be asked to guess, and every checkpoint forces
 `off` because a checkpoint that can be passed while reading the answer off the
 screen measures nothing.
 
+**A lesson's mode seeds the run; it does not overrule the player** (#145).
+Read as a plain override the line above is a trap, and the ladder walks
+straight into it: **every one of the hundred names a mode**, so the `??` never
+falls through, the player's setting is beaten on all hundred rungs, and
+`keyboardLocked` marks no difference between the lessons that insist and the
+ninety-odd that were only suggesting. So the lesson's mode is what the brief's
+control **opens on**; an unlocked lesson may be changed before Start and the
+choice governs that run; a locked one is shown, disabled, with the reason.
+
+The choice lives in `TypingConfig.keyboard` and lasts exactly as long as the
+run it was made for. It is deliberately not written back to the profile: the
+control opens on the _lesson's_ suggestion, so saving what came out of it would
+let the ladder quietly overwrite a setting the child chose for themselves in
+free play. `games/typing/keyboard/lessonKeyboard.ts` is the one resolver, and
+both the brief and the track read it.
+
 Default `guide` rather than `off` for a new profile: the cost of showing it to
 a child who didn't need it is a glance; the cost of hiding it from one who did
 is a downward glance that becomes a habit.
@@ -1091,6 +1107,7 @@ Almost nothing, and that is the design working.
 | `Session`         | unchanged                                                             |
 | `Profile`         | `keyboard?: KeyboardMode` — optional, defaulted on read, no migration |
 | `TypingConfig`    | `lessonId?: string` — optional, and the ghost-key discriminator       |
+| `TypingConfig`    | `keyboard?: KeyboardMode` — the brief's choice; inert in `configKey`  |
 | `configKey`       | unchanged for every config already saved (§5.4)                       |
 | Lesson progress   | derived from sessions; stored nowhere (§6.5)                          |
 
@@ -1130,6 +1147,7 @@ first when either optional field is added.
 | 24  | Hailstorm never gates the ladder                        | A tablet has no keys, and a reward that blocks you is not a reward                                       |
 | 25  | DOM, not canvas                                         | Eleven custom properties change the whole app's biome; a canvas is a hole in that                        |
 | 26  | US ANSI only, and say so                                | A UK keyboard would fail lessons 62 and 67 for a child doing everything right                            |
+| 27  | A lesson's keyboard seeds; it does not overrule         | All hundred name a mode, so an override beats the player's own setting on every rung                     |
 
 ---
 

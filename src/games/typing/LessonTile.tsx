@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/kit";
 import type { LadderProgress } from "@/engine/typing/ladder";
 import type { Lesson } from "@/engine/typing/lessons";
+import { lockNote } from "./lessonNotes";
 
 /**
  * One rung of the ladder, as a square on a map (docs/typing.md §9).
@@ -70,7 +71,7 @@ const SAID: Record<TileState, string> = {
 /**
  * The tile's accessible name: which lesson, what it is called, where you are
  * with it, and — where it is true — why it is open when the one before it is
- * not.
+ * not, or what would open it when it isn't.
  *
  * The checkpoint clause is the copy half of decision 16. A child who cannot
  * see the ring around a checkpoint has no other way to learn that the tile
@@ -95,7 +96,12 @@ function tileLabel(lesson: Lesson, state: TileState): string {
       ? " Checkpoint — always open, whatever you have passed."
       : "";
 
-  return `${what}.${note} ${SAID[state]}.`;
+  // What unlocks it, on the tile as well as in the brief (#145). The tile is
+  // the only place a locked lesson is met by a child who never presses it, and
+  // "Locked" on its own is a state rather than a way out of one.
+  const how = state === "locked" ? ` ${lockNote(lesson)}` : "";
+
+  return `${what}.${note} ${SAID[state]}.${how}`;
 }
 
 export function LessonTile({

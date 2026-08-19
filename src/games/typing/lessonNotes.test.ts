@@ -4,7 +4,7 @@ import type { LadderProgress } from "@/engine/typing/ladder";
 import { lessonById, lessonNumbered } from "@/engine/typing/lessons";
 import type { Verdict } from "@/engine/typing/verdict";
 
-import { missNote, nextNote, weakestKey } from "./lessonNotes";
+import { lockNote, missNote, nextNote, weakestKey } from "./lessonNotes";
 
 /**
  * The sentence a results screen says (docs/typing.md §6.1).
@@ -171,5 +171,38 @@ describe("nextNote", () => {
 
     expect(next).toBeNull();
     expect(text).toBe("That is the top of the ladder. Every lesson done.");
+  });
+});
+
+describe("lockNote", () => {
+  it("names the rung below", () => {
+    expect(lockNote(lessonNumbered(8)!)).toBe(
+      "Pass lesson 7 to open this one.",
+    );
+  });
+
+  /**
+   * §8.8: a Hailstorm level never gates, so the lesson that opens 10 is 8 —
+   * and pointing a child at the storm at 9 would be sending them at a wave
+   * they cannot play at all on a tablet.
+   */
+  it("looks past a Hailstorm level to the lesson that really opens it", () => {
+    expect(lessonNumbered(9)!.kind.type).toBe("storm");
+    expect(lockNote(lessonNumbered(10)!)).toBe(
+      "Pass lesson 8 to open this one.",
+    );
+    // Two storms never sit together, but the loop walks rather than steps once
+    // so that a re-cut ladder cannot make this the sentence that lies.
+    expect(lessonNumbered(4)!.kind.type).toBe("storm");
+    expect(lockNote(lessonNumbered(5)!)).toBe(
+      "Pass lesson 3 to open this one.",
+    );
+  });
+
+  it("says something sensible at the bottom of the ladder", () => {
+    // Unreachable: lesson 1 is `next` on a profile with no runs at all, so it
+    // is never locked. A sentence rather than a throw, because the ladder is
+    // data and this is copy.
+    expect(lockNote(lessonNumbered(1)!)).toBe("This one opens as you climb.");
   });
 });

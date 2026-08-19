@@ -137,3 +137,31 @@ export function nextNote(
         : `Next up is lesson ${next.n}: ${next.title}.`,
   };
 }
+
+/**
+ * What opens a lesson that is not open yet (§6.6).
+ *
+ * The rung below it — skipping any Hailstorm level in between, because the
+ * pointer is carried over a storm rather than made to jump it (§8.8), so
+ * clearing lesson 44 is what opens lesson 46 and saying "pass lesson 45" would
+ * send a child at a wave they cannot play on a tablet.
+ *
+ * One sentence, because it is read on a tile as well as in the brief and
+ * ninety tiles all offering the same advice about checkpoints is not advice,
+ * it is wallpaper. The nudge towards the express lane belongs on the screen
+ * where a child is actually stopped, which is the brief.
+ *
+ * A locked lesson always has a rung below it — lesson 1 is `next` on a profile
+ * with no runs at all and can never be locked — but the fallback is written
+ * rather than asserted, because a re-cut ladder is data and this is a sentence,
+ * not a place to throw.
+ */
+export function lockNote(lesson: Lesson): string {
+  let n = lesson.n - 1;
+  while (lessonNumbered(n)?.kind.type === "storm") n -= 1;
+  const below = lessonNumbered(n);
+
+  return below
+    ? `Pass lesson ${below.n} to open this one.`
+    : "This one opens as you climb.";
+}

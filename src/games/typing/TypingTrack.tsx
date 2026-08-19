@@ -26,7 +26,7 @@ import { sfx } from "@/services/sound";
 import { LessonBars } from "./LessonBars";
 import { Passage } from "./Passage";
 import { TypeField } from "./TypeField";
-import { keyboardMode } from "./keyboard/KeyboardSetting";
+import { keyboardFor } from "./keyboard/lessonKeyboard";
 import { LiveKeyboard } from "./keyboard/LiveKeyboard";
 import type {
   CardResult,
@@ -291,26 +291,22 @@ function Track({
   const next = live ? nextChar(deck[index]?.answer ?? "", entry) : null;
 
   /**
-   * How much of the board is on screen: `lesson.keyboard ?? profile.keyboard ??
-   * "guide"`, which is the one line §4.2 asks for.
+   * How much of the board is on screen — §4.2's one line, resolved in the one
+   * place that resolves it (`keyboardFor`).
    *
-   * On the ladder as it stands, the lesson always wins: every one of the
-   * hundred names a mode, so `?? keyboardMode(profile.keyboard)` is free play's
-   * arm — plus the defensive one, for a lesson that ever carries `null`. The
-   * pins run the ladder's whole length, not just its ends, and the reasoning is
-   * clearest there: lesson 1 forces `guide`, because a child who has never seen
-   * a keyboard cannot be asked to guess, and every checkpoint forces `off`,
-   * because a checkpoint that can be passed while reading the answer off the
-   * screen measures nothing. `keyboardLocked` consequently reads the same as
-   * unlocked here — #145, the lesson brief and its keyboard lock, is where an
-   * unlocked lesson seeds the control instead of overriding it and the player
-   * gets the choice back.
+   * Three inputs and the same three the brief showed before the run started: a
+   * locked lesson wins outright, then what the child chose in the brief
+   * (`config.keyboard`, travelling with the run exactly as its words do), then
+   * the lesson's own suggestion, the player's setting and `guide`. Free play
+   * has no lesson and makes no choice, so it lands on the profile's setting and
+   * is untouched by any of it.
    *
-   * The player's half is resolved by the same function that draws the pills on
-   * the setup screen, so the two can't disagree about a profile whose field is
-   * absent — which is every profile made before the setting shipped.
+   * Reading the choice off the config rather than off a prop is what makes it
+   * survive the navigation: `pending` is what the countdown, the save and the
+   * results screen all read, and a mode that lived anywhere else would be gone
+   * by the time this component mounted.
    */
-  const board = lesson?.keyboard ?? keyboardMode(profile.keyboard);
+  const board = keyboardFor(lesson, profile.keyboard, config.keyboard);
 
   if (saveError) {
     return (

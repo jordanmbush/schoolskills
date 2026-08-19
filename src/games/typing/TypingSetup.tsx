@@ -17,8 +17,9 @@ import { ladderProgress } from "@/engine/typing/ladder";
 import { RivalList } from "@/games/race";
 import { sfx } from "@/services/sound";
 import { KeyboardSetting } from "./keyboard/KeyboardSetting";
+import { LessonBrief } from "./LessonBrief";
 import { LessonLadder } from "./LessonLadder";
-import { lessonConfig } from "./lessonRun";
+import { lessonConfig, lessonKey } from "./lessonRun";
 import type { Lesson } from "@/engine/typing/lessons";
 import type { KeyboardMode, TypingConfig } from "@/engine/types";
 
@@ -55,6 +56,17 @@ export default function TypingSetup() {
     wordCount: 30,
   }));
   const [rivalId, setRivalId] = useState<string | null>(null);
+
+  /**
+   * The lesson whose brief is up, or `null` for none (§9).
+   *
+   * A tile no longer starts a run — it opens the door and the brief is what is
+   * written on it. Holding the lesson rather than a boolean is what lets the
+   * brief be mounted per lesson below, which is how the keyboard control gets
+   * seeded afresh each time instead of carrying the last lesson's choice onto
+   * one that suggests something else.
+   */
+  const [briefing, setBriefing] = useState<Lesson | null>(null);
 
   const key = configKey(config);
   const rivals = useMemo(
@@ -108,19 +120,25 @@ export default function TypingSetup() {
   }
 
   /**
-   * Open a lesson: fresh words, no ghost, no rival (§7).
+   * Start the lesson the brief is showing: fresh words, no ghost, no rival
+   * (§7).
    *
    * The same three lines the results screen's "Try again" runs, and
    * deliberately so — a lesson started from a tile and a lesson started from
    * its own results are the same run, filed under the same `configKey`, or a
    * child's best would depend on which button they reached it by.
+   *
+   * `keyboard` is what the child chose in the brief, and it is absent when
+   * they were not offered a choice — a locked lesson hands back nothing rather
+   * than handing back the mode it insisted on, so what is saved with the run
+   * says "chosen" and not merely "shown" (§4.2).
    */
-  function openLesson(lesson: Lesson) {
+  function runLesson(lesson: Lesson, keyboard?: KeyboardMode) {
     sfx.whoosh();
     const seed = randomSeed();
     start({
       profileId: profile!.id,
-      config: lessonConfig(lesson, seed),
+      config: lessonConfig(lesson, seed, keyboard),
       seed,
       ghost: null,
     });
@@ -149,7 +167,23 @@ export default function TypingSetup() {
         </Link>
       </TopBar>
 
-      <LessonLadder progress={progress} onOpen={openLesson} />
+      <LessonLadder progress={progress} onOpen={setBriefing} />
+
+      {/* Keyed by the lesson, so a second brief is a second mount: the
+          keyboard control is seeded from the lesson on mount, and a component
+          held across two openings would show lesson 12's suggestion under
+          lesson 40's title. */}
+      {briefing && (
+        <LessonBrief
+          key={briefing.id}
+          lesson={briefing}
+          progress={progress}
+          best={bestRun(sessionsFor(sessions, profile.id, lessonKey(briefing)))}
+          profileKeyboard={profile.keyboard}
+          onStart={(keyboard) => runLesson(briefing, keyboard)}
+          onClose={() => setBriefing(null)}
+        />
+      )}
 
       <div className="setup__grid">
         <section className="panel anim-rise">

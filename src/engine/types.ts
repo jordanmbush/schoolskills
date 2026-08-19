@@ -124,6 +124,29 @@ export type TypingConfig = {
    * ladder existed is a level and must key exactly as it always has.
    */
   lessonId?: string;
+  /**
+   * How much of the board this run puts on screen, when the child chose it
+   * (docs/typing.md §4.2).
+   *
+   * Absent is the ordinary case and means "nobody chose": free play never sets
+   * it, and a lesson whose keyboard is locked has nothing to record. It is set
+   * by the lesson brief, which seeds its control from `lesson.keyboard` and
+   * lets an unlocked lesson be run with the board turned down — the choice
+   * belongs to the run it was made for, so it travels with the run's config
+   * rather than being written back over the player's own setting.
+   *
+   * Carried in the config rather than in `PendingRace` because the run outlives
+   * the navigation: a lesson passed with the board off is a different thing
+   * from one passed reading the answers, and `eyes-up` (§6.7) is a badge for
+   * exactly that choice. A mode kept in memory would be gone by the time
+   * anything could award it.
+   *
+   * Inert in `configKey` on purpose (`decks/typing.ts#typingConfigKey`) — a
+   * child's best at lesson 7 is their best at lesson 7, and splitting the
+   * record book by how much help was on screen would hide their own record
+   * from them the first time they turned the guide off.
+   */
+  keyboard?: KeyboardMode;
   /** An explicit set, for a drill of the words a player keeps fumbling. */
   words?: string[];
   wordCount: number;

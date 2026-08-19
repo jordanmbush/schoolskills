@@ -25,6 +25,14 @@ import type { KeyboardMode } from "@/engine/types";
  * `keyboard` key at all, and a restored backup can carry a value no version of
  * this app ever wrote. Either one must land on "guide" rather than on nothing
  * selected. `KeyboardSetting.test.tsx` is that test.
+ *
+ * ── Two homes, and only one of them saves ─────────────────────────────────
+ * On the free-play panel this writes straight through to the profile: how much
+ * of the keyboard you need is a fact about the child and should still be true
+ * next week. In the lesson brief it is seeded by the lesson and governs that
+ * run alone (`lessonKeyboard.ts`). The component does not know the difference —
+ * it renders a mode and reports a change — which is what keeps the two screens
+ * showing one control instead of two that look alike.
  */
 
 /**
@@ -47,6 +55,12 @@ const OPTIONS: SegmentedOption<KeyboardMode>[] = [
   { value: "keys", label: "Keys", hint: "Show the board" },
   { value: "guide", label: "Guide", hint: "Show the next key" },
 ];
+
+/** The same three pills with nothing to press, built once rather than per render. */
+const LOCKED: SegmentedOption<KeyboardMode>[] = OPTIONS.map((option) => ({
+  ...option,
+  disabled: true,
+}));
 
 /**
  * What a profile's `keyboard` field actually means, for a field that may hold
@@ -76,6 +90,7 @@ export const keyboardMode = (mode?: KeyboardMode): KeyboardMode =>
 export function KeyboardSetting({
   mode,
   onChange,
+  lockedBecause,
 }: {
   /**
    * `Profile.keyboard` as it comes out of storage — absent on every profile
@@ -85,7 +100,20 @@ export function KeyboardSetting({
    */
   mode?: KeyboardMode;
   onChange: (next: KeyboardMode) => void;
+  /**
+   * Why this run's keyboard cannot be changed, on the lessons that insist
+   * (docs/typing.md §4.2). Absent everywhere else, which is free play and
+   * every unlocked lesson.
+   *
+   * A sentence rather than a `disabled` flag, because a control that can be
+   * greyed out without saying why is a control that will be. The pills still
+   * show which mode the run is in — a lesson that hid them would be deciding
+   * for a child and not telling them what it decided.
+   */
+  lockedBecause?: string | null;
 }) {
+  const locked = Boolean(lockedBecause);
+
   return (
     <div className="control">
       {/* A span, not a `<label>`: the group's accessible name comes from
@@ -96,8 +124,14 @@ export function KeyboardSetting({
         label="Keyboard"
         value={keyboardMode(mode)}
         onChange={onChange}
-        options={OPTIONS}
+        options={locked ? LOCKED : OPTIONS}
       />
+      {/* Under the pills, in reading order, because a disabled radiogroup has
+          no focus stop left to hang a description on — every input in it is
+          `disabled`, so nothing in the group can be tabbed to and told. Plain
+          text after the thing it explains is what a screen reader meets on the
+          way past, and what everyone else reads without looking for it. */}
+      {lockedBecause && <p className="control__why muted">{lockedBecause}</p>}
     </div>
   );
 }
