@@ -2144,6 +2144,7 @@ label.segmented__btn {
      under a thumb mid-run is worse here than in a race — the letters would
      still be falling somewhere off screen. */
   height: calc(100dvh - var(--ad-h));
+  /* …while the storm is falling. Lifted below, once it has stopped. */
   overflow: hidden;
 
   display: grid;
@@ -2161,6 +2162,19 @@ label.segmented__btn {
   grid-template-rows: minmax(0, 1fr) auto;
   gap: clamp(0.35rem, 1.5vh, 1rem);
   padding: clamp(0.4rem, 1.5vh, 1rem) clamp(0.5rem, 2vw, 1rem);
+}
+
+/* A field that scrolls under a thumb mid-run is the hazard above; a field
+   that cannot scroll once the run is over is a different one, because what is
+   in the board's track by then is three buttons (`.storm__over`). Measured on
+   a 740×360 landscape phone, the ending wants about 280px where the five rows
+   of keycaps it replaced took 180 — and the difference is where the only way
+   off this screen is. So the rule is lifted exactly when there is nothing left
+   falling to lose track of, which is what `:has` asks. Nothing scrolls at any
+   viewport that fits, and a browser too old to answer `:has` keeps today's
+   behaviour rather than getting a worse one. */
+.storm:has(.storm__over) {
+  overflow-y: auto;
 }
 
 /* Fifteen key units of sky, centred over fifteen key units of board, so a
@@ -2291,13 +2305,12 @@ label.segmented__btn {
   position: absolute;
   inset: 0;
 
-  /* Two columns and two rows: the score and the multiplier along the top, and
-     the payout centred in what is left once the storm is over. `1fr` on the
-     second row rather than `auto` is what gives the XP line somewhere to be
-     centred IN — with two auto rows it would sit just under the score. */
+  /* Two columns and one row: the score at one end and the multiplier at the
+     other, and nothing else — what a run PAID is the ending screen's to say
+     (`StormOver`), where there is room to say it beside the finger that let
+     the storm through. */
   display: grid;
   grid-template-columns: 1fr 1fr;
-  grid-template-rows: auto 1fr;
   align-items: start;
   padding: calc(var(--key) * 0.12) calc(var(--key) * 0.1);
 
@@ -2362,18 +2375,6 @@ label.segmented__btn {
 .storm__combo[data-hot] {
   scale: 1.12;
   color: var(--lime);
-}
-
-/* What the run paid the profile, once it is over (§8.6). Centred in the sky
-   the storm has just emptied, in `--chalk` rather than the HUD's dim, because
-   at that moment it is the only thing on the field worth reading. STM07 puts a
-   real ending in front of a child; until then this is the payout. */
-.storm__xp {
-  grid-column: 1 / -1;
-  place-self: center;
-
-  font-size: calc(var(--key) * 0.7);
-  color: var(--chalk);
 }
 
 /* ── Hailstorm: the shield ───────────────────────────────────────────────
@@ -2526,38 +2527,159 @@ label.segmented__btn {
   }
 }
 
+/* ── Hailstorm: the ending ───────────────────────────────────────────────
+   What the storm came to, and what to do about it (docs/typing.md §8.5,
+   decision 47).
+
+   **It stands where the board stood.** `.storm` is two tracks — a sky that
+   gives and a board that never does — and this takes the board's, because the
+   board is the gun and the gun is dead. That is what keeps the sky above it
+   whole: the hail frozen where the clock stopped, and the shield with the
+   hole still open under the finger this panel is naming. A panel drawn OVER
+   the sky would have covered the one picture that explains its own sentence,
+   and one added as a third row would have taken the space out of the sky
+   instead — which on a short viewport is the whole of it (§8.2).
+
+   The heading, the sentence and the keys line are in `--key` units like
+   everything else on this screen, so they shrink with the board they replaced
+   rather than against it. The two rows under them do not: the figures are the
+   site's own `.stat`, at the size a score is drawn at on every other results
+   screen, and the buttons are the kit's at the kit's hit targets — the
+   youngest player is five, and a control that shrinks with the viewport is
+   the one thing here that must not. So the panel does cost the sky a little
+   more than the board did — about 45px of it at 1280×380, measured — and the
+   `:has` rule up at `.storm` is what keeps that from ever becoming a button
+   nobody can reach.
+
+   Colour says nothing about how well the run went. There is no `--flare` on a
+   loss and no `--lime` on a win: the two endings are the same panel with the
+   same four figures in the same order, because a child who has just lost is
+   reading it and nothing here is a mark out of ten (§8.5). The one hue in it
+   is the named finger's own, which is identity and not judgement — the same
+   hue as the block that broke and the keys under it. `--lime` appears exactly
+   once, on the XP, where it means what it means on every other results screen
+   on this site: this is what you earned, and it could not have gone down.  */
+
+.storm__over {
+  /* Overwritten by the eight below when a finger is named. A cleared wave
+     names none, and the neutral is what the keys line and the finger word
+     fall back to — neither of which a cleared wave draws. */
+  --finger: var(--chalk-dim);
+
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: calc(var(--key) * 0.22);
+  text-align: center;
+}
+
+/* The words are held to fifteen key units — the width of the sky above them
+   and of the board they replaced, which is the column everything else in this
+   game is read in. The panel itself is NOT: it is the full width of the
+   field, so that the three buttons at the bottom of it sit on one row wherever
+   there is room for one. That is worth more than the alignment, and it is
+   worth it on exactly the viewport where it is hardest — three buttons
+   wrapping to two rows is sixty-five more pixels out of the sky, and at
+   1280×380 there are about fifty of it left to take. */
+.storm__lede,
+.storm__keys {
+  max-width: calc(15 * var(--key));
+}
+
+.storm__verdict {
+  font-size: calc(var(--key) * 0.95);
+  color: var(--chalk);
+}
+
+.storm__lede {
+  font-size: calc(var(--key) * 0.55);
+  line-height: 1.25;
+  color: var(--chalk-soft);
+}
+
+/* The finger, in the finger's own colour — see the eight below. Bold because
+   it is the subject of the sentence and the thing a child is meant to go and
+   look at on their own hand. */
+.storm__finger {
+  font-weight: 700;
+  color: var(--finger);
+}
+
+.storm__keys {
+  font-size: calc(var(--key) * 0.46);
+  color: var(--chalk-dim);
+}
+
+/* The keys themselves, in the same hue as the finger that owns them and
+   spaced out, because they are read one at a time rather than as a word. */
+.storm__keys .u-mono {
+  letter-spacing: 0.22em;
+  color: var(--finger);
+}
+
+/* The run's four figures, in one row while there is room for one. The same
+   `.stat` the record book and every results screen use, so a score here and a
+   score there are the same size and the same shape of thing. */
+.storm__stats {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--gap-2) var(--gap-5);
+}
+
+.storm__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--gap-2);
+}
+
 /* The same eight hues the keycaps carry, on the same closed set of fingers —
    see the board's block above, and tokens.css for why none of them is one of
    the telemetry five. There is no thumb segment: nothing falls on the space
-   bar (§8.3). */
-.storm__zone[data-finger="l-index"] {
+   bar (§8.3).
+
+   The ending panel is on this list because it NAMES one of the eight, and the
+   name has to be the colour of the block that broke and of the keys under it:
+   "your right ring finger" in steel, over a steel socket, over steel keycaps,
+   is one sentence said three ways. It reads `--finger` and never a token, so
+   there is no ninth place a hue could be picked. */
+.storm__zone[data-finger="l-index"],
+.storm__over[data-finger="l-index"] {
   --finger: var(--finger-l-index);
 }
 
-.storm__zone[data-finger="l-middle"] {
+.storm__zone[data-finger="l-middle"],
+.storm__over[data-finger="l-middle"] {
   --finger: var(--finger-l-middle);
 }
 
-.storm__zone[data-finger="l-ring"] {
+.storm__zone[data-finger="l-ring"],
+.storm__over[data-finger="l-ring"] {
   --finger: var(--finger-l-ring);
 }
 
-.storm__zone[data-finger="l-pinky"] {
+.storm__zone[data-finger="l-pinky"],
+.storm__over[data-finger="l-pinky"] {
   --finger: var(--finger-l-pinky);
 }
 
-.storm__zone[data-finger="r-index"] {
+.storm__zone[data-finger="r-index"],
+.storm__over[data-finger="r-index"] {
   --finger: var(--finger-r-index);
 }
 
-.storm__zone[data-finger="r-middle"] {
+.storm__zone[data-finger="r-middle"],
+.storm__over[data-finger="r-middle"] {
   --finger: var(--finger-r-middle);
 }
 
-.storm__zone[data-finger="r-ring"] {
+.storm__zone[data-finger="r-ring"],
+.storm__over[data-finger="r-ring"] {
   --finger: var(--finger-r-ring);
 }
 
-.storm__zone[data-finger="r-pinky"] {
+.storm__zone[data-finger="r-pinky"],
+.storm__over[data-finger="r-pinky"] {
   --finger: var(--finger-r-pinky);
 }

@@ -109,10 +109,12 @@ describe("StormHud", () => {
     expect(hud(played(1))).not.toContain("data-stone");
   });
 
-  it("says what the run paid only once it is over", () => {
-    // XP is computed once at the end and floored at zero (§8.6), so there is
-    // nothing to show mid-run — and a live XP counter would be a second score
-    // beside the first, moving on different rules.
+  it("says nothing about XP, in a run or at the end of one", () => {
+    // The payout is the ending screen's line now (`StormOver`), where there is
+    // room to put it beside the finger that let the storm through. Here it
+    // would be a second number moving on different rules from the score beside
+    // it — XP is computed once at the end and floored at zero (§8.6), and the
+    // HUD is the run's own running total.
     const running = played(2);
     expect(running.ending).toBeNull();
     expect(readOut(running)).not.toContain("XP");
@@ -120,19 +122,6 @@ describe("StormHud", () => {
     const cleared = played(4, 0, only("f", { count: 2 }));
     expect(cleared.ending).toEqual({ kind: "cleared" });
     expect(stormXp(cleared)).toBeGreaterThan(0);
-    expect(readOut(cleared)).toContain(`+${stormXp(cleared)} XP`);
-  });
-
-  it("pays nothing rather than something negative on a run that went badly", () => {
-    // The pair §8.6 exists to keep apart, on one screen: a score deep in the
-    // red, and a payout of zero. A child's level does not go backwards because
-    // they had a bad five minutes.
-    // Six wrong keys, and then the one letter of the wave through a shield
-    // that was never there — a run that ends with nothing shot at all.
-    const beaten = tick(played(0, 6, only("f", { count: 1, shield: 0 })), 5000);
-
-    expect(beaten.ending?.kind).toBe("breached");
-    expect(beaten.score).toBeLessThan(0);
-    expect(readOut(beaten)).toContain("+0 XP");
+    expect(readOut(cleared), "not even once there is one").not.toContain("XP");
   });
 });

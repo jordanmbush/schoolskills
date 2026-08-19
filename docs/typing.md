@@ -1121,6 +1121,49 @@ the run ends, the screen says which finger let it through, and offers a drill
 of exactly the keys that zone covers — which is the trouble-facts machinery
 already in `records.ts`, pointed at a different question.
 
+**The ending is a screen, and it stands where the board stood** (decision 47).
+`.storm` is two tracks — a sky that gives and a board that never does — so the
+panel takes the board's, because the board is the gun and the gun is dead. That
+is what leaves the sky whole: the hail frozen where the clock stopped, and the
+shield with the hole still open under the finger being named. Drawn over the
+sky it would have covered the one picture that explains its own sentence, and
+added as a third row it would have taken the space out of the sky instead —
+which on a short viewport is the whole of it (§8.2). The gun stops listening
+with the run for the same reason: `Space` and `Enter` are keys this board
+carries, and a dead gun that went on swallowing them would leave a child on the
+keyboard unable to press the three buttons that replaced it.
+
+What it says is decided in `stormReport(state)` and rendered in `StormOver`,
+which holds no rules at all:
+
+- **Which finger, and how many it let through.** The finger is copied off the
+  letter at the moment it got past (`StormEnding.breached`), and the count is
+  `zoneTally` — a filter over `resolved`, never over `hasLanded`. After a
+  breach the clock stops at the fatal `landMs`, so a letter from a higher index
+  tying that exact millisecond is left unresolved while the clock reads it as
+  landed; counting the clock would over-report what got through, on the one
+  screen where the number is the whole point.
+- **The keys to practise.** That finger's characters, out of `spec.keys` rather
+  than off the whole board: a child who died at lesson 13 has met perhaps two
+  of the right ring finger's keys, and a drill of `9` and `(` would be a
+  practice deck of keys nobody has taught them. It can never be empty for a
+  finger that just breached — the letter that got through came out of that same
+  pool wearing that same finger.
+- **What the run came to.** Shield left out of the eight-of-`shield` it started
+  with, the longest streak (recovered from `LetterOutcome.combo`, which only
+  ever climbs by one), the score, and the XP.
+
+**No score-shaming, and that is a criterion rather than a preference.** A run
+that ended early is "the storm got through", not a mark. The two endings are
+the same panel, in the same order, with the same four figures — only the
+heading and what is offered next differ — so nothing in the arrangement, the
+ordering or the colour can be read as a grade for the child rather than a
+report of what the weather did. The one hue on it is the named finger's own,
+which is identity and not judgement: the same colour as the block that broke
+and the keys under it. `--lime` appears exactly once, on the XP, where it means
+what it means everywhere else on this site — this is what you earned, and it
+could not have gone down (§8.6).
+
 **A zone is its finger's home-row span** (`FINGER_ZONES` in
 `engine/keyboard.ts`, decision 41). That is a choice between four rows rather
 than a derivation: every row divides into eight runs — no row hands a key back
@@ -1214,10 +1257,12 @@ say what just happened.
 (decision 43). That needed deciding rather than inheriting: with nothing in the
 air there is no expected character, and `useKeyEcho` marks nothing wrong when
 nothing is expected — so every key would have lit `--lime` for "that was
-right" while the score fell by ten. The field passes `emptyIsWrong` while the
-gun is live, which turns the echo's "nothing to judge" into "nothing that could
-be right", and every key flares. Once the run is over the flag goes off with
-the gun: `aimedAt` is null for both reasons, and this is what tells them apart.
+right" while the score fell by ten. The field passes `emptyIsWrong`, which
+turns the echo's "nothing to judge" into "nothing that could be right", and
+every key flares. It is unconditional because the board is: a run with an
+ending has handed the board's place to the ending screen (§8.5, decision 47),
+so there is no keyboard left to mark a child's keys against a letter nothing
+can shoot.
 
 **Key auto-repeat is not a shot** (decision 44). A held key repeats about
 thirty times a second, and a gun that fired on it would let a child spray by
@@ -1231,8 +1276,9 @@ The HUD lives **inside the sky**, absolutely positioned over it and painted
 behind the stones (decision 45). `.storm` is a two-track grid whose only
 flexible track is the sky, and the sky is down to a few dozen pixels on a short
 viewport (§8.2) — so a HUD row would come out of the one thing with nothing
-left to give. What a run paid is shown there too, once it is over, until STM07
-gives the ending a screen of its own.
+left to give. It carries the two numbers a live run keeps and no more: what a
+run PAID is the ending screen's line (§8.5), where there is room to put it
+beside the finger that let the storm through.
 
 ### 8.7 · A run is a `Session`
 
@@ -1400,7 +1446,8 @@ syllabus, and it is the one piece of UI in this epic worth spending real design
 time on.
 
 Component budget: `LessonLadder`, `LessonTile`, `LessonBrief`, `PassBars`,
-`Keyboard`, `StormRun`, `StormField`, `StormShield`. All under the 300-line cap;
+`Keyboard`, `StormRun`, `StormField`, `StormShield`, `StormOver`. All under the
+300-line cap;
 the ladder is the only one that will come close, and the brief splitting out is
 why it won't. `StormRun` is the route and `StormField` is the screen it draws:
 the field is a pure function of one `StormState`, so the wave, the clock and
@@ -1480,6 +1527,7 @@ first when either optional field is added.
 | 44  | Key auto-repeat is not a shot                            | A held key is one stroke, not thirty a second of spraying, drained score and flashing red                   |
 | 45  | The HUD is drawn inside the sky, not as a row of its own | `.storm`'s only flexible track is the sky, and on a short viewport it has nothing left to give              |
 | 46  | A wrong key costs score; a letter through costs shield   | One failure, one cost — the landing has already taken the thing that ends runs                              |
+| 47  | The ending stands where the board did                    | The gun is dead, and the sky it leaves whole is the shield with the hole in it that the sentence is about   |
 
 ---
 

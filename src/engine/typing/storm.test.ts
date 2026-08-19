@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 
+import { buildDeck, buildDrill, isTyping } from "@/engine/decks";
+import { typingMode } from "@/engine/decks/typing";
 import { keyX, strokeFor } from "@/engine/keyboard";
 import { cardXp, stormXp } from "@/engine/progress";
 import { unlockedAt } from "./keys";
@@ -11,8 +13,11 @@ import {
   isAirborne,
   progressAt,
   startStorm,
+  stormReport,
   targetIndex,
   tick,
+  zoneKeys,
+  zoneTally,
 } from "./storm";
 import type { Shield, StormLetter, StormState, Wave, WaveSpec } from "./storm";
 
@@ -1240,5 +1245,242 @@ describe("the rules are pure, and they do not mutate what they are given", () =>
     // same: a reducer that mutated its input would have spent it.
     const again = to(fire(fire(to(to(start, 100), 300), "KeyJ"), "KeyZ"), 1000);
     expect(again).toEqual(ended);
+  });
+});
+
+/* ═══ What a run came to (§8.5, STM07) ═══════════════════════════════════════
+ *
+ * The ending screen is a rendering of these four answers and nothing else, so
+ * this is where "your right ring finger let three through" is decided to be
+ * true. Every one of them is a question about a run that has stopped, which is
+ * a state a test can write down and a browser can only be waited for.
+ */
+
+describe("the per-zone tally the ending is named from", () => {
+  it("counts what landed on each zone, and nothing that was shot", () => {
+    const letters = [at("f", 0, 100), at("j", 0, 200), at("f", 300, 100)];
+    const state = fire(to(runOf(letters, { shield: 3 }), 350), "KeyF");
+
+    expect(state.resolved.map((r) => r?.outcome)).toEqual([
+      "landed",
+      "landed",
+      "shot",
+    ]);
+    expect(zoneTally(state)["l-index"].hit, "the f that landed").toBe(1);
+    expect(zoneTally(state)["r-index"].hit).toBe(1);
+    expect(
+      SHIELD_FINGERS.reduce((sum, f) => sum + zoneTally(state)[f].hit, 0),
+    ).toBe(2);
+  });
+
+  it("counts the letter that ended the run, hole and all", () => {
+    const dead = to(
+      runOf([at("f", 0, 100), at("f", 200, 100)], { shield: 1 }),
+      400,
+    );
+    expect(dead.ending?.kind).toBe("breached");
+    // Two got past this finger: one the shield paid for, and one it could not.
+    // The fatal letter is the story, not an exception to it.
+    expect(zoneTally(dead)["l-index"]).toEqual({ hit: 2, mend: 0 });
+  });
+
+  it("counts `resolved`, and never the clock", () => {
+    /*
+     * The case `tick` leaves behind, and the reason this is a tally over
+     * outcomes rather than a filter on `hasLanded`.
+     *
+     * The run ends at 300ms on `l-index`, and the clock stops THERE rather
+     * than at the end of the tick. A letter from a higher index landing on
+     * that same millisecond is left unresolved — but `hasLanded(letter, 300)`
+     * reads true of it, because 300 is exactly its `landMs`. A screen that
+     * counted the clock would report a letter through a zone the storm never
+     * reached, on the one screen where the number is the whole point.
+     */
+    const letters = [at("f", 0, 100), at("f", 100, 200), at("j", 0, 300)];
+    const dead = tick(runOf(letters, { shield: 1 }), 60_000);
+
+    expect(dead.ending).toEqual({
+      kind: "breached",
+      finger: "l-index",
+      index: 1,
+    });
+    expect(dead.timeMs).toBe(300);
+    expect(hasLanded(letters[2], dead.timeMs), "by the clock, it landed").toBe(
+      true,
+    );
+    expect(dead.resolved[2], "by the run, it never did").toBeNull();
+    expect(zoneTally(dead)["r-index"].hit, "so nothing got through it").toBe(0);
+    expect(stormReport(dead)?.through, "two got through, not three").toBe(2);
+  });
+});
+
+describe("the keys a zone covers", () => {
+  const POOL = [...unlockedAt(39)];
+
+  it("is every character of the wave's own pool that finger types", () => {
+    const wave = buildWave(spec({ keys: POOL }), 7);
+
+    for (const finger of SHIELD_FINGERS) {
+      const keys = zoneKeys(wave, finger);
+      // Every key is that finger's…
+      expect(keys.every((ch) => strokeFor(ch)?.finger === finger)).toBe(true);
+      // …and every one of that finger's in the pool is there.
+      expect(keys).toEqual(
+        POOL.filter((ch) => strokeFor(ch)?.finger === finger),
+      );
+    }
+
+    // Between them the eight cover the whole pool but for the space bar, which
+    // is the thumb's and has no zone to break (§8.5).
+    const all = SHIELD_FINGERS.flatMap((finger) => zoneKeys(wave, finger));
+    expect(new Set(all).size, "no character in two zones").toBe(all.length);
+    expect(all.sort().join("")).toBe(
+      POOL.filter((ch) => strokeFor(ch)?.finger !== "thumb")
+        .sort()
+        .join(""),
+    );
+  });
+
+  it("drops a repeat, and a character this board cannot type", () => {
+    // A pool may weight a character by listing it twice (`WaveSpec.keys`), and
+    // may carry one the layout has no key for — a wave drops both silently, so
+    // a drill built off the same pool has to as well or it would ask a child
+    // for a curly quote.
+    const wave = buildWave(spec({ keys: ["f", "f", "“", "v", " "] }), 3);
+    expect(zoneKeys(wave, "l-index")).toEqual(["f", "v"]);
+  });
+
+  it("always has something in it for the finger that just breached", () => {
+    // The letter that got through came out of this pool wearing this finger,
+    // so the drill offered at the worst moment can never be an empty deck.
+    const wave = buildWave(spec({ keys: POOL, count: 40, shield: 1 }), 42);
+    const dead = tick(startStorm(wave), 600_000);
+
+    expect(dead.ending?.kind).toBe("breached");
+    const report = stormReport(dead);
+    expect(report?.breach?.keys.length).toBeGreaterThan(0);
+    expect(report?.breach?.keys).toContain(
+      wave.letters[(dead.ending as { index: number }).index].ch,
+    );
+  });
+});
+
+describe("the report the ending screen reads", () => {
+  it("is nothing at all while the run is live", () => {
+    const running = to(runOf([at("f", 0, 1000)], { shield: 3 }), 400);
+    expect(running.ending).toBeNull();
+    expect(stormReport(running)).toBeNull();
+  });
+
+  it("names the finger that let it through, and how many it let through", () => {
+    // The acceptance criterion, in one assertion: "your left index finger let
+    // three through" is these two fields and nothing else.
+    const letters = [
+      at("f", 0, 100),
+      at("j", 100, 100),
+      at("v", 200, 100),
+      at("f", 300, 100),
+    ];
+    const dead = tick(runOf(letters, { shield: 2 }), 60_000);
+    const report = stormReport(dead);
+
+    expect(report?.ending).toEqual({
+      kind: "breached",
+      finger: "l-index",
+      index: 3,
+    });
+    expect(report?.breach?.finger).toBe("l-index");
+    expect(report?.breach?.through, "f, v and f again").toBe(3);
+    expect(report?.through, "the j as well").toBe(4);
+    // Sixteen points of shield, three of them spent — the fatal letter took
+    // nothing, because there was nothing left in that zone to take.
+    expect(report?.shieldFull).toBe(16);
+    expect(report?.shieldLeft).toBe(13);
+  });
+
+  it("has no breach, and a shield, on a wave that was cleared", () => {
+    const letters = [at("f", 0, 1000), at("j", 400, 1000)];
+    const cleared = fire(
+      to(fire(to(runOf(letters, { shield: 3 }), 100), "KeyF"), 500),
+      "KeyJ",
+    );
+    const report = stormReport(cleared);
+
+    expect(report?.ending).toEqual({ kind: "cleared" });
+    expect(report?.breach).toBeNull();
+    expect(report?.through, "nothing got past at all").toBe(0);
+    expect(report?.shieldLeft).toBe(report?.shieldFull);
+    expect(report?.bestCombo).toBe(2);
+  });
+
+  it("reports a shield that was hit and mended as hit, not as whole", () => {
+    // `shieldLeft` alone cannot tell "nothing ever landed" from "one landed
+    // and a repair put it back", and the two are not the same run.
+    const letters = [at("f", 0, 100), at("j", 200, 1000)];
+    const mended = fire(
+      to(runOf(letters, { shield: 2, repairAt: 1 }), 300),
+      "KeyJ",
+    );
+    const report = stormReport(tick(mended, 60_000));
+
+    expect(report?.shieldLeft, "the repair filled it back up").toBe(
+      report?.shieldFull,
+    );
+    expect(report?.through, "and one still got through").toBe(1);
+  });
+
+  it("remembers the longest streak, not the one it ended on", () => {
+    const letters = [
+      at("f", 0, 4000),
+      at("j", 100, 4000),
+      at("k", 200, 4000),
+      at("d", 300, 4000),
+    ];
+    let state = to(runOf(letters, { shield: 3 }), 400);
+    for (const code of ["KeyF", "KeyJ", "KeyK"]) state = fire(state, code);
+    expect(state.combo).toBe(3);
+
+    // A wrong key takes the streak back to nothing, and the last letter goes
+    // in on a streak of one — but three in a row happened, and that is what a
+    // child is being told about.
+    state = fire(fire(state, "KeyZ"), "KeyD");
+    expect(state.combo).toBe(1);
+    expect(stormReport(state)?.bestCombo).toBe(3);
+  });
+
+  it("pays a run that never hit anything a best combo of nothing", () => {
+    const dead = to(runOf([at("f", 0, 100)], { shield: 0 }), 100);
+    expect(stormReport(dead)?.bestCombo).toBe(0);
+    expect(stormXp(dead), "and no XP either").toBe(0);
+  });
+});
+
+describe("the drill a hole earns", () => {
+  it("is exactly that zone's keys, through the door every drill uses", () => {
+    /*
+     * The composition `StormOver` makes, pinned where the rules are: a zone's
+     * keys are fact ids, `buildDrill` routes them on the mode the run files
+     * under, and what comes back is a typing config carrying those characters
+     * and nothing else. Same call the record book makes for the facts a child
+     * keeps missing (§8.5) — the question is different, the machinery is not.
+     */
+    const wave = buildWave(spec({ keys: [...unlockedAt(39)], shield: 1 }), 42);
+    const dead = tick(startStorm(wave), 600_000);
+    const keys = stormReport(dead)!.breach!.keys;
+
+    const drill = buildDrill(keys, typingMode("L39"), {
+      inputMode: "type",
+      timeLimitMs: null,
+    });
+
+    expect(isTyping(drill) && drill.words).toEqual(keys);
+    // A passage long enough to be worth running, built out of nothing but
+    // those keys — the deck layer's rule, and this is what it comes to.
+    expect(isTyping(drill) && drill.wordCount).toBeGreaterThanOrEqual(10);
+    const cards = buildDeck(drill, 1);
+    expect(cards.length).toBe(isTyping(drill) ? drill.wordCount : 0);
+    expect([...new Set(cards.map((card) => card.answer))].sort()).toEqual(
+      [...keys].sort(),
+    );
   });
 });

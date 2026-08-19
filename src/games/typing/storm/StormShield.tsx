@@ -1,7 +1,7 @@
 import { FINGER_ZONES } from "@/engine/keyboard";
-import { SHIELD_FINGERS } from "@/engine/typing/storm";
+import { SHIELD_FINGERS, zoneTally } from "@/engine/typing/storm";
 
-import type { ShieldFinger, StormState } from "@/engine/typing/storm";
+import type { StormState } from "@/engine/typing/storm";
 import type { CSSProperties } from "react";
 
 /**
@@ -49,60 +49,11 @@ import type { CSSProperties } from "react";
  * `StormState` asks of anything wanting a per-finger tally: `resolved` says
  * what landed and where, and a zone's hit points say what is left, so the only
  * unknown is how many repairs went in and that falls out of the other two.
+ * `zoneTally` does that arithmetic, and it is in the engine beside the reducer
+ * rather than here — the ending screen names a finger out of the same numbers
+ * ("your right ring finger let three through", §8.5), and a view that owned
+ * them would have made a second screen import a component to count landings.
  */
-
-/** What one zone has been through: the two things worth drawing an event for. */
-export type ZoneTally = {
-  /** Letters that reached this zone. Each is one damage tint. */
-  readonly hit: number;
-  /** Points repaired back into it (§8.5). Each is one mend pulse. */
-  readonly mend: number;
-};
-
-/**
- * The eight zones' histories, from the run itself.
- *
- * `hit` is a filter over `resolved` — the tally `StormState` deliberately does
- * not keep, because a second copy of it is a second thing to hold in step
- * sixty times a second.
- *
- * `mend` is arithmetic over the same: a zone's hit points are
- * `spec.shield - absorbed + repairs` by construction, so solving for repairs
- * needs nothing that is not already on screen. **Absorbed, not landed**: the
- * letter that ends a run lands on a zone that is already at nothing and takes
- * no point off it (`tick` breaks before the decrement), so counting it would
- * read as a phantom repair on the frame a child dies. It still tints — it is
- * the loudest thing that ever gets through — which is why the two counters are
- * separate rather than one.
- */
-export function zoneTally(state: StormState): Record<ShieldFinger, ZoneTally> {
-  const full = state.wave.spec.shield;
-  const fatal = state.ending?.kind === "breached" ? state.ending.index : -1;
-
-  const hit = {} as Record<ShieldFinger, number>;
-  const absorbed = {} as Record<ShieldFinger, number>;
-  for (const finger of SHIELD_FINGERS) {
-    hit[finger] = 0;
-    absorbed[finger] = 0;
-  }
-
-  state.resolved.forEach((outcome, index) => {
-    if (outcome?.outcome !== "landed") return;
-    const { finger } = state.wave.letters[index];
-    hit[finger] += 1;
-    if (index !== fatal) absorbed[finger] += 1;
-  });
-
-  return Object.fromEntries(
-    SHIELD_FINGERS.map((finger) => [
-      finger,
-      {
-        hit: hit[finger],
-        mend: state.shield[finger] + absorbed[finger] - full,
-      },
-    ]),
-  ) as Record<ShieldFinger, ZoneTally>;
-}
 
 /**
  * The shield, as markup. A pure function of one `StormState`, like the rest of

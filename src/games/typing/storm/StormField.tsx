@@ -99,10 +99,16 @@ export function isDrawn(state: StormState, index: number): boolean {
  * The `ending` guard is the whole reason this is a function. `targetIndex`
  * deliberately does not read it: the reducer's question is "which letter is
  * lowest", not "is this run still alive", and a run that ended mid-wave still
- * has letters in the air for it to answer with. So a screen that draws
- * anything off that index has to guard for itself, and this is the screen —
- * without it, the board would go on flaring `--flare` at a child whose run was
- * already over, marking their keys against a letter nothing can shoot.
+ * has letters in the air for it to answer with — frozen where the clock
+ * stopped, which is exactly what the ending screen leaves on show. So
+ * anything drawn off that index has to guard for itself, and this is where
+ * that guard lives for the whole screen.
+ *
+ * The board is no longer the caller that needs it: a run with an ending hands
+ * the board's place to `over` (below), so there is no keyboard left to mark a
+ * child's keys against a letter nothing can shoot. It is still the honest
+ * answer to "what is the gun on", which is a question `redrawn` asks on every
+ * frame and the next screen to ask will be asking of a run that may be over.
  */
 export function aimedAt(state: StormState): string | null {
   if (state.ending !== null) return null;
@@ -118,10 +124,25 @@ export function aimedAt(state: StormState): string | null {
 export function StormField({
   state,
   skyRef,
+  over,
 }: {
   state: StormState;
   /** Where `useStormClock` writes the fall, frame by frame. */
   skyRef: React.RefObject<HTMLDivElement | null>;
+  /**
+   * What stands where the board does once the run is over (§8.5, STM07).
+   *
+   * The board is the gun, so it goes when the gun does — and the ending takes
+   * its track rather than being drawn over the sky, which leaves the hail
+   * frozen where it stopped and the hole still open under the finger that let
+   * it through. The panel itself is the route's, because everything it offers
+   * is navigation: a drill, a retry, the way out.
+   *
+   * WHEN it appears is decided here and not by the caller, off the same
+   * `ending` the gun dies on — one rule, in the file that draws both halves of
+   * it.
+   */
+  over?: React.ReactNode;
 }) {
   return (
     <main className="storm">
@@ -179,19 +200,21 @@ export function StormField({
       </div>
 
       {/*
-        `emptyIsWrong` while the run is live, which is the honest answer to
-        firing at an empty sky (§8.4, decision 43). The reducer charges that
-        stroke `MISS_POINTS` and breaks the streak, so the board cannot be
-        allowed to light it `--lime` for "that was right" — with nothing in the
-        air there is nothing that could be right, and every key flares. Once
-        the run is over the gun is dead and so is the marking: `aimedAt` is
-        null for both reasons, and this is what tells them apart.
+        The board while the gun is live, and the ending in its place afterwards
+        (see `over`). `emptyIsWrong` is the honest answer to firing at an empty
+        sky (§8.4, decision 43): the reducer charges that stroke `MISS_POINTS`
+        and breaks the streak, so the board cannot be allowed to light it
+        `--lime` for "that was right" — with nothing in the air there is
+        nothing that could be right, and every key flares. It is `true`
+        wherever this is drawn at all, because this is drawn while the run is
+        live and only then; `aimedAt` is what goes null on the last letter of a
+        wave that is still being played.
       */}
-      <LiveKeyboard
-        mode="keys"
-        next={aimedAt(state)}
-        emptyIsWrong={state.ending === null}
-      />
+      {state.ending === null ? (
+        <LiveKeyboard mode="keys" next={aimedAt(state)} emptyIsWrong />
+      ) : (
+        over
+      )}
     </main>
   );
 }
