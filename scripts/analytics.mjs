@@ -37,6 +37,8 @@ import { existsSync, mkdirSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
+import { awsAuthHint, awsIdentityLabel, awsProfileArgs } from "./aws.mjs";
+
 // Temp, deliberately. See the header: nothing this produces is kept, and
 // writing into the repo is what this stopped doing.
 const OUT = join(tmpdir(), "schoolskills-counts.json");
@@ -44,7 +46,6 @@ const ROLLUP = "scripts/rollup-analytics.mjs";
 // Stable rather than a fresh mkdtemp: `aws s3 sync` is incremental, so keeping
 // the directory between runs turns the second run into a no-op download.
 const LOGS = join(tmpdir(), "schoolskills-cflogs");
-const PROFILE = process.env.AWS_PROFILE ?? "schoolskills";
 
 const argv = process.argv.slice(2);
 const flag = (name) => argv.includes(`--${name}`);
@@ -69,15 +70,14 @@ function bucket() {
       "Account",
       "--output",
       "text",
-      "--profile",
-      PROFILE,
+      ...awsProfileArgs(),
     ]).trim();
     return `schoolskills-access-logs-${account}`;
   } catch (error) {
     const detail = String(error.stderr ?? error.message).trim();
     throw new Error(
-      `Could not reach AWS as profile "${PROFILE}".\n${detail}\n\n` +
-        `If the session has expired: aws sso login --profile ${PROFILE}`,
+      `Could not reach AWS as ${awsIdentityLabel()}.\n${detail}\n\n` +
+        awsAuthHint(),
       { cause: error },
     );
   }
@@ -92,8 +92,7 @@ function sync() {
     "sync",
     `s3://${name}/cf/`,
     LOGS,
-    "--profile",
-    PROFILE,
+    ...awsProfileArgs(),
     "--no-progress",
     "--only-show-errors",
   ]);

@@ -57,6 +57,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 
+import { awsAuthHint, awsIdentityLabel, awsProfileArgs } from "./aws.mjs";
 import {
   ARTIFACT,
   MAGIC,
@@ -106,7 +107,6 @@ const SOURCES = {
 };
 
 const DOWNLOADS = join(tmpdir(), "schoolskills-geoip-src");
-const PROFILE = process.env.AWS_PROFILE ?? "schoolskills";
 
 const run = (cmd, args) =>
   execFileSync(cmd, args, {
@@ -498,16 +498,30 @@ async function main({ dry }) {
     return;
   }
 
-  const account = run("aws", [
-    "sts",
-    "get-caller-identity",
-    "--query",
-    "Account",
-    "--output",
-    "text",
-    "--profile",
-    PROFILE,
-  ]).trim();
+  let account;
+  try {
+    account = run("aws", [
+      "sts",
+      "get-caller-identity",
+      "--query",
+      "Account",
+      "--output",
+      "text",
+      ...awsProfileArgs(),
+    ]).trim();
+  } catch (error) {
+    // Named, rather than left as a raw execFileSync dump. The build takes
+    // minutes and has already written a good artifact by this point; whoever
+    // reads the failed job needs to know it fell over at the upload and which
+    // credentials it was using, not to reverse-engineer that from a stack.
+    throw new Error(
+      `Built the artifact, but could not reach AWS as ${awsIdentityLabel()} to upload it.\n` +
+        `${String(error.stderr ?? error.message).trim()}\n` +
+        awsAuthHint(),
+      { cause: error },
+    );
+  }
+
   const target = `s3://schoolskills-access-logs-${account}/geoip/${ARTIFACT}.gz`;
 
   // The `geoip/` prefix, not `cf/`. The 90-day expiry rule in sst.config.ts is
@@ -519,8 +533,7 @@ async function main({ dry }) {
     "cp",
     localGz,
     target,
-    "--profile",
-    PROFILE,
+    ...awsProfileArgs(),
     "--only-show-errors",
   ]);
   say("done");
