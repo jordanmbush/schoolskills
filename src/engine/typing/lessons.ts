@@ -540,3 +540,26 @@ const BY_NUMBER = new Map(LESSONS.map((lesson) => [lesson.n, lesson]));
  */
 export const lessonNumbered = (n: number): Lesson | null =>
   BY_NUMBER.get(n) ?? null;
+
+/**
+ * The mode this lesson insists on, or `null` when the choice is the child's
+ * (docs/typing.md §4.2).
+ *
+ * The one definition of "the lesson forced the board", and it lives here — in
+ * the engine, beside the rows it reads — because two layers need the same
+ * answer to two different questions. The island asks it to draw the board and
+ * to grey out the control (`keyboardFor`, `keyboardLock`); the engine asks it
+ * to award `eyes-up` (§6.7), and the engine may not import from `src/games/`.
+ *
+ * That badge is why the distinction is a function at all rather than a line
+ * inside the island's resolver. Every checkpoint forces the board `off`,
+ * because a checkpoint passed while reading the answer off the screen measures
+ * nothing — so a badge for "passed with the keyboard hidden" that asked only
+ * what was on screen would land on exactly the ten runs where being eyes-up
+ * was compulsory, which is the inverse of what it is for.
+ *
+ * A lock over `keyboard: null` is not a lock, and hands back `null` here: a
+ * lesson that names no mode is insisting on nothing.
+ */
+export const forcedKeyboard = (lesson: Lesson): KeyboardMode | null =>
+  lesson.keyboardLocked && lesson.keyboard ? lesson.keyboard : null;

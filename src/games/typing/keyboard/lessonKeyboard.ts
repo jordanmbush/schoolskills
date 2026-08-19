@@ -1,5 +1,5 @@
-import type { Lesson } from "@/engine/typing/lessons";
 import type { KeyboardMode } from "@/engine/types";
+import { forcedKeyboard, type Lesson } from "@/engine/typing/lessons";
 import { keyboardMode } from "./KeyboardSetting";
 
 /**
@@ -24,7 +24,10 @@ import { keyboardMode } from "./KeyboardSetting";
  *     of the ladder are why it exists — lesson 1 forces `guide`, because a
  *     child who has never seen a keyboard cannot be asked to guess, and every
  *     checkpoint forces `off`, because a checkpoint passed while reading the
- *     answer off the screen measures nothing.
+ *     answer off the screen measures nothing. Which lesson insists on what is
+ *     `forcedKeyboard`'s to say, in the engine: `eyes-up` (§6.7) has to tell a
+ *     board a child turned off from one the lesson turned off for them, and a
+ *     rule only this file knew would be a rule the badge had to guess at.
  *   - **What the child chose**, for the run they chose it on.
  *   - **The lesson's own mode, then the player's, then `guide`** — §4.2's line,
  *     unchanged, and the arm free play takes. Free play has no lesson and makes
@@ -42,7 +45,8 @@ export function keyboardFor(
   /** `TypingConfig.keyboard`: what the child chose in the brief, if anything. */
   chosen?: KeyboardMode | null,
 ): KeyboardMode {
-  if (lesson?.keyboardLocked && lesson.keyboard) return lesson.keyboard;
+  const forced = lesson ? forcedKeyboard(lesson) : null;
+  if (forced) return forced;
   return chosen ?? lesson?.keyboard ?? keyboardMode(profileMode);
 }
 
@@ -66,12 +70,14 @@ export function keyboardFor(
  * `null` here: a lesson that names no mode is insisting on nothing, and
  * `keyboardFor` above lets the player through for the same reason. The two have
  * to agree — a control greyed out with a reason while the run honoured the
- * child's setting anyway would be the first bug all over again, inverted.
+ * child's setting anyway would be the first bug all over again, inverted — so
+ * both ask `forcedKeyboard` rather than each reading the two fields itself.
  */
 export function keyboardLock(lesson: Lesson): string | null {
-  if (!lesson.keyboardLocked || !lesson.keyboard) return null;
+  const forced = forcedKeyboard(lesson);
+  if (!forced) return null;
 
-  switch (lesson.keyboard) {
+  switch (forced) {
     case "off":
       return "Checkpoints are typed without the keyboard — that is what makes passing one worth something.";
     case "guide":
