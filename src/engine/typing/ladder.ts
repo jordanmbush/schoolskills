@@ -31,8 +31,30 @@ export type LadderProgress = {
   /** The highest cleared. 0 if none. */
   best: number;
   /**
-   * What the ladder points at, and the top of what is open: a lesson is
-   * unlocked when its number is at or below this.
+   * What the ladder points at: `best + 1`, carried past any Hailstorm level
+   * standing in the way (§8.8) and capped at the top of the ladder. On a
+   * profile with no runs at all it is 1.
+   *
+   * **It is not the whole unlock rule.** A screen that opens a tile on
+   * `n <= next` alone is wrong in the direction that locks a child out. A
+   * lesson is openable when *either* of these holds (§6.6):
+   *
+   *   - **`n <= next`** — everything up to and including the pointer, the
+   *     storm levels it stepped over included. The pointer is carried over
+   *     them rather than made to jump, so a storm stays playable: skippable
+   *     is not the same as skipped, and no storm level ever gates the lesson
+   *     after it (decision 24).
+   *   - **the lesson is a checkpoint** (`lesson.checkpoint`, every tenth —
+   *     10, 20 … 100). **All ten are always open**, at every value of `next`,
+   *     including on a profile that has never run anything (decision 16).
+   *     That is the placement test: a nine-year-old who already types opens
+   *     checkpoint 40, passes it, and starts at 41 — rather than being sent
+   *     to `fff jjj` for a week. Gate the checkpoints on `next` and that
+   *     express lane is gone, with nothing on screen looking broken.
+   *
+   * Nothing else gates, and a failed attempt costs nothing (§6.6), so opening
+   * a checkpoint early is free — which is what makes "just try one" the
+   * whole of the levelling advice.
    */
   next: number;
 };
@@ -82,9 +104,11 @@ function derive(sessions: Session[]): LadderProgress {
 
   for (const session of sessions) {
     const lesson = BY_MODE.get(session.mode);
-    // Nothing to learn from a second pass at a lesson already cleared, and
-    // `verdictFor` walks every card of the run — so the pass over 2000
-    // sessions costs one verdict per lesson, not one per run.
+    // `verdictFor` walks every card of the run, and there is nothing to learn
+    // from a second pass at a lesson already cleared — so what the `cleared`
+    // guard buys is that repeat passes are free, however many times a child
+    // replays a lesson they have beaten. Runs of a lesson *not* yet cleared
+    // each still pay a verdict, retries included, until one of them clears it.
     if (!lesson || cleared.has(lesson.n)) continue;
     // A `Session` is a `Run`: what passes a lesson is what the child did, not
     // which profile did it or when.
