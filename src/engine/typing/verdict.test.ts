@@ -156,6 +156,31 @@ describe("the new-key gate", () => {
     expect(met.passed).toBe(true);
   });
 
+  /**
+   * The other half of the same boundary: `keyAccuracy` is a floor to reach,
+   * not one to clear. Nine `z` out of ten is exactly 90%, and a child who hits
+   * the bar on the nose has met it — a `>` where `>=` belongs would send them
+   * round again for landing precisely what was asked.
+   */
+  it("passes a key struck exactly at the accuracy bar", () => {
+    const lesson = lessonWith({
+      pass: {
+        kind: "lesson",
+        accuracy: 0,
+        wpm: 0,
+        keyAccuracy: 0.9,
+        keyStrikes: 10,
+      },
+    });
+    const verdict = verdictFor(
+      run([...right(9, "zip"), ...wrong(1, "zip", "sip")]),
+      lesson,
+    );
+
+    expect(verdict.keys).toEqual([{ key: "z", got: 0.9, need: 0.9, ok: true }]);
+    expect(verdict.passed).toBe(true);
+  });
+
   it("marks only the characters that differ on a word typed wrong", () => {
     const lesson = lessonWith({
       introduces: ["z", "i", "p"],
@@ -180,6 +205,14 @@ describe("the new-key gate", () => {
   /**
    * A character never reached is a miss, not an absence: a word abandoned
    * halfway, or a `given` of null, has to cost the keys it never got to.
+   *
+   * The run therefore mixes one `p` that *was* struck with two that were not,
+   * so what is asserted is the fraction and not just a bar that reads empty.
+   * An implementation that skipped past the end of `given` — counting neither
+   * a strike nor a hit — would leave `p` at 1/1 rather than 1/3, and a bar
+   * asserted only as `got: 0, ok: false` would go green for both. That is the
+   * lenient direction and it matters: abandoned words containing the new key
+   * would simply stop counting against it.
    */
   it("counts a character that was never reached as a miss", () => {
     const lesson = lessonWith({
@@ -189,17 +222,20 @@ describe("the new-key gate", () => {
         accuracy: 0,
         wpm: 0,
         keyAccuracy: 0.9,
-        keyStrikes: 2,
+        keyStrikes: 3,
       },
     });
-    // "zip" abandoned after two letters, and "zip" with nothing typed at all:
-    // the `p` was never offered a keystroke either time.
+    // "zip" typed out, "zip" abandoned after two letters, and "zip" with
+    // nothing typed at all — the two shapes a `given` short of its answer can
+    // take. The `p` was offered a keystroke once out of three.
     const verdict = verdictFor(
-      run([card("zip", "zi"), card("zip", null)]),
+      run([card("zip", "zip"), card("zip", "zi"), card("zip", null)]),
       lesson,
     );
 
-    expect(verdict.keys).toEqual([{ key: "p", got: 0, need: 0.9, ok: false }]);
+    expect(verdict.keys).toEqual([
+      { key: "p", got: 1 / 3, need: 0.9, ok: false },
+    ]);
   });
 
   /**
@@ -212,6 +248,7 @@ describe("the new-key gate", () => {
    */
   it("counts every character of a word marked right as a hit", () => {
     const lesson = lessonWith({
+      introduces: ["i"],
       pass: {
         kind: "lesson",
         accuracy: 0,
@@ -220,9 +257,13 @@ describe("the new-key gate", () => {
         keyStrikes: 1,
       },
     });
-    const verdict = verdictFor(run([card("zip", "zip ", true)]), lesson);
+    // `given` disagrees with the answer *at the introduced key itself*, and
+    // the run marked the card right anyway. Reading `given` regardless of the
+    // mark would score `i` at 0 and fail the gate; the mark wins, which is
+    // what forgiving a correction means in practice.
+    const verdict = verdictFor(run([card("zip", "zap", true)]), lesson);
 
-    expect(verdict.keys).toEqual([{ key: "z", got: 1, need: 0.9, ok: true }]);
+    expect(verdict.keys).toEqual([{ key: "i", got: 1, need: 0.9, ok: true }]);
   });
 
   it("has no key bars on a lesson that introduces nothing", () => {
