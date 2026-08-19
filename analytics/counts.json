@@ -20,6 +20,15 @@
       "decks": {
         "words:dolch-1": 2
       }
+    },
+    "2026-08-19": {
+      "visitors": 1,
+      "pageViews": 2,
+      "pages": {
+        "/flash-cards": 2
+      },
+      "events": {},
+      "decks": {}
     }
   }
 }
