@@ -584,6 +584,72 @@ label.segmented__btn {
   opacity: 0.8;
 }
 
+/* ── The three bars, where a lesson keeps its lane ─────────────────────────
+   A lesson is not a race (docs/typing.md §7): nothing is chasing you, so what
+   stands where the ghost lane stands is what you ARE chasing — accuracy, the
+   new keys, and speed — filling as the run goes. Same row of the race grid,
+   same job, different question answered. */
+
+.passbars {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.passbar {
+  display: grid;
+  /* Label, bar, reading. The bar takes what the two ends don't, so a long key
+     name can't squeeze it to nothing. */
+  grid-template-columns: minmax(5.5rem, auto) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.passbar__label {
+  font-size: var(--step--2);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--chalk-dim);
+}
+
+.passbar__track {
+  height: 0.55rem;
+  border-radius: 999px;
+  border: 1px solid var(--hairline);
+  background: rgb(0 0 0 / 25%);
+  overflow: hidden;
+}
+
+.passbar__fill {
+  display: block;
+  height: 100%;
+  /* "Not yet" is not "wrong". A bar short of its target is drawn in the
+     player's own tint and never in --flare, which on this site means a wrong
+     answer and would tell a child mid-run that they had failed something they
+     are three words from passing. */
+  background: var(--tint, var(--accent));
+  transition: width 0.3s var(--ease-out);
+}
+
+/* Met, in the same green "correct" is everywhere else — one of the five
+   colours that mean the same thing in every world (CLAUDE.md). */
+.passbar.is-ok .passbar__fill {
+  background: var(--lime);
+}
+
+.passbar__value {
+  font-size: var(--step--1);
+  font-weight: 700;
+}
+
+.passbar.is-ok .passbar__value {
+  color: var(--lime);
+}
+
+.passbar__need {
+  font-weight: 400;
+  color: var(--chalk-dim);
+}
+
 /* ── The card ──────────────────────────────────────────────────────────── */
 
 .card {
@@ -840,6 +906,15 @@ label.segmented__btn {
   color: var(--go);
   animation: pop 0.45s var(--ease-spring) both;
   text-shadow: 0 0 60px color-mix(in oklab, var(--go) 40%, transparent);
+}
+
+/* What the 3·2·1 is for on a lesson, where it is not a starting gun (§7). */
+.countdown__note {
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--chalk-dim);
 }
 
 /* ── Results ───────────────────────────────────────────────────────────── */

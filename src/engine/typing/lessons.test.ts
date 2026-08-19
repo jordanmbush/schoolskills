@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { LESSONS } from "./lessons";
+import { LESSONS, lessonById } from "./lessons";
 import type { Lesson } from "./lessons";
 import { strokeFor } from "../keyboard";
 
@@ -55,6 +55,23 @@ describe("the shape of the ladder", () => {
     expect(lesson(7).id).toBe("L07");
     expect(lesson(50).id).toBe("L50");
     expect(lesson(100).id).toBe("L100");
+  });
+
+  /**
+   * The other half of that promise: the id has to resolve back. A screen asks
+   * "is this run a lesson?" with a config in hand and gets the lesson or
+   * nothing — never a throw, because a saved run outlives the ladder it was
+   * played on and every one of these three cases reaches a live screen.
+   */
+  it("resolves an id back to its lesson, and anything else to null", () => {
+    expect(lessonById("L07")).toBe(lesson(7));
+    expect(lessonById("L100")).toBe(lesson(100));
+    // A free-play config, which simply has no lesson id.
+    expect(lessonById(undefined)).toBeNull();
+    // A level id, which shares the `typing:` prefix and is not on the ladder.
+    expect(lessonById("home-row")).toBeNull();
+    // A lesson a later build re-cut away from under a run already saved.
+    expect(lessonById("L101")).toBeNull();
   });
 
   it("puts ten lessons in each of ten blocks", () => {
