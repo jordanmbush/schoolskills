@@ -1,7 +1,7 @@
-import { percent } from "@/engine/format";
-import { verdictFor, type Bar, type KeyBar } from "@/engine/typing/verdict";
+import { verdictFor } from "@/engine/typing/verdict";
 import type { Lesson } from "@/engine/typing/lessons";
 import type { CardResult, RaceConfig } from "@/engine/types";
+import { PassBars } from "./PassBars";
 
 /**
  * What the lesson is asking for, filling as the child does it
@@ -14,11 +14,13 @@ import type { CardResult, RaceConfig } from "@/engine/types";
  * verdict exists: a single score tells a seven-year-old that they failed and
  * not what to do, where "fast enough, not accurate enough" is an instruction.
  *
- * The bars are the SAME ones the results screen will draw, because they come
- * from the same `verdictFor` over the run so far — cards in, elapsed in, three
+ * The bars are the SAME ones the results screen draws — literally `PassBars`,
+ * off the same `verdictFor` over the run so far: cards in, elapsed in, three
  * bars out. A HUD that counted accuracy its own way would drift from the
  * verdict by a rounding rule and tell a child they had it a word before they
- * did.
+ * did. What is only true here is the run-so-far half: the run being marked is
+ * still going, so this module builds it, and `PassBars` never has to know
+ * whether the clock has stopped.
  */
 
 /**
@@ -56,102 +58,5 @@ export function LessonBars({
     lesson,
   );
 
-  const key = weakest(verdict.keys);
-
-  return (
-    <section className="passbars" aria-label="What this lesson asks for">
-      {/* §6.1's order, which is the order they matter: accuracy, then the new
-          keys, then speed. */}
-      <Meter
-        label="Accuracy"
-        bar={verdict.accuracy}
-        value={percent(verdict.accuracy.got)}
-        target={percent(verdict.accuracy.need)}
-      />
-      {/* Absent on a review lesson and on every checkpoint — they introduce
-          nothing, so there is no third thing being asked and a bar for it
-          would be a bar that can never move (§6.1). */}
-      {key && (
-        <Meter
-          label={`New key ${key.key}`}
-          bar={key}
-          value={percent(key.got)}
-          target={percent(key.need)}
-        />
-      )}
-      <Meter
-        label="Speed"
-        bar={verdict.wpm}
-        value={String(Math.round(verdict.wpm.got))}
-        target={`${verdict.wpm.need} wpm`}
-      />
-    </section>
-  );
-}
-
-/**
- * The new keys, as one bar.
- *
- * A lesson introduces two characters as a rule, six at lesson 67 and fifteen at
- * lesson 31 — and fifteen bars over a live passage is a wall rather than a
- * signal. So the bar shown is the key that is holding you up, because the gate
- * is every key at once (§6.4): the run is only through when the weakest one is,
- * and naming it is the instruction the child needs.
- *
- * "Weakest" is a not-yet-passed key before a lower fraction, which is not the
- * same ordering. A key struck right three times reads 100% and is still not
- * `ok`, because the strike floor is the half of the gate a fraction cannot
- * carry — so a bar that looks full and one that looks nearly full can be the
- * failing one and the passing one respectively.
- */
-function weakest(keys: KeyBar[]): KeyBar | null {
-  return keys.reduce<KeyBar | null>((worst, key) => {
-    if (!worst) return key;
-    if (worst.ok !== key.ok) return worst.ok ? key : worst;
-    return key.got < worst.got ? key : worst;
-  }, null);
-}
-
-/**
- * One criterion: what it wants, how far you are, and whether that is full.
- *
- * The fill is `got / need` capped, so a bar cannot report more than a full one
- * — being at 40 wpm against a target of 12 is a full bar and not a bar and a
- * half. `--lime` at the top of it because a met criterion is the same green
- * "correct" is everywhere else on this site (CLAUDE.md, the telemetry five),
- * and a plain fill below it because "not yet" is not "wrong" — `--flare`
- * would tell a child mid-run that they had failed something they are three
- * words from passing.
- */
-function Meter({
-  label,
-  bar,
-  value,
-  target,
-}: {
-  label: string;
-  bar: Bar;
-  /** The reading, in this bar's own units. */
-  value: string;
-  /** What it has to reach, in the same units. */
-  target: string;
-}) {
-  // A storm level asks nothing of the speed column and carries `need: 0` to
-  // say so (§5.6). Nothing divides by that.
-  const filled = bar.need <= 0 ? 1 : Math.min(1, bar.got / bar.need);
-
-  return (
-    <div className={`passbar${bar.ok ? " is-ok" : ""}`}>
-      <span className="passbar__label">{label}</span>
-      {/* The picture of a number the text beside it already gives, so a screen
-          reader is handed the number once rather than a bar it cannot see. */}
-      <span className="passbar__track" aria-hidden="true">
-        <span className="passbar__fill" style={{ width: `${filled * 100}%` }} />
-      </span>
-      <span className="passbar__value u-mono">
-        {value}
-        <span className="passbar__need"> / {target}</span>
-      </span>
-    </div>
-  );
+  return <PassBars lesson={lesson} verdict={verdict} />;
 }

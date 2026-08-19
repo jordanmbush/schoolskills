@@ -1486,6 +1486,17 @@ label.segmented__btn {
   text-align: center;
 }
 
+/* The one sentence on a lesson's results screen that says what to do next
+   (docs/typing.md §6.1). Same voice as `.results__note` and deliberately not
+   the same alignment: it belongs to the headline above it rather than standing
+   on its own between two panels, and a line that names the key you missed is
+   read after the words "not yet" rather than beside them. */
+.results__lede {
+  font-size: var(--step-0);
+  color: var(--accent);
+  max-width: 60ch;
+}
+
 /* ── Typing: the keyboard on screen ──────────────────────────────────────
    A picture of the board, drawn from the layout in engine/keyboard.ts so a
    child never has to look down at the real one (docs/typing.md §4).

@@ -526,3 +526,17 @@ const BY_ID = new Map(LESSONS.map((lesson) => [lesson.id, lesson]));
  */
 export const lessonById = (id?: string | null): Lesson | null =>
   (id ? BY_ID.get(id) : undefined) ?? null;
+
+/** The same hundred by the number a child sees, for walking up the ladder. */
+const BY_NUMBER = new Map(LESSONS.map((lesson) => [lesson.n, lesson]));
+
+/**
+ * The lesson at this rung, or `null` for a number off either end of the ladder.
+ *
+ * Total for the same reason `lessonById` is: the callers are screens asking
+ * where a child goes next, and `best + 1` at the top of the hundred, or a rung
+ * a re-cut ladder no longer has, is an answer to give rather than a case to
+ * throw on.
+ */
+export const lessonNumbered = (n: number): Lesson | null =>
+  BY_NUMBER.get(n) ?? null;
