@@ -1062,6 +1062,19 @@ a wave with three letters in the air is a small exercise in prioritising, and
 "firing the wrong letter out of sequence" is a definable thing that can cost
 you something.
 
+Lowest is the greatest **fall progress** — `(t - spawnMs) / fallMs` — and not
+the earliest `landMs`. The two part company as soon as two letters fall at
+different speeds, which is most of the ladder: a slow letter spawned early is
+halfway down while a fast one spawned later has barely started, and yet the
+fast one lands first. Aiming by the schedule would point the gun at a letter
+that is visibly nearer the top of the screen, and the child is looking at the
+field. On an exact tie — the single instant two letters cross — the earlier
+spawn wins, because a letter's index is its identity (§8.3) and a replay has to
+resolve a dead heat the same way every time.
+
+Firing at an empty field is a miss too. It is the same spray by another route,
+and a streak that survived it would have found the strategy again.
+
 ### 8.5 · The shield is your fingers
 
 The shield spans the bottom of the field in **eight segments, one per finger**
@@ -1084,7 +1097,18 @@ percentage will ever tell them.
 
 `repairAt` gives it back: every _n_ consecutive hits restores a point to the
 weakest segment. It is the comeback path, and it rewards the exact behaviour
-the game exists to build.
+the game exists to build. The weakest segment rather than the last one damaged,
+because a segment at zero is simultaneously the one about to end the run and
+the one a single point is worth most in — "weakest" reaches it with no special
+case for holes.
+
+Two edges of that, both decided in the reducer. **Consecutive means
+consecutive**: a letter you let land breaks the streak exactly as a wrong key
+does, because the streak is "are you keeping up" and a letter that got through
+is the definition of not. And **a repair never lifts a segment above
+`shield`** — repairs that outran damage would hand a strong player a shield
+deeper than the level ever wrote down, and the eight-of-`shield` a run starts
+with is what "the shield came through untouched" is reported against.
 
 ### 8.6 · Score can fall; XP cannot
 
@@ -1159,6 +1183,16 @@ for reduced motion.
 The **rules** — spawn schedule, hit resolution, shield state, scoring — are in
 `engine/typing/storm.ts` as a pure reducer over a tick. No React, no rAF, no
 DOM. The loop calls it; the tests call it too.
+
+`tick(state, dtMs)` resolves **every** landing inside the interval it is given,
+however long that is — including letters that spawned and landed inside the
+same tick and were airborne at no instant anybody sampled. A backgrounded tab
+stops `requestAnimationFrame` and hands back seconds, and a dropped landing
+would leave the shield quietly disagreeing with the storm that damaged it.
+Whether a child should be held responsible for a tab they were not looking at
+is a separate question, and it is the loop's: clamping the delta, or pausing on
+`visibilitychange`, is a decision the clock can only make deliberately because
+the rules underneath it are honest about the whole interval.
 
 ### 8.10 · Motion, flashing and reduced motion
 
@@ -1266,6 +1300,10 @@ first when either optional field is added.
 | 29  | `unbroken` is gated on the wave having a length         | "The wave exists" retires itself when STM10 lands; "no screen starts one" is a line someone must delete  |
 | 30  | A falling letter is on the field on `[spawn, land)`     | Landing is the tick that resolves a letter, so `gap` exactly equal to `fall` is a handover, not two      |
 | 31  | A letter carries its key, finger and lane               | Resolved against the layout once, so the lane, the shot and the finger named at death cannot drift       |
+| 32  | The target is the greatest fall progress, not `landMs`  | Letters at different speeds cross; landing order aims at a letter visibly higher up the screen           |
+| 33  | An exact tie goes to the earlier spawn                  | The index is the letter's identity, so a replay resolves the same dead heat the same way                 |
+| 34  | A repair never lifts a zone above `spec.shield`         | "Untouched" has to keep meaning the eight-of-`shield` a run started with                                 |
+| 35  | A tick resolves every landing inside it                 | A backgrounded tab hands back seconds; clamping the delta is the clock's call, not the rule's            |
 
 ---
 
