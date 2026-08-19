@@ -541,6 +541,14 @@ try {
    */
   await page.evaluate(() => {
     window.__tints = [];
+    // What this counts, and what it does not. One listener on `document` sees
+    // a tint's `animationstart` only if the element is still in the document
+    // when the event dispatches, so a tint mounted and detached inside the
+    // same frame is never counted — 60 real mounts under a wave landing a
+    // letter every 15ms came back as 1. That direction is the safe one for the
+    // check below, which breaks as loudly on too few as on too many, but it
+    // makes this a floor on the tints that were drawn rather than a census of
+    // them. Do not reach for it as a general-purpose animation counter.
     document.addEventListener(
       "animationstart",
       (event) => {

@@ -430,9 +430,13 @@ describe("StormField", () => {
 
     // And the rail as a whole is centred on the DRAWN board rather than on the
     // grid of slots behind it — which is what the half-gap step-back buys, and
-    // the reason a segment is allowed to overhang the sky by the same half gap
-    // at each end. Take the correction out and this fails by a whole gap on
-    // one side.
+    // the reason a segment is allowed to overhang the DRAWN BOARD by the same
+    // half gap at each end. The board, not the sky: the step-back moves the
+    // whole rail left, so measured against the sky it hangs half a gap past
+    // the left edge and stops half a gap short of the right. The caps are the
+    // frame that matters — they are what the assertion below compares against,
+    // and what a child aims at. Take the correction out and this fails by a
+    // whole gap on one side.
     const board: [number, number] = [
       capSpan(cap("CapsLock"))[0],
       capSpan(cap("Enter"))[1],

@@ -399,8 +399,12 @@ describe("FINGER_ZONES", () => {
     const outside = strays.filter((stray) => stray.out > 0);
     // Seven keys, every one of them on the number row, every one of them a
     // quarter unit LEFT of its own segment — so each is drawn over the segment
-    // of the finger next to it, on the inboard side. `6` is the one to know:
-    // right index, over the left index's block by a quarter of a key.
+    // of the finger to its LEFT, which is a different neighbour on each hand:
+    // the outboard one on the left (2 over the pinky, 3 over the ring, 4 over
+    // the middle) and the inboard one on the right (8 over the index, 9 over
+    // the middle, 0 over the ring). `6` is the one to know: right index, over
+    // the LEFT index's block by a quarter of a key — the only one of the seven
+    // that crosses hands.
     expect(outside.map((stray) => stray.code)).toEqual([
       "Digit2",
       "Digit3",
