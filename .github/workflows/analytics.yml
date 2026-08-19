@@ -32,12 +32,6 @@ permissions:
   id-token: write # OIDC, to read the log bucket
   contents: write # to push the branch the counts ride in on
   pull-requests: write # to open that branch's PR and set it to auto-merge
-  # To dispatch ci.yml against that branch. `workflow_dispatch` is one of the
-  # two events (with `repository_dispatch`) that GITHUB_TOKEN is still allowed
-  # to raise, which is the whole reason this route works — but raising it needs
-  # this scope, and without it the call is a bare 403 "Resource not accessible
-  # by integration" that names neither the permission nor the workflow.
-  actions: write
   issues: write # to complain if this stops working
 
 jobs:
@@ -94,10 +88,26 @@ jobs:
       # every run exited at "nothing to commit" before reaching it. The first
       # run with real data was the first run to fail.
       #
-      # Auto-merge is what keeps it hands-off: the PR merges itself the moment
-      # CI is green, so the gate is honoured without a human in the loop each
-      # month. If CI ever fails the PR simply stays open, which is a visible
-      # failure rather than a silent one.
+      # Auto-merge then lands it the moment CI is green, and a PR left open is
+      # a visible failure rather than a silent one.
+      #
+      # ⚠️ It needs ONE CLICK a month. GitHub parks the CI run for a
+      # bot-authored PR at `action_required` — its recursion guard, expressed
+      # as "needs approval" rather than "no run" — so the required check stays
+      # unsatisfied until someone presses "Approve and run". After that it
+      # merges itself.
+      #
+      # Dispatching ci.yml against the branch was tried and does NOT help:
+      # the dispatched run does produce a passing `CI` check on the head SHA,
+      # but GitHub credits only PR-associated runs to the PR, so
+      # `statusCheckRollup` stays empty and the merge stays blocked. All it
+      # bought was a second six-minute run nobody reads.
+      #
+      # The only way to remove the click is to open the PR as a real user —
+      # a stored PAT or GitHub App token — which this repo has so far avoided
+      # for anything, AWS included. Nothing is lost by waiting: the counts sit
+      # in the open PR, and the rollup overwrites per-day, so a month merged
+      # late is corrected rather than doubled.
       - name: Open a PR with the numbers
         env:
           GH_TOKEN: ${{ github.token }}
@@ -145,14 +155,9 @@ jobs:
             esac
           fi
 
-          # Give the PR a check to satisfy. Nothing starts CI on its own here:
-          # events raised with GITHUB_TOKEN don't trigger workflows, so this PR
-          # would otherwise sit blocked forever waiting for a required "CI"
-          # context that never appears. Dispatching it runs the real suite
-          # against this branch's head commit.
-          gh workflow run ci.yml --ref "$BRANCH"
-
           gh pr merge "$BRANCH" --auto --squash --delete-branch
+
+          echo "::notice::The PR needs one 'Approve and run' click on its CI run, then it merges itself."
 
       - name: Say so if this stopped working
         if: failure()
