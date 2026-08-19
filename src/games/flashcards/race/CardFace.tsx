@@ -1,4 +1,4 @@
-import { comboMultiplier } from "@/engine/progress";
+import { comboMultiplier } from "@/engine/combo";
 import type { Card, InputMode } from "@/engine/types";
 import { WordPrompt } from "./WordPrompt";
 import type { Feedback } from "@/games/race/types";

@@ -2,6 +2,7 @@ import { isAirborne, progressAt, targetIndex } from "@/engine/typing/storm";
 
 import { LiveKeyboard } from "../keyboard/LiveKeyboard";
 
+import { StormHud } from "./StormHud";
 import { StormShield } from "./StormShield";
 
 import type { StormState } from "@/engine/typing/storm";
@@ -52,13 +53,17 @@ import type { CSSProperties } from "react";
  * which letter each one is. A rendered index rather than the loop counting
  * children, for the same reason the React key is the index (§8.3): a filtered
  * list renumbers itself the instant something in the middle of it is shot.
- * The shield is in the sky beside them and carries no such attribute, which is
- * what makes the loop skip it: `Number(undefined)` is `NaN`, which indexes no
- * letter. An EMPTY one would not — `Number("")` is `0` — and the shield would
- * be written the first letter's fall, sixty times a second, as though it were
- * the stone.
+ * The HUD and the shield are in the sky beside them and carry no such
+ * attribute, which is what makes the loop skip both: `Number(undefined)` is
+ * `NaN`, which indexes no letter. An EMPTY one would not — `Number("")` is
+ * `0` — and whichever of them held it would be written the first letter's
+ * fall, sixty times a second, as though it were the stone.
  *
- * Firing and its reticle are STM06.
+ * The trigger is not here either. A press has to be answered against the run
+ * as the last FRAME left it, and what this component is handed is the last
+ * frame whose picture changed — which can be several behind — so the gun is in
+ * `useStormClock` beside the loop, and the rules it fires are in the engine
+ * (§8.6, §8.9).
  */
 
 /**
@@ -106,9 +111,9 @@ export function aimedAt(state: StormState): string | null {
 }
 
 /**
- * The field, as markup: the sky, whatever is falling through it, and the board
- * at the bottom. A pure function of one `StormState` — see the file header for
- * why, and for what the next three stories hang off it.
+ * The field, as markup: the HUD, the sky, whatever is falling through it, the
+ * shield they land on and the board at the bottom. A pure function of one
+ * `StormState` — see the file header for why.
  */
 export function StormField({
   state,
@@ -133,6 +138,13 @@ export function StormField({
         keys is told so honestly, and that is STM09's story.
       */}
       <div className="storm__sky" ref={skyRef} aria-hidden="true">
+        {/* First in the sky, so every stone paints over the numbers rather
+            than under them: a score must never hide a letter that has to be
+            shot. It is in here rather than in a row of its own because the sky
+            is the only track `.storm` can take a row FROM, and on a short
+            viewport it has nothing left to give (decision 45, `StormHud`). */}
+        <StormHud state={state} />
+
         {state.wave.letters.map((letter, index) => {
           if (!isDrawn(state, index)) return null;
 
@@ -166,7 +178,20 @@ export function StormField({
         <StormShield state={state} />
       </div>
 
-      <LiveKeyboard mode="keys" next={aimedAt(state)} />
+      {/*
+        `emptyIsWrong` while the run is live, which is the honest answer to
+        firing at an empty sky (§8.4, decision 43). The reducer charges that
+        stroke `MISS_POINTS` and breaks the streak, so the board cannot be
+        allowed to light it `--lime` for "that was right" — with nothing in the
+        air there is nothing that could be right, and every key flares. Once
+        the run is over the gun is dead and so is the marking: `aimedAt` is
+        null for both reasons, and this is what tells them apart.
+      */}
+      <LiveKeyboard
+        mode="keys"
+        next={aimedAt(state)}
+        emptyIsWrong={state.ending === null}
+      />
     </main>
   );
 }

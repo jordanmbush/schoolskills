@@ -36,6 +36,7 @@
  * the spec, the RNG, the keyboard and the rules: the characters a wave draws
  * from arrive as `spec.keys`, from a caller that already knows them.
  */
+import { comboMultiplier } from "@/engine/combo";
 import { keyX, strokeFor } from "@/engine/keyboard";
 import type { Finger } from "@/engine/keyboard";
 import { between, mulberry32 } from "@/engine/random";
@@ -357,10 +358,20 @@ export type Shield = Readonly<Record<ShieldFinger, number>>;
  * late (see `tick`), and STM08 turns this into a `CardResult.ms` of
  * `atMs - spawnMs` (§8.7). A card that timed a backgrounded tab instead of a
  * fall would put a nonsense number in a child's record book for ever.
+ *
+ * `combo` is the streak the shot left the run on — the number the HUD draws
+ * its multiplier from the instant after it — and 0 for a letter that got
+ * through, since a landing is what breaks a streak. It is recorded rather than recovered
+ * because it cannot be recovered: a wrong key breaks the combo and resolves no
+ * letter, so nothing in `resolved` remembers that it happened, and a run's XP
+ * counted back off this array without it would pay a child for a streak they
+ * did not keep. `stormXp` folds exactly this pair — `atMs - spawnMs` and
+ * `combo` — through `cardXp` when the run is over (§8.6).
  */
 export type LetterOutcome = {
   outcome: "shot" | "landed";
   atMs: number;
+  combo: number;
 };
 
 /**
@@ -396,11 +407,9 @@ export type StormEnding =
  * no bookkeeping — card _i_ is letter _i_, so `prompt`, `answer` and `factId`
  * are its character and `ms` is `atMs - spawnMs` (§8.7, STM08).
  *
- * What the next two stories add, and why nothing here is in their way: STM06's
- * score and best-combo watermark are two more numbers beside `combo`, written
- * at the two moments this reducer already has — a hit in `fire`, and a broken
- * streak. STM07 reads `ending` for the finger and counts `resolved` by finger
- * for "let three through". Neither wants a different shape.
+ * What the next story adds, and why nothing here is in its way: STM07 reads
+ * `ending` for the finger and counts `resolved` by finger for "let three
+ * through". It wants no different shape.
  */
 export type StormState = {
   /** The storm being played. Decided before the run; never changes during it. */
@@ -422,13 +431,56 @@ export type StormState = {
    * is the game's only comeback path and pays out for exactly the behaviour it
    * exists to build. A letter that landed breaks the streak as surely as a
    * wrong key does — the streak means "are you keeping up", and a letter you
-   * let through is the definition of not keeping up. STM06 hangs its
-   * multiplier on this same number, so a child sees one streak and not two.
+   * let through is the definition of not keeping up.
+   *
+   * The score multiplier hangs on this same number, through the same
+   * `comboMultiplier` a race pays its cards at — so a child sees ONE streak,
+   * and the ×1.6 in the HUD is the ×1.6 their XP is worth (§8.6).
    */
   readonly combo: number;
+  /**
+   * The run's own score. Starts at 0, and **may go negative** (§8.6).
+   *
+   * Kept rather than derived because it cannot be derived: a wrong key costs
+   * points and resolves no letter, so `resolved` has no record of it, and the
+   * multiplier a hit was paid at is history the moment the streak moves on.
+   *
+   * It is not XP and it never becomes XP. `stormXp` is computed once at the
+   * end, from the hits alone and floored at zero, precisely so that this
+   * number is free to fall (see `progress.ts`).
+   */
+  readonly score: number;
+  /**
+   * Wrong keys — shots that hit nothing, including shots at an empty sky.
+   *
+   * A count and not a list, because the two things that read it want a number:
+   * the HUD mounts one `--flare` flash per miss off it (a counter that only
+   * goes up cannot restart an animation, §8.10, decision 42), and STM08 owes a
+   * saved session an `incorrect` that counts what a child got wrong rather
+   * than only what the shield paid for.
+   */
+  readonly misses: number;
   /** How the run finished, or `null` while it is live. */
   readonly ending: StormEnding | null;
 };
+
+/**
+ * What a clean hit is worth before the combo multiplier, and what a wrong key
+ * costs (§8.6).
+ *
+ * Equal, and that is the whole of the balance: **one wrong key undoes one
+ * plain hit**, which is a sentence a five-year-old can hold on to. A hit on a
+ * long streak is worth two of them (×2 at ten in a row), so keeping a run
+ * clean pays for itself twice over — once in the multiplier, and once in the
+ * misses it did not make.
+ *
+ * A letter that gets through costs neither. It has already cost a shield
+ * point, which is the thing that ends runs, and charging for it twice would
+ * make the number that goes down mean two different failures at once
+ * (decision 46).
+ */
+export const HIT_POINTS = 10;
+export const MISS_POINTS = 10;
 
 /**
  * Stamp `cleared` on a state whose last letter has just been accounted for.
@@ -468,6 +520,8 @@ export function startStorm(wave: Wave): StormState {
     shield,
     resolved: wave.letters.map(() => null),
     combo: 0,
+    score: 0,
+    misses: 0,
     ending: null,
   });
 }
@@ -494,7 +548,8 @@ export function startStorm(wave: Wave): StormState {
  *
  * It does not read `state.ending`. A run that ended mid-wave still has letters
  * in the air, so this still names one; `fire` asks only after its own guard,
- * and a screen painting a reticle from it (STM03, STM06) has to guard too.
+ * and a screen that marks a child's keys against it (`aimedAt`) has to guard
+ * too.
  */
 export function targetIndex(state: StormState): number | null {
   const { letters } = state.wave;
@@ -605,7 +660,10 @@ export function tick(state: StormState, dtMs: number): StormState {
   let clock = timeMs;
 
   for (const { letter, index } of landings) {
-    resolved[index] = { outcome: "landed", atMs: letter.landMs };
+    // Combo 0 on the outcome as well as on the run: a letter that got through
+    // was shot on no streak at all, and `stormXp` pays nothing for it either
+    // way — it looks only at what was shot.
+    resolved[index] = { outcome: "landed", atMs: letter.landMs, combo: 0 };
     combo = 0;
 
     if (shield[letter.finger] <= 0) {
@@ -655,12 +713,17 @@ export function tick(state: StormState, dtMs: number): StormState {
  * thing and the game is pure reaction. With three, taking the bottom one first
  * is an act of prioritising under time pressure — reading ahead, which is the
  * thing that separates a typist from a hunter — and it is a skill precisely
- * because getting the order wrong costs something: the streak here, and the
- * score STM06 hangs on the same number.
+ * because getting the order wrong costs something: the streak, and with it the
+ * multiplier every later hit would have been paid at, plus `MISS_POINTS` off
+ * the score there and then.
  *
  * A shot at an empty field is a miss for the same reason. It is exactly the
  * spray this rule exists to make unprofitable, and a child who could keep
- * their streak through it has found the strategy again by another route.
+ * their streak through it has found the strategy again by another route. The
+ * screen owes them an answer to it that the board can tell the truth with:
+ * a stroke that costs points must not light `--lime` for "that was right", so
+ * the keyboard flares every key while the gun is live and has no target
+ * (`StormField`, decision 43).
  */
 export function fire(state: StormState, code: string): StormState {
   if (state.ending !== null) return state;
@@ -670,16 +733,30 @@ export function fire(state: StormState, code: string): StormState {
   // holding cannot make the shot miss (decision 2).
   const index = targetIndex(state);
   if (index === null || state.wave.letters[index].code !== code)
-    return { ...state, combo: 0 }; // A miss: the streak, and nothing else.
+    // A miss: the streak, the score and a mark against the run. Nothing on the
+    // field moves — the letter the child should have shot is still falling,
+    // which is the other half of the cost.
+    return {
+      ...state,
+      combo: 0,
+      score: state.score - MISS_POINTS,
+      misses: state.misses + 1,
+    };
 
   const resolved = state.resolved.slice();
-  resolved[index] = { outcome: "shot", atMs: state.timeMs };
   const combo = state.combo + 1;
+  resolved[index] = { outcome: "shot", atMs: state.timeMs, combo };
 
   return settled({
     ...state,
     resolved,
     combo,
+    // Paid at the multiplier the hit LANDS on, not the one before it: the
+    // fifth hit in a row is worth ×1.5, and it is the number the HUD is
+    // already showing by the time a child looks at it. Same convention as
+    // `cardXp(ms, streakAfter)`, which is what pays the same hit in XP —
+    // one streak, one multiplier, two currencies (§8.6).
+    score: state.score + Math.round(HIT_POINTS * comboMultiplier(combo)),
     shield: repaired(state.shield, state.wave.spec, combo),
   });
 }

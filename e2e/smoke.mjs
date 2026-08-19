@@ -402,6 +402,12 @@ try {
   // Nothing links to the storm until the ladder grows its tiles, so the URL is
   // the only way in — which is what the route is for at this stage.
   const storm = async () => {
+    // Out to the ladder first, so this is a fresh mount every time it is
+    // called: a hash set to the one it already holds fires no navigation, and
+    // the run below it would be whatever the last one finished as. Leaving is
+    // also the only way out of the storm there is, so this is the same exit a
+    // child takes between two goes at it.
+    await page.evaluate((id) => (location.hash = `#/p/${id}`), player);
     await page.evaluate((id) => (location.hash = `#/p/${id}/storm`), player);
     await page.waitForSelector(".storm__letter", { timeout: 8000 });
   };
@@ -516,8 +522,9 @@ try {
       .join(" "),
   );
 
-  // Leaving is what quitting is on this screen (there is no quit control until
-  // the HUD lands), and it has to take the loop with it.
+  // Leaving is what quitting is on this screen (there is no quit control), and
+  // it has to take the loop with it — and, since the gun landed, the keydown
+  // listener beside it.
   await page.evaluate((id) => (location.hash = `#/p/${id}`), player);
   await page.waitForTimeout(500);
   check(
@@ -535,9 +542,16 @@ try {
    * animation RESTARTED every frame, which reads identically in the CSS and
    * would fire `animationstart` sixty times a second. So the events are
    * counted over a whole run, and against the only number they may equal —
-   * one per letter that lands, twelve for this wave, since nothing can be shot
-   * yet and each is drawn by a counter that only moves when a letter reaches
-   * that zone.
+   * one per letter that lands, twelve for this wave, because **this run is
+   * played with nothing pressed** and each tint is drawn by a counter that
+   * only moves when a letter reaches that zone.
+   *
+   * Nothing pressed is now a choice rather than a fact about the game: keys
+   * fire (§8.6), and the run below this one plays the same wave with a child's
+   * hands on it. Twelve landings is the densest this wave gets, so it is the
+   * right run to measure a strobe in — and it is measured here at every storm
+   * animation there is, not only the shield's, which is what makes "no miss
+   * flashed" a claim of this run rather than an absence nobody looked for.
    */
   await page.evaluate(() => {
     window.__tints = [];
@@ -564,8 +578,8 @@ try {
   });
 
   // And a run that reaches its end stops itself. The stand-in wave is twelve
-  // letters over 7.3s, none of which anything can shoot yet, so this waits out
-  // a whole storm.
+  // letters over 7.3s, and nothing is pressed at it, so this waits out a whole
+  // storm and every letter of it lands.
   await storm();
   await page
     .waitForFunction(() => window.__pendingFrames() === 0, null, {
@@ -595,26 +609,50 @@ try {
       hole: zone.hasAttribute("data-hole"),
     })),
   }));
-  // The closest two tints on any one segment. A flash sequence is two of them
-  // inside the 150ms one is on screen for; this wave lands a letter every
-  // 300ms, so the honest answer here is about 300 and never below 150.
-  const closest = Math.min(
-    ...damage.tints.map((tint, i, all) => {
-      const previous = all
-        .slice(0, i)
-        .findLast((t) => t.finger === tint.finger);
-      return previous ? tint.at - previous.at : Infinity;
-    }),
-  );
+  /**
+   * The closest two of these animations that belong to the same thing, in ms —
+   * `Infinity` where nothing lit twice. `keyOf` says what "the same thing" is:
+   * a shield segment for damage, the HUD for a miss.
+   *
+   * This is the whole no-strobe measurement. A flash sequence is two events
+   * inside the ~150ms one pass is on screen for, so the number below the
+   * duration is the failure and the number above it is the hand or the wave
+   * moving. Written once because both halves of §8.10 are measured with it.
+   */
+  const rhythm = (tints, keyOf) =>
+    Math.min(
+      ...tints.map((tint, i, all) => {
+        const previous = all
+          .slice(0, i)
+          .findLast((t) => keyOf(t) === keyOf(tint));
+        return previous ? tint.at - previous.at : Infinity;
+      }),
+    );
+  const shieldTints = damage.tints.filter((tint) => tint.name === "storm-hit");
+  const closest = rhythm(shieldTints, (tint) => tint.finger);
   check(
     "damage tints once per landing, and never twice inside one tint",
     damage.tints.length === 12 &&
-      damage.tints.every((tint) => tint.name === "storm-hit" && tint.finger) &&
+      shieldTints.length === 12 &&
+      shieldTints.every((tint) => tint.finger) &&
       closest >= 150,
-    `${damage.tints.length} tints, closest pair on one zone ${closest}ms apart`,
+    `${damage.tints.length} storm animations, all shield damage, ` +
+      `closest pair on one zone ${closest}ms apart`,
+  );
+  // Twelve is the whole census and not only the shield's share of it: no key
+  // was pressed at this wave, so the HUD's `--flare` (one per wrong key) and
+  // the shield's `--lime` mend (this spec repairs at nothing) each drew none.
+  // Counting them here is what stops a run of the game flashing something a
+  // check aimed only at zones would never have looked at.
+  check(
+    "and nothing else on the screen animated at all",
+    damage.tints.filter((tint) => tint.name !== "storm-hit").length === 0,
+    [...new Set(damage.tints.map((tint) => tint.name))].join() || "none",
   );
   // Three zones took three letters each in this wave, and a zone at zero is a
-  // hole — drawn as one, off the same number the reducer holds.
+  // hole — drawn as one, off the same number the reducer holds. Twelve
+  // landings is what the numbers below are of: shoot one of those letters and
+  // its zone keeps the point, which the run after this one does.
   const holes = damage.zones.filter((zone) => zone.hole);
   check(
     "a zone the storm emptied is drawn as a hole",
@@ -622,6 +660,177 @@ try {
       holes.every((zone) => zone.hp === 0) &&
       holes.map((zone) => zone.finger).join() === "l-index,r-index,r-middle",
     damage.zones.map((z) => `${z.finger}:${z.hp.toFixed(2)}`).join(" "),
+  );
+
+  /*
+   * The same wave again, with a child's hands on it: the gun, the combo and
+   * what a wrong key costs (docs/typing.md §8.6).
+   *
+   * A real browser is the only place this can be asked. The rules are pure and
+   * `storm.test.ts` proves every one of them in a millisecond — a hit is ten
+   * points times the streak it lands on, a wrong key is ten off and the streak
+   * gone — but "the key a child presses reaches those rules, and the number
+   * they are looking at is the one that came back" is a claim about a window
+   * listener, a rAF loop and a React tree, and none of the three exist in the
+   * unit suite. What is measured here is the join: press a key, read the HUD.
+   *
+   * Every press is deterministic without knowing the wave, because the target
+   * is the lowest letter and this stand-in falls every letter at one speed —
+   * so the lowest is the earliest still on the field, and its own character
+   * shoots it. A key that is not that character is a miss whatever else is in
+   * the air, which is the other half of §8.4 and the reason the misses below
+   * need no timing at all.
+   */
+  await page.evaluate(() => {
+    window.__tints = [];
+    // Every cap that goes red, kept rather than caught: `useKeyEcho` releases
+    // a key 120ms after the press (§4.3), and a check that read the DOM after
+    // a round trip would be racing that timer for its evidence.
+    window.__flares = [];
+    new window.MutationObserver((records) => {
+      for (const record of records)
+        if (record.target.classList.contains("is-wrong"))
+          window.__flares.push(record.target.textContent);
+    }).observe(document.body, {
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+  });
+  await storm();
+
+  /** The lowest letter on the field — what the gun is aimed at — or null. */
+  const aimed = () =>
+    page.evaluate(() => {
+      const stones = [...document.querySelectorAll(".storm__letter")];
+      if (stones.length === 0) return null;
+      // Lowest is the earliest spawn here, and `data-stone` is the letter's
+      // index in the wave, which is spawn order (§8.3).
+      const low = stones.reduce((a, b) =>
+        Number(a.dataset.stone) <= Number(b.dataset.stone) ? a : b,
+      );
+      return { index: Number(low.dataset.stone), ch: low.textContent };
+    });
+
+  /** The HUD as a child reads it, plus what the field has left. */
+  const hud = () =>
+    page.evaluate(() => {
+      const combo = document.querySelector(".storm__combo");
+      return {
+        score: Number(document.querySelector(".storm__score").textContent),
+        combo: combo.textContent,
+        hot: combo.hasAttribute("data-hot"),
+        stones: document.querySelectorAll(".storm__letter").length,
+        xp: document.querySelector(".storm__xp")?.textContent ?? null,
+        flares: window.__flares,
+      };
+    });
+
+  // Five clean hits, each fired at the letter nearest the shield as it comes.
+  // The loop waits rather than pressing into an empty sky, because a shot at
+  // nothing is a miss and this half is about what a run of hits is worth.
+  const HITS = 5;
+  const shot = [];
+  for (let tries = 0; tries < 60 && shot.length < HITS; tries++) {
+    const target = await aimed();
+    if (target === null) {
+      await page.waitForTimeout(20);
+      continue;
+    }
+    await page.keyboard.press(target.ch);
+    shot.push(target.index);
+  }
+  const combo = await hud();
+  check(
+    "a run of clean hits climbs, and the multiplier climbs with it",
+    // 11 + 12 + 13 + 14 + 15: ten points a hit, at the multiplier the hit
+    // itself lands on. The fifth is ×1.5 and the HUD says so.
+    shot.length === HITS &&
+      shot.join() === "0,1,2,3,4" &&
+      combo.score === 65 &&
+      combo.combo === "×1.5" &&
+      combo.hot,
+    `shot ${shot.join()} → ${combo.score} at ${combo.combo}`,
+  );
+
+  // And a wrong key, against a letter that is really there: the one case that
+  // is not a shot at an empty sky, so it takes the target's own neighbours out
+  // of the argument. `q` unless the target is a `q`.
+  const target = await aimed();
+  const wrongKey = target?.ch.toLowerCase() === "q" ? "z" : "q";
+  await page.keyboard.press(wrongKey);
+  const missed = await hud();
+  check(
+    "a wrong key costs a hit's worth, breaks the combo, and flares the board",
+    missed.score === combo.score - 10 &&
+      missed.combo === "×1.0" &&
+      !missed.hot &&
+      missed.flares.length === 1 &&
+      missed.flares[0].toLowerCase() === wrongKey,
+    `${combo.score} → ${missed.score} at ${missed.combo}, ` +
+      `flared ${JSON.stringify(missed.flares)}`,
+  );
+
+  // Seven more, at a rate a child could actually hammer at. The point of them
+  // is the score going under: it is the run's own number and it is allowed to.
+  //
+  // The 200ms is spacing, not patience, and it is what the flash count at the
+  // bottom of this section depends on: the HUD's `--flare` is an element keyed
+  // by the miss counter, so two misses inside one frame replace it before its
+  // animation has started and draw ONE flash between them — the same
+  // under-count the shield's tint has for two landings in one tick (§8.10),
+  // and the same safe direction. Pressed back to back, eight wrong keys drew
+  // seven flashes.
+  const MISSES = 8;
+  for (let i = 1; i < MISSES; i++) {
+    await page.waitForTimeout(200);
+    const next = await aimed();
+    await page.keyboard.press(next?.ch.toLowerCase() === "q" ? "z" : "q");
+  }
+  const sunk = await hud();
+  check(
+    "the score goes negative, and is drawn negative",
+    sunk.score === 65 - MISSES * 10,
+    `${sunk.score} after ${MISSES} wrong keys`,
+  );
+
+  // Then the rest of the wave lands and the run ends itself, exactly as the
+  // untouched one did.
+  await page
+    .waitForFunction(() => window.__pendingFrames() === 0, null, {
+      timeout: 15000,
+    })
+    .catch(() => {});
+  await page.waitForTimeout(300);
+  const paid = await hud();
+  const earned = Number(/\+(\d+) XP/.exec(paid.xp ?? "")?.[1]);
+  check(
+    "score can fall; XP cannot — a negative run still pays what it hit",
+    paid.score < 0 && paid.xp !== null && earned > 0,
+    `score ${paid.score}, ${paid.xp}`,
+  );
+
+  const played = await page.evaluate(() => window.__tints);
+  const hits = played.filter((tint) => tint.name === "storm-hit");
+  const flashes = played.filter((tint) => tint.name === "storm-miss");
+  check(
+    "five letters shot are five that never reached the shield",
+    hits.length === 12 - HITS && hits.every((tint) => tint.finger),
+    `${hits.length} damage tints for ${12 - HITS} landings`,
+  );
+  check(
+    "one flash of red per wrong key, and never two inside one flash",
+    // The HUD's flare is mounted from the miss counter exactly as the shield's
+    // tint is from the landing counter (§8.10, decision 42), so the same
+    // measurement holds it: one element per event, and no element restarted.
+    // 220ms is the flash; the presses above are 200ms apart on purpose, so a
+    // pair closer than that would be the animation restarting rather than the
+    // hand moving.
+    flashes.length === MISSES &&
+      flashes.every((tint) => tint.finger === undefined) &&
+      rhythm(flashes, () => "hud") >= 150,
+    `${flashes.length} flashes for ${MISSES} wrong keys, ` +
+      `closest pair ${rhythm(flashes, () => "hud")}ms apart`,
   );
 
   log(

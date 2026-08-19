@@ -32,6 +32,7 @@ import type { KeyboardMode } from "@/engine/types";
 export function LiveKeyboard({
   mode,
   next,
+  emptyIsWrong = false,
 }: {
   /**
    * How much board to draw. "off" is absent because that decision belongs to
@@ -43,6 +44,15 @@ export function LiveKeyboard({
    * on one — before the countdown clears, and once the run is over.
    */
   next: string | null;
+  /**
+   * What a `null` `next` means for a key that was struck anyway.
+   *
+   * A passage leaves it alone: the beat between two words is not a mistake.
+   * Hailstorm sets it while the gun is live, because there a stroke with
+   * nothing to shoot at is a miss that costs score, and a key that costs a
+   * child points must not light `--lime` (§8.4, decision 43).
+   */
+  emptyIsWrong?: boolean;
 }) {
   /**
    * The expectation is the real next character in BOTH modes, and only the
@@ -54,7 +64,7 @@ export function LiveKeyboard({
    * that is the rung of the ladder they are on. Passing `null` here to match
    * the hint would turn every wrong key green.
    */
-  const { down, wrong } = useKeyEcho({ expect: next });
+  const { down, wrong } = useKeyEcho({ expect: next, emptyIsWrong });
 
   return (
     <Keyboard down={down} wrong={wrong} next={mode === "guide" ? next : null} />

@@ -2260,6 +2260,121 @@ label.segmented__btn {
   color: var(--chalk);
 }
 
+/* ── Hailstorm: the HUD ──────────────────────────────────────────────────
+   The two numbers a run keeps: the score, and the multiplier the next hit
+   will be paid at (docs/typing.md §8.6, decision 45).
+
+   **It is drawn inside the sky, and takes none of it.** `.storm` is a
+   two-track grid — a sky that gives and a board that never does — and the sky
+   is what gives: about 78px of it at 1280×360, and about 21px at 1280×250
+   (see the shield below). A HUD row would be taken out of the only track with
+   anything left, so this is absolutely positioned over the sky instead: no
+   track, no height, and no fall shortened by the height of a number.
+
+   The cost of that is an overlap, and the order settles it. The HUD is the
+   FIRST child of the sky, so every hailstone paints over it — a number must
+   never hide a letter that has to be shot — and it is drawn in `--chalk-dim`
+   rather than `--chalk` so a stone crossing it reads as the thing in front.
+
+   Two of the telemetry five are borrowed here, both meaning exactly what they
+   mean everywhere else on this site. `--flare` washes the score for one 220ms
+   pass when a wrong key takes points off it, because that is a wrong. `--lime`
+   colours the multiplier while a streak is running, because that is a run of
+   rights and it is what the streak IS. The other three would each be a lie:
+   nothing on this screen is a ghost, a record or a badge.
+
+   Everything here is a multiple of `--key`, like the lanes and the caps, so
+   the numbers grow and shrink with the board they are being shot from.     */
+
+.storm__hud {
+  position: absolute;
+  inset: 0;
+
+  /* Two columns and two rows: the score and the multiplier along the top, and
+     the payout centred in what is left once the storm is over. `1fr` on the
+     second row rather than `auto` is what gives the XP line somewhere to be
+     centred IN — with two auto rows it would sit just under the score. */
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto 1fr;
+  align-items: start;
+  padding: calc(var(--key) * 0.12) calc(var(--key) * 0.1);
+
+  font-size: calc(var(--key) * 0.5);
+  line-height: 1;
+  color: var(--chalk-dim);
+}
+
+/* The run's own score, which may be negative — a wrong key takes points off
+   it (§8.6). Positioned, because the miss flash below is drawn over exactly
+   this box and nothing wider: the thing that went down is the thing that
+   lights up. */
+.storm__score {
+  position: relative;
+  justify-self: start;
+  padding: calc(var(--key) * 0.08) calc(var(--key) * 0.16);
+  border-radius: calc(var(--key) * 0.14);
+}
+
+/* One wash of `--flare` per wrong key, and never a sequence: a single pass on
+   an element `StormHud` mounts from a counter that only goes up, exactly as
+   the shield's damage tint is (§8.10, decision 42). It rests at zero and
+   animates down to it, so `prefers-reduced-motion` — which clamps every
+   animation to one 0.001ms pass — leaves the score exactly as it found it, and
+   what a child who asked for less motion still gets is the number itself,
+   which has already fallen. */
+.storm__miss {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--flare);
+  opacity: 0;
+  animation: storm-miss 220ms var(--ease-out);
+}
+
+@keyframes storm-miss {
+  from {
+    opacity: 0.75;
+  }
+}
+
+/* The multiplier, and the prominent half of the HUD on purpose: a score is a
+   number about what has happened, and `×1.7` is a number about the next
+   letter. Bigger than the score for that reason, and green only while there is
+   a streak to be paid for — at ×1 it is a fact about the rules, at ×1.6 it is
+   a thing a child earned.
+
+   The step up is a transition and not an animation: it happens when a combo
+   starts and when one breaks, which is twice a run and not once a hit, so
+   there is nothing here that could become a flash sequence. */
+.storm__combo {
+  justify-self: end;
+  scale: 1;
+
+  font-size: calc(var(--key) * 0.8);
+  font-weight: 700;
+  transition:
+    color 200ms var(--ease-out),
+    scale 200ms var(--ease-out);
+}
+
+.storm__combo[data-hot] {
+  scale: 1.12;
+  color: var(--lime);
+}
+
+/* What the run paid the profile, once it is over (§8.6). Centred in the sky
+   the storm has just emptied, in `--chalk` rather than the HUD's dim, because
+   at that moment it is the only thing on the field worth reading. STM07 puts a
+   real ending in front of a child; until then this is the payout. */
+.storm__xp {
+  grid-column: 1 / -1;
+  place-self: center;
+
+  font-size: calc(var(--key) * 0.7);
+  color: var(--chalk);
+}
+
 /* ── Hailstorm: the shield ───────────────────────────────────────────────
    The eight segments the letters land on, one per finger (docs/typing.md
    §8.5, decisions 21 and 41).

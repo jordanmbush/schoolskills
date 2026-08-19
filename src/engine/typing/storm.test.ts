@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { keyX, strokeFor } from "@/engine/keyboard";
+import { cardXp, stormXp } from "@/engine/progress";
 import { unlockedAt } from "./keys";
 import {
   SHIELD_FINGERS,
@@ -585,7 +586,11 @@ describe("firing resolves the lowest letter, and nothing else", () => {
 
   it("shoots the lowest letter with its own key", () => {
     const state = fire(two(), "KeyF");
-    expect(state.resolved[0]).toEqual({ outcome: "shot", atMs: 500 });
+    expect(state.resolved[0]).toEqual({
+      outcome: "shot",
+      atMs: 500,
+      combo: 1,
+    });
     expect(state.resolved[1], "the letter above it is untouched").toBeNull();
     expect(state.combo).toBe(1);
     expect(state.shield, "a hit costs the shield nothing").toEqual(
@@ -638,10 +643,187 @@ describe("firing resolves the lowest letter, and nothing else", () => {
   });
 });
 
+/* ═══ Score, combo and XP (§8.6) ═════════════════════════════════════════════
+ *
+ * Two numbers with opposite rules, which is the whole of this section: the
+ * score is the run's and may fall, the XP is the profile's and may not. They
+ * are tested together because the only way to get them wrong is to let one
+ * become the other.
+ */
+
+/**
+ * Twelve `f`s in the air at once, and nothing else.
+ *
+ * Every letter falls for twenty seconds from within the first tenth of a
+ * second, so at 200ms all twelve are airborne and none can land during a test.
+ * They are all the same character, and the target is the greatest fall
+ * progress — which for equal fall times is the earliest spawn — so `KeyF`
+ * shoots them in index order and a chain of hits needs no clock at all.
+ * `KeyZ` is a wrong key for every one of them.
+ */
+const volley = (): StormState =>
+  to(
+    runOf(
+      Array.from({ length: 12 }, (_, i) => at("f", i * 10, 20_000)),
+      { shield: 9 },
+    ),
+    200,
+  );
+
+/** Fire `codes` in order, and report the score after each one. */
+const scores = (state: StormState, codes: string[]): number[] =>
+  codes.map((code) => (state = fire(state, code)).score);
+
+describe("a run of clean hits is worth more", () => {
+  it("pays a hit at the multiplier the hit itself lands on", () => {
+    // Ten points, scaled by the streak AFTER the hit — the same convention
+    // `cardXp(ms, streakAfter)` pays a flash card at, and the same number the
+    // HUD is showing by the time a child looks at it. So the first hit is
+    // ×1.1 and not ×1.
+    expect(scores(volley(), Array(4).fill("KeyF"))).toEqual([11, 23, 36, 50]);
+  });
+
+  it("stops growing at ×2, ten in a row", () => {
+    // `comboMultiplier` caps at ten steps, so the eleventh and twelfth hits
+    // are worth exactly what the tenth was. Uncapped, the end of a long wave
+    // would be worth more than the whole of the start of it.
+    const gains = scores(volley(), Array(12).fill("KeyF")).map(
+      (score, i, all) => score - (all[i - 1] ?? 0),
+    );
+    expect(gains).toEqual([11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 20, 20]);
+  });
+
+  it("records the streak each letter was shot on", () => {
+    // Not recoverable from anything else in the run — a wrong key breaks the
+    // combo and resolves no letter — and `stormXp` needs it to pay the hit at
+    // the multiplier the child actually had.
+    const state = fire(fire(fire(volley(), "KeyF"), "KeyZ"), "KeyF");
+    expect(state.resolved.map((outcome) => outcome?.combo)).toEqual([
+      1,
+      1,
+      ...Array(10).fill(undefined),
+    ]);
+    expect(state.resolved[1]).toEqual({ outcome: "shot", atMs: 200, combo: 1 });
+  });
+});
+
+describe("a wrong key costs", () => {
+  it("takes points off and breaks the streak in the same stroke", () => {
+    const built = fire(fire(fire(volley(), "KeyF"), "KeyF"), "KeyF");
+    expect([built.score, built.combo, built.misses]).toEqual([36, 3, 0]);
+
+    const missed = fire(built, "KeyZ");
+    expect(missed.score, "one wrong key undoes one plain hit").toBe(26);
+    expect(missed.combo, "and the multiplier with it").toBe(0);
+    expect(missed.misses).toBe(1);
+    expect(missed.resolved, "and nothing on the field moved").toEqual(
+      built.resolved,
+    );
+
+    // The next hit is back at ×1.1, which is the real cost of the miss: the
+    // ten points, and every later hit paid at a multiplier that has to be
+    // earned again.
+    expect(fire(missed, "KeyF").score - missed.score).toBe(11);
+  });
+
+  it("charges the same for a shot at an empty sky", () => {
+    // Spraying between letters is the same strategy by another route (§8.4),
+    // so it costs the same. The screen has to say so too, which is what
+    // `emptyIsWrong` is for — a key that costs points must not light `--lime`.
+    const empty = runOf([at("f", 1000, 500)]);
+    expect(targetIndex(empty), "the premise: nothing is falling").toBeNull();
+
+    const state = fire(empty, "KeyF");
+    expect([state.score, state.misses]).toEqual([-10, 1]);
+  });
+
+  it("lets the score go negative, because it is the run's own", () => {
+    // A five-year-old who hammers the board bottoms out below zero and can
+    // see it. Nothing about that reaches the profile: `stormXp` is floored,
+    // and it is floored at the other end of the run rather than here.
+    const sprayed = fire(fire(fire(volley(), "KeyZ"), "KeyQ"), "KeyP");
+    expect(sprayed.score).toBe(-30);
+    expect(sprayed.misses).toBe(3);
+    expect(stormXp(sprayed)).toBe(0);
+  });
+
+  it("charges a letter that got through to the shield and not to the score", () => {
+    // One wrong, one cost. A landing has already taken a shield point, which
+    // is the thing that ends runs, and charging for it twice would make the
+    // number that goes down mean two different failures at once.
+    const hit = fire(
+      to(runOf([at("f", 0, 400), at("j", 0, 1000)]), 100),
+      "KeyF",
+    );
+    const through = to(hit, 1200);
+
+    expect(through.resolved[1]?.outcome, "the j landed").toBe("landed");
+    expect(through.score, "and cost the score nothing").toBe(hit.score);
+    expect(through.misses, "it is not a wrong key").toBe(0);
+    expect(through.combo, "it does break the streak").toBe(0);
+  });
+});
+
+describe("score can fall; XP cannot", () => {
+  /**
+   * `stormXp` lives in `engine/progress.ts` beside `cardXp` — the storm's own
+   * module may not import it, because it is reachable from `decks/index.ts`
+   * and would drag the deck registry and the hundred lessons in behind it
+   * (§5.3, decision 7). It is tested here anyway: what it means is a rule
+   * about a run, and the run is what this file builds.
+   */
+  it("pays each hit exactly what `cardXp` pays a card", () => {
+    // Reused unchanged, which is what makes a Hailstorm level and a
+    // flash-card race pay out on the same scale. Restating the curve here
+    // would only pin a copy of it, so the assertion is against `cardXp`
+    // itself, on the arguments §8.7 says a hit hands it: how long the letter
+    // was in the air, and the streak it was shot on.
+    const state = fire(fire(volley(), "KeyF"), "KeyF");
+    const shots = [
+      { ms: 200 - 0, combo: 1 },
+      { ms: 200 - 10, combo: 2 },
+    ];
+
+    expect(stormXp(state)).toBe(
+      shots.reduce((sum, shot) => sum + cardXp(shot.ms, shot.combo), 0),
+    );
+    // And it is a real number rather than an accident of two zeroes.
+    expect(stormXp(state)).toBeGreaterThan(0);
+  });
+
+  it("pays nothing for a letter that landed, and never less than nothing", () => {
+    // The floor is what §8.6 turns on: XP is cumulative across years and four
+    // games, so a run a child played badly may pay nothing and must never take
+    // anything away. Here the score is deep in the red and the XP is zero,
+    // which is the pair the whole rule exists to keep apart.
+    const beaten = to(
+      fire(fire(runOf([at("f", 0, 200)], { shield: 3 }), "KeyZ"), "KeyQ"),
+      500,
+    );
+
+    expect(beaten.resolved[0]?.outcome).toBe("landed");
+    expect(beaten.score).toBeLessThan(0);
+    expect(stormXp(beaten)).toBe(0);
+  });
+
+  it("is a fold over the run rather than a tally kept during it", () => {
+    // The same state twice is the same XP, and a state built two ways is the
+    // same XP: nothing about the number depends on how many times it was
+    // asked for, which is what "computed once at the end" has to survive.
+    const state = fire(fire(fire(volley(), "KeyF"), "KeyZ"), "KeyF");
+    expect(stormXp(state)).toBe(stormXp(state));
+    expect(stormXp(startStorm(state.wave)), "an untouched run pays 0").toBe(0);
+  });
+});
+
 describe("what lands takes the shield apart", () => {
   it("takes a point off the zone above it and no others", () => {
     const state = to(runOf([at("f", 0, 100)], { shield: 3 }), 100);
-    expect(state.resolved[0]).toEqual({ outcome: "landed", atMs: 100 });
+    expect(state.resolved[0]).toEqual({
+      outcome: "landed",
+      atMs: 100,
+      combo: 0,
+    });
     expect(state.shield["l-index"], "the finger that types f").toBe(2);
     expect(state.shield).toEqual({ ...evenShield(3), "l-index": 2 });
   });
@@ -673,7 +855,7 @@ describe("what lands takes the shield apart", () => {
       index: 1,
     });
     expect(dead.resolved[1], "the letter that got through is recorded").toEqual(
-      { outcome: "landed", atMs: 300 },
+      { outcome: "landed", atMs: 300, combo: 0 },
     );
     expect(dead.shield["l-index"], "there was nothing left to take it").toBe(0);
   });
@@ -705,10 +887,15 @@ describe("a tick resolves every landing inside it", () => {
     );
 
     expect(landed(state)).toEqual([0, 1]);
-    expect(state.resolved[0]).toEqual({ outcome: "landed", atMs: 100 });
+    expect(state.resolved[0]).toEqual({
+      outcome: "landed",
+      atMs: 100,
+      combo: 0,
+    });
     expect(state.resolved[1], "each is timed by its own landing").toEqual({
       outcome: "landed",
       atMs: 200,
+      combo: 0,
     });
     expect(state.shield["l-index"]).toBe(2);
     expect(state.shield["r-index"]).toBe(2);

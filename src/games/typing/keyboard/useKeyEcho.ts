@@ -42,6 +42,12 @@ const SILENT: KeyEcho = { down: new Set(), wrong: new Set() };
 /**
  * The keys that are HELD rather than typed, and so are never wrong.
  *
+ * Exported because Hailstorm's gun has to agree with the board about what a
+ * stroke even is: the same set decides which keys never flare here and which
+ * keys are never a shot there (`useStormClock`). Two lists would be a shift
+ * that flared red without costing anything, or cost something without saying
+ * so.
+ *
  * Shift is the reason this set exists. Shift is not a mistake, it is the
  * technique: a capital is right-shift plus a left-hand letter (§3.3), and the
  * child who reaches for the far shift a beat before the letter — the thing
@@ -56,7 +62,7 @@ const SILENT: KeyEcho = { down: new Set(), wrong: new Set() };
  * the mistake that wants pointing out — before it turns the next line into
  * SHOUTING nobody can explain.
  */
-const HELD = new Set([
+export const HELD = new Set([
   "ShiftLeft",
   "ShiftRight",
   "ControlLeft",
@@ -81,16 +87,31 @@ const HELD = new Set([
  * Nothing is wrong when there is nothing to be wrong about: free play between
  * words has no expected character, and a character this layout cannot produce
  * (a curly quote that escaped the passage filter) has no key to blame.
+ *
+ * `emptyIsWrong` is the caller saying that its own nothing means the opposite:
+ * not "there is nothing to judge" but "there is nothing that could be right".
+ * Hailstorm is the case — a stroke at a sky with no letter in it is a miss
+ * that costs score (§8.4), and a key that costs a child points must not light
+ * `--lime` at them, because `--lime` means "that was right" everywhere else on
+ * this site (decision 43). A lesson never passes it: the pause between two
+ * words is not a mistake.
  */
-function isWrong(code: string, expect: string | null): boolean {
+function isWrong(
+  code: string,
+  expect: string | null,
+  emptyIsWrong: boolean,
+): boolean {
   if (HELD.has(code)) return false;
   const stroke = expect === null ? null : strokeFor(expect);
-  return stroke !== null && code !== stroke.code;
+  return stroke === null ? emptyIsWrong : code !== stroke.code;
 }
 
 export type KeyEchoBoard = {
-  /** Light `code`, flaring it if it wasn't the key `expect` needed. */
-  press: (code: string, expect: string | null) => void;
+  /**
+   * Light `code`, flaring it if it wasn't the key `expect` needed — or, with
+   * nothing expected and `emptyIsWrong`, flaring it for being a stroke at all.
+   */
+  press: (code: string, expect: string | null, emptyIsWrong?: boolean) => void;
   /** Drop every pending release. What unmounting does. */
   stop: () => void;
 };
@@ -116,9 +137,9 @@ export function createKeyEcho(emit: (echo: KeyEcho) => void): KeyEchoBoard {
   const publish = () => emit({ down: new Set(down), wrong: new Set(wrong) });
 
   return {
-    press(code, expect) {
+    press(code, expect, emptyIsWrong = false) {
       down.add(code);
-      if (isWrong(code, expect)) wrong.add(code);
+      if (isWrong(code, expect, emptyIsWrong)) wrong.add(code);
       else wrong.delete(code);
 
       // One release per code, re-armed rather than stacked: every keydown for
@@ -164,7 +185,14 @@ export function createKeyEcho(emit: (echo: KeyEcho) => void): KeyEchoBoard {
  * costs nothing next to the race clock already re-rendering this screen
  * sixteen times a second.
  */
-export function useKeyEcho({ expect }: { expect: string | null }): KeyEcho {
+export function useKeyEcho({
+  expect,
+  emptyIsWrong = false,
+}: {
+  expect: string | null;
+  /** See `isWrong`. Hailstorm's empty sky; never a lesson's. */
+  emptyIsWrong?: boolean;
+}): KeyEcho {
   const [echo, setEcho] = useState<KeyEcho>(SILENT);
 
   /**
@@ -184,10 +212,19 @@ export function useKeyEcho({ expect }: { expect: string | null }): KeyEcho {
   const expected = useRef(expect);
   expected.current = expect;
 
+  /**
+   * Read by the listener for the same reason `expected` is, and it moves for
+   * the same kind of reason: Hailstorm turns it off the moment a run ends, and
+   * a listener bound to the old value would go on flaring at a child whose
+   * storm is over.
+   */
+  const blame = useRef(emptyIsWrong);
+  blame.current = emptyIsWrong;
+
   useEffect(() => {
     const board = createKeyEcho(setEcho);
     const onKeyDown = (event: KeyboardEvent) =>
-      board.press(event.code, expected.current);
+      board.press(event.code, expected.current, blame.current);
 
     // Capture, not bubble — the third argument is load-bearing.
     //

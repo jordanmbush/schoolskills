@@ -135,16 +135,26 @@ describe("redrawn", () => {
     expect(redrawn(before, fire(before, "KeyF"))).toBe(true);
   });
 
-  it("says yes when a miss breaks a streak, and no when there was none", () => {
+  it("says yes to a miss, streak or no streak", () => {
     const hit = fire(run(999), "KeyF");
     expect(hit.combo).toBe(1);
     expect(redrawn(hit, fire(hit, "KeyQ"))).toBe(true);
 
-    // A miss on an unbroken nothing changes nothing a screen can see — and
-    // `fire` still hands back a different object, which is the trap.
+    // And to a miss on an unbroken nothing, which changes no combo at all:
+    // the score fell, and the HUD flashes a `--flare` over it (§8.6). Before
+    // scoring landed this was the case that changed nothing a screen could
+    // see — the one where `fire` hands back a fresh object saying "different"
+    // and means it about the clock. Now the only thing left in that shape is
+    // a miss on a run that has already ended, which `fire` refuses outright.
     const cold = run(120);
-    expect(fire(cold, "KeyQ")).not.toBe(cold);
-    expect(redrawn(cold, fire(cold, "KeyQ"))).toBe(false);
+    const missed = fire(cold, "KeyQ");
+    expect(missed.combo, "there was no streak to break").toBe(cold.combo);
+    expect(missed.score).toBeLessThan(cold.score);
+    expect(redrawn(cold, missed)).toBe(true);
+
+    const dead = { ...cold, ending: { kind: "cleared" } as const };
+    expect(fire(dead, "KeyQ")).toBe(dead);
+    expect(redrawn(dead, fire(dead, "KeyQ"))).toBe(false);
   });
 
   it("says yes when the target changes mid-air with nothing else", () => {
@@ -166,7 +176,7 @@ describe("the shape the clock is watching", () => {
    *
    * The type is what makes this catch an OPTIONAL field. `Object.keys` of a
    * fresh run can only see what `startStorm` actually sets, so a
-   * `readonly score?: number` added for STM06 would be invisible to a list of
+   * `readonly score?: number` added for a HUD would be invisible to a list of
    * key strings — and `redrawn` would go on never comparing it. A
    * `Record<keyof StormState, true>` will not compile without a line for that
    * field, and being an object literal it will not compile with a line for one
@@ -175,18 +185,20 @@ describe("the shape the clock is watching", () => {
   const FIELDS: Record<keyof StormState, true> = {
     combo: true,
     ending: true,
+    misses: true,
     resolved: true,
+    score: true,
     shield: true,
     timeMs: true,
     wave: true,
   };
 
   it("pins the shape of a StormState, so a new field is decided about here", () => {
-    // `redrawn` compares four of these by identity, derives two more from the
-    // clock, and leaves `wave` out because a run's wave is fixed. A story that
-    // adds a seventh — STM06's score, STM07's tally — has to come here and say
-    // which of those three it is; the alternative is finding out from a HUD
-    // that quietly stopped updating.
+    // `redrawn` compares six of these — `score` and `misses` arrived with the
+    // HUD and are drawn in it — derives two more from the clock, and leaves
+    // `wave` out because a run's wave is fixed. A story that adds a ninth
+    // (STM07's tally) has to come here and say which of those three it is; the
+    // alternative is finding out from a HUD that quietly stopped updating.
     expect(Object.keys(startStorm(buildWave(spec, 7))).sort()).toEqual(
       Object.keys(FIELDS).sort(),
     );
