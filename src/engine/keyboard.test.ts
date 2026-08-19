@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { KEYS, KEY_ROWS, reachable, strokeFor } from "./keyboard";
+import { KEYS, KEY_ROWS, keyX, reachable, strokeFor } from "./keyboard";
 import type { Finger, KeyDef } from "./keyboard";
 import { TYPING_LEVELS } from "./decks/typing";
 
@@ -218,6 +218,40 @@ describe("the board", () => {
       }
       expect(edge, `row ${row[0].row}`).toBe(15);
     }
+  });
+
+  it("puts a key's lane in the middle of it", () => {
+    // `keyX` is Hailstorm's lane (§8.2): the letter and the picture of the key
+    // it falls onto read the same number, so a field drawn from it cannot
+    // disagree with the board about where a key is. Middle rather than left
+    // edge, which is only visible on the keys that are not one unit wide.
+    expect(keyX("KeyF")).toBe(5.25);
+    expect(
+      keyX("Space"),
+      "6.25 units wide, so its edge is not its middle",
+    ).toBe(6.875);
+
+    // The example the design is written in: `y` is not above a home key, it is
+    // between two of them, and that is what a child is being shown.
+    expect(keyX("KeyY")).toBeGreaterThan(keyX("KeyG")!);
+    expect(keyX("KeyY")).toBeLessThan(keyX("KeyH")!);
+
+    for (const key of KEYS) {
+      const x = keyX(key.code);
+      expect(x, key.code).toBe(key.x + (key.width ?? 1) / 2);
+      // The board is 15 units wide, so every lane is inside it — which is what
+      // the field's `--key` arithmetic assumes and never checks.
+      expect(x, key.code).toBeGreaterThan(0);
+      expect(x, key.code).toBeLessThan(15);
+    }
+  });
+
+  it("has no lane for a key it does not carry", () => {
+    // A numpad key, a media key, or a `code` from a layout that is not US ANSI
+    // (§3.4). Null rather than 0, which would be a lane on the far left.
+    expect(keyX("Numpad7")).toBeNull();
+    expect(keyX("AudioVolumeUp")).toBeNull();
+    expect(keyX("IntlBackslash")).toBeNull();
   });
 
   it("keeps each row on one row number", () => {
