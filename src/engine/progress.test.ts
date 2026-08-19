@@ -19,8 +19,8 @@ import { LESSONS, type Lesson } from "./typing/lessons";
  *     here before the typing course are re-run underneath it.
  *   - **The five new ones fire on what they say they fire on.** `eyes-up`
  *     carries the epic's argument — it is the only badge on the site that
- *     rewards choosing to make something harder — and the way to get it wrong
- *     is to award it for the ten checkpoints, which force the keyboard off
+ *     rewards doing the work the harder way — and the way to get it wrong is
+ *     to award it for the ten checkpoints, which force the keyboard off
  *     whatever the child wanted. That inversion has a test of its own.
  */
 
@@ -356,8 +356,14 @@ describe("clearing the course", () => {
 
 /**
  * Lesson 41 is the shape this badge is for: an ordinary rung, `keyboard: keys`
- * and no lock on it, so the brief offers the choice and the run records what
- * was chosen.
+ * and no lock on it, so the brief's control is live and the run records the
+ * mode it was actually typed under.
+ *
+ * That recorded mode is the whole question. The badge does not ask who set it:
+ * a lesson's mode seeds the control and Start hands over whatever it shows, so
+ * on the twenty-three unlocked rows that seed `off` themselves an untouched
+ * Start earns this too, once the run passes — which is right, because the
+ * child still typed the lesson blind (§6.7).
  */
 describe("Eyes Up", () => {
   it("is given for a lesson passed with the board turned off", () => {
@@ -369,10 +375,10 @@ describe("Eyes Up", () => {
     expect(badgesFor(passing(lesson(41), "guide"))).not.toContain("eyes-up");
   });
 
-  it("is not given when nobody chose anything", () => {
+  it("is not given when the run recorded no board at all", () => {
     // No `keyboard` on the config is the ordinary case for free play and for
     // any route that starts a run without a brief in front of it. Absent is
-    // not a choice, and this badge is for the choice.
+    // not evidence that the board was hidden, and hidden is what this reads.
     expect(badgesFor(passing(lesson(41)))).not.toContain("eyes-up");
   });
 
@@ -386,9 +392,10 @@ describe("Eyes Up", () => {
    * Every checkpoint forces the keyboard off (§4.2) — that is what makes
    * passing one mean something. A badge that read the board on screen, or that
    * trusted a `keyboard` field a future screen might write on a locked lesson,
-   * would fire on exactly the ten runs where being eyes-up was compulsory and
-   * on none of the runs where it was chosen. So the config below carries `off`
-   * and is still refused: the lesson forced it, so the child did not choose it.
+   * would fire on exactly the ten runs where being eyes-up was compulsory,
+   * which is the one distinction this badge does draw. So the config below
+   * carries `off` and is still refused: the lesson left no other way to play
+   * it, and a run that could not have been typed any other way proves nothing.
    */
   it("is refused on a checkpoint, which forces the board off anyway", () => {
     const badges = badgesFor(passing(lesson(10), "off"));
@@ -407,11 +414,11 @@ describe("Eyes Up", () => {
 /* ── Unbroken ────────────────────────────────────────────────────────────── */
 
 /**
- * Give a storm level the wave it will get from STM08, for the length of one
+ * Give a storm level the wave it will get from STM10, for the length of one
  * test, and take it back.
  *
- * `wordCount` is a storm's wave length (§8.3), and every one of the ten is `0`
- * until the twenty `WaveSpec`s are written. Mutating it here is standing in for
+ * `wordCount` is a storm's wave length (§8.3), and every one of the twenty is
+ * `0` until STM10 writes the `WaveSpec`s. Mutating it here is standing in for
  * the deploy that writes them — nothing else about the world changes.
  */
 function withWave(n: number, count: number, body: () => void) {

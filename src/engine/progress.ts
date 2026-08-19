@@ -326,19 +326,33 @@ function courseBadges(
   const verdict = verdictFor(session, lesson);
 
   /* ── `eyes-up`, the one that matters ───────────────────────────────────────
-     The only badge on the site that rewards choosing to make something harder,
-     which is why it asks *whose doing* the hidden keyboard was rather than
-     what was on screen. Every checkpoint forces the board off (§4.2), so a
-     badge that read the resolved mode — or `config.keyboard` on its own, the
-     day a screen starts writing that field on a locked lesson — would fire on
-     exactly the ten runs where being eyes-up was compulsory. That is the
-     inverse of the badge.
+     Three conditions, and "the child chose it" is deliberately not one of
+     them: the lesson must not have forced the board off (`forcedKeyboard` is
+     the one definition of that, shared with the island's resolver), the run
+     must have been typed with it off, and it must have passed.
 
-     So: the lesson must have left the choice open (`forcedKeyboard` is the one
-     definition of that, shared with the island's resolver), the child must
-     have made it, and they must have passed. A `keyboard` absent from the
-     config means nobody chose — free play, or a run started without a brief in
-     front of it — and absent is not a choice to reward.
+     What excluding the forced ones buys is *compulsion*, not authorship. Every
+     checkpoint forces the board off (§4.2), so a badge that read the resolved
+     mode — or `config.keyboard` on its own, the day a screen starts writing
+     that field on a locked lesson — would fire on exactly the ten runs where
+     being eyes-up was not optional. That is the inverse of the badge.
+
+     Hidden rather than chosen is where the line belongs, and it is worth being
+     plain about the difference. A lesson's mode only *seeds* the brief's
+     control (§4.2, #145) and Start hands over whatever that control is showing,
+     so on an unlocked lesson `config.keyboard` records the mode the run was
+     actually typed under — touched or untouched. Twenty-three unlocked rows
+     seed `off` themselves, so a child who opens lesson 46, presses Start and
+     passes earns this. That is right: they typed a lesson blind. Insisting on
+     authorship would mean comparing the config against the seed and refusing
+     that child for doing exactly what the ladder asked — same lesson, same
+     empty screen, same work — while rewarding a neighbour who flipped a pill
+     the ladder had already flipped for them. "Pass a lesson with the keyboard
+     hidden" is what the badge promises, and hidden is what this reads.
+
+     A `keyboard` absent from the config is not evidence of a hidden board —
+     free play, or a run started without a brief in front of it — so `=== "off"`
+     refuses it rather than guessing.
 
      Lessons only. A Hailstorm level's ⌨ column is about the *field*, which is
      the keyboard (§8.2), so "hidden" does not mean there what it means here. */
@@ -350,10 +364,10 @@ function courseBadges(
   )
     earned.push("eyes-up");
 
-  /* ── `unbroken`, which is waiting for STM08 ────────────────────────────────
+  /* ── `unbroken`, which is waiting for the waves (STM10) ─────────────────────
      Guarded on the wave rather than on the absence of a screen that could
      start one. A storm level's `wordCount` is its wave's `count` (§8.3) and
-     every one of the ten is `0` until the twenty `WaveSpec`s are written — so
+     every one of the twenty is `0` until STM10 writes the `WaveSpec`s — so
      `survived` is vacuously true, "cleared a wave" is a claim about a wave
      that does not exist, and this badge must not be given for it. Stating the
      guard as "the wave has a length" means it retires itself the day the waves
@@ -364,7 +378,17 @@ function courseBadges(
      letters (§8.7), so a run with nothing marked wrong is a run where nothing
      got through. That errs strict — a letter fired at twice and then hit may
      cost a card without costing the shield — and strict is the right direction
-     for a badge that, once in `Profile.badges`, is not taken back.           */
+     for a badge that, once in `Profile.badges`, is not taken back.
+
+     `correct > 0` cannot change the answer, and is kept on purpose. A run with
+     no cards at all has an accuracy of 0 (`accuracyOf` returns 0 rather than
+     NaN for an empty run), which is under every storm's 0.9 bar, so
+     `verdict.passed` has already refused it. It stays because it says the
+     second half of what "nothing got through" means — nothing wrong *and*
+     something faced — the same pair `perfect` is built from above, and because
+     the thing holding it up is a bar in the criteria table that a future
+     re-tune could lower. Redundant, deliberately; not a condition somebody
+     forgot to finish.                                                        */
   if (
     lesson.pass.kind === "storm" &&
     lesson.wordCount > 0 &&
