@@ -92,12 +92,18 @@ export default $config({
      * long enough to go back and re-derive a number nobody thought to take at
      * the time, which is the only thing retention actually buys.
      *
-     * It is NOT what protects the history. The counts derived from these lines
-     * carry no IP, so they are committed to the repo monthly by
-     * .github/workflows/analytics.yml and kept forever. The raw material
-     * expires; the arithmetic doesn't have to. If that job ever stops running,
-     * this number quietly becomes the limit of what anyone can know about the
-     * site's first year — so it is the job to fix, not this constant.
+     * ⚠️ **This number is now the site's whole memory.** It used to be only a
+     * floor on how far back a number could be re-derived, because a monthly
+     * job reduced these lines to per-day counts and committed them to the
+     * repo. That was dropped: a repo is where code lives forever, and
+     * generated analytics are not code — the file grew without bound and the
+     * PR that landed it needed merging by hand every month.
+     *
+     * Nothing durable replaced it yet. So when a day passes 90 days it is
+     * gone, and raising this constant is the only lever that exists until
+     * somewhere proper to put the aggregates does. Raising it is not free —
+     * it means keeping children's IP addresses longer, and /privacy states
+     * this figure to parents.
      */
     const LOG_RETENTION_DAYS = 90;
 
@@ -358,8 +364,9 @@ export default $config({
      * CloudFront publishes these metrics to CloudWatch for free and whether or
      * not anyone looks, so this dashboard costs nothing to feed — it is three
      * widgets over data AWS is already keeping. Retention is 15 months, which
-     * is longer than the raw logs live (90 days) and shorter than
-     * analytics/counts.json, which is forever.
+     * makes it — since the committed per-day counts were dropped — the
+     * LONGEST-LIVED record of this site that exists, outliving the raw logs by
+     * a year. It is also much the coarsest, which is the whole problem below.
      *
      * It deliberately does NOT try to be the analytics. `Requests` counts every
      * HTTP request — assets, fonts, beacons, bots, the deploy's own smoke

@@ -8,10 +8,18 @@
  * file is a front door, and a second implementation of `isPageView` is exactly
  * the kind of thing that drifts and then disagrees with the committed history.
  *
- * This writes `analytics/counts.json`, the same file the job commits. That is
- * intentional — running it by hand after a fix is how a miscounted day gets
- * corrected — but it does mean a local run leaves a diff. `git checkout
- * analytics/counts.json` if you only wanted to look.
+ * ⚠️ **This is a viewer, not a store.** It writes its counts next to the
+ * synced logs in the system temp directory, and nothing it produces is kept.
+ * An earlier version committed them to `analytics/counts.json`. Version
+ * control is the right home for code forever; it is not a home for analytics.
+ * These counts were generated rather than authored, grew without bound, and
+ * arrived through a PR somebody had to merge by hand every month — none of
+ * which is what a source tree is for.
+ *
+ * What that means today: **the access logs are the only record, and they are
+ * deleted after 90 days** (LOG_RETENTION_DAYS in sst.config.ts). Anything you
+ * want to know beyond that window has to be asked before the window closes.
+ * A durable home for the aggregates is still owed — see docs/analytics.md.
  *
  * Usage:
  *   npm run analytics              sync, count, summarise
@@ -24,7 +32,9 @@ import { existsSync, mkdirSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-const OUT = "analytics/counts.json";
+// Temp, deliberately. See the header: nothing this produces is kept, and
+// writing into the repo is what this stopped doing.
+const OUT = join(tmpdir(), "schoolskills-counts.json");
 const ROLLUP = "scripts/rollup-analytics.mjs";
 // Stable rather than a fresh mkdtemp: `aws s3 sync` is incremental, so keeping
 // the directory between runs turns the second run into a no-op download.
@@ -164,6 +174,23 @@ function summarise(days, limit) {
       console.log(`  ${String(n).padStart(6)}  ${path}`);
   }
 
+  // Days counted before referrers were recorded simply have none of these, so
+  // both blocks stay quiet rather than printing an empty heading over a window
+  // that predates them.
+  const referrers = merge("referrers");
+  if (referrers.length) {
+    console.log("\nCAME FROM");
+    for (const [host, n] of referrers.slice(0, 10))
+      console.log(`  ${String(n).padStart(6)}  ${host}`);
+  }
+
+  const edges = merge("edges");
+  if (edges.length) {
+    console.log("\nSERVED FROM (nearest CloudFront edge, not the visitor)");
+    for (const [code, n] of edges.slice(0, 10))
+      console.log(`  ${String(n).padStart(6)}  ${code}`);
+  }
+
   const events = merge("events");
   if (events.length) {
     console.log("\nEVENTS");
@@ -183,7 +210,9 @@ function summarise(days, limit) {
   console.log(
     "\nvisitors = distinct IPs that day, and is NOT additive across days —\n" +
       "the same person on three days is three visitor-days, not three people.\n" +
-      "Undeclared bots count as people; see docs/analytics.md.\n",
+      "Undeclared bots count as people. (none) is a floor on direct traffic,\n" +
+      "not a measure of it, and an edge code is where the request was served,\n" +
+      "which is near someone rather than at them. See docs/analytics.md.\n",
   );
 }
 
@@ -192,6 +221,7 @@ try {
   else process.stderr.write(`using logs already in ${LOGS}\n`);
 
   execFileSync("node", [ROLLUP, LOGS, OUT], { stdio: "inherit" });
+  process.stderr.write(`counts written to ${OUT} (temporary)\n`);
 
   if (existsSync(OUT)) {
     summarise(

@@ -40,6 +40,21 @@ import Content from "@/layouts/Content.astro";
  * the promise that a beacon carries no deck id or answer is enforced by
  * src/services/analytics.test.ts. Change either and this page is wrong.
  *
+ * Two more things were counted from 19 August 2026 — the site a visitor
+ * followed a link from, and which CloudFront location served the request —
+ * and the paragraphs below say so. Neither adds a request or a script; both
+ * are fields CloudFront was already writing. The referring site is reduced to
+ * a bare hostname before it leaves the log line, because a full referrer URL
+ * carries what somebody searched for: that reduction is `referrerHost()` in
+ * scripts/rollup-analytics.mjs and is held in place by its tests. **Anything
+ * else read off a log line belongs in this list**, in the same pull request.
+ *
+ * The same day, the monthly job that kept per-day counts permanently was
+ * removed. That makes the 90 days below the whole of it — nothing derived
+ * from a log line outlives the line any more — which is a stronger promise
+ * than this page made before, and the text says so plainly. If a durable
+ * store for those counts is ever added, THIS PAGE MOVES WITH IT.
+ *
  * It renders in Line world, which has no scenery on purpose. Every other page
  * here is a place; this one is a promise being read carefully, and dressing it
  * up as an adventure would be the wrong kind of charming.
@@ -47,7 +62,7 @@ import Content from "@/layouts/Content.astro";
 const title = "Privacy — School Skills";
 const description =
   "School Skills has no accounts and no tracking. Advertising is non-personalised everywhere, because the site is made for children. Everything a child does in a game stays in their own browser.";
-const updated = "16 August 2026";
+const updated = "19 August 2026";
 ---
 
 <Content title={title} description={description} world="line">
@@ -161,15 +176,19 @@ const updated = "16 August 2026";
       <p>
         The site is served from Amazon CloudFront. Like any web host, its
         servers write a line for each request &mdash; your IP address, browser
-        type and the file requested. Those lines are kept for 90 days and then
-        deleted automatically.
+        type, the file requested, and the site you followed a link from, if you
+        followed one. Those lines are kept for 90 days and then deleted
+        automatically.
       </p>
       <p>
-        Those lines are the only thing we measure from. Once a month or so we
-        count them: how many different addresses appeared, which pages were
-        asked for, how many races were started and finished. The answers are
-        numbers &mdash; &ldquo;412 people, 1,900 races&rdquo; &mdash; and the
-        numbers are all that&rsquo;s kept once the lines expire.
+        Those lines are the only thing we measure from. Every so often we count
+        them: how many different addresses appeared, which pages were asked for,
+        how many races were started and finished, which other websites link to
+        us, and roughly which part of the world the pages were served to. The
+        answers are numbers &mdash; &ldquo;412 people, 1,900 races, 40 arrivals
+        from a link&rdquo; &mdash; and we look at them and move on. Nothing is
+        filed away: when the lines are deleted at 90 days, that period is simply
+        no longer something we can ask about.
       </p>
       <p>
         There is no analytics service involved and nothing added to your device.
@@ -180,6 +199,14 @@ const updated = "16 August 2026";
         is that our numbers are approximate: a household sharing one connection
         counts once, and a phone that changes network counts twice. We would
         rather have the rougher number.
+      </p>
+      <p>
+        Two of those deserve spelling out. When we count which websites link to
+        us we keep the site&rsquo;s name and nothing else &mdash;
+        &ldquo;google.com&rdquo;, never what was typed into it, and never the
+        rest of the address. And &ldquo;which part of the world&rdquo; means
+        which of Amazon&rsquo;s data centres answered the request, which is the
+        nearest one rather than where you are.
       </p>
       <p>
         A few in-game actions &mdash; a race started, a race finished, a deck

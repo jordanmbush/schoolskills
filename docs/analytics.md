@@ -18,6 +18,11 @@ This is the whole of it, and it exists in this shape for a reason —
 that no third party sees a request. Adding a hosted analytics tool would break
 both. See the header of `src/services/analytics.ts`.
 
+> ⚠️ **Nothing is kept beyond 90 days.** The access logs are the only record,
+> and they expire. Ask a question about last quarter and there is no answer to
+> find — see [The 90-day ceiling](#the-90-day-ceiling), which is an open
+> problem rather than a design decision.
+
 ## What's being recorded
 
 **Page requests.** Free, automatic, and already enough for most questions,
@@ -48,57 +53,63 @@ in `src/services/analytics.ts` — if it isn't there, it isn't collected:
 sent — see the tests in `src/services/analytics.test.ts`, which exist to keep
 that true.
 
-## Retention, and the thing that actually protects the history
+**Where a visit came from, and roughly where it was.** Both are read off the
+same log line as everything else — no extra request, nothing added to a page:
+
+| In the rollup | From the log field | Means                                      |
+| ------------- | ------------------ | ------------------------------------------ |
+| `referrers`   | `cs(Referer)`      | the site that linked here, host only       |
+| `edges`       | `x-edge-location`  | the CloudFront PoP that served the request |
+
+Two things to hold onto, because both are easy to over-read:
+
+- **`referrers` is a bare hostname and nothing more.** Never a path, never a
+  query string. A full referrer URL routinely carries what someone searched
+  for, and occasionally a token from a link that was pasted somewhere, so
+  `google.com` is all that is ever carried out of a log line — no matter where
+  the output is later put. `(none)` is a request that sent no referrer at all — direct,
+  but also every https→http hop, privacy-preserving browser, native app and
+  link out of a document. Read it as a floor on direct traffic, not a measure
+  of it. Our own pages are not counted, since internal navigation would bury
+  the inbound links that are the point.
+- **`edges` is where the request was served, not where the visitor is.**
+  CloudFront routes to a nearby PoP, so `SEA` means "closer to Seattle than to
+  anywhere else with a PoP" — Vancouver is served from Seattle, and anyone on
+  a VPN is served from wherever the exit node is. It answers "roughly which
+  part of the world", never "which country". The field that answers that
+  properly is `c-country`, which the legacy standard log format does not have;
+  getting it means moving the distribution to standard logging v2, a different
+  delivery mechanism rather than a field to add to the rollup.
+
+## The 90-day ceiling
 
 Raw lines are deleted after **90 days** (`LOG_RETENTION_DAYS` in
 `sst.config.ts`). `/privacy` tells parents that number, so it can go down
 without ceremony and cannot go up without editing that page in the same PR.
 
-**Retention is not what preserves the site's history.** A per-day count carries
-no IP and no identifier, so the counts are what get kept — permanently, in this
-repo, at `analytics/counts.json`. `.github/workflows/analytics.yml` runs on the
-2nd of each month, reduces whatever is in the bucket to per-day totals, and
-opens a PR with the result that merges itself once CI is green.
+**That is the whole of the site's memory, and it is a known gap.** There used
+to be a monthly job that reduced the bucket to per-day totals and committed
+them to this repo at `analytics/counts.json`, permanently. It was removed, on
+the grounds that a repo is where _code_ lives forever — generated analytics
+are not code. The file grew without bound in a source tree, it duplicated a
+system of record that already existed in S3, and GitHub parks bot-authored PRs
+at `action_required`, so landing it was a manual click every single month.
 
-It opens a PR rather than pushing because `develop` requires the CI check and
-a direct push from Actions carries none — the protected-branch hook declines
-it.
+What replaced it: nothing, yet. So today —
 
-**That PR needs one click a month.** GitHub parks the CI run on a bot-authored
-PR at `action_required`, so the required check stays unsatisfied until someone
-presses "Approve and run"; after that auto-merge lands it. Nothing is lost by
-leaving it: the counts sit in the open PR, and the rollup overwrites per-day,
-so a month merged late is corrected rather than doubled. Removing the click
-means opening the PR as a real user — a stored PAT or App token — which this
-repo has avoided for everything so far, AWS included.
+| Record               | Lives     | Granularity                  |
+| -------------------- | --------- | ---------------------------- |
+| S3 access logs       | 90 days   | every request, full detail   |
+| CloudWatch dashboard | 15 months | request counts only, no URLs |
 
-If the bucket is empty the job now **fails** rather than quietly counting
-nothing. CloudFront logs every request including crawlers, so zero files means
-delivery has stopped, never that nobody visited — and a job that succeeds over
-nothing cannot be monitored at all.
+The dashboard is now the longest-lived thing there is, and it cannot be broken
+down by page, referrer or anything else. **A day that ages past 90 days is
+gone and cannot be recounted.** Somewhere durable for the aggregates is owed
+before that starts to matter; the shape of it is an open question, and the
+constraint is that it must not be this repo and must not be a third party that
+sees a child's request.
 
-So the numbers you can look back on are bounded by _that job having run_, not by
-the retention window. Retention only governs how far back a forgotten number can
-be re-derived. If the job breaks it opens an issue, and that issue is more urgent
-than it looks: while it is broken, history is on a 90-day timer.
-
-Read the file directly on GitHub — no AWS login, no query, no dashboard:
-
-```jsonc
-"2026-08-16": {
-  "visitors": 2,          // distinct IPs seen that day; approximate by design
-  "pageViews": 3,
-  "pages":  { "/": 1, "/flash-cards/": 1, "/spelling/play/": 1 },
-  "events": { "race_start": 2, "race_end:finished": 1, "race_end:quit": 1 },
-  "decks":  { "multiply": 1, "words:dolch-4": 1 }
-}
-```
-
-Bots are excluded, assets and beacons don't count as page views, and re-running
-overwrites per-day rather than accumulating — so a day whose logs arrived late is
-corrected rather than doubled.
-
-To run it by hand — after a fix, or just to see today before the 2nd:
+## Looking at what's there
 
 ```bash
 npm run analytics                # sync, count, and print a summary
@@ -106,13 +117,31 @@ npm run analytics -- --days 7    # narrow the table
 npm run analytics -- --no-sync   # re-summarise without re-downloading
 ```
 
-That writes `analytics/counts.json`, the same file the job commits, so a local
-run leaves a diff. `git checkout analytics/counts.json` if you only wanted to
-look. The long way round still works and is what the workflow runs:
+It writes its counts to a temp file and prints the path. Nothing is kept and
+nothing lands in the repo — if you want a number preserved, copy it out
+yourself. Bots are excluded, assets and beacons don't count as page views, and
+a re-run overwrites per-day rather than accumulating, so a day whose logs
+arrived late is corrected rather than doubled.
+
+One day looks like this:
+
+```jsonc
+"2026-08-16": {
+  "visitors": 2,          // distinct IPs seen that day; approximate by design
+  "pageViews": 3,
+  "pages":     { "/": 1, "/flash-cards/": 1, "/spelling/play/": 1 },
+  "referrers": { "(none)": 2, "t.co": 1 },   // host only, never a path
+  "edges":     { "SEA": 2, "LHR": 1 },       // the edge, not the visitor
+  "events":    { "race_start": 2, "race_end:finished": 1, "race_end:quit": 1 },
+  "decks":     { "multiply": 1, "words:dolch-4": 1 }
+}
+```
+
+The long way round, if you want the pieces separately:
 
 ```bash
 aws s3 sync s3://schoolskills-access-logs-<account>/cf/ /tmp/cflogs --profile schoolskills
-node scripts/rollup-analytics.mjs /tmp/cflogs analytics/counts.json
+node scripts/rollup-analytics.mjs /tmp/cflogs /tmp/counts.json
 ```
 
 ## The dashboard, for "is anything happening"
@@ -133,8 +162,9 @@ period when the log pipeline was broken.
 ## Athena, for questions the rollup doesn't answer
 
 Everything below is optional. The rollup covers the standing questions; Athena
-is for one-off digging — a specific week, a referrer breakdown, a suspicion
-about bot traffic.
+is for one-off digging — a specific week, a suspicion about bot traffic, or the
+part of a referrer the rollup deliberately throws away. It is the only place a
+full referring URL can be seen, and only for as long as the raw lines live.
 
 ## Setting up Athena (once)
 
@@ -259,6 +289,30 @@ GROUP BY deck
 ORDER BY started DESC;
 ```
 
+**Which links actually send people.** The rollup keeps only the host; this is
+where the rest of the URL still exists, so it is how you tell one post from
+another on the same site. Only works within the 90-day window.
+
+```sql
+SELECT referrer, COUNT(*) AS views, COUNT(DISTINCT request_ip) AS people
+FROM pages
+WHERE referrer <> '-'
+  AND url_extract_host(referrer) NOT LIKE '%schoolskills.app'
+GROUP BY referrer
+ORDER BY views DESC;
+```
+
+**Roughly where from**, by edge location — the PoP code is the first letters of
+`location`, and see the caveat above before reading it as geography:
+
+```sql
+SELECT regexp_extract(location, '^[A-Z]+') AS pop,
+       COUNT(*) AS views, COUNT(DISTINCT request_ip) AS people
+FROM pages
+GROUP BY 1
+ORDER BY views DESC;
+```
+
 **How answers are entered** (does anyone use "spot it"?):
 
 ```sql
@@ -304,5 +358,18 @@ ORDER BY "date" DESC;
   visitor counts as an upper bound.
 - **Bots are in there.** Filter `user_agent` if a number looks implausible;
   the times-table pages exist to be crawled and are crawled accordingly.
+- **One site can arrive under several hosts.** The first real week showed
+  `facebook.com` and `l.facebook.com` counted separately — the second is
+  Facebook's link shim, and `m.`/`lm.` variants exist too. Only `www.` is
+  folded, because folding subdomains in general is wrong (`sites.google.com`
+  is not `google.com`). Add them up by eye rather than teaching the rollup a
+  list of shim hostnames it would have to keep current.
+- **An edge code is not a country.** `edges` says which CloudFront PoP served
+  the request. It is near the visitor, not at them, and a VPN moves it
+  entirely.
+- **`referrers` does not sum to `pageViews`, but `edges` does.** Our own pages
+  are dropped from the first and nothing is dropped from the second, so the
+  gap between them is roughly the internal navigation — 11 views against 4
+  referrers on 2026-08-18 was one visitor clicking around the site.
 - **Logs are delivered late** — usually minutes, occasionally hours. An empty
   result for today is normal, not a broken pipeline.
