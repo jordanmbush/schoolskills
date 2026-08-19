@@ -190,6 +190,22 @@ describe("passageFor", () => {
   it("returns nothing rather than throwing for a level that doesn't exist", () => {
     expect(passageFor(config({ levelId: "no-such-level" }), 1)).toEqual([]);
   });
+
+  /**
+   * A lesson's words arrive in the same field a drill's do, and are not the
+   * same kind of thing. The ladder generates them in order — sentences, their
+   * capitals and their full stops (docs/typing.md §5.1, §5.3) — so dealing
+   * them out again would put the stops in the middle of the passage.
+   */
+  it("keeps a lesson's passage in the order the ladder generated it", () => {
+    const passage = ["The", "cat", "sat", "down."];
+    const words = passageFor(
+      config({ lessonId: "L24", words: passage, wordCount: 4 }),
+      // Any seed at all: a passage is not drawn, so none of them can shuffle it.
+      99,
+    );
+    expect(words).toEqual(passage);
+  });
 });
 
 describe("buildTypingDeck", () => {

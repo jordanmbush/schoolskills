@@ -2,7 +2,7 @@ import type { Card, TypingConfig } from "@/engine/types";
 
 import { mulberry32, shuffled } from "@/engine/random";
 import { SCRIPTURE_CREDIT } from "@/engine/sheets/passages/credit";
-import { LESSONS } from "@/engine/typing/lessons";
+import { lessonById } from "@/engine/typing/lessons";
 import { WORD_LISTS, listWords } from "./wordlists";
 import type { DeckSpec } from "./spec";
 
@@ -353,6 +353,20 @@ const drawn = (pool: readonly string[], count: number, rand: () => number) => {
  * decks follow, so a short run never asks for one word four times.
  */
 export function passageFor(config: TypingConfig, seed: number): string[] {
+  /**
+   * A lesson's words are a PASSAGE; a drill's are a bag.
+   *
+   * Both arrive in the same field, because both are a config that carries its
+   * own words (docs/typing.md §5.3) — but they are not the same kind of thing.
+   * The ladder generates a lesson's text in order and at length, sentences and
+   * their full stops included (§5.1), so dealing it out again would shuffle the
+   * stops into the middle of it. A parent's five tricky words are the opposite:
+   * there is no order to keep and the bag is short, so it is drawn from until
+   * the run is long enough. The lesson id is what tells the two apart, exactly
+   * as it does in `typingConfigKey` below.
+   */
+  if (config.lessonId && config.words?.length)
+    return config.words.slice(0, config.wordCount);
   if (config.words?.length)
     return drawn(config.words, config.wordCount, mulberry32(seed));
 
@@ -484,14 +498,12 @@ export function wordsPerMinute(cards: Array<{ answer: string }>, ms: number) {
  * on the far side of `local/no-corpus-in-decks`, and the words a lesson was
  * played on arrive in `config.words` from the island that generated them.
  */
-const LESSONS_BY_ID = new Map(LESSONS.map((lesson) => [lesson.id, lesson]));
-
 export function typingDeckSpec(mode: string): DeckSpec {
   const id = levelIdOf(mode);
   // Two namespaces behind one prefix, and neither can answer for the other: a
   // lesson id is "L07" and a level id is "home-row". A mode from neither is a
   // level this build has retired, which still reads as a typing run.
-  const lesson = LESSONS_BY_ID.get(id);
+  const lesson = lessonById(id);
   const level = TYPING_LEVELS_BY_ID.get(id);
   return {
     id: mode,

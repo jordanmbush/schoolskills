@@ -504,3 +504,25 @@ function toLesson(row: Row): Lesson {
 
 /** The ladder, in order. Exactly a hundred, and `LESSONS[i].n === i + 1`. */
 export const LESSONS: readonly Lesson[] = ROWS.map(toLesson);
+
+/**
+ * The same hundred by the id a run is filed under.
+ *
+ * `TypingConfig.lessonId` and the half of `Session.mode` after the `typing:`
+ * prefix are the same string, and this is the one place it is resolved.
+ */
+const BY_ID = new Map(LESSONS.map((lesson) => [lesson.id, lesson]));
+
+/**
+ * The lesson with this id, or `null` for anything that is not one.
+ *
+ * Total on purpose, and in both directions: `undefined` is the ordinary answer
+ * for a free-play config, which simply has no `lessonId`, and an id from a
+ * build that has since re-cut the ladder is a run that must still open rather
+ * than a case to throw on. It is the same promise `deckSpec` makes one layer
+ * up — a saved run outlives the ladder it was played on (CLAUDE.md) — and it
+ * is what lets a screen ask "is this a lesson?" and get the lesson back in the
+ * same breath.
+ */
+export const lessonById = (id?: string | null): Lesson | null =>
+  (id ? BY_ID.get(id) : undefined) ?? null;
