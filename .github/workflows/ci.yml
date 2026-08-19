@@ -9,6 +9,19 @@ on:
     branches: [develop, main]
   push:
     branches: [develop, main]
+  # Dispatchable so the monthly analytics rollup can get its own PR checked.
+  #
+  # GitHub deliberately does not start workflows for events raised with
+  # GITHUB_TOKEN — that is what stops a workflow triggering itself forever — so
+  # a PR opened by .github/workflows/analytics.yml receives NO checks at all.
+  # With "CI" required on develop, its PR is then blocked for want of a check
+  # that can never run, and auto-merge waits indefinitely.
+  #
+  # A dispatched run attaches its check to the head SHA of the ref it runs on,
+  # and branch protection evaluates required contexts against that SHA, so
+  # dispatching this against the rollup branch satisfies the gate honestly:
+  # the suite really does run, on exactly the commit being merged.
+  workflow_dispatch:
 
 concurrency:
   group: ci-${{ github.ref }}
