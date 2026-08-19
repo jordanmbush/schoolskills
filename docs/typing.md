@@ -628,7 +628,7 @@ minute; `acc` is the whole-lesson accuracy bar.
 |  99 | Hailstorm · The last storm   | —   | storm   | off   |     — |   — |       — |
 | 100 | **The Ice Exam**             | —   | passage | off🔒 |   150 |  38 |     97% |
 
-Twenty Hailstorm levels, ten checkpoints, thirty-five that introduce keys.
+Twenty Hailstorm levels, ten checkpoints, thirty that introduce keys.
 
 Read the wpm column down the page and it does not climb smoothly — it **drops
 every time a key arrives** and climbs back on the review lessons after it.
