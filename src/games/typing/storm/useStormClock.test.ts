@@ -161,13 +161,34 @@ describe("redrawn", () => {
 });
 
 describe("the shape the clock is watching", () => {
-  it("names every field of a run except the clock", () => {
-    // `redrawn` compares four fields by identity and derives two more from the
-    // clock. A story that adds a fifth field — STM06's score, STM07's tally —
-    // has to come here and decide whether the screen draws it; the alternative
-    // is finding out from a HUD that quietly stopped updating.
+  /**
+   * Every field a `StormState` declares, written as a value.
+   *
+   * The type is what makes this catch an OPTIONAL field. `Object.keys` of a
+   * fresh run can only see what `startStorm` actually sets, so a
+   * `readonly score?: number` added for STM06 would be invisible to a list of
+   * key strings — and `redrawn` would go on never comparing it. A
+   * `Record<keyof StormState, true>` will not compile without a line for that
+   * field, and being an object literal it will not compile with a line for one
+   * that has been removed either.
+   */
+  const FIELDS: Record<keyof StormState, true> = {
+    combo: true,
+    ending: true,
+    resolved: true,
+    shield: true,
+    timeMs: true,
+    wave: true,
+  };
+
+  it("pins the shape of a StormState, so a new field is decided about here", () => {
+    // `redrawn` compares four of these by identity, derives two more from the
+    // clock, and leaves `wave` out because a run's wave is fixed. A story that
+    // adds a seventh — STM06's score, STM07's tally — has to come here and say
+    // which of those three it is; the alternative is finding out from a HUD
+    // that quietly stopped updating.
     expect(Object.keys(startStorm(buildWave(spec, 7))).sort()).toEqual(
-      ["combo", "ending", "resolved", "shield", "timeMs", "wave"].sort(),
+      Object.keys(FIELDS).sort(),
     );
   });
 });

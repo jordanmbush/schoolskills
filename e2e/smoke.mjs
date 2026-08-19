@@ -366,10 +366,13 @@ try {
    * way an animation loop passes every gate and then burns a phone battery
    * behind a screen the child has already left.
    *
-   * So the browser is asked directly, by keeping a ledger of every frame
-   * handle that has been requested and not yet delivered or cancelled. Two
-   * numbers settle it: one frame in flight while the storm is running, and
-   * none at all once the run is over or the screen is gone.
+   * So the browser is asked directly, in two ways. The write half is measured
+   * by how MANY distinct positions a single stone occupies across a window
+   * several spawns long — a number a re-render cannot reach and only a frame
+   * loop can. The lifetime half is a ledger of every frame handle requested
+   * and not yet delivered or cancelled, which two numbers settle: one frame in
+   * flight while the storm is running, and none at all once the run is over or
+   * the screen is gone.
    */
   log("\n9. The hailstorm falls, and its loop dies with the screen");
   await page.addInitScript(() => {
@@ -404,26 +407,63 @@ try {
   };
 
   await storm();
-  // The FIRST stone, by lane order in the DOM — the wave never reorders, so
-  // this is the same element on both readings for as long as it is falling.
-  const stoneTop = () =>
-    page.evaluate(() => ({
-      top: document.querySelector(".storm__letter")?.getBoundingClientRect()
-        .top,
+  /*
+   * Thirty-six readings across 900ms, rather than two readings 300ms apart —
+   * and the difference is the entire value of the check.
+   *
+   * The stand-in wave spawns a letter every 300ms and every spawn is a redraw,
+   * so React rewrites each stone's inline `--drop` from `state.timeMs` at
+   * least once inside any 300ms window. Two readings that far apart therefore
+   * move whether or not the rAF loop writes anything at all: delete the loop's
+   * only side effect and the pair still differs, because the re-render alone
+   * carried the stone. What the re-render cannot fake is the SHAPE of the
+   * motion — without the loop the stone climbs a 300ms staircase, three or
+   * four distinct positions across this window, where the loop gives one per
+   * frame. So the assertion is on the count of distinct positions, which is
+   * the one number a staircase and a fall cannot both satisfy.
+   *
+   * The element is held rather than re-queried between readings: React keys
+   * the sky by wave index, so this node survives every re-render for as long
+   * as its letter is airborne — and the wave's first letter falls for four
+   * seconds, comfortably longer than this samples for.
+   */
+  const fall = await page.evaluate(async () => {
+    // The first stone in DOM order, which is wave-index (spawn) order because
+    // the sky renders `wave.letters` in place — NOT lane order, and the lanes
+    // in DOM order are not sorted. All this relies on is that the wave never
+    // reorders, so it is the same element on every reading below.
+    const stone = document.querySelector(".storm__letter");
+    const tops = [];
+    for (let i = 0; i < 36; i++) {
+      tops.push(stone.getBoundingClientRect().top);
+      await new Promise((done) => window.setTimeout(done, 25));
+    }
+    return {
+      // Rounded to whole pixels so sub-pixel noise cannot be counted as
+      // movement. A frame of this wave is several pixels, so nothing real is
+      // rounded away, and a 300ms step is roughly fifty.
+      distinct: new Set(tops.map((top) => Math.round(top))).size,
+      samples: tops.length,
+      // The loop and the render must never disagree about `--drop`, so the
+      // stone may not rewind on any frame — including the ones React commits.
+      forwards: tops.every((top, i) => i === 0 || top >= tops[i - 1]),
+      travelled: Math.round(tops[tops.length - 1] - tops[0]),
+      // A detached node reads all-zero rects, which would be 1 distinct
+      // position and a false failure rather than a false pass — but say so.
+      attached: stone.isConnected,
       pending: window.__pendingFrames(),
-    }));
-  const before = await stoneTop();
-  await page.waitForTimeout(300);
-  const after = await stoneTop();
+    };
+  });
   check(
-    "a stone is further down the sky 300ms later",
-    after.top > before.top,
-    `${Math.round(before.top)}px → ${Math.round(after.top)}px`,
+    "a stone moves on every frame, not once per spawn",
+    fall.distinct >= 12 && fall.forwards && fall.attached,
+    `${fall.distinct} distinct positions in ${fall.samples} readings over 900ms, ` +
+      `${fall.travelled}px travelled (a per-spawn staircase gives 3)`,
   );
   check(
     "the loop has exactly one frame in flight while it runs",
-    after.pending === 1,
-    `${after.pending} pending`,
+    fall.pending === 1,
+    `${fall.pending} pending`,
   );
 
   // Leaving is what quitting is on this screen (there is no quit control until

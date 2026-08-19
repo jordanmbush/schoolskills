@@ -1252,11 +1252,16 @@ sky is a size container and the travel is written in `cqh`.
 Neither an empty `tick` nor a missed `fire` returns the object it was handed,
 so `===` on the state says "changed" sixty times a second and means nothing.
 What React is re-rendered for is every field of a `StormState` except the
-clock, plus the two things the clock alone moves: a letter appearing, which no
-field records because it is a time crossing, and the target changing, which two
-letters at different speeds can do mid-air with nothing else happening at all
+clock and the wave — `resolved`, `shield`, `combo` and `ending` — plus the two
+things the clock alone moves: a letter appearing, which no field records
+because it is a time crossing, and the target changing, which two letters at
+different speeds can do mid-air with nothing else happening at all
 (decision 32). Miss that second one and the board goes on marking a child's
-keys against a letter that is no longer the lowest.
+keys against a letter that is no longer the lowest. The wave is the field left
+out on purpose: it is fixed for the life of a run, so it cannot change under a
+running loop, and a screen handed a different wave is a different run — which
+the effect notices for itself, starting the new storm from zero rather than
+redrawing the old one.
 
 ### 8.10 · Motion, flashing and reduced motion
 

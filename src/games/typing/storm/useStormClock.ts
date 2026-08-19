@@ -35,7 +35,7 @@ import type { StormState, Wave } from "@/engine/typing/storm";
  * A canvas is a hole in exactly that. Nothing inside a bitmap inherits, so
  * every one of those colours would have to be read back out with
  * `getComputedStyle` and re-plumbed by hand into fill and stroke calls — and
- * the moment somebody adds the twelfth world, the one screen in the app that
+ * the moment somebody adds the eighth world, the one screen in the app that
  * is *most* about scenery would be the one screen that silently kept the old
  * one. The cost of the DOM here is a style recalculation on twelve small
  * elements per frame; the cost of the canvas is a biome that stops being one
@@ -115,19 +115,28 @@ function onField(state: StormState): number {
  * The loop needs this because neither `tick` nor `fire` can answer it:
  * an empty tick and a missed shot both return a fresh object, so `===` on the
  * state says "changed" sixty times a second and means nothing. What the screen
- * is actually a function of is every field of a run except the clock — plus
+ * is actually a function of is every field of a run except the clock and the
+ * wave — so `resolved`, `shield`, `combo` and `ending`, compared here — plus
  * the two things the clock alone moves: a letter appearing (no field of
  * `StormState` records a spawn; it is a time crossing) and the target
  * changing, which two letters at different speeds can do mid-air with nothing
  * else happening at all (decision 32). Miss that one and the board goes on
  * marking a child's keys against a letter that is no longer the lowest.
  *
+ * `wave` is the field left out, and deliberately: a run's wave is fixed for
+ * its whole life, so it cannot change under a running loop, and a screen
+ * handed a different one is a different run rather than a redraw. The effect
+ * below is what notices that — it starts the new storm from zero and
+ * `setState`s it — so comparing `wave` here would be a second, later answer to
+ * a question already settled before the frame.
+ *
  * `resolved`, `shield` and `ending` are compared by identity on purpose: the
  * reducer rebuilds each of them only when it changes one, so identity is a
  * true answer for them where it is a false one for the state that holds them.
- * `useStormClock.test.ts` pins the field list against the real shape of a
- * `StormState`, so a story that adds one has to decide here whether it is
- * drawn rather than find out from a screen that stopped updating.
+ * `useStormClock.test.ts` pins the whole shape of a `StormState` against that
+ * list — an optional field included — so a story that adds one has to come
+ * here and decide whether it is drawn, rather than find out from a screen that
+ * stopped updating.
  */
 export function redrawn(drawn: StormState, next: StormState): boolean {
   return (
