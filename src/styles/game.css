@@ -1418,6 +1418,11 @@ label.segmented__btn {
      neutral, which is the world's own quiet grey. */
   --finger: var(--chalk-dim);
 
+  /* The lip under a keycap. Named because every rule that adds a shadow of
+     its own has to restate it — `box-shadow` replaces rather than adds — and
+     a key that lost its lip while being pointed at would look pressed. */
+  --key-lip: inset 0 -0.1em 0 rgb(0 0 0 / 22%);
+
   position: absolute;
   top: 0;
   bottom: 0;
@@ -1431,7 +1436,7 @@ label.segmented__btn {
   border: 1px solid color-mix(in oklab, var(--finger) 38%, transparent);
   border-radius: calc(var(--key) * 0.2);
   background: color-mix(in oklab, var(--finger) 13%, var(--ink-800));
-  box-shadow: inset 0 -0.1em 0 rgb(0 0 0 / 22%);
+  box-shadow: var(--key-lip);
 
   font-family: var(--font-mono);
   font-size: calc(var(--key) * 0.42);
@@ -1493,6 +1498,61 @@ label.segmented__btn {
 
 .keyboard__key[data-finger="r-pinky"] {
   --finger: var(--finger-r-pinky);
+}
+
+/* ── Typing: the next-key hint ───────────────────────────────────────────
+   Go here next (docs/typing.md §3.3, §4.1). Drawn in `--go`, which is the
+   world's own "press this" — the same colour as the button that started the
+   run and the focus ring around it — so the hint is per-world scenery rather
+   than a sixth telemetry signal a child has to be taught.
+
+   It is deliberately NOT shaped like a press. A strike fills the whole cap
+   with `--lime` for 120ms and is gone; the hint is a ring and a breath around
+   an otherwise ordinary key, and it stays there until the key is struck. Two
+   different colours doing two different things would still read as one
+   flashing board if both were fills, and the child has to be able to tell "you
+   just pressed that" from "press this next" while looking at the board rather
+   than at their hands.
+
+   For a capital, TWO keys carry this at once — the letter, and the shift on
+   the opposite hand. That pair is the technique being taught and the reason
+   the hint exists at all; `strokeFor` picks the hand, and Keyboard.tsx records
+   why.
+
+   The fade is allowed here, unlike on the echo: the hint moves from key to key
+   as a passage is typed, and easing that move reads as the pointer travelling
+   rather than teleporting. A press has to be instant; an instruction does not.
+
+   Placed ABOVE the press echo so the cascade lands the right way round — a
+   hinted key that is struck flashes, rather than staying dressed as an
+   instruction the child has already followed.                             */
+.keyboard__key.is-next {
+  border-color: var(--go);
+  background: color-mix(in oklab, var(--go) 20%, var(--ink-800));
+  color: var(--go);
+
+  /* Two shadows: the cap's own lip, restated so the key still looks
+     pressable, plus an outward ring that is the hint. */
+  box-shadow:
+    var(--key-lip),
+    0 0 0 max(2px, calc(var(--key) * 0.06))
+      color-mix(in oklab, var(--go) 34%, transparent);
+
+  /* A slow breath, not a blink. Fast enough to draw the eye down to the board
+     and back, slow enough that five rows of it aren't a strobe. The keyframe
+     ends where it starts, so `prefers-reduced-motion` — which globally clamps
+     every animation to one 0.001ms pass (base.css) — leaves the static ring
+     above exactly as it is, and the hint survives with only its motion gone. */
+  animation: key-hint 1.6s var(--ease-out) infinite;
+}
+
+@keyframes key-hint {
+  50% {
+    box-shadow:
+      var(--key-lip),
+      0 0 0 max(2px, calc(var(--key) * 0.06))
+        color-mix(in oklab, var(--go) 8%, transparent);
+  }
 }
 
 /* ── Typing: press echo ──────────────────────────────────────────────────
