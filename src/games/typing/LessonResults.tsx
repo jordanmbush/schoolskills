@@ -105,13 +105,25 @@ export default function LessonResults({
     ? levelCredit(session.config.levelId)
     : undefined;
 
+  /**
+   * What the child chose in the brief, if they chose anything (#145, §4.2).
+   *
+   * Carried onto "Try again" and onto nothing else. A retry is the same lesson
+   * with fresh words, and a child who turned the guide off to sit lesson 40
+   * properly should not have it switched back on by the button that means
+   * "again" — but the lesson after it is a different lesson, and it gets to
+   * make its own suggestion. Read through the deck registry's own guard, for
+   * the same reason `credit` above is.
+   */
+  const chosen = isTyping(session.config) ? session.config.keyboard : undefined;
+
   /** Fresh words, no ghost, no attempt counter. */
   function run(of: Lesson) {
     sfx.whoosh();
     const seed = randomSeed();
     start({
       profileId: profile.id,
-      config: lessonConfig(of, seed),
+      config: lessonConfig(of, seed, of.id === lesson.id ? chosen : undefined),
       seed,
       ghost: null,
     });

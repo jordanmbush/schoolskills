@@ -80,6 +80,36 @@ describe("KeyboardSetting", () => {
     expect(chosen(html)).toEqual(["off"]);
   });
 
+  /**
+   * The lessons that insist (docs/typing.md §4.2, #145). Shown rather than
+   * hidden, disabled rather than silently overridden, and with the reason on
+   * the panel — a control that ignores the setting a child chose and a control
+   * greyed out with no explanation are the same bug at different volumes.
+   */
+  it("shows a locked keyboard, disabled, with the reason", () => {
+    const html = renderToStaticMarkup(
+      <KeyboardSetting
+        mode="off"
+        onChange={() => {}}
+        lockedBecause="Checkpoints are typed without the keyboard."
+      />,
+    );
+
+    // Still three pills, still saying which one the run is in.
+    expect(chosen(html)).toEqual(["off"]);
+    expect(html.match(/disabled=""/g)?.length).toBe(3);
+    expect(html).toContain("Checkpoints are typed without the keyboard.");
+  });
+
+  it("leaves an unlocked control pressable and unexplained", () => {
+    const html = renderToStaticMarkup(
+      <KeyboardSetting mode="off" onChange={() => {}} />,
+    );
+
+    expect(html).not.toContain("disabled");
+    expect(html).not.toContain("control__why");
+  });
+
   it("is a named radio group, because this one is a control", () => {
     const html = renderToStaticMarkup(
       <KeyboardSetting mode="keys" onChange={() => {}} />,

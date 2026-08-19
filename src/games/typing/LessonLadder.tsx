@@ -15,10 +15,12 @@ import { LessonTile } from "./LessonTile";
  * "unlocked" flag anywhere behind this screen, which is why re-tuning a
  * lesson's criteria re-draws the map for every child with no backfill.
  *
- * Choosing a tile opens the lesson. §9's `LessonBrief` — what it teaches, the
- * three bars, your best — goes between the two later (LES11); until then the
- * tile is the door, and a lesson that turns out to be too hard costs a child
- * nothing but the run (§6.6).
+ * Choosing a tile opens the lesson's brief (§9, #145) — what it teaches, the
+ * three bars it wants, your best, and how much of the keyboard will be on
+ * screen. The tile is the door and the brief is what is written on it, which
+ * is why a locked tile still says what would open it: a lesson that turns out
+ * to be too hard costs a child nothing but the run (§6.6), and one they cannot
+ * reach yet should at least say so.
  */
 
 /**
