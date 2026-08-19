@@ -1,0 +1,102 @@
+# Rebuild the geo-IP artifact the analytics rollup reads.
+#
+# ⚠️ This exists to discharge a LICENCE OBLIGATION, not to keep a number
+# fresh. The GeoLite2 redistribution the artifact is built from says you
+#
+#   "may not prevent the Library from updating local copies of the GeoLite2
+#    Databases to honor Do Not Sell requests submitted to MaxMind"
+#
+# and MaxMind honours those requests by dropping records from later releases.
+# A snapshot pinned in S3 forever is precisely what that forbids, so the
+# refresh has to be something the pipeline does rather than something somebody
+# remembers. If this workflow is disabled, the obligation stops being met —
+# delete the artifact rather than leaving a stale one in place.
+#
+# Nothing here touches the site. It reads two public CSVs, merges them, and
+# writes one object to the analytics bucket under `geoip/`; the 90-day expiry
+# rule in sst.config.ts is scoped to `cf/` and does not apply to it.
+#
+# Credentials come from the same OIDC deploy role as everything else
+# (scripts/setup-github-oidc.sh). There are no long-lived AWS keys.
+name: Refresh geo-IP artifact
+
+on:
+  schedule:
+    # 04:00 UTC on the 1st. Monthly against MaxMind's weekly releases is
+    # deliberate: the reader warns at 45 days, so a single missed run is
+    # visible in `npm run analytics` before it becomes a compliance gap.
+    - cron: "0 4 1 * *"
+  workflow_dispatch:
+
+concurrency:
+  group: refresh-geoip
+  cancel-in-progress: false
+
+permissions:
+  id-token: write # OIDC
+  contents: read
+  issues: write # the failure alert below
+
+jobs:
+  refresh:
+    name: Rebuild and upload
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24.16"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: us-west-1
+
+      # The merge holds several million ranges in memory at once. Node's
+      # default heap is enough on this runner today; the flag is here so a
+      # source that grows does not turn into an out-of-memory failure that
+      # looks like a bug in the build.
+      - name: Build and upload
+        env:
+          NODE_OPTIONS: --max-old-space-size=6144
+        run: npm run analytics:geoip
+
+      # A skipped refresh is silent by nature — the old artifact keeps working
+      # and the counts keep coming out. An issue is what makes it not silent.
+      - name: Alert on failed refresh
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          title="Geo-IP artifact refresh failed"
+          body="Refresh failed: ${RUN_URL}
+
+          This is a licence obligation, not just stale data — see the header of
+          .github/workflows/refresh-geoip.yml and scripts/build-geoip.mjs.
+
+          First things to check:
+          - Did jsDelivr serve both sources? The build fails loudly if a CSV
+            arrives truncated rather than writing a half-built artifact.
+          - Did the column layout move? 'source did not parse' means the format
+            changed, and the fix is in scripts/build-geoip.mjs.
+          - Can the role still write s3://schoolskills-access-logs-*/geoip/?
+
+          Meanwhile the previous artifact is still being read, and
+          'npm run analytics' warns once it passes 45 days old."
+          existing="$(gh issue list --state open --search "in:title \"$title\"" --json number --jq '.[0].number')"
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --body "$body"
+          else
+            gh issue create --title "$title" --label bug --body "$body"
+          fi

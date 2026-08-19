@@ -7,6 +7,14 @@
  * a pile of them to per-day totals that carry no address and no identifier,
  * so the output is safe to keep — but it does NOT decide where.
  *
+ * Two of those totals are read off the address and not off anything else: how
+ * many were distinct that day, and which country each was in. Both are
+ * computed here and thrown away here — the address reaches no further than
+ * this function, and the lookup that turns it into a country is arithmetic
+ * against a table on this machine (scripts/geoip.mjs), never a request to a
+ * geo-IP service. That distinction is the whole reason the feature is
+ * allowed to exist; /privacy says a child's address goes nowhere.
+ *
  * ⚠️ **Nothing here is a durable store, and 90 days is currently the whole of
  * the site's memory.** These counts used to be committed to this repo, which
  * confused two different things: a repo keeps CODE forever, and that is what
@@ -24,6 +32,7 @@
  * stays documented in docs/analytics.md for ad-hoc digging.
  *
  * Usage:  node scripts/rollup-analytics.mjs <dir-of-gz-logs> <out.json>
+ *         node scripts/rollup-analytics.mjs <dir> <out.json> --no-geoip
  */
 
 import { createReadStream, existsSync } from "node:fs";
@@ -32,6 +41,8 @@ import { createGunzip } from "node:zlib";
 import { createInterface } from "node:readline";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
+
+import { placeLookup } from "./geoip.mjs";
 
 /**
  * CloudFront's standard log format, by position.
@@ -174,16 +185,15 @@ export const referrerHost = (raw) => {
 /**
  * Which CloudFront edge served the request: `SEA19-C1` → `SEA`.
  *
- * ⚠️ **This is the edge, not the visitor.** CloudFront routes to a nearby PoP,
+ * ⚠️ **This is the edge, not the visitor**, and since `countries` exists it is
+ * no longer the answer to "where are they". CloudFront routes to a nearby PoP,
  * so the airport code is a coarse proxy for where someone is and nothing
  * stronger — a visitor in Vancouver is served from Seattle, and one on a VPN
- * is served from wherever the exit node is. Read it as "roughly which part of
- * the world", never as a country count.
+ * is served from wherever the exit node is.
  *
- * The real field is `c-country`, and it does not exist in CloudFront's legacy
- * standard log format — the 33 fields are fixed. Getting it means moving the
- * distribution to standard logging v2, which is a different delivery mechanism
- * (CloudWatch vended logs) rather than a field to add here.
+ * It is kept anyway because it answers a different question that nothing else
+ * can: which PoPs actually serve this site, which is a cache and latency
+ * question rather than an audience one.
  *
  * The trailing `-C1`/`-P3` is the individual server within the PoP and is
  * dropped: it changes between requests from one household and means nothing to
@@ -197,11 +207,50 @@ export const edgeAirport = (raw) => {
 const BOT =
   /bot|crawler|spider|crawling|slurp|bingpreview|facebookexternalhit|headlesschrome|lighthouse|curl|wget|python-requests/i;
 
+/**
+ * Where a page view came from, as up to three keys, or `null` when nothing
+ * looked.
+ *
+ * `"(unknown)"` and an absent `countries` key are deliberately different
+ * things, and conflating them is how a broken lookup starts reading as data.
+ * `(unknown)` means the address was checked and the table did not place it —
+ * a new allocation, a reserved range, something the source missed.
+ * **No key at all** means no lookup ran, and `main` omits the fields entirely
+ * in that case rather than filing a day of `(unknown)` that looks measured.
+ *
+ * Region and city are **absent rather than guessed** when the source has no
+ * answer, which is often: an address can resolve to a country and no further.
+ * Filling those in from a country centroid is exactly the mistake that makes
+ * geo-IP data infamous, so a missing city is left missing and the counts for
+ * the three levels do not have to agree.
+ *
+ * Everything the caveats say about `visitors` applies here and harder. A VPN,
+ * a school's egress or a carrier-grade NAT puts someone in the wrong place
+ * outright rather than merely nearby, and the finer the level the more often
+ * it is wrong.
+ */
+export const placeOf = (geo, ip) => {
+  if (!geo) return null;
+  const at = geo.lookup(ip);
+  if (!at) return { country: "(unknown)", region: null, city: null };
+  return {
+    country: at.country,
+    // Qualified by the level above, because place names are not unique:
+    // Ontario is a province of Canada and a city in California, and there are
+    // some thirty Springfields. An unqualified key would silently add them up.
+    region: at.region ? `${at.country} / ${at.region}` : null,
+    city: at.city ? `${at.country} / ${at.region || "—"} / ${at.city}` : null,
+  };
+};
+
 /** One day's tallies. Sets while counting, numbers by the time they're stored. */
 const emptyDay = () => ({
   visitors: new Set(),
   pageViews: 0,
   pages: {},
+  countries: {},
+  regions: {},
+  cities: {},
   referrers: {},
   edges: {},
   events: {},
@@ -218,7 +267,13 @@ async function* lines(file) {
   }
 }
 
-export async function tally(dir) {
+/**
+ * @param dir  directory of gzipped CloudFront logs, searched recursively
+ * @param geo  a `{ lookup }` from scripts/geoip.mjs, or omitted to skip
+ *             geolocation entirely — see `countryOf` for why that is not the
+ *             same as looking up and finding nothing.
+ */
+export async function tally(dir, geo = null) {
   const days = new Map();
   const files = (await readdir(dir, { recursive: true })).filter((f) =>
     f.endsWith(".gz"),
@@ -290,12 +345,26 @@ export async function tally(dir) {
       }
 
       if (!isPageView(row)) continue;
-      // The IP is used here and discarded here. Only its cardinality survives
-      // this function, which is what lets the output live in a public repo.
+      // The IP is used here and discarded here. What survives is a count of
+      // distinct addresses and a count per place — no address, and nothing an
+      // address could be recovered from.
+      //
+      // ⚠️ That is a weaker guarantee at city level than at country level, and
+      // it is weakest exactly where the traffic is thinnest: a city with one
+      // page view on one day is close to naming a household. See
+      // docs/analytics.md before putting any of this anywhere but a terminal.
       day.visitors.add(row["c-ip"]);
       day.pageViews += 1;
       const path = row["cs-uri-stem"];
       day.pages[path] = (day.pages[path] ?? 0) + 1;
+
+      const place = placeOf(geo, row["c-ip"]);
+      if (place) {
+        const { country, region, city } = place;
+        day.countries[country] = (day.countries[country] ?? 0) + 1;
+        if (region) day.regions[region] = (day.regions[region] ?? 0) + 1;
+        if (city) day.cities[city] = (day.cities[city] ?? 0) + 1;
+      }
 
       // Both are counted on page views only, not on every request. An asset's
       // referrer is always the page that asked for it, so counting those would
@@ -314,8 +383,61 @@ export async function tally(dir) {
 const sortObject = (o) =>
   Object.fromEntries(Object.entries(o).sort(([a], [b]) => a.localeCompare(b)));
 
-async function main(LOG_DIR, OUT) {
-  const days = await tally(LOG_DIR);
+/**
+ * Load the country table, or explain at the top of your voice why not.
+ *
+ * A missing table is NOT a reason to fail the run: the counts that matter are
+ * derived from the log lines themselves, and losing a month of page views
+ * because a CDN was briefly unreachable would be the wrong trade. But it is
+ * emphatically a reason to say so — this pipeline's one real outage was a
+ * silent one, so "quietly produced numbers with a field missing" is the shape
+ * of failure it is least allowed to have.
+ */
+async function loadGeo(enabled) {
+  if (!enabled) {
+    process.stderr.write("geolocation off (--no-geoip); places omitted\n");
+    return null;
+  }
+  try {
+    const geo = await placeLookup();
+    process.stderr.write(
+      `geo-IP artifact ready — built ${geo.builtAt}, ` +
+        `${geo.ranges.toLocaleString()} ranges, ${geo.places.toLocaleString()} places\n`,
+    );
+    // Not fatal, and deliberately not silent. The GeoLite2 licence requires
+    // that local copies keep updating so Do Not Sell requests propagate, so a
+    // build this old is a stalled obligation rather than merely stale data.
+    if (geo.stale) {
+      process.stderr.write(
+        `\n⚠️  That artifact is ${geo.stale} days old. The refresh has stopped —\n` +
+          "   check .github/workflows/refresh-geoip.yml, or rebuild by hand:\n" +
+          "     npm run analytics:geoip\n\n",
+      );
+    }
+    return geo;
+  } catch (error) {
+    // The whole message, indented — not just its first line. The reader
+    // spends its later lines saying which command rebuilds the artifact,
+    // which is the entire remedy for the likeliest causes, and a
+    // first-line-only version threw that away.
+    const detail = String(error.message)
+      .split("\n")
+      .map((line) => `   ${line}`.trimEnd())
+      .join("\n");
+    process.stderr.write(
+      "\n⚠️  Could not load the geo-IP artifact, so countries, regions and\n" +
+        "   cities are OMITTED from this run — days counted now have no place\n" +
+        "   breakdown at all, which is not the same as every visitor being\n" +
+        "   unknown. Everything else was counted normally.\n\n" +
+        `${detail}\n\n`,
+    );
+    return null;
+  }
+}
+
+async function main(LOG_DIR, OUT, { geoip = true } = {}) {
+  const geo = await loadGeo(geoip);
+  const days = await tally(LOG_DIR, geo);
 
   const existing = existsSync(OUT)
     ? JSON.parse(await readFile(OUT, "utf8"))
@@ -329,6 +451,14 @@ async function main(LOG_DIR, OUT) {
       visitors: day.visitors.size,
       pageViews: day.pageViews,
       pages: sortObject(day.pages),
+      // Omitted rather than empty when no lookup ran — see `placeOf`.
+      ...(geo
+        ? {
+            countries: sortObject(day.countries),
+            regions: sortObject(day.regions),
+            cities: sortObject(day.cities),
+          }
+        : {}),
       referrers: sortObject(day.referrers),
       edges: sortObject(day.edges),
       events: sortObject(day.events),
@@ -342,9 +472,15 @@ async function main(LOG_DIR, OUT) {
     "distinct addresses seen that day and is approximate by design (see " +
     "/privacy). `referrers` holds bare hostnames, never a path or a query " +
     "string; `edges` is the CloudFront location that served the request, " +
-    "which is near the visitor rather than at them. Derived from logs that " +
-    "are deleted after 90 days, so a day outside that window cannot be " +
-    "recounted.";
+    "which is near the visitor rather than at them. `countries`, `regions` " +
+    "and `cities` are that visitor's own address resolved against a table " +
+    "held locally — no address is sent anywhere to produce it. `(unknown)` " +
+    "means the table did not place the address; a missing region or city " +
+    "means the table knew the country and no more, so the three levels do " +
+    "not sum alike; and no place keys at all mean no lookup ran. City counts " +
+    "in particular are small enough to identify a household and are NOT for " +
+    "publishing. Derived from logs that are deleted after 90 days, so a day " +
+    "outside that window cannot be recounted.";
   existing.days = sortObject(existing.days);
 
   await writeFile(OUT, JSON.stringify(existing, null, 2) + "\n");
@@ -368,18 +504,22 @@ if (
   process.argv[1] &&
   import.meta.url === pathToFileURL(process.argv[1]).href
 ) {
-  const [, , LOG_DIR, OUT] = process.argv;
+  const argv = process.argv.slice(2);
+  const geoip = !argv.includes("--no-geoip");
+  const [LOG_DIR, OUT] = argv.filter((arg) => !arg.startsWith("--"));
 
   // No default output path. There used to be one pointing into the repo, and
   // a default that writes into a source tree is how a generated file ends up
   // committed by accident.
   if (!LOG_DIR || !OUT) {
-    console.error("usage: rollup-analytics.mjs <dir-of-gz-logs> <out.json>");
+    console.error(
+      "usage: rollup-analytics.mjs <dir-of-gz-logs> <out.json> [--no-geoip]",
+    );
     process.exit(2);
   }
 
   try {
-    await main(LOG_DIR, OUT);
+    await main(LOG_DIR, OUT, { geoip });
   } catch (error) {
     console.error(`\n${error.message}`);
     process.exit(1);
