@@ -62,8 +62,15 @@ opens a PR with the result that merges itself once CI is green.
 
 It opens a PR rather than pushing because `develop` requires the CI check and
 a direct push from Actions carries none — the protected-branch hook declines
-it. If a rollup PR is ever sitting open, CI failed on it; the numbers are
-waiting, not lost.
+it.
+
+**That PR needs one click a month.** GitHub parks the CI run on a bot-authored
+PR at `action_required`, so the required check stays unsatisfied until someone
+presses "Approve and run"; after that auto-merge lands it. Nothing is lost by
+leaving it: the counts sit in the open PR, and the rollup overwrites per-day,
+so a month merged late is corrected rather than doubled. Removing the click
+means opening the PR as a real user — a stored PAT or App token — which this
+repo has avoided for everything so far, AWS included.
 
 If the bucket is empty the job now **fails** rather than quietly counting
 nothing. CloudFront logs every request including crawlers, so zero files means
