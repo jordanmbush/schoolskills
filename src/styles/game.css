@@ -896,7 +896,15 @@ label.segmented__btn {
   inset: 0;
   z-index: 40;
   display: grid;
+
+  /* `align-content` matters here because a lesson puts a second child in the
+     overlay (the home-row note, §7). Left at its default the two rows stretch
+     to fill the viewport and each child centres inside its own half, which
+     drops the note hundreds of pixels below the numeral and on top of the
+     keyboard. Centring the track group keeps the two as one stack. */
   place-items: center;
+  align-content: center;
+  gap: 0.75rem;
   background: rgb(7 8 13 / 88%);
   backdrop-filter: blur(4px);
 }

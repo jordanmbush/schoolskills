@@ -294,12 +294,17 @@ function Track({
    * How much of the board is on screen: `lesson.keyboard ?? profile.keyboard ??
    * "guide"`, which is the one line §4.2 asks for.
    *
-   * The lesson wins where it has an opinion, and most of them don't — a lesson
-   * carrying `null` defers to the child, which is the ordinary case. The two
-   * ends of the ladder are where the override earns its keep: lesson 1 forces
-   * `guide`, because a child who has never seen a keyboard cannot be asked to
-   * guess, and every checkpoint forces `off`, because a checkpoint that can be
-   * passed while reading the answer off the screen measures nothing.
+   * On the ladder as it stands, the lesson always wins: every one of the
+   * hundred names a mode, so `?? keyboardMode(profile.keyboard)` is free play's
+   * arm — plus the defensive one, for a lesson that ever carries `null`. The
+   * pins run the ladder's whole length, not just its ends, and the reasoning is
+   * clearest there: lesson 1 forces `guide`, because a child who has never seen
+   * a keyboard cannot be asked to guess, and every checkpoint forces `off`,
+   * because a checkpoint that can be passed while reading the answer off the
+   * screen measures nothing. `keyboardLocked` consequently reads the same as
+   * unlocked here — #145, the lesson brief and its keyboard lock, is where an
+   * unlocked lesson seeds the control instead of overriding it and the player
+   * gets the choice back.
    *
    * The player's half is resolved by the same function that draws the pills on
    * the setup screen, so the two can't disagree about a profile whose field is
