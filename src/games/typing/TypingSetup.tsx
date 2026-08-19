@@ -13,19 +13,34 @@ import {
 } from "@/engine/decks/typing";
 import { bestRun, ghostsFor, sessionsFor } from "@/engine/records";
 import { randomSeed } from "@/engine/random";
+import { ladderProgress } from "@/engine/typing/ladder";
 import { RivalList } from "@/games/race";
 import { sfx } from "@/services/sound";
 import { KeyboardSetting } from "./keyboard/KeyboardSetting";
+import { LessonLadder } from "./LessonLadder";
+import { lessonConfig } from "./lessonRun";
+import type { Lesson } from "@/engine/typing/lessons";
 import type { KeyboardMode, TypingConfig } from "@/engine/types";
 
 const LENGTHS = [20, 30, 50, 80];
 
 /**
- * Picking a level and a length.
+ * The ladder, and free play under it (docs/typing.md §9).
  *
- * Shorter than the flash-card setup on purpose: there is no operation, no
- * number grid, no input mode and no per-word clock to choose. A typing run is
- * a level and a length, and everything else about it is the same for everyone.
+ * `#/p/:id` is the way into the typing world, and after LES10 that means the
+ * hundred lessons first: `LessonLadder` is the screen's subject and the panel
+ * below it is the game that was here before the course existed.
+ *
+ * **Free play stays, and stays whole** — the five levels, the four lengths,
+ * the keyboard setting and the rival list, unchanged. A hundred lessons is a
+ * course, and a child who has come here to type a psalm and race their brother
+ * has not asked to be enrolled in one. Nothing on the ladder gates it, and
+ * nothing about it is worse than it was the day before the ladder landed.
+ *
+ * The two halves share this screen and nothing else. A lesson is not a race
+ * (§7): it carries its own words, no ghost and no rival, which is why the
+ * ladder starts a run through `lessonConfig` rather than through the level and
+ * length held in this component's state.
  */
 export default function TypingSetup() {
   const { profileId } = useParams();
@@ -53,6 +68,21 @@ export default function TypingSetup() {
       setRivalId(null);
   }, [rivalId, rivals]);
 
+  /**
+   * Where this child is on the ladder, from the runs the hub has already
+   * loaded (§6.5). Nothing is stored: pass a lesson and the tile fills because
+   * the session it was passed in is in this array.
+   *
+   * Memoised over the slice as well as the derivation, because `sessionsFor`
+   * builds a fresh array every call and `ladderProgress` remembers its answer
+   * against the array it was handed — so an unmemoised slice would pay for a
+   * pass over every saved run on every keystroke of the free-play panel below.
+   */
+  const progress = useMemo(
+    () => ladderProgress(sessionsFor(sessions, profile?.id ?? "")),
+    [sessions, profile?.id],
+  );
+
   if (!profile) return <Navigate to="/" replace />;
 
   const credit = levelCredit(config.levelId);
@@ -77,6 +107,26 @@ export default function TypingSetup() {
     }
   }
 
+  /**
+   * Open a lesson: fresh words, no ghost, no rival (§7).
+   *
+   * The same three lines the results screen's "Try again" runs, and
+   * deliberately so — a lesson started from a tile and a lesson started from
+   * its own results are the same run, filed under the same `configKey`, or a
+   * child's best would depend on which button they reached it by.
+   */
+  function openLesson(lesson: Lesson) {
+    sfx.whoosh();
+    const seed = randomSeed();
+    start({
+      profileId: profile!.id,
+      config: lessonConfig(lesson, seed),
+      seed,
+      ghost: null,
+    });
+    navigate(`/p/${profile!.id}/go`);
+  }
+
   function launch() {
     const ghost = rivals.find((g) => g.session.id === rivalId) ?? null;
     sfx.whoosh();
@@ -99,12 +149,23 @@ export default function TypingSetup() {
         </Link>
       </TopBar>
 
+      <LessonLadder progress={progress} onOpen={openLesson} />
+
       <div className="setup__grid">
         <section className="panel anim-rise">
           <div className="panel__head">
-            <h2 className="panel__title">Typing</h2>
+            <h2 className="panel__title">Free play</h2>
             <span className="chip">{describeConfig(config)}</span>
           </div>
+
+          {/* Said once, under the ladder, because a screen that led with a
+              hundred lessons and then showed a level picker without a word
+              would read as the course being over. Free play is the other
+              game here, not the leftovers of this one. */}
+          <p className="muted">
+            No lesson, no bars to meet — a passage, a clock, and anyone
+            you&apos;ve raced before.
+          </p>
 
           <div className="control">
             <span className="control__label">Level</span>

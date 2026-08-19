@@ -84,12 +84,12 @@ export default function LessonResults({
   const storm = lesson.pass.kind === "storm";
 
   /**
-   * Where the ladder will live (§9).
+   * Where the ladder lives (§9).
    *
-   * `#/p/:id` is the setup screen until #144 turns it into the hundred tiles.
-   * Every way off this screen points at the route rather than at today's
-   * screen, which is what makes that story a swap rather than a hunt for the
-   * links that guessed.
+   * `#/p/:id` is the hundred tiles, with free play under them. Every way off
+   * this screen points at the route rather than at the screen behind it, which
+   * is what made turning the setup screen into the ladder a swap rather than a
+   * hunt for the links that had guessed.
    */
   const ladder = `/p/${profile.id}`;
 
