@@ -526,6 +526,10 @@ export default defineConfig([
         // Node has had this since v10; the analytics rollup parses beacon
         // query strings with it.
         URLSearchParams: "readonly",
+        // Global since Node 18. scripts/geoip.mjs downloads the country table
+        // with it — the ONE network call anywhere in this pipeline, and it
+        // fetches a public CSV rather than sending anything anywhere.
+        fetch: "readonly",
         Buffer: "readonly",
         __dirname: "readonly",
       },

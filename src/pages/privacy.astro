@@ -27,14 +27,14 @@ import Content from "@/layouts/Content.astro";
  *
  * If an ad network, embedded video, a hosted analytics service or any
  * third-party script is ever added, this page MUST be updated in the same pull
- * request. Under COPPA a persistent identifier — an ad cookie, a device id, an
+ * request. Under COPPA, a persistent identifier — an ad cookie, a device id, an
  * analytics client id — counts as personal information collected from a child,
  * and shipping one while this page says otherwise turns a technical change into
  * a false statement.
  *
  * Measurement was added on 16 August 2026 and deliberately did not cross that
  * line: it is CloudFront's own access logs plus a first-party image request,
- * described under "Hosting, and how we count". Two things there are load-
+ * described under "How visits get counted". Two things there are load-
  * bearing and are asserted elsewhere in the codebase rather than left to
  * goodwill — the 90-day retention is `LOG_RETENTION_DAYS` in sst.config.ts, and
  * the promise that a beacon carries no deck id or answer is enforced by
@@ -49,6 +49,36 @@ import Content from "@/layouts/Content.astro";
  * scripts/rollup-analytics.mjs and is held in place by its tests. **Anything
  * else read off a log line belongs in this list**, in the same pull request.
  *
+ * Country, region and city were added on 19 August 2026 and are the entries on
+ * that list that are DERIVED rather than read: they resolve the IP address the
+ * logs already carried, which the rollup was already reading to count distinct
+ * visitors. Nothing new is collected and no request is added. What makes them
+ * sayable on this page is where the resolving happens — `scripts/geoip.mjs`
+ * searches a table in our own bucket, so no address is sent to a geo-IP
+ * service. **Swapping that for an API would make this page false**, and would
+ * put a child's IP address in a third party's logs, which is the line the
+ * paragraph above says is not crossed.
+ *
+ * ⚠️ CITY IS A DIFFERENT LEGAL CATEGORY FROM COUNTRY, and this comment exists
+ * so nobody discovers that later. The COPPA rule's definition of personal
+ * information (16 CFR 312.2) enumerates "geolocation information sufficient to
+ * identify street name and name of a city or town"; a country is not on that
+ * list and a city is. This site is declared child-directed in Search Console
+ * and, as the Advertising section says, cannot obtain verifiable parental
+ * consent. The judgement made here was that deriving a coarse count from an
+ * address the logs already hold, keeping nothing, publishing nothing and
+ * discarding it at 90 days, is not "collecting geolocation from a child" — but
+ * that judgement is the load-bearing part, not the code. **If this site ever
+ * retains place data beyond the log window, publishes it, joins it to anything
+ * else, or goes to a finer level than a town, that reasoning stops holding and
+ * this page and that decision both need revisiting — with a lawyer, not with a
+ * commit.**
+ *
+ * Latitude, longitude and postcode are in the source data and are deliberately
+ * excluded from the artifact — see the header of scripts/build-geoip.mjs. A
+ * coordinate is squarely inside the enumerated category above; a town name is
+ * arguable. Do not add them.
+ *
  * The same day, the monthly job that kept per-day counts permanently was
  * removed. That makes the 90 days below the whole of it — nothing derived
  * from a log line outlives the line any more — which is a stronger promise
@@ -58,6 +88,42 @@ import Content from "@/layouts/Content.astro";
  * It renders in Line world, which has no scenery on purpose. Every other page
  * here is a place; this one is a promise being read carefully, and dressing it
  * up as an adventure would be the wrong kind of charming.
+ *
+ * ## How this page is written, which is a decision and not an accident
+ *
+ * **No "we", and no "I".** A one-person project saying "we" reads like a
+ * template, and the visible text is aimed at a parent deciding whether to trust
+ * the site rather than at a lawyer. So the subject of a sentence here is the
+ * concrete thing doing the work — the site, the browser, your device, Google —
+ * and the reader is addressed directly as "you".
+ *
+ * ⚠️ The trap in that style is the AGENTLESS PASSIVE, which is the house voice
+ * of every evasive privacy policy ever written: "data may be shared" tells a
+ * parent nothing about who has their child's address. **Wherever an actor
+ * matters, name it** — "Google receives requests from your browser" is the
+ * shape to copy. Passive is fine for "those lines are deleted after 90 days",
+ * where the actor is a cron job nobody needs introduced.
+ *
+ * **Plain words, and only what a parent would actually act on.** The brand of
+ * the CDN, the storage engine, the words "static site" and "IndexedDB" were all
+ * removed deliberately: a parent cannot do anything with them, and jargon in a
+ * privacy policy reads as something being hidden behind it. What must survive
+ * any rewrite is the substance the law and the reader both need — what is
+ * collected, who else receives it, how long it is kept, and what the reader can
+ * delete.
+ *
+ * ⚠️ **State the fact; do not argue for the decision.** The strongest pull when
+ * editing this page is to explain WHY a choice was made, because the choices
+ * here were deliberate and defending them feels like transparency. It isn't —
+ * it is writing to the author rather than to the reader. A paragraph that
+ * ended "borrowing a typeface from somewhere else would hand another company a
+ * record of every page your child opened" was cut for exactly this: no parent
+ * has a question about typefaces, and the sentence existed to show its work.
+ *
+ * The tell is a second sentence that justifies the first instead of telling the
+ * reader something new about their child. "Everything else you see is served by
+ * this site" is a fact a parent can use. Why that was worth doing belongs in a
+ * comment like this one, where the audience is somebody who might undo it.
  */
 const title = "Privacy — School Skills";
 const description =
@@ -82,170 +148,157 @@ const updated = "19 August 2026";
 
   <section class="band band--tight wrap">
     <div class="prose">
-      <h2>What we collect</h2>
+      <h2>What&rsquo;s collected</h2>
       <p>
-        Nothing about your child. There are no accounts, no sign-up and no email
-        addresses. Nothing your child does in a game &mdash; the words they
-        type, the answers they give, the times they run &mdash; is sent
-        anywhere; it is written to your own device and stays there. Nothing
-        stored on your device identifies them to us or to anyone else.
+        Nothing about your child. No sign-up, no account, no email address. What
+        they type, the answers they give, how fast they go &mdash; none of it
+        leaves your device. It&rsquo;s saved there and it stays there.
       </p>
       <p>
-        The site does carry advertising, and that is the one part of it
-        involving another company. Those ads are non-personalised everywhere, so
-        no profile of your child is built or used to choose them. The
-        Advertising section below says exactly what Google does and does not
-        receive.
+        The advertising is the exception. That&rsquo;s another company&rsquo;s
+        code running on the page, and the Advertising section below sets out
+        exactly what Google does and doesn&rsquo;t get.
       </p>
       <p>
-        We do count how many people visit and which parts of the site get used
-        &mdash; how many races are started and finished, and whether the
-        custom-deck feature is used at all. That counting is described in full
-        below. It runs on our own web server rather than an analytics service,
-        it stores nothing on your device, and it cannot tell one visitor from
-        another on a different day.
+        Visits do get counted &mdash; how many people came, which pages they
+        opened, how many races were started and finished. No analytics company
+        is involved, nothing is added to your device, and one visitor
+        can&rsquo;t be told from another on a different day.
       </p>
 
-      <h2>How that&rsquo;s possible</h2>
+      <h2>Where it all stays</h2>
       <p>
-        School Skills is a static website. Every page is a file, served as-is
-        &mdash; there is no application server, no database, and nothing for
-        your child&rsquo;s answers to be sent to. When they finish a race, the
-        result is written to your own browser&rsquo;s storage on your own
-        device. It does not leave it.
+        The games run inside your browser. When a race finishes, the result is
+        saved on your device, and nothing is sent anywhere.
       </p>
       <p>
-        Every file a page loads comes from this site, including the fonts. A
-        font served from a font network would mean a request carrying your
-        child&rsquo;s IP address to a third party on every page load, which
-        would make the paragraph above untrue.
+        The advertising is the only part of a page that comes from another
+        company. Everything else you see is served by this site.
       </p>
 
-      <h2>What&rsquo;s stored on your device</h2>
+      <h2>What&rsquo;s on your device</h2>
       <p>
-        Player profiles (a name you choose, an emoji, a colour and an age), and
-        the history of races played: times, scores, and which facts were
-        answered right or wrong. This is kept in your browser&rsquo;s IndexedDB
-        storage.
+        Player profiles &mdash; a name you pick, an emoji, a colour, an age
+        &mdash; and the history of races: times, scores, and which facts came
+        out right or wrong. It sits in your browser&rsquo;s own storage.
       </p>
       <p>
-        You control it completely. Clearing your browser&rsquo;s site data
-        deletes all of it permanently, and deleting a player in the app removes
-        that player and every race they ran. Because we never receive any of it,
-        we cannot restore it &mdash; which is why the app offers a backup file
-        you keep yourself.
+        You control all of it. Clearing your browser&rsquo;s site data wipes it
+        for good, and deleting a player in the app removes that player and every
+        race they ran. None of it can be brought back afterwards, so the app can
+        save you a backup file to keep yourself.
       </p>
 
       <h2>Children</h2>
       <p>
-        This site is intended for children and the adults helping them, and that
-        governs what the advertising on it is allowed to be. We do not build a
-        profile of any child, we do not use one to choose an ad, and
-        personalised advertising is not permitted anywhere on the site. We set
-        no advertising ID, no analytics ID and no tracking cookie of our own.
+        This site is for children and the adults helping them, and that decides
+        what the advertising on it is allowed to be. No profile of any child is
+        built here or used to choose an ad. Personalised advertising is off
+        everywhere, with no setting to turn it on and no page it doesn&rsquo;t
+        apply to. No advertising ID, no analytics ID and no tracking cookie
+        belongs to this site.
       </p>
       <p>
         Google&rsquo;s ad requests are the exception to &ldquo;nothing leaves
-        the device&rdquo;, and we would rather say so plainly than bury it: an
-        ad request reaches Google, carries an IP address, and may set a cookie
-        for frequency capping and fraud prevention. What it does not do is
-        target your child &mdash; non-personalised is set on every page before
-        the advertising code is allowed to run at all.
+        the device&rdquo;. An ad request reaches Google, carries an IP address,
+        and may set a cookie to stop the same ad repeating and to catch
+        fraudulent clicks. What it doesn&rsquo;t do is target your child.
       </p>
       <p>
-        The one exception is the ordinary web-server log described below, which
-        records the IP address a request came from. Every website has one, it is
-        needed to deliver a page at all, we keep ours for 90 days, and we use it
-        only to count visits in aggregate.
+        The other exception is the ordinary record every website keeps of who
+        asked for a page, described below. It notes the address a request came
+        from, it&rsquo;s needed to send the page at all, it&rsquo;s deleted
+        after 90 days, and counting is the only thing it&rsquo;s used for.
       </p>
       <p>
-        The name you type for a player is stored only in your browser. We
-        suggest a first name or nickname; nothing checks it, and nothing
-        transmits it.
+        The name you type for a player stays in your browser. A first name or a
+        nickname is plenty; nothing checks it and nothing sends it anywhere.
       </p>
 
       <h2>Cookies</h2>
       <p>
-        We don&rsquo;t set any of our own. Google&rsquo;s advertising may set
-        cookies for purposes such as limiting how often the same ad is shown and
-        detecting fraudulent clicks &mdash; not for building a profile, because
-        the ads are non-personalised.
+        None belong to this site. Google&rsquo;s advertising may set some
+        &mdash; to limit how often the same ad turns up, and to spot fraudulent
+        clicks &mdash; but not to build a profile, because the ads aren&rsquo;t
+        personalised.
       </p>
 
-      <h2>Hosting, and how we count</h2>
+      <h2>How visits get counted</h2>
       <p>
-        The site is served from Amazon CloudFront. Like any web host, its
-        servers write a line for each request &mdash; your IP address, browser
-        type, the file requested, and the site you followed a link from, if you
-        followed one. Those lines are kept for 90 days and then deleted
-        automatically.
+        Every website is sent a request each time somebody opens a page, and the
+        computers that answer write down a line about it: the address it came
+        from, what sort of browser, which page, and the site you followed a link
+        from if there was one. Those lines are deleted after 90 days.
       </p>
       <p>
-        Those lines are the only thing we measure from. Every so often we count
-        them: how many different addresses appeared, which pages were asked for,
-        how many races were started and finished, which other websites link to
-        us, and roughly which part of the world the pages were served to. The
-        answers are numbers &mdash; &ldquo;412 people, 1,900 races, 40 arrivals
-        from a link&rdquo; &mdash; and we look at them and move on. Nothing is
-        filed away: when the lines are deleted at 90 days, that period is simply
-        no longer something we can ask about.
+        They are the only thing counted, and it happens every so often: how many
+        different addresses turned up, which pages were opened, how many races
+        were started and finished, which other websites send people here, and
+        roughly where in the world the visits came from. The answers are numbers
+        &mdash; &ldquo;412 people, 1,900 races, 40 arrivals from a link&rdquo;
+        &mdash; read once and left at that. Nothing gets filed away. When the
+        lines are deleted, that stretch of time simply stops being something
+        anyone can ask about.
       </p>
       <p>
-        There is no analytics service involved and nothing added to your device.
-        Most sites count visitors by storing an identifier in the browser so the
-        same person can be recognised next week; we deliberately don&rsquo;t,
-        because a persistent identifier belonging to a child is exactly what
-        children&rsquo;s privacy law treats as personal information. The trade
-        is that our numbers are approximate: a household sharing one connection
-        counts once, and a phone that changes network counts twice. We would
-        rather have the rougher number.
+        Most sites count visitors by leaving a marker in the browser, so the
+        same person can be recognised next week. Nothing here does that, which
+        is why these counts are only ever rough.
       </p>
       <p>
-        Two of those deserve spelling out. When we count which websites link to
-        us we keep the site&rsquo;s name and nothing else &mdash;
-        &ldquo;google.com&rdquo;, never what was typed into it, and never the
-        rest of the address. And &ldquo;which part of the world&rdquo; means
-        which of Amazon&rsquo;s data centres answered the request, which is the
-        nearest one rather than where you are.
+        Two of them are worth spelling out. When another website sends somebody
+        here, only that site&rsquo;s name is kept: &ldquo;google.com&rdquo;,
+        never what was typed into it, and never the rest of the link.
       </p>
       <p>
-        A few in-game actions &mdash; a race started, a race finished, a deck
-        saved &mdash; are counted by requesting a tiny image from this site with
-        the action&rsquo;s name in the address. That request carries no
-        identifier, and it never carries what your child typed, which list they
-        chose, their name, or their age.
+        The other is roughly where a visit came from, worked out here against a
+        public list of which addresses belong to which country, region and town.
+        Your child&rsquo;s address is not sent to a location service or to any
+        other company. It gives a country, a region and sometimes a town, and
+        never coordinates, a postcode, a street or a map &mdash; and it is often
+        wrong about the town, because an address given out in one place gets
+        used from another all the time.
+      </p>
+      <p>
+        None of these counts are published, shared or kept. Once the lines go at
+        90 days, they can&rsquo;t be worked out again.
+      </p>
+      <p>
+        A few things that happen inside a game &mdash; a race started, a race
+        finished, a deck saved &mdash; are counted by asking this site for a
+        tiny invisible image with the action&rsquo;s name in the link. That
+        request carries nothing that identifies anyone, and it never carries
+        what your child typed, which list they chose, their name, or their age.
       </p>
 
       <h2 id="advertising">Advertising</h2>
       <p>
         This site carries advertising from Google AdSense, including on the game
-        screens. It is how a free site with no accounts and nothing to sell pays
-        for itself. Google&rsquo;s advertising code runs on every page, whether
-        or not an ad is actually shown on it &mdash; so treat everything below
-        as describing every visit, not only the ones where you see an advert.
+        screens. It&rsquo;s how a free site with no accounts and nothing to sell
+        pays for itself. Google&rsquo;s advertising code runs on every page,
+        whether or not an ad actually appears there &mdash; so read everything
+        below as describing every visit, not only the ones with a visible
+        advert.
       </p>
       <p>
-        <strong>The ads are non-personalised, everywhere, always.</strong> They are
-        chosen from the page they appear on rather than from anything about the person
-        looking at it. No profile of your child is built, consulted or added to. There
-        is no setting for this and no page it doesn&rsquo;t apply to, because a site
-        made for children is not a place where behavioural advertising belongs &mdash;
-        and under children&rsquo;s privacy law it would need a level of parental consent
-        a free website cannot honestly obtain.
+        <strong>The ads are non-personalised, everywhere, always.</strong> They&rsquo;re
+        chosen from the page they sit on, not from anything about the person looking
+        at it. No profile of your child is built, consulted or added to. There&rsquo;s
+        no setting for this and no page it doesn&rsquo;t apply to &mdash; a site made
+        for children isn&rsquo;t a place for advertising that follows people around,
+        and under children&rsquo;s privacy law it would need a kind of parental consent
+        a free website can&rsquo;t honestly get.
       </p>
       <p>
-        Google does receive requests from your browser. Loading the advertising
-        code is one, and asking for an advert is another; both carry an IP
-        address, as every web request does, and Google may set a cookie for
-        purposes such as capping how often an ad repeats and detecting
-        fraudulent clicks. This is a real change from how the site worked
-        before, and it is why nothing on this page claims any more that there
-        are no third-party requests.
+        Google does receive requests from your browser: one to load the
+        advertising code, another to ask for an advert. Both carry an IP
+        address, as every web request does, and Google may set a cookie to cap
+        how often an ad repeats and to catch fraudulent clicks.
       </p>
       <p>
-        Ads are labelled and kept in a marked frame. The youngest player here is
-        five, and telling advertising from content is a skill children acquire
-        late.
+        Ads are labelled and kept inside a marked frame. The youngest player
+        here is five, and telling an advert from the rest of a page is a skill
+        children pick up late.
       </p>
 
       <h2>Changes</h2>

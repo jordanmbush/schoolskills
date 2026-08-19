@@ -9,6 +9,7 @@ import {
   edgeAirport,
   isDocumentPath,
   isPageView,
+  placeOf,
   referrerHost,
   tally,
 } from "./rollup-analytics.mjs";
@@ -50,15 +51,28 @@ const row = ({
     "\t",
   );
 
+/**
+ * A stand-in for scripts/geoip.mjs.
+ *
+ * The real one downloads 23MB of CSV, which a unit test has no business doing:
+ * it would make the suite need a network, and it would test jsDelivr rather
+ * than this file. `geoip.test.mjs` exercises the actual lookup against
+ * fixtures; here the only question is what the rollup does with an answer.
+ */
+const geoStub = (byIp) => ({ lookup: (ip) => byIp[ip] ?? null });
+
+/** Shorthand for the `{ country, region, city }` the real lookup returns. */
+const at = (country, region = null, city = null) => ({ country, region, city });
+
 /** Write one gzipped log file and count it, the way the real job would. */
-const count = async (rows) => {
+const count = async (rows, geo = null) => {
   const dir = mkdtempSync(join(tmpdir(), "rollup-"));
   const body = ["#Version: 1.0", `#Fields: ${FIELDS}`, ...rows, ""].join("\n");
   writeFileSync(
     join(dir, "E2B47B9IHQSJU0.2026-08-18-22.abc.gz"),
     gzipSync(body),
   );
-  const days = await tally(dir);
+  const days = await tally(dir, geo);
   return days.get("2026-08-18");
 };
 
@@ -172,6 +186,51 @@ describe("edgeAirport", () => {
     expect(edgeAirport("-")).toBeNull());
 });
 
+describe("placeOf", () => {
+  const geo = geoStub({
+    "98.168.10.1": at("US", "Arizona", "Peoria"),
+    "8.8.8.8": at("US"),
+    "1.2.3.4": at("CA", "Ontario"),
+  });
+
+  it("qualifies each level by the one above it", () =>
+    expect(placeOf(geo, "98.168.10.1")).toEqual({
+      country: "US",
+      region: "US / Arizona",
+      city: "US / Arizona / Peoria",
+    }));
+
+  // Ontario is a province of Canada AND a city in California; there are some
+  // thirty Springfields. Unqualified keys would add strangers together.
+  it("keeps two places of the same name apart", () => {
+    const canada = placeOf(geo, "1.2.3.4");
+    expect(canada.region).toBe("CA / Ontario");
+    expect(canada.region).not.toBe(placeOf(geo, "98.168.10.1").region);
+  });
+
+  // Filling these in from a country centroid is the mistake that makes geo-IP
+  // data infamous. A missing city stays missing.
+  it("leaves region and city absent rather than guessing them", () =>
+    expect(placeOf(geo, "8.8.8.8")).toEqual({
+      country: "US",
+      region: null,
+      city: null,
+    }));
+
+  // The distinction the whole field rests on. "Looked and found nothing" is a
+  // fact about one address; "did not look" is a fact about the run, and a day
+  // recorded as 107 unknowns would read as the first while meaning the second.
+  it("says (unknown) when the table does not place an address", () =>
+    expect(placeOf(geo, "203.0.113.9")).toEqual({
+      country: "(unknown)",
+      region: null,
+      city: null,
+    }));
+
+  it("says nothing at all when no lookup was configured", () =>
+    expect(placeOf(null, "98.168.10.1")).toBeNull());
+});
+
 describe("tally, over the first real hour of logs", () => {
   const FIRST_HOUR = [
     // A person, back for a second visit: three revalidated page loads and the
@@ -256,6 +315,45 @@ describe("tally, over the first real hour of logs", () => {
     const day = await count(FIRST_HOUR);
     expect(day.events).toEqual({ race_start: 1 });
     expect(day.decks).toEqual({ multiply: 1 });
+  });
+
+  // Same basis as referrers and edges: page views, not every request. The
+  // undeclared bot is in here, because nothing distinguishes it from a person.
+  it("files places off page views, on the same basis as edges", async () => {
+    const day = await count(
+      FIRST_HOUR,
+      geoStub({
+        "98.168.10.1": at("US", "Arizona", "Peoria"),
+        "34.171.68.1": at("US", "Iowa", "Council Bluffs"),
+      }),
+    );
+    expect(day.countries).toEqual({ US: 4 });
+    expect(Object.values(day.countries).reduce((a, b) => a + b, 0)).toBe(
+      day.pageViews,
+    );
+  });
+
+  // The three levels deliberately do NOT sum alike: an address can resolve to
+  // a country and no further, and inventing a city to make the columns balance
+  // is the one thing this must never do.
+  it("lets the levels disagree when the table knows less", async () => {
+    const day = await count(
+      FIRST_HOUR,
+      geoStub({
+        "98.168.10.1": at("US", "Arizona", "Peoria"),
+        "34.171.68.1": at("US"),
+      }),
+    );
+    expect(day.countries).toEqual({ US: 4 });
+    expect(day.regions).toEqual({ "US / Arizona": 3 });
+    expect(day.cities).toEqual({ "US / Arizona / Peoria": 3 });
+  });
+
+  it("records nothing at all when no lookup is supplied", async () => {
+    const day = await count(FIRST_HOUR);
+    expect(day.countries).toEqual({});
+    expect(day.regions).toEqual({});
+    expect(day.cities).toEqual({});
   });
 });
 

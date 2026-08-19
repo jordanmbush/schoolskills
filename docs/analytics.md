@@ -53,15 +53,18 @@ in `src/services/analytics.ts` — if it isn't there, it isn't collected:
 sent — see the tests in `src/services/analytics.test.ts`, which exist to keep
 that true.
 
-**Where a visit came from, and roughly where it was.** Both are read off the
-same log line as everything else — no extra request, nothing added to a page:
+**Where a visit came from, and where it was.** All three come off the same log
+line as everything else — no extra request, nothing added to a page:
 
-| In the rollup | From the log field | Means                                      |
-| ------------- | ------------------ | ------------------------------------------ |
-| `referrers`   | `cs(Referer)`      | the site that linked here, host only       |
-| `edges`       | `x-edge-location`  | the CloudFront PoP that served the request |
+| In the rollup | From the log field | Means                                         |
+| ------------- | ------------------ | --------------------------------------------- |
+| `referrers`   | `cs(Referer)`      | the site that linked here, host only          |
+| `countries`   | `c-ip`             | where the visitor's own address is registered |
+| `regions`     | `c-ip`             | the state or province inside that country     |
+| `cities`      | `c-ip`             | the city, where the source claims to know one |
+| `edges`       | `x-edge-location`  | the CloudFront PoP that served the request    |
 
-Two things to hold onto, because both are easy to over-read:
+Three things to hold onto, because all of them are easy to over-read:
 
 - **`referrers` is a bare hostname and nothing more.** Never a path, never a
   query string. A full referrer URL routinely carries what someone searched
@@ -72,14 +75,84 @@ Two things to hold onto, because both are easy to over-read:
   link out of a document. Read it as a floor on direct traffic, not a measure
   of it. Our own pages are not counted, since internal navigation would bury
   the inbound links that are the point.
+- **The places are resolved on your machine, never by asking anyone.** The
+  log line already carries `c-ip` — the visitor's address, which the rollup has
+  always read to count distinct visitors. Turning it into a place is a binary
+  search against a table in our own bucket. **Do not replace this with a geo-IP
+  API.** Sending a child's IP address to a third party is the exact thing
+  /privacy promises does not happen, and it would be a COPPA step change rather
+  than a refactor. See [Where the place data comes from](#where-the-place-data-comes-from).
+
+  Read a place as where the address is _registered_. A VPN, a school's egress
+  or a mobile carrier hauling traffic across a border land in the wrong place
+  outright — not merely at the wrong end of the right one, which is the failure
+  mode `edges` has. **The finer the level, the more often it is wrong**, and
+  the first two days of real data make the point: the top three cities were
+  Council Bluffs, Ashburn and Santa Clara, which are Google, Amazon and a
+  datacentre belt rather than three American families.
+
+  Three states are deliberately distinct, and collapsing any two of them is how
+  a broken lookup starts reading as a finding:
+
+  | What you see                       | Means                                      |
+  | ---------------------------------- | ------------------------------------------ |
+  | `(unknown)` in `countries`         | the address was checked; nothing placed it |
+  | a missing `regions`/`cities` entry | the source knew the country and no more    |
+  | no place keys on the day           | no lookup ran at all                       |
+
+  Because of the middle row **the three levels do not sum alike**, and they are
+  not supposed to. An address that resolves only to a country contributes to
+  `countries` and to nothing else. Filling the gap in from a country centroid
+  is exactly the mistake that makes geo-IP data infamous.
+
 - **`edges` is where the request was served, not where the visitor is.**
   CloudFront routes to a nearby PoP, so `SEA` means "closer to Seattle than to
   anywhere else with a PoP" — Vancouver is served from Seattle, and anyone on
-  a VPN is served from wherever the exit node is. It answers "roughly which
-  part of the world", never "which country". The field that answers that
-  properly is `c-country`, which the legacy standard log format does not have;
-  getting it means moving the distribution to standard logging v2, a different
-  delivery mechanism rather than a field to add to the rollup.
+  a VPN is served from wherever the exit node is. Since `countries` exists this
+  is no longer the answer to "where is everyone"; it is kept because it answers
+  a question nothing else does, which is which PoPs actually serve this site —
+  a cache and latency question rather than an audience one.
+
+## Where the place data comes from
+
+`scripts/build-geoip.mjs` merges two published databases into one binary
+artifact and puts it in `s3://schoolskills-access-logs-<account>/geoip/`.
+`scripts/geoip.mjs` downloads that artifact and binary-searches it. The split
+matters: all the parsing, sorting and overlap-flattening happens **once**, in
+the build, so a rollup run loads 3.4M ranges in about 25ms instead of
+re-deriving them every time.
+
+| Source                                  | Gives        | Licence      |
+| --------------------------------------- | ------------ | ------------ |
+| `@ip-location-db/geo-whois-asn-country` | country      | CC0-1.0      |
+| `@ip-location-db/geolite2-city`         | region, city | MaxMind EULA |
+
+The country always comes from the CC0 table where it has an answer — it is
+built from whois and geofeed records rather than inference, and keeping it
+authoritative means adding cities did not silently move anybody between
+countries. GeoLite2 supplies the country only where whois is silent.
+
+```bash
+npm run analytics:geoip           # rebuild and upload
+npm run analytics:geoip -- --dry  # build locally, upload nothing
+```
+
+**Latitude, longitude and postcode are in the source and are deliberately not
+in the artifact.** Do not add them. A coordinate is a different kind of fact
+about a child than a city name, and the accuracy is not there to justify it:
+the single most common coordinate in the source is MaxMind's "somewhere in the
+United States" fallback, which 99,194 ranges point at. That is the mechanism
+that put a Kansas farm on the receiving end of years of harassment from people
+who believed a database that said it knew where somebody was.
+
+> ⚠️ **Rebuilding is a licence term, not housekeeping.** The GeoLite2
+> redistribution says you "may not prevent the Library from updating local
+> copies of the GeoLite2 Databases to honor Do Not Sell requests submitted to
+> MaxMind", and MaxMind honours those by dropping records from later releases —
+> so an artifact pinned in S3 forever is what that clause forbids.
+> `.github/workflows/refresh-geoip.yml` rebuilds monthly, the artifact carries
+> its build date, and `npm run analytics` warns past 45 days. If that workflow
+> is ever disabled, delete the artifact rather than leaving a stale one.
 
 ## The 90-day ceiling
 
@@ -115,7 +188,20 @@ sees a child's request.
 npm run analytics                # sync, count, and print a summary
 npm run analytics -- --days 7    # narrow the table
 npm run analytics -- --no-sync   # re-summarise without re-downloading
+npm run analytics -- --no-geoip  # skip the country lookup (offline)
 ```
+
+The first run downloads a ~13MB artifact from S3 and caches it next to the
+logs, so it is slower than the ones after it. If that fails, the run still
+counts everything else and says loudly that the place fields are missing — it
+does not fill them with `(unknown)` and pretend.
+
+> ⚠️ **City counts are for reading, not for publishing.** At this traffic most
+> city rows are a single page view, and one view from a named city on a named
+> day is close to naming a household. `npm run analytics` prints how many of
+> them were seen exactly once for that reason. Nothing this produces is kept —
+> and city data in particular should not be pasted into an issue, a commit
+> message or anywhere else that outlives the terminal.
 
 It writes its counts to a temp file and prints the path. Nothing is kept and
 nothing lands in the repo — if you want a number preserved, copy it out
@@ -130,6 +216,9 @@ One day looks like this:
   "visitors": 2,          // distinct IPs seen that day; approximate by design
   "pageViews": 3,
   "pages":     { "/": 1, "/flash-cards/": 1, "/spelling/play/": 1 },
+  "countries": { "US": 2, "GB": 1 },         // the visitor, resolved locally
+  "regions":   { "US / Washington": 2 },     // note: does NOT sum to pageViews
+  "cities":    { "US / Washington / Seattle": 2 },
   "referrers": { "(none)": 2, "t.co": 1 },   // host only, never a path
   "edges":     { "SEA": 2, "LHR": 1 },       // the edge, not the visitor
   "events":    { "race_start": 2, "race_end:finished": 1, "race_end:quit": 1 },
@@ -142,6 +231,15 @@ The long way round, if you want the pieces separately:
 ```bash
 aws s3 sync s3://schoolskills-access-logs-<account>/cf/ /tmp/cflogs --profile schoolskills
 node scripts/rollup-analytics.mjs /tmp/cflogs /tmp/counts.json
+```
+
+The place lookup is its own module, so it can be used on its own:
+
+```js
+import { placeLookup } from "./scripts/geoip.mjs";
+const geo = await placeLookup();
+geo.lookup("2a00:1450:4009:81f::200e");
+// → { country: "IE", region: null, city: null }
 ```
 
 ## The dashboard, for "is anything happening"
@@ -302,8 +400,10 @@ GROUP BY referrer
 ORDER BY views DESC;
 ```
 
-**Roughly where from**, by edge location — the PoP code is the first letters of
-`location`, and see the caveat above before reading it as geography:
+**Which PoPs serve the site**, by edge location — the PoP code is the first
+letters of `location`. This is a cache question; for geography use `countries`
+from the rollup, which resolves `request_ip` itself and which Athena has no
+equivalent of:
 
 ```sql
 SELECT regexp_extract(location, '^[A-Z]+') AS pop,
@@ -366,7 +466,24 @@ ORDER BY "date" DESC;
   list of shim hostnames it would have to keep current.
 - **An edge code is not a country.** `edges` says which CloudFront PoP served
   the request. It is near the visitor, not at them, and a VPN moves it
-  entirely.
+  entirely. `countries` is the field that answers geography; the two disagree
+  routinely and neither is wrong. The first two days had 80 US page views
+  against 33 served from LAX, because an American visitor gets whichever of a
+  dozen US PoPs their network hands them.
+- **A place is where an address is registered**, which for a school, a
+  workplace or anyone on a VPN can be somewhere else entirely — a harder
+  failure than the edge's, which is at least always nearby. Treat a row as
+  "something came from an address registered there".
+- **Most of the top cities are datacentres.** Council Bluffs is Google, Ashburn
+  is Amazon, Santa Clara is half the industry. A city breakdown on a site this
+  size measures crawlers and cloud egress at least as much as it measures
+  households.
+- **The three place levels do not sum alike**, because an address can resolve
+  to a country and no further. That gap is real information; do not close it.
+- **Place fields missing is not place fields empty.** No key at all means the
+  lookup did not run for that day, and days counted before this shipped have
+  none. `(unknown)` inside `countries` means the table did not place an
+  address.
 - **`referrers` does not sum to `pageViews`, but `edges` does.** Our own pages
   are dropped from the first and nothing is dropped from the second, so the
   gap between them is roughly the internal navigation — 11 views against 4
