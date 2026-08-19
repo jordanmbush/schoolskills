@@ -99,6 +99,29 @@ export const isPageView = (row) => {
  * lie. This is a floor, not a complete list — anything that says it is a bot
  * is taken at its word, and anything that lies is counted as a person.
  */
+/**
+ * Undo the encoding CloudFront applies to log FIELDS.
+ *
+ * Every field it writes is percent-encoded on the way into the file, on top of
+ * whatever encoding the value already carried. A beacon sent as
+ * `deck=words%3Adolch-1` is therefore logged as `deck=words%253Adolch-1`, and
+ * anything that decodes only once — `URLSearchParams`, for instance — yields
+ * `words%3Adolch-1` and writes that mangled id into a file that is kept
+ * forever.
+ *
+ * `try` because the input is a query string from the open internet and
+ * `decodeURIComponent` throws on a malformed sequence — a single stray `%`
+ * from a scanner would otherwise take down the whole monthly run. A line we
+ * can't decode is worth skipping; it is not worth losing the month over.
+ */
+const decodeField = (value) => {
+  try {
+    return decodeURIComponent(value ?? "");
+  } catch {
+    return value ?? "";
+  }
+};
+
 const BOT =
   /bot|crawler|spider|crawling|slurp|bingpreview|facebookexternalhit|headlesschrome|lighthouse|curl|wget|python-requests/i;
 
@@ -167,14 +190,16 @@ export async function tally(dir) {
 
       const date = row["date"];
       if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) continue;
-      if (BOT.test(decodeURIComponent(row["cs(User-Agent)"] ?? ""))) continue;
+      if (BOT.test(decodeField(row["cs(User-Agent)"]))) continue;
 
       if (!days.has(date)) days.set(date, emptyDay());
       const day = days.get(date);
 
       if (row["cs-uri-stem"] === "/_e/px.gif") {
+        // Decode CloudFront's field encoding FIRST, then parse. Parsing
+        // first would leave every value still holding one layer of it.
         const q = new URLSearchParams(
-          row["cs-uri-query"] === "-" ? "" : row["cs-uri-query"],
+          row["cs-uri-query"] === "-" ? "" : decodeField(row["cs-uri-query"]),
         );
         const event = q.get("e");
         if (!event) continue;
