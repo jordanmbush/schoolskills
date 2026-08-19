@@ -22,6 +22,12 @@ import { Keyboard } from "./Keyboard";
  * no other place it can be asserted — a keyboard that tinted the left index
  * finger `--lime` would spend a hundred lessons teaching a child to unlearn
  * what green means (§4.6).
+ *
+ * That split is per BLOCK, not per file: the board is scenery and borrows none
+ * of the five, and the press echo below it is signal and borrows exactly two.
+ * So the scenery assertion reads the board's own block and stops where the
+ * echo's begins — a slice to the end of the file would forbid the very colours
+ * §4.3 requires.
  */
 
 const html = renderToStaticMarkup(<Keyboard />);
@@ -32,8 +38,9 @@ const css = (name: string) =>
     "utf8",
   );
 
-/** Where the board's own rules start in the game stylesheet. */
+/** Where the board's own rules start in the game stylesheet, and where they end. */
 const KEYBOARD_BLOCK = "/* ── Typing: the keyboard on screen";
+const ECHO_BLOCK = "/* ── Typing: press echo";
 
 /** The five that mean something everywhere, by name and by value. */
 const TELEMETRY = {
@@ -99,10 +106,49 @@ describe("Keyboard", () => {
 
   it("draws the board out of world tokens, borrowing none of the five", () => {
     const game = css("game.css");
-    const block = game.slice(game.indexOf(KEYBOARD_BLOCK));
+    const block = game.slice(
+      game.indexOf(KEYBOARD_BLOCK),
+      game.indexOf(ECHO_BLOCK),
+    );
 
     expect(game).toContain(KEYBOARD_BLOCK);
+    expect(game).toContain(ECHO_BLOCK);
     for (const name of Object.keys(TELEMETRY))
       expect(block).not.toContain(`var(${name})`);
+  });
+
+  it("flashes a struck key green and a wrong one red, and nothing else", () => {
+    const game = css("game.css");
+    const echo = game.slice(game.indexOf(ECHO_BLOCK));
+
+    // The two the echo is allowed, in the two places they mean something.
+    expect(echo).toMatch(/\.is-down\s*{[^}]*var\(--lime\)/);
+    expect(echo).toMatch(/\.is-wrong\s*{[^}]*var\(--flare\)/);
+
+    // And no others: a board that borrowed `--sky` or `--gold` would be
+    // claiming a ghost or a record over a keystroke.
+    for (const name of ["--sky", "--gold", "--grape"])
+      expect(echo).not.toContain(`var(${name})`);
+  });
+
+  it("lights the codes it is handed, and flares the wrong ones", () => {
+    const lit = renderToStaticMarkup(
+      <Keyboard
+        down={new Set(["KeyF", "ShiftRight"])}
+        wrong={new Set(["KeyF"])}
+      />,
+    );
+
+    // A wrong key is still a key that went down — the echo publishes it in
+    // both sets, and the board writes both classes.
+    expect(lit).toContain("keyboard__key is-home is-down is-wrong");
+    expect(lit).toContain("is-word is-down");
+    expect(lit.match(/is-down/g)).toHaveLength(2);
+    expect(lit.match(/is-wrong/g)).toHaveLength(1);
+  });
+
+  it("draws a resting board when nobody is typing", () => {
+    expect(html).not.toContain("is-down");
+    expect(html).not.toContain("is-wrong");
   });
 });
