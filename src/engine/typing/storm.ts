@@ -1,6 +1,13 @@
 /**
- * Hailstorm's rules. This half of them is the wave: what falls, where, and when
- * (docs/typing.md §8.3).
+ * Hailstorm's rules, both halves: the wave — what falls, where, and when
+ * (docs/typing.md §8.3) — and the reducer that plays it (§8.4, §8.5).
+ *
+ * They are one module because they are one set of rules and the seam between
+ * them is a lie waiting to happen: the reducer's damage lands on the shield
+ * segment the wave already chose for a letter, and its "lowest letter" is the
+ * half-open interval the wave's schedule is written in. Two files would be two
+ * places to state each of those, and the second copy is always the one that
+ * drifts.
  *
  * A wave is generated **whole, up front, from a seed**, exactly as every deck
  * on this site is. That is not a stylistic echo — it is the story this module
@@ -26,8 +33,8 @@
  * on each of the twenty storm lessons — which will make this module reachable
  * from `decks/index.ts`, the front door every island on the site downloads
  * (§5.3, decision 7). So it must never grow a table. There is nothing here but
- * the spec, the RNG, and the keyboard: the characters a wave draws from arrive
- * as `spec.keys`, from a caller that already knows them.
+ * the spec, the RNG, the keyboard and the rules: the characters a wave draws
+ * from arrive as `spec.keys`, from a caller that already knows them.
  */
 import { keyX, strokeFor } from "@/engine/keyboard";
 import type { Finger } from "@/engine/keyboard";
@@ -143,7 +150,9 @@ export type StormLetter = {
    * belongs with it: the *lowest* letter on screen is the one with the greatest
    * `(t - spawnMs) / fallMs`, which is not the same order as `landMs` once two
    * letters fall at different speeds. Two orderings that look interchangeable
-   * and part company exactly where it matters are worth a sentence.
+   * and part company exactly where it matters are worth a sentence — and, now
+   * that something depends on the difference, a function: `targetIndex` aims by
+   * `progressAt` and never by this field.
    */
   landMs: number;
 };
@@ -256,4 +265,401 @@ export function buildWave(spec: WaveSpec, seed: number): Wave {
     letters,
     durationMs: letters.reduce((last, l) => Math.max(last, l.landMs), 0),
   };
+}
+
+/* ═══ The reducer: the wave, played (§8.4, §8.5, §8.9) ═══════════════════════
+ *
+ * Everything below is a pure function of the state it is handed. No clock, no
+ * `Math.random`, no DOM, no React — the loop reads a real clock, calls `tick`
+ * with the delta and writes transforms; the tests call the same two functions
+ * with numbers. "Did that letter get through" is therefore a question that can
+ * be asked without a browser, which is the only reason the shield's rules are
+ * testable at all.
+ */
+
+/**
+ * Is this letter on the field at `timeMs`?
+ *
+ * A letter occupies the **half-open** interval `[spawnMs, landMs)`: there the
+ * instant it spawns, gone the instant it lands, because landing is the tick
+ * that turns it into shield damage (decision 30).
+ *
+ * That convention is exported as a pair of predicates rather than written out
+ * where it is needed, because it is one `<` against one `<=` and more than one
+ * thing reads it: `targetIndex` decides what can be shot with `isAirborne`,
+ * `tick` decides what damages the shield with `hasLanded`, and the field will
+ * draw whatever `isAirborne` says is there (STM03). Spelled out at each of
+ * those, it would be three chances to pick the wrong side of a millisecond —
+ * and the wrong side of a millisecond is a letter that is both shootable and
+ * already spent.
+ *
+ * `hasLanded` is deliberately not `!isAirborne`: a letter that has not spawned
+ * yet is neither on the field nor landed, and the reducer must not charge the
+ * shield for a letter that has not fallen.
+ */
+export function isAirborne(letter: StormLetter, timeMs: number): boolean {
+  return letter.spawnMs <= timeMs && timeMs < letter.landMs;
+}
+
+/** Has this letter reached the shield by `timeMs`? See `isAirborne`. */
+export function hasLanded(letter: StormLetter, timeMs: number): boolean {
+  return letter.landMs <= timeMs;
+}
+
+/**
+ * How far down the field a letter is at `timeMs`: 0 at the top, 1 at the shield.
+ *
+ * One function rather than an expression repeated wherever it is wanted,
+ * because two of its readers must agree exactly: the renderer writes it into a
+ * `translateY` (STM03) and `targetIndex` takes the maximum of it to decide
+ * what the gun is aimed at. A child aims by looking, so the letter the game
+ * thinks is lowest has to be the letter that is drawn lowest.
+ *
+ * `fallMs` cannot be 0 while a letter is airborne — `spawn <= t < spawn +
+ * fall` has no solutions at `fall = 0` — so the division is safe everywhere
+ * the value is a position. Off the interval it still answers, and answers
+ * honestly: negative before the spawn, past 1 after the landing.
+ */
+export function progressAt(letter: StormLetter, timeMs: number): number {
+  return (timeMs - letter.spawnMs) / letter.fallMs;
+}
+
+/**
+ * The eight shield segments, in board order — left pinky to right pinky.
+ *
+ * An order rather than a set, because two things need it to be the *same*
+ * order: the shield is drawn as eight segments across the bottom of the field
+ * (STM03), and a repair has to break a tie between equally weak zones somehow.
+ * Using the order the child is looking at means the tie-break is at least a
+ * thing they could watch happen, rather than whatever order a `Record`'s keys
+ * came out in.
+ */
+export const SHIELD_FINGERS: readonly ShieldFinger[] = [
+  "l-pinky",
+  "l-ring",
+  "l-middle",
+  "l-index",
+  "r-index",
+  "r-middle",
+  "r-ring",
+  "r-pinky",
+];
+
+/** Hit points left in each of the eight zones. A zone at 0 is a hole (§8.5). */
+export type Shield = Readonly<Record<ShieldFinger, number>>;
+
+/**
+ * What became of one letter, and when.
+ *
+ * `atMs` is wave time — the instant of the press for a letter that was shot,
+ * and the letter's own `landMs` for one that got through. Its own landing and
+ * not the tick that noticed it, because a tick can arrive several landings
+ * late (see `tick`), and STM08 turns this into a `CardResult.ms` of
+ * `atMs - spawnMs` (§8.7). A card that timed a backgrounded tab instead of a
+ * fall would put a nonsense number in a child's record book for ever.
+ */
+export type LetterOutcome = {
+  outcome: "shot" | "landed";
+  atMs: number;
+};
+
+/**
+ * How a run finished, or `null` while it is still going.
+ *
+ * `breached` carries the finger rather than leaving it to be looked up later.
+ * Naming the finger that failed is the best thing this game tells a child
+ * (§8.5), and it must be the finger the letter actually fell on — so it is
+ * copied from the letter at the moment it got through, not re-derived from a
+ * shield that by then reads the same at several zones. `index` is the letter
+ * that ended it: what the death screen can show, and where its drill starts.
+ */
+export type StormEnding =
+  | { kind: "cleared" }
+  | { kind: "breached"; finger: ShieldFinger; index: number };
+
+/**
+ * A run, mid-storm.
+ *
+ * Everything here is a fact that cannot be recovered from the wave and the
+ * clock, and nothing here is a fact that can. There is no list of letters on
+ * screen, no cached lowest letter and no per-finger tally of what got through:
+ * the first two are `isAirborne` and `targetIndex` over a schedule that was
+ * decided before the run started, and the third is a `filter` over `resolved`
+ * that the death screen can do for itself. A second copy of any of them would
+ * be a second thing to keep in step sixty times a second, and the copy is
+ * always the one that ends up lying.
+ *
+ * `resolved` is parallel to `wave.letters` and indexed by the letter's
+ * identity (§8.3). Indexed rather than appended to, because resolution is
+ * **not** in spawn order: shoot the middle one of three and the array gets a
+ * hole in it. That indexing is also what makes the run a `Session` later with
+ * no bookkeeping — card _i_ is letter _i_, so `prompt`, `answer` and `factId`
+ * are its character and `ms` is `atMs - spawnMs` (§8.7, STM08).
+ *
+ * What the next two stories add, and why nothing here is in their way: STM06's
+ * score and best-combo watermark are two more numbers beside `combo`, written
+ * at the two moments this reducer already has — a hit in `fire`, and a broken
+ * streak. STM07 reads `ending` for the finger and counts `resolved` by finger
+ * for "let three through". Neither wants a different shape.
+ */
+export type StormState = {
+  /** The storm being played. Decided before the run; never changes during it. */
+  readonly wave: Wave;
+  /** ms since the wave started. Only ever moves forward. */
+  readonly timeMs: number;
+  /** Hit points left in each zone. Starts at `wave.spec.shield` all round. */
+  readonly shield: Shield;
+  /**
+   * What each letter came to, parallel to `wave.letters` — `null` while it is
+   * still to spawn or still falling.
+   */
+  readonly resolved: readonly (LetterOutcome | null)[];
+  /**
+   * Consecutive hits, unbroken by a miss or by a letter getting through.
+   *
+   * It is state and not a view's counter because a rule reads it: every
+   * `repairAt` of them puts a point back into the weakest zone (§8.5), which
+   * is the game's only comeback path and pays out for exactly the behaviour it
+   * exists to build. A letter that landed breaks the streak as surely as a
+   * wrong key does — the streak means "are you keeping up", and a letter you
+   * let through is the definition of not keeping up. STM06 hangs its
+   * multiplier on this same number, so a child sees one streak and not two.
+   */
+  readonly combo: number;
+  /** How the run finished, or `null` while it is live. */
+  readonly ending: StormEnding | null;
+};
+
+/**
+ * Stamp `cleared` on a state whose last letter has just been accounted for.
+ *
+ * Cleared is "every letter resolved" rather than "the clock passed
+ * `durationMs`", because shooting the last letter ends the wave there and
+ * then; the alternative leaves a child watching an empty field for the second
+ * and a half that letter would have taken to fall. The two agree wherever it
+ * matters — a letter is only ever resolved by being shot or by landing, and
+ * nothing can land after `durationMs`.
+ */
+const settled = (state: StormState): StormState =>
+  state.ending !== null || state.resolved.some((outcome) => outcome === null)
+    ? state
+    : { ...state, ending: { kind: "cleared" } };
+
+/**
+ * A run at time zero: full shield, nothing resolved, no streak.
+ *
+ * The wave is carried, not copied. The retry button, the results screen and
+ * the reducer are all meant to be looking at the same storm, and a state that
+ * owned its own copy of the schedule would be a second place for it to be
+ * wrong.
+ *
+ * An empty wave is born `cleared` — the same habit as `buildWave` not throwing
+ * (§8.3). A storm with nothing in it is a screen that ends, where a loop
+ * waiting on a letter that will never spawn is a run a child cannot leave.
+ */
+export function startStorm(wave: Wave): StormState {
+  const shield = Object.fromEntries(
+    SHIELD_FINGERS.map((finger) => [finger, wave.spec.shield]),
+  ) as Record<ShieldFinger, number>;
+
+  return settled({
+    wave,
+    timeMs: 0,
+    shield,
+    resolved: wave.letters.map(() => null),
+    combo: 0,
+    ending: null,
+  });
+}
+
+/**
+ * The lowest letter on the field, as an index into `wave.letters` — or `null`
+ * if nothing is falling.
+ *
+ * **Lowest is the greatest `progressAt`, and not the earliest `landMs`.** The
+ * two orderings look interchangeable and are not: every letter draws its own
+ * fall time, so a fast letter spawned second genuinely overtakes a slow one
+ * spawned first, and from the crossing until the landing the two orderings
+ * disagree about which is nearer the shield. Aiming by `landMs` would point
+ * the gun at a letter that is visibly higher up the screen — and the child is
+ * looking at the field, not at the schedule.
+ *
+ * On an exact tie — two letters at the same height, which is the single
+ * instant their lines cross — the lower index wins, which is the earlier
+ * spawn. Neither is fairer to a child who cannot see a difference between
+ * them, so the tie goes to the thing that is already a letter's identity
+ * (§8.3): the same wave replayed resolves the same dead heat the same way. A
+ * replay that diverged on a rounding difference would be a worse bug than
+ * either answer to the tie.
+ */
+export function targetIndex(state: StormState): number | null {
+  const { letters } = state.wave;
+  let lowest: number | null = null;
+  let best = -Infinity;
+
+  for (let index = 0; index < letters.length; index++) {
+    const letter = letters[index];
+    if (state.resolved[index] !== null) continue;
+    if (!isAirborne(letter, state.timeMs)) continue;
+    const progress = progressAt(letter, state.timeMs);
+    // Strictly greater, so a tie leaves the earlier index where it is.
+    if (progress > best) {
+      best = progress;
+      lowest = index;
+    }
+  }
+
+  return lowest;
+}
+
+/**
+ * The shield after a hit, with `repairAt` applied.
+ *
+ * The weakest zone rather than the last one damaged, because a hole is what
+ * ends a run: the segment at zero is simultaneously the one about to kill you
+ * and the one a single point is worth most in. "Weakest" picks it with no
+ * special case for holes at all.
+ *
+ * Two edges, both deliberate:
+ *
+ *   - **`repairAt: 0` disables repairs**, as `WaveSpec` declares — said out
+ *     loud rather than left to `combo % 0` being `NaN`. The arithmetic does
+ *     fall the right way on its own, which is the problem: the rule the spec
+ *     writes down would be an accident of IEEE, and the same expression hands
+ *     a *negative* `repairAt` a repair every other hit.
+ *   - **No zone ever exceeds `spec.shield`.** A wave whose repairs outran its
+ *     damage would hand a strong player a shield deeper than the level ever
+ *     wrote down, and the eight-of-`shield` a run starts with is exactly what
+ *     "the shield came through untouched" is reported against. At the cap the
+ *     repair is spent rather than banked — banking it would be a hit point
+ *     arriving at a moment nothing on screen explains.
+ */
+function repaired(shield: Shield, spec: WaveSpec, combo: number): Shield {
+  if (spec.repairAt <= 0 || combo % spec.repairAt !== 0) return shield;
+
+  // Ties go to the first in board order: deterministic, and the order the
+  // shield is drawn in, so the segment that lights up is one a child could in
+  // principle have predicted.
+  const weakest = SHIELD_FINGERS.reduce((low, finger) =>
+    shield[finger] < shield[low] ? finger : low,
+  );
+
+  return shield[weakest] >= spec.shield
+    ? shield
+    : { ...shield, [weakest]: shield[weakest] + 1 };
+}
+
+/**
+ * Advance the clock, and resolve everything that reached the shield on the way.
+ *
+ * ── A tick may be arbitrarily long ───────────────────────────────────────────
+ * `dtMs` is whatever the loop hands over, and a backgrounded tab hands over
+ * seconds: `requestAnimationFrame` stops, the child comes back, and a dozen
+ * letters are due at once. Every landing inside the interval is resolved, in
+ * the order it happened — including letters that spawned *and* landed inside
+ * the same tick and were never airborne at any instant anybody sampled.
+ * Dropping those would leave the shield quietly disagreeing with the storm
+ * that damaged it, and the disagreement would be invisible: the letters are
+ * gone from the screen either way.
+ *
+ * Whether a child should be *held responsible* for a tab they were not looking
+ * at is a different question, and it belongs to the clock (STM03): clamping
+ * the delta, or pausing on `visibilitychange`, is a decision the loop can only
+ * make deliberately because the rules underneath it are honest about the whole
+ * interval they were given.
+ */
+export function tick(state: StormState, dtMs: number): StormState {
+  if (state.ending !== null) return state;
+
+  // Time only moves forward. A clock handing back a negative delta is a bug in
+  // the loop, and rewinding the storm — un-landing letters the shield has
+  // already paid for — is not a recovery from it.
+  const timeMs = state.timeMs + Math.max(0, dtMs);
+
+  const landings = state.wave.letters
+    .map((letter, index) => ({ letter, index }))
+    .filter(
+      ({ letter, index }) =>
+        state.resolved[index] === null && hasLanded(letter, timeMs),
+    )
+    // In the order they happened, which is not spawn order: a fast letter
+    // spawned second can land first, and which zone breaks first decides which
+    // finger the death screen names. A dead heat falls back to the letter's
+    // index — its identity (§8.3) — so a replay resolves it the same way.
+    .sort((a, b) => a.letter.landMs - b.letter.landMs || a.index - b.index);
+
+  if (landings.length === 0) return { ...state, timeMs };
+
+  const resolved = state.resolved.slice();
+  const shield = { ...state.shield };
+  let combo = state.combo;
+  let ending: StormEnding | null = null;
+  let clock = timeMs;
+
+  for (const { letter, index } of landings) {
+    resolved[index] = { outcome: "landed", atMs: letter.landMs };
+    combo = 0;
+
+    if (shield[letter.finger] <= 0) {
+      // The zone above it is a hole, so there is nothing left to take the hit
+      // and the storm is through. The clock stops at that landing rather than
+      // at the end of the tick: the rest of this interval never happened, and
+      // the letters still due inside it stay unresolved rather than being
+      // charged to a shield the child no longer had.
+      ending = { kind: "breached", finger: letter.finger, index };
+      clock = letter.landMs;
+      break;
+    }
+
+    shield[letter.finger] -= 1;
+  }
+
+  return settled({ ...state, timeMs: clock, shield, resolved, combo, ending });
+}
+
+/**
+ * Fire at the lowest letter on screen. Anything else is a miss.
+ *
+ * ── Why only the lowest ──────────────────────────────────────────────────────
+ * The alternative is not "let the second letter count too"; it is a game with
+ * no wrong answer in it. If any letter on screen can be shot by its own key,
+ * the winning strategy is to hammer every key the wave draws from and let the
+ * matches happen — and the child doing that is practising nothing at all while
+ * the score congratulates them for it. Firing has to be able to be *wrong*
+ * before hitting can mean anything, and the only sense of "wrong" a
+ * falling-letter game can defend is out of order: the bottom letter is the one
+ * about to cost a shield point, so it is the one that is actually urgent.
+ *
+ * That is also what makes the difference between one letter in the air and
+ * three a difference in kind. With one, target and only letter are the same
+ * thing and the game is pure reaction. With three, taking the bottom one first
+ * is an act of prioritising under time pressure — reading ahead, which is the
+ * thing that separates a typist from a hunter — and it is a skill precisely
+ * because getting the order wrong costs something: the streak here, and the
+ * score STM06 hangs on the same number.
+ *
+ * A shot at an empty field is a miss for the same reason. It is exactly the
+ * spray this rule exists to make unprofitable, and a child who could keep
+ * their streak through it has found the strategy again by another route.
+ */
+export function fire(state: StormState, code: string): StormState {
+  if (state.ending !== null) return state;
+
+  // Compared by `code` and not by the character: a shifted legend and its base
+  // share a key, so `A` and `a` are both `KeyA` and the shift a child is
+  // holding cannot make the shot miss (decision 2).
+  const index = targetIndex(state);
+  if (index === null || state.wave.letters[index].code !== code)
+    return { ...state, combo: 0 }; // A miss: the streak, and nothing else.
+
+  const resolved = state.resolved.slice();
+  resolved[index] = { outcome: "shot", atMs: state.timeMs };
+  const combo = state.combo + 1;
+
+  return settled({
+    ...state,
+    resolved,
+    combo,
+    shield: repaired(state.shield, state.wave.spec, combo),
+  });
 }

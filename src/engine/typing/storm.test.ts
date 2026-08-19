@@ -2,8 +2,18 @@ import { describe, expect, it } from "vitest";
 
 import { keyX, strokeFor } from "@/engine/keyboard";
 import { unlockedAt } from "./keys";
-import { buildWave } from "./storm";
-import type { Wave, WaveSpec } from "./storm";
+import {
+  SHIELD_FINGERS,
+  buildWave,
+  fire,
+  hasLanded,
+  isAirborne,
+  progressAt,
+  startStorm,
+  targetIndex,
+  tick,
+} from "./storm";
+import type { Shield, StormLetter, StormState, Wave, WaveSpec } from "./storm";
 
 /**
  * The wave's properties, proved rather than sampled (docs/typing.md §8.3).
@@ -117,27 +127,22 @@ const STACKING = SPECS.filter(([, s]) => s.gap[1] < s.fall[0]);
 /**
  * The most letters on the field at any one moment.
  *
- * A letter occupies the field on the half-open interval `[spawnMs, landMs)` —
- * present the instant it spawns, gone the instant it lands, because landing is
- * the tick that resolves it into shield damage. That is why departures are
- * processed before arrivals at an equal timestamp: a letter landing on the same
- * millisecond as the next one spawns is a handover, not an overlap.
+ * The count on screen only ever goes up at a spawn, so asking `isAirborne` at
+ * every spawn instant finds the maximum without a sweep. Reading the half-open
+ * interval out of the engine rather than restating it here is what makes the
+ * boundary pair at the bottom of this file — `gap` exactly `fall`, and one
+ * millisecond the other side — a test of the rule the reducer actually fires
+ * and damages by, instead of a test of a second copy of it that happens to
+ * live in the test file.
  */
-const maxOnScreen = (wave: Wave): number => {
-  const events = wave.letters.flatMap((l) => [
-    { at: l.spawnMs, delta: 1 },
-    { at: l.landMs, delta: -1 },
-  ]);
-  events.sort((a, b) => a.at - b.at || a.delta - b.delta);
-
-  let live = 0;
-  let most = 0;
-  for (const event of events) {
-    live += event.delta;
-    most = Math.max(most, live);
-  }
-  return most;
-};
+const maxOnScreen = (wave: Wave): number =>
+  Math.max(
+    0,
+    ...wave.letters.map(
+      (l) =>
+        wave.letters.filter((other) => isAirborne(other, l.spawnMs)).length,
+    ),
+  );
 
 /** The gaps between one spawn and the next, which is what `spec.gap` samples. */
 const gapsOf = (wave: Wave) =>
@@ -436,5 +441,549 @@ describe("when gap clears fall, one letter falls at a time", () => {
           maxOnScreen(buildWave(s, seed)),
           `${name} @ ${seed}`,
         ).toBeGreaterThan(1);
+  });
+});
+
+/* ═══ The reducer (§8.4, §8.5) ═══════════════════════════════════════════════
+ *
+ * The wave above is tested as a distribution, because that is what a generator
+ * is. The rules below are tested at the millisecond instead, on waves written
+ * by hand: "the second-lowest letter is a miss" and "a letter landing in a hole
+ * ends the run" are claims about single instants, and a generated schedule
+ * would only ever reach them by luck.
+ */
+
+/**
+ * One letter, placed by hand.
+ *
+ * Built through `strokeFor`/`keyX` rather than with literal codes and fingers
+ * so that a fixture cannot quietly disagree with the board the game is played
+ * on: `at("f", …)` really is the left index finger's zone, and a change to the
+ * layout breaks these tests where it should.
+ */
+const at = (ch: string, spawnMs: number, fallMs: number): StormLetter => {
+  const stroke = strokeFor(ch);
+  if (!stroke || stroke.finger === "thumb")
+    throw new Error(`${ch} is not a letter that can fall`);
+  return {
+    ch,
+    code: stroke.code,
+    finger: stroke.finger,
+    lane: keyX(stroke.code) ?? 0,
+    spawnMs,
+    fallMs,
+    landMs: spawnMs + fallMs,
+  };
+};
+
+/** A run over exactly these letters, at time zero. */
+const runOf = (letters: StormLetter[], over: Partial<WaveSpec> = {}) =>
+  startStorm({
+    spec: spec({ count: letters.length, shield: 1, ...over }),
+    seed: 0,
+    letters,
+    durationMs: letters.reduce((last, l) => Math.max(last, l.landMs), 0),
+  });
+
+/** Advance the run to an absolute moment, which is how a test thinks. */
+const to = (state: StormState, ms: number) => tick(state, ms - state.timeMs);
+
+/** Eight zones, all at `points` — what an undamaged shield looks like. */
+const evenShield = (points: number): Shield =>
+  Object.fromEntries(SHIELD_FINGERS.map((f) => [f, points])) as Shield;
+
+/** Which letters got through, by index — the shape STM07's death screen counts. */
+const landed = (state: StormState) =>
+  state.resolved.flatMap((outcome, index) =>
+    outcome?.outcome === "landed" ? [index] : [],
+  );
+
+describe("where a letter is at time t", () => {
+  const letter = at("f", 1000, 500);
+
+  it("is on the field over [spawn, land), and not one millisecond either side", () => {
+    // Decision 30, as a boundary rather than as prose. The instant it lands is
+    // the tick that turns it into shield damage, so it cannot still be
+    // shootable there — a letter that was both would be a free hit that also
+    // took a hit point off.
+    expect(isAirborne(letter, 999)).toBe(false);
+    expect(isAirborne(letter, 1000)).toBe(true);
+    expect(isAirborne(letter, 1499)).toBe(true);
+    expect(isAirborne(letter, 1500)).toBe(false);
+
+    expect(hasLanded(letter, 1499)).toBe(false);
+    expect(hasLanded(letter, 1500)).toBe(true);
+  });
+
+  it("has not landed before it has spawned", () => {
+    // `hasLanded` is not `!isAirborne`: a letter still to come is neither, and
+    // a reducer that read it as "landed" would charge the shield for letters
+    // that never fell.
+    expect(isAirborne(letter, 0)).toBe(false);
+    expect(hasLanded(letter, 0)).toBe(false);
+  });
+
+  it("falls from 0 at the top to 1 at the shield", () => {
+    expect(progressAt(letter, 1000)).toBe(0);
+    expect(progressAt(letter, 1250)).toBe(0.5);
+    expect(progressAt(letter, 1500)).toBe(1);
+  });
+});
+
+describe("the lowest letter is the target", () => {
+  it("is the greatest fall progress, not the earliest landing", () => {
+    // The disagreement STM01 wrote down, built to order: a slow letter spawned
+    // first is more than halfway down while a fast one spawned later has
+    // barely started — and yet the fast one lands first. `landMs` order would
+    // aim the gun at the letter that is visibly nearer the top of the screen.
+    const slow = at("f", 0, 5000); // lands at 5000
+    const fast = at("j", 3000, 1000); // lands at 4000
+    const state = to(runOf([slow, fast], { shield: 3 }), 3100);
+
+    expect(progressAt(slow, 3100)).toBeGreaterThan(progressAt(fast, 3100));
+    expect(slow.landMs).toBeGreaterThan(fast.landMs);
+    expect(targetIndex(state)).toBe(0);
+  });
+
+  it("hands the target over as the two letters cross", () => {
+    // Different fall speeds means the orderings really do swap, once, at a
+    // crossing — so the target before it, at it, and after it are three
+    // different answers and all three are tested.
+    const first = at("f", 0, 2000);
+    const second = at("j", 500, 1000);
+    const state = runOf([first, second], { shield: 3 });
+
+    expect(targetIndex(to(state, 900))).toBe(0);
+    expect(progressAt(first, 1000)).toBe(progressAt(second, 1000));
+    expect(targetIndex(to(state, 1000))).toBe(0);
+    expect(targetIndex(to(state, 1100))).toBe(1);
+  });
+
+  it("gives an exact tie to the earlier spawn", () => {
+    // Two letters at the same height are the same shot to a child, so the tie
+    // goes to the letter's identity — the index — and a replay of the same
+    // wave resolves the dead heat the same way every time.
+    const state = to(runOf([at("f", 0, 1000), at("j", 0, 1000)]), 400);
+    expect(targetIndex(state)).toBe(0);
+  });
+
+  it("has no target when the field is empty", () => {
+    const state = runOf([at("f", 1000, 500)], { shield: 3 });
+    expect(targetIndex(state), "before the first spawn").toBeNull();
+    expect(targetIndex(to(state, 1500)), "after it has landed").toBeNull();
+  });
+
+  it("stops targeting a letter that has been shot", () => {
+    const state = to(runOf([at("f", 0, 1000), at("j", 100, 1000)]), 200);
+    expect(targetIndex(state)).toBe(0);
+    expect(targetIndex(fire(state, "KeyF"))).toBe(1);
+  });
+});
+
+describe("firing resolves the lowest letter, and nothing else", () => {
+  const two = () => to(runOf([at("f", 0, 1000), at("j", 300, 1000)]), 500);
+
+  it("shoots the lowest letter with its own key", () => {
+    const state = fire(two(), "KeyF");
+    expect(state.resolved[0]).toEqual({ outcome: "shot", atMs: 500 });
+    expect(state.resolved[1], "the letter above it is untouched").toBeNull();
+    expect(state.combo).toBe(1);
+    expect(state.shield, "a hit costs the shield nothing").toEqual(
+      evenShield(1),
+    );
+  });
+
+  it("counts the second-lowest letter as a miss", () => {
+    // The rule the whole game is balanced on. `KeyJ` is a real letter on a
+    // real lane and it is the wrong shot, because it is not the one about to
+    // cost a shield point.
+    const before = two();
+    const state = fire(before, "KeyJ");
+
+    expect(targetIndex(before), "the premise: KeyJ is not the target").toBe(0);
+    expect(isAirborne(before.wave.letters[1], 500)).toBe(true);
+    expect(state.resolved, "nothing was resolved").toEqual([null, null]);
+    expect(state.combo).toBe(0);
+    expect(state.shield).toEqual(evenShield(1));
+  });
+
+  it("counts a key nothing on screen uses as a miss", () => {
+    const state = fire(two(), "KeyZ");
+    expect(state.resolved).toEqual([null, null]);
+    expect(state.combo).toBe(0);
+  });
+
+  it("counts a shot at an empty field as a miss", () => {
+    // Spraying between letters is the same strategy by another route, so it
+    // costs the streak the same way.
+    const state = fire(runOf([at("f", 1000, 500)]), "KeyF");
+    expect(targetIndex(state), "the premise: nothing is falling").toBeNull();
+    expect(state.resolved).toEqual([null]);
+    expect(state.combo).toBe(0);
+  });
+
+  it("shoots a capital with the key that types it", () => {
+    // `A` and `a` are one key and two letters (decision 2), so the shift a
+    // child is holding cannot make the shot miss.
+    const state = to(runOf([at("A", 0, 1000)]), 400);
+    expect(state.wave.letters[0].code).toBe("KeyA");
+    expect(fire(state, "KeyA").resolved[0]?.outcome).toBe("shot");
+  });
+
+  it("does nothing once the run is over", () => {
+    const dead = to(runOf([at("f", 0, 100), at("f", 200, 100)]), 400);
+    expect(dead.ending?.kind, "the premise: the run ended").toBe("breached");
+    expect(fire(dead, "KeyF")).toBe(dead);
+    expect(tick(dead, 1000)).toBe(dead);
+  });
+});
+
+describe("what lands takes the shield apart", () => {
+  it("takes a point off the zone above it and no others", () => {
+    const state = to(runOf([at("f", 0, 100)], { shield: 3 }), 100);
+    expect(state.resolved[0]).toEqual({ outcome: "landed", atMs: 100 });
+    expect(state.shield["l-index"], "the finger that types f").toBe(2);
+    expect(state.shield).toEqual({ ...evenShield(3), "l-index": 2 });
+  });
+
+  it("charges nothing for a letter that was shot", () => {
+    const state = to(
+      fire(to(runOf([at("f", 0, 1000)], { shield: 3 }), 400), "KeyF"),
+      5000,
+    );
+    expect(state.shield).toEqual(evenShield(3));
+    expect(state.resolved[0]?.outcome).toBe("shot");
+  });
+
+  it("lets the next letter through once a zone is exhausted", () => {
+    // The acceptance criterion, in three moments: a zone at zero is a hole and
+    // the run continues; the letter that lands in the hole is what ends it;
+    // and the finger it names is the finger that typed it.
+    const letters = [at("f", 0, 100), at("f", 200, 100)];
+    const state = runOf(letters, { shield: 1 });
+
+    const holed = to(state, 100);
+    expect(holed.shield["l-index"]).toBe(0);
+    expect(holed.ending, "a hole is not yet a death").toBeNull();
+
+    const dead = to(holed, 300);
+    expect(dead.ending).toEqual({
+      kind: "breached",
+      finger: "l-index",
+      index: 1,
+    });
+    expect(dead.resolved[1], "the letter that got through is recorded").toEqual(
+      { outcome: "landed", atMs: 300 },
+    );
+    expect(dead.shield["l-index"], "there was nothing left to take it").toBe(0);
+  });
+
+  it("ends on the first letter when the spec gives no shield at all", () => {
+    const state = to(runOf([at("f", 0, 100)], { shield: 0 }), 100);
+    expect(state.ending?.kind).toBe("breached");
+  });
+
+  it("breaks the streak when a letter gets through", () => {
+    // The streak means "are you keeping up", so a letter you let land ends it
+    // as surely as a wrong key does — and with it the repair it was earning.
+    const hit = fire(
+      to(runOf([at("f", 0, 400), at("j", 0, 1000)], { shield: 3 }), 100),
+      "KeyF",
+    );
+    expect(hit.combo, "one clean hit").toBe(1);
+    expect(to(hit, 1000).combo, "and then j got through").toBe(0);
+  });
+});
+
+describe("a tick resolves every landing inside it", () => {
+  it("resolves two letters that land in the same tick", () => {
+    // The realistic case is a browser that skipped a frame, and the shield has
+    // to end up reading the same as it would have over two ticks.
+    const state = tick(
+      runOf([at("f", 0, 100), at("j", 0, 200)], { shield: 3 }),
+      500,
+    );
+
+    expect(landed(state)).toEqual([0, 1]);
+    expect(state.resolved[0]).toEqual({ outcome: "landed", atMs: 100 });
+    expect(state.resolved[1], "each is timed by its own landing").toEqual({
+      outcome: "landed",
+      atMs: 200,
+    });
+    expect(state.shield["l-index"]).toBe(2);
+    expect(state.shield["r-index"]).toBe(2);
+    expect(state.timeMs).toBe(500);
+  });
+
+  it("charges a zone twice when both landings are its own", () => {
+    const state = tick(
+      runOf([at("f", 0, 100), at("f", 0, 200)], { shield: 3 }),
+      500,
+    );
+    expect(state.shield["l-index"], "two hits, not one").toBe(1);
+  });
+
+  it("resolves a whole backgrounded tab, letters it never saw included", () => {
+    // rAF stops when a tab is hidden, so `dtMs` can be a minute. Every letter
+    // in the interval lands, including ones that spawned *and* landed inside
+    // it and were airborne at no instant anybody sampled — dropping those
+    // would leave the shield disagreeing with the storm that damaged it.
+    const letters = ["f", "j", "d", "k", "s", "l"].map((ch, i) =>
+      at(ch, i * 1000, 500),
+    );
+    const state = tick(runOf(letters, { shield: 1 }), 60_000);
+
+    expect(landed(state), "all six").toEqual([0, 1, 2, 3, 4, 5]);
+    expect(state.shield, "six zones holed, the pinkies untouched").toEqual({
+      ...evenShield(1),
+      "l-index": 0,
+      "r-index": 0,
+      "l-middle": 0,
+      "r-middle": 0,
+      "l-ring": 0,
+      "r-ring": 0,
+    });
+    expect(state.ending, "survived to the end of the wave").toEqual({
+      kind: "cleared",
+    });
+  });
+
+  it("stops the clock at the landing that ends the run", () => {
+    // The rest of that interval never happened: letters still due in it stay
+    // unresolved rather than being charged to a shield the child no longer had.
+    const letters = [at("f", 0, 100), at("f", 200, 100), at("j", 400, 100)];
+    const state = tick(runOf(letters, { shield: 1 }), 60_000);
+
+    expect(state.ending).toEqual({
+      kind: "breached",
+      finger: "l-index",
+      index: 1,
+    });
+    expect(state.timeMs, "the run's own duration stays honest").toBe(300);
+    expect(state.resolved[2], "the third letter never got to land").toBeNull();
+    expect(state.shield["r-index"], "and never damaged anything").toBe(1);
+  });
+
+  it("never rewinds the storm", () => {
+    const state = to(runOf([at("f", 0, 1000)], { shield: 3 }), 400);
+    expect(tick(state, -1000).timeMs).toBe(400);
+  });
+});
+
+describe("the wave ends", () => {
+  it("clears with the shield untouched when every letter is shot", () => {
+    const letters = [
+      at("f", 0, 1000),
+      at("j", 400, 1000),
+      at("k", 800, 1000),
+      at(";", 1200, 1000),
+    ];
+    let state = runOf(letters, { shield: 3 });
+    for (const [ms, code] of [
+      [100, "KeyF"],
+      [500, "KeyJ"],
+      [900, "KeyK"],
+      [1300, "Semicolon"],
+    ] as const)
+      state = fire(to(state, ms), code);
+
+    expect(state.ending, "cleared as the last letter is shot").toEqual({
+      kind: "cleared",
+    });
+    expect(state.shield, "eight zones, all as the spec wrote them").toEqual(
+      evenShield(3),
+    );
+    expect(landed(state), "nothing got through").toEqual([]);
+    expect(state.combo).toBe(4);
+    expect(
+      state.timeMs,
+      "and it did not wait for the last letter to fall",
+    ).toBeLessThan(letters[3].landMs);
+  });
+
+  it("is born cleared when nothing can fall", () => {
+    // §8.3's empty storm, carried through to the reducer: a screen that ends,
+    // not a loop waiting for a letter that will never spawn.
+    const state = runOf([]);
+    expect(state.ending).toEqual({ kind: "cleared" });
+    expect(tick(state, 10_000)).toBe(state);
+  });
+});
+
+describe("repairs are the comeback path", () => {
+  /*
+   * The script all four of these run, so that the only thing that changes is
+   * `repairAt`: `f` lands and takes the left index finger's only point, two
+   * letters are shot cleanly, and then a second `f` lands on the zone that is
+   * either a hole or has just been mended.
+   */
+  const script = (over: Partial<WaveSpec>) => {
+    const letters = [
+      at("f", 0, 100),
+      at("j", 200, 200),
+      at("k", 500, 200),
+      at("f", 800, 100),
+    ];
+    let state = runOf(letters, { shield: 1, ...over });
+    state = fire(to(state, 300), "KeyJ");
+    state = fire(to(state, 600), "KeyK");
+    return state;
+  };
+
+  it("mends the weakest zone every repairAt hits, and it stops one", () => {
+    const mended = script({ repairAt: 2 });
+    expect(mended.combo, "two clean hits").toBe(2);
+    expect(mended.shield["l-index"], "the hole is a wall again").toBe(1);
+
+    const after = to(mended, 900);
+    expect(after.ending, "the second f is stopped, not fatal").toEqual({
+      kind: "cleared",
+    });
+    expect(after.shield["l-index"], "and costs the mended point").toBe(0);
+  });
+
+  it("does not repair at all when repairAt is 0", () => {
+    const unmended = script({ repairAt: 0 });
+    expect(unmended.combo).toBe(2);
+    expect(unmended.shield["l-index"], "still a hole").toBe(0);
+
+    const after = to(unmended, 900);
+    expect(after.ending, "and the same letter now ends the run").toEqual({
+      kind: "breached",
+      finger: "l-index",
+      index: 3,
+    });
+  });
+
+  it("needs the hits to be consecutive", () => {
+    // A miss between them breaks the streak, so the repair never arrives —
+    // which is what makes the comeback a reward for typing well rather than
+    // for surviving long enough.
+    const letters = [at("f", 0, 100), at("j", 200, 200), at("k", 500, 200)];
+    let state = runOf(letters, { shield: 1, repairAt: 2 });
+    state = fire(to(state, 300), "KeyJ");
+    state = fire(state, "KeyZ");
+    state = fire(to(state, 600), "KeyK");
+
+    expect(state.combo, "the streak restarted").toBe(1);
+    expect(state.shield["l-index"], "no repair").toBe(0);
+  });
+
+  it("repairs to exactly the cap and no further", () => {
+    // A wave whose repairs outran its damage would hand a strong player a
+    // shield deeper than the level ever wrote down — and "untouched" would
+    // stop meaning the eight-of-`shield` the run started with.
+    const letters = [
+      at("f", 0, 100),
+      ...["j", "k", "l", ";", "d", "s"].map((ch, i) =>
+        at(ch, 200 + i * 300, 200),
+      ),
+    ];
+    let state = runOf(letters, { shield: 2, repairAt: 1 });
+    state = to(state, 100);
+    expect(state.shield["l-index"], "one point of damage").toBe(1);
+
+    for (let i = 1; i < letters.length; i++)
+      state = fire(to(state, letters[i].spawnMs + 100), letters[i].code);
+
+    expect(state.combo, "six clean hits, six repairs offered").toBe(6);
+    expect(state.shield["l-index"], "mended to the cap on the first").toBe(2);
+    expect(state.shield, "and no zone anywhere above it").toEqual(
+      evenShield(2),
+    );
+  });
+});
+
+describe("the rules are pure, and they do not mutate what they are given", () => {
+  /** The script both tests below run: two hits, a miss, and a landing. */
+  const play = () => {
+    const letters = [at("f", 0, 1000), at("j", 300, 1000), at("k", 600, 400)];
+    let state = runOf(letters, { shield: 2, repairAt: 3 });
+    state = fire(to(state, 400), "KeyF");
+    state = fire(to(state, 700), "KeyJ");
+    state = fire(state, "KeyZ");
+    return to(state, 1200);
+  };
+
+  it("reads no clock, no DOM and no randomness", () => {
+    // The engine's lint boundary bans *imports* of React and the services
+    // layer, but nothing in it catches a bare `document` or a
+    // `requestAnimationFrame` — so the boundary cannot prove this and a test
+    // has to. Each global is made hostile for the length of one run: a reducer
+    // that so much as reads one throws here, in a millisecond, rather than
+    // three stories from now inside a game loop at 60fps.
+    const boom = () => {
+      throw new Error("the storm reducer must be pure");
+    };
+    const hostile = [
+      "document",
+      "window",
+      "requestAnimationFrame",
+      "performance",
+      "Date",
+    ];
+    const saved = hostile.map(
+      (name) =>
+        [name, Object.getOwnPropertyDescriptor(globalThis, name)] as const,
+    );
+    const realRandom = Math.random;
+
+    let state: StormState | null = null;
+    let thrown: unknown = null;
+    try {
+      for (const name of hostile)
+        Object.defineProperty(globalThis, name, {
+          configurable: true,
+          get: boom,
+        });
+      Math.random = boom;
+      state = play();
+    } catch (error) {
+      thrown = error;
+    } finally {
+      Math.random = realRandom;
+      for (const [name, descriptor] of saved)
+        if (descriptor) Object.defineProperty(globalThis, name, descriptor);
+        else delete (globalThis as Record<string, unknown>)[name];
+    }
+
+    expect(thrown).toBeNull();
+    expect(state?.resolved.map((r) => r?.outcome)).toEqual([
+      "shot",
+      "shot",
+      "landed",
+    ]);
+  });
+
+  it("returns new state rather than editing the state it was handed", () => {
+    // A reducer that mutated would pass every other test in this file — the
+    // returned state would be right, and only the caller holding the old one
+    // would ever find out. Freezing the input turns that into a throw.
+    const deepFreeze = <T>(value: T): T => {
+      if (value && typeof value === "object") {
+        Object.values(value).forEach(deepFreeze);
+        Object.freeze(value);
+      }
+      return value;
+    };
+
+    const start = deepFreeze(
+      runOf([at("f", 0, 1000), at("j", 300, 1000)], { shield: 2, repairAt: 2 }),
+    );
+    const fired = fire(to(start, 400), "KeyF");
+    const ticked = to(fired, 1400);
+
+    expect(fired.resolved[0]?.outcome).toBe("shot");
+    expect(ticked.shield["r-index"], "the second letter got through").toBe(1);
+
+    expect(start.timeMs, "the state we started from is untouched").toBe(0);
+    expect(start.resolved).toEqual([null, null]);
+    expect(start.combo).toBe(0);
+    expect(start.shield).toEqual(evenShield(2));
+    expect(start.ending).toBeNull();
+
+    // And the whole run again from the frozen start, which must come out the
+    // same: a reducer that mutated its input would have spent it.
+    expect(to(fire(to(start, 400), "KeyF"), 1400)).toEqual(ticked);
   });
 });
