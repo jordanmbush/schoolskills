@@ -121,10 +121,18 @@ export function createKeyEcho(emit: (echo: KeyEcho) => void): KeyEchoBoard {
       if (isWrong(code, expect)) wrong.add(code);
       else wrong.delete(code);
 
-      // A held key repeats, and each repeat re-arms the same release rather
-      // than stacking a second one behind it — so a key held down stays lit
-      // for as long as it is held, and goes out 120ms after it is let go
-      // whether or not the `keyup` ever arrives.
+      // One release per code, re-armed rather than stacked: every keydown for
+      // a code — the first, and each OS auto-repeat behind it — replaces that
+      // code's pending release, so the light goes out HOLD_MS after the last
+      // keydown seen for it. Nothing waits on a `keyup`, so no key can be left
+      // stuck lit by one that never arrives.
+      //
+      // What that is not is a picture of which keys are still held down.
+      // Auto-repeat does not begin for a few hundred ms, well past HOLD_MS, so
+      // a key held down goes dark and relights once the repeats arrive, and a
+      // held modifier — which does not repeat at all — simply goes dark. The
+      // board echoes strokes, and §4.3 asks for the timer with no exception
+      // for either.
       clearTimeout(timers.get(code));
       timers.set(
         code,
