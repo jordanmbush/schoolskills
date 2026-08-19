@@ -15,7 +15,7 @@ import { lessonConfig } from "./lessonRun";
  * must be able to build the run without ever meeting the generator.
  */
 
-/** Lesson 1: `f` and `j`, 24 words. */
+/** Lesson 1: `f` and `j`. Its word count is read off the lesson, not here. */
 const L01 = lessonById("L01")!;
 
 describe("lessonConfig", () => {

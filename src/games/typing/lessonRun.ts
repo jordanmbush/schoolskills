@@ -18,13 +18,13 @@ import type { TypingConfig } from "@/engine/types";
  * run and setting it to anything else would only invite a screen to read it.
  *
  * `wordCount` is the lesson's, not the generated array's — it is half of
- * `configKey` (`typing|L07|24`), and a key that moved with the passage would
+ * `configKey` (`typing|L07|25`), and a key that moved with the passage would
  * file every attempt in a bucket of one and never show a child their own best.
  *
  * Fresh words every time, which is why this takes a seed rather than caching:
- * lesson 7 is a lesson, not a passage, and retyping the same forty words would
- * be a memory test by the third attempt. The seed is saved with the run, so
- * the passage is still reproducible after the fact.
+ * lesson 7 is a lesson, not a passage, and a child handed the same words back
+ * on every attempt would be sitting a memory test by the third one. The seed
+ * is saved with the run, so the passage is still reproducible after the fact.
  */
 export function lessonConfig(lesson: Lesson, seed: number): TypingConfig {
   return {
