@@ -38,15 +38,45 @@ import type { CSSProperties } from "react";
  * whole claim is that this drills the one thing a passage cannot, which is
  * finding a key you were not told about.
  *
- * ── What this story does not do ──────────────────────────────────────────────
- * The field is a pure function of a `StormState`: hand it a frame and it draws
- * that frame. It holds no clock, so nothing here moves — STM04 drives `--drop`
- * from a `requestAnimationFrame` loop, and `transform` is deliberately left
- * unused so that loop can write it without disturbing the lane centring (the
- * CSS uses the `translate` property instead). The shield is STM05, and the
- * eight segments belong on the line the letters land on; firing and its
- * reticle are STM06.
+ * ── Still a pure function of one frame ───────────────────────────────────────
+ * Hand it a `StormState` and it draws that state; it holds no clock of its
+ * own. What moves the stones between frames is `useStormClock`, which writes
+ * `--drop` straight onto them on every animation frame and re-renders this
+ * only when the picture changes — so the two writers of that property never
+ * disagree: React's value is `progressAt` at the frame it is rendering, which
+ * is the frame the loop just painted.
+ *
+ * `skyRef` is how the loop finds the stones, and `data-stone` is how it knows
+ * which letter each one is. A rendered index rather than the loop counting
+ * children, for the same reason the React key is the index (§8.3): a filtered
+ * list renumbers itself the instant something in the middle of it is shot.
+ *
+ * The shield is STM05, and the eight segments belong on the line the letters
+ * land on; firing and its reticle are STM06.
  */
+
+/**
+ * Is the field drawing this letter at `state.timeMs`?
+ *
+ * Two things have to agree about that and would drift apart written twice:
+ * the sky draws exactly these, and the clock re-renders the sky when the
+ * count of them changes — a letter appearing is a time crossing that no field
+ * of a `StormState` records, so the loop has nothing else to notice it by.
+ *
+ * `resolved` first, because it is the half of the answer the clock cannot
+ * give: a letter that was shot left the screen at the press, and one that
+ * landed left it at the shield. `isAirborne` is the other half, and it is
+ * asked rather than restated — it is the half-open `[spawnMs, landMs)` the
+ * reducer damages the shield on (decision 30), and re-deciding which side of a
+ * millisecond a landing falls on is how a stone becomes both shootable and
+ * already spent.
+ */
+export function isDrawn(state: StormState, index: number): boolean {
+  return (
+    state.resolved[index] === null &&
+    isAirborne(state.wave.letters[index], state.timeMs)
+  );
+}
 
 /**
  * The character the gun is marked against, or `null` for none.
@@ -72,9 +102,16 @@ export function aimedAt(state: StormState): string | null {
 /**
  * The field, as markup: the sky, whatever is falling through it, and the board
  * at the bottom. A pure function of one `StormState` — see the file header for
- * why, and for what the next four stories hang off it.
+ * why, and for what the next three stories hang off it.
  */
-export function StormField({ state }: { state: StormState }) {
+export function StormField({
+  state,
+  skyRef,
+}: {
+  state: StormState;
+  /** Where `useStormClock` writes the fall, frame by frame. */
+  skyRef: React.RefObject<HTMLDivElement | null>;
+}) {
   return (
     <main className="storm">
       {/* The screen's name, for the one visitor who cannot see any of it. The
@@ -89,22 +126,18 @@ export function StormField({ state }: { state: StormState }) {
         the game is a physical keyboard and a reaction time. The device with no
         keys is told so honestly, and that is STM09's story.
       */}
-      <div className="storm__sky" aria-hidden="true">
+      <div className="storm__sky" ref={skyRef} aria-hidden="true">
         {state.wave.letters.map((letter, index) => {
-          // Resolved is gone: a letter that was shot leaves the screen at the
-          // press, and one that landed left it at the shield. `isAirborne` is
-          // the half-open `[spawnMs, landMs)` the reducer damages the shield
-          // on (decision 30) — asking it here rather than re-deciding which
-          // side of the millisecond a landing falls on.
-          if (state.resolved[index] !== null) return null;
-          if (!isAirborne(letter, state.timeMs)) return null;
+          if (!isDrawn(state, index)) return null;
 
           return (
             <span
               // The index is the letter's identity (§8.3): the wave is built
               // once and never grows, so this key cannot shift under a letter
               // mid-fall — which it would if the drawn letters were numbered
-              // by their position in a filtered list.
+              // by their position in a filtered list. `data-stone` carries the
+              // same number into the DOM, so the loop moving this element
+              // knows which letter it is holding.
               key={index}
               className="storm__letter"
               style={
@@ -113,6 +146,7 @@ export function StormField({ state }: { state: StormState }) {
                   "--drop": progressAt(letter, state.timeMs),
                 } as CSSProperties
               }
+              data-stone={index}
             >
               {letter.ch}
             </span>

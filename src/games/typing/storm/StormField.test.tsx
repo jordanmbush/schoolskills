@@ -159,8 +159,13 @@ const only = (ch: string, count = 1, fallMs = 1000): WaveSpec => ({
 const frameOf = (spec: WaveSpec, atMs: number): StormState =>
   tick(startStorm(buildWave(spec, 7)), atMs);
 
+/**
+ * A frame of the field, on its own. The `skyRef` is where `useStormClock`
+ * writes the fall (§8.9); a still frame has no clock, so it is handed an empty
+ * ref rather than the component being made to work without one.
+ */
 const draw = (state: StormState) =>
-  renderToStaticMarkup(<StormField state={state} />);
+  renderToStaticMarkup(<StormField state={state} skyRef={{ current: null }} />);
 
 /** Every falling letter in a rendered field, as `{ ch, lane }`. */
 const stones = (state: StormState) =>
@@ -268,6 +273,29 @@ describe("StormField", () => {
     // measured in pixels would come apart from the board the moment `--key`
     // moved, which is at every viewport width.
     expect(storm.replace(/1px solid/g, "")).not.toMatch(/\d+px/);
+  });
+
+  it("falls on a transform, down the sky rather than down itself", () => {
+    // The fall is a transform and not `top`: twelve stones moving sixty times
+    // a second is twelve layouts a frame written the other way (§8.9). And it
+    // is `translateY`, which is what leaves `translate: -50% 0` free to hold
+    // the lane centring without the two writing over each other.
+    expect(declaration(".storm__letter", "transform")).toBe(
+      "translateY(calc(var(--drop) * var(--fall)))",
+    );
+    // `top` anchors the stone at the top of the sky and nothing else; the fall
+    // is not written there.
+    expect(declaration(".storm__letter", "top")).toBe("0");
+
+    // A percentage inside a transform resolves against the element being
+    // moved, so the travel is the sky's own height — which is only a length a
+    // stone can read because the sky is a size container. Floored at zero,
+    // because the sky minus a stone goes negative on a viewport shorter than
+    // about 265px, and an unfloored travel runs the storm upwards.
+    expect(declaration(".storm__sky", "container-type")).toBe("size");
+    expect(declaration(".storm__letter", "--fall").replace(/\s+/g, " ")).toBe(
+      "max(0cqh, 100cqh - var(--stone))",
+    );
   });
 
   it("draws one key unit, shared with the board it is aiming at", () => {

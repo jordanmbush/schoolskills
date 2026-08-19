@@ -1224,6 +1224,40 @@ is a separate question, and it is the loop's: clamping the delta, or pausing on
 `visibilitychange`, is a decision the clock can only make deliberately because
 the rules underneath it are honest about the whole interval.
 
+**The clock clamps at 100ms** (`MAX_STEP_MS`, decision 38). That is six frames
+at 60Hz and three at 30Hz, so a step longer than it is not a slow frame but a
+gap — a hidden tab, a resumed laptop, a stall. Under the clamp the wall clock
+is authoritative for any rate a game could be played at, so the storm is not
+quietly easier on a slower machine; over it the wave falls behind the clock
+rather than teleporting a dozen letters through the shield in one frame. A
+`visibilitychange` pause is deliberately _not_ taken as well: rAF is already
+suspended while a tab is hidden, so the clamp is the thing that has to be right
+on the way back, and unlike a listener it also covers the stalls that are not
+tab switches. It also floors a non-finite delta, which `tick` cannot defend
+itself against — `timeMs + NaN` is `NaN` for the rest of the run, and a run
+whose letters can never land has no ending to leave by.
+
+**The loop writes `--drop` and nothing else** (decision 39). The stylesheet
+multiplies that fraction by the height of the sky, so the field's geometry
+stays where the lanes and the keycaps already are — off one `--key` and the
+sky's own size (§8.2) — and the loop never learns how tall the field is or gets
+to hold a second opinion about it at some viewport width. The fall is a
+transform rather than `top` for the reason `.fuse__fill` scales rather than
+setting a width: the layout property is the expensive one to write, and twelve
+stones moving sixty times a second is twelve layouts a frame. Because a
+percentage inside a transform resolves against the element being _moved_, the
+sky is a size container and the travel is written in `cqh`.
+
+**The field re-renders on the picture, not on the frame** (decision 40).
+Neither an empty `tick` nor a missed `fire` returns the object it was handed,
+so `===` on the state says "changed" sixty times a second and means nothing.
+What React is re-rendered for is every field of a `StormState` except the
+clock, plus the two things the clock alone moves: a letter appearing, which no
+field records because it is a time crossing, and the target changing, which two
+letters at different speeds can do mid-air with nothing else happening at all
+(decision 32). Miss that second one and the board goes on marking a child's
+keys against a letter that is no longer the lowest.
+
 ### 8.10 · Motion, flashing and reduced motion
 
 A falling-letter game cannot honour `prefers-reduced-motion` by removing the
@@ -1339,6 +1373,9 @@ first when either optional field is added.
 | 35  | A tick resolves every landing inside it                 | A backgrounded tab hands back seconds; clamping the delta is the clock's call, not the rule's              |
 | 36  | The field's lanes step back half a `--key-gap`          | `keyX` centres a key's slot; the child aims at the cap drawn inside it, and half the gap is the difference |
 | 37  | `--key` is declared once, at the root                   | It lived on the board, which the field above it cannot read — and a second clamp is two ideas of a key     |
+| 38  | A frame is clamped to 100ms of wave time                | A hidden tab hands back seconds; running slow below 10fps beats teleporting letters through the shield     |
+| 39  | The loop writes `--drop`; the stylesheet owns the fall  | Geometry stays off one `--key` and the sky's own height, so the loop holds no second opinion about either  |
+| 40  | The field re-renders on the picture, not on the frame   | `tick` and `fire` hand back a fresh object either way, so identity is not a "nothing changed" signal       |
 
 ---
 
