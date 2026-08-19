@@ -961,20 +961,45 @@ The keyboard component sits at the bottom of the field, lit by the same
 `useKeyEcho` the lessons use. It is literally the gun.
 
 Lanes are key units, not pixels, so the field and the board scale together off
-one `--key` custom property.
+one `--key` custom property — **declared once, at the root**. It lived on
+`.keyboard` until the field was built, and could not stay there: a custom
+property inherits downwards only, so a value declared on the board is a value
+the sky above it cannot read. The alternative was a second clamp with the same
+numbers in the storm's own block, which is precisely the drift this is supposed
+to rule out — a lane and the cap it names, free to disagree about how wide a
+key is (decision 37).
 
-They scale off it differently, though, and the difference is worth writing down
-before the field is built. `keyX` returns the centre of a key's **slot**, while
-the drawn keycap is inset inside that slot: `game.css` gives it
+They scale off it differently, though, and the difference had to be resolved
+rather than inherited. `keyX` returns the centre of a key's **slot**, while the
+drawn keycap is inset inside that slot: `game.css` gives it
 `width: calc(var(--w) * var(--key) - var(--key-gap))`, with `--key-gap` set to
 `calc(var(--key) * 0.09)`. So a cap's visual centre is `--key * (x + w/2 -
 0.045)` while its lane is `--key * (x + w/2)` — a letter placed at
-`left: calc(var(--lane) * var(--key))` and centred with `translateX(-50%)` sits
+`left: calc(var(--lane) * var(--key))` and centred on that point would sit
 **0.045 key units right of the centre of the cap it names**, about 1.7px at the
-2.4rem ceiling of `--key` and about 0.8px at the 1.05rem floor. Whether the
-field subtracts that half-gap is the field's own call to make deliberately
-(§13, item 18); it is recorded here so that it is neither inherited unknowingly
-nor "corrected" into a real misalignment.
+2.4rem ceiling of `--key` and about 0.8px at the 1.05rem floor.
+
+**The field subtracts it** (decision 36):
+
+```css
+left: calc(var(--lane) * var(--key) - var(--key-gap) / 2);
+```
+
+Two reasons, and the second is the one that matters in a year. A child aims at
+the plastic, not at the slot — "`f` falls onto `f`" is a claim about the thing
+on screen called `f`, and the cap is the only `f` there is. And the offset is
+not a constant of nature: it is half of whatever the board insets its caps by,
+so `var(--key-gap) / 2` is the correction at any gap, while the 0.045 it
+currently works out to would be a second number to keep in step with the first.
+Written this way a chunkier keyboard moves the lanes with it and nothing has to
+be remembered.
+
+Sub-pixel, and therefore worth being explicit about what it is not: this is not
+a fudge factor found by nudging until it looked right. It is the difference
+between two positions the stylesheet computes, and the same subtraction makes
+`stoneCentre` and `capCentre` equal to ten decimal places in
+`StormField.test.tsx` — in key units, so the test cannot be satisfied by a
+pixel that happened to round the right way at one size.
 
 ### 8.3 · A wave, from a seed
 
@@ -1238,9 +1263,12 @@ syllabus, and it is the one piece of UI in this epic worth spending real design
 time on.
 
 Component budget: `LessonLadder`, `LessonTile`, `LessonBrief`, `PassBars`,
-`Keyboard`, `StormField`, `StormShield`. All under the 300-line cap; the ladder
-is the only one that will come close, and the brief splitting out is why it
-won't.
+`Keyboard`, `StormRun`, `StormField`, `StormShield`. All under the 300-line cap;
+the ladder is the only one that will come close, and the brief splitting out is
+why it won't. `StormRun` is the route and `StormField` is the screen it draws:
+the field is a pure function of one `StormState`, so the wave, the clock and
+(later) the saving live above it and every frame it can be in is renderable
+from a value.
 
 ---
 
@@ -1267,43 +1295,45 @@ first when either optional field is added.
 
 ## 11 · Decisions, recorded
 
-|     | Decision                                                | Because                                                                                                  |
-| --- | ------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| 1   | The keyboard layout is engine, not view                 | The curriculum, the generator and the game's lanes all need it; only the fourth consumer is a picture    |
-| 2   | `code`, not `key`                                       | Shift+`4` produces `$` and there is no `$` key to light up                                               |
-| 3   | Keys release on a timer, not `keyup`                    | A missed `keyup` leaves a key stuck lit, which is a lie about where the hand is                          |
-| 4   | The board is `aria-hidden`                              | Sixty announcing spans is not accessibility; the passage already carries the state                       |
-| 5   | The visual keyboard is never tappable                   | A tappable board is a hunt-and-peck trainer, which is the thing this is against                          |
-| 6   | Lesson text is generated, not written                   | A hundred hand-written pools is a hundred chances to use a key the child hasn't met                      |
-| 7   | The lexicon must not be reachable from `decks/index.ts` | The same import took the shared chunk 46 KB → 222 KB once already                                        |
-| 8   | Ghost identity is the lesson, not the passage           | Every run generates different words; keying on them buckets every run alone                              |
-| 9   | Three pass bars, not one score                          | A single number says you failed; three say what to fix                                                   |
-| 10  | Accuracy is flat and high; speed scales                 | An accuracy bar you can hammer past teaches hammering                                                    |
-| 11  | The speed bar dips when a key arrives                   | You have just got slower and you should have                                                             |
-| 12  | The new-key gate                                        | 95% and 12 wpm can both be met while getting the lesson's own key wrong every time                       |
-| 13  | Per-key stats come from cards, not keystrokes           | Raw keystrokes would need a `Session` field for one game's benefit; corrections are fairly forgiven      |
-| 14  | Progress is derived, never stored                       | No migration, self-heals when criteria change, cannot disagree with the record book                      |
-| 15  | Unlock is `max(cleared) + 1`                            | Session pruning drops the oldest runs; counting would silently re-lock lesson 1                          |
-| 16  | Any checkpoint, any time                                | It is a placement test, a skip-ahead and an ordering rule in one sentence                                |
-| 17  | A lesson has no ghost and no time penalty               | A penalty double-counts accuracy and makes the wpm number a lie                                          |
-| 18  | Hailstorm is a route in the typing island               | It is a level inside the ladder; a second island means a page load mid-progression and a second keyboard |
-| 19  | Letters fall down their key's column                    | The lane is a spatial hint — the game teaches the layout the whole time it is played                     |
-| 20  | Only the lowest letter can be shot                      | Otherwise spraying the keyboard is a winning strategy                                                    |
-| 21  | The shield is eight finger zones                        | A hole under `o` tells you nothing; a hole under the right ring finger tells you what to practise        |
-| 22  | Score can fall, XP cannot                               | XP is cumulative across years and four games; a bad five minutes must not lower a level                  |
-| 23  | A Hailstorm run is a `Session`                          | Record book, XP, badges and the drill builder all work with no new code                                  |
-| 24  | Hailstorm never gates the ladder                        | A tablet has no keys, and a reward that blocks you is not a reward                                       |
-| 25  | DOM, not canvas                                         | Eleven custom properties change the whole app's biome; a canvas is a hole in that                        |
-| 26  | US ANSI only, and say so                                | A UK keyboard would fail lessons 62 and 67 for a child doing everything right                            |
-| 27  | A lesson's keyboard seeds; it does not overrule         | All hundred name a mode, so an override beats the player's own setting on every rung                     |
-| 28  | `eyes-up` reads the board the run was typed under       | Checkpoints force it off, so the resolved mode alone awards it for the ten where it was compulsory       |
-| 29  | `unbroken` is gated on the wave having a length         | "The wave exists" retires itself when STM10 lands; "no screen starts one" is a line someone must delete  |
-| 30  | A falling letter is on the field on `[spawn, land)`     | Landing is the tick that resolves a letter, so `gap` exactly equal to `fall` is a handover, not two      |
-| 31  | A letter carries its key, finger and lane               | Resolved against the layout once, so the lane, the shot and the finger named at death cannot drift       |
-| 32  | The target is the greatest fall progress, not `landMs`  | Letters at different speeds cross; landing order aims at a letter visibly higher up the screen           |
-| 33  | An exact tie goes to the earlier spawn                  | The index is the letter's identity, so a replay resolves the same dead heat the same way                 |
-| 34  | A repair never lifts a zone above `spec.shield`         | "Untouched" has to keep meaning the eight-of-`shield` a run started with                                 |
-| 35  | A tick resolves every landing inside it                 | A backgrounded tab hands back seconds; clamping the delta is the clock's call, not the rule's            |
+|     | Decision                                                | Because                                                                                                    |
+| --- | ------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| 1   | The keyboard layout is engine, not view                 | The curriculum, the generator and the game's lanes all need it; only the fourth consumer is a picture      |
+| 2   | `code`, not `key`                                       | Shift+`4` produces `$` and there is no `$` key to light up                                                 |
+| 3   | Keys release on a timer, not `keyup`                    | A missed `keyup` leaves a key stuck lit, which is a lie about where the hand is                            |
+| 4   | The board is `aria-hidden`                              | Sixty announcing spans is not accessibility; the passage already carries the state                         |
+| 5   | The visual keyboard is never tappable                   | A tappable board is a hunt-and-peck trainer, which is the thing this is against                            |
+| 6   | Lesson text is generated, not written                   | A hundred hand-written pools is a hundred chances to use a key the child hasn't met                        |
+| 7   | The lexicon must not be reachable from `decks/index.ts` | The same import took the shared chunk 46 KB → 222 KB once already                                          |
+| 8   | Ghost identity is the lesson, not the passage           | Every run generates different words; keying on them buckets every run alone                                |
+| 9   | Three pass bars, not one score                          | A single number says you failed; three say what to fix                                                     |
+| 10  | Accuracy is flat and high; speed scales                 | An accuracy bar you can hammer past teaches hammering                                                      |
+| 11  | The speed bar dips when a key arrives                   | You have just got slower and you should have                                                               |
+| 12  | The new-key gate                                        | 95% and 12 wpm can both be met while getting the lesson's own key wrong every time                         |
+| 13  | Per-key stats come from cards, not keystrokes           | Raw keystrokes would need a `Session` field for one game's benefit; corrections are fairly forgiven        |
+| 14  | Progress is derived, never stored                       | No migration, self-heals when criteria change, cannot disagree with the record book                        |
+| 15  | Unlock is `max(cleared) + 1`                            | Session pruning drops the oldest runs; counting would silently re-lock lesson 1                            |
+| 16  | Any checkpoint, any time                                | It is a placement test, a skip-ahead and an ordering rule in one sentence                                  |
+| 17  | A lesson has no ghost and no time penalty               | A penalty double-counts accuracy and makes the wpm number a lie                                            |
+| 18  | Hailstorm is a route in the typing island               | It is a level inside the ladder; a second island means a page load mid-progression and a second keyboard   |
+| 19  | Letters fall down their key's column                    | The lane is a spatial hint — the game teaches the layout the whole time it is played                       |
+| 20  | Only the lowest letter can be shot                      | Otherwise spraying the keyboard is a winning strategy                                                      |
+| 21  | The shield is eight finger zones                        | A hole under `o` tells you nothing; a hole under the right ring finger tells you what to practise          |
+| 22  | Score can fall, XP cannot                               | XP is cumulative across years and four games; a bad five minutes must not lower a level                    |
+| 23  | A Hailstorm run is a `Session`                          | Record book, XP, badges and the drill builder all work with no new code                                    |
+| 24  | Hailstorm never gates the ladder                        | A tablet has no keys, and a reward that blocks you is not a reward                                         |
+| 25  | DOM, not canvas                                         | Eleven custom properties change the whole app's biome; a canvas is a hole in that                          |
+| 26  | US ANSI only, and say so                                | A UK keyboard would fail lessons 62 and 67 for a child doing everything right                              |
+| 27  | A lesson's keyboard seeds; it does not overrule         | All hundred name a mode, so an override beats the player's own setting on every rung                       |
+| 28  | `eyes-up` reads the board the run was typed under       | Checkpoints force it off, so the resolved mode alone awards it for the ten where it was compulsory         |
+| 29  | `unbroken` is gated on the wave having a length         | "The wave exists" retires itself when STM10 lands; "no screen starts one" is a line someone must delete    |
+| 30  | A falling letter is on the field on `[spawn, land)`     | Landing is the tick that resolves a letter, so `gap` exactly equal to `fall` is a handover, not two        |
+| 31  | A letter carries its key, finger and lane               | Resolved against the layout once, so the lane, the shot and the finger named at death cannot drift         |
+| 32  | The target is the greatest fall progress, not `landMs`  | Letters at different speeds cross; landing order aims at a letter visibly higher up the screen             |
+| 33  | An exact tie goes to the earlier spawn                  | The index is the letter's identity, so a replay resolves the same dead heat the same way                   |
+| 34  | A repair never lifts a zone above `spec.shield`         | "Untouched" has to keep meaning the eight-of-`shield` a run started with                                   |
+| 35  | A tick resolves every landing inside it                 | A backgrounded tab hands back seconds; clamping the delta is the clock's call, not the rule's              |
+| 36  | The field's lanes step back half a `--key-gap`          | `keyX` centres a key's slot; the child aims at the cap drawn inside it, and half the gap is the difference |
+| 37  | `--key` is declared once, at the root                   | It lived on the board, which the field above it cannot read — and a second clamp is two ideas of a key     |
 
 ---
 

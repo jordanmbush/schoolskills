@@ -1864,16 +1864,35 @@ label.segmented__btn {
    legends are its chalk, and the eight hues on top are the same in all of
    them because a finger doesn't change biome.                             */
 
-.keyboard {
-  /* The one dial. The board is fifteen key units wide and every key knows its
-     own left edge in those units, so a key is a fifteenth of the room there
-     is — floored so it stays legible on a narrow phone, capped so it doesn't
-     become furniture on a desktop. The dvh term is what makes a phone in
-     landscape work: five rows and the passage above them are sharing about
-     390px of height, and width alone would happily spend all of it. */
+/* The one dial, and it is at the ROOT because two screens now scale off it.
+
+   The board is fifteen key units wide and every key knows its own left edge
+   in those units, so a key is a fifteenth of the room there is — floored so
+   it stays legible on a narrow phone, capped so it doesn't become furniture
+   on a desktop. The dvh term is what makes a phone in landscape work: five
+   rows and whatever they are under — the passage, or a sky full of falling
+   letters — are sharing about 390px of height, and width alone would happily
+   spend all of it.
+
+   It lived on `.keyboard` until Hailstorm, which positions falling letters in
+   key units in the sky ABOVE the board (docs/typing.md §8.2): a custom
+   property inherits downwards only, so a value declared on the board is a
+   value the field cannot read. The alternative was a second clamp with the
+   same five numbers in the storm's own block, and that is the one thing this
+   must not be — a lane and the cap it names would then be free to drift
+   apart, which is a spatial hint teaching the wrong geometry.
+
+   `--key-gap` is here for the same reason and one more: it is the inset that
+   turns a key's slot into the keycap drawn inside it, so it is also what the
+   field subtracts half of to centre a letter over the CAP rather than over
+   the slot (decision 36). One declaration, and both halves of that stay
+   true at every size. */
+:root {
   --key: clamp(1.05rem, min(5.6vw, 9dvh), 2.4rem);
   --key-gap: calc(var(--key) * 0.09);
+}
 
+.keyboard {
   display: grid;
   gap: var(--key-gap);
   width: calc(15 * var(--key));
@@ -2090,4 +2109,126 @@ label.segmented__btn {
 .keyboard__key.is-wrong {
   border-color: var(--flare);
   background: color-mix(in oklab, var(--flare) 78%, var(--ink-800));
+}
+
+/* ── Hailstorm: the field ────────────────────────────────────────────────
+   The sky the letters fall through, and the board underneath that shoots
+   them (docs/typing.md §8.2, decision 19).
+
+   **A letter falls down the column of its own key.** `f` falls onto `f`; `y`
+   falls between `g` and `h`, because that is where `y` is. Everything in this
+   block is in service of that one claim, and everything it needs to keep it
+   is already here: `StormLetter.lane` is `keyX(code)` in key units, and the
+   caps below are `KeyDef.x` in the same units against the same `--key`. Two
+   readings of one table, so there is no arithmetic in this file for a lane
+   and a cap to disagree about.
+
+   No pixel constant appears anywhere in the geometry — a lane, a hailstone
+   and the fall are all multiples of `--key`, so the field and the board
+   change size together or not at all. And no colour here is a literal: the
+   ice world's tokens draw the sky and the stones, and the telemetry five stay
+   out of it until there is something to signal. A hailstone in `--lime` would
+   be telling a child something was right about it.                        */
+
+.storm {
+  /* A hailstone, in key units: a little wider than the cap it is aimed at, so
+     the glyph reads at the top of the screen. Named because the fall
+     arithmetic needs it too — a letter travels the sky MINUS its own height,
+     which is what leaves it whole at the top and resting on the line at the
+     bottom rather than half off each end. */
+  --stone: calc(var(--key) * 1.15);
+
+  /* One viewport minus the ad band above it, exactly as `.race` is sized and
+     for a sharper version of the same reason. `height`, not `min-height`: a
+     field that may grow is a field that scrolls, and a page that scrolls
+     under a thumb mid-run is worse here than in a race — the letters would
+     still be falling somewhere off screen. */
+  height: calc(100dvh - var(--ad-h));
+  overflow: hidden;
+
+  display: grid;
+  /* The sky gives, the board never does. `minmax(0, 1fr)` is what lets the
+     sky be shorter than its content wants (the stones are absolutely
+     positioned inside it, so it has no content of its own to insist on) and
+     `auto` hands the board its five rows at whatever `--key` currently is.
+
+     That order is the opposite of the passage screen's, where a viewport too
+     short for both hides the board and lets the words carry on (the
+     `max-height` rule above, scoped to `.typing` and therefore not this).
+     Here the board is the gun: a child who cannot see it is not being asked
+     to read faster, they are being asked to shoot with nothing. So the sky is
+     what shrinks, down to nothing if it has to. */
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: clamp(0.35rem, 1.5vh, 1rem);
+  padding: clamp(0.4rem, 1.5vh, 1rem) clamp(0.5rem, 2vw, 1rem);
+}
+
+/* Fifteen key units of sky, centred over fifteen key units of board, so a
+   lane and its cap are the same column of the screen and not merely the same
+   number. `.keyboard` centres itself the same way at the same width — that
+   shared width is the alignment, and it is why the sky is not simply the full
+   width of the field.
+
+   The bottom border is the line the letters land on. STM05 replaces it with
+   the eight shield segments, one per finger; until then it is what makes the
+   fall legible — a stone at the bottom of the sky is a stone that got
+   through. */
+.storm__sky {
+  position: relative;
+  width: calc(15 * var(--key));
+  margin-inline: auto;
+  border-bottom: 1px solid var(--hairline);
+
+  /* Nothing in here is an interface. A drag should not select a hailstorm,
+     and a tap should not land on a letter — the only thing that fires in this
+     game is a key (§8.8). */
+  pointer-events: none;
+  user-select: none;
+}
+
+.storm__letter {
+  position: absolute;
+
+  /* ── The lane ──────────────────────────────────────────────────────────
+     `--lane` is `keyX(code)`: the centre of the key's SLOT, in key units from
+     the left edge of the board. The cap is drawn INSIDE that slot, inset by
+     `--key-gap` on its width, so the middle of the plastic a child is looking
+     at sits half a gap to the left of the middle of the slot. Half a
+     `--key-gap` back is therefore the difference between a letter over its
+     key and a letter over the seam beside it (§8.2, decision 36).
+
+     Written as `var(--key-gap) / 2` and never as the 0.045 it currently works
+     out to: the offset is half of whatever the board insets its caps by, so
+     expressed this way a chunkier keyboard moves the lanes with it, and there
+     is no second number to keep in step. */
+  left: calc(var(--lane) * var(--key) - var(--key-gap) / 2);
+
+  /* ── The fall ──────────────────────────────────────────────────────────
+     `--drop` is `progressAt`: 0 the instant a letter spawns, 1 the instant it
+     reaches the shield. The percentage resolves against the sky, so the whole
+     fall is one multiplication and the field never learns how tall it is.
+
+     This is the seam STM04 takes over — a `requestAnimationFrame` loop
+     writing `--drop`, or `transform`, per frame. `transform` is left
+     deliberately unused: the centring below is the `translate` property, so a
+     loop can write a transform without wiping the lane out from under the
+     letter it is moving. */
+  top: calc(var(--drop) * (100% - var(--stone)));
+  translate: -50% 0;
+
+  display: grid;
+  place-items: center;
+  width: var(--stone);
+  height: var(--stone);
+
+  border: 1px solid color-mix(in oklab, var(--accent) 42%, transparent);
+  border-radius: calc(var(--key) * 0.3);
+  background: color-mix(in oklab, var(--ink-800) 88%, transparent);
+  box-shadow: 0 0 calc(var(--key) * 0.45)
+    color-mix(in oklab, var(--accent) 18%, transparent);
+
+  font-family: var(--font-mono);
+  font-size: calc(var(--key) * 0.6);
+  line-height: 1;
+  color: var(--chalk);
 }
