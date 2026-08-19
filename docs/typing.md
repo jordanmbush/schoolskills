@@ -415,9 +415,16 @@ The way out is already in the type. `TypingConfig.words` exists, and
   from the deck layer, which is how `deckSpec("typing:L07")` can label a run
   "Lesson 7 · Reaching up" in a record book two years from now.
 
-A lint rule pinning "nothing under `decks/` imports `engine/typing/lexicon` or
-`engine/typing/generate`" is cheap and is the only thing that will stop this
-happening a third time.
+A lint rule is cheap and is the only thing that will stop this happening a
+third time. What it pins is _reachability_, not the one import: banning
+`decks/**` alone would leave the hop through `lessons.ts` — the one module in
+`engine/typing/` the deck layer may import, and therefore the one place an
+`import { WORDS } from "./lexicon"` buys every island a 222 KB chunk with
+nothing under `decks/` looking wrong. So `local/no-corpus-in-decks` bans
+`engine/typing/lexicon` and `engine/typing/generate` from **`src/engine/**`**,
+exempting only the corpus, the generator and their tests. Default-deny costs
+nothing here — no engine module outside those three has any business holding
+the words — and it does not need a new entry each time the engine grows a file.
 
 ### 5.4 · Ghost identity is the lesson, not the passage
 

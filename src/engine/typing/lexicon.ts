@@ -23,8 +23,13 @@
  * the corpus is the largest thing in the epic.
  *
  * A comment would not have stopped it the first time, so the ban is a lint
- * rule — `local/no-corpus-in-decks` in `eslint.config.mjs`, over
- * `src/engine/decks/**`, naming this paragraph as its reason.
+ * rule — `local/no-corpus-in-decks` in `eslint.config.mjs`, naming this
+ * paragraph as its reason. It covers `src/engine/**` rather than
+ * `src/engine/decks/**`, because reachability is transitive and `lessons.ts`
+ * next door is importable from the deck layer: banning only the decks
+ * directory would leave `import { WORDS } from "./lexicon"` one file over as a
+ * legal way to ship this to every island. Only this file, `generate.ts` and
+ * their tests are exempt.
  *
  * The way past it is already in the type. `TypingConfig.words` carries a run's
  * own text, so the ladder screen — inside the typing island, where the corpus
@@ -66,8 +71,9 @@
  *     it: `I`, and the days and months. All three are capitalised here for the
  *     same reason they are capitalised on a page, and `unlockedAt` keeps them
  *     out of a child's way until block 4 teaches the shifts. Every other name
- *     lives in the sentence pool, in a sentence, where it reads as a name
- *     rather than as a capitalised noun.
+ *     lives in `NAMES` or in the sentence pool, where it reads as a name
+ *     rather than as a capitalised noun in the middle of two thousand
+ *     lowercase ones.
  *   - **British spelling**, as everywhere in this repo. A child copies what is
  *     on screen, so the choice costs nothing and being consistent is worth
  *     something.
@@ -891,6 +897,12 @@ export const WORDS: readonly string[] = [
   "traffic",
 
   // ── Time, and counting it ──────────────────────────────────────────────────
+  // The seven days and all twelve months, complete. Two of the months are also
+  // ordinary words further up this list — "march" and "may" — and that is not
+  // a duplicate to be tidied away: they are different words that happen to
+  // share letters, and a child asked for the months and handed eleven of them
+  // would be the one who noticed. The "No duplicates" house rule is about the
+  // same string twice, which neither pair is.
   "today",
   "tomorrow",
   "yesterday",
@@ -907,6 +919,7 @@ export const WORDS: readonly string[] = [
   "February",
   "March",
   "April",
+  "May",
   "June",
   "July",
   "August",
@@ -2725,6 +2738,83 @@ export const RIGHT_HAND: readonly string[] = [
 ];
 
 /**
+ * First names, for lesson 33 (§5.6: "Names, and the word I").
+ *
+ * Lesson 33 is a **words** lesson whose whole subject is names, which is the
+ * one thing `WORDS` deliberately has none of: a proper noun in the corpus is a
+ * capitalised noun in every draw that is not about names, and there are two
+ * thousand of those. So the names it needs are a pool of their own, reached by
+ * that lesson and by nothing else.
+ *
+ * It comes straight after the two shift lessons on purpose. A capital is the
+ * one character a child has just learnt to make and cannot yet practise on
+ * anything — every word in the corpus is lowercase but for `I` and the
+ * calendar — and a name is a capital that has a reason to be there.
+ *
+ * Letters only. The apostrophe does not arrive until lesson 35, so no name
+ * here may carry one, and every entry has to be typeable at lesson 33's
+ * alphabet — which by then is the whole board, both shifts included.
+ * `lexicon.test.ts` checks both.
+ *
+ * Every name the sentence pool uses is here, and a few besides, so a child
+ * meets them twice: once as a word to type, and once five lessons later in a
+ * sentence they belong to.
+ * Alphabetical, because unlike `WORDS` there is no frequency here worth
+ * claiming and a list of names has no other order it could honestly be in.
+ */
+export const NAMES: readonly string[] = [
+  "Ada",
+  "Aisha",
+  "Amina",
+  "Bea",
+  "Ben",
+  "Cara",
+  "Dev",
+  "Dylan",
+  "Ella",
+  "Esme",
+  "Finn",
+  "Freya",
+  "Gita",
+  "Grace",
+  "Hana",
+  "Hassan",
+  "Hugo",
+  "Iris",
+  "Isaac",
+  "Ivan",
+  "Ivy",
+  "Jack",
+  "Jonah",
+  "Jude",
+  "Kai",
+  "Lena",
+  "Leo",
+  "Lily",
+  "Maya",
+  "Mia",
+  "Milo",
+  "Nell",
+  "Nina",
+  "Noah",
+  "Omar",
+  "Oscar",
+  "Otto",
+  "Priya",
+  "Ravi",
+  "Rosa",
+  "Ruby",
+  "Sam",
+  "Sara",
+  "Tess",
+  "Theo",
+  "Tom",
+  "Wren",
+  "Yusuf",
+  "Zoe",
+];
+
+/**
  * Whole sentences, for the lessons that ask for one (§5.6: 30, 36, 37, 38, 40).
  *
  * Written as a sentence is printed — a capital at the front, a stop at the end
@@ -2740,9 +2830,10 @@ export const RIGHT_HAND: readonly string[] = [
  * digits. A lesson takes the ones its alphabet can reach and the order above
  * is what makes sure there are enough of them at every level.
  *
- * Names are here rather than in `WORDS` because a name is only a name in a
- * sentence — a bare list of them is a list of capitalised nouns, and lesson 33
- * wants "Ravi and Grace waited at the gate", not "Ravi. Grace. Omar."
+ * Names in a sentence are a name; names in `WORDS` would be capitalised nouns
+ * skewing every ordinary draw, which is why lesson 38 reads "Ravi and Grace
+ * waited at the gate" and why the bare list lesson 33 needs is `NAMES` above
+ * rather than a band in the corpus.
  */
 export const SENTENCES: readonly string[] = [
   // Letters and a full stop. Everything the end of block 3 can reach.
@@ -2794,7 +2885,8 @@ export const SENTENCES: readonly string[] = [
   "Because it was snowing, the school stayed closed.",
   "He counted the coins, put them in a jar and smiled.",
 
-  // Names and places. Lessons 33 and 38, once both shifts are taught.
+  // Names and places. Lesson 38, once both shifts are taught. (Lesson 33 is a
+  // words lesson and draws from `NAMES`, not from here.)
   "Ravi and Grace waited at the gate.",
   "Sam found a lost dog on Oak Street.",
   "Mia read her poem to the whole class.",
@@ -2887,9 +2979,20 @@ export const SENTENCES: readonly string[] = [
  * makes the copywork library the wrong place to shop.
  *
  * Sorted by what they hold, like the sentences: plain prose first, then
- * speech, then numbers. Lengths run from about fifty words to about a hundred
- * and thirty, which covers lesson 50 at one end and lesson 100's Ice Exam at
- * the other.
+ * speech, then numbers. Lengths run from about eighty words to about a hundred
+ * and seventy, and the top end is set by the ladder rather than by taste — a
+ * passage lesson asks for a whole number of words (§5.6: 100 at lesson 80, 120
+ * at lesson 96, 150 at lesson 100's Ice Exam) and can only be generated from a
+ * passage that reaches it. Two clear a hundred and fifty, so the exam is not
+ * the same text every time; `lexicon.test.ts` counts the pool against every
+ * passage lesson on the ladder rather than against a number written here,
+ * which is the only version of this claim that cannot quietly go stale.
+ *
+ * The floor is "long enough not to be a sentence" rather than lesson 50's
+ * twenty-five words. How a passage lesson shorter than the shortest passage is
+ * served — trimmed to a sentence boundary, most likely — is the generator's
+ * business (LES04), and this file should not decide it on the generator's
+ * behalf by stocking a pool shaped around a guess.
  */
 export const PASSAGES: readonly string[] = [
   "The path to the beach runs between two high hedges. In summer it is full of bees, and the grass on either side grows taller than a child. At the end there is a gate, and beyond the gate the ground drops away into sand. On a still morning you can hear the sea long before you can see it. We walked down with our boots in our hands and found the tide out, the whole bay flat and shining, and not a single footprint on it but our own.",
@@ -2900,8 +3003,20 @@ export const PASSAGES: readonly string[] = [
   "It snowed in the night, quietly, the way it always does. By breakfast the garden had lost its edges: the path, the flower beds and the low wall were one smooth white shape, and the shed had a thick roof of it. The birds came down to the place where the grass had been and stood about looking cross. We put out crumbs and half an apple, and then we went out ourselves and made a track all the way to the gate that spoilt the whole thing, which was the point.",
   "The den took two days to build and lasted until the first proper storm. We made the walls out of fallen branches leant against a low wall, and the roof out of an old sheet with stones on the corners. Inside there was room for three of us if nobody moved. We kept a tin of biscuits under a flat rock by the door, and a candle we were not allowed to light. When the wind took the roof off in October we found the biscuits were still dry, which felt like a kind of success.",
   "Rowing on the lake at dawn is the quietest thing I know. The water is grey and completely flat, and the oars make a sound like somebody turning the page of a very large book. Mist sits on the surface in patches and moves when you go through it. Once we saw a heron standing in the reeds, so still that we had gone past it before we understood what it was. By the time the sun is properly up the wind has started, the lake has small waves on it, and the morning is over.",
+
+  // The five below are the long end, and the ladder is what asks for it: 100
+  // words at lessons 80 and 94, 120 at lesson 96, 150 at lesson 100. A pool
+  // topping out under those is a pool the endurance lessons cannot be
+  // generated from at all, which is why the length test counts against
+  // LESSONS rather than against a window written into the test.
+  "The old railway line behind the village has not carried a train since before my mother was born. The rails came up years ago and the sleepers went with them, so what is left is a long flat path running straight through the middle of the fields, with a hedge on either side and a bridge every mile or so. In spring it fills with cow parsley taller than my head, and the whole cutting smells green. You can walk it for an hour and meet nobody but a man with a dog. At the far end there is a platform standing on its own in the grass, with a bench on it and no station left to belong to.",
+  "Bread is four things: flour, water, salt and yeast. Everything else is time. We mixed ours in a bowl with a wooden spoon until it stopped being a puddle and started being a lump, and then we turned it out onto the table and pushed it about for ten minutes, which is a great deal longer than it sounds. After that it sat under a cloth by the radiator and doubled in size while we did something else entirely. The part I like best is knocking it back down again. It came out of the oven brown on top and hollow when you tapped the bottom, and we burnt our fingers on it because nobody was willing to wait for it to cool.",
+  "A lighthouse is not really a house, though somebody used to live in most of them. The one on the point has a door at the bottom, a stair that turns round and round the inside wall, and a room at the top made almost entirely of glass. The light itself is smaller than you would expect. What makes it carry for miles is the lens around it, a great barrel of curved glass rings that gathers everything the lamp gives out and throws it flat across the water. The whole thing floats on a bed of oil and turns so slowly that you cannot see it move, and the flash a sailor counts out at sea is that turn coming round to face him again.",
+  "Ice is water that has stopped moving, and if you watch a pond through a cold week you can see it happen in stages. The first night puts a skin on the still edges, thin enough that a stone goes straight through it and the hole freezes over again by morning. After three or four nights the skin has reached the middle and thickened, and the whole surface groans when the temperature changes, because ice takes up more room than the water it came from and has nowhere to go but up and outwards. The fish are still there underneath, slower than they were, breathing water that never quite freezes. The lid of ice is what keeps the cold out as much as it keeps it in, which is the part nobody expects. A frozen pond is not a dead one. It is a room with the door shut, and when the thaw comes the whole thing goes back to being water again as though nothing had happened at all.",
+  "Nobody in our house can agree about the right way to make a fire. My father builds a small pile of twigs, lights it, and feeds bigger sticks in one at a time until it takes. My aunt lays the whole thing first, biggest at the bottom, and puts a single match to it. Both of them are completely certain, and both of their fires burn, which is the annoying part. What they do agree on is the two rules: everything must be dry, and there must be room for the air to get in. A fire is not really the wood burning at all. It is the hot gas coming off the wood, meeting the air above it and catching, which is why a heap packed tight goes out and a loose one does not. I have watched enough of them now to believe it, though neither of them has ever managed to light one in the rain.",
   '"Hold the end of it," said Dad, "and do not let go until I say." I held the end of it. The tent went up, more or less, and then it went sideways, and then it lay down in the grass like something that had given up. "Right," said Dad. "We will read the instructions." Mum laughed from the car. By the time it was dark we had a tent, a fire, and a rule that nobody was allowed to say the word tent again for the rest of the week.',
   '"Does anybody know why the sea is salty?" asked Mrs Hall. Nobody did. "Rivers," she said. "Rain falls on the hills, runs down through the rocks, and carries a little salt with it all the way to the sea. The water leaves again as cloud, but the salt stays behind." Ravi put his hand up. "So it is getting saltier?" he asked. "Very slowly," said Mrs Hall, "and it has been doing it for a very long time." We all looked out of the window at the rain.',
+  '"What is the coldest it has ever been here?" I asked Grandad. He thought about it for a while. "The winter the pipes froze," he said. "The snow came in December and it was still lying in the lane in March. We carried water up from the stream in buckets, and the milk froze on the step before your great grandmother could bring it in." I asked him whether the school had closed. "For a fortnight," he said, "and we were pleased about that for roughly three days. After that there is nothing to be done with a fortnight of snow but shovel it, and then shovel it again." He laughed at me. "You would have hated every minute of it. We all did."',
   "The market opens at 7 and is packed by 9. Apples are 2 pounds a bag, bread is 3, and the man on the corner stall sells 6 eggs for the price of 4 if you get there early. We had 15 pounds between us and a list of 8 things, which sounds like plenty until you add it up. In the end we came home with 5 bags, 2 loaves and no money at all, and Mum said that is exactly how a market is supposed to work.",
   "The moon is about 384 thousand kilometres away, which is roughly 30 Earths laid end to end. Light crosses that gap in 1 and a quarter seconds, so a radio message to somebody standing there takes about 2 and a half seconds to go and come back. The astronauts of 1969 took 3 days. They landed with 25 seconds of fuel left, walked about for 2 hours, and brought back 22 kilograms of rock, which is still being studied in laboratories today.",
 ];

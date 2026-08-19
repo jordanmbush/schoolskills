@@ -6,6 +6,7 @@ import {
   DOUBLES,
   HARD_PAIRS,
   LEFT_HAND,
+  NAMES,
   PASSAGES,
   RIGHT_HAND,
   SENTENCES,
@@ -42,6 +43,7 @@ const EVERY_POOL: [name: string, entries: readonly string[]][] = [
   ["ALTERNATING", ALTERNATING],
   ["LEFT_HAND", LEFT_HAND],
   ["RIGHT_HAND", RIGHT_HAND],
+  ["NAMES", NAMES],
   ["SENTENCES", SENTENCES],
   ["PASSAGES", PASSAGES],
 ];
@@ -64,6 +66,16 @@ const FOCUSES = LESSONS.flatMap((lesson) =>
     ? lesson.kind.focus.map((focus) => ({ n: lesson.n, focus }))
     : [],
 );
+
+/** Every lesson that asks for a passage, and the length it asks for. */
+const PASSAGE_LESSONS = LESSONS.flatMap((lesson) =>
+  lesson.kind.type === "passage"
+    ? [{ n: lesson.n, title: lesson.title, wordCount: lesson.wordCount }]
+    : [],
+);
+
+/** How the ladder will count a passage: whitespace-separated tokens. */
+const wordsIn = (passage: string) => passage.split(/\s+/).length;
 
 describe("the whole file, as characters", () => {
   it.each(EVERY_POOL)("%s is producible on this keyboard", (_name, pool) => {
@@ -102,16 +114,46 @@ describe("WORDS", () => {
   /**
    * Letters and the apostrophe, and capitals only where English insists on
    * them: `I`, and the days and months. Anything else with a capital in it is
-   * a proper noun that has wandered in from the sentence pool, where names
-   * belong.
+   * a proper noun that has wandered in from `NAMES` or the sentence pool,
+   * where names belong.
+   *
+   * The permitted set is enumerated rather than described by a shape. A regex
+   * ending in `[A-Z][a-z]+` — which is what this test used to carry — admits
+   * "London", "Ravi" and "England" while claiming to admit only the calendar,
+   * and it also cannot see the failure in the other direction: eleven of the
+   * twelve months, with the missing one noticed by whichever child types the
+   * year out.
    */
   it("is lowercase but for I, the days and the months", () => {
-    const shape = /^[a-z']+$/;
-    const allowed = /^(I|I'[a-z]+|[A-Z][a-z]+day|[A-Z][a-z]+)$/;
-    const capitalised = WORDS.filter((word) => !shape.test(word));
-    expect(capitalised.every((word) => allowed.test(word))).toBe(true);
-    expect(capitalised).toContain("I");
-    expect(capitalised).toContain("March");
+    const days = [
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+      "Saturday",
+      "Sunday",
+    ];
+    const months = [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
+    ];
+    const pronoun = ["I", "I'm", "I've", "I'll", "I'd"];
+
+    const capitalised = WORDS.filter((word) => !/^[a-z']+$/.test(word));
+    expect(new Set(capitalised)).toEqual(
+      new Set([...pronoun, ...days, ...months]),
+    );
     expect(WORDS.filter((word) => /[^A-Za-z']/.test(word))).toEqual([]);
   });
 
@@ -206,6 +248,46 @@ describe("the hand sets", () => {
   });
 });
 
+/**
+ * Lesson 33, "Names, and the word I", is a **words** lesson — it hands over a
+ * list, not prose — and its entire subject is the one thing `WORDS` is
+ * deliberately empty of. Without a pool of its own it is a lesson about names
+ * with no name in anything it can reach, which is what these cases are here to
+ * stop coming back.
+ */
+describe("NAMES", () => {
+  const LESSON_33 = LESSONS.find((lesson) => lesson.n === 33);
+
+  it("is the pool a names lesson can be built out of", () => {
+    expect(LESSON_33?.kind.type).toBe("words");
+    expect(NAMES.length).toBeGreaterThanOrEqual(LESSON_33?.wordCount ?? 0);
+    expect(NAMES.length).toBe(new Set(NAMES).size);
+  });
+
+  it("is names — a capital in, letters only", () => {
+    for (const name of NAMES) expect(name).toMatch(/^[A-Z][a-z]+$/);
+  });
+
+  /**
+   * The apostrophe does not arrive until lesson 35 and the shifts land at 31
+   * and 32, so lesson 33 is the first place a capital is typeable at all. A
+   * name here that needed a key the child has not met would fail exactly as a
+   * word does (§5.2) — as a lesson that cannot be generated.
+   */
+  it("is typeable at the lesson that asks for it", () => {
+    for (const name of NAMES) expect(canType(name, 33)).toBe(true);
+  });
+
+  /**
+   * And they stay out of `WORDS`. A proper noun in the corpus is a capitalised
+   * noun in every draw that is not about names, and there are two thousand of
+   * those — the reason the corpus holds no name to begin with.
+   */
+  it("keeps its names out of the corpus", () => {
+    for (const name of NAMES) expect(WORD_SET).not.toContain(name);
+  });
+});
+
 describe("SENTENCES", () => {
   it("are sentences — a capital in, a stop out", () => {
     for (const sentence of SENTENCES) {
@@ -222,8 +304,9 @@ describe("SENTENCES", () => {
   /**
    * Lessons 30 and 36 are sentence lessons with no punctuation past the full
    * stop unlocked, so the pool has to hold enough of the plain kind for them
-   * to be generated out of. Case is the generator's to fold (§5.3) — what is
-   * being counted here is the *punctuation*, not the capitals.
+   * to be generated out of. Case is the generator's to fold — see the
+   * `SENTENCES` doc block in `lexicon.ts`, which is where that is written down
+   * — so what is being counted here is the *punctuation*, not the capitals.
    */
   it("has plain ones for the lessons that have nothing else yet", () => {
     const plain = SENTENCES.filter((sentence) =>
@@ -234,12 +317,40 @@ describe("SENTENCES", () => {
 });
 
 describe("PASSAGES", () => {
-  it("are the length the endurance blocks ask for", () => {
-    for (const passage of PASSAGES) {
-      const words = passage.split(/\s+/).length;
-      expect(words).toBeGreaterThanOrEqual(50);
-      expect(words).toBeLessThanOrEqual(160);
-    }
+  /**
+   * Counted against the ladder, not against a constant. The window this used to
+   * assert — fifty to a hundred and sixty — was one no lesson had asked for
+   * since the ladder was written, and a pool that topped out at ninety-six
+   * passed it while lessons 80, 94, 96 and 100 (a hundred, a hundred, a hundred
+   * and twenty, a hundred and fifty) had nothing they could be generated from.
+   * A number in a test is a claim about the curriculum, and this is the same
+   * mistake the FOCUSES cases above exist to avoid: drive the case off LESSONS
+   * and the assertion cannot drift away from what the ladder wants.
+   */
+  it.each(PASSAGE_LESSONS)(
+    "is long enough for lesson $n, $title ($wordCount words)",
+    ({ wordCount }) => {
+      const long = PASSAGES.filter((p) => wordsIn(p) >= wordCount);
+      expect(long.length).toBeGreaterThan(0);
+    },
+  );
+
+  /**
+   * And the exam is not a pool of one. Lesson 100 is the longest ask on the
+   * ladder, so a single passage clearing it would mean every child's Ice Exam
+   * is the same text, every attempt — which §5.4 does not require and nobody
+   * would enjoy.
+   */
+  it("gives the longest lesson on the ladder a choice", () => {
+    const longest = Math.max(...PASSAGE_LESSONS.map((l) => l.wordCount));
+    const usable = PASSAGES.filter((p) => wordsIn(p) >= longest);
+    expect(usable.length).toBeGreaterThanOrEqual(2);
+  });
+
+  /** The other end: a passage is prose, not one of the SENTENCES with a fringe. */
+  it("holds nothing short enough to be a sentence", () => {
+    for (const passage of PASSAGES)
+      expect(wordsIn(passage)).toBeGreaterThan(50);
   });
 
   it("holds no passage twice", () => {
@@ -256,7 +367,10 @@ describe("PASSAGES", () => {
     expect(PASSAGES.filter((p) => /\d/.test(p)).length).toBeGreaterThan(0);
   });
 
-  /** Lesson 100 asks for a hundred and fifty words; nothing may be a fragment. */
+  /**
+   * A passage is copied whole, so one that trails off mid-clause reads as a
+   * mistake in the lesson rather than as prose. Nothing here may be a fragment.
+   */
   it("ends every passage on a stop", () => {
     for (const passage of PASSAGES) expect(passage).toMatch(/[.!?"]$/);
   });

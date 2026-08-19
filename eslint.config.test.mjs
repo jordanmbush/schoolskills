@@ -182,6 +182,13 @@ describe("storage service (src/services/storage/)", () => {
  * importable or `deckSpec("typing:L07")` cannot name a lesson in a record book,
  * and the typing island has to be free to import the corpus, since that is the
  * whole plan.
+ *
+ * And because `lessons.ts` is importable, the ban cannot stop at the deck
+ * directory: what §5.3 requires is that the corpus never become *reachable*
+ * from `decks/index.ts`, and a corpus import inside `lessons.ts` is the shared
+ * chunk one hop further out, with nothing in `decks/` looking wrong. Two cases
+ * below are that hop — including the `./lexicon` spelling, which is the only
+ * one a file in that directory would ever write.
  */
 describe("the typing corpus (src/engine/decks/ → engine/typing/)", () => {
   const CORPUS = "local/no-corpus-in-decks";
@@ -198,6 +205,26 @@ describe("the typing corpus (src/engine/decks/ → engine/typing/)", () => {
     expect(fired).toContain(CORPUS);
   });
 
+  /**
+   * The one hop. `lessons.ts` is the single engine/typing module the deck layer
+   * may import, so it is the single file where a corpus import buys the whole
+   * site a 222 KB chunk without a line of `decks/` changing. Both spellings are
+   * pinned: the aliased one, and the relative one a neighbour actually writes.
+   */
+  it.each([
+    ['import { WORDS } from "./lexicon";\nexport const x = WORDS;\n'],
+    [
+      'import { words } from "@/engine/typing/generate";\nexport const x = words;\n',
+    ],
+    ['export * from "./lexicon";\n'],
+  ])(
+    "rejects %s from lessons.ts, one hop from the deck layer",
+    async (code) => {
+      const fired = await rulesFiredFor("src/engine/typing/lessons.ts", code);
+      expect(fired).toContain(CORPUS);
+    },
+  );
+
   it("allows lessons.ts, which is how a saved run gets its name", async () => {
     const fired = await rulesFiredFor(
       "src/engine/decks/typing.ts",
@@ -210,6 +237,33 @@ describe("the typing corpus (src/engine/decks/ → engine/typing/)", () => {
     const fired = await rulesFiredFor(
       "src/games/typing/ladder/Lesson.tsx",
       `import { WORDS } from "@/engine/typing/lexicon";\nexport const x = WORDS;\n`,
+    );
+    expect(fired).not.toContain(CORPUS);
+  });
+
+  /**
+   * The exemptions. Banning the engine by default is what makes the rule
+   * survive the graph growing, but the corpus has to be readable by the two
+   * modules whose whole job is to read it — the generator that filters it
+   * (LES04) and the test that walks every character of it. Neither is
+   * importable from `decks/`, which is the property the rule protects.
+   */
+  it.each([
+    ["src/engine/typing/generate.ts"],
+    ["src/engine/typing/lexicon.test.ts"],
+  ])("allows %s to read the corpus it exists for", async (filePath) => {
+    const fired = await rulesFiredFor(
+      filePath,
+      `import { WORDS } from "./lexicon";\nexport const x = WORDS;\n`,
+    );
+    expect(fired).not.toContain(CORPUS);
+  });
+
+  /** Not every `./lexicon` is this one — the rule resolves before it judges. */
+  it("leaves an unrelated module's own neighbour alone", async () => {
+    const fired = await rulesFiredFor(
+      "src/engine/decks/typing.ts",
+      `import { WORDS } from "./lexicon";\nexport const x = WORDS;\n`,
     );
     expect(fired).not.toContain(CORPUS);
   });
