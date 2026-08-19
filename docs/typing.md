@@ -844,6 +844,39 @@ profile, so adding is safe and removing is not. Five, no more:
 rewards choosing to make something harder, and it exists because the whole
 course is an argument for doing that.
 
+**"Clear" means what the ladder means by it.** The three ladder badges are
+asked of `ladderProgress` and read `best`, not `cleared`: passing checkpoint 50
+clears 1–49 with it (§6.6), so a nine-year-old who takes the express lane holds
+Home Keys as well as Touch Typist. A shelf that disagreed with the ladder next
+to it about the same child would be the stored-flag bug of §6.5 in another
+coat. They are asked on every finished run and not only on typing ones, because
+`evaluateBadges` returns what is _true_ rather than what is new — which is also
+how a child who cleared checkpoint 10 before LES12 shipped is handed the badge
+by their next race, of anything.
+
+**`eyes-up` asks whose doing it was, not what was on screen.** Every checkpoint
+forces the board off, so a badge that read the resolved mode — or
+`config.keyboard` on its own — would fire on exactly the ten runs where being
+eyes-up was compulsory and on none of the runs where it was chosen, which is
+the inverse of the badge. What it asks instead is: the lesson left the choice
+open, the child made it, and they passed. Whether a lesson insists is
+`forcedKeyboard` in `engine/typing/lessons.ts` — one definition, read by the
+island's `keyboardFor` to draw the board and by the badge to decide whose
+choice it was (decision 28). A `keyboard` absent from the config means nobody
+chose, and absent is not a choice to reward.
+
+**`unbroken` is waiting for the waves, and the guard says so.** A storm level's
+`wordCount` is its wave's `count` (§8.3) and every one of the ten is `0` until
+STM08 writes them — so `survived` is vacuously true and "cleared a wave" is a
+claim about a wave that does not exist. The badge requires the wave to have a
+length, which is a guard that retires itself the day the waves land rather than
+a line someone has to remember to delete (decision 29). "Shield untouched" is
+read as **no letter reached the bottom**, which is what takes a point off a
+segment (§8.5): a storm's cards are its falling letters (§8.7), so a run with
+nothing marked wrong is a run where nothing got through. That errs strict, and
+strict is the right direction for a badge that, once in `Profile.badges`, is
+never taken back.
+
 ---
 
 ## 7 · A lesson is not a race
@@ -1148,6 +1181,8 @@ first when either optional field is added.
 | 25  | DOM, not canvas                                         | Eleven custom properties change the whole app's biome; a canvas is a hole in that                        |
 | 26  | US ANSI only, and say so                                | A UK keyboard would fail lessons 62 and 67 for a child doing everything right                            |
 | 27  | A lesson's keyboard seeds; it does not overrule         | All hundred name a mode, so an override beats the player's own setting on every rung                     |
+| 28  | `eyes-up` reads whose doing the hidden board was        | Checkpoints force it off, so reading the mode alone awards it for the ten runs where it was compulsory   |
+| 29  | `unbroken` is gated on the wave having a length         | "The wave exists" retires itself when STM08 lands; "no screen starts one" is a line someone must delete  |
 
 ---
 

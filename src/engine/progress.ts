@@ -1,5 +1,8 @@
 import { OPERATION_ORDER } from "@/engine/decks/flashcards";
 import { isFlash, isTyping, isWords } from "@/engine/decks";
+import { ladderProgress } from "@/engine/typing/ladder";
+import { forcedKeyboard, lessonById } from "@/engine/typing/lessons";
+import { verdictFor } from "@/engine/typing/verdict";
 import type { Session } from "@/engine/types";
 
 /* ── Levels ──────────────────────────────────────────────────────────────
@@ -170,6 +173,39 @@ export const BADGES: BadgeDef[] = [
     icon: "🎯",
     how: "Clear a drill of your tricky facts with no mistakes",
   },
+
+  /* ── Frost Keys, the typing course (docs/typing.md §6.7) ───────────────────
+     Appended, and only ever appended. A badge id is written into
+     `Profile.badges` the moment it is earned and that list is the only copy
+     there is, so adding to this table is free and renaming or removing an
+     entry takes a badge off a child who has it — the row would simply stop
+     resolving in `BADGES_BY_ID` and the tile would vanish from their shelf.
+     Five, and no more (§6.7). */
+  {
+    id: "home-keys",
+    name: "Home Keys",
+    icon: "🏠",
+    how: "Clear checkpoint 10",
+  },
+  {
+    id: "touch-typist",
+    name: "Touch Typist",
+    icon: "✋",
+    how: "Clear checkpoint 50",
+  },
+  { id: "ice-exam", name: "Ice Exam", icon: "🧊", how: "Clear lesson 100" },
+  {
+    id: "eyes-up",
+    name: "Eyes Up",
+    icon: "👀",
+    how: "Pass a lesson with the keyboard hidden",
+  },
+  {
+    id: "unbroken",
+    name: "Unbroken",
+    icon: "🛡️",
+    how: "Clear a Hailstorm wave with the shield untouched",
+  },
 ];
 
 export const BADGES_BY_ID = new Map(BADGES.map((b) => [b.id, b]));
@@ -233,5 +269,110 @@ export function evaluateBadges({
   const raced = new Set([session.mode, ...history.map((s) => s.mode)]);
   if (OPERATION_ORDER.every((op) => raced.has(op))) earned.add("all-rounder");
 
+  for (const id of courseBadges(session, history)) earned.add(id);
+
   return [...earned];
+}
+
+/* ── The typing course's five (docs/typing.md §6.7) ───────────────────────────
+   Split out rather than added to the list above because they are asked in a
+   different tense. The seventeen above are questions about *this race* —
+   perfect, fast, thirty cards, a streak of fifteen. Three of these five are
+   questions about a child's whole climb, and the climb is derived from every
+   run they have ever saved (§6.5). Keeping them apart is what stops the
+   history pass being paid for by a badge that only needed the card count.     */
+
+/**
+ * Whichever of the five this run has just earned, plus the ladder ones the
+ * child already had.
+ *
+ * Like `evaluateBadges` itself this returns what is *true*, not what is new —
+ * `summariseRun` diffs against `Profile.badges` to find the ones worth
+ * celebrating. Which is also how a child who cleared checkpoint 10 before this
+ * shipped is given Home Keys: the next run of anything at all re-asks the
+ * question, and the answer has been yes for months.
+ */
+function courseBadges(
+  session: BadgeContext["session"],
+  history: Session[],
+): string[] {
+  const earned: string[] = [];
+
+  /* ── The three ladder badges ───────────────────────────────────────────────
+     Asked of `ladderProgress` rather than of this run, because "clear
+     checkpoint 10" is a fact about a child and not about a race, and the
+     ladder is the only place that knows what clearing means. This run is
+     handed over beside the history because it is not saved yet: a checkpoint
+     cleared *by this run* has to award its badge on this run's results screen,
+     not on the next one's.
+
+     `best`, not `cleared.has(n)`, and that is the ladder's own rule rather
+     than a shortcut (§6.6). Passing checkpoint 50 clears 1–49 with it — that
+     is the whole of the placement test — so a nine-year-old who opens
+     checkpoint 50 cold has cleared checkpoint 10, and a Touch Typist without
+     Home Keys would be a shelf that disagreed with the ladder next to it.   */
+  const ladder = ladderProgress([...history, session]);
+  if (ladder.best >= 10) earned.push("home-keys");
+  if (ladder.best >= 50) earned.push("touch-typist");
+  if (ladder.best >= 100) earned.push("ice-exam");
+
+  // Through the deck registry's own guard, as everywhere else: narrowing the
+  // config union is `decks/index.ts`'s job. A run that is not a lesson — free
+  // play, a spelling race, a drill — has neither of the two below to earn.
+  const config = isTyping(session.config) ? session.config : null;
+  const lesson = lessonById(config?.lessonId);
+  if (!config || !lesson) return earned;
+
+  const verdict = verdictFor(session, lesson);
+
+  /* ── `eyes-up`, the one that matters ───────────────────────────────────────
+     The only badge on the site that rewards choosing to make something harder,
+     which is why it asks *whose doing* the hidden keyboard was rather than
+     what was on screen. Every checkpoint forces the board off (§4.2), so a
+     badge that read the resolved mode — or `config.keyboard` on its own, the
+     day a screen starts writing that field on a locked lesson — would fire on
+     exactly the ten runs where being eyes-up was compulsory. That is the
+     inverse of the badge.
+
+     So: the lesson must have left the choice open (`forcedKeyboard` is the one
+     definition of that, shared with the island's resolver), the child must
+     have made it, and they must have passed. A `keyboard` absent from the
+     config means nobody chose — free play, or a run started without a brief in
+     front of it — and absent is not a choice to reward.
+
+     Lessons only. A Hailstorm level's ⌨ column is about the *field*, which is
+     the keyboard (§8.2), so "hidden" does not mean there what it means here. */
+  if (
+    lesson.pass.kind === "lesson" &&
+    !forcedKeyboard(lesson) &&
+    config.keyboard === "off" &&
+    verdict.passed
+  )
+    earned.push("eyes-up");
+
+  /* ── `unbroken`, which is waiting for STM08 ────────────────────────────────
+     Guarded on the wave rather than on the absence of a screen that could
+     start one. A storm level's `wordCount` is its wave's `count` (§8.3) and
+     every one of the ten is `0` until the twenty `WaveSpec`s are written — so
+     `survived` is vacuously true, "cleared a wave" is a claim about a wave
+     that does not exist, and this badge must not be given for it. Stating the
+     guard as "the wave has a length" means it retires itself the day the waves
+     land, rather than being a line someone has to remember to delete.
+
+     "Shield untouched" is read as **no letter reached the bottom**, which is
+     what takes a point off a segment (§8.5). A storm's cards are its falling
+     letters (§8.7), so a run with nothing marked wrong is a run where nothing
+     got through. That errs strict — a letter fired at twice and then hit may
+     cost a card without costing the shield — and strict is the right direction
+     for a badge that, once in `Profile.badges`, is not taken back.           */
+  if (
+    lesson.pass.kind === "storm" &&
+    lesson.wordCount > 0 &&
+    verdict.passed &&
+    session.incorrect === 0 &&
+    session.correct > 0
+  )
+    earned.push("unbroken");
+
+  return earned;
 }

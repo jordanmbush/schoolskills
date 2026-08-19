@@ -2,7 +2,7 @@ import type { Session } from "@/engine/types";
 
 import { typingMode } from "@/engine/decks/typing";
 import { LESSONS, lessonNumbered } from "./lessons";
-import { verdictFor } from "./verdict";
+import { verdictFor, type Run } from "./verdict";
 
 /**
  * How far up the ladder a child has got (docs/typing.md §6.5, §6.6).
@@ -24,6 +24,21 @@ import { verdictFor } from "./verdict";
  * down. Which sessions belong to which child is the caller's to say — hand it
  * `sessionsFor(sessions, profile.id)`, exactly as the progress screens do.
  */
+
+/**
+ * What the ladder needs of a run, which is less than a whole `Session`.
+ *
+ * `verdictFor`'s `Run` — what the child did — plus the string the run is filed
+ * under, which is what says *which* lesson they did it on. Nothing here wants
+ * an id or a `finishedAt`, and asking for them would cost something real: the
+ * badge evaluator (`engine/progress.ts`) asks this about the run that has just
+ * finished, before the session service has written it and given it either
+ * field. A ladder that insisted would have made that caller cast, and a cast
+ * is a promise nobody checks.
+ *
+ * Every other caller hands over real `Session`s, which are `LadderRun`s.
+ */
+export type LadderRun = Run & Pick<Session, "mode">;
 
 export type LadderProgress = {
   /** Every lesson number cleared. */
@@ -96,7 +111,7 @@ function carriedOverStorms(best: number): number {
   return Math.min(next, LAST);
 }
 
-function derive(sessions: Session[]): LadderProgress {
+function derive(sessions: readonly LadderRun[]): LadderProgress {
   const cleared = new Set<number>();
 
   for (const session of sessions) {
@@ -145,9 +160,9 @@ function derive(sessions: Session[]): LadderProgress {
  * still (a `useMemo`, as the progress screens already do), or every render
  * hands over a fresh array and pays for the pass again.
  */
-const MEMO = new WeakMap<Session[], LadderProgress>();
+const MEMO = new WeakMap<readonly LadderRun[], LadderProgress>();
 
-export function ladderProgress(sessions: Session[]): LadderProgress {
+export function ladderProgress(sessions: readonly LadderRun[]): LadderProgress {
   const known = MEMO.get(sessions);
   if (known) return known;
 
