@@ -22,7 +22,8 @@
     "prepare": "husky",
     "test:smoke": "node e2e/smoke.mjs",
     "scripture:pull": "node scripts/pull-scripture.mjs",
-    "analytics": "node scripts/analytics.mjs"
+    "analytics": "node scripts/analytics.mjs",
+    "analytics:geoip": "node scripts/build-geoip.mjs"
   },
   "dependencies": {
     "@astrojs/react": "^6.0.2",

@@ -22,15 +22,22 @@
  * A durable home for the aggregates is still owed — see docs/analytics.md.
  *
  * Usage:
- *   npm run analytics              sync, count, summarise
- *   npm run analytics -- --no-sync re-summarise what's already downloaded
- *   npm run analytics -- --days 7  narrow the table (default 30)
+ *   npm run analytics                sync, count, summarise
+ *   npm run analytics -- --no-sync   re-summarise what's already downloaded
+ *   npm run analytics -- --days 7    narrow the table (default 30)
+ *   npm run analytics -- --no-geoip  skip the country lookup
+ *
+ * `--no-geoip` is for working with no network at all. The country table is
+ * cached in the temp directory next to the logs, so an ordinary second run
+ * downloads nothing and the flag buys nothing — see scripts/geoip.mjs.
  */
 
 import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+
+import { awsAuthHint, awsIdentityLabel, awsProfileArgs } from "./aws.mjs";
 
 // Temp, deliberately. See the header: nothing this produces is kept, and
 // writing into the repo is what this stopped doing.
@@ -39,7 +46,6 @@ const ROLLUP = "scripts/rollup-analytics.mjs";
 // Stable rather than a fresh mkdtemp: `aws s3 sync` is incremental, so keeping
 // the directory between runs turns the second run into a no-op download.
 const LOGS = join(tmpdir(), "schoolskills-cflogs");
-const PROFILE = process.env.AWS_PROFILE ?? "schoolskills";
 
 const argv = process.argv.slice(2);
 const flag = (name) => argv.includes(`--${name}`);
@@ -64,15 +70,14 @@ function bucket() {
       "Account",
       "--output",
       "text",
-      "--profile",
-      PROFILE,
+      ...awsProfileArgs(),
     ]).trim();
     return `schoolskills-access-logs-${account}`;
   } catch (error) {
     const detail = String(error.stderr ?? error.message).trim();
     throw new Error(
-      `Could not reach AWS as profile "${PROFILE}".\n${detail}\n\n` +
-        `If the session has expired: aws sso login --profile ${PROFILE}`,
+      `Could not reach AWS as ${awsIdentityLabel()}.\n${detail}\n\n` +
+        awsAuthHint(),
       { cause: error },
     );
   }
@@ -87,8 +92,7 @@ function sync() {
     "sync",
     `s3://${name}/cf/`,
     LOGS,
-    "--profile",
-    PROFILE,
+    ...awsProfileArgs(),
     "--no-progress",
     "--only-show-errors",
   ]);
@@ -97,6 +101,42 @@ function sync() {
 /** The widest value in a column, so the table doesn't wobble. */
 const width = (rows, pick, header) =>
   Math.max(header.length, ...rows.map((row) => String(pick(row)).length));
+
+/**
+ * `BR` → `Brazil`, via `Intl` rather than a table in this repo.
+ *
+ * A two-letter code is exactly as unreadable as the airport codes below it,
+ * which is what prompted the country lookup in the first place — printing
+ * `SG 6` and calling it an improvement would have missed the point. Node has
+ * shipped the region names since v14, so the alternative was carrying 250
+ * country names in a source file and letting them go stale.
+ */
+const REGIONS = new Intl.DisplayNames(["en"], { type: "region" });
+const countryName = (code) => {
+  if (code === "(unknown)") return "address not in the table";
+  try {
+    return REGIONS.of(code) ?? code;
+  } catch {
+    // `of` throws on anything that isn't a well-formed region code. A code the
+    // table produced but Intl doesn't know is worth printing bare, not worth
+    // taking the summary down for.
+    return code;
+  }
+};
+
+/**
+ * `US / Iowa / Council Bluffs` → `United States / Iowa / Council Bluffs`.
+ *
+ * The rollup stores places qualified by the level above them, because place
+ * names are not unique — Ontario is a Canadian province and a Californian
+ * city, and there are around thirty Springfields. Only the leading country
+ * code is expanded; the rest is already what the source called it.
+ */
+const placeLabel = (key) => {
+  const cut = key.indexOf(" / ");
+  if (cut === -1) return key;
+  return `${countryName(key.slice(0, cut))}${key.slice(cut)}`;
+};
 
 function summarise(days, limit) {
   const dates = Object.keys(days).sort();
@@ -184,6 +224,43 @@ function summarise(days, limit) {
       console.log(`  ${String(n).padStart(6)}  ${host}`);
   }
 
+  // Days counted before the place lookup existed have no `countries` key at
+  // all, which is why these stay quiet rather than printing a heading over a
+  // window that predates them. An empty heading and a genuine zero should not
+  // look the same.
+  const countries = merge("countries");
+  if (countries.length) {
+    const codeWidth = Math.max(...countries.map(([code]) => code.length));
+    console.log("\nCOUNTRY (the visitor's own IP, resolved locally)");
+    for (const [code, n] of countries.slice(0, 10))
+      console.log(
+        `  ${String(n).padStart(6)}  ${code.padEnd(codeWidth)}  ${countryName(code)}`,
+      );
+  }
+
+  const regions = merge("regions");
+  if (regions.length) {
+    console.log("\nREGION");
+    for (const [name, n] of regions.slice(0, 10))
+      console.log(`  ${String(n).padStart(6)}  ${placeLabel(name)}`);
+  }
+
+  const cities = merge("cities");
+  if (cities.length) {
+    // The count of distinct cities, not just the top ten, because the shape of
+    // the tail is the thing worth knowing here: a long tail of ones is what a
+    // city breakdown looks like at this traffic, and it is the reason the
+    // caveat at the bottom of this output exists.
+    const singletons = cities.filter(([, n]) => n === 1).length;
+    console.log(`\nCITY (${cities.length} distinct)`);
+    for (const [name, n] of cities.slice(0, 10))
+      console.log(`  ${String(n).padStart(6)}  ${placeLabel(name)}`);
+    if (singletons)
+      console.log(
+        `         ${singletons} of them seen exactly once — see the note below`,
+      );
+  }
+
   const edges = merge("edges");
   if (edges.length) {
     console.log("\nSERVED FROM (nearest CloudFront edge, not the visitor)");
@@ -211,8 +288,14 @@ function summarise(days, limit) {
     "\nvisitors = distinct IPs that day, and is NOT additive across days —\n" +
       "the same person on three days is three visitor-days, not three people.\n" +
       "Undeclared bots count as people. (none) is a floor on direct traffic,\n" +
-      "not a measure of it, and an edge code is where the request was served,\n" +
-      "which is near someone rather than at them. See docs/analytics.md.\n",
+      "not a measure of it. An edge code is a server near someone rather than\n" +
+      "at them, and answers which PoPs serve the site, not who is here.\n" +
+      "\n" +
+      "COUNTRY, REGION and CITY are where the address is REGISTERED, which a\n" +
+      "VPN, a school or a mobile carrier moves outright — and the finer the\n" +
+      "level, the more often it is wrong and the fewer people are behind each\n" +
+      "row. A city seen once is close to naming a household: read it, don't\n" +
+      "publish it, and don't paste it anywhere. See docs/analytics.md.\n",
   );
 }
 
@@ -220,7 +303,11 @@ try {
   if (!flag("no-sync")) sync();
   else process.stderr.write(`using logs already in ${LOGS}\n`);
 
-  execFileSync("node", [ROLLUP, LOGS, OUT], { stdio: "inherit" });
+  execFileSync(
+    "node",
+    [ROLLUP, LOGS, OUT, ...(flag("no-geoip") ? ["--no-geoip"] : [])],
+    { stdio: "inherit" },
+  );
   process.stderr.write(`counts written to ${OUT} (temporary)\n`);
 
   if (existsSync(OUT)) {
