@@ -32,8 +32,9 @@
 /**
  * Which finger presses a key, in touch-typing's standard assignment.
  *
- * `thumb` is one finger rather than two because only the space bar is struck
- * with it and either thumb will do — nothing downstream needs to know which.
+ * `thumb` is one finger rather than two because either thumb will do for the
+ * keys it covers — the space bar and the two Alts — and nothing downstream
+ * needs to know which.
  */
 export type Finger =
   | "l-pinky"
@@ -203,9 +204,10 @@ export type Stroke = {
  * hint highlights the shift a child can actually reach, which means knowing
  * which hand the letter is on.
  *
- * `thumb` falls to the same branch as the right hand and never reaches it:
- * the space bar is the only thumb key and both its caps are a space, so no
- * thumb stroke ever needs a shift. The choice is only ever about two hands.
+ * `thumb` falls to the same branch as the right hand and never reaches it: no
+ * thumb key carries a single-character *shifted* legend — the space bar's two
+ * caps are both a space, and the Alts are words — so no thumb stroke ever needs
+ * a shift. The choice is only ever about two hands.
  */
 const oppositeShift = (finger: Finger): "ShiftLeft" | "ShiftRight" =>
   finger.startsWith("l-") ? "ShiftRight" : "ShiftLeft";
@@ -215,7 +217,11 @@ const oppositeShift = (finger: Finger): "ShiftLeft" | "ShiftRight" =>
  *
  * Only single-character legends are indexed, which is what keeps "Tab" and
  * "Shift" out of it. First writer wins: no legend appears twice on this board,
- * and the round-trip test would catch it if a future one did.
+ * and a second key carrying one would be shadowed here rather than rejected.
+ * The round-trip tests cannot see that — they walk characters, and a shadowed
+ * key never comes up. What rules it out is the key-side test, "resolves each
+ * key's own legends back to that key", which walks the board in this direction
+ * instead: a shadowed key does not answer for its own cap, and fails.
  */
 const STROKES = new Map<string, Stroke>();
 for (const k of KEYS) {

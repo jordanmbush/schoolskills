@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { KEYS, KEY_ROWS, reachable, strokeFor } from "./keyboard";
-import type { KeyDef } from "./keyboard";
+import type { Finger, KeyDef } from "./keyboard";
 import { TYPING_LEVELS } from "./decks/typing";
 
 const BY_CODE = new Map(KEYS.map((k) => [k.code, k]));
@@ -26,6 +26,48 @@ const DIGITS = "0123456789";
 const PUNCTUATION = "`-=[]\\;',./~!@#$%^&*()_+{}|:\"<>? ";
 
 const hand = (key: KeyDef) => (key.finger.startsWith("l-") ? "l" : "r");
+
+/** Unshifted legend → the key that carries it. Word legends are not unique. */
+const BY_LEGEND = new Map(
+  KEYS.filter((k) => k.cap[0].length === 1).map((k) => [k.cap[0], k]),
+);
+
+/**
+ * The finger assignment the module header claims, written out as data.
+ *
+ * Column by column, the way it is taught: the characters that column's finger
+ * types, then the codes of the keys in it that type nothing. Spelling it out
+ * here rather than reading it off `KEYS` is the point — this is the expected
+ * value, and a one-character slip in the table has to disagree with it.
+ */
+const FINGERS: [Finger, string, ...string[]][] = [
+  [
+    "l-pinky",
+    "`1qaz",
+    "Tab",
+    "CapsLock",
+    "ShiftLeft",
+    "ControlLeft",
+    "MetaLeft",
+  ],
+  ["l-ring", "2wsx"],
+  ["l-middle", "3edc"],
+  ["l-index", "45rtfgvb"],
+  ["thumb", " ", "AltLeft", "AltRight"],
+  ["r-index", "67yuhjnm"],
+  ["r-middle", "8ik,"],
+  ["r-ring", "9ol."],
+  [
+    "r-pinky",
+    "p0-=[]\\;'/",
+    "Backspace",
+    "Enter",
+    "ShiftRight",
+    "MetaRight",
+    "ContextMenu",
+    "ControlRight",
+  ],
+];
 
 describe("strokeFor", () => {
   it("round-trips every letter, in both cases", () => {
@@ -182,5 +224,57 @@ describe("the board", () => {
     KEY_ROWS.forEach((row, n) => {
       for (const key of row) expect(key.row, key.code).toBe(n);
     });
+  });
+
+  it("resolves each key's own legends back to that key", () => {
+    // The round-trip tests above walk *characters*, so they cannot see a
+    // legend that appears twice: `STROKES` is first-writer-wins, so the second
+    // key is silently shadowed and every one of those assertions still passes.
+    // This walks keys instead, and asks the question the module exists to
+    // answer — `code`, not `key`, so that the picture and the Hailstorm lane
+    // light the switch that was actually pressed (docs/typing.md §3.2). A
+    // shadowed key cannot answer for its own cap, and fails here.
+    //
+    // What no assertion in this file can catch is two keys whose legends are
+    // swapped wholesale: that board is self-consistent, and only the finger
+    // test below sees it — and only when the swap crosses a finger column.
+    for (const key of KEYS) {
+      const [unshifted, shifted] = key.cap;
+      if (unshifted.length === 1) {
+        const stroke = strokeFor(unshifted);
+        expect(stroke?.code, `${key.code} → ${unshifted}`).toBe(key.code);
+        expect(stroke?.shift, `${key.code} → ${unshifted}`).toBeNull();
+      }
+      // The space bar is the one key whose two caps are the same character,
+      // so its shifted legend is the unshifted stroke. Every other pair
+      // differs, and the shifted half must ask for a shift.
+      if (shifted.length === 1 && shifted !== unshifted) {
+        const stroke = strokeFor(shifted);
+        expect(stroke?.code, `${key.code} → ${shifted}`).toBe(key.code);
+        expect(stroke?.shift, `${key.code} → ${shifted}`).not.toBeNull();
+      }
+    }
+  });
+
+  it("puts every key on the finger the standard assignment gives it", () => {
+    // The assignment is the thing being taught, and three consumers read it:
+    // the curriculum's mirrored-pair ordering (§5.5), the next-key hint's
+    // finger colour, and Hailstorm's eight shield zones (§8.5), where a wrong
+    // finger puts the hole under the wrong hand. Nothing else in this file
+    // would notice a typo — the opposite-hand test compares only the hand.
+    const expected = new Map<string, Finger>();
+    for (const [finger, legends, ...codes] of FINGERS) {
+      for (const ch of legends) {
+        const key = BY_LEGEND.get(ch);
+        expect(key, ch).toBeDefined();
+        expected.set(key!.code, finger);
+      }
+      for (const code of codes) expected.set(code, finger);
+    }
+
+    expect(expected.size, "every key is spoken for").toBe(KEYS.length);
+    for (const key of KEYS) {
+      expect(key.finger, key.code).toBe(expected.get(key.code));
+    }
   });
 });
