@@ -152,8 +152,11 @@ const ALPHABETS: readonly ReadonlySet<string>[] = (() => {
  * whole alphabet and one before the start is the space bar, for the same
  * reason `deckSpec(mode)` never throws — a saved session outlives the ladder
  * it was run on, and a record book from two re-tunings ago still has to open.
- * A number parsed out of one of those saved modes can be `NaN`, which clamps
- * to nothing at all rather than to an alphabet somebody was never given.
+ * `Infinity` is off the end like any other overshoot, and `-Infinity` is
+ * before the start; only `NaN` is turned away, because it is not a lesson
+ * number that missed but a `Number("L7x")` that failed, and the safe answer to
+ * a question nobody asked is nothing at all rather than an alphabet somebody
+ * was never given.
  *
  * The set is shared, not copied. It is `ReadonlySet` because every caller
  * reads it; one that mutates it would be editing the curriculum for everybody
@@ -161,7 +164,7 @@ const ALPHABETS: readonly ReadonlySet<string>[] = (() => {
  */
 export function unlockedAt(n: number): ReadonlySet<string> {
   const last = ALPHABETS.length - 1;
-  const i = Number.isFinite(n) ? Math.min(Math.max(Math.floor(n), 0), last) : 0;
+  const i = Number.isNaN(n) ? 0 : Math.min(Math.max(Math.floor(n), 0), last);
   return ALPHABETS[i];
 }
 
