@@ -1,3 +1,19 @@
+/**
+ * What the typing game puts on screen under the passage (docs/typing.md §4.1).
+ *
+ * One field rather than `showKeyboard` + `showHint`, because three of the four
+ * boolean combinations are meaningful and the fourth — a hint pointing at a
+ * board that isn't drawn — is nonsense. A union cannot express the nonsense,
+ * so no reader has to decide what to do when it arrives.
+ */
+export type KeyboardMode =
+  /** Not on screen at all. */
+  | "off"
+  /** The board, with its finger colours. No hint. */
+  | "keys"
+  /** The board, plus the next key — and its shift — lit. */
+  | "guide";
+
 export type Profile = {
   id: string;
   name: string;
@@ -5,6 +21,17 @@ export type Profile = {
   color: string;
   age: number;
   soundOn: boolean;
+  /**
+   * How much of the keyboard this player wants (§4.2). Absent means "guide",
+   * and absent is the ordinary state: every profile made before this shipped
+   * lacks the field, and nothing writes it until a child chooses. One default,
+   * at one read site, rather than a value copied into `create` as well.
+   *
+   * Optional precisely so this costs no `DB_VERSION` bump and no migration —
+   * profiles are read straight through, unlike sessions, whose widening lives
+   * in `engine/migrate.ts`.
+   */
+  keyboard?: KeyboardMode;
   xp: number;
   badges: string[];
   createdAt: string;
