@@ -196,3 +196,56 @@ describe("tally, over the first real hour of logs", () => {
     expect(day.decks).toEqual({ multiply: 1 });
   });
 });
+
+describe("CloudFront's field encoding", () => {
+  // The log holds `deck=words%253Adolch-1`: the beacon encoded the colon once,
+  // and CloudFront encoded the whole field again on the way into the file.
+  // Decoding only once wrote `words%3Adolch-1` into the permanent record.
+  it("is undone before the query is parsed, so a deck id keeps its colon", async () => {
+    const day = await count([
+      row({
+        ip: "1.2.3.4",
+        uri: "/_e/px.gif",
+        query: "e=race_start&deck=words%253Adolch-1&input=type&n=1",
+        status: 200,
+        type: "image/gif",
+      }),
+    ]);
+    expect(day.decks).toEqual({ "words:dolch-1": 1 });
+  });
+
+  it("is undone for the user-agent too, so bots stay filtered", async () => {
+    const day = await count([
+      row({
+        ip: "1.2.3.4",
+        uri: "/",
+        status: 200,
+        type: "text/html;charset=UTF-8",
+        ua: GOOGLEBOT,
+      }),
+    ]);
+    expect(day).toBeUndefined();
+  });
+
+  // A stray `%` from a scanner makes decodeURIComponent throw. Losing the
+  // month's numbers to one malformed request would be a poor trade.
+  it("survives a malformed percent-sequence rather than losing the run", async () => {
+    const day = await count([
+      row({
+        ip: "1.2.3.4",
+        uri: "/_e/px.gif",
+        query: "e=race_start&deck=%&n=1",
+        status: 200,
+        type: "image/gif",
+      }),
+      row({
+        ip: "1.2.3.4",
+        uri: "/",
+        status: 200,
+        type: "text/html;charset=UTF-8",
+      }),
+    ]);
+    expect(day.pageViews).toBe(1);
+    expect(day.events).toEqual({ race_start: 1 });
+  });
+});

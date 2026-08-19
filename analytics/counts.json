@@ -13,11 +13,12 @@
       },
       "events": {
         "profile_added": 2,
+        "race_end:finished": 1,
         "race_end:quit": 1,
         "race_start": 2
       },
       "decks": {
-        "words%3Adolch-1": 2
+        "words:dolch-1": 2
       }
     }
   }
