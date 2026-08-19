@@ -3,21 +3,27 @@
  * Turn a pile of access logs into numbers worth keeping.
  *
  * Raw CloudFront log lines expire after 90 days (LOG_RETENTION_DAYS in
- * sst.config.ts) because each one contains an IP address. The counts derived
- * from them contain nothing of the sort, so THOSE are what get kept: this
- * script reduces the logs to per-day totals and merges them into
- * analytics/counts.json, which is committed to the repo and never expires.
+ * sst.config.ts) because each one contains an IP address. This script reduces
+ * a pile of them to per-day totals that carry no address and no identifier,
+ * so the output is safe to keep — but it does NOT decide where.
  *
- * That inversion is the whole point. Retention length is not what protects the
- * site's history — this job is. If it stops running, the record of the first
- * year quietly becomes "the last ninety days".
+ * ⚠️ **Nothing here is a durable store, and 90 days is currently the whole of
+ * the site's memory.** These counts used to be committed to this repo, which
+ * confused two different things: a repo keeps CODE forever, and that is what
+ * it is for. Generated analytics are not code. Committing them grew the tree
+ * without bound and put a manual PR merge on the calendar every month.
+ *
+ * That leaves a real gap rather than closing one: when a day ages past the
+ * retention window it is gone, and no amount of re-running brings it back.
+ * Somewhere durable to put these numbers is owed before that starts to bite —
+ * docs/analytics.md carries the shape of the problem.
  *
  * Deliberately not Athena. The GitHub role already has S3 read, the logs are
  * small at this traffic, and a Glue catalogue plus a query-results bucket plus
  * a manual CREATE TABLE is a lot of moving parts to count some lines. Athena
  * stays documented in docs/analytics.md for ad-hoc digging.
  *
- * Usage:  node scripts/rollup-analytics.mjs <dir-of-gz-logs> [counts.json]
+ * Usage:  node scripts/rollup-analytics.mjs <dir-of-gz-logs> <out.json>
  */
 
 import { createReadStream, existsSync } from "node:fs";
@@ -43,6 +49,8 @@ const WANTED = [
   "sc-status",
   "cs(User-Agent)",
   "sc-content-type",
+  "cs(Referer)",
+  "x-edge-location",
 ];
 
 /**
@@ -92,14 +100,6 @@ export const isPageView = (row) => {
 };
 
 /**
- * Obvious crawlers.
- *
- * The times-table pages exist to be found in search, so they are crawled
- * heavily and counting a bot as a visitor would make the headline number a
- * lie. This is a floor, not a complete list — anything that says it is a bot
- * is taken at its word, and anything that lies is counted as a person.
- */
-/**
  * Undo the encoding CloudFront applies to log FIELDS.
  *
  * Every field it writes is percent-encoded on the way into the file, on top of
@@ -122,6 +122,78 @@ const decodeField = (value) => {
   }
 };
 
+/**
+ * Obvious crawlers.
+ *
+ * The times-table pages exist to be found in search, so they are crawled
+ * heavily and counting a bot as a visitor would make the headline number a
+ * lie. This is a floor, not a complete list — anything that says it is a bot
+ * is taken at its word, and anything that lies is counted as a person.
+ */
+/**
+ * Where a page view came from, reduced to a bare hostname.
+ *
+ * **The host is the whole of it — never the path, never the query string.**
+ * A referrer arrives as a full URL, and full URLs from search engines and
+ * social apps routinely carry what someone typed, which post they tapped, and
+ * occasionally a session token in a link that was pasted somewhere. This file
+ * is committed to a public repo and kept forever, so the only safe thing to
+ * write into it is the site's name. `https://www.google.com/search?q=how+do+i
+ * +teach+the+7+times+table` becomes `google.com` and nothing else survives.
+ *
+ * Returns a key to count under, or `null` for a line that shouldn't be counted:
+ *
+ * - **`"(none)"`** — no referrer was sent. Not the same as "typed the address
+ *   in": an https→http hop, a privacy-preserving browser, most native apps and
+ *   every link out of a PDF or a message all arrive bare. It is a floor on
+ *   direct traffic, not a measurement of it.
+ * - **`null` for our own pages**, because internal navigation is every click a
+ *   visitor makes and would bury the handful of links that are the actual
+ *   question here. `www.` is stripped before the comparison, which also folds
+ *   `www.example.com` into `example.com` for everyone else — the same site.
+ * - **`null` for anything `URL` won't parse**, which in practice is scanners
+ *   sending junk in the header.
+ */
+const SELF = new Set(["schoolskills.app"]);
+
+export const referrerHost = (raw) => {
+  const value = decodeField(raw).trim();
+  if (!value || value === "-") return "(none)";
+
+  let host;
+  try {
+    host = new URL(value).hostname;
+  } catch {
+    return null;
+  }
+
+  host = host.toLowerCase().replace(/^www\./, "");
+  return host && !SELF.has(host) ? host : null;
+};
+
+/**
+ * Which CloudFront edge served the request: `SEA19-C1` → `SEA`.
+ *
+ * ⚠️ **This is the edge, not the visitor.** CloudFront routes to a nearby PoP,
+ * so the airport code is a coarse proxy for where someone is and nothing
+ * stronger — a visitor in Vancouver is served from Seattle, and one on a VPN
+ * is served from wherever the exit node is. Read it as "roughly which part of
+ * the world", never as a country count.
+ *
+ * The real field is `c-country`, and it does not exist in CloudFront's legacy
+ * standard log format — the 33 fields are fixed. Getting it means moving the
+ * distribution to standard logging v2, which is a different delivery mechanism
+ * (CloudWatch vended logs) rather than a field to add here.
+ *
+ * The trailing `-C1`/`-P3` is the individual server within the PoP and is
+ * dropped: it changes between requests from one household and means nothing to
+ * anyone reading this file.
+ */
+export const edgeAirport = (raw) => {
+  const match = /^[A-Z]+/.exec(decodeField(raw).toUpperCase());
+  return match ? match[0] : null;
+};
+
 const BOT =
   /bot|crawler|spider|crawling|slurp|bingpreview|facebookexternalhit|headlesschrome|lighthouse|curl|wget|python-requests/i;
 
@@ -130,6 +202,8 @@ const emptyDay = () => ({
   visitors: new Set(),
   pageViews: 0,
   pages: {},
+  referrers: {},
+  edges: {},
   events: {},
   decks: {},
 });
@@ -222,6 +296,16 @@ export async function tally(dir) {
       day.pageViews += 1;
       const path = row["cs-uri-stem"];
       day.pages[path] = (day.pages[path] ?? 0) + 1;
+
+      // Both are counted on page views only, not on every request. An asset's
+      // referrer is always the page that asked for it, so counting those would
+      // measure the number of images on a page; and keeping `edges` on the same
+      // basis as `pages` is what lets it be read as a share of a day's traffic.
+      const from = referrerHost(row["cs(Referer)"]);
+      if (from) day.referrers[from] = (day.referrers[from] ?? 0) + 1;
+
+      const edge = edgeAirport(row["x-edge-location"]);
+      if (edge) day.edges[edge] = (day.edges[edge] ?? 0) + 1;
     }
   }
   return days;
@@ -245,6 +329,8 @@ async function main(LOG_DIR, OUT) {
       visitors: day.visitors.size,
       pageViews: day.pageViews,
       pages: sortObject(day.pages),
+      referrers: sortObject(day.referrers),
+      edges: sortObject(day.edges),
       events: sortObject(day.events),
       decks: sortObject(day.decks),
     };
@@ -254,7 +340,11 @@ async function main(LOG_DIR, OUT) {
     "Generated by scripts/rollup-analytics.mjs from CloudFront access logs. " +
     "Contains no IP addresses and no identifiers — `visitors` is a count of " +
     "distinct addresses seen that day and is approximate by design (see " +
-    "/privacy). Raw logs expire after 90 days; this file does not.";
+    "/privacy). `referrers` holds bare hostnames, never a path or a query " +
+    "string; `edges` is the CloudFront location that served the request, " +
+    "which is near the visitor rather than at them. Derived from logs that " +
+    "are deleted after 90 days, so a day outside that window cannot be " +
+    "recounted.";
   existing.days = sortObject(existing.days);
 
   await writeFile(OUT, JSON.stringify(existing, null, 2) + "\n");
@@ -278,10 +368,13 @@ if (
   process.argv[1] &&
   import.meta.url === pathToFileURL(process.argv[1]).href
 ) {
-  const [, , LOG_DIR, OUT = "analytics/counts.json"] = process.argv;
+  const [, , LOG_DIR, OUT] = process.argv;
 
-  if (!LOG_DIR) {
-    console.error("usage: rollup-analytics.mjs <dir-of-gz-logs> [counts.json]");
+  // No default output path. There used to be one pointing into the repo, and
+  // a default that writes into a source tree is how a generated file ends up
+  // committed by accident.
+  if (!LOG_DIR || !OUT) {
+    console.error("usage: rollup-analytics.mjs <dir-of-gz-logs> <out.json>");
     process.exit(2);
   }
 
