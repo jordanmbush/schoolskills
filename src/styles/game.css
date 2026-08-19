@@ -1494,3 +1494,48 @@ label.segmented__btn {
 .keyboard__key[data-finger="r-pinky"] {
   --finger: var(--finger-r-pinky);
 }
+
+/* ── Typing: press echo ──────────────────────────────────────────────────
+   The two states on this board that are signal rather than scenery
+   (docs/typing.md §4.3, §4.6). Everything above is a world token or a finger
+   hue, deliberately quiet so the board reads as a map; these two borrow from
+   the telemetry five and are the only rules here allowed to, because they
+   already mean this everywhere else on the site — `--lime` is "that was
+   right", `--flare` is "that was wrong". A child glancing down at the board
+   is reading the two colours the flash-card loop taught them.
+
+   Neither is `:active`. The board is never tappable (§4.5), so the only
+   thing that can light a key is a keystroke, and the class goes out on a
+   120ms timer in `useKeyEcho.ts` rather than on `keyup`.
+
+   The fade is on the way out only: the transition lives on the resting key,
+   and the lit states turn it off so a strike lands on the frame it happened.
+   A flash that eased in would be late, and late is the one thing the echo
+   cannot be.                                                              */
+.keyboard__key {
+  transition:
+    background 150ms var(--ease-out),
+    border-color 150ms var(--ease-out),
+    color 150ms var(--ease-out);
+}
+
+.keyboard__key.is-down,
+.keyboard__key.is-wrong {
+  /* The hue goes dark rather than away, so the home-row bar drawn out of
+     `--finger` stays visible against a lit cap instead of dissolving into it. */
+  --finger: var(--ink-900);
+
+  transition: none;
+  color: var(--ink-900);
+}
+
+.keyboard__key.is-down {
+  border-color: var(--lime);
+  background: color-mix(in oklab, var(--lime) 78%, var(--ink-800));
+}
+
+/* Last, so a key that is both — every wrong key is also down — flares. */
+.keyboard__key.is-wrong {
+  border-color: var(--flare);
+  background: color-mix(in oklab, var(--flare) 78%, var(--ink-800));
+}

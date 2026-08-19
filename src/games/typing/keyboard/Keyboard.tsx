@@ -2,6 +2,9 @@ import type { CSSProperties } from "react";
 
 import { KEY_ROWS } from "@/engine/keyboard";
 
+/** Nobody typing. The board still draws — the ladder shows one at rest. */
+const NONE: ReadonlySet<string> = new Set();
+
 /**
  * The keyboard, as a picture (docs/typing.md §4).
  *
@@ -33,10 +36,25 @@ import { KEY_ROWS } from "@/engine/keyboard";
  * different sizes rather than two layouts — there is no breakpoint here to keep
  * in step with the row stagger.
  *
- * Press echo (#131) and the next-key hint (#132) add state to these keys; #134
- * puts the board under the passage. This story is the board.
+ * ── The echo arrives as props, not as a hook ──────────────────────────────
+ * Which keys are lit is `useKeyEcho`'s answer, passed in (§4.3). Calling the
+ * hook in here would look tidier and would cost the two things that matter:
+ * the board would stop being a pure function of its props — untestable by
+ * rendering it — and Hailstorm, which needs the same echo for its own gun
+ * (§8.2), would end up with a second copy of the listener fighting this one.
+ *
+ * The next-key hint (#132) adds one more state to these keys; #134 puts the
+ * board under the passage.
  */
-export function Keyboard() {
+export function Keyboard({
+  down = NONE,
+  wrong = NONE,
+}: {
+  /** Codes lit right now — `useKeyEcho`'s `down`. */
+  down?: ReadonlySet<string>;
+  /** Codes flashing `--flare`; always a subset of `down`. */
+  wrong?: ReadonlySet<string>;
+}) {
   return (
     <div className="keyboard" aria-hidden="true">
       {KEY_ROWS.map((row, index) => (
@@ -51,9 +69,18 @@ export function Keyboard() {
             return (
               <span
                 key={key.code}
-                className={`keyboard__key${key.home ? " is-home" : ""}${
-                  isWord ? " is-word" : ""
-                }`}
+                // `is-wrong` is written alongside `is-down` rather than
+                // instead of it: a wrong key is still a key that went down,
+                // and the CSS orders the two so the flare wins the colour.
+                className={[
+                  "keyboard__key",
+                  key.home && "is-home",
+                  isWord && "is-word",
+                  down.has(key.code) && "is-down",
+                  wrong.has(key.code) && "is-wrong",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
                 // The finger is an attribute rather than a class because it is
                 // one of a closed set the CSS enumerates once, and because
                 // `[data-finger]` is what the tint rules select on.
@@ -63,7 +90,8 @@ export function Keyboard() {
                 {/* The unshifted legend only. A real keycap prints `A` over a
                     key that types `a` unshifted; a child comparing the board
                     against the passage needs the character they are about to
-                    type, and the shifted half is what KEY04 lights up. */}
+                    type, and the shifted half is what the hint (#132) lights
+                    up. */}
                 {key.cap[0]}
               </span>
             );
