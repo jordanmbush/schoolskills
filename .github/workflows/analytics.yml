@@ -32,6 +32,12 @@ permissions:
   id-token: write # OIDC, to read the log bucket
   contents: write # to push the branch the counts ride in on
   pull-requests: write # to open that branch's PR and set it to auto-merge
+  # To dispatch ci.yml against that branch. `workflow_dispatch` is one of the
+  # two events (with `repository_dispatch`) that GITHUB_TOKEN is still allowed
+  # to raise, which is the whole reason this route works — but raising it needs
+  # this scope, and without it the call is a bare 403 "Resource not accessible
+  # by integration" that names neither the permission nor the workflow.
+  actions: write
   issues: write # to complain if this stops working
 
 jobs:
