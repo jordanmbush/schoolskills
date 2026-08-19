@@ -113,9 +113,12 @@ export function Keyboard({
                 // `is-wrong` is written alongside `is-down` rather than
                 // instead of it: a wrong key is still a key that went down,
                 // and the CSS orders the two so the flare wins the colour.
-                // `is-next` stacks the same way, and loses to both: on the
-                // frame a hinted key is struck the child should see the
-                // strike, not the instruction they have just followed.
+                // `is-next` stacks the same way and loses the cap to both —
+                // border, fill and legend go to the echo, whose rules are
+                // written after it — but only the cap: the hint's ring and
+                // its pulse are properties the echo never declares, so they
+                // ride out the strike. On the frame a hinted key is struck,
+                // the strike is the louder of the two, not the only one.
                 className={[
                   "keyboard__key",
                   key.home && "is-home",

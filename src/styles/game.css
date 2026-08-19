@@ -1506,13 +1506,15 @@ label.segmented__btn {
    run and the focus ring around it — so the hint is per-world scenery rather
    than a sixth telemetry signal a child has to be taught.
 
-   It is deliberately NOT shaped like a press. A strike fills the whole cap
-   with `--lime` for 120ms and is gone; the hint is a ring and a breath around
-   an otherwise ordinary key, and it stays there until the key is struck. Two
-   different colours doing two different things would still read as one
-   flashing board if both were fills, and the child has to be able to tell "you
-   just pressed that" from "press this next" while looking at the board rather
-   than at their hands.
+   It is not shaped like a press, but the difference is degree and shape
+   rather than fill and no fill: both tint the cap. A strike floods it at 78%
+   `--lime` for 120ms and is gone; the hint is a 20% `--go` wash — a fifth of
+   that — under a ring that breathes, and it stays until the key is struck.
+   Two fills of the same weight would read as one flashing board however
+   different their hues, so the hint's is kept well under the echo's and
+   carries the one thing the echo has not got. The child has to be able to
+   tell "you just pressed that" from "press this next" while looking at the
+   board rather than at their hands.
 
    For a capital, TWO keys carry this at once — the letter, and the shift on
    the opposite hand. That pair is the technique being taught and the reason
@@ -1523,9 +1525,15 @@ label.segmented__btn {
    as a passage is typed, and easing that move reads as the pointer travelling
    rather than teleporting. A press has to be instant; an instruction does not.
 
-   Placed ABOVE the press echo so the cascade lands the right way round — a
-   hinted key that is struck flashes, rather than staying dressed as an
-   instruction the child has already followed.                             */
+   Placed ABOVE the press echo so the cascade lands the right way round on the
+   three properties the two blocks share: border, fill and legend are declared
+   again below and win the cap, so a hinted key that is struck flashes. The
+   ring and its breath are not in that contest — the echo declares neither
+   `box-shadow` nor `animation`, and an animation would outrank a normal
+   declaration even if it did — so the strike lands inside a still-breathing
+   `--go` halo. That is the wanted reading: for those 120ms the strike is the
+   louder of the two, not the only one, and the ring leaves with the hint when
+   the passage moves on.                                                    */
 .keyboard__key.is-next {
   border-color: var(--go);
   background: color-mix(in oklab, var(--go) 20%, var(--ink-800));
