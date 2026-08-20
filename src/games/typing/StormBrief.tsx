@@ -140,7 +140,7 @@ export function StormBrief({
  * table's.
  *
  * `focus` is a class of character (`storms.ts` decides what each one matches)
- * and this is the only place it is said out loud, so the four names cannot
+ * and this is the only place it is said out loud, so the three names cannot
  * drift apart across screens — there is one screen.
  */
 const FALLS: Record<

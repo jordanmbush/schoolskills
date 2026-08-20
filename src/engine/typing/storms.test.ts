@@ -46,13 +46,23 @@ import {
  */
 
 /**
- * Enough seeds that a rare draw is not a lucky pass.
+ * A sample of the space a spec can draw from, and honestly no more than that.
  *
- * The same spread `storm.test.ts` and `generate.test.ts` use, and it matters
- * more here than in either: the twenty ship with a seed each (decision 58), so
- * a rule proved only at those twenty would be a fact about six lucky rolls
- * rather than about the specs. Everything below that can be asked of a
- * *distribution* is asked of these as well as of the shipped wave.
+ * The same spread `storm.test.ts` and `generate.test.ts` use. What it is for
+ * differs by claim, and the difference is worth stating once here rather than
+ * being inferred at each assertion below:
+ *
+ *   - **Reachability** really is universal over seeds — a wave can only ever
+ *     draw from `stormPool`, whatever the roll — so asking it at sixteen is
+ *     asking it of the generator, and a seventeenth would only be slower.
+ *   - **The tint rate is not.** A `WaveSpec` is a pair of *ranges*, so it is a
+ *     built wave and not a spec that is safe or unsafe, and sixteen seeds are
+ *     sixteen measurements rather than a bound. Swept far more widely, four of
+ *     the twenty specs (83, 89, 93, 99) do reach four or five starts a second
+ *     at seeds nobody is ever served. What makes the shipped twenty safe is
+ *     that a level's seed is derived to keep the rule and frozen (decision 58,
+ *     re-derived in "each level's seed" below), not that the specs cannot roll
+ *     a bad wave.
  */
 const SEEDS = [
   0, 1, 2, 7, 42, 99, 128, 1000, 4242, 65535, 123456, 999983, 2147483647,
@@ -340,22 +350,25 @@ describe("no zone can strobe", () => {
    * patches lighting in turn rather than a flash. A zone taking four is the
    * failure.
    *
-   * Three is the hard bound and it is the standard's, not a preference. What
-   * ships is held to two by `SHIPPED` below — the same peak §8.10 measured on
-   * the stand-in wave — so the twenty a child meets have a full flash a second
-   * of headroom over the line, and the rule still says where the line is.
+   * Three is the standard's line and not a preference — but it is asserted
+   * here over a *sample* of sixteen seeds per spec, which is a measurement and
+   * not a property of the specs (see `SEEDS`). The claim that carries a child
+   * is the next one down: `SHIPPED` is held to two, at the seed each level
+   * freezes, and "each level's seed" re-derives that seed from the rule rather
+   * than reading it off the table.
    */
   const MAX_TINTS_PER_ZONE_PER_SECOND = 3;
 
   /**
    * And what the shipped twenty are actually at.
    *
-   * The seed on each row is chosen to keep it (decision 58, pinned below), so
-   * this is not a hope about a draw: it is the wave that is served.
+   * The seed on each row is derived to keep it (decision 58, re-derived
+   * below), so this is not a hope about a draw: it is the wave that is served,
+   * and the one claim here that is a guarantee rather than a sample.
    */
   const SHIPPED_MAX = 2;
 
-  it("holds every spec under the line, at every seed", () => {
+  it("holds every spec under the line, at the sixteen seeds sampled", () => {
     for (const [name, , wave] of SAMPLED)
       expect(peakTintRate(wave), name).toBeLessThanOrEqual(
         MAX_TINTS_PER_ZONE_PER_SECOND,
@@ -503,8 +516,8 @@ describe("each level's seed", () => {
    * in the table — and twenty unexplained numbers would be twenty things
    * nobody could ever safely edit. So the rule is written here and the table
    * is checked against it: **the level's own number, or the first seed above
-   * it whose wave keeps the level's promises.** Fifteen of the twenty are the
-   * lesson number itself; the other five are within six of it.
+   * it whose wave keeps the level's promises.** Fourteen of the twenty are the
+   * lesson number itself; the other six are within six of it.
    *
    * The promises are the three things this file has already asserted about
    * every shipped wave, which is what makes this a derivation rather than a

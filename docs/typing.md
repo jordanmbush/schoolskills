@@ -751,7 +751,8 @@ Four things about the shape of the table:
 The seed is the level's own number, or the first above it whose wave keeps the
 level's promises — no zone tinting more than twice a second (§8.10), six of the
 eight fingers used, and no finger taking more than a third of the letters
-(decision 58). Five of the twenty needed the bump.
+(decision 58). Six of the twenty needed the bump — lessons 4, 53, 65, 73, 89
+and 93 — and none of them by more than six.
 
 ---
 
@@ -1568,9 +1569,14 @@ guess was, with the way out drawn on it (§8.11). Measured in a browser
 the storm route still opens, and one keystroke flips every tile back with
 nothing reloaded and the pointer still reporting a tablet.
 
-And the skip rule itself, measured the same way: with lesson 44 passed and
-lesson 45's storm never opened, lesson 46 is the tile marked "Start here" — and
-after a run of 45 that the storm got through, it still is.
+The skip rule itself is held in the unit suite rather than in the browser, and
+in two halves that meet at the tile. `ladder.test.ts` has the rule — "opens
+lesson 46 when 44 is cleared, whatever happened at 45" takes both endings a
+storm can have, and "is stepped over at every one of the twenty rungs" says it
+is a property of the ladder rather than a fact about lesson 45.
+`LessonLadder.test.tsx` has what a child sees: "leaves a skipped storm open
+behind the pointer" is the storm still enterable with the pointer past it, and
+"says every tile's state out loud" is where `next` is spoken as "Start here".
 
 ### 8.9 · DOM, not canvas
 
@@ -1710,8 +1716,8 @@ falling. What it can and must do:
   bounded instead is how often it can happen: WCAG 2.3.1 counts _more than
   three flashes in any one second_, and every one of the twenty levels peaks at
   **two tint starts per second on any one zone**, with at most two of the eight
-  lit at once — measured on the wave each of them ships (§5.7) and on sixteen
-  other seeds apiece, where the worst any spec reaches is three.
+  lit at once — measured on the wave each of them ships (§5.7), which is the
+  wave a child meets and the only one there is (decision 58).
 
   The obvious fix is the wrong one and it is worth writing down before somebody
   reaches for it. **`gap` is not the lever, and there is no `MIN_GAP_MS` to
@@ -1730,27 +1736,44 @@ falling. What it can and must do:
   must be — and it is kept in **two** places, because the two things that light
   have two different clocks (decision 57):
 
-  - **A zone's tint is the schedule's, so the specs carry it.**
-    `storms.test.ts` builds every one of the twenty, at its own seed and at
-    sixteen others, and asserts that no zone starts more than **three** tints
-    inside any one second — WCAG 2.3.1's own line, which is _more than_ three
-    flashes in any one second. The twenty as they ship are held to **two**, so
-    what a child meets has a full flash a second of headroom over the line, and
-    at most two of the eight zones are ever lit inside one 150 ms tint. The
-    count is deliberately an over-count: landings within ~20 ms re-peak one lit
-    tint and are one visible episode, and counting them separately errs towards
-    the strobe. It is asserted over the pool of seeds and not only the shipped
-    one, so it is a property of the specs rather than of six lucky rolls.
+  - **A zone's tint is the schedule's, so the seed carries it.**
+    `storms.test.ts` builds every one of the twenty at the seed it ships with
+    and asserts that no zone starts more than **two** tints inside any one
+    second — a full flash a second of headroom under WCAG 2.3.1's own line,
+    which is _more than_ three flashes in any one second — with at most two of
+    the eight zones lit inside one 150 ms tint. The count is deliberately an
+    over-count: landings within ~20 ms re-peak one lit tint and are one visible
+    episode, and counting them separately errs towards the strobe.
+
+    **The guarantee is per shipped seed, and it is worth being exact about
+    that.** A `WaveSpec` is a range, so a spec is not safe or unsafe — a
+    _built wave_ is, and the shipped wave is the one whose seed was derived to
+    keep the rule (§5.7, decision 58). The test re-derives all twenty from that
+    rule rather than trusting the column, so a change to `buildWave` that moved
+    a wave over the line fails loudly instead of shipping. The same twenty
+    specs are also built at sixteen other seeds apiece and held under three,
+    which is a **sample and not a bound**: swept far more widely, four of them
+    (lessons 83, 89, 93 and 99) do reach four or five at seeds nobody is
+    served. Tightening those four rows so the bound held at any seed would be a
+    stronger thing to have, and it is not what ships today.
+
   - **The score's `--flare` wash is a hand's, so the reducer carries it.** No
     `WaveSpec` can shape how fast a child presses wrong keys; auto-repeat is
     already not a shot (decision 44), but eight or ten deliberate presses a
     second is a seven-year-old having a bad time. So `StormState` grew
     `missTintAt` — the wave time the wash last started, which is what the HUD
-    mounts the element from — and it only moves once `MIN_TINT_GAP_MS` (340 ms)
-    has passed. Every other cost of a miss is charged in full whether it lights
-    or not: the ten points, the streak, the mark against the run. Measured in
-    `e2e/smoke.mjs`: eight wrong keys 200 ms apart cost eighty points and draw
-    four flashes, the closest pair 408 ms apart.
+    mounts the element from — and it only moves once `MIN_TINT_GAP_MS` (500 ms)
+    has passed, which is **two starts inside any second**: the same headroom
+    the zone tints have, on the same screen, for the same five-year-old. 340 ms
+    would have permitted three — 0, 340 and 680 — which is the standard's
+    ceiling with nothing to spare, on the one screen where a child hammers keys
+    _because they are losing_. Every other cost of a miss is charged in full
+    whether it lights or not: the ten points, the streak, the mark against the
+    run. Measured over sixty wrong keys at each of fifteen cadences from 10 ms
+    to 750 ms (`storm.test.ts`): all sixty charged every time, and no second
+    with more than two starts in it. And in a browser (`e2e/smoke.mjs`): eight
+    wrong keys 200 ms apart cost eighty points and draw three flashes, the
+    closest pair over 600 ms apart.
 
 - **Fall speeds are capped** at the top of the ladder. "Whiteout" at lesson 89
   should be hard because there are many letters, not because one is a blur.
@@ -1987,11 +2010,13 @@ The four that carry this epic, in the order they are worth writing:
 
 Plus the two the twenty storms brought with them, both in `storms.test.ts`:
 
-5. **No zone can strobe.** Every one of the twenty specs, at its own seed and
-   at sixteen others, starts at most three tints on any one zone inside any one
-   second — WCAG 2.3.1's line — and the shipped twenty are held to two (§8.10).
-   Read off the built schedule, because `fall` is a range and the question is
-   about landings rather than about spawns.
+5. **No zone can strobe.** Every one of the twenty waves that ship starts at
+   most two tints on any one zone inside any one second — a flash under WCAG
+   2.3.1's line of more than three — and the seed that makes that true is
+   re-derived by the test rather than trusted (§8.10, decision 58). The same
+   specs at sixteen other seeds are held under three, as a sample rather than
+   as a property of the specs. Read off the built schedule, because `fall` is a
+   range and the question is about landings rather than about spawns.
 6. **The doc and the specs agree.** §5.7's table is read out of
    `docs/typing.md` and compared with the shipped rows column by column. A
    design doc that disagreed with the code would be a defect here, so it is one

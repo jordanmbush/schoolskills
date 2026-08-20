@@ -1131,10 +1131,11 @@ try {
   //
   // The 200ms is spacing, not patience, and it is what the flash count at the
   // bottom of this section is about. Eight wrong keys 200ms apart is five a
-  // second, which is faster than the `--flare` wash is allowed to light
-  // (`MIN_TINT_GAP_MS`, decision 57) — so this is the strobe case, played at a
-  // rate a seven-year-old really can hammer at, and the check below is that
-  // every one of the eight is CHARGED while fewer than eight light.
+  // second, which is two and a half times faster than the `--flare` wash is
+  // allowed to light (`MIN_TINT_GAP_MS`, decision 57) — so this is the strobe
+  // case, played at a rate a seven-year-old really can hammer at, and the
+  // check below is that every one of the eight is CHARGED while fewer than
+  // eight light.
   const MISSES = 8;
   // Presses the HUD never answered. Each one would be a miss the flash count
   // at the bottom is short by, and the reason is worth carrying to the check
@@ -1239,24 +1240,27 @@ try {
   check(
     "a hand cannot strobe the score, however fast it hammers",
     // **The half of §8.10 no `WaveSpec` can keep** (decision 57). A zone's
-    // tint rate is a property of the schedule and the twenty levels are held
-    // under it by `storms.test.ts`; a miss is a child pressing a wrong key,
-    // and the only place that can be bounded is the reducer. So the wash is
-    // mounted from `missTintAt`, a wave-time stamp that moves at most once
-    // every 340ms — under WCAG 2.3.1's three flashes a second with room to
-    // spare — and eight presses at five a second must therefore light FEWER
-    // than eight times while costing all eight.
+    // tint rate is a property of the schedule and each of the twenty levels
+    // ships at two starts a second (`storms.test.ts`); a miss is a child
+    // pressing a wrong key, and the only place that can be bounded is the
+    // reducer. So the wash is mounted from `missTintAt`, a wave-time stamp
+    // that moves at most once every 500ms — two flashes a second, the same
+    // headroom the zone tints have under WCAG 2.3.1's line of more than three
+    // — and eight presses at five a second must therefore light FEWER than
+    // eight times while costing all eight.
     //
     // The floor is the measurement that says it did not merely mount fewer
     // elements: 150ms is the tint's own life, so a pair closer than that would
-    // be an animation restarting rather than a hand moving, and 340 is the
+    // be an animation restarting rather than a hand moving, and 500 is the
     // rule itself. Both are asserted; the second implies the first, and the
     // first is the one that has been true since the shield's tint was built.
+    // Wall-clock against a wave-time rule is the safe direction: wave time is
+    // clamped per frame and can only run behind the wall, never ahead of it.
     flashes.length > 0 &&
       flashes.length < MISSES &&
       flashes.every((tint) => tint.finger === undefined) &&
       rhythm(flashes, () => "hud") >= 150 &&
-      rhythm(flashes, () => "hud") >= 340,
+      rhythm(flashes, () => "hud") >= 500,
     `${flashes.length} flashes for ${MISSES} wrong keys 200ms apart, ` +
       `closest pair ${rhythm(flashes, () => "hud")}ms apart`,
   );

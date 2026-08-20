@@ -153,13 +153,16 @@ function onField(state: StormState): number {
  * the board goes on marking a child's keys against a letter that is no longer
  * the lowest.
  *
- * `score`, `misses` and `missTintAt` move together on a miss and would each be
- * covered by another today; all three are compared anyway, because "the score
- * happens to change whenever the flash does" is a coincidence of two constants
- * in `storm.ts` rather than a property of the screen. A `MISS_POINTS` of zero
- * would leave the HUD's `--flare` flash undrawn, which is a bug nobody would
- * think to look for here — and `missTintAt` is the one the HUD now mounts that
- * flash from (decision 57), so it is the field whose absence would be silent.
+ * `score` and `misses` move on **every** miss; `missTintAt` moves only on the
+ * ones the throttle lets light, which is `MIN_TINT_GAP_MS` apart at the most
+ * (decision 57). So the stamp is covered by the other two today — a frame it
+ * moves on is a frame the score moved on as well — and all three are compared
+ * anyway, because "the score happens to change whenever the flash does" is a
+ * coincidence of two constants in `storm.ts` rather than a property of the
+ * screen. A `MISS_POINTS` of zero would leave the HUD's `--flare` flash
+ * undrawn, which is a bug nobody would think to look for here — and
+ * `missTintAt` is the field the HUD actually mounts that flash from, so it is
+ * the one whose absence would be silent.
  *
  * `wave` is the field left out, and deliberately: a run's wave is fixed for
  * its whole life, so it cannot change under a running loop, and a screen

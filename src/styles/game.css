@@ -2552,8 +2552,9 @@ label.segmented__btn {
    therefore still one tint (§8.10). What that rules out is the tint
    restarting on a frame where nothing happened; how often a WAVE may land on
    one zone is a separate question, and it is answered by the twenty levels
-   rather than here — no zone starts more than three tints in a second at any
-   seed, and the twenty that ship peak at two (`storms.test.ts`, §8.10).
+   rather than here — each of them ships at a seed whose wave starts no more
+   than two tints on one zone in a second, under WCAG 2.3.1's line of more than
+   three (`storms.test.ts`, §8.10).
 
    The score's `--flare` below is the third of the three, and the one no wave
    can shape: its cadence is a child's own keystrokes, so its floor is in the

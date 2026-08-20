@@ -10,10 +10,11 @@ import { buildWave, type Wave, type WaveSpec } from "./storm";
  * is where that becomes a `WaveSpec` the engine can build. The split is not
  * bookkeeping. It is the whole of the acceptance criterion that **a storm can
  * never ask for a key the ladder has not taught** (decision 56): a
- * `StormShape` has no `keys` field, so there is nowhere on the table to write a character, and the
- * pool can only ever come from `unlockedAt(n)` — the same computed alphabet
- * every lesson's words are drawn from (§5.2). Move lesson 39's storm to rung
- * 12 and it rains what a child at lesson 12 has met, with nothing to edit.
+ * `StormShape` has no `keys` field and the table `satisfies` it, so there is
+ * nowhere to write a character down, and the pool can only ever come from
+ * `unlockedAt(n)` — the same computed alphabet every lesson's words are drawn
+ * from (§5.2). Move lesson 39's storm to rung 12 and it rains what a child at
+ * lesson 12 has met, with nothing to edit.
  *
  * ── Why it is not in `lessons.ts` ────────────────────────────────────────────
  * That module is the one file in `engine/typing/` the deck layer may import
@@ -136,12 +137,17 @@ export function stormPool(lesson: StormLesson): string[] {
  * This level's `WaveSpec`: the shape the table wrote, with the pool the ladder
  * decides.
  *
- * The spread is `shape` last so that a level cannot override `keys`, which is
- * the guarantee this module exists for — and `focus` and `seed` ride along
- * into the spec harmlessly. They are inert to `buildWave` (it reads `count`,
- * `gap`, `fall` and `keys`, and carries the rest for the reducer), and having
- * them on the spec means a wave in hand can still say which level it is —
- * which is what a retry rebuilds from (§8.3).
+ * **The level's shape is spread first and `keys` is written last**, so the
+ * pool this module computes is the last word and a level cannot override it —
+ * which is the guarantee this module exists for (decision 56). The ordering is
+ * the enforcement at runtime; `satisfies StormShape` on the table in
+ * `lessons.ts` is what makes writing a stray `keys` there a type error rather
+ * than an inert field that this line quietly discards.
+ *
+ * `focus` and `seed` ride along into the spec harmlessly. They are inert to
+ * `buildWave` (it reads `count`, `gap`, `fall` and `keys`, and carries the rest
+ * for the reducer), and having them on the spec means a wave in hand can still
+ * say which level it is — which is what a retry rebuilds from (§8.3).
  */
 export function waveSpecFor(lesson: StormLesson): WaveSpec {
   return { ...lesson.kind.wave, keys: stormPool(lesson) };

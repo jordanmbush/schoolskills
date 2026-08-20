@@ -528,7 +528,7 @@ type StormWaveRow = readonly [
  * The seed is the level's own number, or the first above it whose wave keeps
  * the level's promises — no zone tinting more than twice a second (§8.10), six
  * of the eight fingers used, and no finger taking more than a third of the
- * letters. Five of the twenty needed the bump; `storms.test.ts` re-derives all
+ * letters. Six of the twenty needed the bump; `storms.test.ts` re-derives all
  * twenty rather than trusting the column (decision 58).
  */
 const STORM_WAVES: readonly StormWaveRow[] = [
@@ -555,7 +555,17 @@ const STORM_WAVES: readonly StormWaveRow[] = [
   [99, 50, 300, 500, 1200, 1800, 2, 0, 99],
 ];
 
-/** The twenty, by the rung that hosts them. */
+/**
+ * The twenty, by the rung that hosts them.
+ *
+ * `satisfies StormShape` and not only the `Map`'s type argument, because the
+ * two are not the same check: excess properties do not survive a `.map` into a
+ * `new Map<number, StormShape>`, so a `keys` written here would have
+ * type-checked clean and then been discarded in silence by `waveSpecFor`'s
+ * spread. `satisfies` fires excess-property checking on the literal itself,
+ * which is what makes "a storm cannot name its own keys" (decision 56) a thing
+ * the compiler refuses rather than a thing the spread order rescues.
+ */
 const WAVE_BY_N = new Map<number, StormShape>(
   STORM_WAVES.map(([n, count, gapFrom, gapTo, fallFrom, fallTo, ...rest]) => {
     const [shield, repairAt, seed, focus] = rest;
@@ -569,7 +579,7 @@ const WAVE_BY_N = new Map<number, StormShape>(
         repairAt,
         seed,
         ...(focus ? { focus } : {}),
-      },
+      } satisfies StormShape,
     ];
   }),
 );

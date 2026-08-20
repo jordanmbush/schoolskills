@@ -8,6 +8,7 @@ import { unlockedAt } from "./keys";
 import {
   MIN_FALL_MS,
   MIN_TINT_GAP_MS,
+  MISS_POINTS,
   SHIELD_FINGERS,
   buildWave,
   fallRange,
@@ -895,12 +896,12 @@ describe("a wrong key costs", () => {
  *
  * §8.10's "no strobe, ever, in any mode" is kept two different ways, because
  * the two things that light have two different clocks. A shield zone tints
- * when a letter LANDS, so its rate is a property of the schedule and is held
- * under three a second by the twenty levels themselves (`storms.test.ts`). The
- * score's `--flare` wash fires when a child presses a WRONG KEY, and no spec
- * can shape a hand: auto-repeat is already not a shot (decision 44), but eight
- * or ten deliberate presses a second is a seven-year-old having a bad time and
- * not a bug to defend against.
+ * when a letter LANDS, so its rate is a property of the schedule and each of
+ * the twenty levels is held to two a second at its own seed (`storms.test.ts`).
+ * The score's `--flare` wash fires when a child presses a WRONG KEY, and no
+ * spec can shape a hand: auto-repeat is already not a shot (decision 44), but
+ * eight or ten deliberate presses a second is a seven-year-old having a bad
+ * time and not a bug to defend against.
  *
  * So the wash carries its own floor, here in the reducer where the clock is.
  * What a miss costs is unchanged and unconditional; what is rate-limited is
@@ -946,25 +947,55 @@ describe("the miss flash cannot be strobed by a fast hand", () => {
     expect(after.missTintAt).toBe(MIN_TINT_GAP_MS);
   });
 
-  it("stays under three flashes in any one second, whatever the hand does", () => {
-    // WCAG 2.3.1's line, measured the way `storms.test.ts` measures a zone's:
-    // the count of starts inside a sliding second. The hand here presses a
-    // wrong key every 40ms for ten seconds, which is faster than a child can
-    // type and far faster than one can aim.
-    let state = live();
-    const lit: number[] = [];
-    for (let ms = 0; ms <= 10_000; ms += 40) {
-      state = fire(to(state, ms), "KeyZ");
-      if (state.missTintAt !== null && state.missTintAt !== lit.at(-1))
-        lit.push(state.missTintAt);
-    }
+  it("stays at two flashes in any one second, whatever the hand does", () => {
+    // **Two, not three.** WCAG 2.3.1's line is *more than three* flashes in
+    // any one second, and a gap of `g` permits `ceil(1000 / g)` starts inside
+    // one — so 340ms would have sat exactly on the line with nothing to spare,
+    // and 500 buys the second flash back. That is the same headroom the twenty
+    // waves' zone tints ship with (§8.10), on the same screen, for the same
+    // five-year-old. Counted the way `storms.test.ts` counts a zone's: starts
+    // inside a sliding second, anchored at each start, which is where every
+    // window's maximum sits.
+    //
+    // Swept rather than hammered at one rate, because the worst case is not
+    // the fastest hand. A hand landing just inside the gap is the one that
+    // reached three, and no amount of pressing faster finds it — so the sweep
+    // walks the cadences either side of the constant as well as the ones a
+    // child can actually produce.
+    const PRESSES = 60;
+    // A letter that outlasts the whole sweep, so every press is a miss inside
+    // a live run rather than a key at a run that has already ended.
+    const held = () => to(runOf([at("f", 0, 120_000)]), 0);
 
-    expect(state.misses, "the premise: a lot of wrong keys").toBe(251);
-    for (const at of lit)
+    for (const cadence of [
+      10, 20, 40, 60, 100, 150, 200, 250, 333, 400, 450, 499, 500, 501, 750,
+    ]) {
+      let state = held();
+      const lit: number[] = [];
+      for (let press = 0; press < PRESSES; press++) {
+        state = fire(to(state, press * cadence), "KeyZ");
+        if (state.missTintAt !== null && state.missTintAt !== lit.at(-1))
+          lit.push(state.missTintAt);
+      }
+
+      // Every cost of a miss is charged in full at every cadence. Only the
+      // tint is throttled, and that is the whole of decision 57.
+      expect(state.misses, `${cadence}ms: every miss counted`).toBe(PRESSES);
+      expect(state.score, `${cadence}ms: every miss charged`).toBe(
+        -MISS_POINTS * PRESSES,
+      );
+      expect(state.combo, `${cadence}ms: every miss broke the streak`).toBe(0);
       expect(
-        lit.filter((other) => other >= at && other - at < 1000).length,
-        `from ${at}ms`,
-      ).toBeLessThanOrEqual(3);
+        lit.length,
+        `${cadence}ms: the premise, a wash that does light`,
+      ).toBeGreaterThan(0);
+
+      for (const start of lit)
+        expect(
+          lit.filter((other) => other >= start && other - start < 1000).length,
+          `${cadence}ms, from ${start}ms`,
+        ).toBeLessThanOrEqual(2);
+    }
   });
 });
 

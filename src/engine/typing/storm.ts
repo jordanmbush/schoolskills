@@ -255,10 +255,10 @@ function fallable(ch: string): Fallable | null {
  * a time — still leaves three. The floor would cost the density knob the top
  * of the ladder is built out of and buy almost no safety, so the rule the
  * twenty levels keep is a count per zone per second and not a floor here:
- * `storms.test.ts` builds each of them and asserts no zone starts more than
- * three tints inside any one second, which is WCAG 2.3.1's line (§8.10). The
- * other half of that rule is `MIN_TINT_GAP_MS` below, for the flash no wave
- * can shape (decision 57).
+ * `storms.test.ts` builds each of the twenty at the seed it ships with and
+ * asserts no zone starts more than **two** tints inside any one second, under
+ * WCAG 2.3.1's line of more than three (§8.10). The other half of that rule is
+ * `MIN_TINT_GAP_MS` below, for the flash no wave can shape (decision 57).
  */
 export const MIN_FALL_MS = 800;
 
@@ -561,10 +561,10 @@ export type StormState = {
    *
    * The count above cannot do that job, and this is the one cadence on this
    * screen no `WaveSpec` can shape (decision 57). A wave's tint rate is read
-   * off its own schedule and held under three a second by the twenty levels
-   * themselves (`storms.ts`); a miss happens when a child presses a wrong key,
-   * so its rate is the rate a hand can move at. Auto-repeat is already not a
-   * shot (decision 44), which takes 30Hz off the table, but a child mashing at
+   * off its own schedule and held to two a second by each of the twenty levels
+   * (`storms.ts`); a miss happens when a child presses a wrong key, so its rate
+   * is the rate a hand can move at. Auto-repeat is already not a shot
+   * (decision 44), which takes 30Hz off the table, but a child mashing at
    * eight or ten a second is not a bug and must not produce eight or ten
    * flashes — "no strobe, ever, in any mode" (§8.10) is a promise about the
    * screen and not about the wave.
@@ -602,18 +602,29 @@ export const MISS_POINTS = 10;
  * The least time between two starts of the score's miss wash, in wave ms
  * (§8.10, decision 57).
  *
- * **WCAG 2.3.1's line is more than three flashes in any one second**, so 340ms
- * holds the wash to at most two full flashes and a fraction inside any second
- * — under the line with room to spare, and this site's youngest player is
- * five. It is deliberately longer than the 150ms the tint is drawn for, so
- * what a fast hand gets is a wash that lights, fades and then is allowed to
- * light again, never a wash that blinks off and on inside its own animation.
+ * **WCAG 2.3.1's line is more than three flashes in any one second**, and 500ms
+ * holds the wash to **two starts inside any second** — the same number the
+ * twenty waves' zone tints ship at (§8.10), so the two things that light on
+ * this screen have the same full flash a second of headroom under the line.
+ *
+ * The arithmetic is worth writing down, because the obvious value is wrong.
+ * A gap of `g` permits `ceil(1000 / g)` starts inside a second: 340ms permits
+ * **three** — 0, 340 and 680 — which is exactly the standard's ceiling with
+ * nothing to spare, and this is the one screen on the site where the youngest
+ * player is hammering keys *because they are losing*. 500 is the largest round
+ * number that buys the second flash back. Measured by driving `fire` 60 times
+ * at cadences from 10ms to 750ms: every one of the 60 charged, and no second
+ * ever contains more than two starts.
+ *
+ * It is also deliberately longer than the 150ms the tint is drawn for, so what
+ * a fast hand gets is a wash that lights, fades and then is allowed to light
+ * again, never a wash that blinks off and on inside its own animation.
  *
  * Wave time and not wall-clock time, so the quit sheet's pause (§8.11) cannot
  * spend it: a run resumed after a minute behind the sheet is exactly where it
  * was, which is what "the sheet costs the run zero" means everywhere else.
  */
-export const MIN_TINT_GAP_MS = 340;
+export const MIN_TINT_GAP_MS = 500;
 
 /**
  * Stamp `cleared` on a state whose last letter has just been accounted for.

@@ -74,14 +74,14 @@ import type { StormState } from "@/engine/typing/storm";
  * and there is no timer here to be left mid-flash by a screen that unmounted.
  *
  * **The stamp rather than `misses`, and that is the whole of decision 57.** A
- * wave's tint rate is a property of its own schedule, held under three a
- * second by the twenty levels themselves — but a miss is a child pressing a
- * wrong key, and eight or ten a second is a hand rather than a bug. The gun
- * already ignores key auto-repeat (decision 44), which takes 30Hz off the
- * table; what keeps the rest of it under WCAG 2.3.1's three flashes a second
- * is `MIN_TINT_GAP_MS` in the reducer, where the clock is. So this element
- * mounts at most once every 340ms however fast the keys come, and every other
- * cost of a miss is charged in full whether it lights or not.
+ * wave's tint rate is a property of its own schedule, and each of the twenty
+ * levels ships at two a second — but a miss is a child pressing a wrong key,
+ * and eight or ten a second is a hand rather than a bug. The gun already
+ * ignores key auto-repeat (decision 44), which takes 30Hz off the table; what
+ * holds the rest of it to the same two a second, under WCAG 2.3.1's line of
+ * more than three, is `MIN_TINT_GAP_MS` in the reducer, where the clock is. So
+ * this element mounts at most once every 500ms however fast the keys come, and
+ * every other cost of a miss is charged in full whether it lights or not.
  */
 export function StormHud({
   state,
