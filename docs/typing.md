@@ -527,12 +527,12 @@ minute; `acc` is the whole-lesson accuracy bar.
 |   1 | Two keys                  | `f j` | keys    | guide🔒 |    20 |   8 | 95% |
 |   2 | Four keys                 | `d k` | keys    | guide🔒 |    20 |   8 | 95% |
 |   3 | Six keys                  | `s l` | keys    | guide🔒 |    24 |   9 | 95% |
-|   4 | Hailstorm · First ice     | —     | storm   | guide🔒 |     — |   — |   — |
+|   4 | Hailstorm · First ice     | —     | storm   | guide🔒 |    12 |   — |   — |
 |   5 | Both pinkies              | `a ;` | keys    | guide🔒 |    24 |   9 | 95% |
 |   6 | The inside reach          | `g h` | keys    | guide🔒 |    24 |  10 | 95% |
 |   7 | Home-row words            | —     | words   | guide   |    25 |  11 | 95% |
 |   8 | Pairs that repeat         | —     | bigrams | guide   |    25 |  11 | 95% |
-|   9 | Hailstorm · Home row      | —     | storm   | guide   |     — |   — |   — |
+|   9 | Hailstorm · Home row      | —     | storm   | guide   |    16 |   — |   — |
 |  10 | **Checkpoint · Home row** | —     | words   | off🔒   |    30 |  12 | 97% |
 
 **Block 2 · Reaching up**
@@ -541,13 +541,13 @@ minute; `acc` is the whole-lesson accuracy bar.
 | --: | ------------------------- | ----- | ------- | ------- | ----: | --: | --: |
 |  11 | Up to e and i             | `e i` | keys    | guide🔒 |    24 |   9 | 95% |
 |  12 | Up to r and u             | `r u` | keys    | guide🔒 |    24 |   9 | 95% |
-|  13 | Hailstorm · Eight lanes   | —     | storm   | guide   |     — |   — |   — |
+|  13 | Hailstorm · Eight lanes   | —     | storm   | guide   |    18 |   — |   — |
 |  14 | The long reach            | `t y` | keys    | guide🔒 |    24 |  10 | 95% |
 |  15 | Up to w and o             | `w o` | keys    | guide🔒 |    26 |  10 | 95% |
 |  16 | Real words at last        | —     | words   | guide   |    30 |  12 | 95% |
 |  17 | The corners               | `q p` | keys    | guide🔒 |    26 |  10 | 95% |
 |  18 | th · he · er · re         | —     | bigrams | guide   |    30 |  13 | 95% |
-|  19 | Hailstorm · Two rows      | —     | storm   | keys    |     — |   — |   — |
+|  19 | Hailstorm · Two rows      | —     | storm   | keys    |    20 |   — |   — |
 |  20 | **Checkpoint · Two rows** | —     | words   | off🔒   |    35 |  15 | 97% |
 
 **Block 3 · Reaching down**
@@ -556,13 +556,13 @@ minute; `acc` is the whole-lesson accuracy bar.
 | --: | ----------------------------- | ----- | --------- | ------- | ----: | --: | --: |
 |  21 | Down to v and m               | `v m` | keys      | guide🔒 |    26 |  11 | 95% |
 |  22 | c, and the comma              | `c ,` | keys      | guide🔒 |    26 |  11 | 95% |
-|  23 | Hailstorm · Down low          | —     | storm     | guide   |     — |   — |   — |
+|  23 | Hailstorm · Down low          | —     | storm     | guide   |    22 |   — |   — |
 |  24 | x, and the full stop          | `x .` | keys      | guide🔒 |    26 |  12 | 95% |
 |  25 | The last corner               | `z /` | keys      | guide🔒 |    26 |  12 | 95% |
 |  26 | The last two                  | `b n` | keys      | guide🔒 |    28 |  12 | 95% |
 |  27 | Every letter                  | —     | words     | guide   |    35 |  14 | 95% |
 |  28 | an · in · on · nd · nt        | —     | bigrams   | keys    |    35 |  15 | 95% |
-|  29 | Hailstorm · Whole alphabet    | —     | storm     | keys    |     — |   — |   — |
+|  29 | Hailstorm · Whole alphabet    | —     | storm     | keys    |    24 |   — |   — |
 |  30 | **Checkpoint · Every letter** | —     | sentences | off🔒   |    40 |  18 | 97% |
 
 **Block 4 · Capitals**
@@ -572,12 +572,12 @@ minute; `acc` is the whole-lesson accuracy bar.
 |  31 | The right shift                 | `⇧`→left letters  | keys      | guide🔒 |    30 |  13 | 95% |
 |  32 | The left shift                  | `⇧`→right letters | keys      | guide🔒 |    30 |  13 | 95% |
 |  33 | Names, and the word I           | —                 | words     | guide   |    35 |  15 | 95% |
-|  34 | Hailstorm · Capitals            | —                 | storm     | keys    |     — |   — |   — |
+|  34 | Hailstorm · Capitals            | —                 | storm     | keys    |    26 |   — |   — |
 |  35 | The apostrophe                  | `'`               | keys      | guide🔒 |    30 |  14 | 95% |
 |  36 | First sentences                 | —                 | sentences | keys    |    35 |  16 | 95% |
 |  37 | Where the comma goes            | —                 | sentences | keys    |    40 |  17 | 95% |
 |  38 | Places and people               | —                 | sentences | keys    |    40 |  18 | 95% |
-|  39 | Hailstorm · Shift under fire    | —                 | storm     | off     |     — |   — |   — |
+|  39 | Hailstorm · Shift under fire    | —                 | storm     | off     |    28 |   — |   — |
 |  40 | **Checkpoint · Real sentences** | —                 | sentences | off🔒   |    45 |  20 | 97% |
 
 **Block 5 · Fluency**
@@ -588,11 +588,11 @@ minute; `acc` is the whole-lesson accuracy bar.
 |  42 | th · he · in · er       | —   | bigrams | keys  |    40 |  19 | 95% |
 |  43 | an · re · on · at · en  | —   | bigrams | keys  |    40 |  20 | 95% |
 |  44 | The hard pairs          | —   | bigrams | keys  |    40 |  19 | 95% |
-|  45 | Hailstorm · Pairs       | —   | storm   | keys  |     — |   — |   — |
+|  45 | Hailstorm · Pairs       | —   | storm   | keys  |    30 |   — |   — |
 |  46 | Hands that take turns   | —   | words   | off   |    45 |  22 | 95% |
 |  47 | One hand at a time      | —   | words   | keys  |    40 |  20 | 95% |
 |  48 | The hundred             | —   | words   | off   |    50 |  24 | 95% |
-|  49 | Hailstorm · Whole words | —   | storm   | off   |     — |   — |   — |
+|  49 | Hailstorm · Whole words | —   | storm   | off   |    32 |   — |   — |
 |  50 | **Checkpoint · Fluent** | —   | passage | off🔒 |    60 |  25 | 97% |
 
 **Block 6 · Numbers**
@@ -601,13 +601,13 @@ minute; `acc` is the whole-lesson accuracy bar.
 | --: | --------------------------- | ----- | ------- | ------- | ----: | --: | --: |
 |  51 | Four and five               | `4 5` | keys    | guide🔒 |    30 |  16 | 95% |
 |  52 | Three and six               | `3 6` | keys    | guide🔒 |    30 |  16 | 95% |
-|  53 | Hailstorm · Digits          | —     | storm   | guide   |     — |   — |   — |
+|  53 | Hailstorm · Digits          | —     | storm   | guide   |    30 |   — |   — |
 |  54 | Two and seven               | `2 7` | keys    | guide🔒 |    30 |  17 | 95% |
 |  55 | One and eight               | `1 8` | keys    | guide🔒 |    30 |  17 | 95% |
 |  56 | Nine and nought             | `9 0` | keys    | guide🔒 |    30 |  18 | 95% |
 |  57 | Ages, dates and scores      | —     | numbers | keys    |    40 |  19 | 95% |
 |  58 | Words and numbers together  | —     | mixed   | keys    |    45 |  20 | 95% |
-|  59 | Hailstorm · Numbers falling | —     | storm   | keys    |     — |   — |   — |
+|  59 | Hailstorm · Numbers falling | —     | storm   | keys    |    34 |   — |   — |
 |  60 | **Checkpoint · Numbers**    | —     | mixed   | off🔒   |    50 |  22 | 97% |
 
 **Block 7 · Punctuation**
@@ -618,11 +618,11 @@ minute; `acc` is the whole-lesson accuracy bar.
 |  62 | Speech marks                | `"`           | keys    | guide🔒 |    35 |  18 | 95% |
 |  63 | Hyphen and underscore       | `- _`         | keys    | guide🔒 |    35 |  19 | 95% |
 |  64 | Colon and semicolon         | `: ;`         | keys    | guide🔒 |    35 |  19 | 95% |
-|  65 | Hailstorm · Punctuation     | —             | storm   | keys    |     — |   — |   — |
+|  65 | Hailstorm · Punctuation     | —             | storm   | keys    |    34 |   — |   — |
 |  66 | Brackets                    | `( )`         | keys    | guide🔒 |    35 |  19 | 95% |
 |  67 | Above the numbers           | `@ # $ % & *` | keys    | guide🔒 |    35 |  18 | 95% |
 |  68 | Slash, plus, equals         | `/ \ + =`     | keys    | guide🔒 |    35 |  19 | 95% |
-|  69 | Hailstorm · Symbols         | —             | storm   | off     |     — |   — |   — |
+|  69 | Hailstorm · Symbols         | —             | storm   | off     |    36 |   — |   — |
 |  70 | **Checkpoint · Punctuated** | —             | passage | off🔒   |    55 |  24 | 97% |
 
 **Block 8 · Endurance**
@@ -631,13 +631,13 @@ minute; `acc` is the whole-lesson accuracy bar.
 | --: | -------------------------------- | --- | ------- | ----- | ----: | --: | --: |
 |  71 | Sixty words                      | —   | passage | off   |    60 |  22 | 96% |
 |  72 | A whole paragraph                | —   | passage | off   |    70 |  23 | 96% |
-|  73 | Hailstorm · The long wave        | —   | storm   | off   |     — |   — |   — |
+|  73 | Hailstorm · The long wave        | —   | storm   | off   |    50 |   — |   — |
 |  74 | The sight words, again           | —   | words   | off   |    60 |  24 | 96% |
 |  75 | Verses                           | —   | passage | off   |    70 |  24 | 96% |
 |  76 | Someone speaking                 | —   | passage | off   |    70 |  25 | 96% |
 |  77 | Eighty words                     | —   | passage | off   |    80 |  26 | 96% |
 |  78 | Numbers in prose                 | —   | passage | off   |    80 |  26 | 96% |
-|  79 | Hailstorm · No repairs           | —   | storm   | off   |     — |   — |   — |
+|  79 | Hailstorm · No repairs           | —   | storm   | off   |    36 |   — |   — |
 |  80 | **Checkpoint · A hundred words** | —   | passage | off🔒 |   100 |  28 | 97% |
 
 **Block 9 · Speed**
@@ -646,13 +646,13 @@ minute; `acc` is the whole-lesson accuracy bar.
 | --: | ---------------------------- | --- | ------- | ----- | ----: | --: | --: |
 |  81 | Sprint · Common words        | —   | sprint  | off   |    30 |  28 | 95% |
 |  82 | Sprint · Alternating hands   | —   | sprint  | off   |    30 |  30 | 95% |
-|  83 | Hailstorm · Hard rain        | —   | storm   | off   |     — |   — |   — |
+|  83 | Hailstorm · Hard rain        | —   | storm   | off   |    40 |   — |   — |
 |  84 | Sprint · The hard pairs      | —   | sprint  | off   |    30 |  28 | 95% |
 |  85 | Sprint · Capitals            | —   | sprint  | off   |    30 |  29 | 95% |
 |  86 | Sprint · Numbers             | —   | sprint  | off   |    30 |  26 | 95% |
 |  87 | Sprint · Punctuation         | —   | sprint  | off   |    30 |  28 | 95% |
 |  88 | A solid minute               | —   | passage | off   |    90 |  32 | 95% |
-|  89 | Hailstorm · Whiteout         | —   | storm   | off   |     — |   — |   — |
+|  89 | Hailstorm · Whiteout         | —   | storm   | off   |    44 |   — |   — |
 |  90 | **Checkpoint · Thirty-five** | —   | passage | off🔒 |    80 |  35 | 96% |
 
 **Block 10 · Everything**
@@ -661,13 +661,13 @@ minute; `acc` is the whole-lesson accuracy bar.
 | --: | ---------------------------- | --- | ------- | ----- | ----: | --: | ------: |
 |  91 | Mixed prose                  | —   | passage | off   |    90 |  30 |     96% |
 |  92 | Prose with numbers           | —   | mixed   | off   |    90 |  30 |     96% |
-|  93 | Hailstorm · Everything falls | —   | storm   | off   |     — |   — |       — |
+|  93 | Hailstorm · Everything falls | —   | storm   | off   |    46 |   — |       — |
 |  94 | A long verse                 | —   | passage | off   |   100 |  31 |     96% |
 |  95 | An address, a price, a date  | —   | mixed   | off   |    80 |  30 |     96% |
 |  96 | A hundred and twenty         | —   | passage | off   |   120 |  32 |     96% |
 |  97 | The accuracy run             | —   | passage | off   |    80 |  28 | **99%** |
 |  98 | Sprint · Everything          | —   | sprint  | off   |    40 |  36 |     95% |
-|  99 | Hailstorm · The last storm   | —   | storm   | off   |     — |   — |       — |
+|  99 | Hailstorm · The last storm   | —   | storm   | off   |    50 |   — |       — |
 | 100 | **The Ice Exam**             | —   | passage | off🔒 |   150 |  38 |     97% |
 
 Twenty Hailstorm levels, ten checkpoints, thirty that introduce keys.
@@ -678,6 +678,81 @@ Lesson 50 asks for 25 wpm and lesson 51 asks for 16. That is not a bug in the
 table. It is the truth about learning a new key, written into the pass mark so
 that a child who has just met the number row is not measured against the person
 they were yesterday. See §6.3.
+
+A storm's Words column is its **wave's `count`** — letters, not words — which
+is what its `wordCount` is (§8.3, §8.7). Its wpm and its accuracy stay — for
+the reason §6.1 gives: it is marked on surviving a wave, and the accuracy bar
+it does carry is the new-key gate's 90% rather than a passage's.
+
+### 5.7 · The twenty storms
+
+The rest of each Hailstorm row, which is the level itself (§8.3). `gap` is the
+ms between spawns and `fall` is the ms to cross the sky, both sampled per
+letter from the range shown; `shield` is hit points per finger; `mends` is the
+combo that repairs the weakest zone, and `—` is none.
+
+|   # | Title            | Len |       gap |      fall | shield | mends | Rains    | seed |
+| --: | ---------------- | --: | --------: | --------: | -----: | ----: | -------- | ---: |
+|   4 | First ice        |  12 | 1500–1900 |  900–1200 |      4 |     4 | —        |    6 |
+|   9 | Home row         |  16 | 1300–1600 |  900–1250 |      3 |     4 | —        |    9 |
+|  13 | Eight lanes      |  18 | 1200–1500 |  900–1150 |      3 |     4 | —        |   13 |
+|  19 | Two rows         |  20 | 1000–1300 | 1000–1500 |      3 |     4 | —        |   19 |
+|  23 | Down low         |  22 |  900–1200 | 1100–1600 |      3 |     5 | —        |   23 |
+|  29 | Whole alphabet   |  24 |  800–1100 | 1200–1700 |      3 |     5 | —        |   29 |
+|  34 | Capitals         |  26 |  750–1050 | 1200–1800 |      3 |     5 | capitals |   34 |
+|  39 | Shift under fire |  28 |  700–1000 | 1300–1900 |      3 |     5 | capitals |   39 |
+|  45 | Pairs            |  30 |   650–950 | 1300–2000 |      3 |     6 | —        |   45 |
+|  49 | Whole words      |  32 |   600–900 | 1400–2000 |      3 |     6 | —        |   49 |
+|  53 | Digits           |  30 |  700–1000 | 1300–1800 |      3 |     6 | digits   |   55 |
+|  59 | Numbers falling  |  34 |   600–850 | 1400–2000 |      3 |     6 | digits   |   59 |
+|  65 | Punctuation      |  34 |   600–850 | 1400–2100 |      3 |     6 | marks    |   66 |
+|  69 | Symbols          |  36 |   550–800 | 1500–2100 |      3 |     6 | marks    |   69 |
+|  73 | The long wave    |  50 |   550–800 | 1500–2200 |      3 |     8 | —        |   74 |
+|  79 | No repairs       |  36 |   500–750 | 1400–2000 |      3 |     — | —        |   79 |
+|  83 | Hard rain        |  40 |   450–650 | 1300–1900 |      3 |     — | —        |   83 |
+|  89 | Whiteout         |  44 |   300–450 | 1900–2600 |      3 |     — | —        |   95 |
+|  93 | Everything falls |  46 |   350–550 | 1300–1900 |      2 |     — | —        |   95 |
+|  99 | The last storm   |  50 |   300–500 | 1200–1800 |      2 |     — | —        |   99 |
+
+**There is no `keys` column, and there cannot be one.** A level's pool is
+`unlockedAt(n)` — the same computed alphabet its neighbours' words come from
+(§5.2) — so a storm can never ask for a key the ladder has not taught, and
+moving a storm up the ladder moves what falls in it. "Rains" is a weighting on
+top of that pool, not a replacement for it: the named class is repeated until
+it is about half of what can fall, which is what makes lesson 53 a level about
+the number row when only `3 4 5 6` have arrived (`storms.ts`). `marks` is that
+module's name for everything which is neither a letter nor a digit nor the
+space — the punctuation and the symbols, stated as the complement so that a
+key added to the layout is in it without an edit.
+
+The table above is not prose: `storms.test.ts` reads it out of this file and
+checks it against the twenty rows that ship, column by column. A design doc
+that disagreed with the code would be a defect here, so it is one the suite can
+see.
+
+Four things about the shape of the table:
+
+- **`gap` clears `fall` at lessons 4, 9 and 13** — one letter on screen at a
+  time, pure reaction (§8.3) — and overlaps from 19 on, which is reading ahead.
+  Measured in a browser at 1280×1000: lesson 4 peaks at one letter in the sky,
+  lesson 45 at three, lesson 89 at seven.
+- **It does not climb smoothly, and must not be smoothed.** Lesson 53's storm
+  eases where the number row has just arrived, exactly as the wpm column does
+  (§6.3, decision 11); lesson 73 is long where 79 is dense. What climbs is each
+  quarter of the twenty, in both length and letters a second, and that is what
+  `storms.test.ts` holds it to.
+- **The repairs stop at 79 and never come back**, which is that level's name
+  and the block's turn: below it the weakest zone mends every `mends` clean
+  hits, above it what breaks stays broken.
+- **No row asks for a fall under `MIN_FALL_MS`** (800ms, §8.10, decision 52).
+  The floor is a backstop, not a knob; a row that went under it would come out
+  of `fallRange` as a metronome and quietly not be what it says.
+
+The seed is the level's own number, or the first above it whose wave keeps the
+level's promises — no zone tinting more than twice a second (§8.10), six of the
+eight fingers used, and no finger taking more than a third of the letters
+(decision 58). Six of the twenty needed the bump — lessons 4, 53, 65, 73, 89
+and 93 — and none of them by more than six.
 
 ---
 
@@ -887,12 +962,13 @@ flipped. A `keyboard` absent from the config is a different matter — free play
 or a run started without a brief in front of it — and absent is not evidence of
 a hidden board, so `=== "off"` refuses it rather than guessing.
 
-**`unbroken` is waiting for the waves, and the guard says so.** A storm level's
-`wordCount` is its wave's `count` (§8.3) and every one of the twenty is `0`
-until STM10 writes them — so `survived` is vacuously true and "cleared a wave"
-is a claim about a wave that does not exist. The badge requires the wave to have
-a length, which is a guard that retires itself the day the waves land rather
-than a line someone has to remember to delete (decision 29). "Shield untouched"
+**`unbroken` requires the wave to have a length, and now every one of them
+does.** A storm level's `wordCount` is its wave's `count` (§5.7, §8.3), so the
+guard that kept the badge unearnable while the twenty rows were `0` has retired
+itself exactly as it was written to (decision 29) — a guard rather than a line
+someone had to remember to delete. It stays because it is still the sentence
+the badge makes: with no wave, `survived` is vacuously true and "cleared a
+wave" is a claim about a wave that does not exist. "Shield untouched"
 is read as **no letter reached the bottom**, which is what takes a point off a
 segment (§8.5): a storm's cards are its falling letters (§8.7), so a run with
 nothing marked wrong is a run where nothing got through. That errs strict, and
@@ -1033,6 +1109,14 @@ is generated up front from `mulberry32(seed)`, exactly as every deck on this
 site is. That makes a run **replayable**, which matters more than it sounds: it
 is what lets a child retry the level that beat them and meet the same storm,
 and it is what makes the rules unit-testable without a browser.
+
+**And the seed is the level's, not the visit's** (decision 58). Each of the
+twenty carries one (§5.7), so opening lesson 45 twice is opening the same level
+twice — "I beat Whiteout" is a sentence about a thing rather than about a roll,
+and the twenty waves the no-strobe rule is measured on (§8.10) are the twenty a
+child actually meets rather than a sample of what a generator might produce.
+"Try this wave again" already meant the same letters in the same lanes; this is
+the same promise across two visits instead of two attempts.
 
 `gap` and `fall` as ranges rather than numbers is what "sometimes even random
 within the level" means. Early levels set `gap` wider than `fall`, so there is
@@ -1258,7 +1342,10 @@ it. So the `×1.6` a child watches climb in the HUD is the figure their XP is
 being paid at, and the score and the payout cannot tell them two different
 stories about one run. The storm may not import `progress.ts` to get it: that
 module reaches `decks/index.ts`, the front door every island downloads, and
-STM10 puts a `WaveSpec` on each storm lesson (§5.3, decision 7).
+`lessons.ts` — which the deck layer imports — names a `WaveSpec` on each storm
+lesson (§5.3, decision 7). It names it as a **type**, which is erased: the
+keyboard layout `storm.ts` reads never reaches that chunk, and the shipped
+build is checked for it (no `ShiftRight` in the shared bundle).
 
 **A wrong key costs `MISS_POINTS` (ten) and the streak.** Equal to a plain hit
 on purpose — one wrong key undoes one clean one, which is a sentence a
@@ -1355,11 +1442,12 @@ hands `useRaceFinish` a `previousBest` of `null`, which is what makes
 `summariseRun.personalRecord` false and the 150 XP unpayable — but it decides
 this run's own panel and nothing else. Every _other_ "best" on the site is
 `bestRun`, which groups a player's runs by `configKey` and picks on
-`compareRuns`, and a storm's key is a lesson's key: without a second signal the
-record book's "your best" column, the house best beside it, and — the moment
-STM10 gives lesson 39 a `WaveSpec` and `lessonKey` starts returning
-`typing|L39|12` — the lesson brief's best and its rival list would all rank
-storms against each other on time, and hand the record to the shortest life.
+`compareRuns`, and a storm's key IS a lesson's key: `lessonKey(lesson)` returns
+`typing|L39|28` and so does `configKey(stormConfig(...))`, because a storm
+level's `wordCount` is its wave's `count` (§5.7). Without a second signal the
+record book's "your best" column, the house best beside it, the lesson brief's
+best and every rival list would rank storms against each other on time, and
+hand the record to the shortest life.
 
 So the run says what it is. `stormConfig` writes **`storm: true`** into its
 `TypingConfig`, `isRanked` in `decks/index.ts` reads it, and `bestRun` drops
@@ -1370,7 +1458,9 @@ a saved run outlives the ladder it was played on (§5.4): re-tune lesson 39 out
 of a Hailstorm and a derived rule would quietly start ranking every storm
 already in the record book. It is optional, never `false`, and inert in
 `configKey` — a storm and its lesson still key identically, which they must, or
-STM10 would orphan every storm already saved.
+the twenty waves landing would have orphaned every storm already saved.
+`stormSession.test.ts` asserts both halves over all twenty: the keys match, and
+`bestRun` and `ghostsFor` still hand back nothing at them.
 
 A run that holds no record is still a run in every other way: the record book
 _lists_ it, it pays its XP, it earns badges, and its letters feed the drill
@@ -1384,9 +1474,13 @@ The XP on the ending panel is the run's own `stormXp` — what its letters paid
 not restated on the panel: the four figures there are about the weather, and a
 bonus line is a results screen's business.
 
-`configKey` is `typing|L39|12` — the lesson, and the **wave's** length, never
+`configKey` is `typing|L39|28` — the lesson, and the **wave's** length, never
 the letters that were survived. Retries of a level therefore compare with each
-other, which is the whole point of the key (§5.4).
+other, which is the whole point of the key (§5.4). It is the same string
+`lessonKey(lesson)` returns, because a storm level's `wordCount` IS its wave's
+`count` (§5.7): sharing a bucket is what makes a retry comparable, and it is
+exactly what makes `storm: true` necessary, because the bucket is what
+`bestRun` ranks.
 
 **Saved exactly once, and a retry is a new run** (decision 51). The run is
 written on the frame `ending` appears, which the reducer sets once and never
@@ -1411,9 +1505,25 @@ Two reasons, and either alone is sufficient:
   the ones that need a reason to keep going; a game level that a child cannot
   beat would be the exact opposite of what it was put there for.
 
-The ladder marks them clearly — a different tile, "worth playing, not
-required" — and the tile is disabled with a reason on a device with no
-keyboard, rather than failing mysteriously.
+The ladder marks them clearly — a diamond rather than a square, and "Hailstorm
+— worth playing, never required" first in every one of the twenty tiles' spoken
+names — and the tile is disabled with a reason on a device with no keyboard,
+rather than failing mysteriously. `tileState` draws it like any other rung
+otherwise: filled behind the child, outlined ahead of them, and locked with
+what would open it on a rung they have not climbed to (`lockNote`, which walks
+down past any storm in the way, so it never asks a child to pass a wave).
+
+**A storm's door is its own screen** (`StormBrief`). The other eighty rungs
+open `LessonBrief`, which is three bars, a best and a keyboard control — and a
+storm has none of the three: it is marked on surviving a wave (§6.1), it holds
+no record at all (decision 50), and its keyboard is not a hint under a passage
+but the gun itself (§8.2). What it says instead is how a storm is played (only
+the lowest letter can be shot, which is not guessable from watching), what
+_this_ storm is — its length, its shield, whether it repairs and what it mostly
+rains, which is what makes "First ice" and "Whiteout" different screens rather
+than one screen with different numbers behind it — and that nothing waits on
+it: **"Lesson 46 opens whether you play this or not"**, in as many words, on
+the one screen with room for the sentence.
 
 **How the tile knows** (`useKeyboardPresence`, decision 53). There is no
 browser API for "a keyboard is attached", so the answer is built out of two
@@ -1452,12 +1562,21 @@ honest answer out; re-proving it costs one keystroke and a child at a keyboard
 makes hundreds.
 
 **And the route is not gated by any of it.** A wrong guess costs a child a
-tile, never the game — `#/p/:id/storm` opens and plays whatever the guess was,
-with the way out drawn on it (§8.11). Measured in a browser (`e2e/smoke.mjs`
-§13): on a touch-only context all twenty storm tiles are `aria-disabled` and
-name the keyboard, the other eighty rungs are untouched, the storm route still
-opens, and one keystroke flips every tile back with nothing reloaded and the
-pointer still reporting a tablet.
+tile, never the game — `#/p/:id/storm/:lessonId` opens and plays whatever the
+guess was, with the way out drawn on it (§8.11). Measured in a browser
+(`e2e/smoke.mjs` §13): on a touch-only context all twenty storm tiles are
+`aria-disabled` and name the keyboard, the other eighty rungs are untouched,
+the storm route still opens, and one keystroke flips every tile back with
+nothing reloaded and the pointer still reporting a tablet.
+
+The skip rule itself is held in the unit suite rather than in the browser, and
+in two halves that meet at the tile. `ladder.test.ts` has the rule — "opens
+lesson 46 when 44 is cleared, whatever happened at 45" takes both endings a
+storm can have, and "is stepped over at every one of the twenty rungs" says it
+is a property of the ladder rather than a fact about lesson 45.
+`LessonLadder.test.tsx` has what a child sees: "leaves a skipped storm open
+behind the pointer" is the storm still enterable with the pointer past it, and
+"says every tile's state out loud" is where `next` is spoken as "Start here".
 
 ### 8.9 · DOM, not canvas
 
@@ -1593,11 +1712,12 @@ falling. What it can and must do:
   each other re-peak, as the 15 ms measurement above found; landings 100 ms
   apart do not — the zone has gone dark and comes back, which is a blink.
   Between roughly 50 ms and 333 ms is therefore a band where a zone genuinely
-  flashes, and **nothing in the generator keeps a wave out of it**. What bounds
-  the risk today is only how often it can happen: WCAG 2.3.1 counts _more than
-  three flashes in any one second_, and the stand-in wave at its fixed seed
-  peaks at **two tint starts per second on any one zone**, with at most two of
-  the eight lit at once.
+  flashes, and **nothing in the generator keeps a wave out of it**. So what is
+  bounded instead is how often it can happen: WCAG 2.3.1 counts _more than
+  three flashes in any one second_, and every one of the twenty levels peaks at
+  **two tint starts per second on any one zone**, with at most two of the eight
+  lit at once — measured on the wave each of them ships (§5.7), which is the
+  wave a child meets and the only one there is (decision 58).
 
   The obvious fix is the wrong one and it is worth writing down before somebody
   reaches for it. **`gap` is not the lever, and there is no `MIN_GAP_MS` to
@@ -1605,21 +1725,55 @@ falling. What it can and must do:
   _land_ on one finger, and because `fall` is a range as well, two letters
   spawned far apart land together: `storm.test.ts`'s "capitals", at `gap`
   600–1000 ms, already lands two letters on one zone 14 ms apart. Measured on
-  "everything falls", the lesson-93 shape: flooring its `gap` at 350 ms takes
-  one zone from four tint starts a second to three, and flooring it at 800 ms —
-  which would make the top of the ladder one letter at a time and delete
-  "whiteout" — still leaves three. A floor on `gap` buys a difficulty ceiling
-  and almost no safety.
+  its "everything falls", the lesson-93 shape: flooring its `gap` at 350 ms
+  takes one zone from four tint starts a second to three, and flooring it at
+  800 ms — which would make the top of the ladder one letter at a time and
+  delete "whiteout" — still leaves three. A floor on `gap` buys a difficulty
+  ceiling and almost no safety.
 
-  So the rule the twenty specs have to keep is **a count of tint starts per
-  zone per second**, read off the built schedule the way `fallRange` says such
-  questions must be. Which of the two ways to keep it — shaping the specs so no
-  zone lands twice inside the band, or making the tint itself rate-insensitive
-  so no spec can — is STM10's to decide, because it is the story that writes
-  the twenty rows and the one that retires the stand-in the numbers above are
-  measured on. The same question is open for `.storm__miss`, whose cadence is
-  not a wave's at all but the rate a child can press wrong keys at, and which
-  `StormState` currently records as a bare count with no times on it.
+  So the rule the twenty specs keep is **a count of tint starts per zone per
+  second**, read off the built schedule the way `fallRange` says such questions
+  must be — and it is kept in **two** places, because the two things that light
+  have two different clocks (decision 57):
+
+  - **A zone's tint is the schedule's, so the seed carries it.**
+    `storms.test.ts` builds every one of the twenty at the seed it ships with
+    and asserts that no zone starts more than **two** tints inside any one
+    second — a full flash a second of headroom under WCAG 2.3.1's own line,
+    which is _more than_ three flashes in any one second — with at most two of
+    the eight zones lit inside one 150 ms tint. The count is deliberately an
+    over-count: landings within ~20 ms re-peak one lit tint and are one visible
+    episode, and counting them separately errs towards the strobe.
+
+    **The guarantee is per shipped seed, and it is worth being exact about
+    that.** A `WaveSpec` is a range, so a spec is not safe or unsafe — a
+    _built wave_ is, and the shipped wave is the one whose seed was derived to
+    keep the rule (§5.7, decision 58). The test re-derives all twenty from that
+    rule rather than trusting the column, so a change to `buildWave` that moved
+    a wave over the line fails loudly instead of shipping. The same twenty
+    specs are also built at sixteen other seeds apiece and held under three,
+    which is a **sample and not a bound**: swept far more widely, four of them
+    (lessons 83, 89, 93 and 99) do reach four or five at seeds nobody is
+    served. Tightening those four rows so the bound held at any seed would be a
+    stronger thing to have, and it is not what ships today.
+
+  - **The score's `--flare` wash is a hand's, so the reducer carries it.** No
+    `WaveSpec` can shape how fast a child presses wrong keys; auto-repeat is
+    already not a shot (decision 44), but eight or ten deliberate presses a
+    second is a seven-year-old having a bad time. So `StormState` grew
+    `missTintAt` — the wave time the wash last started, which is what the HUD
+    mounts the element from — and it only moves once `MIN_TINT_GAP_MS` (500 ms)
+    has passed, which is **two starts inside any second**: the same headroom
+    the zone tints have, on the same screen, for the same five-year-old. 340 ms
+    would have permitted three — 0, 340 and 680 — which is the standard's
+    ceiling with nothing to spare, on the one screen where a child hammers keys
+    _because they are losing_. Every other cost of a miss is charged in full
+    whether it lights or not: the ten points, the streak, the mark against the
+    run. Measured over sixty wrong keys at each of fifteen cadences from 10 ms
+    to 750 ms (`storm.test.ts`): all sixty charged every time, and no second
+    with more than two starts in it. And in a browser (`e2e/smoke.mjs`): eight
+    wrong keys 200 ms apart cost eighty points and draw three flashes, the
+    closest pair over 600 ms apart.
 
 - **Fall speeds are capped** at the top of the ladder. "Whiteout" at lesson 89
   should be hard because there are many letters, not because one is a blur.
@@ -1627,11 +1781,13 @@ falling. What it can and must do:
   The cap is `MIN_FALL_MS` in `buildWave`, and it is there rather than in the
   levels because the twenty `WaveSpec`s are a table and a table gets tightened
   one row at a time until a level nobody can read ships (decision 52). 800ms is
-  a judgement rather than a measured reaction time, and it is anchored to this
-  epic's own level shapes: the fastest fall any of them declares is 800ms, so
-  the floor is the fastest the ladder ever _means_ to be. At the 1280×1000
-  viewport the smoke suite runs at, a fall crosses 615px of sky — 154px/s at
-  the stand-in wave's four seconds, and 769px/s at the floor.
+  a judgement rather than a measured reaction time, and it is anchored to the
+  ladder's own shapes: the fastest fall any of the twenty declares is 900ms
+  (lessons 4, 9 and 13, §5.7), so the floor sits just under the fastest the
+  ladder ever _means_ to be and no row is touched by it. At the 1280×1000
+  viewport the smoke suite runs at, a fall crosses 615px of sky — 236px/s at
+  lesson 89's 2.6 seconds, 683px/s at lesson 13's 900ms, and 769px/s at the
+  floor.
 
   It is a backstop and not a difficulty knob: `fallRange(spec)` is the spec's
   own range with both ends raised to the floor, so a wave written entirely
@@ -1701,13 +1857,13 @@ exactly the child least able to get out of it.
 
 `/typing` keeps its hash router; the island grows three screens.
 
-| Route             | Screen                                                     |
-| ----------------- | ---------------------------------------------------------- |
-| `#/`              | Player select (unchanged)                                  |
-| `#/p/:id`         | **The ladder** — a hundred tiles, plus a Free play section |
-| `#/p/:id/go`      | A lesson run, or a free-play run. Driven by `pending`.     |
-| `#/p/:id/storm`   | A Hailstorm run                                            |
-| `#/p/:id/results` | Results — lesson bars, or the free-play scoreline          |
+| Route                     | Screen                                                     |
+| ------------------------- | ---------------------------------------------------------- |
+| `#/`                      | Player select (unchanged)                                  |
+| `#/p/:id`                 | **The ladder** — a hundred tiles, plus a Free play section |
+| `#/p/:id/go`              | A lesson run, or a free-play run. Driven by `pending`.     |
+| `#/p/:id/storm/:lessonId` | A Hailstorm run — the level is the rung (§5.7)             |
+| `#/p/:id/results`         | Results — lesson bars, or the free-play scoreline          |
 
 The run routes are driven by `RaceContext.pending` exactly as today, so the
 guards that stop a mid-navigation flicker (the ones documented at the top of
@@ -1719,15 +1875,16 @@ around them is how they come back.
 blocks named down the side, cleared tiles filled, the next one lit with `--go`,
 later ones dim, checkpoints marked, Hailstorm tiles a different shape. Choosing
 a tile opens a brief: what it teaches, the three bars it wants, your best if
-you have one, and Start.
+you have one, and Start — or, on a storm, what the wave is and that nothing
+waits on it (`StormBrief`, §8.8).
 
 It is the screen that makes a hundred lessons feel like a map rather than a
 syllabus, and it is the one piece of UI in this epic worth spending real design
 time on.
 
-Component budget: `LessonLadder`, `LessonTile`, `LessonBrief`, `PassBars`,
-`Keyboard`, `StormRun`, `StormField`, `StormShield`, `StormOver`. All under the
-300-line cap;
+Component budget: `LessonLadder`, `LessonTile`, `LessonBrief`, `StormBrief`,
+`PassBars`, `Keyboard`, `StormRun`, `StormField`, `StormShield`, `StormOver`.
+All under the 300-line cap;
 the ladder is the only one that will come close, and the brief splitting out is
 why it won't. `StormRun` is the route and `StormField` is the screen it draws:
 the field is a pure function of one `StormState`, so the wave, the clock and
@@ -1772,63 +1929,68 @@ which is what every run saved before this is.
 
 ## 11 · Decisions, recorded
 
-|     | Decision                                                 | Because                                                                                                      |
-| --- | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| 1   | The keyboard layout is engine, not view                  | The curriculum, the generator and the game's lanes all need it; only the fourth consumer is a picture        |
-| 2   | `code`, not `key`                                        | Shift+`4` produces `$` and there is no `$` key to light up                                                   |
-| 3   | Keys release on a timer, not `keyup`                     | A missed `keyup` leaves a key stuck lit, which is a lie about where the hand is                              |
-| 4   | The board is `aria-hidden`                               | Sixty announcing spans is not accessibility; the passage already carries the state                           |
-| 5   | The visual keyboard is never tappable                    | A tappable board is a hunt-and-peck trainer, which is the thing this is against                              |
-| 6   | Lesson text is generated, not written                    | A hundred hand-written pools is a hundred chances to use a key the child hasn't met                          |
-| 7   | The lexicon must not be reachable from `decks/index.ts`  | The same import took the shared chunk 46 KB → 222 KB once already                                            |
-| 8   | Ghost identity is the lesson, not the passage            | Every run generates different words; keying on them buckets every run alone                                  |
-| 9   | Three pass bars, not one score                           | A single number says you failed; three say what to fix                                                       |
-| 10  | Accuracy is flat and high; speed scales                  | An accuracy bar you can hammer past teaches hammering                                                        |
-| 11  | The speed bar dips when a key arrives                    | You have just got slower and you should have                                                                 |
-| 12  | The new-key gate                                         | 95% and 12 wpm can both be met while getting the lesson's own key wrong every time                           |
-| 13  | Per-key stats come from cards, not keystrokes            | Raw keystrokes would need a `Session` field for one game's benefit; corrections are fairly forgiven          |
-| 14  | Progress is derived, never stored                        | No migration, self-heals when criteria change, cannot disagree with the record book                          |
-| 15  | Unlock is `max(cleared) + 1`                             | Session pruning drops the oldest runs; counting would silently re-lock lesson 1                              |
-| 16  | Any checkpoint, any time                                 | It is a placement test, a skip-ahead and an ordering rule in one sentence                                    |
-| 17  | A lesson has no ghost and no time penalty                | A penalty double-counts accuracy and makes the wpm number a lie                                              |
-| 18  | Hailstorm is a route in the typing island                | It is a level inside the ladder; a second island means a page load mid-progression and a second keyboard     |
-| 19  | Letters fall down their key's column                     | The lane is a spatial hint — the game teaches the layout the whole time it is played                         |
-| 20  | Only the lowest letter can be shot                       | Otherwise spraying the keyboard is a winning strategy                                                        |
-| 21  | The shield is eight finger zones                         | A hole under `o` tells you nothing; a hole under the right ring finger tells you what to practise            |
-| 22  | Score can fall, XP cannot                                | XP is cumulative across years and four games; a bad five minutes must not lower a level                      |
-| 23  | A Hailstorm run is a `Session`                           | Record book, XP, badges and the drill builder all work with no new code                                      |
-| 24  | Hailstorm never gates the ladder                         | A tablet has no keys, and a reward that blocks you is not a reward                                           |
-| 25  | DOM, not canvas                                          | Eleven custom properties change the whole app's biome; a canvas is a hole in that                            |
-| 26  | US ANSI only, and say so                                 | A UK keyboard would fail lessons 62 and 67 for a child doing everything right                                |
-| 27  | A lesson's keyboard seeds; it does not overrule          | All hundred name a mode, so an override beats the player's own setting on every rung                         |
-| 28  | `eyes-up` reads the board the run was typed under        | Checkpoints force it off, so the resolved mode alone awards it for the ten where it was compulsory           |
-| 29  | `unbroken` is gated on the wave having a length          | "The wave exists" retires itself when STM10 lands; "no screen starts one" is a line someone must delete      |
-| 30  | A falling letter is on the field on `[spawn, land)`      | Landing is the tick that resolves a letter, so `gap` exactly equal to `fall` is a handover, not two          |
-| 31  | A letter carries its key, finger and lane                | Resolved against the layout once, so the lane, the shot and the finger named at death cannot drift           |
-| 32  | The target is the greatest fall progress, not `landMs`   | Letters at different speeds cross; landing order aims at a letter visibly higher up the screen               |
-| 33  | An exact tie goes to the earlier spawn                   | The index is the letter's identity, so a replay resolves the same dead heat the same way                     |
-| 34  | A repair never lifts a zone above `spec.shield`          | "Untouched" has to keep meaning the eight-of-`shield` a run started with                                     |
-| 35  | A tick resolves every landing inside it                  | A backgrounded tab hands back seconds; clamping the delta is the clock's call, not the rule's                |
-| 36  | The field's lanes step back half a `--key-gap`           | `keyX` centres a key's slot; the child aims at the cap drawn inside it, and half the gap is the difference   |
-| 37  | `--key` is declared once, at the root                    | It lived on the board, which the field above it cannot read — and a second clamp is two ideas of a key       |
-| 38  | A frame is clamped to 100ms of wave time                 | A hidden tab hands back seconds; running slow below 10fps beats teleporting letters through the shield       |
-| 39  | The loop writes `--drop`; the stylesheet owns the fall   | Geometry stays off one `--key` and the sky's own height, so the loop holds no second opinion about either    |
-| 40  | The field re-renders on the picture, not on the frame    | `tick` and `fire` hand back a fresh object either way, so identity is not a "nothing changed" signal         |
-| 41  | A shield segment is its finger's home-row span           | All four rows divide into eight, but the stagger moves the seams; the home row is the one the hands rest on  |
-| 42  | A tint is an element keyed by a counter, not a class     | A single-pass animation on a new node cannot restart on a frame where nothing happened, which is a strobe    |
-| 43  | A stroke at an empty sky flares the whole board          | It costs ten points and the streak, and a key that costs a child points must not light `--lime`              |
-| 44  | Key auto-repeat is not a shot                            | A held key is one stroke, not thirty a second of spraying, drained score and flashing red                    |
-| 45  | The HUD is drawn inside the sky, not as a row of its own | `.storm`'s only flexible track is the sky, and on a short viewport it has nothing left to give               |
-| 46  | A wrong key costs score; a letter through costs shield   | One failure, one cost — the landing has already taken the thing that ends runs                               |
-| 47  | The ending stands where the board did                    | The gun is dead, and the sky it leaves whole is the shield with the hole in it that the sentence is about    |
-| 48  | A storm's cards are its letters, not its keystrokes      | `survived` counts cards, `unbroken` reads "nothing wrong" as "nothing through"; a card per key moves both    |
-| 49  | A letter that got through is a `timedOut` card           | The clock it ran out is its own fall, and it ranks the keys never reached above the ones merely mistyped     |
-| 50  | A storm has no ghost and holds no record                 | Any best is `compareRuns`, i.e. time — so it goes to dying at letter three; XP was only half of it           |
-| 51  | A retry is a new run, so it is a remount                 | The finish guard, the history snapshot and the clock all have to start again; one instance is one run        |
-| 52  | Fall time has a floor, in the generator                  | The twenty specs are a table, and a table gets tightened a row at a time until a level nobody can read ships |
-| 53  | A keystroke proves a keyboard; the pointer only guesses  | Every proxy is wrong about somebody, and wrongly shut is a child locked out where wrongly open is a dud tile |
-| 54  | The quit sheet is the storm's pause                      | A wave falling behind it would break a shield while a child read "it won't be saved"                         |
-| 55  | `Escape` leaves, and is taken before the trigger         | Every other key while a run is live is a shot, so a way out on a second listener would cost ten points       |
+|     | Decision                                                      | Because                                                                                                         |
+| --- | ------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| 1   | The keyboard layout is engine, not view                       | The curriculum, the generator and the game's lanes all need it; only the fourth consumer is a picture           |
+| 2   | `code`, not `key`                                             | Shift+`4` produces `$` and there is no `$` key to light up                                                      |
+| 3   | Keys release on a timer, not `keyup`                          | A missed `keyup` leaves a key stuck lit, which is a lie about where the hand is                                 |
+| 4   | The board is `aria-hidden`                                    | Sixty announcing spans is not accessibility; the passage already carries the state                              |
+| 5   | The visual keyboard is never tappable                         | A tappable board is a hunt-and-peck trainer, which is the thing this is against                                 |
+| 6   | Lesson text is generated, not written                         | A hundred hand-written pools is a hundred chances to use a key the child hasn't met                             |
+| 7   | The lexicon must not be reachable from `decks/index.ts`       | The same import took the shared chunk 46 KB → 222 KB once already                                               |
+| 8   | Ghost identity is the lesson, not the passage                 | Every run generates different words; keying on them buckets every run alone                                     |
+| 9   | Three pass bars, not one score                                | A single number says you failed; three say what to fix                                                          |
+| 10  | Accuracy is flat and high; speed scales                       | An accuracy bar you can hammer past teaches hammering                                                           |
+| 11  | The speed bar dips when a key arrives                         | You have just got slower and you should have                                                                    |
+| 12  | The new-key gate                                              | 95% and 12 wpm can both be met while getting the lesson's own key wrong every time                              |
+| 13  | Per-key stats come from cards, not keystrokes                 | Raw keystrokes would need a `Session` field for one game's benefit; corrections are fairly forgiven             |
+| 14  | Progress is derived, never stored                             | No migration, self-heals when criteria change, cannot disagree with the record book                             |
+| 15  | Unlock is `max(cleared) + 1`                                  | Session pruning drops the oldest runs; counting would silently re-lock lesson 1                                 |
+| 16  | Any checkpoint, any time                                      | It is a placement test, a skip-ahead and an ordering rule in one sentence                                       |
+| 17  | A lesson has no ghost and no time penalty                     | A penalty double-counts accuracy and makes the wpm number a lie                                                 |
+| 18  | Hailstorm is a route in the typing island                     | It is a level inside the ladder; a second island means a page load mid-progression and a second keyboard        |
+| 19  | Letters fall down their key's column                          | The lane is a spatial hint — the game teaches the layout the whole time it is played                            |
+| 20  | Only the lowest letter can be shot                            | Otherwise spraying the keyboard is a winning strategy                                                           |
+| 21  | The shield is eight finger zones                              | A hole under `o` tells you nothing; a hole under the right ring finger tells you what to practise               |
+| 22  | Score can fall, XP cannot                                     | XP is cumulative across years and four games; a bad five minutes must not lower a level                         |
+| 23  | A Hailstorm run is a `Session`                                | Record book, XP, badges and the drill builder all work with no new code                                         |
+| 24  | Hailstorm never gates the ladder                              | A tablet has no keys, and a reward that blocks you is not a reward                                              |
+| 25  | DOM, not canvas                                               | Eleven custom properties change the whole app's biome; a canvas is a hole in that                               |
+| 26  | US ANSI only, and say so                                      | A UK keyboard would fail lessons 62 and 67 for a child doing everything right                                   |
+| 27  | A lesson's keyboard seeds; it does not overrule               | All hundred name a mode, so an override beats the player's own setting on every rung                            |
+| 28  | `eyes-up` reads the board the run was typed under             | Checkpoints force it off, so the resolved mode alone awards it for the ten where it was compulsory              |
+| 29  | `unbroken` is gated on the wave having a length               | "The wave exists" retires itself when STM10 lands; "no screen starts one" is a line someone must delete         |
+| 30  | A falling letter is on the field on `[spawn, land)`           | Landing is the tick that resolves a letter, so `gap` exactly equal to `fall` is a handover, not two             |
+| 31  | A letter carries its key, finger and lane                     | Resolved against the layout once, so the lane, the shot and the finger named at death cannot drift              |
+| 32  | The target is the greatest fall progress, not `landMs`        | Letters at different speeds cross; landing order aims at a letter visibly higher up the screen                  |
+| 33  | An exact tie goes to the earlier spawn                        | The index is the letter's identity, so a replay resolves the same dead heat the same way                        |
+| 34  | A repair never lifts a zone above `spec.shield`               | "Untouched" has to keep meaning the eight-of-`shield` a run started with                                        |
+| 35  | A tick resolves every landing inside it                       | A backgrounded tab hands back seconds; clamping the delta is the clock's call, not the rule's                   |
+| 36  | The field's lanes step back half a `--key-gap`                | `keyX` centres a key's slot; the child aims at the cap drawn inside it, and half the gap is the difference      |
+| 37  | `--key` is declared once, at the root                         | It lived on the board, which the field above it cannot read — and a second clamp is two ideas of a key          |
+| 38  | A frame is clamped to 100ms of wave time                      | A hidden tab hands back seconds; running slow below 10fps beats teleporting letters through the shield          |
+| 39  | The loop writes `--drop`; the stylesheet owns the fall        | Geometry stays off one `--key` and the sky's own height, so the loop holds no second opinion about either       |
+| 40  | The field re-renders on the picture, not on the frame         | `tick` and `fire` hand back a fresh object either way, so identity is not a "nothing changed" signal            |
+| 41  | A shield segment is its finger's home-row span                | All four rows divide into eight, but the stagger moves the seams; the home row is the one the hands rest on     |
+| 42  | A tint is an element keyed by a counter, not a class          | A single-pass animation on a new node cannot restart on a frame where nothing happened, which is a strobe       |
+| 43  | A stroke at an empty sky flares the whole board               | It costs ten points and the streak, and a key that costs a child points must not light `--lime`                 |
+| 44  | Key auto-repeat is not a shot                                 | A held key is one stroke, not thirty a second of spraying, drained score and flashing red                       |
+| 45  | The HUD is drawn inside the sky, not as a row of its own      | `.storm`'s only flexible track is the sky, and on a short viewport it has nothing left to give                  |
+| 46  | A wrong key costs score; a letter through costs shield        | One failure, one cost — the landing has already taken the thing that ends runs                                  |
+| 47  | The ending stands where the board did                         | The gun is dead, and the sky it leaves whole is the shield with the hole in it that the sentence is about       |
+| 48  | A storm's cards are its letters, not its keystrokes           | `survived` counts cards, `unbroken` reads "nothing wrong" as "nothing through"; a card per key moves both       |
+| 49  | A letter that got through is a `timedOut` card                | The clock it ran out is its own fall, and it ranks the keys never reached above the ones merely mistyped        |
+| 50  | A storm has no ghost and holds no record                      | Any best is `compareRuns`, i.e. time — so it goes to dying at letter three; XP was only half of it              |
+| 51  | A retry is a new run, so it is a remount                      | The finish guard, the history snapshot and the clock all have to start again; one instance is one run           |
+| 52  | Fall time has a floor, in the generator                       | The twenty specs are a table, and a table gets tightened a row at a time until a level nobody can read ships    |
+| 53  | A keystroke proves a keyboard; the pointer only guesses       | Every proxy is wrong about somebody, and wrongly shut is a child locked out where wrongly open is a dud tile    |
+| 54  | The quit sheet is the storm's pause                           | A wave falling behind it would break a shield while a child read "it won't be saved"                            |
+| 55  | `Escape` leaves, and is taken before the trigger              | Every other key while a run is live is a shot, so a way out on a second listener would cost ten points          |
+| 56  | A storm level cannot name its own keys                        | The row holds a `WaveSpec` minus `keys`, so the pool can only be `unlockedAt(n)` and reachability is structural |
+| 57  | The miss flash has a floor, in the reducer                    | A zone's tint rate is the schedule's and the specs keep it; a wrong key's is a hand's, and no spec can          |
+| 58  | A storm's seed is the level's, not the visit's                | A level is the same weather twice, and the twenty waves measured for strobe are the twenty a child meets        |
+| 59  | A lesson is cleared only by a run that says it is that lesson | A drill files under the lesson's mode, so mode alone would let practising a lesson clear it                     |
+| 60  | A storm's brief is its own screen                             | Three bars, a best and a keyboard control are three things a storm does not have, and it has three of its own   |
 
 ---
 
@@ -1845,6 +2007,20 @@ The four that carry this epic, in the order they are worth writing:
    produces byte-identical keys. Runs from before must still find their ghosts.
 4. **The storm reducer.** Spawn schedule, lowest-target resolution, shield
    depletion, repair, scoring, death — all pure, all without a DOM.
+
+Plus the two the twenty storms brought with them, both in `storms.test.ts`:
+
+5. **No zone can strobe.** Every one of the twenty waves that ship starts at
+   most two tints on any one zone inside any one second — a flash under WCAG
+   2.3.1's line of more than three — and the seed that makes that true is
+   re-derived by the test rather than trusted (§8.10, decision 58). The same
+   specs at sixteen other seeds are held under three, as a sample rather than
+   as a property of the specs. Read off the built schedule, because `fall` is a
+   range and the question is about landings rather than about spawns.
+6. **The doc and the specs agree.** §5.7's table is read out of
+   `docs/typing.md` and compared with the shipped rows column by column. A
+   design doc that disagreed with the code would be a defect here, so it is one
+   the suite can see.
 
 Plus the ones that are cheap and catch the embarrassing failures: `strokeFor`
 round-trips every character in every lesson; the hundred lessons have unique

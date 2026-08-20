@@ -7,6 +7,8 @@ import { cardXp, stormXp } from "@/engine/progress";
 import { unlockedAt } from "./keys";
 import {
   MIN_FALL_MS,
+  MIN_TINT_GAP_MS,
+  MISS_POINTS,
   SHIELD_FINGERS,
   buildWave,
   fallRange,
@@ -126,11 +128,20 @@ const SPECS: [name: string, spec: WaveSpec][] = [
   ["the long wave", spec({ keys: [...unlockedAt(100)], count: 60 })],
 ];
 
-/** The specs whose `gap` clears their `fall` — the levels that are pure reaction. */
-const REACTION = SPECS.filter(([, s]) => s.gap[0] >= s.fall[1]);
-
-/** The specs whose ranges overlap — the levels that stack letters up. */
-const STACKING = SPECS.filter(([, s]) => s.gap[1] < s.fall[0]);
+/**
+ * The specs whose `gap` clears their `fall` — the levels that are pure
+ * reaction — and the ones whose ranges overlap.
+ *
+ * Both read `fallRange(spec)` and never `spec.fall`, which is what
+ * `fallRange`'s own docstring asks for: `MIN_FALL_MS` can only ever RAISE a
+ * fall, so a spec that declared "one letter at a time" with falls under the
+ * floor gets letters that overlap — and a classifier reading the declaration
+ * would put it in the group whose assertion is that they never do. Today's
+ * fixtures are all above the floor, so the two readings agree; the pair at the
+ * bottom of this file is what keeps that a fact rather than an assumption.
+ */
+const REACTION = SPECS.filter(([, s]) => s.gap[0] >= fallRange(s)[1]);
+const STACKING = SPECS.filter(([, s]) => s.gap[1] < fallRange(s)[0]);
 
 /**
  * The most letters on the field at any one moment.
@@ -499,7 +510,7 @@ describe("when gap clears fall, one letter falls at a time", () => {
 
     for (const [name, s] of REACTION) {
       expect(s.gap[0], `${name} is a reaction level`).toBeGreaterThanOrEqual(
-        s.fall[1],
+        fallRange(s)[1],
       );
       for (const seed of SEEDS)
         expect(maxOnScreen(buildWave(s, seed)), `${name} @ ${seed}`).toBe(1);
@@ -512,6 +523,26 @@ describe("when gap clears fall, one letter falls at a time", () => {
     const s = spec({ count: 30, gap: [900, 900], fall: [900, 900] });
     for (const seed of SEEDS)
       expect(maxOnScreen(buildWave(s, seed)), `@ ${seed}`).toBe(1);
+  });
+
+  it("is not a reaction level just because the row says so", () => {
+    // The floor raises a fall and can therefore turn a spacing promise into an
+    // overlap (§8.10, `fallRange`): this spec's own numbers read as one letter
+    // at a time — 700ms between spawns against a 500ms fall — and the wave it
+    // builds puts two on screen, because every letter falls for 800ms. Which
+    // is the right way for it to go; the alternative is a level keeping its
+    // promise by dropping letters nobody could read.
+    //
+    // It is here because the classification above is otherwise only ever asked
+    // of specs written above the floor, where the two readings agree and a
+    // classifier reading `spec.fall` would look correct forever.
+    const s = spec({ count: 20, gap: [700, 700], fall: [300, 500] });
+    expect(s.gap[0], "reads as a reaction level").toBeGreaterThanOrEqual(
+      s.fall[1],
+    );
+    expect(s.gap[0], "and is not one").toBeLessThan(fallRange(s)[1]);
+    for (const seed of SEEDS)
+      expect(maxOnScreen(buildWave(s, seed)), `@ ${seed}`).toBe(2);
   });
 
   it("stops holding one millisecond the other side of it", () => {
@@ -858,6 +889,113 @@ describe("a wrong key costs", () => {
     expect(through.score, "and cost the score nothing").toBe(hit.score);
     expect(through.misses, "it is not a wrong key").toBe(0);
     expect(through.combo, "it does break the streak").toBe(0);
+  });
+});
+
+/* ── The miss flash, and the one cadence a wave cannot shape (decision 57) ──
+ *
+ * §8.10's "no strobe, ever, in any mode" is kept two different ways, because
+ * the two things that light have two different clocks. A shield zone tints
+ * when a letter LANDS, so its rate is a property of the schedule and each of
+ * the twenty levels is held to two a second at its own seed (`storms.test.ts`).
+ * The score's `--flare` wash fires when a child presses a WRONG KEY, and no
+ * spec can shape a hand: auto-repeat is already not a shot (decision 44), but
+ * eight or ten deliberate presses a second is a seven-year-old having a bad
+ * time and not a bug to defend against.
+ *
+ * So the wash carries its own floor, here in the reducer where the clock is.
+ * What a miss costs is unchanged and unconditional; what is rate-limited is
+ * only the moment the HUD mounts a fresh element from (`StormHud`).
+ */
+describe("the miss flash cannot be strobed by a fast hand", () => {
+  /** A run with a letter in the air, so a wrong key is a miss and not a stroke
+   * at an empty sky — the two cost the same, and this keeps the cause plain. */
+  const live = () => to(runOf([at("f", 0, 20_000)]), 0);
+
+  it("is unlit until the first miss", () => {
+    expect(live().missTintAt).toBeNull();
+    expect(startStorm(buildWave(spec({}), 3)).missTintAt).toBeNull();
+  });
+
+  it("lights at the moment of the miss, in wave time", () => {
+    const missed = fire(to(live(), 1234), "KeyZ");
+    expect(missed.missTintAt).toBe(1234);
+    expect(missed.misses).toBe(1);
+  });
+
+  it("does not relight while the last flash is still recent", () => {
+    let state = fire(to(live(), 1000), "KeyZ");
+    const lit = state.missTintAt;
+
+    // Six more wrong keys over the next 300ms — a hand going about as fast as
+    // a hand goes. Every one of them costs ten points and the streak; none of
+    // them mounts a second element.
+    for (let ms = 1050; ms <= 1300; ms += 50)
+      state = fire(to(state, ms), "KeyZ");
+
+    expect(state.misses, "every miss counted").toBe(7);
+    expect(state.score, "and every miss charged").toBe(-70);
+    expect(state.missTintAt, "one flash, not seven").toBe(lit);
+  });
+
+  it("lights again once the gap has passed", () => {
+    const first = fire(to(live(), 0), "KeyZ");
+    const inside = fire(to(first, MIN_TINT_GAP_MS - 1), "KeyZ");
+    const after = fire(to(inside, MIN_TINT_GAP_MS), "KeyZ");
+
+    expect(inside.missTintAt).toBe(0);
+    expect(after.missTintAt).toBe(MIN_TINT_GAP_MS);
+  });
+
+  it("stays at two flashes in any one second, whatever the hand does", () => {
+    // **Two, not three.** WCAG 2.3.1's line is *more than three* flashes in
+    // any one second, and a gap of `g` permits `ceil(1000 / g)` starts inside
+    // one — so 340ms would have sat exactly on the line with nothing to spare,
+    // and 500 buys the second flash back. That is the same headroom the twenty
+    // waves' zone tints ship with (§8.10), on the same screen, for the same
+    // five-year-old. Counted the way `storms.test.ts` counts a zone's: starts
+    // inside a sliding second, anchored at each start, which is where every
+    // window's maximum sits.
+    //
+    // Swept rather than hammered at one rate, because the worst case is not
+    // the fastest hand. A hand landing just inside the gap is the one that
+    // reached three, and no amount of pressing faster finds it — so the sweep
+    // walks the cadences either side of the constant as well as the ones a
+    // child can actually produce.
+    const PRESSES = 60;
+    // A letter that outlasts the whole sweep, so every press is a miss inside
+    // a live run rather than a key at a run that has already ended.
+    const held = () => to(runOf([at("f", 0, 120_000)]), 0);
+
+    for (const cadence of [
+      10, 20, 40, 60, 100, 150, 200, 250, 333, 400, 450, 499, 500, 501, 750,
+    ]) {
+      let state = held();
+      const lit: number[] = [];
+      for (let press = 0; press < PRESSES; press++) {
+        state = fire(to(state, press * cadence), "KeyZ");
+        if (state.missTintAt !== null && state.missTintAt !== lit.at(-1))
+          lit.push(state.missTintAt);
+      }
+
+      // Every cost of a miss is charged in full at every cadence. Only the
+      // tint is throttled, and that is the whole of decision 57.
+      expect(state.misses, `${cadence}ms: every miss counted`).toBe(PRESSES);
+      expect(state.score, `${cadence}ms: every miss charged`).toBe(
+        -MISS_POINTS * PRESSES,
+      );
+      expect(state.combo, `${cadence}ms: every miss broke the streak`).toBe(0);
+      expect(
+        lit.length,
+        `${cadence}ms: the premise, a wash that does light`,
+      ).toBeGreaterThan(0);
+
+      for (const start of lit)
+        expect(
+          lit.filter((other) => other >= start && other - start < 1000).length,
+          `${cadence}ms, from ${start}ms`,
+        ).toBeLessThanOrEqual(2);
+    }
   });
 });
 

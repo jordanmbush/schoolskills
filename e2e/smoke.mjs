@@ -464,8 +464,20 @@ try {
   await page.getByText("Smoke", { exact: false }).first().click();
   await page.waitForTimeout(700);
   const player = (await page.evaluate(() => location.hash)).replace("#/p/", "");
-  // Nothing links to the storm until the ladder grows its tiles, so the URL is
-  // the only way in — which is what the route is for at this stage.
+  /**
+   * Open lesson 4's storm — "First ice", the first of the twenty (§5.6).
+   *
+   * By URL rather than by pressing its tile, which section 13 does: what these
+   * sections are about is the game, and a tile press would put the ladder's
+   * unlock rule in front of every one of them. The rung is in the path because
+   * a storm is a level (`#/p/:id/storm/:lessonId`).
+   *
+   * Lesson 4 is the one the numbers below are of: twelve letters, one at a
+   * time — `gap` clears `fall`, so this level never puts two on screen — over
+   * about twenty seconds, from the seed the table gives it. Being able to sit
+   * through a whole wave is why the FIRST storm is the one measured.
+   */
+  const STORM_LESSON = "L04";
   const storm = async () => {
     // Out to the ladder first, so this is a fresh mount every time it is
     // called: a hash set to the one it already holds fires no navigation, and
@@ -474,30 +486,33 @@ try {
     // has — the HUD's Quit button and `Escape` both open the sheet (§8.11),
     // and section 12 leaves that way on purpose.
     await page.evaluate((id) => (location.hash = `#/p/${id}`), player);
-    await page.evaluate((id) => (location.hash = `#/p/${id}/storm`), player);
+    await page.evaluate(
+      ([id, lesson]) => (location.hash = `#/p/${id}/storm/${lesson}`),
+      [player, STORM_LESSON],
+    );
     await page.waitForSelector(".storm__letter", { timeout: 8000 });
   };
 
   await storm();
   /*
-   * Thirty-six readings across 900ms, rather than two readings 300ms apart —
-   * and the difference is the entire value of the check.
+   * Twenty-eight readings across 700ms, rather than two readings apart — and
+   * the difference is the entire value of the check.
    *
-   * The stand-in wave spawns a letter every 300ms and every spawn is a redraw,
-   * so React rewrites each stone's inline `--drop` from `state.timeMs` at
-   * least once inside any 300ms window. Two readings that far apart therefore
-   * move whether or not the rAF loop writes anything at all: delete the loop's
-   * only side effect and the pair still differs, because the re-render alone
-   * carried the stone. What the re-render cannot fake is the SHAPE of the
-   * motion — without the loop the stone climbs a 300ms staircase, three or
-   * four distinct positions across this window, where the loop gives one per
-   * frame. So the assertion is on the count of distinct positions, which is
-   * the one number a staircase and a fall cannot both satisfy.
+   * Every spawn is a redraw, so React rewrites each stone's inline `--drop`
+   * from `state.timeMs` whenever the picture changes. Two readings far enough
+   * apart therefore move whether or not the rAF loop writes anything at all:
+   * delete the loop's only side effect and the pair still differs, because the
+   * re-render alone carried the stone. What the re-render cannot fake is the
+   * SHAPE of the motion — without the loop this level's stone would sit still
+   * until the next spawn a second and a half later, one position across this
+   * whole window, where the loop gives one per frame. So the assertion is on
+   * the count of distinct positions, which is the one number a staircase and a
+   * fall cannot both satisfy.
    *
    * The element is held rather than re-queried between readings: React keys
    * the sky by wave index, so this node survives every re-render for as long
-   * as its letter is airborne — and the wave's first letter falls for four
-   * seconds, comfortably longer than this samples for.
+   * as its letter is airborne — and this level's first letter falls for 900ms,
+   * which is why the window below is 700 and not a second.
    */
   const fall = await page.evaluate(async () => {
     // The first stone in DOM order, which is wave-index (spawn) order because
@@ -506,14 +521,14 @@ try {
     // reorders, so it is the same element on every reading below.
     const stone = document.querySelector(".storm__letter");
     const tops = [];
-    for (let i = 0; i < 36; i++) {
+    for (let i = 0; i < 28; i++) {
       tops.push(stone.getBoundingClientRect().top);
       await new Promise((done) => window.setTimeout(done, 25));
     }
     return {
       // Rounded to whole pixels so sub-pixel noise cannot be counted as
       // movement. A frame of this wave is several pixels, so nothing real is
-      // rounded away, and a 300ms step is roughly fifty.
+      // rounded away, and a whole spawn gap is the height of the sky.
       distinct: new Set(tops.map((top) => Math.round(top))).size,
       samples: tops.length,
       // The loop and the render must never disagree about `--drop`, so the
@@ -529,8 +544,8 @@ try {
   check(
     "a stone moves on every frame, not once per spawn",
     fall.distinct >= 12 && fall.forwards && fall.attached,
-    `${fall.distinct} distinct positions in ${fall.samples} readings over 900ms, ` +
-      `${fall.travelled}px travelled (a per-spawn staircase gives 3)`,
+    `${fall.distinct} distinct positions in ${fall.samples} readings over 700ms, ` +
+      `${fall.travelled}px travelled (a per-spawn staircase gives 1)`,
   );
   check(
     "the loop has exactly one frame in flight while it runs",
@@ -646,13 +661,13 @@ try {
     );
   });
 
-  // And a run that reaches its end stops itself. The stand-in wave is twelve
-  // letters over 7.3s, and nothing is pressed at it, so this waits out a whole
-  // storm and every letter of it lands.
+  // And a run that reaches its end stops itself. Lesson 4's wave is twelve
+  // letters over twenty seconds, and nothing is pressed at it, so this waits
+  // out a whole storm and every letter of it lands.
   await storm();
   await page
     .waitForFunction(() => window.__pendingFrames() === 0, null, {
-      timeout: 15000,
+      timeout: 30000,
     })
     .catch(() => {});
   const ended = await page.evaluate(() => ({
@@ -718,16 +733,21 @@ try {
     damage.tints.filter((tint) => tint.name !== "storm-hit").length === 0,
     [...new Set(damage.tints.map((tint) => tint.name))].join() || "none",
   );
-  // Three zones took three letters each in this wave, and a zone at zero is a
-  // hole — drawn as one, off the same number the reducer holds. Twelve
-  // landings is what the numbers below are of: shoot one of those letters and
-  // its zone keeps the point, which the run after this one does.
+  // Lesson 4's wave drops four of its twelve letters on the right index and
+  // three on the right ring, against a shield of four (§5.6) — so exactly one
+  // zone is emptied and drawn as a hole, off the same number the reducer
+  // holds, and no fifth letter ever lands on it. That is the level's own
+  // promise: the first storm a child meets cannot end before its letters do
+  // (`storms.test.ts`), so twelve landings is what the census above is of.
   const holes = damage.zones.filter((zone) => zone.hole);
   check(
     "a zone the storm emptied is drawn as a hole",
-    holes.length === 3 &&
+    holes.length === 1 &&
       holes.every((zone) => zone.hp === 0) &&
-      holes.map((zone) => zone.finger).join() === "l-index,r-index,r-middle",
+      holes.map((zone) => zone.finger).join() === "r-index" &&
+      // And the zone that took three of four is drawn short but whole, which
+      // is what makes the hole above a hole rather than a colour.
+      damage.zones.some((zone) => !zone.hole && zone.hp === 0.25),
     damage.zones.map((z) => `${z.finger}:${z.hp.toFixed(2)}`).join(" "),
   );
 
@@ -736,13 +756,13 @@ try {
    *
    * A browser is the only place two halves of it can be checked at once. The
    * panel stands in the BOARD's grid track rather than over the sky, which is
-   * what leaves the shield — with its three holes still in it — on screen
-   * beside the sentence about it; the unit suite renders the panel alone and
-   * cannot see either the board it replaced or the eight segments it left
-   * behind. This run is the cleared ending, because nothing was pressed at it
-   * and every letter therefore resolved; the breach ending has no reachable
-   * wave in the stand-in (three zones take three letters each and the shield
-   * is three deep), and its wording is `StormOver.test.tsx`'s.
+   * what leaves the shield — with the hole still in it — on screen beside the
+   * sentence about it; the unit suite renders the panel alone and cannot see
+   * either the board it replaced or the eight segments it left behind. This
+   * run is the cleared ending, because nothing was pressed at it and every
+   * letter therefore resolved; the breach ending is not reachable on this
+   * level at all (§5.6: no zone takes more letters than its four-deep shield
+   * can hold), and its wording is `StormOver.test.tsx`'s.
    */
   const over = await page.evaluate(() => {
     const panel = document.querySelector(".storm__over");
@@ -765,8 +785,8 @@ try {
     "a run that ends says what the storm did, where the board was",
     over.text?.includes("Wave cleared") &&
       over.text.includes("Shield left") &&
-      // Twelve landed and the shield is eight zones of three deep.
-      over.text.includes("12/24") &&
+      // Twelve landed, and lesson 4's shield is eight zones of four deep.
+      over.text.includes("20/32") &&
       over.buttons.join("|") === "Try this wave again|Back to the ladder" &&
       over.keys === 0 &&
       over.zones === 8 &&
@@ -788,9 +808,12 @@ try {
    * unit suite. What is measured here is the join: press a key, read the HUD.
    *
    * Every press is deterministic without knowing the wave, because the target
-   * is the lowest letter and this stand-in falls every letter at one speed —
-   * so the lowest is the earliest still on the field, and its own character
-   * shoots it.
+   * is a thing the field says out loud: the lowest letter is the greatest
+   * `--drop` (§8.4, decision 32), which the loop writes onto every stone, and
+   * its own character shoots it. Read that way rather than as "the earliest
+   * still on the field", which is a different ordering the moment two letters
+   * fall at different speeds — and every one of the twenty levels draws its
+   * falls from a range (§8.3).
    *
    * ── Nothing here may read the field and then act on the reading ───────────
    * The reducer marks a key against the target it holds **when the key
@@ -846,22 +869,24 @@ try {
   const read = () =>
     page.evaluate(() => {
       const stones = [...document.querySelectorAll(".storm__letter")];
-      // Lowest is the earliest spawn here, and `data-stone` is the letter's
-      // index in the wave, which is spawn order (§8.3).
+      // Lowest is the greatest `--drop`, with the earlier spawn taking an
+      // exact tie — `targetIndex`, read off the field (§8.4, decision 33).
+      const dropOf = (stone) =>
+        Number(window.getComputedStyle(stone).getPropertyValue("--drop"));
       let low = null;
       for (const stone of stones)
         if (
           low === null ||
-          Number(stone.dataset.stone) < Number(low.dataset.stone)
+          dropOf(stone) > dropOf(low) ||
+          (dropOf(stone) === dropOf(low) &&
+            Number(stone.dataset.stone) < Number(low.dataset.stone))
         )
           low = stone;
       return {
         chars: stones.map((stone) => stone.textContent.toLowerCase()),
         index: low && Number(low.dataset.stone),
         ch: low && low.textContent,
-        drop:
-          low &&
-          Number(window.getComputedStyle(low).getPropertyValue("--drop")),
+        drop: low && dropOf(low),
       };
     });
 
@@ -875,36 +900,40 @@ try {
    * reading is at best one round trip stale. This pays one, and the answer is
    * a frame old.
    *
-   * `0.7` is the last drop it will aim at. `--drop` is the 0→1 the renderer
-   * writes on each stone (STM03), the stand-in's fall is four seconds of wave
+   * `0.35` is the last drop it will aim at. `--drop` is the 0→1 the renderer
+   * writes on each stone (STM03), lesson 4's falls are 900–1200ms of wave
    * time, and wave time only ever runs slower than the clock — so leaving the
-   * last three tenths of a fall unshot leaves at least 1.2s of real time for
+   * last two thirds of a fall unshot leaves at least 580ms of real time for
    * the press to arrive in. Waiting is the ordinary case and not a slow
-   * machine: a letter spawns every 300ms, this shoots faster than that, and
-   * the sky between a shot and the next spawn is genuinely empty.
+   * machine: this level puts one letter on screen at a time and spawns the
+   * next 1.5–1.9s later, so the sky between a shot and the next spawn is
+   * genuinely empty.
    *
-   * **The budget is short on purpose.** There are only two reasons to wait —
-   * the next spawn (300ms) and, at the very start, a first letter that was
-   * already too low when the driver arrived. Neither takes 2.5s, and past that
-   * the wave has simply outrun the hand: from the first landing onwards the
-   * lowest letter is always in the last tenth of its fall, so there is no
-   * letter left that a press can be promised to reach and no amount of further
-   * waiting will produce one. A fresh wave is the only way back, which is what
-   * `cleanRun` does with this `null`.
+   * **The budget is generous enough for one spawn gap and no more.** There are
+   * only two reasons to wait — the next spawn, and at the very start a first
+   * letter that was already too low when the driver arrived. Past that the
+   * wave has outrun the hand: the lowest letter is always deep in its fall, so
+   * there is no letter left that a press can be promised to reach and no
+   * amount of further waiting will produce one. A fresh wave is the only way
+   * back, which is what `cleanRun` does with this `null`.
    */
-  const armed = async (budgetMs = 2500) => {
+  const armed = async (budgetMs = 3000) => {
     const handle = await page
       .waitForFunction(
         (room) => {
           const stones = [...document.querySelectorAll(".storm__letter")];
           if (stones.length === 0) return null;
+          const dropOf = (stone) =>
+            Number(window.getComputedStyle(stone).getPropertyValue("--drop"));
           let low = stones[0];
           for (const stone of stones)
-            if (Number(stone.dataset.stone) < Number(low.dataset.stone))
+            if (
+              dropOf(stone) > dropOf(low) ||
+              (dropOf(stone) === dropOf(low) &&
+                Number(stone.dataset.stone) < Number(low.dataset.stone))
+            )
               low = stone;
-          const drop = Number(
-            window.getComputedStyle(low).getPropertyValue("--drop"),
-          );
+          const drop = dropOf(low);
           if (!(drop <= room)) return null;
           return {
             chars: stones.map((stone) => stone.textContent.toLowerCase()),
@@ -913,7 +942,7 @@ try {
             drop,
           };
         },
-        0.7,
+        0.35,
         { timeout: budgetMs },
       )
       .catch(() => null);
@@ -1101,16 +1130,12 @@ try {
   // is the score going under: it is the run's own number and it is allowed to.
   //
   // The 200ms is spacing, not patience, and it is what the flash count at the
-  // bottom of this section depends on: the HUD's `--flare` is an element keyed
-  // by the miss counter, so misses landing inside one frame replace the element
-  // before its animation has started, and the listener on `document` sees ONE
-  // `animationstart` for all of them — the same under-count the shield's tint
-  // has for two landings in one tick (§8.10, and the note above the damage run
-  // in this file), and the same safe direction. It is not a one-in-eight
-  // rounding error. Measured on this build: eight wrong keys pressed back to
-  // back land inside 10ms, mount eight elements and draw ONE flash; thirty
-  // inside 21ms also draw one. The 200ms is what buys each flash a frame of
-  // its own, and at that cadence all eight are counted.
+  // bottom of this section is about. Eight wrong keys 200ms apart is five a
+  // second, which is two and a half times faster than the `--flare` wash is
+  // allowed to light (`MIN_TINT_GAP_MS`, decision 57) — so this is the strobe
+  // case, played at a rate a seven-year-old really can hammer at, and the
+  // check below is that every one of the eight is CHARGED while fewer than
+  // eight light.
   const MISSES = 8;
   // Presses the HUD never answered. Each one would be a miss the flash count
   // at the bottom is short by, and the reason is worth carrying to the check
@@ -1144,7 +1169,7 @@ try {
   // untouched one did.
   await page
     .waitForFunction(() => window.__pendingFrames() === 0, null, {
-      timeout: 15000,
+      timeout: 30000,
     })
     .catch(() => {});
   await page.waitForTimeout(300);
@@ -1213,17 +1238,30 @@ try {
       `after ${shot.length} shot`,
   );
   check(
-    "one flash of red per wrong key, and never two inside one flash",
-    // The HUD's flare is mounted from the miss counter exactly as the shield's
-    // tint is from the landing counter (§8.10, decision 42), so the same
-    // measurement holds it: one element per event, and no element restarted.
-    // 220ms is the flash; the presses above are 200ms apart on purpose, so a
-    // pair closer than that would be the animation restarting rather than the
-    // hand moving.
-    flashes.length === MISSES &&
+    "a hand cannot strobe the score, however fast it hammers",
+    // **The half of §8.10 no `WaveSpec` can keep** (decision 57). A zone's
+    // tint rate is a property of the schedule and each of the twenty levels
+    // ships at two starts a second (`storms.test.ts`); a miss is a child
+    // pressing a wrong key, and the only place that can be bounded is the
+    // reducer. So the wash is mounted from `missTintAt`, a wave-time stamp
+    // that moves at most once every 500ms — two flashes a second, the same
+    // headroom the zone tints have under WCAG 2.3.1's line of more than three
+    // — and eight presses at five a second must therefore light FEWER than
+    // eight times while costing all eight.
+    //
+    // The floor is the measurement that says it did not merely mount fewer
+    // elements: 150ms is the tint's own life, so a pair closer than that would
+    // be an animation restarting rather than a hand moving, and 500 is the
+    // rule itself. Both are asserted; the second implies the first, and the
+    // first is the one that has been true since the shield's tint was built.
+    // Wall-clock against a wave-time rule is the safe direction: wave time is
+    // clamped per frame and can only run behind the wall, never ahead of it.
+    flashes.length > 0 &&
+      flashes.length < MISSES &&
       flashes.every((tint) => tint.finger === undefined) &&
-      rhythm(flashes, () => "hud") >= 150,
-    `${flashes.length} flashes for ${MISSES} wrong keys, ` +
+      rhythm(flashes, () => "hud") >= 150 &&
+      rhythm(flashes, () => "hud") >= 500,
+    `${flashes.length} flashes for ${MISSES} wrong keys 200ms apart, ` +
       `closest pair ${rhythm(flashes, () => "hud")}ms apart`,
   );
 
@@ -1248,17 +1286,19 @@ try {
    */
   log("\n10. A storm is a session, and a retry is a second one");
   const stormRuns = async () =>
-    (await readStore("sessions")).filter((s) => s.mode === "typing:L39");
+    (await readStore("sessions")).filter(
+      (s) => s.mode === `typing:${STORM_LESSON}`,
+    );
 
   /**
    * Waits — in the page, against the same database the app writes to — until
    * exactly `want` storm runs are stored. `false` if it never got there, which
    * says "too few, or the count went past it and stayed".
    */
-  const storedRuns = (want) =>
+  const storedRuns = (target) =>
     page
       .waitForFunction(
-        (target) =>
+        ([lesson, want]) =>
           new Promise((res) => {
             const open = indexedDB.open("schoolskills");
             open.onerror = () => res(false);
@@ -1269,12 +1309,12 @@ try {
                 .getAll();
               all.onsuccess = () =>
                 res(
-                  all.result.filter((s) => s.mode === "typing:L39").length ===
-                    target,
+                  all.result.filter((s) => s.mode === `typing:${lesson}`)
+                    .length === want,
                 );
             };
           }),
-        want,
+        [STORM_LESSON, target],
         { timeout: 8000 },
       )
       .then(() => true)
@@ -1290,9 +1330,13 @@ try {
       saved.length === 2 &&
       saved.every(
         (s) =>
-          s.configKey === "typing|L39|12" &&
-          s.config.lessonId === "L39" &&
-          s.seed === 353 &&
+          s.configKey === `typing|${STORM_LESSON}|12` &&
+          s.config.lessonId === STORM_LESSON &&
+          s.config.storm === true &&
+          // The level's own seed, off `STORM_WAVES` — a storm is the same
+          // weather every time it is opened (decision 58), so two runs a
+          // minute apart are two runs of one storm and not two storms.
+          s.seed === 6 &&
           s.cards.length === 12,
       ),
     `${saved.length} run(s): ${saved.map((s) => `${s.mode} ${s.configKey} ${s.correct}/${s.cards.length}`).join(", ")}`,
@@ -1301,9 +1345,14 @@ try {
     "a wave nobody pressed at saves twelve letters that all got through",
     untouched?.correct === 0 &&
       untouched?.incorrect === 12 &&
-      // Twelve four-second falls. `ms` is the letter's own time in the air,
-      // so the total is the wave's letters and not the wall clock.
-      untouched?.durationMs === 48000 &&
+      // `ms` is the letter's own time in the air and the total is the sum of
+      // them, not a wall clock — which is the whole of §8.7's `durationMs` for
+      // a wave whose letters can overlap. Derived rather than a number written
+      // here, because every level draws its falls from a range (§8.3): what is
+      // asserted is that each is one of lesson 4's, and that the total is
+      // exactly what they add up to.
+      untouched?.durationMs ===
+        untouched?.cards.reduce((sum, c) => sum + c.ms, 0) &&
       untouched?.cards.every(
         (c) =>
           c.prompt === c.answer &&
@@ -1311,7 +1360,8 @@ try {
           c.given === null &&
           c.ok === false &&
           c.timedOut === true &&
-          c.ms === 4000,
+          c.ms >= 900 &&
+          c.ms <= 1200,
       ),
     `${untouched?.correct}/${untouched?.incorrect} in ${untouched?.durationMs}ms`,
   );
@@ -1323,8 +1373,9 @@ try {
       handsOn?.bestStreak === shot.length &&
       handsOn?.cards.filter((c) => c.ok).every((c) => c.given === c.answer) &&
       // A shot letter was caught before it landed, so its time in the air is
-      // less than the fall — which is what makes it worth XP (§8.6).
-      handsOn?.cards.filter((c) => c.ok).every((c) => c.ms < 4000),
+      // less than the fastest fall this level can draw — which is what makes
+      // it worth XP (§8.6).
+      handsOn?.cards.filter((c) => c.ok).every((c) => c.ms < 900),
     `${handsOn?.correct} shot, ${handsOn?.incorrect} through, ` +
       `${handsOn?.xpEarned} XP, best combo ${handsOn?.bestStreak}`,
   );
@@ -1337,7 +1388,7 @@ try {
   await page.waitForSelector(".storm__letter", { timeout: 8000 });
   await page
     .waitForFunction(() => document.querySelector(".storm__over") !== null, {
-      timeout: 20000,
+      timeout: 30000,
     })
     .catch(() => {});
   const threeRuns = await storedRuns(3);
@@ -1376,10 +1427,11 @@ try {
   const calm = await page.evaluate(async () => {
     // The same measurement as the fall at the top of section 9, on a page that
     // has asked for less motion: distinct positions are what a re-render alone
-    // cannot fake, because without the loop a stone climbs a 300ms staircase.
+    // cannot fake, because without the loop a stone would not move at all
+    // between two spawns a second and a half apart.
     const stone = document.querySelector(".storm__letter");
     const tops = [];
-    for (let i = 0; i < 24; i++) {
+    for (let i = 0; i < 20; i++) {
       tops.push(stone.getBoundingClientRect().top);
       await new Promise((done) => window.setTimeout(done, 25));
     }
@@ -1412,7 +1464,7 @@ try {
   check(
     "a stone still falls, frame by frame, for a child who asked for less motion",
     calm.distinct >= 12 && calm.forwards && calm.travelled > 0,
-    `${calm.distinct} distinct positions in 24 readings over 600ms, ` +
+    `${calm.distinct} distinct positions in 20 readings over 500ms, ` +
       `${calm.travelled}px travelled`,
   );
   check(
@@ -1429,7 +1481,7 @@ try {
   // so the number below is over twelve landings and not over a quiet moment.
   await page
     .waitForFunction(() => window.__pendingFrames() === 0, null, {
-      timeout: 15000,
+      timeout: 30000,
     })
     .catch(() => {});
   await page.waitForTimeout(300);
@@ -1439,9 +1491,9 @@ try {
   }));
   check(
     "twelve letters land and not one animation runs",
-    quiet.tints.length === 0 && quiet.zones === 3,
+    quiet.tints.length === 0 && quiet.zones === 1,
     `${quiet.tints.length} storm animations over a whole wave, ` +
-      `${quiet.zones} zones emptied (the damage still happened)`,
+      `${quiet.zones} zone emptied (the damage still happened)`,
   );
   await page.emulateMedia({ reducedMotion: null });
 
@@ -1499,6 +1551,14 @@ try {
   // And the way out. `Escape` is not a key the board carries, so it is neither
   // swallowed nor fired at the lowest letter — a way out that cost ten points
   // and a streak would be a trap.
+  //
+  // A letter has to be in the sky for the freeze below to be measurable, and
+  // on this level the sky is empty between letters — one at a time is what
+  // makes lesson 4 a reaction level (§5.6). So the same `armed()` the shots
+  // used waits for a stone with most of its fall left, and `Escape` follows it
+  // immediately: what is then frozen has hundreds of milliseconds of wave time
+  // still to run, and standing still for 900 of them is the pause.
+  const paused = await armed(3000);
   const scoreAtQuit = await page.evaluate(() =>
     Number(document.querySelector(".storm__score").textContent),
   );
@@ -1507,15 +1567,15 @@ try {
     timeout: 4000,
   });
   const asked = await page.evaluate(async () => {
+    // The stone the sheet froze, whichever it is: with the run paused nothing
+    // spawns and nothing lands, so the deepest `--drop` in the sky is the same
+    // element at both readings.
     const lowest = () => {
-      const stones = [...document.querySelectorAll(".storm__letter")];
-      let low = stones[0];
-      for (const stone of stones)
-        if (Number(stone.dataset.stone) < Number(low.dataset.stone))
-          low = stone;
-      return low
-        ? Number(window.getComputedStyle(low).getPropertyValue("--drop"))
-        : null;
+      const drops = [...document.querySelectorAll(".storm__letter")].map(
+        (stone) =>
+          Number(window.getComputedStyle(stone).getPropertyValue("--drop")),
+      );
+      return drops.length ? Math.max(...drops) : null;
     };
     const before = lowest();
     await new Promise((done) => window.setTimeout(done, 900));
@@ -1531,7 +1591,8 @@ try {
   });
   check(
     "Escape asks rather than fires, and the storm stops where it stood",
-    asked.escaped.code === "Escape" &&
+    paused !== null &&
+      asked.escaped.code === "Escape" &&
       asked.escaped.prevented === false &&
       asked.score === scoreAtQuit &&
       asked.before !== null &&
@@ -1647,7 +1708,10 @@ try {
   // And the route itself is not gated by any of it. A wrong guess must cost a
   // child a tile, never the game — so a URL still opens a playable storm, with
   // the way out drawn on it.
-  await tablet.evaluate(() => (location.hash = `${location.hash}/storm`));
+  await tablet.evaluate(
+    (lesson) => (location.hash = `${location.hash}/storm/${lesson}`),
+    STORM_LESSON,
+  );
   await tablet.waitForSelector(".storm__letter", { timeout: 8000 });
   const reachable = await tablet.evaluate(() => ({
     stones: document.querySelectorAll(".storm__letter").length,
@@ -1667,7 +1731,9 @@ try {
       reachable.quit === 1 &&
       proved.touchOnly === true &&
       proved.said === 0 &&
-      proved.legend.includes("Coming soon"),
+      // What the legend says on a device that can play them, which is the one
+      // fact a child needs before pressing a diamond (§8.8).
+      proved.legend.includes("Nothing on the ladder waits on one"),
     `the route opened ${reachable.stones} stone(s) either way; ` +
       `after one key ${proved.said}/${proved.storms} still name a keyboard`,
   );

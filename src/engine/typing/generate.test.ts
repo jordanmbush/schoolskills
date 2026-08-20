@@ -62,8 +62,15 @@ const SEEDS = [
   16777216, 31337, 8675309,
 ];
 
-/** Every lesson that has text — the storms have a wave instead (§8.3). */
-const WITH_TEXT = LESSONS.filter((lesson) => lesson.wordCount > 0);
+/**
+ * Every lesson that has text — the storms have a wave instead (§8.3).
+ *
+ * Read off the *kind* and not off `wordCount`, which stopped being able to
+ * answer this the day the twenty waves landed: a storm level's `wordCount` is
+ * its wave's `count` (§5.6), so "has a length" is now true of all hundred and
+ * "has words" is true of eighty.
+ */
+const WITH_TEXT = LESSONS.filter((lesson) => lesson.kind.type !== "storm");
 
 /** The lessons the new-key invariants are about. */
 const INTRODUCING = WITH_TEXT.filter((lesson) => lesson.introduces.length > 0);
@@ -110,12 +117,14 @@ describe("the reachability invariant", () => {
    *
    * A lesson asks for `wordCount` words because that is what its wpm bar is
    * computed against (§6.3): a lesson that quietly ran nine words short would
-   * report a speed nobody typed. Storm levels are the exception the type
-   * already carries — `wordCount` is 0 and the wave decides the length.
+   * report a speed nobody typed. Storm levels are the exception, and their
+   * `wordCount` means something else entirely — the letters in the wave — so
+   * they are asked the question they do have an answer to instead, three tests
+   * down: a storm generates no text at all.
    */
   it("produces exactly the number of words the lesson asks for", () => {
     const offenders: string[] = [];
-    for (const lesson of LESSONS)
+    for (const lesson of WITH_TEXT)
       for (const seed of SEEDS) {
         const words = generate(lesson, seed);
         if (words.length !== lesson.wordCount)

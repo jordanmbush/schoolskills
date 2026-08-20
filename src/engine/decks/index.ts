@@ -101,10 +101,10 @@ export function buildDeck(config: RaceConfig, seed: number): Card[] {
  * "house best" columns, the `previousBest` a results screen pays the
  * personal-best bonus on, and `ghostsFor`, which is where every rival a setup
  * screen offers comes from. That matters most for the consumers that do not
- * exist yet. STM10 gives lesson 39 a `WaveSpec`, at which point
- * `lessonKey(lesson)` is `typing|L39|12` — the same string `stormConfig`
- * already writes — and `TypingSetup`'s brief and rival list would start
- * reading storms as lesson runs without a line of them changing.
+ * exist yet, and it is not hypothetical for the ones that do: lesson 39 has a
+ * `WaveSpec`, so `lessonKey(lesson)` is `typing|L39|28` — the same string
+ * `stormConfig` writes — and every "best" that groups by key reads a storm and
+ * a run of that lesson as one group.
  *
  * An unranked run is still a run in every other way: the record book lists it,
  * it pays its XP, it earns badges and its cards feed the drill builder. It

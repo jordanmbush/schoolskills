@@ -5,8 +5,8 @@ import { useHub, usePlayer } from "@/components/state/HubContext";
 import { useRace } from "@/components/state/RaceContext";
 import { typingMode } from "@/engine/decks/typing";
 import { sessionsFor } from "@/engine/records";
-import { unlockedAt } from "@/engine/typing/keys";
-import { buildWave } from "@/engine/typing/storm";
+import { lessonById } from "@/engine/typing/lessons";
+import { isStormLesson, stormWave } from "@/engine/typing/storms";
 import { QuitSheet, SaveFailed, useRaceFinish } from "@/games/race";
 
 import { StormField } from "./StormField";
@@ -14,11 +14,11 @@ import { StormOver } from "./StormOver";
 import { stormConfig, stormTally } from "./stormSession";
 import { useStormClock } from "./useStormClock";
 
-import type { WaveSpec } from "@/engine/typing/storm";
+import type { StormLesson } from "@/engine/typing/storms";
 import type { Profile } from "@/engine/types";
 
 /**
- * The Hailstorm route (docs/typing.md §9), playing one wave.
+ * The Hailstorm route (docs/typing.md §9), playing one of the twenty levels.
  *
  * The screen is six things joined: a field that draws a `StormState`, a clock
  * that produces one per animation frame, a keyboard that shoots, the way out
@@ -26,75 +26,18 @@ import type { Profile } from "@/engine/types";
  * of that finger's keys (`StormOver`), and — the moment the storm stops — the
  * run written to the record book as a `Session` (§8.7, `stormSession.ts`).
  *
- * What it is still not is a whole game. STM10 replaces the stand-in wave below
- * with the twenty the ladder actually names.
+ * **Which storm is in the URL** (`#/p/:profileId/storm/:lessonId`), because a
+ * level is a rung of the ladder and the ladder is where a child chose it. The
+ * lesson is the whole of what this route reads: the wave comes from it
+ * (`stormWave`, which draws the pool from `unlockedAt(n)` — §5.6), the run
+ * files itself under it (`typing:L39`, §8.7), and nothing here holds a spec of
+ * its own for the two to drift apart from.
  *
- * Unlinked on purpose. Nothing on the ladder points here until STM10 puts the
- * storm tiles on it, so the only way in is the URL.
+ * A `lessonId` that is not a storm — a passage, a level id, a typo — goes back
+ * to the ladder rather than rendering an empty sky. It is not an error case so
+ * much as the ordinary end of a hand-edited URL, and the ladder is where the
+ * answer to "which storms are there" is drawn.
  */
-
-/**
- * Which lesson this stand-in stands in for: 39, "Hailstorm · Shift under
- * fire" — the last of block 4's two storm levels.
- *
- * One number for the pool AND the id, so the two cannot drift: the wave draws
- * on the alphabet lesson 39 is played at, and the run files itself under
- * `typing:L39` exactly as a lesson run does (§8.7). STM10 replaces all of this
- * with the lesson the ladder tile named.
- */
-const PREVIEW_LESSON = 39;
-
-/**
- * The id that identifies the run — in `Session.mode`, in `configKey`, and in
- * the config the run is saved with. Written once here and read by both
- * `typingMode` and `stormConfig`, because a mode and a config that disagreed
- * about which lesson this is would file the run in one place and look for it
- * in another.
- */
-const PREVIEW_LESSON_ID = `L${PREVIEW_LESSON}`;
-
-/**
- * A stand-in storm: everything a child has met by lesson 39, falling one after
- * another.
- *
- * `unlockedAt` rather than a hand-written pool, because "a wave draws only on
- * keys the ladder has already taught" is the rule STM10 has to keep and a
- * stand-in that broke it would be a stand-in nobody could reason from.
- *
- * The gap and the fall are single values rather than ranges, so this wave is a
- * ruler where a real level is a roll of the dice (§8.3): twelve letters, one
- * every 300ms, each taking four seconds to cross — which puts all twelve in
- * the air together from 3.3s until the first one lands at 4s. That overlap is
- * the point as much as the ruler is. §8.9 promises sixty frames a second with
- * ten letters, the shield and the keyboard on screen, and a stand-in that only
- * ever showed one would be a stand-in that never asked the question.
- */
-const PREVIEW_SPEC: WaveSpec = {
-  keys: [...unlockedAt(PREVIEW_LESSON)],
-  count: 12,
-  gap: [300, 300],
-  fall: [4000, 4000],
-  shield: 3,
-  repairAt: 0,
-};
-
-/**
- * The seed, picked so the twelve letters land on twelve different keys across
- * both hands rather than stuttering on three — and so that the two this epic
- * is named after, `f` and `y`, are among the first to fall, right above the
- * caps they are claimed to line up with.
- *
- * A wave is replayable from `(spec, seed)` (§8.3), so this storm is the same
- * storm on every machine and in every session: "does `y` fall between `g` and
- * `h`" stays a question anybody can go and look at rather than one that
- * depends on a lucky roll. It is also what "try this wave again" means — the
- * retry below rebuilds from these same two values and meets the same twelve
- * letters in the same lanes.
- */
-const PREVIEW_SEED = 353;
-
-/** The mode a run of it files under, and the drill's family (§8.7). */
-const PREVIEW_MODE = typingMode(PREVIEW_LESSON_ID);
 
 /**
  * The route, which owns nothing but which attempt is being played.
@@ -119,23 +62,35 @@ const PREVIEW_MODE = typingMode(PREVIEW_LESSON_ID);
  *     one.
  *
  * The wave itself is rebuilt from the same `(spec, seed)`, so "try this wave
- * again" means the same twelve letters in the same lanes at the same speeds
- * (§8.3) — a different run of the same storm, which is the only version of
- * beating it that means a child got better.
+ * again" means the same letters in the same lanes at the same speeds (§8.3) —
+ * a different run of the same storm, which is the only version of beating it
+ * that means a child got better.
  */
 export default function StormRun() {
-  const { profileId } = useParams();
+  const { profileId, lessonId } = useParams();
   const profile = usePlayer(profileId);
+  const lesson = lessonById(lessonId);
   const [attempt, setAttempt] = useState(0);
 
   // Same guard as the other run screens: a URL naming a player who isn't on
   // this device goes back to the picker rather than rendering half a game.
   // Below the hooks, so they are called in the same order on every render.
   if (!profile) return <Navigate to="/" replace />;
+  if (!isStormLesson(lesson))
+    return <Navigate to={`/p/${profile.id}`} replace />;
 
+  /* **The key carries the lesson as well as the attempt**, and the lesson half
+     is not decoration. `StormPlay` builds its wave in a `useState` initialiser,
+     which runs once per mount — so a route that stayed mounted across
+     `#/…/storm/L39` → `#/…/storm/L45` (same pattern, different param, no
+     remount) would go on playing lesson 39's storm under lesson 45's name, and
+     save it under lesson 45's id. Every reason a retry is a remount is a
+     reason a different level is one too (see below); the difference is that a
+     retry means to meet the same wave and this must not. */
   return (
     <StormPlay
-      key={attempt}
+      key={`${lesson.id}:${attempt}`}
+      lesson={lesson}
       profile={profile}
       onRetry={() => setAttempt((n) => n + 1)}
     />
@@ -176,9 +131,12 @@ export default function StormRun() {
  *     would, and moves nothing.
  */
 function StormPlay({
+  lesson,
   profile,
   onRetry,
 }: {
+  /** The rung this storm is, and therefore the wave and the id (§5.6, §8.7). */
+  lesson: StormLesson;
   profile: Profile;
   /** Play the same storm again, as a new run. See `StormRun`. */
   onRetry: () => void;
@@ -212,10 +170,13 @@ function StormPlay({
    *
    * Built once per mount and never rebuilt: a run's wave is fixed for its
    * whole life (`StormState.wave`), and the config is its length and its
-   * lesson, both of which are decided before the first letter falls.
+   * lesson, both of which are decided before the first letter falls. Which is
+   * safe only because a different lesson is a different mount — see the key in
+   * `StormRun`, without which this initialiser would keep the first storm a
+   * child opened for as long as they stayed on the route.
    */
-  const [wave] = useState(() => buildWave(PREVIEW_SPEC, PREVIEW_SEED));
-  const config = useMemo(() => stormConfig(PREVIEW_LESSON_ID, wave), [wave]);
+  const [wave] = useState(() => stormWave(lesson));
+  const config = useMemo(() => stormConfig(lesson.id, wave), [lesson.id, wave]);
   const { state, skyRef } = useStormClock(wave, {
     paused: quitting,
     // The keyboard's way to the same sheet the button opens. It is taken
@@ -243,7 +204,7 @@ function StormPlay({
     finish,
     notify,
     navigate,
-    resultsPath: `/p/${profile.id}/storm`,
+    resultsPath: `/p/${profile.id}/storm/${lesson.id}`,
     // Nothing to disarm. The gun dies with the run inside `useStormClock` and
     // the field is frozen where the clock stopped, so there is no phase a
     // saving storm is in that it is not in already.
@@ -295,7 +256,7 @@ function StormPlay({
         over={
           <StormOver
             state={state}
-            mode={PREVIEW_MODE}
+            mode={typingMode(lesson.id)}
             profileId={profile.id}
             onRetry={onRetry}
           />

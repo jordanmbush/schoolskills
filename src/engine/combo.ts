@@ -8,8 +8,8 @@
  * may not import `progress.ts`. That file is reachable from
  * `engine/decks/index.ts`, the front door every island on the site downloads,
  * and `progress.ts` pulls the deck registry, the hundred lessons and the
- * ladder in behind it (§5.3, decision 7); STM10 also puts a `WaveSpec` on each
- * storm lesson, which would close the import into a cycle.
+ * ladder in behind it (§5.3, decision 7); the hundred lessons name a
+ * `WaveSpec` on each storm row, which would close the import into a cycle.
  *
  * The alternative was a second `1 + min(streak, 10) / 10` written in the storm,
  * and a second copy of a curve is how a race and a shooter end up paying out

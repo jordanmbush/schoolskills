@@ -85,14 +85,32 @@ const lessonWith = (over: Partial<Lesson> = {}): Lesson => ({
   ...over,
 });
 
+/**
+ * A storm level, dictated like the lesson above it rather than read off the
+ * ladder — what is on trial here is the criteria and not the table.
+ *
+ * `wordCount` is the wave's length (§8.3), which is what `survived` reads back
+ * off a run's own config; twelve is a first storm's shape and every case below
+ * says which of the twelve a run faced.
+ */
 const stormWith = (over: Partial<Lesson> = {}): Lesson => ({
   n: 4,
   id: "L04",
   block: 1,
   title: "Hailstorm · First ice",
   introduces: [],
-  kind: { type: "storm" },
-  wordCount: 0,
+  kind: {
+    type: "storm",
+    wave: {
+      count: 12,
+      gap: [1500, 1900],
+      fall: [900, 1200],
+      shield: 4,
+      repairAt: 4,
+      seed: 6,
+    },
+  },
+  wordCount: 12,
   keyboard: "guide",
   pass: { kind: "storm", survive: true, accuracy: 0.9 },
   ...over,

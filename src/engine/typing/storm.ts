@@ -29,12 +29,15 @@
  * decide was decided here, before the first frame.
  *
  * ── And it has to stay small ─────────────────────────────────────────────────
- * `lessons.ts` is importable from the deck layer, and STM10 puts a `WaveSpec`
- * on each of the twenty storm lessons — which will make this module reachable
- * from `decks/index.ts`, the front door every island on the site downloads
- * (§5.3, decision 7). So it must never grow a table. There is nothing here but
- * the spec, the RNG, the keyboard and the rules: the characters a wave draws
- * from arrive as `spec.keys`, from a caller that already knows them.
+ * `lessons.ts` is importable from the deck layer, and each of the twenty storm
+ * lessons names a `WaveSpec` — as a **type**, which is erased, so this module
+ * and the keyboard layout behind it stay out of the chunk `decks/index.ts`
+ * ships to every island on the site (§5.3, decision 7). That is a build away
+ * from being untrue: one value import from `lessons.ts` and the layout is in
+ * every island's bundle. So it must never grow a table either. There is
+ * nothing here but the spec, the RNG, the keyboard and the rules: the
+ * characters a wave draws from arrive as `spec.keys`, from a caller that
+ * already knows them (`storms.ts`, decision 56).
  */
 import { comboMultiplier } from "@/engine/combo";
 import { keyX, strokeFor } from "@/engine/keyboard";
@@ -70,13 +73,19 @@ export type ShieldFinger = Exclude<Finger, "thumb">;
  */
 export type WaveSpec = {
   /**
-   * Which characters can fall. Usually "everything unlocked by lesson n".
+   * Which characters can fall — for the twenty levels, everything unlocked by
+   * that lesson, with the level's focus weighted up inside it (§5.7).
    *
    * Order and repeats are the caller's to use: a character listed twice falls
    * about twice as often, which is how a level built around six new symbols
    * weights them above the forty a child already has. Anything this board
    * cannot produce, and anything typed with a thumb, is dropped rather than
    * refused — see `buildWave`.
+   *
+   * A level cannot write this field down: the shape the ladder holds is a
+   * `WaveSpec` minus this one key, and `storms.ts` is the only place the two
+   * are joined (decision 56). That is what makes "a storm can never ask for a
+   * key the ladder has not taught" structural rather than a promise.
    */
   keys: string[];
   /** How many letters in the wave. */
@@ -223,10 +232,10 @@ function fallable(ch: string): Fallable | null {
  * forgotten by a row.
  *
  * 800ms is a judgement and worth being honest about that — it is not a
- * measured reaction time. What it is anchored to is the epic's own level
- * shapes: the fastest fall any of them declares is 800ms (`storm.test.ts`'s
- * "home row", lesson 9), so the floor is the fastest the ladder ever *means*
- * to be. Under it a letter stops being a thing to read, find and press and
+ * measured reaction time. What it is anchored to is the ladder's own shapes:
+ * the fastest fall any of the twenty declares is 900ms (lessons 4, 9 and 13,
+ * §5.7), so the floor sits just under the fastest the ladder ever *means* to
+ * be and no row is touched by it. Under it a letter stops being a thing to read, find and press and
  * becomes a streak going past — which is the failure §8.10 names, and the one
  * a five-year-old cannot tell from the game being broken.
  *
@@ -244,8 +253,12 @@ function fallable(ch: string): Fallable | null {
  * `gap` at 350ms takes one zone from four tint starts a second to three, and
  * flooring it at 800ms — which would make the top of the ladder one letter at
  * a time — still leaves three. The floor would cost the density knob the top
- * of the ladder is built out of and buy almost no safety, so the rule STM10
- * has to keep is a count per zone per second and not a floor here (§8.10).
+ * of the ladder is built out of and buy almost no safety, so the rule the
+ * twenty levels keep is a count per zone per second and not a floor here:
+ * `storms.test.ts` builds each of the twenty at the seed it ships with and
+ * asserts no zone starts more than **two** tints inside any one second, under
+ * WCAG 2.3.1's line of more than three (§8.10). The other half of that rule is
+ * `MIN_TINT_GAP_MS` below, for the flash no wave can shape (decision 57).
  */
 export const MIN_FALL_MS = 800;
 
@@ -536,8 +549,33 @@ export type StormState = {
    * `cards.length >= wordCount`, and the `unbroken` badge (§8.7, decision 48).
    * What a miss cost is still saved, in the streak it broke: `bestStreak` is
    * `bestCombo`, and the combo a wrong key ended is one the maximum never saw.
+   *
+   * It is the count and **not** what the HUD's flash is mounted from — see
+   * `missTintAt` below, which is the half of this that a hand can strobe.
    */
   readonly misses: number;
+  /**
+   * When the score's `--flare` wash last started, in wave time — `null` before
+   * the first one. **A new value is a new flash, and an unchanged one is the
+   * same element left alone** (§8.10, decision 42).
+   *
+   * The count above cannot do that job, and this is the one cadence on this
+   * screen no `WaveSpec` can shape (decision 57). A wave's tint rate is read
+   * off its own schedule and held to two a second by each of the twenty levels
+   * (`storms.ts`); a miss happens when a child presses a wrong key, so its rate
+   * is the rate a hand can move at. Auto-repeat is already not a shot
+   * (decision 44), which takes 30Hz off the table, but a child mashing at
+   * eight or ten a second is not a bug and must not produce eight or ten
+   * flashes — "no strobe, ever, in any mode" (§8.10) is a promise about the
+   * screen and not about the wave.
+   *
+   * So the flash is rate-limited where the rule lives rather than in the view:
+   * a miss inside `MIN_TINT_GAP_MS` of the last flash still costs the points
+   * and still breaks the streak, and simply does not re-light a wash that is
+   * already lit. The reducer is the only thing here holding a clock, which is
+   * why this is a field and not a `useRef` in the HUD.
+   */
+  readonly missTintAt: number | null;
   /** How the run finished, or `null` while it is live. */
   readonly ending: StormEnding | null;
 };
@@ -559,6 +597,34 @@ export type StormState = {
  */
 export const HIT_POINTS = 10;
 export const MISS_POINTS = 10;
+
+/**
+ * The least time between two starts of the score's miss wash, in wave ms
+ * (§8.10, decision 57).
+ *
+ * **WCAG 2.3.1's line is more than three flashes in any one second**, and 500ms
+ * holds the wash to **two starts inside any second** — the same number the
+ * twenty waves' zone tints ship at (§8.10), so the two things that light on
+ * this screen have the same full flash a second of headroom under the line.
+ *
+ * The arithmetic is worth writing down, because the obvious value is wrong.
+ * A gap of `g` permits `ceil(1000 / g)` starts inside a second: 340ms permits
+ * **three** — 0, 340 and 680 — which is exactly the standard's ceiling with
+ * nothing to spare, and this is the one screen on the site where the youngest
+ * player is hammering keys *because they are losing*. 500 is the largest round
+ * number that buys the second flash back. Measured by driving `fire` 60 times
+ * at cadences from 10ms to 750ms: every one of the 60 charged, and no second
+ * ever contains more than two starts.
+ *
+ * It is also deliberately longer than the 150ms the tint is drawn for, so what
+ * a fast hand gets is a wash that lights, fades and then is allowed to light
+ * again, never a wash that blinks off and on inside its own animation.
+ *
+ * Wave time and not wall-clock time, so the quit sheet's pause (§8.11) cannot
+ * spend it: a run resumed after a minute behind the sheet is exactly where it
+ * was, which is what "the sheet costs the run zero" means everywhere else.
+ */
+export const MIN_TINT_GAP_MS = 500;
 
 /**
  * Stamp `cleared` on a state whose last letter has just been accounted for.
@@ -600,6 +666,7 @@ export function startStorm(wave: Wave): StormState {
     combo: 0,
     score: 0,
     misses: 0,
+    missTintAt: null,
     ending: null,
   });
 }
@@ -814,11 +881,21 @@ export function fire(state: StormState, code: string): StormState {
     // A miss: the streak, the score and a mark against the run. Nothing on the
     // field moves — the letter the child should have shot is still falling,
     // which is the other half of the cost.
+    //
+    // The flash is the one part of that a fast hand could turn into a strobe,
+    // so it is the one part with a clock on it: the wash starts again only
+    // once `MIN_TINT_GAP_MS` of wave time has passed, and every other cost of
+    // a miss is charged in full whether it lights or not (decision 57).
     return {
       ...state,
       combo: 0,
       score: state.score - MISS_POINTS,
       misses: state.misses + 1,
+      missTintAt:
+        state.missTintAt === null ||
+        state.timeMs - state.missTintAt >= MIN_TINT_GAP_MS
+          ? state.timeMs
+          : state.missTintAt,
     };
 
   const resolved = state.resolved.slice();
@@ -847,8 +924,7 @@ export function fire(state: StormState, code: string): StormState {
  * much armour is left and how long the best streak ran are all `state` — so
  * they are decided here, and the screen puts them on a page. What is NOT here
  * is XP: `stormXp` lives in `progress.ts`, which reaches `decks/index.ts`, and
- * this module is one hop from the deck layer from STM10 onwards (see the file
- * header).
+ * this module is one type-only hop from the deck layer (see the file header).
  */
 
 /** What one zone has been through: the two things worth drawing an event for. */

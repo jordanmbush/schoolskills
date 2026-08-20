@@ -1,4 +1,5 @@
 import type { KeyboardMode } from "@/engine/types";
+import type { WaveSpec } from "./storm";
 
 /**
  * The hundred lessons of Frost Keys, as data (docs/typing.md §5).
@@ -58,16 +59,57 @@ export type LessonKind =
   /** Short and fast — the speed bar moved up and the length cut down. */
   | { type: "sprint" }
   /**
-   * A Hailstorm level (§8).
+   * A Hailstorm level, and the storm it is (§8, §5.6's storm table).
    *
-   * §5.1 gives this variant a `wave: WaveSpec` and it will get one. The twenty
-   * waves are keyed off each lesson's *unlocked set*, so they can only be
-   * written once `keys.ts` exists — which is why §13 builds them last (WEAVE,
-   * step 24) rather than here. Adding the field later is additive; until then
-   * a storm level is identified by its type alone, which is all the ladder,
-   * the record book and the skip rule (§8.8) need from it.
+   * The wave is a `WaveSpec` **minus its keys** (`StormShape` below, decision
+   * 56), which is the whole of how "a storm can never ask for a key the ladder
+   * has not taught" is kept: there is nowhere in the table to write one down.
+   * `storms.ts` composes the real spec by drawing the pool from
+   * `unlockedAt(n)` — the same computed alphabet every lesson's words come
+   * from (§5.2) — so moving a storm up the ladder moves what falls in it, and
+   * a level cannot be given a key by hand.
    */
-  | { type: "storm" };
+  | { type: "storm"; wave: StormShape };
+
+/**
+ * Which class of character a storm level is *about*, or absent for one that is
+ * about everything.
+ *
+ * §8.3 leaves repeats in `spec.keys` meaning "this falls more often", and this
+ * is the curriculum's half of that: "Hailstorm · Digits" has to rain digits
+ * and not one digit in six. The classes are named rather than written out as
+ * characters for the same reason `introduces` is per lesson — the pool is
+ * always a filter over what the ladder has taught by then, so a focus can only
+ * ever weight keys a child already has. `storms.ts` decides what each name
+ * matches.
+ */
+export type StormFocus = "capitals" | "digits" | "marks";
+
+/**
+ * The storm a level is, as the table writes it: everything a `WaveSpec` has
+ * except the keys, plus the two things only a level knows.
+ *
+ * `Omit<WaveSpec, "keys">` rather than a restatement of `count`, `gap`,
+ * `fall`, `shield` and `repairAt`, so a field added to the engine's spec is a
+ * field the table is asked for rather than one it silently stops carrying.
+ * The import is a type and is erased, which is what keeps `storm.ts` — and the
+ * keyboard layout behind it — out of the chunk `decks/index.ts` ships to every
+ * island (§5.3, decision 7).
+ */
+export type StormShape = Omit<WaveSpec, "keys"> & {
+  /**
+   * The seed this level's weather comes from (decision 58).
+   *
+   * A Hailstorm level is a *level*, so it is the same storm every time it is
+   * opened — the twenty waves that ship are the twenty a child meets, and the
+   * twenty the no-strobe rule is measured on (§8.10). "Try this wave again"
+   * already meant the same letters in the same lanes; this is the same promise
+   * across two visits instead of two attempts.
+   */
+  seed: number;
+  /** The characters this level rains, over the ones it merely includes. */
+  focus?: StormFocus;
+};
 
 /**
  * What passing looks like, in three bars rather than one score (§6.1).
@@ -236,7 +278,16 @@ type LessonRow = readonly [
   accuracy: number,
 ];
 
-/** A Hailstorm row. §5.6 prints — for its words, its wpm and its accuracy. */
+/**
+ * A Hailstorm row. §5.6 prints — for its wpm and its accuracy, and its Words
+ * column is the wave's `count`, which `toLesson` reads out of `STORM_WAVES`.
+ *
+ * The wave is a table of its own rather than six more columns here, exactly as
+ * §5.6 prints it: a storm's numbers are read against *each other* — a `gap`
+ * means nothing except beside the `fall` it does or does not clear — where a
+ * lesson's columns are read down the page against the same column on the rows
+ * above. Two tables, each shaped like the thing it is.
+ */
 type StormRow = readonly [
   n: number,
   title: string,
@@ -428,6 +479,111 @@ const ROWS: readonly Row[] = [
   [100, "The Ice Exam", "", "passage", "off!", 150, 38, 97],
 ];
 
+/**
+ * One storm, as §5.6's storm table writes it: the six numbers that make a
+ * level, its seed, and the class of character it is about.
+ *
+ * Positional for the same reason `LessonRow` is — this is read as a table, and
+ * a column out of line is invisible in twenty objects of seven fields. The
+ * ranges are flat pairs because that is how they are read: `gap` against
+ * `fall` is the whole difficulty shape (§8.3), and the eye compares two
+ * columns down the page rather than two brackets across a row.
+ */
+type StormWaveRow = readonly [
+  n: number,
+  count: number,
+  gapFrom: number,
+  gapTo: number,
+  fallFrom: number,
+  fallTo: number,
+  shield: number,
+  repairAt: number,
+  seed: number,
+  focus?: StormFocus,
+];
+
+/**
+ * The twenty storms (docs/typing.md §5.6's storm table, §8.3).
+ *
+ * Four things about the shape of it, and none of them is arbitrary:
+ *
+ *   - **`gap` clears `fall` at the top of the ladder and overlaps below it.**
+ *     Lessons 4, 9 and 13 never put two letters on screen — pure reaction —
+ *     and from 19 on they stack, which is reading ahead. Both halves are
+ *     asserted off the *built* schedule in `storms.test.ts`, because
+ *     `MIN_FALL_MS` can raise a fall and turn a spacing promise into an
+ *     overlap (§8.10, decision 52).
+ *   - **It does not climb smoothly, and must not be smoothed.** Lesson 53's
+ *     storm eases where the number row has just arrived, exactly as the wpm
+ *     column does (§6.3, decision 11); lesson 73 is long where 79 is dense.
+ *     What climbs is each *quarter* of the twenty, which is what the test
+ *     holds it to.
+ *   - **The repairs stop at 79 and never come back.** "No repairs" is that
+ *     level's name and the block's turn: below it the weakest zone mends every
+ *     `repairAt` clean hits, above it what breaks stays broken.
+ *   - **No row asks for a fall under `MIN_FALL_MS`.** The floor is a backstop
+ *     and not a knob (decision 52); a row that went under it would come out of
+ *     `fallRange` as a metronome at 800ms and quietly not be what it says.
+ *
+ * The seed is the level's own number, or the first above it whose wave keeps
+ * the level's promises — no zone tinting more than twice a second (§8.10), six
+ * of the eight fingers used, and no finger taking more than a third of the
+ * letters. Six of the twenty needed the bump; `storms.test.ts` re-derives all
+ * twenty rather than trusting the column (decision 58).
+ */
+const STORM_WAVES: readonly StormWaveRow[] = [
+  //  n  len       gap        fall  shield repair seed  focus
+  [4, 12, 1500, 1900, 900, 1200, 4, 4, 6],
+  [9, 16, 1300, 1600, 900, 1250, 3, 4, 9],
+  [13, 18, 1200, 1500, 900, 1150, 3, 4, 13],
+  [19, 20, 1000, 1300, 1000, 1500, 3, 4, 19],
+  [23, 22, 900, 1200, 1100, 1600, 3, 5, 23],
+  [29, 24, 800, 1100, 1200, 1700, 3, 5, 29],
+  [34, 26, 750, 1050, 1200, 1800, 3, 5, 34, "capitals"],
+  [39, 28, 700, 1000, 1300, 1900, 3, 5, 39, "capitals"],
+  [45, 30, 650, 950, 1300, 2000, 3, 6, 45],
+  [49, 32, 600, 900, 1400, 2000, 3, 6, 49],
+  [53, 30, 700, 1000, 1300, 1800, 3, 6, 55, "digits"],
+  [59, 34, 600, 850, 1400, 2000, 3, 6, 59, "digits"],
+  [65, 34, 600, 850, 1400, 2100, 3, 6, 66, "marks"],
+  [69, 36, 550, 800, 1500, 2100, 3, 6, 69, "marks"],
+  [73, 50, 550, 800, 1500, 2200, 3, 8, 74],
+  [79, 36, 500, 750, 1400, 2000, 3, 0, 79],
+  [83, 40, 450, 650, 1300, 1900, 3, 0, 83],
+  [89, 44, 300, 450, 1900, 2600, 3, 0, 95],
+  [93, 46, 350, 550, 1300, 1900, 2, 0, 95],
+  [99, 50, 300, 500, 1200, 1800, 2, 0, 99],
+];
+
+/**
+ * The twenty, by the rung that hosts them.
+ *
+ * `satisfies StormShape` and not only the `Map`'s type argument, because the
+ * two are not the same check: excess properties do not survive a `.map` into a
+ * `new Map<number, StormShape>`, so a `keys` written here would have
+ * type-checked clean and then been discarded in silence by `waveSpecFor`'s
+ * spread. `satisfies` fires excess-property checking on the literal itself,
+ * which is what makes "a storm cannot name its own keys" (decision 56) a thing
+ * the compiler refuses rather than a thing the spread order rescues.
+ */
+const WAVE_BY_N = new Map<number, StormShape>(
+  STORM_WAVES.map(([n, count, gapFrom, gapTo, fallFrom, fallTo, ...rest]) => {
+    const [shield, repairAt, seed, focus] = rest;
+    return [
+      n,
+      {
+        count,
+        gap: [gapFrom, gapTo],
+        fall: [fallFrom, fallTo],
+        shield,
+        repairAt,
+        seed,
+        ...(focus ? { focus } : {}),
+      } satisfies StormShape,
+    ];
+  }),
+);
+
 // ── Table → lessons ──────────────────────────────────────────────────────────
 
 /**
@@ -451,11 +607,19 @@ const MODE_OF: Record<Keyboard, KeyboardMode> = {
   "guide!": "guide",
 };
 
-const kindFor = (n: number, kind: RowKind): LessonKind =>
+/**
+ * The `Kind` cell as a `LessonKind`, for every kind that is only its own name.
+ *
+ * A storm row is the exception and is built in `toLesson` instead: its variant
+ * carries a wave, which lives in `STORM_WAVES` and is looked up by rung.
+ * `Exclude<RowKind, "storm">` on the parameter is what makes reaching for it
+ * here a type error rather than a `{ type: "storm" }` missing its wave.
+ */
+const kindFor = (n: number, kind: Exclude<RowKind, "storm">): LessonKind =>
   kind === "bigrams" ? { type: "bigrams", focus: BIGRAMS[n] } : { type: kind };
 
 function toLesson(row: Row): Lesson {
-  const [n, title, introduced, kind, keyboard] = row;
+  const [n, title, introduced, , keyboard] = row;
   const locked = keyboard.endsWith("!");
   const introduces = [...introduced];
   const base = {
@@ -464,7 +628,6 @@ function toLesson(row: Row): Lesson {
     block: Math.ceil(n / 10),
     title,
     introduces,
-    kind: kindFor(n, kind),
     keyboard: MODE_OF[keyboard],
     // A storm level is `keyboard: "guide"` without the lock as often as not,
     // so this stays undefined rather than false: `keyboardLocked?: true` is
@@ -477,20 +640,37 @@ function toLesson(row: Row): Lesson {
     ...(n % 10 === 0 ? { checkpoint: true as const } : {}),
   };
 
-  if (row[3] === "storm")
+  if (row[3] === "storm") {
+    const wave = WAVE_BY_N.get(n);
+    // A storm row with no wave is a table that has stopped describing itself,
+    // and it can only be reached by editing one of the two above without the
+    // other — never by anything a child does and never by anything already
+    // saved. So it is loud at module load, where `storms.test.ts` meets it on
+    // its first assertion, rather than a stand-in storm nobody chose or an
+    // `undefined` that reaches the field as a crash mid-run.
+    if (!wave) throw new Error(`lesson ${n} is a storm with no wave`);
     return {
       ...base,
-      // A storm level's length is its wave's `count` (§8.3), which arrives
-      // with the waves themselves. Zero says "not a passage" rather than
-      // "empty passage", and nothing reads it until then.
-      wordCount: 0,
+      kind: { type: "storm", wave },
+      // **A storm level's length is its wave's `count`** (§8.3), and this is
+      // the one place the two are joined. Three things read it back and all
+      // three would be wrong against any other number: `survived` in
+      // `verdict.ts` is `cards.length >= wordCount`, the `unbroken` badge is
+      // guarded on the wave having a length (decision 29), and `lessonKey` —
+      // the string a run is filed under — is `typing|L39|28`, which is what
+      // makes a storm and its lesson share one bucket (§5.4, §8.7).
+      wordCount: wave.count,
       pass: { kind: "storm", survive: true, accuracy: STORM_ACCURACY },
     };
+  }
 
-  // The last three columns, which only a lesson row carries.
-  const [, , , , , wordCount, wpm, accuracy] = row;
+  // The last three columns, which only a lesson row carries — and the `Kind`
+  // cell again, which is only now narrowed to the eight a `kindFor` can take:
+  // the return above is what tells the checker this row is not a storm.
+  const [, , , kind, , wordCount, wpm, accuracy] = row;
   return {
     ...base,
+    kind: kindFor(n, kind),
     wordCount,
     pass: {
       kind: "lesson",

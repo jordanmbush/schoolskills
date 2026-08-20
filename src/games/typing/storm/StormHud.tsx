@@ -24,8 +24,8 @@ import type { StormState } from "@/engine/typing/storm";
  * flash card at, so the figure a child watches climb here is the figure their
  * XP is worth (`stormXp`). One streak, one multiplier, two currencies.
  *
- * Nothing here decides any of that. `score`, `combo` and `misses` are read off
- * the reducer, which is where every rule about them lives (§8.9): a HUD that
+ * Nothing here decides any of that. `score`, `combo` and the miss stamp are
+ * read off the reducer, where every rule about them lives (§8.9): a HUD that
  * worked out what a hit was worth would be a second opinion about it at sixty
  * frames a second, and the one on screen is the one a child would believe.
  *
@@ -67,13 +67,21 @@ import type { StormState } from "@/engine/typing/storm";
  * be two answers to "how do I leave" on one screen.
  *
  * ── One flash per miss, and never a sequence ─────────────────────────────────
- * The `--flare` wash over the score is a child element keyed by `misses`, a
- * counter that only ever goes up — the mechanism the shield's damage tint
- * already uses (§8.10, decision 42). A fresh node runs its animation once, an
- * unchanged key is the same node and does not restart it, and there is no
- * timer here to be left mid-flash by a screen that unmounted. The gun ignores
- * key auto-repeat (decision 44), so the fastest this can mount is a child's
- * own keystrokes.
+ * The `--flare` wash over the score is a child element keyed by `missTintAt`,
+ * a wave-time stamp that only ever goes forward — the mechanism the shield's
+ * damage tint already uses (§8.10, decision 42). A fresh node runs its
+ * animation once, an unchanged key is the same node and does not restart it,
+ * and there is no timer here to be left mid-flash by a screen that unmounted.
+ *
+ * **The stamp rather than `misses`, and that is the whole of decision 57.** A
+ * wave's tint rate is a property of its own schedule, and each of the twenty
+ * levels ships at two a second — but a miss is a child pressing a wrong key,
+ * and eight or ten a second is a hand rather than a bug. The gun already
+ * ignores key auto-repeat (decision 44), which takes 30Hz off the table; what
+ * holds the rest of it to the same two a second, under WCAG 2.3.1's line of
+ * more than three, is `MIN_TINT_GAP_MS` in the reducer, where the clock is. So
+ * this element mounts at most once every 500ms however fast the keys come, and
+ * every other cost of a miss is charged in full whether it lights or not.
  */
 export function StormHud({
   state,
@@ -83,15 +91,18 @@ export function StormHud({
   /** Ask to leave mid-run. Absent on a screen that offers no way out. */
   onQuit?: () => void;
 }) {
-  const { combo, misses, score } = state;
+  const { combo, missTintAt, score } = state;
 
   return (
     <div className="storm__hud">
       <p className="storm__score u-mono" aria-hidden="true">
         {score}
-        {/* Mounted by the counter — see the header. Only above zero, so a run
-            does not start with a flash of red over a score of nothing. */}
-        {misses > 0 && <span key={`miss${misses}`} className="storm__miss" />}
+        {/* Mounted by the stamp — see the header. Absent until the first miss,
+            so a run does not start with a flash of red over a score of
+            nothing. */}
+        {missTintAt !== null && (
+          <span key={`miss${missTintAt}`} className="storm__miss" />
+        )}
       </p>
 
       {onQuit && state.ending === null && (

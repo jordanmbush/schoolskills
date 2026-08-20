@@ -14,12 +14,14 @@ import {
 import { bestRun, ghostsFor, sessionsFor } from "@/engine/records";
 import { randomSeed } from "@/engine/random";
 import { ladderProgress } from "@/engine/typing/ladder";
+import { isStormLesson } from "@/engine/typing/storms";
 import { RivalList } from "@/games/race";
 import { sfx } from "@/services/sound";
 import { KeyboardSetting } from "./keyboard/KeyboardSetting";
 import { useKeyboardPresence } from "./keyboard/useKeyboardPresence";
 import { LessonBrief } from "./LessonBrief";
 import { LessonLadder } from "./LessonLadder";
+import { StormBrief } from "./StormBrief";
 import { lessonConfig, lessonKey } from "./lessonRun";
 import type { Lesson } from "@/engine/typing/lessons";
 import type { KeyboardMode, TypingConfig } from "@/engine/types";
@@ -66,6 +68,11 @@ export default function TypingSetup() {
    * brief be mounted per lesson below, which is how the keyboard control gets
    * seeded afresh each time instead of carrying the last lesson's choice onto
    * one that suggests something else.
+   *
+   * One piece of state for both kinds of rung, and the lesson itself decides
+   * which brief opens over it (`isStormLesson`). Two flags would be two ways
+   * to have both open at once, over a ladder where a tile is exactly one of
+   * the two.
    */
   const [briefing, setBriefing] = useState<Lesson | null>(null);
 
@@ -184,11 +191,27 @@ export default function TypingSetup() {
         onOpen={setBriefing}
       />
 
+      {/* A storm's door is its own (`StormBrief`, decision 60): no three bars,
+          no best and no keyboard control, because a storm has none of the
+          three. Play sends the child to the level's own route, which is where
+          the wave is built — this screen never holds one. */}
+      {isStormLesson(briefing) && (
+        <StormBrief
+          lesson={briefing}
+          progress={progress}
+          onStart={() => {
+            sfx.whoosh();
+            navigate(`/p/${profile.id}/storm/${briefing.id}`);
+          }}
+          onClose={() => setBriefing(null)}
+        />
+      )}
+
       {/* Keyed by the lesson, so a second brief is a second mount: the
           keyboard control is seeded from the lesson on mount, and a component
           held across two openings would show lesson 12's suggestion under
           lesson 40's title. */}
-      {briefing && (
+      {briefing && !isStormLesson(briefing) && (
         <LessonBrief
           key={briefing.id}
           lesson={briefing}

@@ -150,7 +150,7 @@ export function LessonLadder({
               advice — and it corrects itself the instant a key is pressed,
               with nothing to reload. */}
           {hasKeyboard
-            ? `${STORM_NOTE} Coming soon`
+            ? `${STORM_NOTE} Nothing on the ladder waits on one`
             : `${STORM_NOTE} It needs a keyboard, so these stay shut here. Press any key if you have one`}
         </li>
       </ul>
