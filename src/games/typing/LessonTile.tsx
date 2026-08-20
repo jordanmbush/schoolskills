@@ -60,6 +60,42 @@ export function tileState(lesson: Lesson, progress: LadderProgress): TileState {
   return "locked";
 }
 
+/**
+ * What a Hailstorm tile is, said the same way wherever it is said.
+ *
+ * The tile's accessible name and the ladder's legend both open with it, and a
+ * third copy would be one to keep in step: a legend that described a different
+ * kind of tile from the tiles it is a legend for is a legend that has quietly
+ * stopped being one.
+ */
+export const STORM_NOTE = "Hailstorm — worth playing, never required.";
+
+/**
+ * Why a Hailstorm tile cannot be entered, or `null` when it can be.
+ *
+ * **Two reasons, and the keyboard one wins** (docs/typing.md §8.8, #155). A
+ * storm tile is shut today for everybody, because there is no wave behind it
+ * yet — and shut on a tablet for a reason that will still be true long after
+ * #156 builds one. Told only "coming soon", a child on an iPad would press it
+ * again in a month and find it still doing nothing, with no more idea why. So
+ * the reason a child is given is the one that is about them and their device,
+ * and the reason about the calendar is what is left when it does not apply.
+ *
+ * #156 deletes the second arm and returns `null` there: a keyboard is then the
+ * only thing between a child and a wave, and `LessonTile` opens the tile off
+ * this same answer without knowing that anything changed.
+ *
+ * It is deliberately not "you have no keyboard" said as a fact. The detection
+ * is a guess (`useKeyboardPresence`), and a guess that has been wrong is
+ * undone by one keystroke — which is why the ladder's legend, where there is
+ * room to say it once rather than a hundred times, offers exactly that.
+ */
+export function stormReason(hasKeyboard: boolean): string | null {
+  if (!hasKeyboard)
+    return "Hailstorm needs a keyboard, so this one stays shut.";
+  return "Coming soon.";
+}
+
 /** The state, said out loud. Read after the lesson's number and title. */
 const SAID: Record<TileState, string> = {
   cleared: "Passed",
@@ -77,16 +113,19 @@ const SAID: Record<TileState, string> = {
  * see the ring around a checkpoint has no other way to learn that the tile
  * forty rungs above their own is one they are allowed to press.
  */
-function tileLabel(lesson: Lesson, state: TileState): string {
+function tileLabel(
+  lesson: Lesson,
+  state: TileState,
+  blocked: string | null,
+): string {
   const what = `Lesson ${lesson.n}, ${lesson.title}`;
 
-  // A storm level has no passage and no wave yet (#159 builds it), so its tile
-  // says what it is and that it cannot be entered — the same stand-down the
-  // lesson results screen makes for the same reason, rather than a run of
-  // nothing. Its place on the map is still worth drawing: it is what makes
-  // lesson 4 arriving before the first word look deliberate.
+  // A storm level says what it is, and — where there is one — why it cannot be
+  // entered, rather than being a tile that does nothing when pressed. Its
+  // place on the map is worth drawing either way: it is what makes lesson 4
+  // arriving before the first word look deliberate.
   if (lesson.kind.type === "storm")
-    return `${what}. Hailstorm — worth playing, never required. Coming soon.`;
+    return `${what}. ${STORM_NOTE} ${blocked ?? `${SAID[state]}.`}`;
 
   // Only worth saying while it is ahead of the child: a checkpoint they have
   // already passed is just a lesson they passed, and "always open" on it would
@@ -107,15 +146,25 @@ function tileLabel(lesson: Lesson, state: TileState): string {
 export function LessonTile({
   lesson,
   progress,
+  hasKeyboard,
   onOpen,
 }: {
   lesson: Lesson;
   progress: LadderProgress;
+  /**
+   * Whether this device looks like it has a physical keyboard
+   * (`useKeyboardPresence`). Only a Hailstorm tile reads it — every other rung
+   * of the ladder is a passage, and a passage on a tablet is typed on the
+   * software keyboard like anything else (§4.5).
+   */
+  hasKeyboard: boolean;
   onOpen: (lesson: Lesson) => void;
 }) {
   const state = tileState(lesson, progress);
   const storm = lesson.kind.type === "storm";
-  const openable = state !== "locked" && !storm;
+  // One answer, drawn twice: what stops a storm tile is also what it says.
+  const blocked = storm ? stormReason(hasKeyboard) : null;
+  const openable = state !== "locked" && blocked === null;
 
   const classes = [
     "ladder__tile",
@@ -143,7 +192,7 @@ export function LessonTile({
       <span className="ladder__n u-mono" aria-hidden="true">
         {lesson.n}
       </span>
-      <span className="u-sr">{tileLabel(lesson, state)}</span>
+      <span className="u-sr">{tileLabel(lesson, state, blocked)}</span>
     </Button>
   );
 }

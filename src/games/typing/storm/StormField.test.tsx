@@ -8,6 +8,7 @@ import { describe, expect, it } from "vitest";
 import { RaceProvider } from "@/components/state/RaceContext";
 import { FINGER_ZONES, KEYS, keyX, strokeFor } from "@/engine/keyboard";
 import {
+  MIN_FALL_MS,
   SHIELD_FINGERS,
   buildWave,
   fire,
@@ -557,9 +558,11 @@ describe("StormField", () => {
   });
 
   it("draws what is in the air, and nothing that is spent", () => {
-    // Four letters, 300ms apart, each crossing the field in half a second: by
-    // 950ms the first two have landed and the last two are still falling.
-    const state = frameOf(only("j", 4, 500), 950);
+    // Four letters, 300ms apart, each crossing the field in the fastest fall
+    // the generator allows (`MIN_FALL_MS`, §8.10): they land at 800, 1100,
+    // 1400 and 1700, so by 1150ms the first two are spent and the last two —
+    // spawned at 600 and 900 — are still in the air.
+    const state = frameOf(only("j", 4, MIN_FALL_MS), MIN_FALL_MS + 350);
 
     expect(stones(state)).toHaveLength(2);
     expect(state.resolved[0]).not.toBeNull();
@@ -601,12 +604,51 @@ describe("StormField", () => {
     expect(aimedAt(dead)).toBeNull();
   });
 
+  it("hands the way out to the HUD, and says which key does it too", () => {
+    // Forwarding, which is all this file does with it — where the control
+    // goes and when it goes away are `StormHud`'s (§8.8, #155). What is worth
+    // pinning here is that a screen which offers a destination gets one, and
+    // that the key doing the same job is named for a child who cannot see the
+    // button: while the gun is live, `Tab` is one of the keys it swallows.
+    const live = frameOf(only("f"), 500);
+    const html = renderToStaticMarkup(
+      <StormField state={live} skyRef={{ current: null }} onQuit={() => {}} />,
+    );
+
+    expect(html).toContain("storm__quit");
+    expect(html).toContain("press Escape to leave");
+    // And a screen with nowhere to send them draws neither.
+    expect(draw(live)).not.toContain("storm__quit");
+  });
+
   it("says what the screen is, without reading out the hailstorm", () => {
     const html = draw(frameOf(only("f"), 500));
 
+    /** The opening tag of the first element carrying a class, whole. */
+    const tag = (cls: string) =>
+      new RegExp(`<[a-z0-9]+[^>]*class="[^"]*\\b${cls}\\b[^"]*"[^>]*>`).exec(
+        html,
+      )?.[0] ?? "";
+
     expect(html).toContain("Hailstorm");
-    // The sky churns sixty times a second once STM04 lands; the board is
-    // sixty spans. Neither is an announcement anybody could act on.
-    expect(html.match(/aria-hidden="true"/g)).toHaveLength(2);
+
+    // Everything that moves is hidden: the two HUD numbers, every stone, the
+    // eight shield segments and the board's sixty spans. None of it is an
+    // announcement anybody could act on, and a live region reading out a
+    // hailstorm is a denial of service rather than an accommodation (§4.4).
+    for (const cls of [
+      "storm__score",
+      "storm__combo",
+      "storm__letter",
+      "storm__shield",
+      "keyboard",
+    ])
+      expect(tag(cls), cls).toContain('aria-hidden="true"');
+
+    // The sky itself is NOT, and that is the point of putting the attribute on
+    // its parts (#155): the way out is drawn in the HUD, and a screen whose
+    // only exit sat inside a hidden subtree would be a trap for the child
+    // least able to get out of it.
+    expect(tag("storm__sky")).not.toContain("aria-hidden");
   });
 });

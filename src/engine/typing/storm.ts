@@ -213,6 +213,66 @@ function fallable(ch: string): Fallable | null {
 }
 
 /**
+ * The fastest a letter may ever cross the sky, in ms (§8.10, decision 52).
+ *
+ * **"Whiteout" is hard because there are many letters, not because one is a
+ * blur.** That is a promise about the top of the ladder, and the only place it
+ * can be kept is here: twenty `WaveSpec`s are a table somebody writes, and a
+ * table is exactly the kind of thing a difficulty pass tightens one row at a
+ * time until a level nobody can read ships. A floor in the generator cannot be
+ * forgotten by a row.
+ *
+ * 800ms is a judgement and worth being honest about that — it is not a
+ * measured reaction time. What it is anchored to is the epic's own level
+ * shapes: the fastest fall any of them declares is 800ms (`storm.test.ts`'s
+ * "home row", lesson 9), so the floor is the fastest the ladder ever *means*
+ * to be. Under it a letter stops being a thing to read, find and press and
+ * becomes a streak going past — which is the failure §8.10 names, and the one
+ * a five-year-old cannot tell from the game being broken.
+ *
+ * It is a backstop, not a difficulty knob: it bites only on a spec that asked
+ * for something faster than the ladder ever intends, and a wave built entirely
+ * above it is untouched.
+ *
+ * **There is deliberately no `MIN_GAP_MS` beside it, and the symmetry is a
+ * trap.** The thing a gap floor looks like it would buy is §8.10's "no strobe,
+ * ever" — a zone tinting over and over. But a zone tints when two letters
+ * *land* on one finger, and `fall` is a range too, so letters spawned a second
+ * apart land together: `storm.test.ts`'s "capitals", at `gap` 600–1000ms,
+ * already lands two on one zone 14ms apart. Measured on its "everything
+ * falls", the lesson-93 shape: flooring its
+ * `gap` at 350ms takes one zone from four tint starts a second to three, and
+ * flooring it at 800ms — which would make the top of the ladder one letter at
+ * a time — still leaves three. The floor would cost the density knob the top
+ * of the ladder is built out of and buy almost no safety, so the rule STM10
+ * has to keep is a count per zone per second and not a floor here (§8.10).
+ */
+export const MIN_FALL_MS = 800;
+
+/**
+ * The fall times a spec can actually produce — its own range, floored at
+ * `MIN_FALL_MS`.
+ *
+ * Exported because two questions are asked of it and neither should re-derive
+ * the clamp: `buildWave` samples from it, and anything asking whether a level
+ * is "one letter at a time" has to read the schedule the wave was built with
+ * rather than the one it was written with. `gap[0] >= fall[1]` is that
+ * property (see `buildWave`), and a fall the floor has raised is a fall that
+ * can overlap where the declaration said it would not.
+ *
+ * The range is clamped rather than each sample, so the draw stays uniform over
+ * what a letter can be. Flooring the sample instead would pile every letter of
+ * a too-fast spec onto the floor exactly, which is a metronome wearing a
+ * range's clothes.
+ */
+export function fallRange(spec: WaveSpec): [number, number] {
+  return [
+    Math.max(MIN_FALL_MS, spec.fall[0]),
+    Math.max(MIN_FALL_MS, spec.fall[1]),
+  ];
+}
+
+/**
  * The whole wave, from a seed.
  *
  * Deterministic in `(spec, seed)` and in nothing else: no clock is read and
@@ -235,9 +295,17 @@ function fallable(ch: string): Fallable | null {
  * letter on screen, because the interval is half-open — the outgoing letter
  * lands on the same millisecond the next one spawns, and landing is the tick
  * that takes it off the field.
+ *
+ * That arithmetic is read against `fallRange(spec)` and not against
+ * `spec.fall`: the fall a letter gets is floored at `MIN_FALL_MS`, and a floor
+ * can only ever raise a fall — so a spec that declared "one at a time" with
+ * falls under the floor gets letters that overlap. Which is the right way for
+ * that to go: the alternative is a level that keeps its spacing promise by
+ * dropping letters nobody could read.
  */
 export function buildWave(spec: WaveSpec, seed: number): Wave {
   const rand = mulberry32(seed);
+  const fall = fallRange(spec);
 
   // Filtered once, up front. An empty pool — a spec naming only characters
   // this board cannot type — yields an empty wave rather than an exception:
@@ -256,7 +324,7 @@ export function buildWave(spec: WaveSpec, seed: number): Wave {
     // because a draw nobody uses is still part of what the seed means.
     if (i > 0) spawnMs += between(spec.gap[0], spec.gap[1], rand);
     const from = pool[between(0, pool.length - 1, rand)];
-    const fallMs = between(spec.fall[0], spec.fall[1], rand);
+    const fallMs = between(fall[0], fall[1], rand);
     letters.push({ ...from, spawnMs, fallMs, landMs: spawnMs + fallMs });
   }
 

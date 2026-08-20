@@ -64,7 +64,10 @@ export function StormShield({ state }: { state: StormState }) {
   const tally = zoneTally(state);
 
   return (
-    <div className="storm__shield">
+    // Hidden for the reason the rest of the sky's moving parts are (§4.4,
+    // `StormField`): eight numbers that change as letters land are not an
+    // announcement anybody could act on.
+    <div className="storm__shield" aria-hidden="true">
       {SHIELD_FINGERS.map((finger) => {
         const zone = FINGER_ZONES[finger];
         const hp = state.shield[finger];

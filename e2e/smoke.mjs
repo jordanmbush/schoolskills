@@ -469,9 +469,10 @@ try {
   const storm = async () => {
     // Out to the ladder first, so this is a fresh mount every time it is
     // called: a hash set to the one it already holds fires no navigation, and
-    // the run below it would be whatever the last one finished as. Leaving is
-    // also the only way out of the storm there is, so this is the same exit a
-    // child takes between two goes at it.
+    // the run below it would be whatever the last one finished as. A hash
+    // navigation is the exit THIS helper uses; it is not the only one a child
+    // has — the HUD's Quit button and `Escape` both open the sheet (§8.11),
+    // and section 12 leaves that way on purpose.
     await page.evaluate((id) => (location.hash = `#/p/${id}`), player);
     await page.evaluate((id) => (location.hash = `#/p/${id}/storm`), player);
     await page.waitForSelector(".storm__letter", { timeout: 8000 });
@@ -587,8 +588,11 @@ try {
       .join(" "),
   );
 
-  // Leaving is what quitting is on this screen (there is no quit control), and
-  // it has to take the loop with it — and, since the gun landed, the keydown
+  // Leaving the route is one of the three ways a run ends — route-left,
+  // run-ended, paused (§8.11) — and no longer the only one, now that the HUD
+  // carries a Quit and `Escape` opens the same sheet (section 12 uses both).
+  // The point being made here is still the one only a navigation can make: it
+  // has to take the loop with it, and — since the gun landed — the keydown
   // listener beside it.
   await page.evaluate((id) => (location.hash = `#/p/${id}`), player);
   await page.waitForTimeout(500);
@@ -1344,6 +1348,330 @@ try {
     `${retried.length} run(s) after the retry: ` +
       retried.map((s) => `${s.correct}/${s.cards.length}`).join(", "),
   );
+
+  /*
+   * The setting a falling-letter game cannot honour by removing the falling
+   * (docs/typing.md §8.10, #155).
+   *
+   * Two claims, and neither can be read off the stylesheet. **The fall stays**
+   * — it is a custom property written from a rAF loop rather than an
+   * animation, so base.css's blanket clamp has nothing of it to reach, and the
+   * only proof of that is a stone moving on a page that asked for less motion.
+   * **The flashing comes off** — the three tints are switched to
+   * `animation: none` rather than left to the clamp's 0.001ms pass, and the
+   * difference between those two is exactly one `animationstart` per event: a
+   * clamped animation still starts. So the census below is of a whole run, and
+   * the number it may equal is zero.
+   *
+   * Screen shake, parallax and particles are the rest of §8.10's list, and the
+   * honest answer is that this screen has never had any of them. That is not a
+   * claim a count can carry, so it is checked as what it looks like: nothing
+   * on this screen is transformed but the stones.
+   */
+  log("\n11. Under reduced motion the fall stays and the flashing goes");
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.evaluate(() => (window.__tints = []));
+  await storm();
+
+  const calm = await page.evaluate(async () => {
+    // The same measurement as the fall at the top of section 9, on a page that
+    // has asked for less motion: distinct positions are what a re-render alone
+    // cannot fake, because without the loop a stone climbs a 300ms staircase.
+    const stone = document.querySelector(".storm__letter");
+    const tops = [];
+    for (let i = 0; i < 24; i++) {
+      tops.push(stone.getBoundingClientRect().top);
+      await new Promise((done) => window.setTimeout(done, 25));
+    }
+    return {
+      distinct: new Set(tops.map((top) => Math.round(top))).size,
+      forwards: tops.every((top, i) => i === 0 || top >= tops[i - 1]),
+      travelled: Math.round(tops[tops.length - 1] - tops[0]),
+      // Nothing but the stones moves — and that is asked of the whole screen
+      // rather than of a list of selectors somebody has to remember to grow.
+      // A shake would be a transform on the field, the sky or the shield; a
+      // parallax layer would be a transform on something none of those three
+      // names. Enumerating every descendant catches all of them, including
+      // the one nobody thought of, which is the only kind worth checking for.
+      // `.storm__combo` reports `scale: 1` rather than a transform, so it is
+      // `none` here like everything else that is not a falling stone. The
+      // field itself is in the list as well as its descendants, because a
+      // shake would most naturally be put on the thing that holds them.
+      // Read as an attribute rather than `className`, which is an
+      // `SVGAnimatedString` and not a string on an SVG node — and an icon
+      // somebody transforms is exactly the kind of thing this is here to
+      // find, so the one case it must not choke on is the new one.
+      moved: [...document.querySelectorAll("main.storm, main.storm *")]
+        .filter((el) => window.getComputedStyle(el).transform !== "none")
+        .map((el) => el.getAttribute("class") ?? el.tagName),
+      stone: window.getComputedStyle(document.querySelector(".storm__letter"))
+        .transform,
+      particles: document.querySelectorAll(".confetti, .confetti__bit").length,
+    };
+  });
+  check(
+    "a stone still falls, frame by frame, for a child who asked for less motion",
+    calm.distinct >= 12 && calm.forwards && calm.travelled > 0,
+    `${calm.distinct} distinct positions in 24 readings over 600ms, ` +
+      `${calm.travelled}px travelled`,
+  );
+  check(
+    "and nothing but the stones is moved at all",
+    calm.moved.every((name) => name.split(" ").includes("storm__letter")) &&
+      calm.stone.startsWith("matrix") &&
+      calm.particles === 0,
+    `${calm.moved.length} transformed element(s) in the storm, all stones: ` +
+      `${[...new Set(calm.moved)].join() || "none"}; stone ${calm.stone}, ` +
+      `${calm.particles} particles`,
+  );
+
+  // The whole wave, untouched, exactly as the census run in section 9 was —
+  // so the number below is over twelve landings and not over a quiet moment.
+  await page
+    .waitForFunction(() => window.__pendingFrames() === 0, null, {
+      timeout: 15000,
+    })
+    .catch(() => {});
+  await page.waitForTimeout(300);
+  const quiet = await page.evaluate(() => ({
+    tints: window.__tints,
+    zones: document.querySelectorAll(".storm__zone[data-hole]").length,
+  }));
+  check(
+    "twelve letters land and not one animation runs",
+    quiet.tints.length === 0 && quiet.zones === 3,
+    `${quiet.tints.length} storm animations over a whole wave, ` +
+      `${quiet.zones} zones emptied (the damage still happened)`,
+  );
+  await page.emulateMedia({ reducedMotion: null });
+
+  /*
+   * The keys the gun swallows, the key that leaves, and what quitting costs
+   * the record book (§8.8, #155).
+   *
+   * `preventDefault` is invisible to every other kind of test: the storm is
+   * exactly one viewport tall with `overflow: hidden`, so a `Space` that
+   * scrolled would move nothing HERE and everything on a shorter screen or
+   * behind a taller ad. What can be asked is whether the default was taken,
+   * which a listener on the way back up can see — so the checks below read
+   * `defaultPrevented` rather than a scroll position, and read the scroll
+   * position too because it costs nothing.
+   *
+   * The pair matters as much as the members: `Space`, `/` and `Tab` are keys
+   * the board carries and are swallowed; `ArrowDown` and `Escape` are not on
+   * it and are left alone, which is what keeps a browser's own keys working on
+   * a screen a child has to be able to get out of.
+   */
+  log("\n12. The keys a storm swallows, and the one that leaves it");
+  const runsBeforeQuit = (await stormRuns()).length;
+  await storm();
+  await page.evaluate(() => {
+    window.__keys = [];
+    // Bubble phase, so this runs after the gun's capture listener and sees
+    // whatever it decided.
+    window.addEventListener("keydown", (event) =>
+      window.__keys.push({
+        code: event.code,
+        prevented: event.defaultPrevented,
+      }),
+    );
+  });
+  for (const key of ["Space", "/", "Tab", "ArrowDown"]) {
+    await press(key);
+    await page.waitForTimeout(120);
+  }
+  const swallowed = await page.evaluate(() => ({
+    keys: window.__keys,
+    scrollY: window.scrollY,
+  }));
+  const took = (code) => swallowed.keys.find((k) => k.code === code)?.prevented;
+  check(
+    "the gun reads event.code, and swallows the keys that would scroll",
+    swallowed.keys.length === 4 &&
+      took("Space") === true &&
+      took("Slash") === true &&
+      took("Tab") === true &&
+      took("ArrowDown") === false &&
+      swallowed.scrollY === 0,
+    swallowed.keys.map((k) => `${k.code}:${k.prevented}`).join(" "),
+  );
+
+  // And the way out. `Escape` is not a key the board carries, so it is neither
+  // swallowed nor fired at the lowest letter — a way out that cost ten points
+  // and a streak would be a trap.
+  const scoreAtQuit = await page.evaluate(() =>
+    Number(document.querySelector(".storm__score").textContent),
+  );
+  await press("Escape");
+  await page.waitForSelector('[aria-label="Quit the storm"]', {
+    timeout: 4000,
+  });
+  const asked = await page.evaluate(async () => {
+    const lowest = () => {
+      const stones = [...document.querySelectorAll(".storm__letter")];
+      let low = stones[0];
+      for (const stone of stones)
+        if (Number(stone.dataset.stone) < Number(low.dataset.stone))
+          low = stone;
+      return low
+        ? Number(window.getComputedStyle(low).getPropertyValue("--drop"))
+        : null;
+    };
+    const before = lowest();
+    await new Promise((done) => window.setTimeout(done, 900));
+    return {
+      before,
+      after: lowest(),
+      // No frame is requested while the sheet is up, which is what makes the
+      // pause cost the wave nothing rather than merely look like it.
+      pending: window.__pendingFrames(),
+      escaped: window.__keys.at(-1),
+      score: Number(document.querySelector(".storm__score").textContent),
+    };
+  });
+  check(
+    "Escape asks rather than fires, and the storm stops where it stood",
+    asked.escaped.code === "Escape" &&
+      asked.escaped.prevented === false &&
+      asked.score === scoreAtQuit &&
+      asked.before !== null &&
+      asked.after === asked.before &&
+      asked.pending === 0,
+    `--drop ${asked.before} → ${asked.after} over 900ms, ` +
+      `${asked.pending} frames pending, score ${scoreAtQuit} → ${asked.score}`,
+  );
+
+  // Then confirm it. A quit mid-wave is a run with no ending, and the save is
+  // an effect on the ending — so the record book must not move. Counted in
+  // IndexedDB rather than watched on screen: a partial run written and then
+  // hidden would look identical from here.
+  await page.locator(".modal__actions button", { hasText: /^quit$/i }).click();
+  await page.waitForFunction(
+    () => document.querySelector(".ladder__tile") !== null,
+    null,
+    { timeout: 8000 },
+  );
+  const runsAfterQuit = await stormRuns();
+  check(
+    "quitting mid-wave saves nothing at all",
+    runsAfterQuit.length === runsBeforeQuit &&
+      (await page.evaluate(
+        () => document.querySelectorAll(".storm").length,
+      )) === 0,
+    `${runsBeforeQuit} run(s) before, ${runsAfterQuit.length} after`,
+  );
+
+  /*
+   * The tablet (§4.5, §8.8, #155).
+   *
+   * A second context, because `hasTouch` is fixed when one is created — and it
+   * is what makes `(any-pointer: coarse) and (any-hover: none)` match, which
+   * is the guess `useKeyboardPresence` makes. Only a browser can be asked
+   * whether that query really matches on a device with no mouse; the unit
+   * suite can only be told.
+   *
+   * Both halves of the story are here, and the second is the one that matters:
+   * the guess is a guess, so a child in a keyboard folio has to be able to
+   * overturn it — with one keystroke, live, on the same page.
+   */
+  log("\n13. A device with no keyboard is told so, and is not locked out");
+  const tabletCtx = await browser.newContext({
+    viewport: { width: 1024, height: 768 },
+    hasTouch: true,
+  });
+  const tablet = await tabletCtx.newPage();
+  tablet.on("pageerror", (e) => errors.push(`pageerror: ${e.message}`));
+  await tablet.goto(`${BASE}/typing`, { waitUntil: "networkidle" });
+  await tablet
+    .getByRole("button", { name: /add a player/i })
+    .first()
+    .click();
+  await tablet.waitForSelector(".modal__panel", { timeout: 8000 });
+  await tablet.locator(".modal__panel input").first().fill("Tablet");
+  await tablet.getByRole("button", { name: /^add player$/i }).click();
+  await tablet.waitForSelector(".modal__panel", {
+    state: "detached",
+    timeout: 8000,
+  });
+  await tablet.getByText("Tablet", { exact: false }).first().click();
+  await tablet.waitForSelector(".ladder__tile", { timeout: 8000 });
+
+  /** The ladder as this device draws it: the storms, and the legend's line. */
+  const ladder = () =>
+    tablet.evaluate(() => {
+      const rung = (extra) => [
+        ...document.querySelectorAll(`.ladder__row .ladder__tile${extra}`),
+      ];
+      const storms = rung(".is-storm");
+      return {
+        storms: storms.length,
+        shut: storms.filter((t) => t.getAttribute("aria-disabled") === "true")
+          .length,
+        said: storms.filter((t) =>
+          t.textContent.includes("Hailstorm needs a keyboard"),
+        ).length,
+        // The rest of the ladder is untouched: a passage is typed on the
+        // software keyboard like anything else (§4.5), so a child on an iPad
+        // still has the whole course. Counted exactly, because "some are
+        // open" would pass with seventy-nine of the eighty wrongly shut —
+        // which is the failure this is here to catch, and the one a floor of
+        // zero cannot see.
+        lessonsOpen: rung(":not(.is-storm):not([aria-disabled])").length,
+        legend: [...document.querySelectorAll(".ladder__keyitem")]
+          .map((li) => li.textContent.trim())
+          .find((text) => text.startsWith("Hailstorm")),
+        touchOnly: window.matchMedia(
+          "(any-pointer: coarse) and (any-hover: none)",
+        ).matches,
+      };
+    });
+
+  const guessed = await ladder();
+  check(
+    "every storm tile is shut, with the reason on it",
+    guessed.touchOnly === true &&
+      guessed.storms === 20 &&
+      guessed.shut === 20 &&
+      guessed.said === 20 &&
+      // Eleven of the eighty non-storm rungs, which is what FRESH progress
+      // opens on any device: lesson 1, and the ten checkpoints a placement
+      // test may be taken at from a standing start (§6.6). A desktop draws
+      // the same eleven — the keyboard guess reaches storm tiles and nothing
+      // else — so a drift either way is the bug this names.
+      guessed.lessonsOpen === 11 &&
+      guessed.legend.includes("Press any key if you have one"),
+    `${guessed.said}/${guessed.storms} storms say why, ` +
+      `${guessed.lessonsOpen} lessons still open: "${guessed.legend}"`,
+  );
+
+  // And the route itself is not gated by any of it. A wrong guess must cost a
+  // child a tile, never the game — so a URL still opens a playable storm, with
+  // the way out drawn on it.
+  await tablet.evaluate(() => (location.hash = `${location.hash}/storm`));
+  await tablet.waitForSelector(".storm__letter", { timeout: 8000 });
+  const reachable = await tablet.evaluate(() => ({
+    stones: document.querySelectorAll(".storm__letter").length,
+    quit: document.querySelectorAll(".storm__quit").length,
+  }));
+  await tablet.goBack();
+  await tablet.waitForSelector(".ladder__tile", { timeout: 8000 });
+
+  // One keystroke, and the guess is over. Nothing is reloaded and the pointer
+  // still says tablet — which is the point: proof beats a proxy.
+  await tablet.keyboard.press("k");
+  await tablet.waitForTimeout(250);
+  const proved = await ladder();
+  check(
+    "and one keystroke lets a keyboard in, with nothing reloaded",
+    reachable.stones > 0 &&
+      reachable.quit === 1 &&
+      proved.touchOnly === true &&
+      proved.said === 0 &&
+      proved.legend.includes("Coming soon"),
+    `the route opened ${reachable.stones} stone(s) either way; ` +
+      `after one key ${proved.said}/${proved.storms} still name a keyboard`,
+  );
+  await tabletCtx.close();
 
   log(
     `\nconsole errors: ${errors.length ? errors.slice(0, 5).join(" | ") : "none"}`,

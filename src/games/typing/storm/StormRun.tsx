@@ -7,7 +7,7 @@ import { typingMode } from "@/engine/decks/typing";
 import { sessionsFor } from "@/engine/records";
 import { unlockedAt } from "@/engine/typing/keys";
 import { buildWave } from "@/engine/typing/storm";
-import { SaveFailed, useRaceFinish } from "@/games/race";
+import { QuitSheet, SaveFailed, useRaceFinish } from "@/games/race";
 
 import { StormField } from "./StormField";
 import { StormOver } from "./StormOver";
@@ -20,18 +20,17 @@ import type { Profile } from "@/engine/types";
 /**
  * The Hailstorm route (docs/typing.md §9), playing one wave.
  *
- * The screen is five things joined: a field that draws a `StormState`, a clock
- * that produces one per animation frame, a keyboard that shoots, the ending
- * that says which finger let it through and offers a drill of that finger's
- * keys (`StormOver`), and — the moment the storm stops — the run written to
- * the record book as a `Session` (§8.7, `stormSession.ts`).
+ * The screen is six things joined: a field that draws a `StormState`, a clock
+ * that produces one per animation frame, a keyboard that shoots, the way out
+ * (below), the ending that says which finger let it through and offers a drill
+ * of that finger's keys (`StormOver`), and — the moment the storm stops — the
+ * run written to the record book as a `Session` (§8.7, `stormSession.ts`).
  *
  * What it is still not is a whole game. STM10 replaces the stand-in wave below
  * with the twenty the ladder actually names.
  *
  * Unlinked on purpose. Nothing on the ladder points here until STM10 puts the
- * storm tiles on it, so the only way in is the URL — which is exactly what a
- * screen with no quit button should be.
+ * storm tiles on it, so the only way in is the URL.
  */
 
 /**
@@ -189,6 +188,26 @@ function StormPlay({
   const navigate = useNavigate();
 
   /**
+   * Is the quit sheet up? (§8.8, decision 54.)
+   *
+   * It is the storm's pause as well as its question, and the two are one flag
+   * because they are one moment: a wave that went on falling behind the sheet
+   * would break a child's shield while they read "it won't be saved", and a
+   * gun still listening would fire `Space` and `Enter` at the letters instead
+   * of at the two buttons in front of them. `useStormClock` takes it as
+   * `paused` and stops the loop, which costs the run nothing — wave time is
+   * measured between frames, and there are none.
+   *
+   * **Quitting saves nothing, and there is no code here that makes that true.**
+   * The run is written by the effect below, which fires on an `ending` the
+   * reducer stamps; a wave abandoned halfway has none, so leaving is a
+   * navigation and the route unmounts with the run still only in memory. That
+   * is worth stating because it is the kind of guarantee somebody later adds a
+   * "save the partial run" line against without noticing it was a promise.
+   */
+  const [quitting, setQuitting] = useState(false);
+
+  /**
    * This attempt's wave, and the config the run will be filed under.
    *
    * Built once per mount and never rebuilt: a run's wave is fixed for its
@@ -197,7 +216,14 @@ function StormPlay({
    */
   const [wave] = useState(() => buildWave(PREVIEW_SPEC, PREVIEW_SEED));
   const config = useMemo(() => stormConfig(PREVIEW_LESSON_ID, wave), [wave]);
-  const { state, skyRef } = useStormClock(wave);
+  const { state, skyRef } = useStormClock(wave, {
+    paused: quitting,
+    // The keyboard's way to the same sheet the button opens. It is taken
+    // inside the gun's own listener because every other key while the run is
+    // live is a shot, and a way out that cost ten points would be a trap
+    // (`QUIT_KEY`).
+    onQuit: () => setQuitting(true),
+  });
 
   // Snapshotted at mount so the run we're about to save can't affect it.
   const [history] = useState(() => sessionsFor(sessions, profile.id));
@@ -259,19 +285,37 @@ function StormPlay({
     );
 
   return (
-    <StormField
-      state={state}
-      skyRef={skyRef}
-      // Drawn where the board was, and only once the run is over — which is
-      // `StormField`'s call to make, off the same `ending` the gun dies on.
-      over={
-        <StormOver
-          state={state}
-          mode={PREVIEW_MODE}
-          profileId={profile.id}
-          onRetry={onRetry}
+    <>
+      <StormField
+        state={state}
+        skyRef={skyRef}
+        onQuit={() => setQuitting(true)}
+        // Drawn where the board was, and only once the run is over — which is
+        // `StormField`'s call to make, off the same `ending` the gun dies on.
+        over={
+          <StormOver
+            state={state}
+            mode={PREVIEW_MODE}
+            profileId={profile.id}
+            onRetry={onRetry}
+          />
+        }
+      />
+
+      {/* The race's sheet and not a second one, because it is the same
+          question with a different noun: the storm is paused behind it, the
+          run is not saved either way, and "it won't be saved and no XP is
+          earned" is the one thing being weighed. Quitting goes back to the
+          ladder, which is where the tile that will send a child here lives. */}
+      {quitting && (
+        <QuitSheet
+          title="Quit this storm?"
+          keep="Keep playing"
+          label="Quit the storm"
+          onQuit={() => navigate(`/p/${profile.id}`)}
+          onKeepRacing={() => setQuitting(false)}
         />
-      }
-    />
+      )}
+    </>
   );
 }

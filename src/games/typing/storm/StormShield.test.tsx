@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import { FINGER_ZONES } from "@/engine/keyboard";
 import {
+  MIN_FALL_MS,
   SHIELD_FINGERS,
   buildWave,
   fire,
@@ -30,7 +31,10 @@ const only = (ch: string, over: Partial<WaveSpec> = {}): WaveSpec => ({
   keys: [ch],
   count: 4,
   gap: [300, 300],
-  fall: [500, 500],
+  // The fastest fall the generator will build (`MIN_FALL_MS`, §8.10), so the
+  // schedule below is the one a wave really gets: spawns at 0, 300, 600 and
+  // 900, landing at 800, 1100, 1400 and 1700.
+  fall: [MIN_FALL_MS, MIN_FALL_MS],
   shield: 3,
   repairAt: 0,
   ...over,
@@ -102,20 +106,20 @@ describe("StormShield", () => {
     const start = frameOf(only("f", { shield: 3 }), 0);
     expect(at(start, "l-index").vars["--hp"]).toBe(1);
 
-    // One `f` has landed by 550ms: two of three left on the left index, and
+    // One `f` has landed by 850ms: two of three left on the left index, and
     // nothing taken off any other finger.
-    const hurt = frameOf(only("f", { shield: 3 }), 550);
+    const hurt = frameOf(only("f", { shield: 3 }), 850);
     expect(at(hurt, "l-index").vars["--hp"]).toBeCloseTo(2 / 3, 10);
     expect(at(hurt, "r-index").vars["--hp"]).toBe(1);
   });
 
   it("reads a zone at zero as a hole, and nothing above it", () => {
-    const hurt = frameOf(only("f", { shield: 2 }), 550);
+    const hurt = frameOf(only("f", { shield: 2 }), 850);
     expect(at(hurt, "l-index").hole).toBe(false);
 
     // Two landings into a two-point zone: empty, and the next `f` down this
     // column ends the run.
-    const gone = frameOf(only("f", { shield: 2 }), 850);
+    const gone = frameOf(only("f", { shield: 2 }), 1150);
     expect(at(gone, "l-index").vars["--hp"]).toBe(0);
     expect(at(gone, "l-index").hole).toBe(true);
     expect(segments(gone).filter((zone) => zone.hole)).toHaveLength(1);
@@ -134,14 +138,14 @@ describe("StormShield", () => {
     // moves by two rather than a second element (§8.10). What that element
     // then does — mount once, animate once, and not restart on a frame where
     // nothing happened — is the browser's to answer, and `e2e/smoke.mjs` does.
-    const one = frameOf(only("f"), 550);
+    const one = frameOf(only("f"), 850);
     expect(at(one, "l-index").hit).toBe(1);
     expect(zoneTally(one)["l-index"].hit).toBe(1);
 
-    // 30ms of gap and a 500ms fall puts two landings inside one 16ms frame.
+    // 30ms of gap and an 800ms fall puts two landings inside one 16ms frame.
     const together = tick(
       startStorm(buildWave(only("f", { gap: [30, 30] }), 7)),
-      540,
+      830,
     );
     expect(together.resolved.filter(Boolean)).toHaveLength(2);
     expect(zoneTally(together)["l-index"].hit).toBe(2);
@@ -152,15 +156,17 @@ describe("StormShield", () => {
     // A shield of two with a repair every second hit: one letter through, then
     // two shot, and the weakest zone — the one that just took the hit — gets
     // its point back (§8.5).
-    const spec = only("f", { shield: 2, repairAt: 2 });
-    const hurt = frameOf(spec, 550);
+    // Gaps wider than the fall, so the letters come one at a time (§8.3):
+    // spawns at 0, 900 and 1800, landing at 800, 1700 and 2600.
+    const spec = only("f", { shield: 2, repairAt: 2, gap: [900, 900] });
+    const hurt = frameOf(spec, 1000);
     expect(at(hurt, "l-index").vars["--hp"]).toBe(0.5);
     expect(at(hurt, "l-index").mend).toBe(0);
 
-    // A tick between the two shots, because the second letter has not spawned
-    // at 550ms and firing at an empty field is a miss that breaks the streak
+    // A tick between the two shots, because the third letter has not spawned
+    // at 1000ms and firing at an empty field is a miss that breaks the streak
     // (§8.4) — which is the rule the repair hangs off.
-    const mended = fire(tick(fire(hurt, "KeyF"), 100), "KeyF");
+    const mended = fire(tick(fire(hurt, "KeyF"), 900), "KeyF");
     expect(mended.shield["l-index"]).toBe(2);
     expect(zoneTally(mended)["l-index"]).toEqual({ hit: 1, mend: 1 });
     expect(at(mended, "l-index").mend).toBe(1);
@@ -172,7 +178,7 @@ describe("StormShield", () => {
     // breaks before the decrement — there was nothing left to take. Counting
     // it against the hit points would leave the arithmetic one short and draw
     // a lime pulse on the frame a child died.
-    const dead = frameOf(only("f", { shield: 1 }), 900);
+    const dead = frameOf(only("f", { shield: 1 }), 1150);
 
     expect(dead.ending).toEqual({
       kind: "breached",

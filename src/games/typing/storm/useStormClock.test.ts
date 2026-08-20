@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { keyX, strokeFor } from "@/engine/keyboard";
 import { buildWave, fire, startStorm, tick } from "@/engine/typing/storm";
 
-import { MAX_STEP_MS, redrawn, stepMs } from "./useStormClock";
+import { MAX_STEP_MS, QUIT_KEY, redrawn, stepMs } from "./useStormClock";
 
 import type {
   ShieldFinger,
@@ -35,6 +35,27 @@ const spec: WaveSpec = {
 
 const run = (atMs: number): StormState =>
   tick(startStorm(buildWave(spec, 7)), atMs);
+
+describe("the key that leaves a storm", () => {
+  /*
+   * `QUIT_KEY` is taken inside the gun's own listener and before the trigger,
+   * so what it must be is a key that could not have been a shot. Two ways it
+   * could stop being one, and both are decidable here.
+   */
+
+  it("is not a key the board carries", () => {
+    // A key with a lane is a key `preventDefault` swallows and a key a letter
+    // can fall down. `Escape` has neither, which is what makes it spendable.
+    expect(keyX(QUIT_KEY)).toBeNull();
+  });
+
+  it("is not a key any character is typed with", () => {
+    // The stronger half: if some character resolved to this code, a child
+    // shooting that letter would leave the game instead.
+    for (const ch of [...`abcdefghijklmnopqrstuvwxyz0123456789 ;',./[]\\-=\``])
+      expect(strokeFor(ch)?.code, ch).not.toBe(QUIT_KEY);
+  });
+});
 
 describe("stepMs", () => {
   it("is nothing on the first frame of a run", () => {

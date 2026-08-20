@@ -124,11 +124,20 @@ export function aimedAt(state: StormState): string | null {
 export function StormField({
   state,
   skyRef,
+  onQuit,
   over,
 }: {
   state: StormState;
   /** Where `useStormClock` writes the fall, frame by frame. */
   skyRef: React.RefObject<HTMLDivElement | null>;
+  /**
+   * Ask to leave mid-run, or absent on a screen with no way out (`StormHud`).
+   *
+   * Handed to the HUD rather than drawn here, because the HUD is the row that
+   * already owns the top of the sky and its two corners — a way out placed by
+   * this file would be a second opinion about where that row is.
+   */
+  onQuit?: () => void;
   /**
    * What stands where the board does once the run is over (§8.5, STM07).
    *
@@ -146,31 +155,47 @@ export function StormField({
 }) {
   return (
     <main className="storm">
-      {/* The screen's name, for the one visitor who cannot see any of it. The
-          field itself is hidden below — see the sky. */}
+      {/* The screen's name and what it is, for the one visitor who cannot see
+          any of it. Everything that moves is hidden one level down — see the
+          sky — so this and the way out are all there is to announce, which is
+          honest: the game is a physical keyboard and a reaction time, and a
+          child who cannot see the letters cannot play it (§8.8). What they can
+          still do is leave, and while the gun is live `Tab` is a key it
+          swallows, so the key that does it is worth naming. */}
       <h1 className="u-sr">Hailstorm</h1>
+      {state.ending === null && (
+        <p className="u-sr">
+          Letters fall down the column of the key that types them. Press that
+          key to shoot the lowest one, or press Escape to leave.
+        </p>
+      )}
 
       {/*
-        `aria-hidden`, for the reason the board is (§4.4): what is in here
-        changes sixty times a second under STM04's loop, and a live region
-        reading out a hailstorm is a denial of service rather than an
-        accommodation. Nothing is announced that a child could act on anyway —
-        the game is a physical keyboard and a reaction time. The device with no
-        keys is told so honestly, and that is STM09's story.
+        Not `aria-hidden` itself, though nearly everything in it is: the way
+        out lives in the HUD (`StormHud`), and a screen whose only exit was
+        inside a hidden subtree would be a trap for exactly the child least
+        able to get out of it. So the attribute sits on each churning part —
+        the two HUD numbers, every stone, the shield — for the reason the board
+        carries one (§4.4): what is in here changes sixty times a second, and a
+        live region reading out a hailstorm is a denial of service rather than
+        an accommodation.
       */}
-      <div className="storm__sky" ref={skyRef} aria-hidden="true">
+      <div className="storm__sky" ref={skyRef}>
         {/* First in the sky, so every stone paints over the numbers rather
             than under them: a score must never hide a letter that has to be
             shot. It is in here rather than in a row of its own because the sky
             is the only track `.storm` can take a row FROM, and on a short
             viewport it has nothing left to give (decision 45, `StormHud`). */}
-        <StormHud state={state} />
+        <StormHud state={state} onQuit={onQuit} />
 
         {state.wave.letters.map((letter, index) => {
           if (!isDrawn(state, index)) return null;
 
           return (
             <span
+              // Hidden for the reason the sky's other churn is: a letter is on
+              // screen for a second and a half and is not a thing to announce.
+              aria-hidden="true"
               // The index is the letter's identity (§8.3): the wave is built
               // once and never grows, so this key cannot shift under a letter
               // mid-fall — which it would if the drawn letters were numbered

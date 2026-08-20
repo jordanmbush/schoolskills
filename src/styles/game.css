@@ -2305,12 +2305,17 @@ label.segmented__btn {
   position: absolute;
   inset: 0;
 
-  /* Two columns and one row: the score at one end and the multiplier at the
-     other, and nothing else — what a run PAID is the ending screen's to say
-     (`StormOver`), where there is room to say it beside the finger that let
-     the storm through. */
+  /* Three columns and one row: the score at one end, the multiplier at the
+     other, and the way out between them — what a run PAID is the ending
+     screen's to say (`StormOver`), where there is room to say it beside the
+     finger that let the storm through.
+
+     Each child names its own column rather than being placed in order,
+     because the middle one is not always there: the quit goes when the gun
+     does (`StormHud`), and auto-placement would then slide the multiplier
+     into the middle of the sky on the frame a run ends. */
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr auto 1fr;
   align-items: start;
   padding: calc(var(--key) * 0.12) calc(var(--key) * 0.1);
 
@@ -2325,6 +2330,7 @@ label.segmented__btn {
    lights up. */
 .storm__score {
   position: relative;
+  grid-column: 1;
   justify-self: start;
   padding: calc(var(--key) * 0.08) calc(var(--key) * 0.16);
   border-radius: calc(var(--key) * 0.14);
@@ -2333,10 +2339,13 @@ label.segmented__btn {
 /* One wash of `--flare` per wrong key, and never a sequence: a single pass on
    an element `StormHud` mounts from a counter that only goes up, exactly as
    the shield's damage tint is (§8.10, decision 42). It rests at zero and
-   animates down to it, so `prefers-reduced-motion` — which clamps every
-   animation to one 0.001ms pass — leaves the score exactly as it found it, and
-   what a child who asked for less motion still gets is the number itself,
-   which has already fallen. */
+   animates down to it, so nothing is lost by taking it off entirely — which
+   is what the reduced-motion block below does, `animation: none` rather than
+   base.css's 0.001ms clamp (§8.10). Do not read that block as redundant with
+   the clamp: the clamp shortens this animation, the block stops it existing,
+   and the difference is one `animationstart` the smoke suite counts. What a
+   child who asked for less motion still gets is the number itself, which has
+   already fallen. */
 .storm__miss {
   position: absolute;
   inset: 0;
@@ -2362,6 +2371,7 @@ label.segmented__btn {
    starts and when one breaks, which is twice a run and not once a hit, so
    there is nothing here that could become a flash sequence. */
 .storm__combo {
+  grid-column: 3;
   justify-self: end;
   scale: 1;
 
@@ -2375,6 +2385,46 @@ label.segmented__btn {
 .storm__combo[data-hot] {
   scale: 1.12;
   color: var(--lime);
+}
+
+/* The way out, mid-run (docs/typing.md §8.8, decision 54).
+
+   A storm is a whole viewport with no site chrome over it, so this is the only
+   exit a child has until the run ends — and on a tablet, where the game cannot
+   be played at all, it is the only thing on the screen that does anything.
+   `Escape` is the same door for a child at a keyboard (`QUIT_KEY`), which this
+   one cannot be: `Tab` is a key the gun swallows while it is live.
+
+   `pointer-events` are handed back here and nowhere else in the sky. The sky
+   refuses them so a drag cannot select a hailstorm and a tap cannot land on a
+   letter, and this is the single exception — the one thing in there a finger
+   is meant to hit.
+
+   Drawn like the race's quit and dimmer than the numbers beside it: it is the
+   least urgent thing in the sky, and the letters have to stay the loudest. */
+.storm__quit {
+  grid-column: 2;
+  pointer-events: auto;
+
+  font-family: var(--font-mono);
+  font-size: calc(var(--key) * 0.32);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--chalk-dim);
+  padding: 0.35em 0.9em;
+  /* In key units like everything else in this field, and NOT the race's pill:
+     a pixel radius here would be the one length in the storm that did not
+     move with `--key`. */
+  border-radius: calc(var(--key) * 0.18);
+  border: 1px solid var(--hairline);
+}
+
+/* Brighter, not redder. The race's quit goes to `--flare` on hover and this
+   one must not: `--flare` is a wrong, and on this screen it is already damage,
+   a hole and a wrong key. Leaving a storm is none of those. */
+.storm__quit:hover {
+  color: var(--chalk);
+  border-color: color-mix(in oklab, var(--accent) 45%, transparent);
 }
 
 /* ── Hailstorm: the shield ───────────────────────────────────────────────
@@ -2451,9 +2501,11 @@ label.segmented__btn {
    a letter lands or a repair pays out, not sixty times a second, so the layout
    property is the honest one and costs nothing. The transition is what makes a
    repair visible as a repair — the block grows back where damage drops it —
-   and it ends where `--hp` says either way, so `prefers-reduced-motion`
-   clamping every transition to 0.001ms (base.css) loses the movement and none
-   of the reading. */
+   and it ends where `--hp` says either way, so it is switched off outright
+   under `prefers-reduced-motion` (`transition: none`, in the block below —
+   §8.10) and the movement goes while none of the reading does. The block is
+   what does that here, not base.css's 0.001ms clamp: the clamp would still
+   run this transition, only faster. */
 .storm__zone::before {
   content: "";
   position: absolute;
@@ -2489,14 +2541,19 @@ label.segmented__btn {
    `StormShield` from a counter that only goes up, so it exists exactly once
    per landing and once per repair. Two letters landing on one zone inside a
    single `tick` move that counter by two, which is still one element and
-   therefore still one tint (§8.10).
+   therefore still one tint (§8.10). What that rules out is the tint
+   restarting on a frame where nothing happened; how often a WAVE may land on
+   one zone is a separate question, and one the generator does not yet answer
+   — see §8.10 for what is measured and what STM10 still owes it.
 
    Both rest at `opacity: 0` and animate down to it, so the animation adds
-   nothing to the picture once it is over and `prefers-reduced-motion` — which
-   clamps every animation to one 0.001ms pass — leaves the segment exactly as
-   it would have found it. What a child who asked for less motion still gets
-   is the block's own height, which is the damage itself rather than a report
-   of it.                                                                  */
+   nothing to the picture once it is over — which is why the reduced-motion
+   block below can take both off outright with `animation: none` and leave the
+   segment exactly as it would have found it. That block, and not base.css's
+   0.001ms clamp, is what suppresses these two under the setting; the clamp
+   only shortens them, and a shortened animation still starts. What a child
+   who asked for less motion still gets is the block's own height, which is
+   the damage itself rather than a report of it.                           */
 .storm__hit,
 .storm__mend {
   position: absolute;
@@ -2524,6 +2581,56 @@ label.segmented__btn {
 @keyframes storm-mend {
   from {
     opacity: 0.7;
+  }
+}
+
+/* ── Hailstorm under `prefers-reduced-motion` ────────────────────────────
+   What comes off, and the one thing that cannot (docs/typing.md §8.10, #155).
+
+   **The falling stays.** A falling-letter game cannot honour the setting by
+   removing the falling, and this is why the fall was never written as an
+   animation in the first place: `useStormClock` writes `--drop` onto each
+   stone from a `requestAnimationFrame` loop and the rule above multiplies it
+   by the height of the sky, so base.css's blanket clamp — every animation to
+   one 0.001ms pass, every transition likewise — has nothing of the storm's
+   motion to reach. That is the same reason `.fuse__fill` scales rather than
+   animating: a clock a player asked less motion of still has to run.
+
+   **What comes off is decoration, and there is less of it here than the
+   design feared.** §8.10 asks for no screen shake, no parallax and no
+   particles under this setting, and the honest answer is that Hailstorm has
+   never had any of the three: nothing translates but the stones, the sky is
+   one flat box rather than layers at different speeds, and the only thing on
+   the screen resembling a particle is a hailstone, which is the game. The
+   guarantee is kept by not having built them, and it is measured rather than
+   promised — `e2e/smoke.mjs` runs the same twelve-landing wave twice and
+   counts `animationstart` over the whole of each: twelve under normal motion
+   (one per letter that lands), and zero under this setting. Both censuses
+   filter on `animationName` starting `storm-`, so what they can catch is a
+   new animation named into this family; one added under any other prefix is
+   invisible to them and needs its own check.
+
+   What is left is the three tints, and they are switched off rather than
+   left to the blanket clamp. Under the clamp they still start and still fire
+   an `animationstart`, 0.001ms of a wash nobody sees; `animation: none` is
+   the same picture with the event and the work gone, and it is what makes
+   "zero storm animations ran" a thing the browser can be asked. Nothing is
+   lost by it: both damage tints rest at `opacity: 0` and animate DOWN to it,
+   so what a child who asked for less motion still gets is the block's own
+   height — the damage itself rather than a report of it — and a score that
+   has already fallen.                                                      */
+@media (prefers-reduced-motion: reduce) {
+  .storm__hit,
+  .storm__mend,
+  .storm__miss {
+    animation: none;
+  }
+
+  /* The armour's height and the multiplier's step still change; they just
+     arrive rather than travel. Both end where the state says either way. */
+  .storm__zone::before,
+  .storm__combo {
+    transition: none;
   }
 }
 
