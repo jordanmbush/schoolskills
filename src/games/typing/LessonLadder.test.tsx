@@ -130,8 +130,16 @@ describe("LessonLadder", () => {
     expect(drawn[9].label).toBe(
       "Lesson 10, Checkpoint · Home row. Checkpoint — always open, whatever you have passed. Open.",
     );
+    // A storm says its own sentence first and then the same state every other
+    // tile says out loud (#156) — here a rung this child has not reached, so
+    // it carries what would open it as well.
     expect(drawn[8].label).toBe(
-      "Lesson 9, Hailstorm · Home row. Hailstorm — worth playing, never required. Coming soon.",
+      "Lesson 9, Hailstorm · Home row. Hailstorm — worth playing, never required. Locked. Pass lesson 8 to open this one.",
+    );
+    // And a storm this child has played fills like any other rung: `at(7, 8)`
+    // clears the first seven, lesson 4 among them.
+    expect(drawn[3].label).toBe(
+      "Lesson 4, Hailstorm · First ice. Hailstorm — worth playing, never required. Passed.",
     );
   });
 
@@ -162,15 +170,40 @@ describe("LessonLadder", () => {
   });
 
   /**
-   * A storm level has no passage and no wave until #159 builds one, so its
-   * tile is drawn — the map is wrong without lesson 4 on it — and cannot be
-   * entered. Same stand-down the lesson results screen makes.
+   * A storm is a rung of the ladder with a shape of its own, and — on a device
+   * with keys — a door that opens (#156). Both halves matter: the diamond is
+   * what says "not the course" without a word, and being enterable is what it
+   * is there for.
+   *
+   * The twenty are drawn at the top of the ladder, where every rung is behind
+   * the child, so a shut tile here could only be a storm that had stopped
+   * being playable.
    */
-  it("draws the storms as diamonds that cannot be entered yet", () => {
+  it("draws the storms as diamonds a child can enter", () => {
     const drawn = tiles(at(99, 100));
     const storms = drawn.filter((tile) => tile.classes.includes("is-storm"));
     expect(storms).toHaveLength(STORMS.length);
-    for (const storm of storms) expect(storm.shut).toBe(true);
+    for (const storm of storms) {
+      expect(storm.shut).toBe(false);
+      expect(storm.label).toContain("worth playing, never required");
+    }
+  });
+
+  /**
+   * And a storm a child has not climbed to yet is locked like any other rung —
+   * with the way out of it on the tile, because "Locked" alone is a state and
+   * not a way out of one (#145).
+   *
+   * The rung it names is never the storm's own neighbour: `lockNote` walks
+   * down past any storm in the way, so lesson 9's tile asks for lesson 8 and
+   * never for a wave a tablet cannot play (§8.8).
+   */
+  it("locks a storm a child has not reached, and says what opens it", () => {
+    const storm = tiles(FRESH).find((tile) =>
+      tile.classes.includes("is-storm"),
+    )!;
+    expect(storm.shut).toBe(true);
+    expect(storm.label).toContain("Locked. Pass lesson 3 to open this one.");
   });
 
   /**
@@ -219,6 +252,8 @@ describe("LessonLadder", () => {
       <LessonLadder progress={FRESH} hasKeyboard onOpen={() => {}} />,
     );
     expect(open).not.toContain("Press any key");
-    expect(open).toContain("Coming soon");
+    // What the legend says instead, on a device that can play them: the one
+    // fact about a storm a child needs before pressing one (§8.8).
+    expect(open).toContain("Nothing on the ladder waits on one");
   });
 });

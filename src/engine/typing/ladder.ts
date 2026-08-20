@@ -122,6 +122,19 @@ function derive(sessions: readonly LadderRun[]): LadderProgress {
     // replays a lesson they have beaten. Runs of a lesson *not* yet cleared
     // each still pay a verdict, retries included, until one of them clears it.
     if (!lesson || cleared.has(lesson.n)) continue;
+    // ── A lesson is cleared by a run that says it IS that lesson ───────────
+    // The mode is not enough on its own. `buildDrill` files a practice deck
+    // under the mode it came from, so the drill a child takes from lesson 41's
+    // results — or from the finger a storm broke (§8.5) — is also
+    // `typing:L41`: ten to forty words of trouble keys, with its own
+    // `wordCount`, that would otherwise clear the lesson it was offered from
+    // without the lesson ever being run. `lessonId` is the discriminator §5.4
+    // put on the config for exactly this, and `progress.ts` already reads the
+    // badges off it rather than off the mode; this is the same rule, one
+    // module over. A run from before the ladder existed carries no `lessonId`
+    // and no lesson mode either, so nothing already saved changes.
+    if (session.config?.kind !== "typing") continue;
+    if (session.config.lessonId !== lesson.id) continue;
     // A `Session` is a `Run`: what passes a lesson is what the child did, not
     // which profile did it or when.
     if (verdictFor(session, lesson).passed) cleared.add(lesson.n);

@@ -153,12 +153,13 @@ function onField(state: StormState): number {
  * the board goes on marking a child's keys against a letter that is no longer
  * the lowest.
  *
- * `score` and `misses` move together on every miss and would each be covered
- * by the other today; both are compared anyway, because "the score happens to
- * change whenever the flash does" is a coincidence of two constants in
- * `storm.ts` rather than a property of the screen. A `MISS_POINTS` of zero
+ * `score`, `misses` and `missTintAt` move together on a miss and would each be
+ * covered by another today; all three are compared anyway, because "the score
+ * happens to change whenever the flash does" is a coincidence of two constants
+ * in `storm.ts` rather than a property of the screen. A `MISS_POINTS` of zero
  * would leave the HUD's `--flare` flash undrawn, which is a bug nobody would
- * think to look for here.
+ * think to look for here — and `missTintAt` is the one the HUD now mounts that
+ * flash from (decision 57), so it is the field whose absence would be silent.
  *
  * `wave` is the field left out, and deliberately: a run's wave is fixed for
  * its whole life, so it cannot change under a running loop, and a screen
@@ -182,6 +183,7 @@ export function redrawn(drawn: StormState, next: StormState): boolean {
     drawn.combo !== next.combo ||
     drawn.score !== next.score ||
     drawn.misses !== next.misses ||
+    drawn.missTintAt !== next.missTintAt ||
     drawn.ending !== next.ending ||
     aimedAt(drawn) !== aimedAt(next) ||
     onField(drawn) !== onField(next)

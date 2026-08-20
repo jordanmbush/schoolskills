@@ -414,14 +414,15 @@ function courseBadges(
   )
     earned.push("eyes-up");
 
-  /* ── `unbroken`, which is waiting for the waves (STM10) ─────────────────────
+  /* ── `unbroken`, and the guard that retired itself ─────────────────────────
      Guarded on the wave rather than on the absence of a screen that could
-     start one. A storm level's `wordCount` is its wave's `count` (§8.3) and
-     every one of the twenty is `0` until STM10 writes the `WaveSpec`s — so
-     `survived` is vacuously true, "cleared a wave" is a claim about a wave
-     that does not exist, and this badge must not be given for it. Stating the
-     guard as "the wave has a length" means it retires itself the day the waves
-     land, rather than being a line someone has to remember to delete.
+     start one. A storm level's `wordCount` is its wave's `count` (§5.7, §8.3),
+     and every one of the twenty was `0` until the waves landed — so `survived`
+     was vacuously true, "cleared a wave" was a claim about a wave that did not
+     exist, and the badge had to be refused for it. Stating the guard as "the
+     wave has a length" is what let it retire itself the day the twenty rows
+     were written, rather than being a line someone had to remember to delete
+     (decision 29). It stays because it is still the badge's own sentence.
 
      "Shield untouched" is read as **no letter reached the bottom**, which is
      what takes a point off a segment (§8.5). A storm's cards are its falling

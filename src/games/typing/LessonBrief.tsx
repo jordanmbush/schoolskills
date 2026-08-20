@@ -187,9 +187,10 @@ function NewKeys({ lesson }: { lesson: Lesson }) {
  */
 function Asks({ lesson }: { lesson: Lesson }) {
   // A Hailstorm level is marked on surviving a wave rather than on three bars,
-  // and has no passage to ask anything about (§6.1). Its tile cannot open this
-  // screen until #159 builds the wave; this is the arm that keeps that true
-  // rather than a promise that it is.
+  // and has no passage to ask anything about (§6.1). A storm's tile opens
+  // `StormBrief` instead (decision 60), so this arm is the type-level half of
+  // that rather than a screen a child reaches — and it is what narrows the
+  // three bars below to the criteria that have them.
   if (lesson.pass.kind !== "lesson") return null;
   const { accuracy, wpm, keyAccuracy, keyStrikes } = lesson.pass;
 

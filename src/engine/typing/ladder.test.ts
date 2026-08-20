@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { CardResult, Session } from "@/engine/types";
 
+import { buildDrill } from "@/engine/decks";
 import { typingMode } from "@/engine/decks/typing";
 import { ladderProgress } from "./ladder";
 import { LESSONS } from "./lessons";
@@ -155,6 +156,33 @@ describe("a child who has done nothing", () => {
     expect(progress.next).toBe(1);
   });
 
+  /**
+   * A drill is filed under the mode it came from, and is not that lesson.
+   *
+   * `buildDrill(keys, "typing:L41")` builds ten to forty words of trouble
+   * keys with a `wordCount` of its own and **no `lessonId`** — the practice
+   * deck a child takes from lesson 41's results, or from the finger a storm
+   * broke (§8.5). Filed by mode alone it would clear the lesson it was offered
+   * from without the lesson ever being run: the ladder would fill in behind a
+   * child who only ever practised. `progress.ts` already reads its badges off
+   * `config.lessonId` for the same reason; this is that rule, one module over.
+   */
+  it("is not advanced by a drill filed under a lesson's mode", () => {
+    const drill = {
+      ...passing(lesson(41)),
+      config: buildDrill(["all", "glad"], typingMode("L41"), {
+        inputMode: "type" as const,
+        timeLimitMs: null,
+      }),
+    };
+    expect(drill.mode).toBe("typing:L41");
+    expect(drill.config).not.toHaveProperty("lessonId");
+    expect(ladderProgress([drill]).cleared.has(41)).toBe(false);
+    // And the lesson itself still clears it, so this is a discriminator and
+    // not a wall.
+    expect(ladderProgress([passing(lesson(41))]).cleared.has(41)).toBe(true);
+  });
+
   /** Fast enough, and half of it wrong. Lesson 41 asks 95%. */
   it("is not advanced by a run that missed a bar", () => {
     const sloppy = run(lesson(41), [card("all", "all"), card("glad", "glaf")], {
@@ -250,6 +278,28 @@ describe("Hailstorm never gates the ladder", () => {
     // And the same for a child who never opened the storm at all. Stepped
     // over, not skipped: 45 is below `next`, so the storm stays open.
     expect(ladderProgress([passing(lesson(44))]).next).toBe(46);
+  });
+
+  /**
+   * All twenty, and not only the one §8.8 uses as its example.
+   *
+   * The rule is a property of the ladder rather than of lesson 45: every storm
+   * sits between two lessons, and clearing the one below it has to open the
+   * one above it — at rung 4, where a child has met four keys, and at rung 99,
+   * where the only thing above is the Ice Exam. A table re-cut so that two
+   * storms sat side by side would break this and nothing else.
+   */
+  it("is stepped over at every one of the twenty rungs", () => {
+    const storms = LESSONS.filter((l) => l.kind.type === "storm");
+    expect(storms).toHaveLength(20);
+
+    for (const storm of storms) {
+      const below = lesson(storm.n - 1);
+      expect(below.kind.type, `lesson ${below.n}`).not.toBe("storm");
+      const progress = ladderProgress([passing(below)]);
+      expect(progress.best, `after lesson ${below.n}`).toBe(below.n);
+      expect(progress.next, `past storm ${storm.n}`).toBe(storm.n + 1);
+    }
   });
 
   /**

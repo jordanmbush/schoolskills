@@ -207,6 +207,7 @@ describe("the shape the clock is watching", () => {
     combo: true,
     ending: true,
     misses: true,
+    missTintAt: true,
     resolved: true,
     score: true,
     shield: true,
@@ -215,11 +216,12 @@ describe("the shape the clock is watching", () => {
   };
 
   it("pins the shape of a StormState, so a new field is decided about here", () => {
-    // `redrawn` compares six of these — `score` and `misses` arrived with the
-    // HUD and are drawn in it — derives two more from the clock, and leaves
-    // `wave` out because a run's wave is fixed. A story that adds a ninth
-    // (STM07's tally) has to come here and say which of those three it is; the
-    // alternative is finding out from a HUD that quietly stopped updating.
+    // `redrawn` compares seven of these — `score`, `misses` and `missTintAt`
+    // are the HUD's, and the last of them is what its `--flare` wash is
+    // mounted from (decision 57) — derives two more from the clock, and leaves
+    // `wave` out because a run's wave is fixed. A story that adds a tenth has
+    // to come here and say which of those three it is; the alternative is
+    // finding out from a HUD that quietly stopped updating.
     expect(Object.keys(startStorm(buildWave(spec, 7))).sort()).toEqual(
       Object.keys(FIELDS).sort(),
     );

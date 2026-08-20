@@ -32,8 +32,8 @@ import type { StormState } from "@/engine/typing/storm";
  *
  * Two of the four figures on the panel come from somewhere else, for two
  * different reasons. XP cannot be in the report: `stormXp` lives in
- * `progress.ts`, which reaches `decks/index.ts`, and `storm.ts` is one hop
- * from the deck layer from STM10 on. It is read here instead, where the deck
+ * `progress.ts`, which reaches `decks/index.ts`, and `storm.ts` is one
+ * type-only hop from the deck layer (`lessons.ts` names a `WaveSpec`). It is read here instead, where the deck
  * layer is already in the graph — this screen builds a drill through
  * `buildDrill`, which is that same front door. The score need not be in it:
  * it is the run's own live number, taken straight off `state`, and it was on

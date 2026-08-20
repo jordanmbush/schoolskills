@@ -13,8 +13,10 @@ import {
 import { summariseRun } from "@/engine/run";
 import { lessonById } from "@/engine/typing/lessons";
 import { fire, startStorm, stormReport, tick } from "@/engine/typing/storm";
+import { STORM_LESSONS, stormWave } from "@/engine/typing/storms";
 import { verdictFor } from "@/engine/typing/verdict";
 
+import { lessonKey } from "../lessonRun";
 import { stormCards, stormConfig, stormTally } from "./stormSession";
 
 import type { StormLetter, StormState, WaveSpec } from "@/engine/typing/storm";
@@ -250,7 +252,7 @@ describe("what a storm files itself as", () => {
     expect(key).toBe("typing|L39|6");
   });
 
-  it("carries the wave's length rather than the ladder's placeholder", () => {
+  it("carries the wave's length, not the rung's", () => {
     const config = stormConfig(LESSON, drumbeat(12).wave);
 
     expect(config).toEqual({
@@ -263,10 +265,14 @@ describe("what a storm files itself as", () => {
       storm: true,
       wordCount: 12,
     });
-    // The rung itself still says 0 — a storm level's `wordCount` is its wave's
-    // `count` (§8.3) and the twenty `WaveSpec`s land in STM10 — so the wave in
-    // hand is the only honest place to read a run's length from today.
-    expect(lessonById(LESSON)?.wordCount).toBe(0);
+    // The rung has a wave of its own now (§5.6, #156) and it is not twelve
+    // letters long — which is the point of reading the length off the wave in
+    // hand. A saved run outlives the ladder it was played on (§5.4): re-tune
+    // lesson 39 and this run is still a run of the twelve it actually faced,
+    // and `survived` still asks the right question of it.
+    const rung = lessonById(LESSON);
+    expect(rung?.kind.type).toBe("storm");
+    expect(rung?.wordCount).toBeGreaterThan(0);
   });
 
   it("names itself in a record book years later", () => {
@@ -312,14 +318,18 @@ describe("a storm holds no record", () => {
   };
 
   /**
-   * A lesson run at the identical key — STM10's trap, dry-run.
+   * A lesson run at the identical key — the trap, no longer a dry run.
    *
-   * Once lesson 39 carries a `WaveSpec`, `lessonKey(lesson)` is
-   * `typing|L39|12`: the exact string `stormConfig` already writes, because
-   * `storm` is inert in `configKey` and must stay so. `TypingSetup`'s brief and
-   * its rival list then read this run and the two storms as one group. It is
-   * SLOWER than either storm and still has to be the best of the three, which
-   * it can only be if the other two are refused.
+   * Lesson 39 carries a `WaveSpec` now (#156), so `lessonKey(lesson)` and
+   * `configKey(stormConfig(...))` really are one string — `storm` is inert in
+   * `configKey` and must stay so, or every storm already saved is orphaned.
+   * `TypingSetup`'s brief and its rival list read this run and the two storms
+   * as one group. It is SLOWER than either storm and still has to be the best
+   * of the three, which it can only be if the other two are refused.
+   *
+   * Its twelve letters are the hand-built wave above rather than the rung's
+   * own count, which is why the key here is `typing|L39|12`; the twenty rungs
+   * are checked against `lessonKey` for real at the bottom of this file.
    */
   const lessonRun: Session = {
     ...died,
@@ -461,9 +471,11 @@ describe("the `unbroken` badge, over a wave the reducer really played", () => {
    * touches `progress.ts`. These two pin the meaning that shipped.
    *
    * The rung's own `wordCount` is lent for the length of the test, exactly as
-   * `progress.test.ts` does: the badge is guarded on the wave having a length
-   * (decision 29) and the twenty `WaveSpec`s land in STM10, so nothing can
-   * earn it today.
+   * `progress.test.ts` does. Lesson 39's wave is a real length now (§5.6), and
+   * borrowing it is what keeps these two about the badge's meaning rather than
+   * about the table: they are ten-letter runs, and the rung is asked to say
+   * ten so that `survived` is the thing being tested and not the difficulty
+   * pass that last edited the row.
    */
   const withWave = (count: number, body: () => void) => {
     const of = lessonById(LESSON);
@@ -586,5 +598,47 @@ describe("nothing downstream needs a line of new code", () => {
       "l",
       "o",
     ]);
+  });
+});
+
+describe("every storm keys exactly as its own rung does", () => {
+  /**
+   * **The trap above, over the twenty as they ship** (§5.4, §8.7, decision
+   * 50).
+   *
+   * A storm's `configKey` is built from the wave in hand and a lesson's from
+   * the rung, and #156 made those the same number — `wordCount` IS the wave's
+   * `count`. That is deliberate and load-bearing: retries of a level have to
+   * compare with each other, so they must share a bucket. It is also exactly
+   * what makes `config.storm` necessary, because sharing a bucket with a
+   * lesson is sharing it with `bestRun`.
+   *
+   * So both halves are asserted here, on the real waves rather than on a
+   * fixture: the keys match, and the storm still holds nothing at that key.
+   */
+  it("shares its bucket with the lesson, and holds no best in it", () => {
+    for (const lesson of STORM_LESSONS) {
+      const wave = stormWave(lesson);
+      const config = stormConfig(lesson.id, wave);
+
+      expect(configKey(config), lesson.id).toBe(lessonKey(lesson));
+      expect(configKey(config), lesson.id).toBe(
+        `typing|${lesson.id}|${lesson.wordCount}`,
+      );
+
+      // And a run of it is refused a record at that shared key, which is the
+      // whole reason the flag is on the run rather than derived from the rung.
+      const session: Session = {
+        ...asSaved(startStorm(wave)),
+        id: lesson.id,
+        config,
+        configKey: configKey(config),
+      };
+      expect(bestRun([session]), lesson.id).toBeNull();
+      expect(
+        ghostsFor([session], [PLAYER], session.configKey, PLAYER.id),
+        lesson.id,
+      ).toEqual([]);
+    }
   });
 });

@@ -22,8 +22,8 @@ import type { CardResult, TypingConfig } from "@/engine/types";
  * the screen that runs a lesson, and for the same two reasons. It needs
  * `stormXp`, which lives in `progress.ts`, which imports `decks/index.ts` —
  * and `storm.ts` is deliberately kept a hop clear of the deck layer, because
- * STM10 puts a `WaveSpec` on each storm lesson and `lessons.ts` is reachable
- * from `decks/index.ts` (§5.3, decision 7). And what a run of a lesson is
+ * each storm lesson names a `WaveSpec` and `lessons.ts` is reachable from
+ * `decks/index.ts` (§5.3, decision 7). And what a run of a lesson is
  * filed as is the island's answer to give: the engine is handed a config, it
  * does not compose one.
  *
@@ -36,7 +36,7 @@ import type { CardResult, TypingConfig } from "@/engine/types";
  *
  * `lessonId` is the identity of the run and the one field `modeOf` and
  * `configKey` prefer (§5.4), so a storm is `typing:L39` and keys as
- * `typing|L39|12`. `levelId` carries the same id for the same reason
+ * `typing|L39|28`. `levelId` carries the same id for the same reason
  * `lessonConfig` does: both fields are read through `lessonId` on a ladder run,
  * and putting anything else in the level would only invite a screen to read it.
  *
@@ -49,9 +49,11 @@ import type { CardResult, TypingConfig } from "@/engine/types";
  * (`verdict.ts`): "you faced every letter the wave had" is `cards.length >=
  * wordCount`, which only means anything if the second number is the wave's.
  *
- * A storm lesson's own `wordCount` is that same figure (§8.3) but is `0` on
- * every row until STM10 writes the `WaveSpec`s, so the wave in hand is the
- * only place the length can honestly be read from today.
+ * A storm lesson's own `wordCount` is that same figure (§5.7), so the two
+ * agree — which is what makes this key and `lessonKey(lesson)` one string. The
+ * wave in hand is still where the run reads it, because a saved run outlives
+ * the ladder it was played on (§5.4): re-tune lesson 39 from twelve letters to
+ * forty and this run is still a run of twelve.
  *
  * **`storm: true` is what keeps it out of the record book's ranking**
  * (decision 50). The key above is deliberately the lesson's, so retries
@@ -60,7 +62,7 @@ import type { CardResult, TypingConfig } from "@/engine/types";
  * so without the flag the run that died first would hold the record. It is the
  * only thing here a `lessonConfig` does not also write, and it is inert in
  * `configKey`, so the two configs still key identically — which they must, or
- * STM10 would orphan every storm already saved.
+ * the twenty waves landing would have orphaned every storm already saved.
  */
 export function stormConfig(lessonId: string, wave: Wave): TypingConfig {
   return {

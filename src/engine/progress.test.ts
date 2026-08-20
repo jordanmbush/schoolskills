@@ -414,12 +414,14 @@ describe("Eyes Up", () => {
 /* ── Unbroken ────────────────────────────────────────────────────────────── */
 
 /**
- * Give a storm level the wave it will get from STM10, for the length of one
- * test, and take it back.
+ * Run one test against a storm level whose wave is a given length.
  *
- * `wordCount` is a storm's wave length (§8.3), and every one of the twenty is
- * `0` until STM10 writes the `WaveSpec`s. Mutating it here is standing in for
- * the deploy that writes them — nothing else about the world changes.
+ * The twenty waves are real now (#156), so this is no longer standing in for a
+ * deploy — it is how a test about the badge's *guard* asks its question
+ * without being a test about lesson 4's `count`. Three of the cases below turn
+ * on the relationship between a run's cards and the wave's length, and pinning
+ * them to whatever the table says today would make a difficulty pass look like
+ * a badge regression.
  */
 function withWave(n: number, count: number, body: () => void) {
   const of = lesson(n);
@@ -434,22 +436,33 @@ function withWave(n: number, count: number, body: () => void) {
 
 describe("Unbroken", () => {
   /**
-   * The premise of the guard, pinned so that it cannot quietly stop being
-   * true: no storm level has a wave yet, so no run can have cleared one.
+   * The premise of the guard, the other way up from how it started life.
+   *
+   * It used to read "no storm level has a wave yet", which is what made the
+   * badge unearnable before the waves landed (decision 29). Now every one of
+   * the twenty has a length, so what has to stay true is that they all do: a
+   * storm whose `count` slipped back to zero would be a rung that quietly
+   * cannot earn a badge it advertises, and `survived` would pass every run of
+   * it — including one that died at letter one.
    */
-  it("has nothing to fire on — no Hailstorm level has a wave yet", () => {
+  it("has a wave on every Hailstorm level to fire on", () => {
     const storms = LESSONS.filter((l) => l.pass.kind === "storm");
-    expect(storms.length).toBeGreaterThan(0);
-    for (const of of storms) expect(of.wordCount).toBe(0);
+    expect(storms.length).toBe(20);
+    for (const of of storms) expect(of.wordCount).toBeGreaterThan(0);
   });
 
-  it("is not awarded for a flawless run of a storm level with no wave", () => {
-    const of = lesson(4);
-    const flawless = lessonRun(
-      of,
-      ["a", "s", "d"].map((letter) => card(letter, letter)),
-    );
-    expect(badgesFor(flawless)).not.toContain("unbroken");
+  it("is not awarded for a storm level with no wave", () => {
+    // The guard itself, with the wave taken away for one test: a run that met
+    // three letters of a level that has none is a claim about a wave that does
+    // not exist. It cannot happen off today's table and is what the line in
+    // `progress.ts` is there for, so it is asked directly.
+    withWave(4, 0, () => {
+      const flawless = lessonRun(
+        lesson(4),
+        ["a", "s", "d"].map((letter) => card(letter, letter)),
+      );
+      expect(badgesFor(flawless)).not.toContain("unbroken");
+    });
   });
 
   it("does not throw on a storm-shaped run", () => {

@@ -90,14 +90,27 @@ describe("StormHud", () => {
 
   it("flashes once per miss, and mounts nothing before the first one", () => {
     // The no-strobe mechanism, at the altitude a unit test can hold it: the
-    // flash is one element keyed by a counter that only goes up (§8.10,
-    // decision 42), so an unchanged count is the same node and cannot restart
-    // the animation. A run starts with no element at all, or every HUD would
-    // flash red on its first frame.
+    // flash is one element keyed by `missTintAt`, a wave-time stamp that only
+    // ever goes forward (§8.10, decisions 42 and 57), so an unchanged stamp is
+    // the same node and cannot restart the animation. A run starts with no
+    // element at all, or every HUD would flash red on its first frame.
     expect(flashes(played(0))).toBe(0);
     expect(flashes(played(2))).toBe(0);
     expect(flashes(played(2, 1))).toBe(1);
     expect(flashes(played(2, 4)), "one element, not one per miss").toBe(1);
+  });
+
+  it("mounts the flash off the stamp and not off the count", () => {
+    // Which is the difference that matters, and it is invisible in the markup
+    // — a React key is not an attribute. So it is asked the other way round:
+    // the reducer holds the flash back when a hand is going too fast to be
+    // flashed at (`MIN_TINT_GAP_MS`), and this screen must be reading THAT
+    // field. A HUD still keyed on `misses` would draw an element for a state
+    // whose stamp is null, and would not for one whose stamp is set.
+    const four = played(2, 4);
+    expect(four.misses, "the premise: four wrong keys").toBe(4);
+    expect(flashes({ ...four, missTintAt: null })).toBe(0);
+    expect(flashes({ ...four, misses: 0, missTintAt: 900 })).toBe(1);
   });
 
   it("carries no `data-stone`, so the fall loop steps over it", () => {

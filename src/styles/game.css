@@ -1431,8 +1431,8 @@ label.segmented__btn {
   transform: scale(1.12);
 }
 
-/* Locked, and the storms until #159 gives them a wave to be. Dim rather than
-   hidden: the point of a map is that it shows you the ground you have not
+/* Locked, and a storm on a device with no keys to play it with. Dim rather
+   than hidden: the point of a map is that it shows you the ground you have not
    walked yet. */
 .ladder__tile[aria-disabled] {
   cursor: default;
@@ -1497,6 +1497,14 @@ label.segmented__btn {
 .ladder__tile.is-storm {
   transform: rotate(45deg) scale(0.82);
   border-radius: 5px;
+}
+
+/* A storm a child can play reads as one, and the four states above colour it
+   like any other rung — filled when it is behind them, outlined when it is
+   open. What stays dim is a diamond this device cannot enter: on a tablet the
+   twenty are shut (§8.8) and there is no reason to draw them as an invitation.
+   The rung after it is unaffected either way, which is the whole of §8.8. */
+.ladder__tile.is-storm[aria-disabled]:not(.is-locked) {
   color: var(--chalk-dim);
 }
 
@@ -2543,8 +2551,13 @@ label.segmented__btn {
    single `tick` move that counter by two, which is still one element and
    therefore still one tint (§8.10). What that rules out is the tint
    restarting on a frame where nothing happened; how often a WAVE may land on
-   one zone is a separate question, and one the generator does not yet answer
-   — see §8.10 for what is measured and what STM10 still owes it.
+   one zone is a separate question, and it is answered by the twenty levels
+   rather than here — no zone starts more than three tints in a second at any
+   seed, and the twenty that ship peak at two (`storms.test.ts`, §8.10).
+
+   The score's `--flare` below is the third of the three, and the one no wave
+   can shape: its cadence is a child's own keystrokes, so its floor is in the
+   reducer instead (`MIN_TINT_GAP_MS`, decision 57).
 
    Both rest at `opacity: 0` and animate down to it, so the animation adds
    nothing to the picture once it is over — which is why the reduced-motion

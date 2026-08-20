@@ -73,27 +73,25 @@ export const STORM_NOTE = "Hailstorm — worth playing, never required.";
 /**
  * Why a Hailstorm tile cannot be entered, or `null` when it can be.
  *
- * **Two reasons, and the keyboard one wins** (docs/typing.md §8.8, #155). A
- * storm tile is shut today for everybody, because there is no wave behind it
- * yet — and shut on a tablet for a reason that will still be true long after
- * #156 builds one. Told only "coming soon", a child on an iPad would press it
- * again in a month and find it still doing nothing, with no more idea why. So
- * the reason a child is given is the one that is about them and their device,
- * and the reason about the calendar is what is left when it does not apply.
- *
- * #156 deletes the second arm and returns `null` there: a keyboard is then the
- * only thing between a child and a wave, and `LessonTile` opens the tile off
- * this same answer without knowing that anything changed.
+ * **One reason now, and it is about the child's device** (docs/typing.md §8.8,
+ * #155, #156). The "coming soon" arm this had while the twenty waves were
+ * being built is gone with them: a keyboard is the only thing between a child
+ * and a storm, and the tile opens off this same answer.
  *
  * It is deliberately not "you have no keyboard" said as a fact. The detection
  * is a guess (`useKeyboardPresence`), and a guess that has been wrong is
  * undone by one keystroke — which is why the ladder's legend, where there is
  * room to say it once rather than a hundred times, offers exactly that.
+ *
+ * The lock is only ever the reason a storm cannot be *entered*, and never a
+ * reason it cannot be skipped: nothing on the ladder waits on a storm (§8.8,
+ * decision 24), so a device with no keys costs a child twenty tiles and not
+ * one rung of the course.
  */
 export function stormReason(hasKeyboard: boolean): string | null {
-  if (!hasKeyboard)
-    return "Hailstorm needs a keyboard, so this one stays shut.";
-  return "Coming soon.";
+  return hasKeyboard
+    ? null
+    : "Hailstorm needs a keyboard, so this one stays shut.";
 }
 
 /** The state, said out loud. Read after the lesson's number and title. */
@@ -120,12 +118,26 @@ function tileLabel(
 ): string {
   const what = `Lesson ${lesson.n}, ${lesson.title}`;
 
+  // What unlocks it, on the tile as well as in the brief (#145). The tile is
+  // the only place a locked rung is met by a child who never presses it, and
+  // "Locked" on its own is a state rather than a way out of one. One
+  // definition for both kinds of tile: a diamond a child has not climbed to
+  // yet needs the same sentence a square does, and `lockNote` is already the
+  // one that walks down past any storm in the way.
+  const how = state === "locked" ? ` ${lockNote(lesson)}` : "";
+
   // A storm level says what it is, and — where there is one — why it cannot be
   // entered, rather than being a tile that does nothing when pressed. Its
   // place on the map is worth drawing either way: it is what makes lesson 4
   // arriving before the first word look deliberate.
+  //
+  // Its state is the same `tileState` every other rung is drawn from, which is
+  // what a storm this far up the ladder needs. What it can never say is that
+  // something is waiting on it — a storm opens no door and closes none (§8.8),
+  // and `STORM_NOTE` is the sentence that carries that, first, on every one of
+  // the twenty.
   if (lesson.kind.type === "storm")
-    return `${what}. ${STORM_NOTE} ${blocked ?? `${SAID[state]}.`}`;
+    return `${what}. ${STORM_NOTE} ${blocked ?? `${SAID[state]}.${how}`}`;
 
   // Only worth saying while it is ahead of the child: a checkpoint they have
   // already passed is just a lesson they passed, and "always open" on it would
@@ -134,11 +146,6 @@ function tileLabel(
     lesson.checkpoint && state !== "cleared"
       ? " Checkpoint — always open, whatever you have passed."
       : "";
-
-  // What unlocks it, on the tile as well as in the brief (#145). The tile is
-  // the only place a locked lesson is met by a child who never presses it, and
-  // "Locked" on its own is a state rather than a way out of one.
-  const how = state === "locked" ? ` ${lockNote(lesson)}` : "";
 
   return `${what}.${note} ${SAID[state]}.${how}`;
 }
