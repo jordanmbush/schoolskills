@@ -1223,6 +1223,128 @@ try {
       `closest pair ${rhythm(flashes, () => "hud")}ms apart`,
   );
 
+  /*
+   * A storm is a `Session`, and a retry is a second one (docs/typing.md §8.7).
+   *
+   * The mapping is pure and `stormSession.test.ts` proves every field of it
+   * without a browser. What only a browser can answer is whether the write
+   * happens at all, exactly once, and again for the next attempt: the save is
+   * an effect fired on the frame `ending` appears, the guard against a second
+   * one is a component instance, and a retry is a remount — none of which
+   * exist in the unit suite. So this counts what actually reached IndexedDB.
+   *
+   * Two runs have FINISHED by now and they are deliberately different shapes:
+   * the census run above was played with nothing pressed, so all twelve
+   * letters got through it, and the one after it was played with a child's
+   * hands on it. The first is the honest-numbers case (§8.7's "correct,
+   * incorrect and durationMs are all honest") and the second is the one that
+   * pays XP. Every other storm this file entered was left mid-fall, and a run
+   * with no ending writes nothing — which is why "two" is the number here even
+   * though `storm()` has been called four or five times.
+   */
+  log("\n10. A storm is a session, and a retry is a second one");
+  const stormRuns = async () =>
+    (await readStore("sessions")).filter((s) => s.mode === "typing:L39");
+
+  /**
+   * Waits — in the page, against the same database the app writes to — until
+   * exactly `want` storm runs are stored. `false` if it never got there, which
+   * says "too few, or the count went past it and stayed".
+   */
+  const storedRuns = (want) =>
+    page
+      .waitForFunction(
+        (target) =>
+          new Promise((res) => {
+            const open = indexedDB.open("schoolskills");
+            open.onerror = () => res(false);
+            open.onsuccess = () => {
+              const all = open.result
+                .transaction("sessions", "readonly")
+                .objectStore("sessions")
+                .getAll();
+              all.onsuccess = () =>
+                res(
+                  all.result.filter((s) => s.mode === "typing:L39").length ===
+                    target,
+                );
+            };
+          }),
+        want,
+        { timeout: 8000 },
+      )
+      .then(() => true)
+      .catch(() => false);
+
+  const twoRuns = await storedRuns(2);
+  const saved = await stormRuns();
+  const untouched = saved.find((s) => s.correct === 0);
+  const handsOn = saved.find((s) => s.correct > 0);
+  check(
+    "both finished storms are in the record book, filed under their lesson",
+    twoRuns &&
+      saved.length === 2 &&
+      saved.every(
+        (s) =>
+          s.configKey === "typing|L39|12" &&
+          s.config.lessonId === "L39" &&
+          s.seed === 353 &&
+          s.cards.length === 12,
+      ),
+    `${saved.length} run(s): ${saved.map((s) => `${s.mode} ${s.configKey} ${s.correct}/${s.cards.length}`).join(", ")}`,
+  );
+  check(
+    "a wave nobody pressed at saves twelve letters that all got through",
+    untouched?.correct === 0 &&
+      untouched?.incorrect === 12 &&
+      // Twelve four-second falls. `ms` is the letter's own time in the air,
+      // so the total is the wave's letters and not the wall clock.
+      untouched?.durationMs === 48000 &&
+      untouched?.cards.every(
+        (c) =>
+          c.prompt === c.answer &&
+          c.factId === c.answer &&
+          c.given === null &&
+          c.ok === false &&
+          c.timedOut === true &&
+          c.ms === 4000,
+      ),
+    `${untouched?.correct}/${untouched?.incorrect} in ${untouched?.durationMs}ms`,
+  );
+  check(
+    "the run that was played saves what was shot, and pays for it",
+    handsOn?.correct === shot.length &&
+      handsOn?.incorrect === 12 - shot.length &&
+      handsOn?.xpEarned > 0 &&
+      handsOn?.bestStreak === shot.length &&
+      handsOn?.cards.filter((c) => c.ok).every((c) => c.given === c.answer) &&
+      // A shot letter was caught before it landed, so its time in the air is
+      // less than the fall — which is what makes it worth XP (§8.6).
+      handsOn?.cards.filter((c) => c.ok).every((c) => c.ms < 4000),
+    `${handsOn?.correct} shot, ${handsOn?.incorrect} through, ` +
+      `${handsOn?.xpEarned} XP, best combo ${handsOn?.bestStreak}`,
+  );
+
+  // And the same wave again. "Try this wave again" is a new run rather than
+  // the old one rewound (decision 51), so it owes the record book exactly one
+  // more session — where a screen that kept its finish guard across the retry
+  // would write none, and one that re-fired the old one would write two.
+  await page.getByRole("button", { name: /try this wave again/i }).click();
+  await page.waitForSelector(".storm__letter", { timeout: 8000 });
+  await page
+    .waitForFunction(() => document.querySelector(".storm__over") !== null, {
+      timeout: 20000,
+    })
+    .catch(() => {});
+  const threeRuns = await storedRuns(3);
+  const retried = await stormRuns();
+  check(
+    "a retry writes one more run, and only one",
+    threeRuns && retried.length === 3,
+    `${retried.length} run(s) after the retry: ` +
+      retried.map((s) => `${s.correct}/${s.cards.length}`).join(", "),
+  );
+
   log(
     `\nconsole errors: ${errors.length ? errors.slice(0, 5).join(" | ") : "none"}`,
   );

@@ -1,7 +1,14 @@
 import { describe, expect, it } from "vitest";
 
-import { factStats, factsToDrill, masteryOf, troubleFacts } from "./records";
-import type { CardResult, Session } from "./types";
+import {
+  bestRun,
+  factStats,
+  factsToDrill,
+  ghostsFor,
+  masteryOf,
+  troubleFacts,
+} from "./records";
+import type { CardResult, Profile, Session } from "./types";
 
 /**
  * What counts as "the same fact" is now the deck's answer, not this module's.
@@ -43,6 +50,85 @@ const session = (mode: string, cards: CardResult[]): Session => ({
   ghostSessionId: null,
   beatGhost: null,
   cards,
+});
+
+describe("bestRun", () => {
+  /**
+   * A run that may not hold a record is dropped before anything is compared.
+   *
+   * `isRanked` is the judgement and this is the only place it is enforced, so
+   * these two cases are what every "best" on the site inherits: the record
+   * book's columns, the `previousBest` a personal-best bonus is paid on, and
+   * `ghostsFor` below it. Today only a Hailstorm answers false — it ends when
+   * the shield does, so ranking it on time gives the record to whoever quit
+   * first (docs/typing.md §8.7, decision 50).
+   */
+  const typing = (over: Partial<Session>): Session => ({
+    ...session("typing:L39", [card()]),
+    configKey: "typing|L39|12",
+    config: { kind: "typing", levelId: "L39", lessonId: "L39", wordCount: 12 },
+    ...over,
+  });
+
+  const PLAYER: Profile = {
+    id: "p1",
+    name: "Ada",
+    emoji: "🦊",
+    color: "#4ade80",
+    age: 8,
+    soundOn: false,
+    xp: 0,
+    badges: [],
+    createdAt: "2026-01-01T00:00:00.000Z",
+  };
+
+  it("returns null when every run is one that may not be ranked", () => {
+    const storm = typing({
+      id: "storm",
+      config: {
+        kind: "typing",
+        levelId: "L39",
+        lessonId: "L39",
+        storm: true,
+        wordCount: 12,
+      },
+      durationMs: 1000,
+    });
+
+    // Not the empty-list null: there is a run here, and it is still a run in
+    // every other way. It just sets no record.
+    expect(bestRun([storm])).toBeNull();
+    expect(ghostsFor([storm], [PLAYER], storm.configKey, PLAYER.id)).toEqual(
+      [],
+    );
+  });
+
+  it("picks the slowest ranked run over a faster unranked one", () => {
+    const storm = typing({
+      id: "storm",
+      config: {
+        kind: "typing",
+        levelId: "L39",
+        lessonId: "L39",
+        storm: true,
+        wordCount: 12,
+      },
+      durationMs: 1000,
+    });
+    const lesson = typing({ id: "lesson", durationMs: 90_000 });
+
+    expect(bestRun([storm, lesson])?.id).toBe("lesson");
+  });
+
+  it("still ranks two ordinary runs on time", () => {
+    const slow = { ...session("multiply", [card()]), id: "slow" };
+    const fast = { ...session("multiply", [card()]), id: "fast" };
+    slow.durationMs = 9000;
+    fast.durationMs = 4000;
+
+    expect(bestRun([slow, fast])?.id).toBe("fast");
+    expect(bestRun([])).toBeNull();
+  });
 });
 
 describe("factStats", () => {

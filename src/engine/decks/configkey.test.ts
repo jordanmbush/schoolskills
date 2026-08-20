@@ -155,6 +155,28 @@ const FROZEN: Frozen[] = [
     },
     "typing|home-row|10|wadd,ask",
   ],
+  // The ladder's two run shapes. Both key on the LESSON and on the length the
+  // rung declares — never on the words a passage came out with, and never on
+  // how much of a wave was survived (§5.4, §8.7). The lesson below carries
+  // both of the fields that have to stay inert: the passage it generated, and
+  // the board the child chose to type it under.
+  [
+    "typing, a lesson from the ladder",
+    {
+      kind: "typing",
+      levelId: "L07",
+      lessonId: "L07",
+      words: ["fff", "jjj", "fjfj"],
+      keyboard: "off",
+      wordCount: 25,
+    },
+    "typing|L07|25",
+  ],
+  [
+    "typing, a Hailstorm wave",
+    { kind: "typing", levelId: "L39", lessonId: "L39", wordCount: 12 },
+    "typing|L39|12",
+  ],
 ];
 
 describe("the keys already saved", () => {

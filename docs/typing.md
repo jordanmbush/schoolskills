@@ -1175,8 +1175,10 @@ the colour can be read as a mark for the child rather than a report of what the
 weather did. The one hue a breach adds is the named finger's own, which is
 identity and not judgement: the same colour as the block that broke and the
 keys under it. `--lime` appears exactly once, on the XP, where it means
-what it means everywhere else on this site — this is what you earned, and it
-could not have gone down (§8.6).
+what it means everywhere else on this site — this is what the letters paid,
+and it could not have gone down (§8.6). A cleared wave that let nothing through
+earns the site's standard "No mistakes" bonus on top of it, which the profile
+takes and this panel does not restate (§8.7).
 
 **A zone is its finger's home-row span** (`FINGER_ZONES` in
 `engine/keyboard.ts`, decision 41). That is a choice between four rows rather
@@ -1308,6 +1310,88 @@ XP and badges accrue, per-character trouble spots feed the drill builder, and
 The one thing that is different: a run can **end early**. Dying at letter 18 of
 40 saves a session with 18 cards. `correct`, `incorrect` and `durationMs` are
 all honest; the pass criterion (`survive`) is simply not met.
+
+The mapping is `stormSession.ts`, beside the screen that plays a wave and for
+the same two reasons `lessonRun.ts` sits beside the screen that runs a lesson:
+it needs `stormXp`, which is in `progress.ts`, which reaches `decks/index.ts` —
+and `storm.ts` is kept a hop clear of the deck layer (§5.3) — and what a run is
+filed as is the island's answer to give. The write itself is `useRaceFinish`,
+unchanged: `summariseRun` scores it, the session service pays its XP into the
+profile, and `SaveFailed` offers the retry when IndexedDB refuses.
+
+**A card is a letter's outcome, never a keystroke** (decision 48). A wrong key
+resolves no letter, so it is not a card, and `incorrect` counts what got
+through rather than what was mistyped. That is not a detail: `survived` is
+`cards.length >= wordCount`, so a card per keystroke would hand a pass to a run
+that died at letter three and sprayed forty keys — and the `unbroken` badge
+reads "nothing marked wrong" as "nothing got through" (§6.7), which counting
+wrong keys would silently re-tune into "flawless run". It is also the bargain
+decision 13 already struck for the lessons, where a key backspaced away costs
+nothing because what ended up on the line is right. What a miss cost is still
+in the saved run: it broke the streak, and `bestStreak` is the run's longest
+combo, which is the one the miss ended.
+
+**A letter that got through is a `timedOut` card** (decision 49). That is what
+the flag has always meant — the clock ran out before an answer arrived — and
+the clock here is the fall. `troubleFacts` weights a timeout above a wrong
+answer, so the keys a child never reaches rank straight to the top of the drill
+the record book offers.
+
+**No ghost, and no record of any kind** (decision 50). `compareRuns` ranks runs
+on time, and a run that ended at letter three took less of it than one that
+cleared the wave — so a best would go to dying early and pay 150 XP for it,
+which is XP rewarding the one thing the game is against (§8.6). The run still
+carries its `configKey`, so a later story that wants to rank storms on
+something other than time has every run it needs. `durationMs` is then the sum
+of the letters' own air time rather than a wall clock, because a storm's
+letters overlap in the sky; the two agree only on a wave that never puts two up
+at once.
+
+**That takes two things, not one, and the XP half is the smaller.** The screen
+hands `useRaceFinish` a `previousBest` of `null`, which is what makes
+`summariseRun.personalRecord` false and the 150 XP unpayable — but it decides
+this run's own panel and nothing else. Every _other_ "best" on the site is
+`bestRun`, which groups a player's runs by `configKey` and picks on
+`compareRuns`, and a storm's key is a lesson's key: without a second signal the
+record book's "your best" column, the house best beside it, and — the moment
+STM10 gives lesson 39 a `WaveSpec` and `lessonKey` starts returning
+`typing|L39|12` — the lesson brief's best and its rival list would all rank
+storms against each other on time, and hand the record to the shortest life.
+
+So the run says what it is. `stormConfig` writes **`storm: true`** into its
+`TypingConfig`, `isRanked` in `decks/index.ts` reads it, and `bestRun` drops
+those runs before it compares anything — one rule, at the single door every
+best on the site comes through, inherited by the screens that do not exist yet.
+The flag is on the run rather than derived from `lessonById(lessonId)` because
+a saved run outlives the ladder it was played on (§5.4): re-tune lesson 39 out
+of a Hailstorm and a derived rule would quietly start ranking every storm
+already in the record book. It is optional, never `false`, and inert in
+`configKey` — a storm and its lesson still key identically, which they must, or
+STM10 would orphan every storm already saved.
+
+A run that holds no record is still a run in every other way: the record book
+_lists_ it, it pays its XP, it earns badges, and its letters feed the drill
+builder. `bestRun` returning `null` for a player whose every run at a
+configuration is a storm is therefore an ordinary answer — the record table
+drops the row rather than inventing a record for it.
+
+The XP on the ending panel is the run's own `stormXp` — what its letters paid
+(§8.5). A wave cleared with nothing through also earns the site's standard
+"No mistakes" bonus, which goes into the profile like any other run's and is
+not restated on the panel: the four figures there are about the weather, and a
+bonus line is a results screen's business.
+
+`configKey` is `typing|L39|12` — the lesson, and the **wave's** length, never
+the letters that were survived. Retries of a level therefore compare with each
+other, which is the whole point of the key (§5.4).
+
+**Saved exactly once, and a retry is a new run** (decision 51). The run is
+written on the frame `ending` appears, which the reducer sets once and never
+touches again. "Try this wave again" remounts the screen rather than swapping a
+wave under it, so the second attempt gets its own finish guard, its own history
+snapshot — the first attempt included — and a clock that starts at zero. The
+wave is rebuilt from the same `(spec, seed)`, so it is the same twelve letters:
+a different run of the same storm.
 
 ### 8.8 · Hailstorm never gates the ladder
 
@@ -1483,11 +1567,24 @@ Almost nothing, and that is the design working.
 | `TypingConfig`    | `lessonId?: string` — optional, and the ghost-key discriminator       |
 | `TypingConfig`    | `keyboard?: KeyboardMode` — the brief's choice; inert in `configKey`  |
 | `configKey`       | unchanged for every config already saved (§5.4)                       |
+| `TypingConfig`    | `storm?: true` — optional, set only by a storm, inert in `configKey`  |
+| A Hailstorm run   | a `Session` with a `TypingConfig`; no new store, no bump (§8.7)       |
 | Lesson progress   | derived from sessions; stored nowhere (§6.5)                          |
 
 Two existing runs saved before any of this must keep resolving, and the tests
 that pin that (`decks/typing.test.ts`, `migrate.test.ts`) are the ones to run
 first when either optional field is added.
+
+A Hailstorm run costs nothing here either, and that is the shape being right
+rather than a coincidence. Its cards are already the current shape — a string
+`answer` and a string `factId` — so `migrate.ts` passes them straight through
+and has nothing to widen; its config is a `TypingConfig` carrying the same
+optional `lessonId` a ladder run already writes, plus the one field that is new
+— `storm?: true` (§8.7) — which is optional and never `false`, exactly like
+`lessonId` and `keyboard` beside it; and `configKey`'s format is untouched,
+which `configkey.test.ts` freezes. No new store, no `DB_VERSION` bump, no
+backfill: a config without the field reads as a config that is not a storm,
+which is what every run saved before this is.
 
 ---
 
@@ -1542,6 +1639,10 @@ first when either optional field is added.
 | 45  | The HUD is drawn inside the sky, not as a row of its own | `.storm`'s only flexible track is the sky, and on a short viewport it has nothing left to give              |
 | 46  | A wrong key costs score; a letter through costs shield   | One failure, one cost — the landing has already taken the thing that ends runs                              |
 | 47  | The ending stands where the board did                    | The gun is dead, and the sky it leaves whole is the shield with the hole in it that the sentence is about   |
+| 48  | A storm's cards are its letters, not its keystrokes      | `survived` counts cards, `unbroken` reads "nothing wrong" as "nothing through"; a card per key moves both   |
+| 49  | A letter that got through is a `timedOut` card           | The clock it ran out is its own fall, and it ranks the keys never reached above the ones merely mistyped    |
+| 50  | A storm has no ghost and holds no record                 | Any best is `compareRuns`, i.e. time — so it goes to dying at letter three; XP was only half of it          |
+| 51  | A retry is a new run, so it is a remount                 | The finish guard, the history snapshot and the clock all have to start again; one instance is one run       |
 
 ---
 

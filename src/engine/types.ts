@@ -147,6 +147,34 @@ export type TypingConfig = {
    * from them the first time they turned the guide off.
    */
   keyboard?: KeyboardMode;
+  /**
+   * Set only by a Hailstorm run (docs/typing.md §8.7, decision 50).
+   *
+   * A storm is not ranked, and this is the field that says so. Every "best" on
+   * the site is `compareRuns`, which decides on time — and a storm run ends
+   * when the shield does, so a child who died at letter three took less time
+   * than one who cleared the wave and would hold the record for it. `isRanked`
+   * (`decks/index.ts`) reads this and `bestRun` (`engine/records.ts`) refuses
+   * those runs, so the record book's two columns, the `previousBest` that pays
+   * the personal-best bonus and every ghost a setup screen offers all inherit
+   * one judgement.
+   *
+   * ── On the run, not derived from the lesson ─────────────────────────────
+   * `lessonById(lessonId)?.kind.type === "storm"` would answer the same
+   * question today without a field. It is not used, because a saved run
+   * outlives the ladder it was played on (§5.4, and `UNKNOWN_DECK`): re-tune
+   * lesson 39 out of a Hailstorm — or retire the id — and a derived rule would
+   * quietly start ranking every storm already in the record book, awarding the
+   * record to the shortest life. What a run *was* is a fact about the run, and
+   * facts about a run travel with it.
+   *
+   * Optional and never `false`, exactly like `lessonId` and `keyboard` above,
+   * so it costs no `DB_VERSION` bump and no migration. Inert in `configKey`
+   * (`decks/typing.ts#typingConfigKey`): that key decides which runs may race
+   * each other as ghosts, and changing its format orphans every personal best
+   * already saved (CLAUDE.md, §10).
+   */
+  storm?: true;
   /** An explicit set, for a drill of the words a player keeps fumbling. */
   words?: string[];
   wordCount: number;
