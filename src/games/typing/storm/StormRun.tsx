@@ -158,12 +158,18 @@ export default function StormRun() {
  * What it is handed that a race is not:
  *
  *   - **No ghost, and no previous best.** Nothing chases a storm, and a storm
- *     has no personal record: `compareRuns` ranks runs on time, and a run that
- *     ended at letter three took less of it than one that cleared the wave —
- *     so the record would go to dying early, and pay a personal-best bonus for
- *     it. XP must never reward the thing the game is against (§8.6, decision
- *     50). The run is still filed under its `configKey`, so a later story that
- *     wants to rank storms has every run it needs.
+ *     holds no record: `compareRuns` ranks runs on time, and a run that ended
+ *     at letter three took less of it than one that cleared the wave — so a
+ *     best would go to dying early, and pay a personal-best bonus for it. XP
+ *     must never reward the thing the game is against (§8.6, decision 50).
+ *
+ *     `previousBest: null` is only half of that, and the smaller half: it
+ *     buys this run's own 150 XP bonus and its `personalRecord` flag, and
+ *     nothing else. What stops the record book, the house best and every
+ *     future rival list from ranking the run is `config.storm`, which
+ *     `stormConfig` sets and `isRanked` reads — the run is still filed under
+ *     its `configKey`, so a later story that wants to rank storms on
+ *     something other than time has every run it needs.
  *   - **A results path that is the screen it is already on.** The ending
  *     stands where the board did (decision 47) and IS this run's results
  *     screen, so the navigation `useRaceFinish` performs on a good save is a

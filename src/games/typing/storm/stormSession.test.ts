@@ -3,7 +3,13 @@ import { describe, expect, it } from "vitest";
 import { buildDrill, configKey, deckSpec, modeOf } from "@/engine/decks";
 import { keyX, strokeFor } from "@/engine/keyboard";
 import { stormXp } from "@/engine/progress";
-import { troubleFacts } from "@/engine/records";
+import {
+  bestRun,
+  compareRuns,
+  ghostsFor,
+  raceTimeMs,
+  troubleFacts,
+} from "@/engine/records";
 import { summariseRun } from "@/engine/run";
 import { lessonById } from "@/engine/typing/lessons";
 import { fire, startStorm, stormReport, tick } from "@/engine/typing/storm";
@@ -251,6 +257,10 @@ describe("what a storm files itself as", () => {
       kind: "typing",
       levelId: LESSON,
       lessonId: LESSON,
+      // The one field a `lessonConfig` at this rung does not write, and the
+      // whole of what keeps the run out of the record book's ranking — see
+      // "a storm holds no record" below.
+      storm: true,
       wordCount: 12,
     });
     // The rung itself still says 0 — a storm level's `wordCount` is its wave's
@@ -265,6 +275,106 @@ describe("what a storm files itself as", () => {
       "Lesson 39 · Hailstorm · Shift under fire",
     );
     expect(deckSpec(MODE).world).toBe("ice");
+  });
+});
+
+describe("a storm holds no record", () => {
+  /**
+   * **Decision 50, as the record book actually reaches it.**
+   *
+   * `previousBest: null` on the playing screen buys one thing: this run's own
+   * `personalRecord` flag and the 150 XP behind it. Every OTHER best on the
+   * site — the record book's "your best" column, the house best beside it, the
+   * `previousBest` a lesson's results screen is handed, and every rival a
+   * setup screen offers — is `bestRun`, which groups runs by `configKey` and
+   * picks with `compareRuns`, i.e. on time. A storm ends when the shield does,
+   * so on that rule the child who died first wins.
+   *
+   * These are the reviewer's two runs, played by the reducer rather than
+   * hand-built: one twelve-letter wave cleared, and the same wave with nothing
+   * pressed at all. Both file under `typing|L39|12`, which is the point of the
+   * key (§5.4) and therefore also the trap.
+   */
+  const WAVE = Array.from({ length: 12 }, (_, i) => at("f", i * 100, 3000));
+
+  /** Every letter shot 200ms before it would have landed. */
+  const cleared: Session = (() => {
+    let state = fire(tick(runOf(WAVE), 2800), "KeyF");
+    for (let i = 1; i < WAVE.length; i++)
+      state = fire(tick(state, 100), "KeyF");
+    return { ...asSaved(state), id: "cleared" };
+  })();
+
+  /** Nothing pressed: the shield takes three, and the fourth ends the run. */
+  const died: Session = {
+    ...asSaved(tick(runOf(WAVE), 60_000)),
+    id: "died",
+  };
+
+  /**
+   * A lesson run at the identical key — STM10's trap, dry-run.
+   *
+   * Once lesson 39 carries a `WaveSpec`, `lessonKey(lesson)` is
+   * `typing|L39|12`: the exact string `stormConfig` already writes, because
+   * `storm` is inert in `configKey` and must stay so. `TypingSetup`'s brief and
+   * its rival list then read this run and the two storms as one group. It is
+   * SLOWER than either storm and still has to be the best of the three, which
+   * it can only be if the other two are refused.
+   */
+  const lessonRun: Session = {
+    ...died,
+    id: "lesson",
+    config: {
+      kind: "typing",
+      levelId: LESSON,
+      lessonId: LESSON,
+      wordCount: WAVE.length,
+    },
+    durationMs: 40_000,
+    correct: 12,
+    incorrect: 0,
+  };
+
+  it("would lose its own wave to the run that died, if it were ranked", () => {
+    // The premise, and the only reason any of this is needed. Asserted so the
+    // guards below cannot pass because the two runs happen to tie or because
+    // the wrong-answer penalty happens to cover the difference.
+    expect(cleared.cards).toHaveLength(12);
+    expect(died.cards).toHaveLength(4);
+    expect(cleared.configKey).toBe(died.configKey);
+    expect(cleared.configKey).toBe("typing|L39|12");
+    // Twelve letters, 2.8s in the air each, and nothing through.
+    expect(raceTimeMs(cleared)).toBe(33_600);
+    // Four letters through: 3s each in the air, and 3s of penalty apiece.
+    expect(raceTimeMs(died)).toBe(24_000);
+    expect(compareRuns(died, cleared)).toBeLessThan(0);
+  });
+
+  it("is refused a best, so the run that died holds nothing", () => {
+    expect(bestRun([cleared, died])).toBeNull();
+    expect(bestRun([died, cleared])).toBeNull();
+    expect(bestRun([died])).toBeNull();
+  });
+
+  it("is offered as nobody's ghost", () => {
+    expect(ghostsFor([cleared, died], [PLAYER], died.configKey, PLAYER.id)) //
+      .toEqual([]);
+  });
+
+  it("never takes a best off the lesson it shares a key with", () => {
+    expect(configKey(lessonRun.config)).toBe(died.configKey);
+    // Slower than the storm that died AND slower than the one that cleared.
+    expect(raceTimeMs(lessonRun)).toBeGreaterThan(raceTimeMs(cleared));
+
+    expect(bestRun([cleared, died, lessonRun])?.id).toBe("lesson");
+    expect(
+      ghostsFor(
+        [cleared, died, lessonRun],
+        [PLAYER],
+        died.configKey,
+        PLAYER.id,
+      ).map((ghost) => ghost.session.id),
+    ).toEqual(["lesson"]);
   });
 });
 
@@ -421,9 +531,12 @@ describe("nothing downstream needs a line of new code", () => {
     expect(summary.draft.seed).toBe(353);
     expect(summary.draft.ghostSessionId).toBeNull();
     expect(summary.draft.beatGhost).toBeNull();
-    // A storm is never a personal best (decision 50): `previousBest` is null,
-    // so a run that ended at letter three can never be ranked above one that
-    // cleared the wave on the strength of having taken less time.
+    // `previousBest` is null, so this run's own results can never call
+    // themselves a personal record or pay the 150 XP for one (decision 50).
+    // That is ALL it decides — it is a fact about this summary and about
+    // nothing else in storage. What keeps a run that died early from taking
+    // a record off one that cleared the wave is `config.storm`, which the
+    // block below is about.
     expect(summary.personalRecord).toBe(false);
   });
 

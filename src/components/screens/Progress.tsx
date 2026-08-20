@@ -89,17 +89,29 @@ export default function Progress() {
     ];
   }, [mine]);
 
-  /** Best time per configuration, with whoever in the house holds it. */
+  /**
+   * Best time per configuration, with whoever in the house holds it.
+   *
+   * A configuration with no ranked run of mine gets no row at all. That is not
+   * an empty group — I have run it — it is a group of runs that may not hold a
+   * record, which today means Hailstorm: a storm ends when the shield does, so
+   * ranking it on time would put the child who died first at the top of both
+   * columns (`isRanked`, docs/typing.md §8.7). Those runs are still in the
+   * history below; they just set nothing. Once `myBest` exists the house best
+   * does too, because mine is one of the runs it is chosen from.
+   */
   const records = useMemo(() => {
     if (!profile) return [];
     const keys = [...new Set(mine.map((s) => s.configKey))];
     return keys
       .map((key) => {
-        const myBest = bestRun(sessionsFor(sessions, profile.id, key))!;
+        const myBest = bestRun(sessionsFor(sessions, profile.id, key));
+        if (!myBest) return null;
         const houseBest = bestRun(sessions.filter((s) => s.configKey === key))!;
         const holder = profiles.find((p) => p.id === houseBest.profileId);
         return { key, myBest, houseBest, holder };
       })
+      .filter((row) => row !== null)
       .sort((a, b) => raceTimeMs(a.myBest) - raceTimeMs(b.myBest));
   }, [mine, sessions, profiles, profile]);
 

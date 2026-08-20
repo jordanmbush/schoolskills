@@ -84,6 +84,36 @@ export function buildDeck(config: RaceConfig, seed: number): Card[] {
   return buildFlashDeck(config, seed);
 }
 
+/**
+ * Whether this run may hold a record — a personal best, the house best, or a
+ * place in a rival list.
+ *
+ * Every "best" on the site is `compareRuns`, which decides on time. That is
+ * safe for a race, where the only way to stop the clock is to answer every
+ * card, and wrong for a run that can **end early**: a Hailstorm run stops when
+ * the shield does, so a child who died at letter three took less time than one
+ * who cleared the wave and would be handed the record for it (docs/typing.md
+ * §8.7, decision 50).
+ *
+ * The judgement is made here, at the front door, and enforced in exactly one
+ * place — `bestRun` in `engine/records.ts` — rather than filtered at each
+ * screen, so every consumer inherits it: the record book's "your best" and
+ * "house best" columns, the `previousBest` a results screen pays the
+ * personal-best bonus on, and `ghostsFor`, which is where every rival a setup
+ * screen offers comes from. That matters most for the consumers that do not
+ * exist yet. STM10 gives lesson 39 a `WaveSpec`, at which point
+ * `lessonKey(lesson)` is `typing|L39|12` — the same string `stormConfig`
+ * already writes — and `TypingSetup`'s brief and rival list would start
+ * reading storms as lesson runs without a line of them changing.
+ *
+ * An unranked run is still a run in every other way: the record book lists it,
+ * it pays its XP, it earns badges and its cards feed the drill builder. It
+ * just never holds a "best". Only a storm answers false today, and this is the
+ * only place to widen if a second kind of run ever can end early.
+ */
+export const isRanked = (config: RaceConfig): boolean =>
+  !(isTyping(config) && config.storm === true);
+
 /** Two runs may only race each other as ghosts if they share this. */
 export function configKey(config: RaceConfig): string {
   if (isWords(config)) return wordConfigKey(config);

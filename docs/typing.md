@@ -1337,14 +1337,43 @@ the clock here is the fall. `troubleFacts` weights a timeout above a wrong
 answer, so the keys a child never reaches rank straight to the top of the drill
 the record book offers.
 
-**No ghost, and no personal best** (decision 50). `compareRuns` ranks runs on
-time, and a run that ended at letter three took less of it than one that
-cleared the wave — so a personal best would go to dying early and pay 150 XP
-for it, which is XP rewarding the one thing the game is against (§8.6). The run
-still carries its `configKey`, so a later story that wants to rank storms has
-every run it needs. `durationMs` is then the sum of the letters' own air time
-rather than a wall clock, because a storm's letters overlap in the sky; the two
-agree only on a wave that never puts two up at once.
+**No ghost, and no record of any kind** (decision 50). `compareRuns` ranks runs
+on time, and a run that ended at letter three took less of it than one that
+cleared the wave — so a best would go to dying early and pay 150 XP for it,
+which is XP rewarding the one thing the game is against (§8.6). The run still
+carries its `configKey`, so a later story that wants to rank storms on
+something other than time has every run it needs. `durationMs` is then the sum
+of the letters' own air time rather than a wall clock, because a storm's
+letters overlap in the sky; the two agree only on a wave that never puts two up
+at once.
+
+**That takes two things, not one, and the XP half is the smaller.** The screen
+hands `useRaceFinish` a `previousBest` of `null`, which is what makes
+`summariseRun.personalRecord` false and the 150 XP unpayable — but it decides
+this run's own panel and nothing else. Every _other_ "best" on the site is
+`bestRun`, which groups a player's runs by `configKey` and picks on
+`compareRuns`, and a storm's key is a lesson's key: without a second signal the
+record book's "your best" column, the house best beside it, and — the moment
+STM10 gives lesson 39 a `WaveSpec` and `lessonKey` starts returning
+`typing|L39|12` — the lesson brief's best and its rival list would all rank
+storms against each other on time, and hand the record to the shortest life.
+
+So the run says what it is. `stormConfig` writes **`storm: true`** into its
+`TypingConfig`, `isRanked` in `decks/index.ts` reads it, and `bestRun` drops
+those runs before it compares anything — one rule, at the single door every
+best on the site comes through, inherited by the screens that do not exist yet.
+The flag is on the run rather than derived from `lessonById(lessonId)` because
+a saved run outlives the ladder it was played on (§5.4): re-tune lesson 39 out
+of a Hailstorm and a derived rule would quietly start ranking every storm
+already in the record book. It is optional, never `false`, and inert in
+`configKey` — a storm and its lesson still key identically, which they must, or
+STM10 would orphan every storm already saved.
+
+A run that holds no record is still a run in every other way: the record book
+_lists_ it, it pays its XP, it earns badges, and its letters feed the drill
+builder. `bestRun` returning `null` for a player whose every run at a
+configuration is a storm is therefore an ordinary answer — the record table
+drops the row rather than inventing a record for it.
 
 The XP on the ending panel is the run's own `stormXp` — what its letters paid
 (§8.5). A wave cleared with nothing through also earns the site's standard
@@ -1538,7 +1567,8 @@ Almost nothing, and that is the design working.
 | `TypingConfig`    | `lessonId?: string` — optional, and the ghost-key discriminator       |
 | `TypingConfig`    | `keyboard?: KeyboardMode` — the brief's choice; inert in `configKey`  |
 | `configKey`       | unchanged for every config already saved (§5.4)                       |
-| A Hailstorm run   | a `Session` with a `TypingConfig` — no new field either side (§8.7)   |
+| `TypingConfig`    | `storm?: true` — optional, set only by a storm, inert in `configKey`  |
+| A Hailstorm run   | a `Session` with a `TypingConfig`; no new store, no bump (§8.7)       |
 | Lesson progress   | derived from sessions; stored nowhere (§6.5)                          |
 
 Two existing runs saved before any of this must keep resolving, and the tests
@@ -1549,9 +1579,12 @@ A Hailstorm run costs nothing here either, and that is the shape being right
 rather than a coincidence. Its cards are already the current shape — a string
 `answer` and a string `factId` — so `migrate.ts` passes them straight through
 and has nothing to widen; its config is a `TypingConfig` carrying the same
-optional `lessonId` a ladder run already writes; and `configKey`'s format is
-untouched, which `configkey.test.ts` freezes. No new store, no `DB_VERSION`
-bump, no backfill.
+optional `lessonId` a ladder run already writes, plus the one field that is new
+— `storm?: true` (§8.7) — which is optional and never `false`, exactly like
+`lessonId` and `keyboard` beside it; and `configKey`'s format is untouched,
+which `configkey.test.ts` freezes. No new store, no `DB_VERSION` bump, no
+backfill: a config without the field reads as a config that is not a storm,
+which is what every run saved before this is.
 
 ---
 
@@ -1608,7 +1641,7 @@ bump, no backfill.
 | 47  | The ending stands where the board did                    | The gun is dead, and the sky it leaves whole is the shield with the hole in it that the sentence is about   |
 | 48  | A storm's cards are its letters, not its keystrokes      | `survived` counts cards, `unbroken` reads "nothing wrong" as "nothing through"; a card per key moves both   |
 | 49  | A letter that got through is a `timedOut` card           | The clock it ran out is its own fall, and it ranks the keys never reached above the ones merely mistyped    |
-| 50  | A storm has no ghost and no personal best                | `compareRuns` ranks on time, so the record would go to dying at letter three — and pay 150 XP for it        |
+| 50  | A storm has no ghost and holds no record                 | Any best is `compareRuns`, i.e. time — so it goes to dying at letter three; XP was only half of it          |
 | 51  | A retry is a new run, so it is a remount                 | The finish guard, the history snapshot and the clock all have to start again; one instance is one run       |
 
 ---

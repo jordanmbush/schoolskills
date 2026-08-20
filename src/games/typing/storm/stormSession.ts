@@ -52,12 +52,22 @@ import type { CardResult, TypingConfig } from "@/engine/types";
  * A storm lesson's own `wordCount` is that same figure (§8.3) but is `0` on
  * every row until STM10 writes the `WaveSpec`s, so the wave in hand is the
  * only place the length can honestly be read from today.
+ *
+ * **`storm: true` is what keeps it out of the record book's ranking**
+ * (decision 50). The key above is deliberately the lesson's, so retries
+ * compare with each other — and that is exactly what makes the flag necessary:
+ * a group of runs sharing a key is what `bestRun` ranks, and it ranks on time,
+ * so without the flag the run that died first would hold the record. It is the
+ * only thing here a `lessonConfig` does not also write, and it is inert in
+ * `configKey`, so the two configs still key identically — which they must, or
+ * STM10 would orphan every storm already saved.
  */
 export function stormConfig(lessonId: string, wave: Wave): TypingConfig {
   return {
     kind: "typing",
     levelId: lessonId,
     lessonId,
+    storm: true,
     wordCount: wave.spec.count,
   };
 }
