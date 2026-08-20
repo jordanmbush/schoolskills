@@ -2,6 +2,7 @@ import type { Card, TypingConfig } from "@/engine/types";
 
 import { mulberry32, shuffled } from "@/engine/random";
 import { SCRIPTURE_CREDIT } from "@/engine/sheets/passages/credit";
+import { lessonById } from "@/engine/typing/lessons";
 import { WORD_LISTS, listWords } from "./wordlists";
 import type { DeckSpec } from "./spec";
 
@@ -336,6 +337,13 @@ export function typingLevelForAge(age: number): TypingLevel {
 export const levelCredit = (levelId: string): string | undefined =>
   TYPING_LEVELS_BY_ID.get(levelId)?.credit;
 
+/** `count` words out of a bag, exhausting it before it repeats. */
+const drawn = (pool: readonly string[], count: number, rand: () => number) => {
+  const out: string[] = [];
+  while (out.length < count) out.push(...shuffled(pool, rand));
+  return out.slice(0, count);
+};
+
 /**
  * The words of a passage, in the order they'll be typed.
  *
@@ -345,13 +353,22 @@ export const levelCredit = (levelId: string): string | undefined =>
  * decks follow, so a short run never asks for one word four times.
  */
 export function passageFor(config: TypingConfig, seed: number): string[] {
-  if (config.words?.length) {
-    const rand = mulberry32(seed);
-    const out: string[] = [];
-    while (out.length < config.wordCount)
-      out.push(...shuffled(config.words, rand));
-    return out.slice(0, config.wordCount);
-  }
+  /**
+   * A lesson's words are a PASSAGE; a drill's are a bag.
+   *
+   * Both arrive in the same field, because both are a config that carries its
+   * own words (docs/typing.md §5.3) — but they are not the same kind of thing.
+   * The ladder generates a lesson's text in order and at length, sentences and
+   * their full stops included (§5.1), so dealing it out again would shuffle the
+   * stops into the middle of it. A parent's five tricky words are the opposite:
+   * there is no order to keep and the bag is short, so it is drawn from until
+   * the run is long enough. The lesson id is what tells the two apart, exactly
+   * as it does in `typingConfigKey` below.
+   */
+  if (config.lessonId && config.words?.length)
+    return config.words.slice(0, config.wordCount);
+  if (config.words?.length)
+    return drawn(config.words, config.wordCount, mulberry32(seed));
 
   const level = TYPING_LEVELS_BY_ID.get(config.levelId);
   if (!level) return [];
@@ -370,11 +387,30 @@ export function passageFor(config: TypingConfig, seed: number): string[] {
     return words.slice(0, config.wordCount);
   }
 
-  const words: string[] = [];
-  while (words.length < config.wordCount)
-    words.push(...shuffled(level.pool, rand));
-  return words.slice(0, config.wordCount);
+  return drawn(level.pool, config.wordCount, rand);
 }
+
+/**
+ * The character a typist is waiting on, given the live word and what they have
+ * typed of it so far.
+ *
+ * The letter at the cursor, and once every letter of the word is in, the SPACE
+ * that commits it. Space is a key like any other here and the most-missed one
+ * on the board: a child who can spell "because" and cannot find the space bar
+ * without looking types at half speed, and the thumb is the only finger the
+ * passage never names.
+ *
+ * Anything typed PAST the end of the word also asks for space, because space is
+ * what gets out of it — the extra letters are already marked wrong in the
+ * passage above and the run does not stop to be told twice.
+ *
+ * Here rather than inline in `TypingTrack` because this is the expectation the
+ * keyboard's red is decided against (docs/typing.md §4.3), and it is text in,
+ * text out — so the boundary that matters, a full word wanting a space next,
+ * can be pinned without a race running around it.
+ */
+export const nextChar = (word: string, entry: string): string =>
+  word[entry.length] ?? " ";
 
 export function buildTypingDeck(config: TypingConfig, seed: number): Card[] {
   return passageFor(config, seed).map((word) => ({
@@ -384,13 +420,31 @@ export function buildTypingDeck(config: TypingConfig, seed: number): Card[] {
   }));
 }
 
+/**
+ * Which runs may race each other as ghosts — the lesson, or the level and its
+ * words (docs/typing.md §5.4).
+ *
+ * A drill's words *are* its identity: a parent's five tricky words at twenty
+ * words long is a different exercise from another five, and folding them in is
+ * what keeps the two apart. A lesson's words are the opposite — lesson 7
+ * generates a fresh passage every time it is run, so the same fold would give
+ * every attempt a key of its own and a child would never be shown the best
+ * they have already done. So the words are left out exactly when a lesson id
+ * is there to stand in for them.
+ *
+ * Every key written before the ladder existed is unchanged, which is not a
+ * nicety: `configKey` is how a saved run finds its ghosts, and the record book
+ * is the only copy there is (CLAUDE.md). A config with no `lessonId` takes the
+ * same two branches it always has, and no shipped level id can be mistaken for
+ * a lesson id — `configkey.test.ts` is where that is held still.
+ */
 export function typingConfigKey(config: TypingConfig) {
   const parts: Array<string | number> = [
     "typing",
-    config.levelId,
+    config.lessonId ?? config.levelId,
     config.wordCount,
   ];
-  if (config.words?.length)
+  if (!config.lessonId && config.words?.length)
     parts.push(`w${[...config.words].sort().join(",")}`);
   return parts.join("|");
 }
@@ -433,11 +487,29 @@ export function wordsPerMinute(cards: Array<{ answer: string }>, ms: number) {
   return Math.round(characters / 5 / (ms / 60000));
 }
 
+/**
+ * The ladder, by the id that goes into `Session.mode`.
+ *
+ * `lessons.ts` is the one module in `engine/typing/` the deck layer may import
+ * (docs/typing.md §5.3), and this is what it is for: a run filed under
+ * `typing:L07` has to be able to name itself in a record book two years from
+ * now, long after the ladder has been re-tuned. It carries titles and pass
+ * criteria and not one word a child types — the corpus and the generator stay
+ * on the far side of `local/no-corpus-in-decks`, and the words a lesson was
+ * played on arrive in `config.words` from the island that generated them.
+ */
 export function typingDeckSpec(mode: string): DeckSpec {
-  const level = TYPING_LEVELS_BY_ID.get(levelIdOf(mode));
+  const id = levelIdOf(mode);
+  // Two namespaces behind one prefix, and neither can answer for the other: a
+  // lesson id is "L07" and a level id is "home-row". A mode from neither is a
+  // level this build has retired, which still reads as a typing run.
+  const lesson = lessonById(id);
+  const level = TYPING_LEVELS_BY_ID.get(id);
   return {
     id: mode,
-    label: level?.name ?? "Typing",
+    label: lesson
+      ? `Lesson ${lesson.n} · ${lesson.title}`
+      : (level?.name ?? "Typing"),
     world: "ice",
     // Exact, including case: at the sentence level the shift key IS the
     // exercise, so "the" and "The" are two different things to get right.

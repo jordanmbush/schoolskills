@@ -6,7 +6,7 @@ import type {
   Session,
 } from "@/engine/types";
 
-import { deckSpec } from "@/engine/decks";
+import { deckSpec, isRanked } from "@/engine/decks";
 
 export const accuracyOf = (session: Pick<Session, "correct" | "incorrect">) => {
   const total = session.correct + session.incorrect;
@@ -52,9 +52,26 @@ export function compareRuns(a: Scored, b: Scored) {
   return raceTimeMs(a) - raceTimeMs(b);
 }
 
+/**
+ * The best of these runs, or null if none of them may hold a record.
+ *
+ * Runs `isRanked` refuses are dropped before anything is compared, and this is
+ * the one place that happens. It is the single door every "best" on the site
+ * comes through — the record book's two columns, the `previousBest` a results
+ * screen pays the personal-best bonus on, and `ghostsFor` below, which every
+ * rival list is built from — so putting the rule here is what makes a run that
+ * must not be ranked unrankable everywhere at once, including in the screens
+ * that have not been written yet (see `isRanked`).
+ *
+ * **Null is an ordinary answer, not only the empty-list one.** A player whose
+ * every run at a configuration is a Hailstorm has no best at it, and a caller
+ * has to say what it shows instead: `Progress.tsx` drops the row rather than
+ * inventing a record, and `PlayerHub` already renders "No runs yet".
+ */
 export function bestRun(sessions: Session[]): Session | null {
-  if (sessions.length === 0) return null;
-  return sessions.reduce((best, s) => (compareRuns(s, best) < 0 ? s : best));
+  const ranked = sessions.filter((session) => isRanked(session.config));
+  if (ranked.length === 0) return null;
+  return ranked.reduce((best, s) => (compareRuns(s, best) < 0 ? s : best));
 }
 
 export const sessionsFor = (

@@ -3,7 +3,7 @@ import { Navigate, useNavigate, useParams } from "react-router-dom";
 import { useHub, usePlayer } from "@/components/state/HubContext";
 import { useRace } from "@/components/state/RaceContext";
 import { buildDeck, configKey, deckSpec, modeOf } from "@/engine/decks";
-import { levelCredit } from "@/engine/decks/typing";
+import { levelCredit, nextChar } from "@/engine/decks/typing";
 import { cardXp } from "@/engine/progress";
 import {
   WRONG_ANSWER_PENALTY_MS,
@@ -11,6 +11,7 @@ import {
   cumulativeSplits,
   sessionsFor,
 } from "@/engine/records";
+import { lessonById } from "@/engine/typing/lessons";
 import {
   Hud,
   Lane,
@@ -22,8 +23,11 @@ import {
   useRaceFinish,
 } from "@/games/race";
 import { sfx } from "@/services/sound";
+import { LessonBars } from "./LessonBars";
 import { Passage } from "./Passage";
 import { TypeField } from "./TypeField";
+import { keyboardFor } from "./keyboard/lessonKeyboard";
+import { LiveKeyboard } from "./keyboard/LiveKeyboard";
 import type {
   CardResult,
   Profile,
@@ -48,6 +52,20 @@ import type {
  * - **Space is the whole interface.** No Enter, no submit button. Backspace
  *   works inside the current word and nowhere else, because a typing test that
  *   lets you walk back through a finished passage isn't measuring anything.
+ *
+ * ── And the same loop with the race taken out ────────────────────────────────
+ * A run from the ladder is a lesson, and a lesson is not a race
+ * (docs/typing.md §7). It is this component with four things removed and one
+ * added, all of them off `config.lessonId` and none of them a second loop:
+ * no ghost, no lane, no wrong-answer penalty, no starting gun in the copy —
+ * and the three pass bars filling live where the rival's gap would be.
+ *
+ * One component rather than two because of what is NOT different: space still
+ * commits a word and a word is still a `Card`. Keeping that is what makes the
+ * record book, the splits, the trouble list, XP and the drill builder work on
+ * lessons for free, and it is the single highest-leverage thing here not to
+ * change. Free play — the five levels, their ghosts and their personal bests —
+ * runs through these same lines and is untouched by any of it.
  */
 export default function TypingTrack() {
   const { profileId } = useParams();
@@ -103,9 +121,32 @@ function Track({
   finish,
   navigate,
 }: TrackProps) {
-  const { config, seed, ghost } = pending;
+  const { config, seed } = pending;
   const spec = deckSpec(modeOf(config));
   const deck = useMemo(() => buildDeck(config, seed), [config, seed]);
+
+  /**
+   * The lesson this run is, or `null` when it is free play — the one switch
+   * every difference below hangs off (§7).
+   *
+   * Read from the config rather than from a route or a prop, so that what a run
+   * IS travels with the run: `pending` is what the countdown, the save and the
+   * results screen all read, and a second source for "is this a lesson" is a
+   * second thing to get out of step with `modeOf`, which files the run under
+   * this same id. `lessonById` is total — a config with no lesson id, and one
+   * naming a lesson this build has re-cut, both land here as free play.
+   */
+  const lesson = lessonById(config.lessonId);
+
+  /**
+   * Nothing is chasing you on a lesson (§7).
+   *
+   * The ladder never offers a rival, so this is belt and braces — but it is the
+   * one value the lane, the gap, the overtake sound and `beatGhost` all hang
+   * off, so making it null HERE is what makes "no ghost" true of the whole
+   * screen rather than of the four places that would each have to remember.
+   */
+  const ghost = lesson ? null : pending.ghost;
   const ghostSplits = useMemo(
     () => (ghost ? cumulativeSplits(ghost.session) : null),
     [ghost],
@@ -142,7 +183,19 @@ function Track({
     index,
     onTimeout: () => {},
   });
-  const raceElapsed = elapsed() + misses.current * WRONG_ANSWER_PENALTY_MS;
+  /**
+   * The clock a rival is measured against — and on a lesson, just the clock.
+   *
+   * **No `WRONG_ANSWER_PENALTY_MS` on a lesson** (§7). Three seconds a miss is
+   * a race mechanic: it is there to make a wrong answer cost something when the
+   * only thing a race counts is time. A lesson already counts accuracy, on a
+   * bar of its own, so charging for it again double-counts it — and it would
+   * make the wpm figure a lie, because a "minute" with penalties folded into it
+   * is not a minute and the number stops being words per minute of anything.
+   * Free play keeps every second of it; free play is a race.
+   */
+  const raceElapsed =
+    elapsed() + (lesson ? 0 : misses.current * WRONG_ANSWER_PENALTY_MS);
 
   const rival = useGhostGap({ splits: ghostSplits, raceElapsed, index, total });
 
@@ -222,6 +275,39 @@ function Track({
     [deck, spec, onCard, bank, startCard, total, hasFinished],
   );
 
+  /**
+   * The character the passage is waiting on — the whole input to the board.
+   *
+   * WHICH character that is, space bar included once a word is fully typed, is
+   * `nextChar`'s to say. What is decided here is when the passage is waiting on
+   * nothing at all: `null` during the 3·2·1, while the quit sheet is up, and
+   * once the last word is in and the run is saving. That comes off `live`, the
+   * same flag `TypeField` is disabled on rather than a second reading of the
+   * same two pieces of state, because the two have to agree — a key pressed at
+   * a disabled field that the board marked wrong would be blaming a child for
+   * a keystroke the game had already thrown away.
+   */
+  const live = phase === "racing" && !quitting;
+  const next = live ? nextChar(deck[index]?.answer ?? "", entry) : null;
+
+  /**
+   * How much of the board is on screen — §4.2's one line, resolved in the one
+   * place that resolves it (`keyboardFor`).
+   *
+   * Three inputs and the same three the brief showed before the run started: a
+   * locked lesson wins outright, then what the child chose in the brief
+   * (`config.keyboard`, travelling with the run exactly as its words do), then
+   * the lesson's own suggestion, the player's setting and `guide`. Free play
+   * has no lesson and makes no choice, so it lands on the profile's setting and
+   * is untouched by any of it.
+   *
+   * Reading the choice off the config rather than off a prop is what makes it
+   * survive the navigation: `pending` is what the countdown, the save and the
+   * results screen all read, and a mode that lived anywhere else would be gone
+   * by the time this component mounted.
+   */
+  const board = keyboardFor(lesson, profile.keyboard, config.keyboard);
+
   if (saveError) {
     return (
       <SaveFailed
@@ -244,6 +330,11 @@ function Track({
           <span key={countdown} className="countdown__num u-display">
             {countdown === 0 ? "GO" : countdown}
           </span>
+          {/* The 3·2·1 stays on a lesson, because it is the moment the hands go
+              on the home row and that is worth keeping for its own sake — but
+              it is not a starting gun there, so it doesn't talk like one
+              (§7). */}
+          {lesson && <p className="countdown__note">Fingers on home row</p>}
         </div>
       )}
 
@@ -253,16 +344,30 @@ function Track({
         answered={answered}
         total={total}
         onQuit={() => setQuitting(true)}
+        penalty={!lesson}
       />
 
-      <Lane
-        profile={profile}
-        ghost={ghost}
-        mePos={answered / total}
-        ghostPos={rival.position}
-        gap={rival.gap}
-        note="Space moves you on"
-      />
+      {/* The lane is the race; the bars are the lesson. They stand in the same
+          place because they answer the same question — how is this going —
+          and a lesson answers it with the criteria rather than with a rival
+          (§7). */}
+      {lesson ? (
+        <LessonBars
+          lesson={lesson}
+          config={config}
+          cards={results.current}
+          elapsedMs={elapsed()}
+        />
+      ) : (
+        <Lane
+          profile={profile}
+          ghost={ghost}
+          mePos={answered / total}
+          ghostPos={rival.position}
+          gap={rival.gap}
+          note="Space moves you on"
+        />
+      )}
 
       <Passage
         deck={deck}
@@ -274,10 +379,16 @@ function Track({
       <TypeField
         value={entry}
         index={index}
-        disabled={phase !== "racing" || quitting}
+        disabled={!live}
         onChange={setEntry}
         onCommit={commit}
       />
+
+      {/* Under the line being typed on, and after it in the DOM as well as on
+          screen — the board is a map of the keyboard, so it reads last, and
+          `TypeField` keeps the tab order's first and only stop. Rendered
+          nothing at all on "off": see `LiveKeyboard`. */}
+      {board !== "off" && <LiveKeyboard mode={board} next={next} />}
 
       {quitting && (
         <QuitSheet

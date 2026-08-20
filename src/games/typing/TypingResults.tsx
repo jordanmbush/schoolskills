@@ -8,9 +8,11 @@ import { levelCredit, wordsPerMinute } from "@/engine/decks/typing";
 import { clock, delta, percent } from "@/engine/format";
 import { cumulativeSplits, raceTimeMs } from "@/engine/records";
 import { randomSeed } from "@/engine/random";
+import { lessonById } from "@/engine/typing/lessons";
 import { Rewards } from "@/games/race";
 import { SplitsTable } from "@/games/flashcards/results/SplitsTable";
 import { sfx } from "@/services/sound";
+import LessonResults from "./LessonResults";
 
 /**
  * What the run was worth.
@@ -19,6 +21,11 @@ import { sfx } from "@/services/sound";
  * accuracy sits beside it rather than being folded into a single "net WPM".
  * A child who types fast and gets half of it wrong should see both, not one
  * blended figure that hides which half is the problem.
+ *
+ * That is **free play**, which is a race. A run from the ladder is marked
+ * against three criteria rather than ranked against a rival, so it gets a
+ * screen of its own (`LessonResults`, docs/typing.md §6.1) and this one is
+ * left exactly as it was — the wpm, the accuracy, the splits and the ghost.
  */
 export default function TypingResults() {
   const { profileId } = useParams();
@@ -44,6 +51,28 @@ export default function TypingResults() {
 
   const { session, ghost, personalRecord, previousBest, newBadges, bonuses } =
     outcome;
+
+  /**
+   * Which of the two screens this run gets, decided by the run itself.
+   *
+   * Off `config.lessonId` and not off a route or a prop, for the same reason
+   * `TypingTrack` reads it there: what a run IS travels with the run, and a
+   * second source for "is this a lesson" is a second thing to get out of step
+   * with `modeOf`, which files it under this same id. Below every guard above,
+   * so the two navigation races those guards were written for are settled
+   * before either screen renders — `LessonResults` starts runs and clears
+   * outcomes exactly as this one does, and it is this component's guards that
+   * catch it when it does.
+   */
+  const lesson = isTyping(session.config)
+    ? lessonById(session.config.lessonId)
+    : null;
+  if (lesson) {
+    return (
+      <LessonResults lesson={lesson} outcome={outcome} profile={profile} />
+    );
+  }
+
   const wpm = wordsPerMinute(session.cards, session.durationMs);
   // Through the deck registry's own guard rather than reading `kind` here:
   // narrowing the config union is `decks/index.ts`'s job and nowhere else's.
@@ -110,6 +139,12 @@ export default function TypingResults() {
         </div>
         <div className="stat">
           <span className="stat__value">{clock(raceTimeMs(session))}</span>
+          {/* `raceTimeMs` is the clock plus three seconds a miss, and that is
+              the truth about a free-play run: it is a race, the penalty is
+              what stops "guess fast" beating "know it", and it is the number
+              the personal best and the ghost are decided on. A lesson has no
+              penalty at all (§7) and says so with a plain "Time" — the label
+              is per-screen because the thing it names is. */}
           <span className="stat__label">
             {session.incorrect > 0 ? "Time + penalties" : "Time"}
           </span>

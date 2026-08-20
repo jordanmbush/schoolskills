@@ -7,6 +7,7 @@ import {
   buildTypingDrill,
   describeTypingConfig,
   levelCredit,
+  nextChar,
   passageFor,
   typingConfigKey,
   typingDeckSpec,
@@ -189,6 +190,22 @@ describe("passageFor", () => {
   it("returns nothing rather than throwing for a level that doesn't exist", () => {
     expect(passageFor(config({ levelId: "no-such-level" }), 1)).toEqual([]);
   });
+
+  /**
+   * A lesson's words arrive in the same field a drill's do, and are not the
+   * same kind of thing. The ladder generates them in order — sentences, their
+   * capitals and their full stops (docs/typing.md §5.1, §5.3) — so dealing
+   * them out again would put the stops in the middle of the passage.
+   */
+  it("keeps a lesson's passage in the order the ladder generated it", () => {
+    const passage = ["The", "cat", "sat", "down."];
+    const words = passageFor(
+      config({ lessonId: "L24", words: passage, wordCount: 4 }),
+      // Any seed at all: a passage is not drawn, so none of them can shuffle it.
+      99,
+    );
+    expect(words).toEqual(passage);
+  });
 });
 
 describe("buildTypingDeck", () => {
@@ -262,6 +279,40 @@ describe("configKey", () => {
   it("never collides with a word or arithmetic key", () => {
     expect(typingConfigKey(config())).toMatch(/^typing\|/);
   });
+
+  it("keys a lesson on the lesson and not on its passage", () => {
+    // Lesson 7 generates its own words every time it is run, so a key that
+    // folded them in would file every attempt in a bucket of one — a child
+    // would run the lesson twenty times and never be shown their own best.
+    const monday = config({
+      lessonId: "L07",
+      words: ["all", "dad", "flash"],
+      wordCount: 25,
+    });
+    const tuesday = config({
+      lessonId: "L07",
+      words: ["gala", "sash", "half"],
+      wordCount: 25,
+    });
+    expect(typingConfigKey(monday)).toBe("typing|L07|25");
+    expect(typingConfigKey(tuesday)).toBe(typingConfigKey(monday));
+  });
+
+  it("still separates lengths within a lesson", () => {
+    // The one thing about a lesson run that can differ and still matter: a
+    // 25-word run and a 50-word one are not the same race.
+    expect(typingConfigKey(config({ lessonId: "L07", wordCount: 50 }))).toBe(
+      "typing|L07|50",
+    );
+  });
+
+  it("still folds a drill's words in, which is what makes it that drill", () => {
+    // No lesson id, so nothing changed: a parent's five tricky words are the
+    // identity of the run, and two different fives are two different races.
+    expect(
+      typingConfigKey(config({ words: ["ask", "add"], wordCount: 10 })),
+    ).toBe("typing|home-row|10|wadd,ask");
+  });
 });
 
 describe("the deck registry", () => {
@@ -271,6 +322,19 @@ describe("the deck registry", () => {
 
   it("still answers for a level this build has never heard of", () => {
     expect(deckSpec(typingMode("retired")).label).toBe("Typing");
+  });
+
+  it("names the lesson a ladder run was played at", () => {
+    // What a record book two years from now reads, long after the ladder has
+    // been re-tuned: the lesson by number and title, not "Typing".
+    expect(deckSpec("typing:L07").label).toBe("Lesson 7 · Home-row words");
+    expect(deckSpec("typing:L100").label).toBe("Lesson 100 · The Ice Exam");
+  });
+
+  it("files a lesson run under its lesson id, not its level", () => {
+    expect(modeOf(config({ lessonId: "L07", words: ["all", "dad"] }))).toBe(
+      "typing:L07",
+    );
   });
 
   it("dispatches build, key and description on the config's shape", () => {
@@ -303,5 +367,49 @@ describe("buildTypingDrill", () => {
       "The",
       "the",
     ]);
+  });
+});
+
+describe("nextChar", () => {
+  /*
+   * The expectation the keyboard's red is judged against (docs/typing.md
+   * §4.3), so every case below is a case where a child either does or does not
+   * get told they made a mistake. The word boundary is the one that has been
+   * wrong in production: a fully typed word wants SPACE, and a board that
+   * wanted the next word's first letter instead flared the space bar on every
+   * word a child got right.
+   */
+
+  it("wants the first letter before anything is typed", () => {
+    expect(nextChar("three", "")).toBe("t");
+  });
+
+  it("wants the letter under the cursor mid-word", () => {
+    expect(nextChar("three", "th")).toBe("r");
+    expect(nextChar("three", "thre")).toBe("e");
+  });
+
+  it("wants the SPACE that commits a finished word", () => {
+    // The buffer is exactly the word: there is no letter left, and the only
+    // key that gets out of it is the space bar.
+    expect(nextChar("three", "three")).toBe(" ");
+  });
+
+  it("still wants SPACE once the word has been over-typed", () => {
+    // The extra letters are already red in the passage above. Asking for a
+    // letter that cannot be reached would flare the way out of the word too.
+    expect(nextChar("three", "threee")).toBe(" ");
+    expect(nextChar("three", "threexyz")).toBe(" ");
+  });
+
+  it("wants SPACE for a word that isn't there at all", () => {
+    // `TypingTrack` passes "" for an index past the end of the deck.
+    expect(nextChar("", "")).toBe(" ");
+  });
+
+  it("does not fold a word's own punctuation away", () => {
+    // A sentence level types the comma, so it is a character like any other.
+    expect(nextChar("hand,", "hand")).toBe(",");
+    expect(nextChar("hand,", "hand,")).toBe(" ");
   });
 });

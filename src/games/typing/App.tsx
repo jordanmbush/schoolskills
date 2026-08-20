@@ -10,6 +10,7 @@ import PlayerSelect from "@/components/screens/PlayerSelect";
 import TypingSetup from "./TypingSetup";
 import TypingTrack from "./TypingTrack";
 import TypingResults from "./TypingResults";
+import StormRun from "./storm/StormRun";
 
 /**
  * The typing game, as its own island.
@@ -73,6 +74,14 @@ function Shell() {
         <Route path="/" element={<PlayerSelect />} />
         <Route path="/p/:profileId" element={<TypingSetup />} />
         <Route path="/p/:profileId/go" element={<TypingTrack />} />
+        {/* Hailstorm (docs/typing.md §9). Its own route rather than a mode of
+            `/go`, because it shares none of that screen's machinery — no
+            passage, no input, no ghost — and all of its own. The lesson is in
+            the path because a storm is a rung of the ladder: twenty levels,
+            one route, and the tile a child pressed is what says which. A
+            `lessonId` that names no storm goes back to the ladder rather than
+            opening an empty sky (`StormRun`). */}
+        <Route path="/p/:profileId/storm/:lessonId" element={<StormRun />} />
         <Route path="/p/:profileId/results" element={<TypingResults />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

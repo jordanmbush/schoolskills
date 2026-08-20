@@ -9,6 +9,11 @@ on:
     branches: [develop, main]
   push:
     branches: [develop, main]
+  # Runnable by hand against any branch. Added while trying to get the monthly
+  # analytics PR checked automatically — which it does not do, because GitHub
+  # credits only PR-associated runs to a PR (see analytics.yml) — but useful on
+  # its own for re-running the suite on a branch without pushing to it.
+  workflow_dispatch:
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -64,8 +69,36 @@ jobs:
       # loop (create a profile → race → results → reload) against the built
       # output. It caught a routing regression that skipped the results screen
       # entirely while still saving the run, which no unit test would have seen.
+      # Split deliberately. The browser download is cacheable; `--with-deps` is
+      # not, because it shells out to apt. On 2026-08-19 azure.archive.ubuntu.com
+      # hung inside it for eighteen minutes and ate this job's whole twenty-minute
+      # budget, three runs running, with every real gate step having already
+      # passed — and `develop` push runs were timing out identically at the time.
+      #
+      # So the apt half is bounded and retried, and failing it is a warning
+      # rather than the job. If the libraries genuinely aren't there the smoke
+      # test below goes red, which is the signal we actually want; ubuntu-latest
+      # ships them already, so a dead mirror should cost two minutes and a note,
+      # not a red build on green code.
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - name: Install Playwright system dependencies
+        timeout-minutes: 8
+        run: |
+          for attempt in 1 2 3; do
+            if timeout 150 npx playwright install-deps chromium; then exit 0; fi
+            echo "::warning::playwright install-deps attempt $attempt failed or timed out; retrying"
+            sleep 15
+          done
+          echo "::warning::playwright install-deps never completed — continuing, because ubuntu-latest ships these libraries and the smoke test will fail if it does not"
+
       - name: Install Playwright browser
-        run: npx playwright install --with-deps chromium
+        timeout-minutes: 5
+        run: npx playwright install chromium
 
       - name: Smoke test the built site
         run: |
