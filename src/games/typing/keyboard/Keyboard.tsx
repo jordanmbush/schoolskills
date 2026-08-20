@@ -36,6 +36,12 @@ const NONE: ReadonlySet<string> = new Set();
  * different sizes rather than two layouts — there is no breakpoint here to keep
  * in step with the row stagger.
  *
+ * That dial tops out at real key pitch — 19.05mm, which is 4.5rem (§4.7) —
+ * because this is a map read while the hands are on the actual keyboard, and a
+ * map at half scale makes the child do the scaling. On a wide screen the board
+ * is therefore wider than the 720px column the race is written in, and is
+ * allowed to overflow it; the CSS says how.
+ *
  * ── The echo arrives as props, not as a hook ──────────────────────────────
  * Which keys are lit is `useKeyEcho`'s answer, passed in (§4.3). Calling the
  * hook in here would look tidier and would cost the two things that matter:

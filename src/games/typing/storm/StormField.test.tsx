@@ -333,11 +333,28 @@ describe("StormField", () => {
 
   it("draws one key unit, shared with the board it is aiming at", () => {
     // The AC's "one source of truth" is the `KEY_ROWS` table for the lanes and
-    // this custom property for the scale. Two declarations of it — one on the
-    // board, one on the field — is exactly how a lane and a cap start
-    // disagreeing about how wide a key is.
-    expect(css.match(/--key:\s/g)).toHaveLength(1);
-    expect(/:root\s*{\s*--key:/.test(css)).toBe(true);
+    // this custom property for the scale. Two declarations of it reachable
+    // from THIS screen — one on the board, one on the field — is exactly how a
+    // lane and a cap start disagreeing about how wide a key is. So the storm's
+    // own block declares it nowhere at all: every rule under `.storm` reads
+    // the root's value, and a falling letter has no second opinion available
+    // to land by.
+    expect(storm).not.toMatch(/--key:\s/);
+    expect(/:root\s*{\s*--key:/.test(sheet)).toBe(true);
+
+    // There is one other declaration in the stylesheet, and it is deliberately
+    // not on a screen with lanes. `.race.typing` re-scales the dial to subtract
+    // the chrome a passage screen carries above the board — the HUD, the bars,
+    // the line you type on — because that chrome is a constant and a share of
+    // the viewport cannot express it (§4.7, decision 63). It may, because the
+    // board is the only thing on that screen that reads `--key` at all.
+    //
+    // Pinned at two rather than left open, so that a third has to be argued
+    // for here first. The count is taken off `sheet` and not `css`: the prose
+    // in this stylesheet quotes the property by name, and a test that counted
+    // comments would be marking the explanation.
+    expect(sheet.match(/--key:\s/g)).toHaveLength(2);
+    expect(/\.race\.typing\s*{\s*--key:/.test(sheet)).toBe(true);
   });
 
   it("fills the viewport minus the ad band, and does not scroll while the storm is falling", () => {

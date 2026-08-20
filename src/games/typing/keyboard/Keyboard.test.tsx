@@ -135,6 +135,65 @@ describe("Keyboard", () => {
       expect(block).not.toContain(`var(${name})`);
   });
 
+  it("draws a key at the pitch of a real one", () => {
+    const sheet = css("game.css").replace(/\/\*[\s\S]*?\*\//g, "");
+    const dial = /:root\s*{[^}]*--key:\s*([^;]+)/.exec(sheet)![1];
+
+    // 19.05mm of key pitch is three quarters of an inch, which CSS defines as
+    // exactly 72px, which is 4.5rem. The board is a map a child glances at
+    // while their hands are on the real thing, so the ceiling is that
+    // measurement and not a taste — at half of it they do the scaling, which
+    // is the work looking down would have saved them (§4.7, decision 61).
+    //
+    // Written out whole rather than as a `toContain("4.5rem")`, because the
+    // two floor terms are load-bearing too: `6vw` is what keeps fifteen units
+    // inside 90% of a narrow viewport whatever the column under them says, and
+    // `9dvh` is what leaves a landscape phone a sky to fall through.
+    expect(dial.replace(/\s+/g, " ")).toBe(
+      "clamp(1.05rem, min(6vw, 9dvh), 4.5rem)",
+    );
+  });
+
+  it("centres the board on the arithmetic when it overflows the race column", () => {
+    const sheet = css("game.css").replace(/\/\*[\s\S]*?\*\//g, "");
+
+    // A life-size board is fifteen units of 72px — 1080px — and `.race` is
+    // `min(720px, 100%)`, a measure chosen for reading a line of words. So on
+    // the passage screen the board overflows its column, evenly, on purpose
+    // (decision 62).
+    //
+    // Half the column minus half of fifteen units, and NOT `margin-inline:
+    // auto`: an auto margin is defined to resolve to zero against negative
+    // free space, so the board would hug the left edge and hang off the right.
+    // `justify-self: center` loses the same way — Chrome start-aligns an
+    // overflowing grid item. This expression is the one that means the same
+    // thing in both directions.
+    //
+    // Filtered rather than taken first, because `.typing .keyboard` is written
+    // twice: the other one is the short-viewport rule that drops the board
+    // altogether. Exactly one of them may say where the board sits.
+    const centring = [...sheet.matchAll(/\.typing \.keyboard\s*{([^}]*)}/g)]
+      .map(([, body]) => body)
+      .filter((body) => /margin-inline/.test(body));
+
+    expect(centring).toHaveLength(1);
+    expect(centring[0]).toMatch(
+      /margin-inline:\s*calc\(50% - 7\.5 \* var\(--key\)\)/,
+    );
+
+    // And the height budget on the same screen is divided by the board's own
+    // height in key units — five rows, and the four gaps between them at
+    // whatever the board insets its caps by. Read out of `--key-gap` rather
+    // than pinned at 5.36, so a chunkier keycap moves the budget with it
+    // instead of leaving the board a fraction too tall on a short window and
+    // scrolling a race under a child's thumb (decision 63).
+    const gap = Number(
+      /--key-gap:\s*calc\(var\(--key\) \* ([\d.]+)\)/.exec(sheet)![1],
+    );
+    const divisor = /\.race\.typing\s*{[^}]*\/\s*([\d.]+)\s*\)/.exec(sheet)![1];
+    expect(Number(divisor)).toBeCloseTo(5 + 4 * gap, 5);
+  });
+
   it("flashes a struck key green and a wrong one red, and nothing else", () => {
     const game = css("game.css");
     const echo = game.slice(game.indexOf(ECHO_BLOCK));
