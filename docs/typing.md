@@ -1586,6 +1586,41 @@ falling. What it can and must do:
   hits on one zone re-peak a tint that is already lit rather than blinking it
   off and on, which is the safe direction for that failure to go in.
 
+  **That re-peak only holds while the previous tint is still lit, and it is lit
+  for less time than the animation is long.** `storm-hit` is 150 ms on
+  `cubic-bezier(0.16, 1, 0.3, 1)`, which is heavily front-loaded: 40% of peak
+  opacity is gone by 20 ms and 90% of it by 50 ms. So landings within ~20 ms of
+  each other re-peak, as the 15 ms measurement above found; landings 100 ms
+  apart do not — the zone has gone dark and comes back, which is a blink.
+  Between roughly 50 ms and 333 ms is therefore a band where a zone genuinely
+  flashes, and **nothing in the generator keeps a wave out of it**. What bounds
+  the risk today is only how often it can happen: WCAG 2.3.1 counts _more than
+  three flashes in any one second_, and the stand-in wave at its fixed seed
+  peaks at **two tint starts per second on any one zone**, with at most two of
+  the eight lit at once.
+
+  The obvious fix is the wrong one and it is worth writing down before somebody
+  reaches for it. **`gap` is not the lever, and there is no `MIN_GAP_MS` to
+  mirror `MIN_FALL_MS`.** A zone's tint rate is set by how often two letters
+  _land_ on one finger, and because `fall` is a range as well, two letters
+  spawned far apart land together: `storm.test.ts`'s "capitals", at `gap`
+  600–1000 ms, already lands two letters on one zone 14 ms apart. Measured on
+  "everything falls", the lesson-93 shape: flooring its `gap` at 350 ms takes
+  one zone from four tint starts a second to three, and flooring it at 800 ms —
+  which would make the top of the ladder one letter at a time and delete
+  "whiteout" — still leaves three. A floor on `gap` buys a difficulty ceiling
+  and almost no safety.
+
+  So the rule the twenty specs have to keep is **a count of tint starts per
+  zone per second**, read off the built schedule the way `fallRange` says such
+  questions must be. Which of the two ways to keep it — shaping the specs so no
+  zone lands twice inside the band, or making the tint itself rate-insensitive
+  so no spec can — is STM10's to decide, because it is the story that writes
+  the twenty rows and the one that retires the stand-in the numbers above are
+  measured on. The same question is open for `.storm__miss`, whose cadence is
+  not a wave's at all but the rate a child can press wrong keys at, and which
+  `StormState` currently records as a bare count with no times on it.
+
 - **Fall speeds are capped** at the top of the ladder. "Whiteout" at lesson 89
   should be hard because there are many letters, not because one is a blur.
 

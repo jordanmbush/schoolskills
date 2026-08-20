@@ -225,14 +225,27 @@ function fallable(ch: string): Fallable | null {
  * 800ms is a judgement and worth being honest about that — it is not a
  * measured reaction time. What it is anchored to is the epic's own level
  * shapes: the fastest fall any of them declares is 800ms (`storm.test.ts`'s
- * "capitals under fire", lesson 44), so the floor is the fastest the ladder
- * ever *means* to be. Under it a letter stops being a thing to read, find and
- * press and becomes a streak going past — which is the failure §8.10 names,
- * and the one a five-year-old cannot tell from the game being broken.
+ * "home row", lesson 9), so the floor is the fastest the ladder ever *means*
+ * to be. Under it a letter stops being a thing to read, find and press and
+ * becomes a streak going past — which is the failure §8.10 names, and the one
+ * a five-year-old cannot tell from the game being broken.
  *
  * It is a backstop, not a difficulty knob: it bites only on a spec that asked
  * for something faster than the ladder ever intends, and a wave built entirely
  * above it is untouched.
+ *
+ * **There is deliberately no `MIN_GAP_MS` beside it, and the symmetry is a
+ * trap.** The thing a gap floor looks like it would buy is §8.10's "no strobe,
+ * ever" — a zone tinting over and over. But a zone tints when two letters
+ * *land* on one finger, and `fall` is a range too, so letters spawned a second
+ * apart land together: `storm.test.ts`'s "capitals", at `gap` 600–1000ms,
+ * already lands two on one zone 14ms apart. Measured on its "everything
+ * falls", the lesson-93 shape: flooring its
+ * `gap` at 350ms takes one zone from four tint starts a second to three, and
+ * flooring it at 800ms — which would make the top of the ladder one letter at
+ * a time — still leaves three. The floor would cost the density knob the top
+ * of the ladder is built out of and buy almost no safety, so the rule STM10
+ * has to keep is a count per zone per second and not a floor here (§8.10).
  */
 export const MIN_FALL_MS = 800;
 

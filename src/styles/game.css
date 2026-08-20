@@ -2339,10 +2339,13 @@ label.segmented__btn {
 /* One wash of `--flare` per wrong key, and never a sequence: a single pass on
    an element `StormHud` mounts from a counter that only goes up, exactly as
    the shield's damage tint is (§8.10, decision 42). It rests at zero and
-   animates down to it, so `prefers-reduced-motion` — which clamps every
-   animation to one 0.001ms pass — leaves the score exactly as it found it, and
-   what a child who asked for less motion still gets is the number itself,
-   which has already fallen. */
+   animates down to it, so nothing is lost by taking it off entirely — which
+   is what the reduced-motion block below does, `animation: none` rather than
+   base.css's 0.001ms clamp (§8.10). Do not read that block as redundant with
+   the clamp: the clamp shortens this animation, the block stops it existing,
+   and the difference is one `animationstart` the smoke suite counts. What a
+   child who asked for less motion still gets is the number itself, which has
+   already fallen. */
 .storm__miss {
   position: absolute;
   inset: 0;
@@ -2498,9 +2501,11 @@ label.segmented__btn {
    a letter lands or a repair pays out, not sixty times a second, so the layout
    property is the honest one and costs nothing. The transition is what makes a
    repair visible as a repair — the block grows back where damage drops it —
-   and it ends where `--hp` says either way, so `prefers-reduced-motion`
-   clamping every transition to 0.001ms (base.css) loses the movement and none
-   of the reading. */
+   and it ends where `--hp` says either way, so it is switched off outright
+   under `prefers-reduced-motion` (`transition: none`, in the block below —
+   §8.10) and the movement goes while none of the reading does. The block is
+   what does that here, not base.css's 0.001ms clamp: the clamp would still
+   run this transition, only faster. */
 .storm__zone::before {
   content: "";
   position: absolute;
@@ -2536,14 +2541,19 @@ label.segmented__btn {
    `StormShield` from a counter that only goes up, so it exists exactly once
    per landing and once per repair. Two letters landing on one zone inside a
    single `tick` move that counter by two, which is still one element and
-   therefore still one tint (§8.10).
+   therefore still one tint (§8.10). What that rules out is the tint
+   restarting on a frame where nothing happened; how often a WAVE may land on
+   one zone is a separate question, and one the generator does not yet answer
+   — see §8.10 for what is measured and what STM10 still owes it.
 
    Both rest at `opacity: 0` and animate down to it, so the animation adds
-   nothing to the picture once it is over and `prefers-reduced-motion` — which
-   clamps every animation to one 0.001ms pass — leaves the segment exactly as
-   it would have found it. What a child who asked for less motion still gets
-   is the block's own height, which is the damage itself rather than a report
-   of it.                                                                  */
+   nothing to the picture once it is over — which is why the reduced-motion
+   block below can take both off outright with `animation: none` and leave the
+   segment exactly as it would have found it. That block, and not base.css's
+   0.001ms clamp, is what suppresses these two under the setting; the clamp
+   only shortens them, and a shortened animation still starts. What a child
+   who asked for less motion still gets is the block's own height, which is
+   the damage itself rather than a report of it.                           */
 .storm__hit,
 .storm__mend {
   position: absolute;
@@ -2593,9 +2603,12 @@ label.segmented__btn {
    one flat box rather than layers at different speeds, and the only thing on
    the screen resembling a particle is a hailstone, which is the game. The
    guarantee is kept by not having built them, and it is measured rather than
-   promised — `e2e/smoke.mjs` counts every `animationstart` over a whole run
-   and holds the total to one per letter that lands, so a shake or a burst
-   added later fails a check that is already looking.
+   promised — `e2e/smoke.mjs` runs the same twelve-landing wave twice and
+   counts `animationstart` over the whole of each: twelve under normal motion
+   (one per letter that lands), and zero under this setting. Both censuses
+   filter on `animationName` starting `storm-`, so what they can catch is a
+   new animation named into this family; one added under any other prefix is
+   invisible to them and needs its own check.
 
    What is left is the three tints, and they are switched off rather than
    left to the blanket clamp. Under the clamp they still start and still fire

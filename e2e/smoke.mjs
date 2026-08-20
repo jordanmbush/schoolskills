@@ -469,9 +469,10 @@ try {
   const storm = async () => {
     // Out to the ladder first, so this is a fresh mount every time it is
     // called: a hash set to the one it already holds fires no navigation, and
-    // the run below it would be whatever the last one finished as. Leaving is
-    // also the only way out of the storm there is, so this is the same exit a
-    // child takes between two goes at it.
+    // the run below it would be whatever the last one finished as. A hash
+    // navigation is the exit THIS helper uses; it is not the only one a child
+    // has — the HUD's Quit button and `Escape` both open the sheet (§8.11),
+    // and section 12 leaves that way on purpose.
     await page.evaluate((id) => (location.hash = `#/p/${id}`), player);
     await page.evaluate((id) => (location.hash = `#/p/${id}/storm`), player);
     await page.waitForSelector(".storm__letter", { timeout: 8000 });
@@ -587,8 +588,11 @@ try {
       .join(" "),
   );
 
-  // Leaving is what quitting is on this screen (there is no quit control), and
-  // it has to take the loop with it — and, since the gun landed, the keydown
+  // Leaving the route is one of the three ways a run ends — route-left,
+  // run-ended, paused (§8.11) — and no longer the only one, now that the HUD
+  // carries a Quit and `Escape` opens the same sheet (section 12 uses both).
+  // The point being made here is still the one only a navigation can make: it
+  // has to take the loop with it, and — since the gun landed — the keydown
   // listener beside it.
   await page.evaluate((id) => (location.hash = `#/p/${id}`), player);
   await page.waitForTimeout(500);
@@ -1379,18 +1383,29 @@ try {
       tops.push(stone.getBoundingClientRect().top);
       await new Promise((done) => window.setTimeout(done, 25));
     }
-    const transformOf = (selector) => {
-      const el = document.querySelector(selector);
-      return el ? window.getComputedStyle(el).transform : "missing";
-    };
     return {
       distinct: new Set(tops.map((top) => Math.round(top))).size,
       forwards: tops.every((top, i) => i === 0 || top >= tops[i - 1]),
       travelled: Math.round(tops[tops.length - 1] - tops[0]),
-      // Nothing but the stones moves. A shake would be on one of the first
-      // three; a parallax layer would be a fourth thing with a transform.
-      still: [".storm", ".storm__sky", ".storm__shield"].map(transformOf),
-      stone: transformOf(".storm__letter"),
+      // Nothing but the stones moves — and that is asked of the whole screen
+      // rather than of a list of selectors somebody has to remember to grow.
+      // A shake would be a transform on the field, the sky or the shield; a
+      // parallax layer would be a transform on something none of those three
+      // names. Enumerating every descendant catches all of them, including
+      // the one nobody thought of, which is the only kind worth checking for.
+      // `.storm__combo` reports `scale: 1` rather than a transform, so it is
+      // `none` here like everything else that is not a falling stone. The
+      // field itself is in the list as well as its descendants, because a
+      // shake would most naturally be put on the thing that holds them.
+      // Read as an attribute rather than `className`, which is an
+      // `SVGAnimatedString` and not a string on an SVG node — and an icon
+      // somebody transforms is exactly the kind of thing this is here to
+      // find, so the one case it must not choke on is the new one.
+      moved: [...document.querySelectorAll("main.storm, main.storm *")]
+        .filter((el) => window.getComputedStyle(el).transform !== "none")
+        .map((el) => el.getAttribute("class") ?? el.tagName),
+      stone: window.getComputedStyle(document.querySelector(".storm__letter"))
+        .transform,
       particles: document.querySelectorAll(".confetti, .confetti__bit").length,
     };
   });
@@ -1402,10 +1417,11 @@ try {
   );
   check(
     "and nothing but the stones is moved at all",
-    calm.still.every((value) => value === "none") &&
+    calm.moved.every((name) => name.split(" ").includes("storm__letter")) &&
       calm.stone.startsWith("matrix") &&
       calm.particles === 0,
-    `field/sky/shield ${calm.still.join()}, stone ${calm.stone}, ` +
+    `${calm.moved.length} transformed element(s) in the storm, all stones: ` +
+      `${[...new Set(calm.moved)].join() || "none"}; stone ${calm.stone}, ` +
       `${calm.particles} particles`,
   );
 
@@ -1596,7 +1612,10 @@ try {
         ).length,
         // The rest of the ladder is untouched: a passage is typed on the
         // software keyboard like anything else (§4.5), so a child on an iPad
-        // still has the whole course.
+        // still has the whole course. Counted exactly, because "some are
+        // open" would pass with seventy-nine of the eighty wrongly shut —
+        // which is the failure this is here to catch, and the one a floor of
+        // zero cannot see.
         lessonsOpen: rung(":not(.is-storm):not([aria-disabled])").length,
         legend: [...document.querySelectorAll(".ladder__keyitem")]
           .map((li) => li.textContent.trim())
@@ -1614,7 +1633,12 @@ try {
       guessed.storms === 20 &&
       guessed.shut === 20 &&
       guessed.said === 20 &&
-      guessed.lessonsOpen > 0 &&
+      // Eleven of the eighty non-storm rungs, which is what FRESH progress
+      // opens on any device: lesson 1, and the ten checkpoints a placement
+      // test may be taken at from a standing start (§6.6). A desktop draws
+      // the same eleven — the keyboard guess reaches storm tiles and nothing
+      // else — so a drift either way is the bug this names.
+      guessed.lessonsOpen === 11 &&
       guessed.legend.includes("Press any key if you have one"),
     `${guessed.said}/${guessed.storms} storms say why, ` +
       `${guessed.lessonsOpen} lessons still open: "${guessed.legend}"`,
