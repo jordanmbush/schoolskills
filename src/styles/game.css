@@ -1876,11 +1876,32 @@ label.segmented__btn {
 
    The board is fifteen key units wide and every key knows its own left edge
    in those units, so a key is a fifteenth of the room there is — floored so
-   it stays legible on a narrow phone, capped so it doesn't become furniture
-   on a desktop. The dvh term is what makes a phone in landscape work: five
-   rows and whatever they are under — the passage, or a sky full of falling
-   letters — are sharing about 390px of height, and width alone would happily
-   spend all of it.
+   it stays legible on a narrow phone. The dvh term is what makes a phone in
+   landscape work: five rows and whatever they are under — the passage, or a
+   sky full of falling letters — are sharing about 390px of height, and width
+   alone would happily spend all of it.
+
+   **The cap is the real thing's measurement, not a taste.** Key pitch on
+   every full-size keyboard a child will ever meet is 19.05mm — three quarters
+   of an inch, which CSS defines as exactly 72px, which is 4.5rem. That is the
+   number, and it is written in rem rather than in `mm` (identical lengths,
+   since CSS pins an inch to 96px) so that a child who has turned their text
+   up gets a board that grew with everything else.
+
+   Why it matters that this is life-size rather than merely large: the board
+   is not an illustration of a keyboard, it is a map a child glances at while
+   their hands are on the actual one. A map at half scale asks them to do the
+   scaling — to see that the gap between `f` and `j` on screen is the gap
+   their two index fingers are already holding — and that translation is
+   exactly the work looking down at their hands would have saved them. At
+   pitch, the picture and the plastic are the same shape, so the glance costs
+   nothing and the reach it teaches is the reach they make.
+
+   It was capped at 2.4rem — about half pitch — until this, which on any
+   laptop drew a keyboard the size of a phone in the middle of an empty half
+   screen. On a laptop the room was simply there, in the passage row that
+   gives (`minmax(0, 1fr)`); on a shorter window it was not, which is what the
+   passage screen's own height term below is for.
 
    It lived on `.keyboard` until Hailstorm, which positions falling letters in
    key units in the sky ABOVE the board (docs/typing.md §8.2): a custom
@@ -1896,8 +1917,42 @@ label.segmented__btn {
    the slot (decision 36). One declaration, and both halves of that stay
    true at every size. */
 :root {
-  --key: clamp(1.05rem, min(5.6vw, 9dvh), 2.4rem);
+  --key: clamp(1.05rem, min(6vw, 9dvh), 4.5rem);
   --key-gap: calc(var(--key) * 0.09);
+}
+
+/* …and one extra term on the passage screen: what is left after the words.
+
+   `9dvh` is a FRACTION of the viewport, and what the board is competing with
+   here is not a fraction. The HUD, the pass bars or the ghost lane, the line
+   you type on, four grid gaps and the race's own padding come to about 365px
+   at every height — they are type and borders, and none of them grows with
+   the window — and two lines of passage left to read is another 60. A dvh
+   coefficient that clears 425px of that at an 850px viewport does not clear
+   it at 700, which is how the board could grow the PAGE: `.race` is
+   `min-height`, so a grid whose rows stop fitting simply gets taller, and a
+   race that scrolls under a child's thumb mid-word is the exact thing that
+   `min-height` is there to prevent. At half pitch the ceiling hid this —
+   a 2.4rem board fitted anywhere, so the dvh term was never the governor it
+   looked like.
+
+   So the height term is a subtraction, not a proportion: take the constant
+   off the viewport and divide by the board's own height in key units — five
+   rows and the four gaps between them, `5 + 4 × 0.09`. The board is handed
+   what is actually left rather than a guess at it.
+
+   This is a second declaration of `--key`, which the note above rules out —
+   and it is not the one it rules out. What the storm may never do is let a
+   falling letter's lane and the cap it names come from two numbers. The
+   passage screen has no lanes: the board is the only thing on it that reads
+   `--key` at all, and a screen only ever sees one of these two values. There
+   is nothing here left to disagree.                                       */
+.race.typing {
+  --key: clamp(
+    1.05rem,
+    min(6vw, 9dvh, calc((100dvh - var(--ad-h) - 26.5rem) / 5.36)),
+    4.5rem
+  );
 }
 
 .keyboard {
@@ -1913,6 +1968,37 @@ label.segmented__btn {
      should not offer to copy the letter `f`. */
   pointer-events: none;
   user-select: none;
+}
+
+/* A board at pitch is wider than the column it sits in, and is allowed to be.
+
+   `.race` is `min(720px, 100%)` because that is a comfortable measure for the
+   things above it — a clock, a rival's gap, a line of words to read. A
+   life-size keyboard is 1080px, and squeezing it back into 720 would be
+   letting a column width that exists for reading decide the size of a piece
+   of hardware. So it doesn't: the board is centred on its grid area and
+   overflows it evenly on both sides, which is also how the desk it is a
+   picture of is arranged — a screen, and a wider keyboard underneath it.
+
+   The centring is arithmetic rather than an alignment property, because
+   neither alignment property survives the overflow. `margin-inline: auto` is
+   defined to resolve to ZERO against negative free space, so the board would
+   hug the left edge of the column and hang off the right; `justify-self:
+   center` is start-aligned by Chrome for the same overflowing item, measured
+   rather than assumed. Half the column minus half the board is the one
+   expression that means the same thing in both directions — a positive margin
+   on a phone where the board still fits inside the column, the same number
+   negative on a laptop where it doesn't.
+
+   Nothing ends up off screen, because `--key` is capped by `6vw` first: the
+   widest the board can be is 90vw, whatever the column underneath it says.
+
+   The storm is not scoped in here on purpose. Its board is already centred in
+   a full-width field, so it has nothing to break out of, and `.storm__sky`
+   centres itself at the same fifteen units by the same `margin-inline: auto`
+   — a lane and its cap stay one column of the screen (§8.2).             */
+.typing .keyboard {
+  margin-inline: calc(50% - 7.5 * var(--key));
 }
 
 .keyboard__row {
