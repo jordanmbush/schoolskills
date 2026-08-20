@@ -9,12 +9,14 @@ import {
   MIN_FALL_MS,
   MIN_TINT_GAP_MS,
   MISS_POINTS,
+  QUEUE_MS,
   SHIELD_FINGERS,
   buildWave,
   fallRange,
   fire,
   hasLanded,
   isAirborne,
+  isFalling,
   progressAt,
   startStorm,
   stormReport,
@@ -144,17 +146,32 @@ const REACTION = SPECS.filter(([, s]) => s.gap[0] >= fallRange(s)[1]);
 const STACKING = SPECS.filter(([, s]) => s.gap[1] < fallRange(s)[0]);
 
 /**
- * The most letters on the field at any one moment.
+ * The most letters *coming down* at any one moment.
  *
- * The count on screen only ever goes up at a spawn, so asking `isAirborne` at
- * every spawn instant finds the maximum without a sweep. Reading the half-open
- * interval out of the engine rather than restating it here is what makes the
- * boundary pair at the bottom of this file — `gap` exactly `fall`, and one
- * millisecond the other side — a test of the rule the reducer actually fires
- * and damages by, instead of a test of a second copy of it that happens to
- * live in the test file.
+ * The count only ever goes up when a letter starts to drop, so asking
+ * `isFalling` at every drop instant finds the maximum without a sweep. Reading
+ * the half-open interval out of the engine rather than restating it here is
+ * what makes the boundary pair at the bottom of this file — `gap` exactly
+ * `fall`, and one millisecond the other side — a test of the rule the reducer
+ * actually fires and damages by, instead of a test of a second copy of it that
+ * happens to live in the test file.
+ *
+ * Falling and not merely on the field, because that is what `gap >= fall`
+ * buys: every letter waits the same beat at the top before it moves
+ * (`QUEUE_MS`), so a reaction level has one letter coming down with the next
+ * one queued above it. `maxOnField` below is the other count, and the pair of
+ * them is what says the queue is a queue.
  */
-const maxOnScreen = (wave: Wave): number =>
+const maxFalling = (wave: Wave): number =>
+  Math.max(
+    0,
+    ...wave.letters.map(
+      (l) => wave.letters.filter((other) => isFalling(other, l.dropMs)).length,
+    ),
+  );
+
+/** The most letters drawn at once — queued and falling together. */
+const maxOnField = (wave: Wave): number =>
   Math.max(
     0,
     ...wave.letters.map(
@@ -450,7 +467,8 @@ describe("the schedule the wave hands the reducer", () => {
         const wave = buildWave(s, seed);
         wave.letters.forEach((letter, i) => {
           const where = `${name} @ ${seed}: letter ${i}`;
-          expect(letter.landMs, where).toBe(letter.spawnMs + letter.fallMs);
+          expect(letter.dropMs, where).toBe(letter.spawnMs + QUEUE_MS);
+          expect(letter.landMs, where).toBe(letter.dropMs + letter.fallMs);
           if (i > 0)
             expect(letter.spawnMs, where).toBeGreaterThanOrEqual(
               wave.letters[i - 1].spawnMs,
@@ -513,7 +531,7 @@ describe("when gap clears fall, one letter falls at a time", () => {
         fallRange(s)[1],
       );
       for (const seed of SEEDS)
-        expect(maxOnScreen(buildWave(s, seed)), `${name} @ ${seed}`).toBe(1);
+        expect(maxFalling(buildWave(s, seed)), `${name} @ ${seed}`).toBe(1);
     }
   });
 
@@ -522,7 +540,7 @@ describe("when gap clears fall, one letter falls at a time", () => {
     // the next one spawns, which is a handover and not an overlap.
     const s = spec({ count: 30, gap: [900, 900], fall: [900, 900] });
     for (const seed of SEEDS)
-      expect(maxOnScreen(buildWave(s, seed)), `@ ${seed}`).toBe(1);
+      expect(maxFalling(buildWave(s, seed)), `@ ${seed}`).toBe(1);
   });
 
   it("is not a reaction level just because the row says so", () => {
@@ -542,7 +560,7 @@ describe("when gap clears fall, one letter falls at a time", () => {
     );
     expect(s.gap[0], "and is not one").toBeLessThan(fallRange(s)[1]);
     for (const seed of SEEDS)
-      expect(maxOnScreen(buildWave(s, seed)), `@ ${seed}`).toBe(2);
+      expect(maxFalling(buildWave(s, seed)), `@ ${seed}`).toBe(2);
   });
 
   it("stops holding one millisecond the other side of it", () => {
@@ -552,7 +570,7 @@ describe("when gap clears fall, one letter falls at a time", () => {
     // this pair.
     const s = spec({ count: 30, gap: [899, 899], fall: [900, 900] });
     for (const seed of SEEDS)
-      expect(maxOnScreen(buildWave(s, seed)), `@ ${seed}`).toBe(2);
+      expect(maxFalling(buildWave(s, seed)), `@ ${seed}`).toBe(2);
   });
 
   it("stacks letters up on the levels that mean to", () => {
@@ -567,7 +585,7 @@ describe("when gap clears fall, one letter falls at a time", () => {
     for (const [name, s] of STACKING)
       for (const seed of SEEDS)
         expect(
-          maxOnScreen(buildWave(s, seed)),
+          maxFalling(buildWave(s, seed)),
           `${name} @ ${seed}`,
         ).toBeGreaterThan(1);
   });
@@ -600,6 +618,12 @@ const at = (ch: string, spawnMs: number, fallMs: number): StormLetter => {
     finger: stroke.finger,
     lane: keyX(stroke.code) ?? 0,
     spawnMs,
+    // No queue: a hand-placed letter falls the instant it appears, so every
+    // absolute moment below is the one the test wrote down. The beat a real
+    // wave gives a letter (`QUEUE_MS`) is `buildWave`'s, and it is tested
+    // where it is added rather than folded into the arithmetic of every
+    // reducer test that only cares about what a landing costs.
+    dropMs: spawnMs,
     fallMs,
     landMs: spawnMs + fallMs,
   };
@@ -626,6 +650,125 @@ const landed = (state: StormState) =>
   state.resolved.flatMap((outcome, index) =>
     outcome?.outcome === "landed" ? [index] : [],
   );
+
+describe("a letter hangs before it falls", () => {
+  /*
+   * The queue (§8.3, decision 67). A letter appears, stands perfectly still
+   * for `QUEUE_MS` while a child reads it, and only then starts to drop.
+   *
+   * Everything here is about what that beat must NOT disturb, because the
+   * whole reason it can be a single constant is that it disturbs nothing: it
+   * is added to every letter of every level, so it shifts the schedule and
+   * warps no part of it.
+   */
+
+  it("is drawn and shootable from the moment it appears", () => {
+    // The point of the beat is that a child can read the letter — and a game
+    // that showed them one and then charged ten points for pressing it would
+    // be punishing them for doing exactly that (`QUEUE_MS`).
+    const wave = buildWave(spec({ count: 1, keys: ["f"] }), 3);
+    const [letter] = wave.letters;
+    const half = letter.spawnMs + QUEUE_MS / 2;
+
+    expect(isAirborne(letter, half)).toBe(true);
+    expect(isFalling(letter, half)).toBe(false);
+
+    const early = fire(to(startStorm(wave), half), "KeyF");
+    expect(early.resolved[0]?.outcome).toBe("shot");
+    expect(early.score).toBeGreaterThan(0);
+  });
+
+  it("does not move while it hangs, and lands a fall after it drops", () => {
+    const wave = buildWave(
+      spec({ count: 1, keys: ["f"], fall: [1200, 1200] }),
+      3,
+    );
+    const [letter] = wave.letters;
+
+    expect(progressAt(letter, letter.spawnMs)).toBe(0);
+    expect(progressAt(letter, letter.dropMs - 1)).toBe(0);
+    expect(progressAt(letter, letter.dropMs)).toBe(0);
+    expect(progressAt(letter, letter.dropMs + 600)).toBe(0.5);
+    expect(progressAt(letter, letter.landMs)).toBe(1);
+  });
+
+  it("floors progress at zero, so a queued stone cannot fly up out of the sky", () => {
+    // `--drop` is multiplied by the travel, so a negative one is a negative
+    // offset — a letter drawn ABOVE where it appeared, climbing as it waits.
+    const wave = buildWave(spec({ count: 4 }), 5);
+    for (const letter of wave.letters)
+      for (let t = letter.spawnMs; t < letter.dropMs; t += 100)
+        expect(progressAt(letter, t)).toBe(0);
+  });
+
+  it("gives two letters hanging side by side to the earlier spawn", () => {
+    // Floored, they tie at the top of the sky, and a tie goes to the index
+    // like every other dead heat (decision 33). Unfloored they would be ranked
+    // by how long each had left divided by how long its own fall is, which is
+    // a number nothing on screen shows a child.
+    const slow = {
+      ...at("f", 0, 4000),
+      dropMs: QUEUE_MS,
+      landMs: QUEUE_MS + 4000,
+    };
+    const quick = {
+      ...at("j", 0, 900),
+      dropMs: QUEUE_MS,
+      landMs: QUEUE_MS + 900,
+    };
+    const state = to(runOf([slow, quick], { shield: 3 }), QUEUE_MS / 2);
+
+    expect(progressAt(slow, QUEUE_MS / 2)).toBe(
+      progressAt(quick, QUEUE_MS / 2),
+    );
+    expect(targetIndex(state)).toBe(0);
+  });
+
+  it("shifts the schedule and warps no part of it", () => {
+    // The three things that make the beat a constant rather than a re-tune:
+    // which letters fall, how far apart they spawn, and how long each falls
+    // for are all exactly what they were, at every seed.
+    for (const [name, s] of SPECS)
+      for (const seed of SEEDS) {
+        const wave = buildWave(s, seed);
+        const where = `${name} @ ${seed}`;
+
+        // Spawns are untouched — the queue is time added to a letter's life,
+        // not a head start on the wave. The first letter is still the instant
+        // the wave begins, and every gap after it is still a draw from the
+        // level's own range.
+        expect(wave.letters[0].spawnMs, where).toBe(0);
+        for (const gap of gapsOf(wave)) {
+          expect(gap, where).toBeGreaterThanOrEqual(s.gap[0]);
+          expect(gap, where).toBeLessThanOrEqual(s.gap[1]);
+        }
+        wave.letters.forEach((letter, i) => {
+          expect(letter.dropMs, `${where}: ${i}`).toBe(
+            letter.spawnMs + QUEUE_MS,
+          );
+          expect(letter.landMs - letter.dropMs, `${where}: ${i}`).toBe(
+            letter.fallMs,
+          );
+        });
+        expect(wave.durationMs, where).toBe(
+          Math.max(...wave.letters.map((l) => l.landMs)),
+        );
+      }
+  });
+
+  it("costs a level nothing it did not already have on the field", () => {
+    // A reaction level shows one letter falling with the next queued above it
+    // — two on the field, never three. A third would mean the beat had grown
+    // past the gaps these levels are spaced at, which is the shape of the
+    // failure a bigger `QUEUE_MS` would have.
+    for (const [name, s] of REACTION)
+      for (const seed of SEEDS) {
+        const wave = buildWave(s, seed);
+        expect(maxFalling(wave), `${name} @ ${seed}`).toBe(1);
+        expect(maxOnField(wave), `${name} @ ${seed}`).toBeLessThanOrEqual(2);
+      }
+  });
+});
 
 describe("where a letter is at time t", () => {
   const letter = at("f", 1000, 500);

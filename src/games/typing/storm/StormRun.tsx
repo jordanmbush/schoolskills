@@ -209,6 +209,12 @@ function StormPlay({
     // the field is frozen where the clock stopped, so there is no phase a
     // saving storm is in that it is not in already.
     onSaving: () => {},
+    // And nothing to play. A storm can end by being lost, so the sound of an
+    // ending is decided off the ending itself, on the frame the reducer
+    // stamped it — `sfx.finish` for a wave cleared, `sfx.breach` for a shield
+    // that failed (`stormSounds.ts`). The race's default would congratulate a
+    // child for dying.
+    fanfare: () => {},
   });
 
   /**

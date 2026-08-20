@@ -84,6 +84,13 @@ import type { CSSProperties } from "react";
  * reducer damages the shield on (decision 30), and re-deciding which side of a
  * millisecond a landing falls on is how a stone becomes both shootable and
  * already spent.
+ *
+ * It is `isAirborne` and never `isFalling`: a letter hangs at the top of the
+ * sky for a beat before it moves (`QUEUE_MS`, decision 67), and that beat is
+ * the whole reason it is legible — the one moment it is new is the one moment
+ * it is standing still. A field that drew only what was falling would hide the
+ * letter exactly while a child was meant to be reading it, and would still let
+ * them shoot it, which the gun would have no way to explain.
  */
 export function isDrawn(state: StormState, index: number): boolean {
   return (
@@ -184,6 +191,15 @@ export function StormField({
               style={
                 {
                   "--lane": letter.lane,
+                  // How long this letter falls for, which the stylesheet turns
+                  // into how FAR: a stone is capped at `--hail-speed` stone
+                  // heights a second, so a short fall uses less of the sky
+                  // rather than crossing all of it faster (decision 65).
+                  // Written here beside the lane because it is the same kind
+                  // of fact — fixed when the wave was built, and never the
+                  // loop's to touch. The loop writes `--drop` and nothing
+                  // else.
+                  "--fall-ms": letter.fallMs,
                   "--drop": progressAt(letter, state.timeMs),
                 } as CSSProperties
               }

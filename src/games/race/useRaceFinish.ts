@@ -34,6 +34,7 @@ export function useRaceFinish({
   navigate,
   resultsPath,
   onSaving,
+  fanfare = sfx.finish,
 }: {
   profile: Profile;
   config: RaceConfig;
@@ -50,6 +51,24 @@ export function useRaceFinish({
   /** Where the finished run is shown. Each game has its own results screen. */
   resultsPath: string;
   onSaving: () => void;
+  /**
+   * What a finished run sounds like. `sfx.finish` unless a game says
+   * otherwise, which is every race: reaching the end of a deck is good news
+   * whatever the time on the clock.
+   *
+   * Hailstorm is the one that says otherwise, because it is the one run that
+   * can end by being LOST — a wave gets through the shield and the storm
+   * stops there. A major triad over a broken shield is the game congratulating
+   * a child for dying, so the storm passes a fanfare that does nothing and
+   * announces its own ending from the frame that stamped it, where the
+   * difference between clearing the wave and being breached is still in hand
+   * (`stormSounds.ts`).
+   *
+   * It is here and not at the call site of `complete()` because this hook owns
+   * the once-per-run guard: a sound played beside a call that may be refused
+   * is a sound that can play twice.
+   */
+  fanfare?: () => void;
 }) {
   const [saveError, setSaveError] = useState<string | null>(null);
   const finishing = useRef(false);
@@ -98,7 +117,7 @@ export function useRaceFinish({
       if (finishing.current) return;
       finishing.current = true;
       onSaving();
-      sfx.finish();
+      fanfare();
       await save();
     },
     retry() {

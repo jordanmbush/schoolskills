@@ -10,6 +10,7 @@ import {
   buildWave,
   fallRange,
   isAirborne,
+  isFalling,
   startStorm,
   type ShieldFinger,
   type Wave,
@@ -158,13 +159,30 @@ function peakZonesLit(wave: Wave, windowMs = 150): number {
 }
 
 /**
- * The most letters on the field at once.
+ * The most letters *coming down* at once.
  *
- * The count only ever rises at a spawn, so asking `isAirborne` at every spawn
- * instant finds the maximum without sweeping the clock — and it asks the
- * engine's own half-open interval rather than restating it (§8.3).
+ * The count only ever rises when a letter starts to drop, so asking
+ * `isFalling` at every drop instant finds the maximum without sweeping the
+ * clock — and it asks the engine's own half-open interval rather than
+ * restating it (§8.3).
+ *
+ * Falling and not merely drawn, because that is the claim the early levels
+ * make. Every letter hangs at the top for the same beat before it moves
+ * (`QUEUE_MS`), so a reaction level shows one letter coming down with the next
+ * queued above it — which is a queue, not a second thing to track. `maxOnField`
+ * is the other count, and the pair of them is what says so.
  */
-const maxOnScreen = (wave: Wave): number =>
+const maxFalling = (wave: Wave): number =>
+  Math.max(
+    0,
+    ...wave.letters.map(
+      (letter) =>
+        wave.letters.filter((other) => isFalling(other, letter.dropMs)).length,
+    ),
+  );
+
+/** The most letters drawn at once — queued and falling together. */
+const maxOnField = (wave: Wave): number =>
   Math.max(
     0,
     ...wave.letters.map(
@@ -413,27 +431,34 @@ describe("no zone can strobe", () => {
 });
 
 describe("the ladder's difficulty climbs", () => {
-  it("drops one letter at a time until lesson 19", () => {
+  it("drops one letter at a time until lesson 19, with the next one queued", () => {
     // Pure reaction (§8.3): `gap` clears `fall`, so a letter lands before the
-    // next one spawns and there is never a second on screen. Read off the
-    // built schedule at every seed rather than off the declared range, because
-    // `MIN_FALL_MS` can raise a fall and turn a promise into an overlap.
+    // next one starts to drop and there is never a second one coming down.
+    // Read off the built schedule at every seed rather than off the declared
+    // range, because `MIN_FALL_MS` can raise a fall and turn a promise into an
+    // overlap.
     for (const [name, lesson, wave] of SHIPPED) {
       if (lesson.n >= 19) continue;
-      expect(maxOnScreen(wave), name).toBe(1);
+      expect(maxFalling(wave), name).toBe(1);
       for (const seed of SEEDS)
         expect(
-          maxOnScreen(buildWave(waveSpecFor(lesson), seed)),
+          maxFalling(buildWave(waveSpecFor(lesson), seed)),
           `${name} @ ${seed}`,
         ).toBe(1);
+
+      // And what IS beside it is the next letter, waiting its turn. Two on the
+      // field where one is falling is the queue (`QUEUE_MS`); a third would
+      // mean the beat had grown past the gap these levels are spaced at, and
+      // the reaction levels would have quietly become reading-ahead ones.
+      expect(maxOnField(wave), name).toBeLessThanOrEqual(2);
     }
   });
 
   it("stacks them from lesson 19 on, and four deep at the top", () => {
     for (const [name, lesson, wave] of SHIPPED) {
       if (lesson.n < 19) continue;
-      expect(maxOnScreen(wave), name).toBeGreaterThan(1);
-      if (lesson.n >= 83) expect(maxOnScreen(wave), name).toBeGreaterThan(3);
+      expect(maxFalling(wave), name).toBeGreaterThan(1);
+      if (lesson.n >= 83) expect(maxFalling(wave), name).toBeGreaterThan(3);
     }
   });
 

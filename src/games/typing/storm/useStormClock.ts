@@ -6,6 +6,7 @@ import { fire, progressAt, startStorm, tick } from "@/engine/typing/storm";
 import { HELD } from "../keyboard/useKeyEcho";
 
 import { isDrawn } from "./StormField";
+import { playStormSounds } from "./stormSounds";
 
 import type { StormState, Wave } from "@/engine/typing/storm";
 
@@ -15,8 +16,8 @@ import type { StormState, Wave } from "@/engine/typing/storm";
  *
  * ── The loop holds no rules ──────────────────────────────────────────────────
  * All it does per frame is measure the delta, hand it to `tick`, write each
- * drawn stone's `--drop`, and re-render when the picture — rather than the
- * clock — has changed. Which letters exist, where they are, what a landing
+ * drawn stone's `--drop`, play whatever the frame turned out to sound like,
+ * and re-render when the picture — rather than the clock — has changed. Which letters exist, where they are, what a landing
  * costs, what a hit is worth, what a wrong key costs and when a run is over
  * were all settled in `engine/typing/storm.ts` before the first frame. That is
  * what makes the shield's rules answerable by a unit test in a millisecond
@@ -24,6 +25,15 @@ import type { StormState, Wave } from "@/engine/typing/storm";
  * this file is a rule that has stopped being testable. The two engine
  * predicates called here — `progressAt` for where a stone is, `isDrawn` for
  * whether it is on the field — are asked, never restated.
+ *
+ * The sound is the same shape of thing. `playStormSounds` is handed the frame
+ * before and the frame after and works out what changed between them
+ * (`stormSounds.ts`); nothing here decides what a hit or a breach sounds like,
+ * and nothing in `storm.ts` has grown an event list to tell it. It is called
+ * from beside `tick` and `fire` rather than from a hook watching the rendered
+ * state for the same reason the trigger is here: those two are the only things
+ * that move a run, and a state that never reaches a render is still a state
+ * something happened in.
  *
  * ── The trigger is here because the clock is ─────────────────────────────────
  * A shot is fired at `live.current` — the run as this frame left it — and not
@@ -341,6 +351,7 @@ export function useStormClock(
       if (!event.altKey && keyX(event.code) !== null) event.preventDefault();
 
       const next = fire(live.current, event.code);
+      playStormSounds(live.current, next);
       live.current = next;
       publish(next);
     };
@@ -355,6 +366,7 @@ export function useStormClock(
       frame = 0;
       const next = tick(live.current, stepMs(now, last));
       last = now;
+      playStormSounds(live.current, next);
       live.current = next;
 
       const sky = skyRef.current;

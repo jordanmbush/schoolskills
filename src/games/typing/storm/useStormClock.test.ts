@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
 
 import { keyX, strokeFor } from "@/engine/keyboard";
-import { buildWave, fire, startStorm, tick } from "@/engine/typing/storm";
+import {
+  QUEUE_MS,
+  buildWave,
+  fire,
+  startStorm,
+  tick,
+} from "@/engine/typing/storm";
 
 import { MAX_STEP_MS, QUIT_KEY, redrawn, stepMs } from "./useStormClock";
 
@@ -33,6 +39,14 @@ const spec: WaveSpec = {
   repairAt: 0,
 };
 
+/**
+ * The fixture wave at an absolute moment of wave time.
+ *
+ * Spawns are at 0, 300, 600 and 900 — the queue shifts no spawn (§8.3) — and
+ * each letter then hangs for `QUEUE_MS` before falling for a second, so the
+ * landings are at 2000, 2300, 2600 and 2900. Both clocks are used below and
+ * the call sites say which they mean.
+ */
 const run = (atMs: number): StormState =>
   tick(startStorm(buildWave(spec, 7)), atMs);
 
@@ -110,6 +124,11 @@ const letterOf = (ch: string, spawnMs: number, fallMs: number): StormLetter => {
     lane: keyX(stroke.code)!,
     spawnMs,
     fallMs,
+    // No queue: a hand-placed letter falls the instant it appears, so every
+    // absolute moment below is the one the test wrote down. The beat a real
+    // wave gives a letter (`QUEUE_MS`) is `buildWave`'s, and it belongs to the
+    // tests of the schedule rather than to every test of what a landing costs.
+    dropMs: spawnMs,
     landMs: spawnMs + fallMs,
   };
 };
@@ -151,13 +170,14 @@ describe("redrawn", () => {
   });
 
   it("says yes when a letter lands, and when one is shot", () => {
-    const before = run(999);
+    // A hair before the first landing, which is a fall after the drop.
+    const before = run(QUEUE_MS + 999);
     expect(redrawn(before, tick(before, 2))).toBe(true);
     expect(redrawn(before, fire(before, "KeyF"))).toBe(true);
   });
 
   it("says yes to a miss, streak or no streak", () => {
-    const hit = fire(run(999), "KeyF");
+    const hit = fire(run(QUEUE_MS + 999), "KeyF");
     expect(hit.combo).toBe(1);
     expect(redrawn(hit, fire(hit, "KeyQ"))).toBe(true);
 

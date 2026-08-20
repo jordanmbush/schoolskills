@@ -2240,6 +2240,33 @@ label.segmented__btn {
      bottom rather than half off each end. */
   --stone: calc(var(--key) * 1.15);
 
+  /* The fastest a hailstone is ever allowed to fall, in **stone heights per
+     second** (decision 65).
+
+     A backstop rather than a knob, and the same kind of thing as the
+     generator's `MIN_FALL_MS`: what makes a letter readable while it moves is
+     the beat it spends standing still first (`QUEUE_MS`, decision 67), and
+     this only has to stop the one case that beat cannot cover.
+
+     That case is real. A wave says how LONG a letter falls for and never how
+     far, so the distance is whatever sky there is — and since #197 took the
+     keyboard off the screen, that is the whole viewport. A 900ms fall crosses
+     about 640px on a 1512×850 laptop and about 1100px on a 27-inch monitor, so
+     without a ceiling the same level is a different game depending on what a
+     child opens it on. Nine stone heights a second is a shade above what the
+     tallest ordinary screen asks for, so on anything a child is likely to be
+     sitting at the stone uses the full sky and this changes nothing; on a
+     display taller than that it starts lower and falls at the ceiling.
+
+     Stone heights and not pixels, because what smears a moving glyph is how
+     far it travels against its own size — a cap written in pixels would mean
+     something different at every `--key`.
+
+     **It caps the speed and does not change the clock.** A letter still falls
+     for exactly the `fallMs` its wave drew (§8.3), so every level's timing,
+     and therefore its difficulty, is untouched. */
+  --hail-speed: 9;
+
   /* One viewport minus the ad band above it, exactly as `.race` is sized and
      for a sharper version of the same reason. `height`, not `min-height`: a
      field that may grow is a field that scrolls, and a page that scrolls
@@ -2330,11 +2357,13 @@ label.segmented__btn {
   left: calc(var(--lane) * var(--key) - var(--key-gap) / 2);
 
   /* ── The fall ──────────────────────────────────────────────────────────
-     `--drop` is `progressAt`: 0 the instant a letter spawns, 1 the instant it
-     reaches the shield. `useStormClock` writes it onto each stone every frame
-     and nothing else — the whole fall is this one multiplication, so the loop
-     never learns how tall the sky is and cannot hold a second opinion about
-     it (§8.9).
+     `--drop` is `progressAt`: 0 for as long as a letter hangs at the top
+     waiting to go (`QUEUE_MS`, decision 67), then 0 → 1 across its fall.
+     `useStormClock` writes it onto each stone every frame and nothing else —
+     the whole fall is this one multiplication, so the loop never learns how
+     tall the sky is and cannot hold a second opinion about it (§8.9). The
+     queue therefore costs this rule nothing at all: a stone that is not
+     moving is a stone whose `--drop` is not moving.
 
      A transform rather than `top` — the same trade `.fuse__fill` takes when it
      scales instead of setting a width: the layout property is the honest one
@@ -2345,21 +2374,51 @@ label.segmented__btn {
      down the sky by two independent declarations, and the loop can own one of
      them without touching the other.
 
-     The travel is the sky minus one stone, which is what leaves a letter whole
-     at the top and resting on the line at the bottom rather than half off each
-     end. Floored at zero because that subtraction goes NEGATIVE once the sky
-     is shorter than a hailstone — around 265px of viewport height, below
-     anything real, but the difference between a still frame and a loop is that
-     a loop would animate it, and a storm that falls upwards is not a
-     degradation anybody would read as one.
+     `--sky-fall` is the whole travel the sky can offer: its height minus one
+     stone, which is what leaves a letter whole at the top and resting on the
+     line at the bottom rather than half off each end. Floored at zero because
+     that subtraction goes NEGATIVE once the sky is shorter than a hailstone —
+     around 265px of viewport height, below anything real, but the difference
+     between a still frame and a loop is that a loop would animate it, and a
+     storm that falls upwards is not a degradation anybody would read as one.
+
+     **`--fall` is the shorter of that and what `--hail-speed` allows** — the
+     cap declared on `.storm`, in stone heights a second, which is what stops
+     a bigger monitor from being a faster storm (decision 65). `--fall-ms` is
+     the letter's own fall time, written inline by `StormField` beside its
+     lane: it is fixed for the life of a letter, so it is a render's to write
+     and never the loop's. The fallback is a second rather than nothing on
+     purpose — a `min()` over a missing variable is invalid at computed-value
+     time, and an invalid `--fall` is a stone that does not move at all.
+
+     `top` is where the fall BEGINS and the transform is the fall itself, so
+     a capped stone comes into view lower in the sky and still lands exactly
+     on the shield. Two declarations, one moving and one not, which is the
+     same split `translate: -50% 0` takes for the lane: the loop owns the
+     transform and touches neither of the others.
 
      No clamp on `--drop` itself: `isDrawn` mounts a stone only on the
      half-open `[spawnMs, landMs)` the reducer resolves it over (decision 30),
      so every stone this rule can apply to has a fraction in [0, 1). */
-  --fall: max(0cqh, 100cqh - var(--stone));
-  top: 0;
+  --sky-fall: max(0cqh, 100cqh - var(--stone));
+  --fall: min(
+    var(--sky-fall),
+    calc(var(--fall-ms, 1000) / 1000 * var(--hail-speed) * var(--stone))
+  );
+  top: calc(var(--sky-fall) - var(--fall));
   transform: translateY(calc(var(--drop) * var(--fall)));
   translate: -50% 0;
+
+  /* A layer of its own, for the one element on this site that moves every
+     frame and carries text. Without it the glyph is re-rasterised at a new
+     sub-pixel offset sixty times a second, and sub-pixel antialiasing puts
+     the colour fringes somewhere different each time — which is a shimmer on
+     top of the smear the cap above is already fighting. Promoted, it is
+     rasterised once and the compositor moves the texture; the cost is
+     greyscale antialiasing, which is very slightly softer standing still and
+     much steadier moving. Twelve stones at the very most, and only while a
+     wave is running. */
+  will-change: transform;
 
   display: grid;
   place-items: center;
@@ -2368,12 +2427,25 @@ label.segmented__btn {
 
   border: 1px solid color-mix(in oklab, var(--accent) 42%, transparent);
   border-radius: calc(var(--key) * 0.3);
-  background: color-mix(in oklab, var(--ink-800) 88%, transparent);
+  /* Opaque, where it used to be 88% of the ink. The only thing a stone ever
+     crosses is the HUD (see below), and the glyph inside it is the one thing
+     on this screen that has to be read at a glance while it is moving — a
+     score showing faintly through the `l` a child is trying to tell from an
+     `i` is a contrast cost for no gain. The HUD is still legible: what it is
+     drawn in is `--chalk-dim`, and what passes over it is one stone. */
+  background: var(--ink-800);
   box-shadow: 0 0 calc(var(--key) * 0.45)
     color-mix(in oklab, var(--accent) 18%, transparent);
 
   font-family: var(--font-mono);
   font-size: calc(var(--key) * 0.6);
+  /* Bold, and this is legibility rather than emphasis. A moving glyph is
+     smeared across however far it travels in one frame, and what survives
+     that is stroke WIDTH — so the two letters this game confuses, `l` and
+     `i`, are told apart by a thicker stem long after a thin one has washed
+     out. Space Mono ships 700 and the storm is the one screen that needs it;
+     everything else on the site reads standing still. */
+  font-weight: 700;
   line-height: 1;
   color: var(--chalk);
 }

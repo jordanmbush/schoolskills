@@ -1124,6 +1124,59 @@ It bought the fall, too. The board was five rows of keycaps at real pitch
 screen whose entire job is giving a child time to read a letter and find its
 key.
 
+**What that bought was distance, and distance at a fixed time is speed.** A
+wave says how LONG a letter falls for and never how far, so the same 900ms fall
+that used to cross 430px now crosses 720px — and more again on a bigger
+monitor. At around 12px a frame the display's own persistence smears a 43px
+glyph across a quarter of its own height, and `i` and `l` stop being different
+letters. The first storm on the ladder has the shortest fall of the twenty
+(900–1200ms, §5.6), so the level a five-year-old meets first is the one it hurts
+most.
+
+**The answer is not to slow the fall down, it is to stand the letter still
+first** (§8.3, decision 67). A letter appears at the top of the sky, hangs
+there for `QUEUE_MS` while a child reads it, and only then drops. Reading and
+racing become two moments instead of one, and the one moment a glyph is new is
+the one moment it is not moving — which is worth more than any amount of
+slowing down, because a letter you have already identified does not need to be
+legible on the way down.
+
+What is left for the geometry is a **backstop**, in the same spirit as the
+generator's `MIN_FALL_MS` (decision 65):
+
+```css
+--hail-speed: 9; /* stone heights per second */
+--fall: min(
+  var(--sky-fall),
+  calc(var(--fall-ms, 1000) / 1000 * var(--hail-speed) * var(--stone))
+);
+```
+
+Nine is a shade above what the tallest ordinary screen asks for, so on anything
+a child is likely to be sitting at the stone uses the whole sky and this changes
+nothing. On a display taller than that it stops the level quietly becoming a
+different game because of the monitor it was opened on. It is in **stone
+heights** and not pixels because what smears a moving glyph is how far it
+travels against its own size, so a cap written in pixels would mean something
+different at every `--key`. And it **changes no clock**: a letter still falls
+for exactly the `fallMs` its wave drew, so every level's timing, and therefore
+its difficulty, is what §5.6's table says it is.
+
+A capped stone **comes into view lower** rather than falling faster: `top` is
+the sky's whole travel minus this letter's, so the fall still ends exactly on
+the shield. `--fall-ms` is written inline by `StormField` beside the lane, never
+by the loop — it is fixed when the wave is built, where `--drop` moves every
+frame (§8.9).
+
+Two smaller things go with all this, and both are about the same quarter-second
+of smear. The glyph is **bold**, because what survives motion blur is stroke
+width, and `l` and `i` are told apart by a thick stem long after a thin one has
+washed out. And the stone gets `will-change: transform`, so it is rasterised
+once and composited rather than re-rasterised at a new sub-pixel offset sixty
+times a second — the cost is greyscale antialiasing, slightly softer standing
+still and much steadier moving, which is the right way round for the one element
+on this site that is always moving.
+
 Lanes are key units, not pixels, so the stones and the shield scale together
 off one `--key` custom property — **declared once, at the root**. It lived on
 `.keyboard` while the field had one, and could not stay there: a custom
@@ -1257,10 +1310,57 @@ reducer's "which are in the air" or under a React key.
 
 A letter is on the field over the **half-open** interval `[spawnMs, landMs)`:
 there the instant it spawns, gone the instant it lands, because landing is the
-tick that turns it into shield damage. That is what makes the early levels'
-guarantee `gap[0] >= fall[1]` rather than `>` — at exactly equal, the outgoing
-letter lands on the same millisecond the next one spawns, which is a handover
-and not two letters on screen.
+tick that turns it into shield damage.
+
+#### A letter hangs before it falls
+
+It does not start moving at `spawnMs`. It appears, stands perfectly still for
+`QUEUE_MS` — a second — and only then drops (decision 67). That beat is the
+whole of how this mode stays legible: a glyph is hardest to read at exactly the
+moment it is new, and this is the moment it is not moving. Reading the letter
+and racing it down become two things instead of one, and a child who has
+already identified an `i` does not need it to be legible on the way past.
+
+Four things about it, and the first is the one that matters most:
+
+- **A queued letter is shootable.** `isAirborne` says it is on the field,
+  `targetIndex` will aim at it and `fire` will take it. Anything else is a game
+  that shows a child a letter and then charges them ten points for pressing it.
+- **It is time added, and it has to be.** The cheaper-looking version — hang for
+  a beat, then cover the same sky in what is left of the same `fallMs` — is
+  strictly worse than doing nothing, because the same distance in less time is
+  a _faster_ drop at the most urgent point of it.
+- **It disturbs no level.** The value is the same for every letter of every
+  level, so it shifts the whole schedule and warps no part of it: `gap` and
+  `fall` are untouched, the generator draws in the same order from the same
+  seed, and every level rains the same letters in the same lanes at the same
+  speeds it did before.
+- **`CardResult.ms` still means what it did** (§8.7). It is `atMs - spawnMs` —
+  time from a child first _seeing_ the letter — so a fast player's card is the
+  number it always was and only a slow one has longer to be slow in.
+
+`progressAt` is floored at zero, which is what a queued letter is. Both its
+readers need that: the renderer would otherwise carry a queued stone _up_ out of
+the sky, since `--drop` is multiplied by the travel; and `targetIndex` would
+rank two letters hanging side by side — visibly at the same height — by how long
+each has left before it drops divided by how long its own fall is, which is a
+number nothing on screen shows. Floored, they tie, and a tie goes to the earlier
+spawn like every other dead heat (decision 33).
+
+**"One letter at a time" survives, as a claim about falling.** Lessons 4, 9 and
+13 promise pure reaction, and what that has always meant is that no two letters
+are coming _down_ at once — which `gap[0] >= fall[1]` still buys exactly,
+because every fall is shifted by the same amount and the beat cancels out of the
+arithmetic. What is beside a falling letter on those levels is the next one
+waiting its turn, which is what makes it a queue rather than a crowd:
+`storms.test.ts` holds them to one falling and at most two on the field, at
+every seed. `isFalling` is the engine's own name for the narrower interval, so a
+test asking that question does not restate `QUEUE_MS`.
+
+The guarantee is `gap[0] >= fall[1]` rather than `>` for the same reason it
+always was — at exactly equal, the outgoing letter lands on the same
+millisecond the next one starts to drop, which is a handover and not two letters
+falling.
 
 Two characters never fall, whatever `spec.keys` says: one this board cannot
 produce (§3.3's null), because it could never be shot, and one typed with a
@@ -1973,6 +2073,76 @@ numbers, every stone, the shield — for the reason a board carries one (§4.4).
 A screen whose only exit sat inside a hidden subtree would be a trap for
 exactly the child least able to get out of it.
 
+### 8.12 · What a storm sounds like
+
+Hailstorm is the one screen on this site a child can be looking away from at
+the moment it needs them — their hands are on a keyboard and their eyes are on
+the letters, and the shield is at the bottom of the screen where nobody is
+looking until it is too late. So it is the one screen that has to be playable
+by ear as well, and six sounds carry it (`services/sound.ts`):
+
+| Sound         | When                                                | Length |
+| ------------- | --------------------------------------------------- | ------ |
+| `shoot`       | Every stroke the gun takes, hit or miss             | 50ms   |
+| `shatter`     | A hailstone shot out of the sky — pitched by streak | 80ms   |
+| `misfire`     | A stroke that hit nothing, including an empty sky   | 90ms   |
+| `shieldHit`   | A letter got through; that finger's armour took it  | 160ms  |
+| `shieldBreak` | …and that was the zone's last point: a hole         | 340ms  |
+| `breach`      | A stone came through the hole. The run is over      | 750ms  |
+
+They are laid out along two axes a five-year-old can hear without being taught
+either. **Pitch says whose it is** — the gun and the stones are bright and
+short, the shield is low and long — so "I did something" and "something
+happened to me" never have to be told apart by timbre alone. **Length says what
+it cost**, and nothing else on the screen is allowed to be longer than the end
+of the run.
+
+The shot and its answer are **layered, not alternatives**: a stroke plays
+`shoot` and then `shatter` or `misfire` over the top of it. So the answer to a
+keypress arrives within a frame whatever else is true, and the quietest,
+shortest thing on the screen is the one that happens most often. Gains sit
+below the rest of the kit for the same reason — a race plays a handful of
+sounds a minute and a storm plays one per keystroke.
+
+**The sounds are a diff over two frames, not events the reducer raises**
+(decision 66). `fire` and `tick` are the only two things that move a run and
+neither returns an event list; every sound worth playing is a difference
+between the state they returned and the one before it — a hit is the combo
+going up, a miss is the miss count going up, a letter through is a shield zone
+going down, an ending is `ending` arriving. `soundsFor(before, after)` in
+`stormSounds.ts` is that diff, and it is a pure function a unit test drives a
+whole wave through in a millisecond. The alternative is the model handing back
+"and here is what happened", which is a second description of the run living
+beside the run — and the copy is the one that drifts (§8.9).
+
+It is called from beside `tick` and `fire` in `useStormClock`, and not from a
+hook watching the state React rendered. Every event here does change the
+picture, so a hook on the rendered state would see all of them today — but it
+would be one batching decision away from not seeing them, and a sound that
+never plays is a bug nobody can reproduce.
+
+Two edges the diff has to get right, both pinned by tests:
+
+- **A tick that lands a dozen letters is still one shield sound.** A
+  backgrounded tab hands the loop a second of wave at once (§8.9), and twelve
+  crunches inside one frame says nothing about which zone or how many — the
+  same reasoning that makes several landings on one zone a single tint
+  (decision 42).
+- **A mended zone is not a damaged one.** `repaired` hands back a new shield
+  when a streak puts a point back (§8.5), so a diff that only asked whether the
+  shield had changed would hear armour growing back as armour breaking.
+
+**And a storm does not play `finish`.** A race ends by being finished; a storm
+can end by being lost, and a major triad over a broken shield is the game
+congratulating a child for dying. `useRaceFinish` takes a `fanfare` — its
+default is `sfx.finish` and every race uses it — and the storm passes one that
+does nothing, announcing its own ending off the frame the reducer stamped it:
+`sfx.finish` for a wave cleared, `sfx.breach` for a shield that failed.
+
+Nothing here needs a guard for the player who has sound off. `sfx` is silent
+when `soundOn` is false and in any environment with no `AudioContext`, which is
+also why the storm's tests never stub it.
+
 ---
 
 ## 9 · Routes and screens
@@ -2117,6 +2287,9 @@ which is what every run saved before this is.
 | 62  | The board may overflow the 720px race column                                                 | 720px is a reading measure and a keyboard is not read; a screen with a wider keyboard under it is the desk it depicts                                         |
 | 63  | The passage screen's `--key` subtracts its chrome rather than taking a share of the viewport | The HUD, the bars and the line you type on are a constant, so a dvh fraction that fits at 850px of viewport grows the page at 700                             |
 | 64  | Hailstorm draws no keyboard                                                                  | A storm is the exam for the lessons that taught the layout, and a picture of the keyboard on the exam is the answer sheet — and it was taking 45% of the fall |
+| 65  | A hailstone's speed has a ceiling in stone heights, not left to the sky                      | A wave says how long a letter falls and never how far, so a taller monitor would be a faster level; a backstop like `MIN_FALL_MS`, not a difficulty knob      |
+| 66  | A storm's sounds are a diff over two frames                                                  | `fire` and `tick` return states, not events; a model that raised events would be a second description of the run, and the copy is the one that drifts         |
+| 67  | A letter hangs at the top for a second before it falls                                       | A glyph is hardest to read exactly when it is new; standing it still first beats any amount of slowing it down, and it costs the twenty levels nothing        |
 
 ---
 
