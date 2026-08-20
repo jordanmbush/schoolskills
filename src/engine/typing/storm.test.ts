@@ -6,8 +6,10 @@ import { keyX, strokeFor } from "@/engine/keyboard";
 import { cardXp, stormXp } from "@/engine/progress";
 import { unlockedAt } from "./keys";
 import {
+  MIN_FALL_MS,
   SHIELD_FINGERS,
   buildWave,
+  fallRange,
   fire,
   hasLanded,
   isAirborne,
@@ -334,7 +336,18 @@ describe("gap and fall are sampled per letter", () => {
     // This is the assertion an exclusive bound fails: a generator that never
     // reached `max` would make every level fractionally easier than written,
     // and nothing else here would notice.
-    const s = spec({ keys: HOME, count: 40, gap: [10, 12], fall: [5, 7] });
+    //
+    // The fall range sits just above `MIN_FALL_MS` rather than at any three
+    // numbers, because the floor would flatten a range under it (below) — and
+    // a range flattened to a constant is exactly what this assertion is here
+    // to catch. Sitting one millisecond above the floor also says the floor
+    // does not disturb a range that clears it.
+    const s = spec({
+      keys: HOME,
+      count: 40,
+      gap: [10, 12],
+      fall: [MIN_FALL_MS + 1, MIN_FALL_MS + 3],
+    });
     const gaps = new Set<number>();
     const falls = new Set<number>();
     for (const seed of SEEDS) {
@@ -343,7 +356,79 @@ describe("gap and fall are sampled per letter", () => {
       for (const letter of wave.letters) falls.add(letter.fallMs);
     }
     expect([...gaps].sort()).toEqual([10, 11, 12]);
-    expect([...falls].sort()).toEqual([5, 6, 7]);
+    expect([...falls].sort((a, b) => a - b)).toEqual([
+      MIN_FALL_MS + 1,
+      MIN_FALL_MS + 2,
+      MIN_FALL_MS + 3,
+    ]);
+  });
+});
+
+describe("no letter is ever a blur", () => {
+  /*
+   * The cap at the top of the ladder (§8.10, decision 52). "Whiteout" is meant
+   * to be hard because there are many letters, not because one of them cannot
+   * be read — and the only place that can be guaranteed is the generator,
+   * because the twenty specs are a table and a table is edited a row at a time.
+   */
+
+  it("floors every fall a too-fast spec asks for", () => {
+    const blur = spec({ count: 40, gap: [200, 300], fall: [40, 200] });
+    for (const seed of SEEDS)
+      for (const letter of buildWave(blur, seed).letters)
+        expect(letter.fallMs, `@ ${seed}`).toBe(MIN_FALL_MS);
+  });
+
+  it("holds for every spec and seed in this file, capped or not", () => {
+    // The universal form of it: whatever a level declares, nothing crosses the
+    // sky faster than the floor. The specs above all clear it, so this is the
+    // assertion that keeps clearing it true of a table somebody re-tunes.
+    for (const [name, s] of SPECS)
+      for (const seed of SEEDS)
+        for (const letter of buildWave(s, seed).letters)
+          expect(letter.fallMs, `${name} @ ${seed}`).toBeGreaterThanOrEqual(
+            MIN_FALL_MS,
+          );
+  });
+
+  it("leaves a spec that clears the floor exactly as it was written", () => {
+    // A cap that quietly re-tuned the levels that were already fine would be a
+    // difficulty knob wearing a safety rail's clothes.
+    for (const [name, s] of SPECS) {
+      expect(fallRange(s), name).toEqual(s.fall);
+      for (const seed of SEEDS)
+        for (const letter of buildWave(s, seed).letters) {
+          expect(letter.fallMs, `${name} @ ${seed}`).toBeGreaterThanOrEqual(
+            s.fall[0],
+          );
+          expect(letter.fallMs, `${name} @ ${seed}`).toBeLessThanOrEqual(
+            s.fall[1],
+          );
+        }
+    }
+  });
+
+  it("raises a range rather than flattening it", () => {
+    // Clamping each sample would pile every letter of a too-fast spec onto the
+    // floor exactly; clamping the range keeps the draw a draw. Only the half
+    // of the range under the floor moves.
+    const half = spec({ count: 40, fall: [MIN_FALL_MS - 400, 2000] });
+    expect(fallRange(half)).toEqual([MIN_FALL_MS, 2000]);
+
+    const falls = new Set<number>();
+    for (const seed of SEEDS)
+      for (const letter of buildWave(half, seed).letters)
+        falls.add(letter.fallMs);
+    expect(Math.min(...falls)).toBeGreaterThanOrEqual(MIN_FALL_MS);
+    expect(falls.size).toBeGreaterThan(5);
+  });
+
+  it("still builds the same storm twice under the cap", () => {
+    // The floor is part of what a seed means, and a cap applied anywhere but
+    // in the build would make a replay a different wave.
+    const blur = spec({ count: 20, fall: [10, 100] });
+    for (const seed of SEEDS)
+      expect(buildWave(blur, seed), `@ ${seed}`).toEqual(buildWave(blur, seed));
   });
 });
 
@@ -375,7 +460,14 @@ describe("the schedule the wave hands the reducer", () => {
         );
       }
 
-    const overtaking = spec({ count: 20, gap: [10, 10], fall: [100, 2000] });
+    // Written above `MIN_FALL_MS` so the range is the one the letters get: the
+    // floor would raise a 100ms fall to 800 anyway, and a spec that says one
+    // thing while the wave does another is a fixture nobody can reason from.
+    const overtaking = spec({
+      count: 20,
+      gap: [10, 10],
+      fall: [MIN_FALL_MS, 2000],
+    });
     const waves = SEEDS.map((seed) => buildWave(overtaking, seed));
     expect(
       waves.some((w) => w.durationMs !== w.letters.at(-1)!.landMs),

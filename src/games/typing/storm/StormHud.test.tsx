@@ -39,8 +39,8 @@ const played = (hits: number, misses = 0, spec = only("f")): StormState => {
   return state;
 };
 
-const hud = (state: StormState) =>
-  renderToStaticMarkup(<StormHud state={state} />);
+const hud = (state: StormState, onQuit?: () => void) =>
+  renderToStaticMarkup(<StormHud state={state} onQuit={onQuit} />);
 
 /** The HUD's text, with the markup taken out. */
 const readOut = (state: StormState) => hud(state).replace(/<[^>]+>/g, " ");
@@ -107,6 +107,58 @@ describe("StormHud", () => {
     // be `Number("")`, which is 0, and the HUD would be written the first
     // letter's fall sixty times a second.
     expect(hud(played(1))).not.toContain("data-stone");
+  });
+
+  /*
+   * The way out (docs/typing.md §8.8, #155). A storm fills the viewport with
+   * no site chrome over it, so until the run ends this is the only exit there
+   * is — and on a tablet, where the game cannot be played at all, it is the
+   * only thing on the screen that does anything.
+   */
+
+  it("draws a way out while the gun is live", () => {
+    const html = hud(played(2), () => {});
+    expect(html).toContain("storm__quit");
+    expect(html).toContain(">Quit<");
+  });
+
+  it("draws none where a screen offers none", () => {
+    // The prop is optional so that a still frame — this suite, a future
+    // screen showing a run back — is not obliged to invent a destination.
+    expect(hud(played(2))).not.toContain("storm__quit");
+  });
+
+  it("takes it away with the gun", () => {
+    // Once the run has an ending, the panel standing where the board did
+    // carries the way out (`StormOver`), and two exits on one screen are two
+    // answers to the same question.
+    const spec = only("f", { count: 1, fall: [1000, 1000] });
+    const over = tick(startStorm(buildWave(spec, 7)), 5000);
+
+    expect(over.ending).not.toBeNull();
+    expect(hud(over, () => {})).not.toContain("storm__quit");
+  });
+
+  it("keeps the numbers where they were when it goes", () => {
+    // Both are placed by column rather than by order (`game.css`), so the
+    // multiplier does not slide into the middle of the sky on the frame the
+    // quit disappears.
+    const live = hud(played(2), () => {});
+    expect(live).toMatch(/storm__score[^>]*>[\s\S]*storm__quit/);
+    expect(live).toMatch(/storm__quit[\s\S]*storm__combo/);
+  });
+
+  it("is the one thing in the sky that is not aria-hidden", () => {
+    // The sky's moving parts are hidden one element at a time (§4.4,
+    // `StormField`), and this is why: an exit inside a hidden subtree is a
+    // trap for exactly the child least able to get out of it.
+    const html = hud(played(2), () => {});
+    const quit = /<button[^>]*class="[^"]*storm__quit[^"]*"[^>]*>/.exec(
+      html,
+    )![0];
+
+    expect(quit).not.toContain("aria-hidden");
+    expect(html.match(/aria-hidden="true"/g)).toHaveLength(2);
   });
 
   it("says nothing about XP, in a run or at the end of one", () => {

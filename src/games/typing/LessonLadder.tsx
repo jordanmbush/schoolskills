@@ -1,6 +1,6 @@
 import type { LadderProgress } from "@/engine/typing/ladder";
 import { LESSONS, type Lesson } from "@/engine/typing/lessons";
-import { LessonTile } from "./LessonTile";
+import { STORM_NOTE, LessonTile } from "./LessonTile";
 
 /**
  * The hundred lessons, as the ice world's own overworld (docs/typing.md §9).
@@ -61,9 +61,20 @@ const BLOCKS = BLOCK_NAMES.map((name, i) => ({
 
 export function LessonLadder({
   progress,
+  hasKeyboard,
   onOpen,
 }: {
   progress: LadderProgress;
+  /**
+   * Whether this device looks like it has a physical keyboard
+   * (`useKeyboardPresence`), which decides what the Hailstorm tiles say
+   * (§8.8).
+   *
+   * A prop rather than a hook call in here, so this screen stays a pure
+   * function of what it is handed — the same reason `progress` arrives as one.
+   * `TypingSetup` is where the browser is asked.
+   */
+  hasKeyboard: boolean;
   onOpen: (lesson: Lesson) => void;
 }) {
   return (
@@ -101,6 +112,7 @@ export function LessonLadder({
                   <LessonTile
                     lesson={lesson}
                     progress={progress}
+                    hasKeyboard={hasKeyboard}
                     onOpen={onOpen}
                   />
                 </li>
@@ -131,7 +143,15 @@ export function LessonLadder({
         </li>
         <li className="ladder__keyitem">
           <span className="ladder__tile is-open is-storm" aria-hidden="true" />
-          Hailstorm — worth playing, never required. Coming soon
+          {/* The one place the keyboard is explained rather than merely
+              enforced, and the one place the way out of a wrong guess is
+              offered (§8.8, #155). It is said once, here, because a hundred
+              tiles each carrying "press any key" is wallpaper rather than
+              advice — and it corrects itself the instant a key is pressed,
+              with nothing to reload. */}
+          {hasKeyboard
+            ? `${STORM_NOTE} Coming soon`
+            : `${STORM_NOTE} It needs a keyboard, so these stay shut here. Press any key if you have one`}
         </li>
       </ul>
     </section>

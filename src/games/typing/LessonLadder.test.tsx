@@ -41,9 +41,21 @@ const STORMS = LESSONS.filter((lesson) => lesson.kind.type === "storm");
 
 type Tile = { classes: string; label: string; shut: boolean };
 
-/** Every tile the ladder drew, in the order it drew them. */
-const tiles = (progress: LadderProgress): Tile[] =>
-  renderToStaticMarkup(<LessonLadder progress={progress} onOpen={() => {}} />)
+/**
+ * Every tile the ladder drew, in the order it drew them.
+ *
+ * `hasKeyboard` defaults to true because that is what every device this suite
+ * is not about reports, and what the hook answers when it cannot tell
+ * (`useKeyboardPresence`). The tablet is a case, not the baseline.
+ */
+const tiles = (progress: LadderProgress, hasKeyboard = true): Tile[] =>
+  renderToStaticMarkup(
+    <LessonLadder
+      progress={progress}
+      hasKeyboard={hasKeyboard}
+      onOpen={() => {}}
+    />,
+  )
     .split("<button")
     .slice(1)
     .map((chunk) => ({
@@ -97,7 +109,7 @@ describe("tileState", () => {
 describe("LessonLadder", () => {
   it("draws the hundred as ten rows of ten, named", () => {
     const html = renderToStaticMarkup(
-      <LessonLadder progress={FRESH} onOpen={() => {}} />,
+      <LessonLadder progress={FRESH} hasKeyboard onOpen={() => {}} />,
     );
     expect(tiles(FRESH)).toHaveLength(LESSONS.length);
     expect(html.match(/class="ladder__row"/g)).toHaveLength(10);
@@ -125,7 +137,7 @@ describe("LessonLadder", () => {
 
   it("says a checkpoint is always open, on the tile and in the copy", () => {
     const html = renderToStaticMarkup(
-      <LessonLadder progress={FRESH} onOpen={() => {}} />,
+      <LessonLadder progress={FRESH} hasKeyboard onOpen={() => {}} />,
     );
     expect(html).toContain("every checkpoint is open from the start");
     for (const tile of tiles(FRESH).filter((t) =>
@@ -143,7 +155,7 @@ describe("LessonLadder", () => {
    */
   it("keeps every tile in the tab order, locked ones included", () => {
     const html = renderToStaticMarkup(
-      <LessonLadder progress={FRESH} onOpen={() => {}} />,
+      <LessonLadder progress={FRESH} hasKeyboard onOpen={() => {}} />,
     );
     expect(html).not.toContain('disabled=""');
     expect(tiles(FRESH).filter((tile) => tile.shut).length).toBeGreaterThan(0);
@@ -159,5 +171,54 @@ describe("LessonLadder", () => {
     const storms = drawn.filter((tile) => tile.classes.includes("is-storm"));
     expect(storms).toHaveLength(STORMS.length);
     for (const storm of storms) expect(storm.shut).toBe(true);
+  });
+
+  /**
+   * The tablet (docs/typing.md §8.8, #155). Hailstorm needs raw `keydown` with
+   * a `code` and there is no software keyboard on screen during it, so a
+   * device with no keys is told which of these tiles is not for it and why —
+   * rather than being given a tile that does nothing when it is pressed.
+   *
+   * Every other rung is unaffected, and that is half the claim: a passage is
+   * typed on the software keyboard like anything else, so a child on an iPad
+   * still has the whole course.
+   */
+  it("says why a storm tile is shut on a device with no keyboard", () => {
+    const drawn = tiles(at(99, 100), false);
+    const storms = drawn.filter((tile) => tile.classes.includes("is-storm"));
+
+    expect(storms).toHaveLength(STORMS.length);
+    for (const storm of storms) {
+      expect(storm.shut).toBe(true);
+      expect(storm.label).toContain("Hailstorm needs a keyboard");
+    }
+
+    const lessons = drawn.filter((tile) => !tile.classes.includes("is-storm"));
+    expect(lessons).toHaveLength(LESSONS.length - STORMS.length);
+    for (const lesson of lessons) {
+      expect(lesson.shut).toBe(false);
+      expect(lesson.label).not.toContain("keyboard");
+    }
+  });
+
+  /**
+   * And the way out of a wrong guess, said once where there is room for it.
+   * Detection is a guess (`useKeyboardPresence`), so the legend has to carry
+   * the instruction that overturns it — a child in a keyboard folio reads
+   * "press any key", presses one, and the ladder redraws with no reload.
+   */
+  it("offers the keystroke that overturns the guess, in the legend only", () => {
+    const shut = renderToStaticMarkup(
+      <LessonLadder progress={FRESH} hasKeyboard={false} onOpen={() => {}} />,
+    );
+    expect(shut).toContain("Press any key if you have one");
+    // Once, in the legend — not on each of the twenty tiles.
+    expect(shut.match(/Press any key if you have one/g)).toHaveLength(1);
+
+    const open = renderToStaticMarkup(
+      <LessonLadder progress={FRESH} hasKeyboard onOpen={() => {}} />,
+    );
+    expect(open).not.toContain("Press any key");
+    expect(open).toContain("Coming soon");
   });
 });

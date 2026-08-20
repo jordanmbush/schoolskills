@@ -17,6 +17,7 @@ import { ladderProgress } from "@/engine/typing/ladder";
 import { RivalList } from "@/games/race";
 import { sfx } from "@/services/sound";
 import { KeyboardSetting } from "./keyboard/KeyboardSetting";
+import { useKeyboardPresence } from "./keyboard/useKeyboardPresence";
 import { LessonBrief } from "./LessonBrief";
 import { LessonLadder } from "./LessonLadder";
 import { lessonConfig, lessonKey } from "./lessonRun";
@@ -67,6 +68,16 @@ export default function TypingSetup() {
    * one that suggests something else.
    */
   const [briefing, setBriefing] = useState<Lesson | null>(null);
+
+  /**
+   * Whether this device looks like it can play Hailstorm at all (§8.8, #155).
+   *
+   * Asked here rather than inside the ladder so that screen stays a pure
+   * function of its props, and asked at all because a storm tile that opened a
+   * game a child physically cannot play is the "fails mysteriously" this is
+   * against. It is a guess that costs a keystroke to overturn — see the hook.
+   */
+  const hasKeyboard = useKeyboardPresence();
 
   const key = configKey(config);
   const rivals = useMemo(
@@ -167,7 +178,11 @@ export default function TypingSetup() {
         </Link>
       </TopBar>
 
-      <LessonLadder progress={progress} onOpen={setBriefing} />
+      <LessonLadder
+        progress={progress}
+        hasKeyboard={hasKeyboard}
+        onOpen={setBriefing}
+      />
 
       {/* Keyed by the lesson, so a second brief is a second mount: the
           keyboard control is seeded from the lesson on mount, and a component

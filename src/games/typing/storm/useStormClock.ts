@@ -95,6 +95,22 @@ import type { StormState, Wave } from "@/engine/typing/storm";
 export const MAX_STEP_MS = 100;
 
 /**
+ * The key that leaves a storm (§8.8, decision 55).
+ *
+ * `Escape` is not on the board — `keyX` says so, which is what keeps it out of
+ * the `preventDefault` below — so it is the one key on a keyboard this game
+ * has no use for, and therefore the one it can spend on the way out.
+ *
+ * It has to be known HERE and not only by the screen that acts on it. Every
+ * other keydown while the gun is live is a shot, and a shot that missed costs
+ * ten points and the streak: an `Escape` handled by a second listener beside
+ * this one would still be fired at as a miss on the way past, so a child
+ * reaching for the way out would be charged for reaching for it. One listener,
+ * one decision, and the quit is taken before the trigger.
+ */
+export const QUIT_KEY = "Escape";
+
+/**
  * How much wave time one frame is worth, given the two rAF timestamps around
  * it. `last` is `null` on the first frame of a run, which is worth nothing.
  *
@@ -182,7 +198,38 @@ export function redrawn(drawn: StormState, next: StormState): boolean {
  * than from a render, which is the same reason `useRaceClock` keeps its marks
  * in refs.
  */
-export function useStormClock(wave: Wave): {
+export function useStormClock(
+  wave: Wave,
+  {
+    paused = false,
+    onQuit,
+  }: {
+    /**
+     * Freeze the run: no frames, no wave time, no gun (§8.8, decision 54).
+     *
+     * This file's cleanup used to say that a quit which kept the field on
+     * screen would be a pause, and that a pause is an input rather than an
+     * omission. This is that input. A storm with the quit sheet up must not go
+     * on falling behind it — a child reading "this won't be saved" while their
+     * shield breaks is being charged for asking the question — and it must not
+     * go on shooting either, because `Space` and `Enter` are the keys the
+     * sheet's own buttons answer to.
+     *
+     * Both come free from tearing the effect down. rAF is what moves wave
+     * time, and `last` starts over at `null` when the loop re-arms, so however
+     * long the sheet is up is worth exactly zero to the storm. Nothing here
+     * holds a paused-at timestamp for a resume to get wrong.
+     */
+    paused?: boolean;
+    /**
+     * What `QUIT_KEY` does, or nothing where a screen offers no way out.
+     *
+     * Taken here rather than by a listener of the screen's own, because the
+     * gun is here: see `QUIT_KEY`.
+     */
+    onQuit?: () => void;
+  } = {},
+): {
   state: StormState;
   skyRef: React.RefObject<HTMLDivElement | null>;
 } {
@@ -193,6 +240,14 @@ export function useStormClock(wave: Wave): {
   const drawn = useRef(state);
   const skyRef = useRef<HTMLDivElement | null>(null);
 
+  /**
+   * Through a ref for the reason `StormRun`'s finish is: a fresh closure every
+   * render, and naming it as a dependency would re-arm the loop — and reset
+   * `last` — on every re-render of a screen that re-renders on the picture.
+   */
+  const quitRef = useRef<(() => void) | undefined>(undefined);
+  quitRef.current = onQuit;
+
   useEffect(() => {
     // A run's wave is fixed for its whole life (`StormState.wave`), so this
     // normally arms once per mount. Handed a different storm it starts that
@@ -202,6 +257,12 @@ export function useStormClock(wave: Wave): {
       drawn.current = live.current;
       setState(live.current);
     }
+
+    // Nothing is armed while the sheet is up: no frame is requested, so no
+    // wave time passes, and no listener is bound, so no key fires or is
+    // swallowed. Resuming re-runs this effect from the top with `last` null
+    // again, which is a first frame worth zero (`stepMs`).
+    if (paused) return;
 
     let frame = 0;
     let last: number | null = null;
@@ -218,9 +279,12 @@ export function useStormClock(wave: Wave): {
      * as the run is live; the rules for what that is worth are `fire`'s, and
      * none of them are here.
      *
-     * Three keydowns are not strokes even while it is, and each is left out
+     * Four keydowns are not strokes even while it is, and each is left out
      * for a reason the board already agrees with:
      *
+     *   - **`QUIT_KEY`** — the way out (§8.11). It is taken before the trigger
+     *     rather than beside it, because a key that reached `fire` would be a
+     *     miss: ten points off and the streak gone for asking to leave.
      *   - **`HELD`** — shift, ctrl, alt and the cmd keys. It is the very set
      *     `useKeyEcho` never flares, imported rather than restated: a capital
      *     is a shift and a letter (§3.3), and a game that charged a child for
@@ -258,6 +322,12 @@ export function useStormClock(wave: Wave): {
       // mouse unable to focus a button, let alone press one.
       if (live.current.ending !== null) return;
       if (event.repeat || event.ctrlKey || event.metaKey) return;
+      // Before the trigger, and after the chord guard: the way out is not a
+      // shot (`QUIT_KEY`), but cmd+Escape is the operating system's.
+      if (event.code === QUIT_KEY) {
+        quitRef.current?.();
+        return;
+      }
       if (HELD.has(event.code)) return;
       if (!event.altKey && keyX(event.code) !== null) event.preventDefault();
 
@@ -309,11 +379,11 @@ export function useStormClock(wave: Wave): {
     // of anything that might stop propagation on the way up.
     window.addEventListener("keydown", onKeyDown, true);
 
-    // The only exit there is, and every way out runs it. Quitting is one of
-    // them today: this screen has no quit control, so leaving it is a
-    // navigation, and a navigation unmounts the route. A quit that instead
-    // kept the field on screen would be a pause, and a pause is a thing this
-    // effect has to be told about — an input, not an omission.
+    // Every way out of a run runs this, and there are three: the route being
+    // left, the run ending, and the pause above. Quitting is now the first of
+    // them by way of the third — the sheet pauses the storm, and confirming it
+    // navigates — which is why `paused` is an input to this effect rather than
+    // something it could have been left to infer.
     //
     // The listener goes with the frame, for a plainer reason than the loop's:
     // one left on the window outlives the screen. It would hold this run's
@@ -325,7 +395,7 @@ export function useStormClock(wave: Wave): {
       cancelAnimationFrame(frame);
       window.removeEventListener("keydown", onKeyDown, true);
     };
-  }, [wave]);
+  }, [wave, paused]);
 
   return { state, skyRef };
 }
