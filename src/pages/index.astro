@@ -79,18 +79,60 @@ const verse = passage("the-plans-of-the-diligent");
       homeschool and after-school practice at home &mdash; free, with no account
       and nothing about your child ever leaving the device it&rsquo;s on.
     </p>
+    {
+      /*
+       * The button goes down the page, not into a game.
+       *
+       * It used to open /flash-cards, which quietly said the times tables were
+       * the site and the other three worlds were extras. They aren't — the map
+       * is the thesis, and a child who came to practise spellings shouldn't
+       * have to back out of a multiplication race to find it. So the primary
+       * action is "choose", and the map is one scroll away rather than one
+       * navigation away.
+       *
+       * Both buttons are in-page jumps now, so both carry `data-scroll`. The
+       * arrow is only on this one: it is the button that used to leave the
+       * page, and it is the one whose destination is off screen, so it is the
+       * one that has to say it goes downwards rather than away. See the script
+       * at the foot of this page for why the scroll is animated in JavaScript
+       * rather than by `scroll-behavior: smooth`.
+       */
+    }
     <div class="hero__actions">
-      <a class="cta" href="/flash-cards">Start the times tables</a>
-      <a class="cta cta--quiet" href="#limits">What it isn&rsquo;t</a>
+      <a class="cta" href="#worlds" data-scroll>
+        Pick a world
+        <svg
+          class="cta__down"
+          viewBox="0 0 24 24"
+          width="18"
+          height="18"
+          aria-hidden="true"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.6"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M12 5v13M5.5 12l6.5 6.5 6.5-6.5"></path>
+        </svg>
+      </a>
+      <a class="cta cta--quiet" href="#limits" data-scroll
+        >What it isn&rsquo;t</a
+      >
     </div>
   </header>
 
-  <section class="band band--tight wrap">
+  {
+    /* `tabindex="-1"` so the scroll can hand focus over with it. Without that a
+      keyboard user's next Tab carries on from the hero button they just left,
+      several screens above where the page now is. */
+  }
+  <section class="band band--tight wrap" id="worlds" tabindex="-1">
     <WorldMap />
   </section>
 
   <div class="wrap"><AdSlot name="article" /></div>
-  <section class="band band--inset" id="limits">
+  <section class="band band--inset" id="limits" tabindex="-1">
     <div class="wrap">
       <h2 class="h2">What this is, and what it isn&rsquo;t</h2>
       <p class="h2__sub">
@@ -267,7 +309,7 @@ const verse = passage("the-plans-of-the-diligent");
     </div>
   </section>
 
-  <section class="band" id="for-parents">
+  <section class="band" id="for-parents" tabindex="-1">
     <div class="wrap">
       <h2 class="h2">For parents</h2>
       <div class="prose">
@@ -308,4 +350,151 @@ const verse = passage("the-plans-of-the-diligent");
       </div>
     </div>
   </section>
+
+  <!--
+    Why this isn't `scroll-behavior: smooth` on <html>.
+
+    That property is global to the document, and it also applies to the scroll
+    the browser performs when a page *loads* at a fragment. The masthead links
+    to /#for-parents from every other page, so a global rule would make that
+    arrival animate three screens down from the top on every load — and it
+    would put the same animation on the skip link, which exists to get a
+    keyboard user somewhere immediately.
+
+    So the smoothing is opt-in per link, via `data-scroll`, and lives here
+    rather than in the layout because the map is the only page whose primary
+    action is a scroll. Without JavaScript both links still work: they are real
+    anchors to real ids, and the browser jumps as it always has.
+  -->
+  <script is:inline>
+    /**
+     * How much of the top of the viewport the masthead is covering.
+     *
+     * Read off the element rather than repeating chrome.css's 760px
+     * breakpoint here: below it the bar scrolls away with the page and covers
+     * nothing, and a number written down twice is a number that drifts.
+     */
+    const coveredByMasthead = () => {
+      const mast = document.querySelector(".mast");
+      if (!mast || getComputedStyle(mast).position !== "sticky") return 0;
+      return mast.getBoundingClientRect().height;
+    };
+
+    /**
+     * Where a scroll to `target` should leave the page, or null for "the
+     * browser's own anchor behaviour is already right".
+     *
+     * Where a section names something worth centring, centre it — but only
+     * when the whole of it fits on screen.
+     *
+     * The map is the case this exists for. Its heading and the paragraph
+     * under it are 240px, so landing on the top of the section spends the
+     * arrival on prose and cuts the fourth card off at the fold. Centring the
+     * row of cards instead means the thing the button promised is the thing
+     * you land on, whole.
+     *
+     * The fits test is the whole safety of it. Under 760px those four cards
+     * stop being a row and become a two-thousand-pixel column, and a centred
+     * column puts you in the middle of the third card with no heading
+     * anywhere — so below that width, and on any short window, this returns
+     * null and the ordinary landing at the top of the section stands.
+     */
+    const landingFor = (target) => {
+      const centre = target.querySelector("[data-scroll-centre]");
+      if (!centre) return null;
+      const box = centre.getBoundingClientRect();
+      const reserved = coveredByMasthead();
+      const room = window.innerHeight - reserved;
+      if (box.height > room) return null;
+      return box.top + window.scrollY - reserved - (room - box.height) / 2;
+    };
+
+    /** `#worlds` → the section, without letting a typed hash throw. */
+    const sectionFor = (hash) =>
+      hash.length > 1 ? document.getElementById(hash.slice(1)) : null;
+
+    for (const link of document.querySelectorAll("a[data-scroll]")) {
+      link.addEventListener("click", (event) => {
+        // Leave the modified clicks alone — cmd/ctrl-click opens the section
+        // in its own tab, and that is a reasonable thing to want.
+        if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+          return;
+        }
+        // The masthead's two are absolute — /#worlds and /#for-parents,
+        // because that bar is on every page. Here they point at this page, so
+        // they scroll; the guard is what stops that assumption travelling if
+        // this script ever moves into the layout.
+        if (link.pathname !== location.pathname) return;
+        const target = sectionFor(link.hash);
+        if (!target) return;
+        event.preventDefault();
+
+        const behavior = window.matchMedia("(prefers-reduced-motion: reduce)")
+          .matches
+          ? "auto"
+          : "smooth";
+
+        const top = landingFor(target);
+        if (top === null) {
+          target.scrollIntoView({ behavior, block: "start" });
+        } else {
+          window.scrollTo({ top, behavior });
+        }
+        // `preventScroll` so handing focus over doesn't jump straight to the
+        // destination and cancel the animation that just started.
+        target.focus({ preventScroll: true });
+        // A pushed entry, the same as the anchor would have left behind, so
+        // Back still returns to the top of the page.
+        history.pushState(null, "", link.hash);
+      });
+    }
+
+    /*
+     * Arriving at a section instead of scrolling to one.
+     *
+     * The masthead's Play button is on every page, so from /privacy it is a
+     * real navigation to /#worlds and none of the above runs — the browser
+     * does its own fragment landing and parks the heading at the top, which
+     * is not where the click that started it was aiming.
+     *
+     * So the same landing is applied on arrival — and it is applied twice, in
+     * two different ways, because scrolling the page here does not stay put.
+     * The browser performs its own scroll-to-the-fragment on a schedule of
+     * its own, and it will happily do it again after this script has run: at
+     * end of parse, and again around load. Whichever of those lands last
+     * wins, so a plain scrollTo here is overwritten about half the time —
+     * which half depending on whether the fonts came from cache.
+     *
+     * So rather than fight it, tell it where the anchor is. `scroll-margin`
+     * is exactly the "land this far off the top" control the browser already
+     * consults, and a negative one moves the landing further down the page.
+     * Set it and the browser's own scroll arrives where the click was aiming,
+     * whenever it happens and however many times. The scrollTo alongside is
+     * for the case where it has already been and gone.
+     *
+     * Instantly, not smoothly: a page that loads and then animates itself
+     * somewhere else looks broken, and there is no starting position to
+     * travel from anyway.
+     *
+     * Both are redone once the fonts have settled, because every number here
+     * is a measurement and a font swapping under the heading moves the cards.
+     * In practice the faces are preloaded and this is a no-op; when it isn't,
+     * being right a moment late beats being wrong.
+     */
+    const arrival = location.hash && sectionFor(location.hash);
+    if (arrival) {
+      const land = () => {
+        const top = landingFor(arrival);
+        // null means the cards don't fit and the stylesheet's own
+        // scroll-margin — the one that clears the masthead — is right.
+        if (top === null) return;
+        const sectionTop = arrival.getBoundingClientRect().top + window.scrollY;
+        arrival.style.scrollMarginTop = `${sectionTop - top}px`;
+        window.scrollTo({ top, behavior: "auto" });
+      };
+      land();
+      if (document.fonts) document.fonts.ready.then(land);
+      window.addEventListener("load", land, { once: true });
+    }
+  </script>
 </Content>

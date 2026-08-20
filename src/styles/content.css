@@ -19,10 +19,29 @@
   display: block;
 }
 
-/* The masthead is sticky from 760px up, so an in-page jump has to clear it or
-   it lands with the heading hidden underneath. */
-:target {
-  scroll-margin-top: 5.5rem;
+/* An in-page jump has to clear the masthead or it lands with the heading
+   hidden underneath — but only where the masthead is actually sticky, which
+   is 760px up (see chrome.css). Below that it scrolls away with the rest of
+   the page, and reserving room for it instead leaves the *previous* section
+   parked at the top of the phone, which reads as a scroll that stopped short.
+
+   `.band[id]` is here as well as `:target` because the home page's hero
+   buttons scroll their section into view themselves rather than letting the
+   browser navigate to it (see index.astro), and a section reached that way
+   never becomes `:target`. Any band carrying an id is a jump destination by
+   definition, so both routes to it clear the same masthead. */
+@media (width >= 760px) {
+  :target,
+  .band[id] {
+    scroll-margin-top: 5.5rem;
+  }
+}
+
+/* Focus is moved to a section after a scripted scroll, and a section is not a
+   control — the ring would outline a third of the page for no purpose. The
+   scroll itself is the feedback that something happened. */
+.band[id]:focus {
+  outline: none;
 }
 
 .band {
@@ -158,6 +177,18 @@
 
 .cta:active {
   transform: translateY(1px);
+}
+
+/* The arrow on a button that scrolls rather than navigates. It nudges down
+   while the button lifts, so the two move apart on hover and the direction
+   reads before the click — this one goes further into the page, not away from
+   it. */
+.cta__down {
+  transition: transform 0.14s var(--ease-out);
+}
+
+.cta:hover .cta__down {
+  transform: translateY(3px);
 }
 
 .cta--quiet {

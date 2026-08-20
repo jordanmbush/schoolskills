@@ -60,7 +60,15 @@ const BADGES: Partial<Record<World, string>> = {
       restores the list semantics that base.css's `list-style: none` strips in
       Safari. */
   }
-  <ul class="map__route" role="list">
+  {
+    /* `data-scroll-centre` marks the row as the thing the home page's Play
+      button is actually aiming at, so it can centre the cards rather than
+      park the heading at the top and cut them off at the fold. It is a marker
+      for that script and nothing else — see index.astro, which also decides
+      when centring is the wrong answer (a phone, where these stack two
+      thousand pixels tall). */
+  }
+  <ul class="map__route" role="list" data-scroll-centre>
     {
       WORLDS.map((w) => (
         <li class="map__node" data-world={w.id}>
