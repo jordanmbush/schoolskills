@@ -403,13 +403,16 @@ export type StormEnding =
  * `resolved` is parallel to `wave.letters` and indexed by the letter's
  * identity (§8.3). Indexed rather than appended to, because resolution is
  * **not** in spawn order: shoot the middle one of three and the array gets a
- * hole in it. That indexing is also what makes the run a `Session` later with
- * no bookkeeping — card _i_ is letter _i_, so `prompt`, `answer` and `factId`
- * are its character and `ms` is `atMs - spawnMs` (§8.7, STM08).
+ * hole in it. That indexing is also what makes the run a `Session` with no
+ * bookkeeping: card _i_ is built from letter _i_ and outcome _i_ together, so
+ * `prompt`, `answer` and `factId` are the letter's character and `ms` is
+ * `atMs - spawnMs` (§8.7, `stormSession.ts`). It is a card **per resolved
+ * letter**, not per index — a run that ended early leaves holes in here, and
+ * they are the letters that never happened.
  *
- * What the next story adds, and why nothing here is in its way: STM07 reads
- * `ending` for the finger and counts `resolved` by finger for "let three
- * through". It wants no different shape.
+ * Two stories read this and neither wanted a different shape: STM07 takes the
+ * finger off `ending` and counts `resolved` by finger for "let three through",
+ * and STM08 walks it in order for the cards.
  */
 export type StormState = {
   /** The storm being played. Decided before the run; never changes during it. */
@@ -453,11 +456,18 @@ export type StormState = {
   /**
    * Wrong keys — shots that hit nothing, including shots at an empty sky.
    *
-   * A count and not a list, because the two things that read it want a number:
-   * the HUD mounts one `--flare` flash per miss off it (a counter that only
-   * goes up cannot restart an animation, §8.10, decision 42), and STM08 owes a
-   * saved session an `incorrect` that counts what a child got wrong rather
-   * than only what the shield paid for.
+   * A count and not a list, because what reads it wants a number: the HUD
+   * mounts one `--flare` flash per miss off it, and a counter that only goes
+   * up cannot restart an animation (§8.10, decision 42).
+   *
+   * **It is the run's own number and does not reach the record book.** STM08
+   * weighed giving a saved session an `incorrect` that counted wrong keys as
+   * well as letters that got through, and did not: a card is a letter's
+   * outcome, a wrong key resolves no letter, and two things downstream read
+   * "nothing marked wrong" as "nothing got through" — `survived`, which is
+   * `cards.length >= wordCount`, and the `unbroken` badge (§8.7, decision 48).
+   * What a miss cost is still saved, in the streak it broke: `bestStreak` is
+   * `bestCombo`, and the combo a wrong key ended is one the maximum never saw.
    */
   readonly misses: number;
   /** How the run finished, or `null` while it is live. */

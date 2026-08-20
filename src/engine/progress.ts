@@ -425,10 +425,14 @@ function courseBadges(
 
      "Shield untouched" is read as **no letter reached the bottom**, which is
      what takes a point off a segment (§8.5). A storm's cards are its falling
-     letters (§8.7), so a run with nothing marked wrong is a run where nothing
-     got through. That errs strict — a letter fired at twice and then hit may
-     cost a card without costing the shield — and strict is the right direction
-     for a badge that, once in `Profile.badges`, is not taken back.
+     letters and nothing else (§8.7, decision 48), so a run with nothing marked
+     wrong is exactly a run where nothing got through: a wrong key resolves no
+     letter and so costs no card, and the one letter that lands without costing
+     a shield point is the fatal one, which is itself a card marked wrong. So
+     this is the badge's own sentence rather than an approximation of it —
+     which is worth saying out loud, because counting a storm's wrong KEYS into
+     `incorrect` would quietly re-tune it from "untouched shield" to "flawless
+     run" without a line of this file changing.
 
      `correct > 0` cannot change the answer, and is kept on purpose. A run with
      no cards at all has an accuracy of 0 (`accuracyOf` returns 0 rather than
