@@ -23,28 +23,37 @@ import type { StormState } from "@/engine/typing/storm";
  * on within a second of reading it: they can look down at the finger.
  *
  * ── It decides nothing ───────────────────────────────────────────────────────
- * Every number here is `stormReport(state)`, computed in the engine beside the
- * rules that produced it — which finger, how many it let through, which keys
- * that finger owns, how much armour is left, the longest streak. This file
- * chooses words and puts them in boxes. That is the same division the loop
- * keeps (§8.9), and it is what makes "your right ring finger let three
- * through" a claim a unit test can hold still without a browser.
+ * Everything this screen concludes is `stormReport(state)`, computed in the
+ * engine beside the rules that produced it — which finger, how many it let
+ * through, which keys that finger owns, how much armour is left, the longest
+ * streak. This file chooses words and puts them in boxes. That is the same
+ * division the loop keeps (§8.9), and it is what makes "your right ring finger
+ * let three through" a claim a unit test can hold still without a browser.
  *
- * XP is the one figure not in the report, because it cannot be: `stormXp`
- * lives in `progress.ts`, which reaches `decks/index.ts`, and `storm.ts` is
- * one hop from the deck layer from STM10 on. It is read here instead, where
- * the deck layer is already in the graph — this screen builds a drill through
- * `buildDrill`, which is that same front door.
+ * Two of the four figures on the panel come from somewhere else, for two
+ * different reasons. XP cannot be in the report: `stormXp` lives in
+ * `progress.ts`, which reaches `decks/index.ts`, and `storm.ts` is one hop
+ * from the deck layer from STM10 on. It is read here instead, where the deck
+ * layer is already in the graph — this screen builds a drill through
+ * `buildDrill`, which is that same front door. The score need not be in it:
+ * it is the run's own live number, taken straight off `state`, and it was on
+ * the HUD the whole time. A report field restating it would be a second copy
+ * of a figure nothing here derives — and the report exists for the figures
+ * that ARE derived, which is why neither of these two is in it.
  *
  * ── No grade, in any of it ───────────────────────────────────────────────────
  * A run that ended early is "the storm got through", never a mark out of ten.
- * The two endings are the same screen in the same order with the same four
- * figures — the heading and what is offered next are all that differ — so
- * there is no arrangement, no colour and no ranking here that a child could
- * read as a score for themselves rather than a report of what the weather
- * did. The score is shown because it is the run's own number and it was on
- * screen the whole time anyway; the XP beside it can only ever have gone up
- * (§8.6), which is the honest thing a losing run has to say.
+ * Everything on the two endings a child could read as a grade is identical:
+ * the same panel, the same order, the same four figures in the same places,
+ * drawn in the same colours. What differs is what there is to say and to do —
+ * the heading, the lede under it, and, after a breach only, the "Its keys"
+ * line and the drill button that offers them (the one hue a breach adds is
+ * that finger's own, which is identity and not judgement). So there is no
+ * arrangement, no colour and no ranking here that a child could read as a
+ * score for themselves rather than a report of what the weather did. The
+ * score is shown because it is the run's own number and it was on screen the
+ * whole time anyway; the XP beside it can only ever have gone up (§8.6),
+ * which is the honest thing a losing run has to say.
  *
  * ── Where the board was ──────────────────────────────────────────────────────
  * The panel stands in the board's own grid track, because the board is the gun

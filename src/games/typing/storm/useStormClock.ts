@@ -250,11 +250,12 @@ export function useStormClock(wave: Wave): {
       // The gun dies with the run, and the listener has to know it rather than
       // leaning on `fire` refusing an ended state. What it would otherwise
       // still do is swallow the default, and by then the board's place is
-      // taken by the ending's three buttons (`StormField`): `Tab`, `Space` and
-      // `Enter` are all keys this board carries, so all three pass the very
-      // test that calls `preventDefault` below. A gun still eating them after
-      // the storm has stopped would leave a child who is not holding a mouse
-      // unable to focus a button, let alone press one.
+      // taken by the ending's buttons (`StormField`) — three after a breach,
+      // two after a cleared wave, and never none: `Tab`, `Space` and `Enter`
+      // are all keys this board carries, so all three of those keys pass the
+      // very test that calls `preventDefault` below. A gun still eating them
+      // after the storm has stopped would leave a child who is not holding a
+      // mouse unable to focus a button, let alone press one.
       if (live.current.ending !== null) return;
       if (event.repeat || event.ctrlKey || event.metaKey) return;
       if (HELD.has(event.code)) return;

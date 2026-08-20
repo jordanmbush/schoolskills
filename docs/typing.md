@@ -1131,10 +1131,11 @@ added as a third row it would have taken the space out of the sky instead —
 which on a short viewport is the whole of it (§8.2). The gun stops listening
 with the run for the same reason: `Space` and `Enter` are keys this board
 carries, and a dead gun that went on swallowing them would leave a child on the
-keyboard unable to press the three buttons that replaced it.
+keyboard unable to press the buttons that replaced it — three after a breach,
+two after a cleared wave, and on every ending the only way off this screen.
 
-What it says is decided in `stormReport(state)` and rendered in `StormOver`,
-which holds no rules at all:
+What it concludes is decided in `stormReport(state)` and rendered in
+`StormOver`, which holds no rules at all:
 
 - **Which finger, and how many it let through.** The finger is copied off the
   letter at the moment it got past (`StormEnding.breached`), and the count is
@@ -1150,17 +1151,30 @@ which holds no rules at all:
   finger that just breached — the letter that got through came out of that same
   pool wearing that same finger.
 - **What the run came to.** Shield left out of the eight-of-`shield` it started
-  with, the longest streak (recovered from `LetterOutcome.combo`, which only
-  ever climbs by one), the score, and the XP.
+  with, and the longest streak (recovered from `LetterOutcome.combo`, which
+  only ever climbs by one).
+
+Two of the four figures on the panel are **not** in the report, and `StormOver`
+reads them elsewhere. The score is `state.score`, the run's own live number
+taken straight off the state — it was on the HUD the whole time, and a report
+field restating it would be a second copy of a figure nothing derives. The XP
+is `stormXp(state)`, and it could not be in the report: `stormXp` lives in
+`progress.ts`, which imports `decks/index.ts` and the lessons, and `storm.ts`
+imports neither — it is kept a hop clear of the deck layer. The screen is
+where both figures are already in reach, because it builds its drill through
+`buildDrill`, which is that same front door.
 
 **No score-shaming, and that is a criterion rather than a preference.** A run
-that ended early is "the storm got through", not a mark. The two endings are
-the same panel, in the same order, with the same four figures — only the
-heading and what is offered next differ — so nothing in the arrangement, the
-ordering or the colour can be read as a grade for the child rather than a
-report of what the weather did. The one hue on it is the named finger's own,
-which is identity and not judgement: the same colour as the block that broke
-and the keys under it. `--lime` appears exactly once, on the XP, where it means
+that ended early is "the storm got through", not a mark. Everything on the two
+endings that a child could read as a grade is identical: the same panel, in the
+same order, with the same four figures in the same places, drawn in the same
+colours. What differs is what there is to say and to offer — the heading, the
+lede under it, and, after a breach only, an "Its keys" line and a third button
+offering a drill of those keys. So nothing in the arrangement, the ordering or
+the colour can be read as a mark for the child rather than a report of what the
+weather did. The one hue a breach adds is the named finger's own, which is
+identity and not judgement: the same colour as the block that broke and the
+keys under it. `--lime` appears exactly once, on the XP, where it means
 what it means everywhere else on this site — this is what you earned, and it
 could not have gone down (§8.6).
 
