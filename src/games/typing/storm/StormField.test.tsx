@@ -16,7 +16,7 @@ import {
   tick,
 } from "@/engine/typing/storm";
 
-import { StormField, aimedAt } from "./StormField";
+import { StormField } from "./StormField";
 import { StormOver } from "./StormOver";
 
 import type { FingerZone, KeyDef } from "@/engine/keyboard";
@@ -595,30 +595,25 @@ describe("StormField", () => {
     expect(stones(frameOf(only("j"), 750))[0].drop).toBeCloseTo(0.75, 10);
   });
 
-  it("mounts the board as the gun, and lets it point at nothing", () => {
-    const html = draw(frameOf(only("f"), 500));
+  it("draws no keyboard at all, live or ended", () => {
+    // A storm is the exam for the lessons that taught the layout (§8.1), so
+    // the picture of the answer is the one thing this screen must not show:
+    // the quickest way to shoot a falling `y` would become reading the board
+    // for where `y` is, which is hunt-and-peck with a countdown on it
+    // (decision 64).
+    const live = draw(frameOf(only("f"), 500));
+    expect(live).not.toContain("keyboard__key");
+    expect(live).not.toContain('class="keyboard"');
 
-    // The same picture the lessons put under the passage — one board, one
-    // layout, one echo listener.
-    expect(html.match(/class="keyboard__key/g)).toHaveLength(KEYS.length);
-
-    // But no hint, ever. A board that pointed at the next key would be
-    // playing the game for the child (§8.1).
-    expect(html).not.toContain("is-next");
-  });
-
-  it("marks presses against the lowest letter, and against none once dead", () => {
-    const state = frameOf(only("f", 3), 500);
-    expect(aimedAt(state)).toBe("f");
-
-    // `targetIndex` answers "which is lowest", not "is this run alive", so it
-    // still names a letter on a dead run. The screen is where that has to be
-    // caught, or the board goes on flaring at a child who has already lost.
-    const dead: StormState = {
-      ...state,
+    // Nor once the run is over, when the track it would have stood in is the
+    // ending's. `KEYS` is imported for the lanes below and named here so that
+    // a board creeping back in has a number to fail against.
+    expect(KEYS.length).toBeGreaterThan(0);
+    const dead = draw({
+      ...frameOf(only("f", 3), 500),
       ending: { kind: "breached", finger: "l-index", index: 0 },
-    };
-    expect(aimedAt(dead)).toBeNull();
+    } as StormState);
+    expect(dead).not.toContain("keyboard__key");
   });
 
   it("hands the way out to the HUD, and says which key does it too", () => {
@@ -649,16 +644,15 @@ describe("StormField", () => {
 
     expect(html).toContain("Hailstorm");
 
-    // Everything that moves is hidden: the two HUD numbers, every stone, the
-    // eight shield segments and the board's sixty spans. None of it is an
-    // announcement anybody could act on, and a live region reading out a
-    // hailstorm is a denial of service rather than an accommodation (§4.4).
+    // Everything that moves is hidden: the two HUD numbers, every stone and
+    // the eight shield segments. None of it is an announcement anybody could
+    // act on, and a live region reading out a hailstorm is a denial of service
+    // rather than an accommodation (§4.4).
     for (const cls of [
       "storm__score",
       "storm__combo",
       "storm__letter",
       "storm__shield",
-      "keyboard",
     ])
       expect(tag(cls), cls).toContain('aria-hidden="true"');
 

@@ -137,7 +137,9 @@ describe("Keyboard", () => {
 
   it("draws a key at the pitch of a real one", () => {
     const sheet = css("game.css").replace(/\/\*[\s\S]*?\*\//g, "");
-    const dial = /:root\s*{[^}]*--key:\s*([^;]+)/.exec(sheet)![1];
+    const ceilings = [
+      ...sheet.matchAll(/--key:\s*clamp\([^;]*?,\s*([^,;]+)\s*\);/g),
+    ].map(([, ceiling]) => ceiling.trim());
 
     // 19.05mm of key pitch is three quarters of an inch, which CSS defines as
     // exactly 72px, which is 4.5rem. The board is a map a child glances at
@@ -145,12 +147,22 @@ describe("Keyboard", () => {
     // measurement and not a taste — at half of it they do the scaling, which
     // is the work looking down would have saved them (§4.7, decision 61).
     //
-    // Written out whole rather than as a `toContain("4.5rem")`, because the
-    // two floor terms are load-bearing too: `6vw` is what keeps fifteen units
-    // inside 90% of a narrow viewport whatever the column under them says, and
-    // `9dvh` is what leaves a landscape phone a sky to fall through.
-    expect(dial.replace(/\s+/g, " ")).toBe(
-      "clamp(1.05rem, min(6vw, 9dvh), 4.5rem)",
+    // Asserted of EVERY declaration rather than of the board's, because the
+    // storm has no board and is capped at pitch for the same reason anyway: a
+    // lane claims to be where that key is, so a field wider than a keyboard
+    // teaches a reach nobody's hand makes (decision 64).
+    expect(ceilings.length).toBeGreaterThan(0);
+    for (const ceiling of ceilings) expect(ceiling).toBe("4.5rem");
+
+    // The root value is the storm's — the lanes, the stones and the shield —
+    // and the passage screen overrides it. Written out whole because the two
+    // floor terms are load-bearing too: `6vw` is what keeps fifteen units
+    // inside 90% of a narrow viewport whatever is under them, and the dvh term
+    // is what stops a hailstone growing until there is no sky to read it
+    // against.
+    const root = /:root\s*{[^}]*--key:\s*([^;]+)/.exec(sheet)![1];
+    expect(root.replace(/\s+/g, " ")).toBe(
+      "clamp(1.05rem, min(6vw, 15dvh), 4.5rem)",
     );
   });
 

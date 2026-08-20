@@ -1872,14 +1872,13 @@ label.segmented__btn {
    legends are its chalk, and the eight hues on top are the same in all of
    them because a finger doesn't change biome.                             */
 
-/* The one dial, and it is at the ROOT because two screens now scale off it.
+/* The one dial, and it is at the ROOT because two screens scale off it.
 
-   The board is fifteen key units wide and every key knows its own left edge
-   in those units, so a key is a fifteenth of the room there is — floored so
-   it stays legible on a narrow phone. The dvh term is what makes a phone in
-   landscape work: five rows and whatever they are under — the passage, or a
-   sky full of falling letters — are sharing about 390px of height, and width
-   alone would happily spend all of it.
+   Fifteen key units is the width of a keyboard, and everything either screen
+   draws knows its own left edge in those units — a keycap from `KeyDef.x`, a
+   falling letter from `keyX(code)`, a shield segment from `FINGER_ZONES`. So
+   one number sets the scale of all of it, floored so it stays legible on a
+   narrow phone.
 
    **The cap is the real thing's measurement, not a taste.** Key pitch on
    every full-size keyboard a child will ever meet is 19.05mm — three quarters
@@ -1888,28 +1887,37 @@ label.segmented__btn {
    since CSS pins an inch to 96px) so that a child who has turned their text
    up gets a board that grew with everything else.
 
-   Why it matters that this is life-size rather than merely large: the board
-   is not an illustration of a keyboard, it is a map a child glances at while
-   their hands are on the actual one. A map at half scale asks them to do the
-   scaling — to see that the gap between `f` and `j` on screen is the gap
-   their two index fingers are already holding — and that translation is
+   Why life-size rather than merely large, on the screen that draws a board:
+   it is not an illustration of a keyboard, it is a map a child glances at
+   while their hands are on the actual one. A map at half scale asks them to
+   do the scaling — to see that the gap between `f` and `j` on screen is the
+   gap their two index fingers are already holding — and that translation is
    exactly the work looking down at their hands would have saved them. At
    pitch, the picture and the plastic are the same shape, so the glance costs
    nothing and the reach it teaches is the reach they make.
 
-   It was capped at 2.4rem — about half pitch — until this, which on any
-   laptop drew a keyboard the size of a phone in the middle of an empty half
-   screen. On a laptop the room was simply there, in the passage row that
-   gives (`minmax(0, 1fr)`); on a shorter window it was not, which is what the
-   passage screen's own height term below is for.
+   And on the screen that draws no board, the cap is doing the same job for
+   the same reason. Hailstorm has lanes rather than keycaps now (decision 64),
+   but a lane still claims to be where that key IS — so a field wider than a
+   keyboard would be teaching a reach nobody's hand makes.
 
-   It lived on `.keyboard` until Hailstorm, which positions falling letters in
-   key units in the sky ABOVE the board (docs/typing.md §8.2): a custom
-   property inherits downwards only, so a value declared on the board is a
-   value the field cannot read. The alternative was a second clamp with the
-   same five numbers in the storm's own block, and that is the one thing this
-   must not be — a lane and the cap it names would then be free to drift
-   apart, which is a spatial hint teaching the wrong geometry.
+   ── What this value is, and what overrides it ──────────────────────────────
+   THIS one is the storm's: the lanes, the hailstones and the eight shield
+   segments, which is every reader of `--key` that is not a keycap. Its height
+   term is loose (`15dvh`) because the storm's only other track is the ending
+   panel, which is absent while a wave is falling — the sky is the whole field,
+   so what the dvh term is protecting is not the layout but the FALL: a stone
+   is 1.15 units, and past about a sixth of the viewport per unit a letter is
+   big enough that there is no sky left to read it against.
+
+   The passage screen overrides it below, because that screen draws five rows
+   of keycaps under a HUD, three bars and a line of words. It lived on
+   `.keyboard` until Hailstorm and could not stay there — a custom property
+   inherits downwards only, so a value declared on the board is a value the
+   sky above it cannot read (docs/typing.md §8.2, decision 37). At the root
+   both screens can reach it and each is one value, which is the property that
+   matters: within a screen a lane and the segment it lands on are never free
+   to disagree about how wide a key is.
 
    `--key-gap` is here for the same reason and one more: it is the inset that
    turns a key's slot into the keycap drawn inside it, so it is also what the
@@ -1917,7 +1925,7 @@ label.segmented__btn {
    the slot (decision 36). One declaration, and both halves of that stay
    true at every size. */
 :root {
-  --key: clamp(1.05rem, min(6vw, 9dvh), 4.5rem);
+  --key: clamp(1.05rem, min(6vw, 15dvh), 4.5rem);
   --key-gap: calc(var(--key) * 0.09);
 }
 
@@ -2242,17 +2250,19 @@ label.segmented__btn {
   overflow: hidden;
 
   display: grid;
-  /* The sky gives, the board never does. `minmax(0, 1fr)` is what lets the
-     sky be shorter than its content wants (the stones are absolutely
-     positioned inside it, so it has no content of its own to insist on) and
-     `auto` hands the board its five rows at whatever `--key` currently is.
+  /* The sky takes the field, and the second track is empty until the run ends.
 
-     That order is the opposite of the passage screen's, where a viewport too
-     short for both hides the board and lets the words carry on (the
-     `max-height` rule above, scoped to `.typing` and therefore not this).
-     Here the board is the gun: a child who cannot see it is not being asked
-     to read faster, they are being asked to shoot with nothing. So the sky is
-     what shrinks, down to nothing if it has to. */
+     `minmax(0, 1fr)` is what lets the sky be shorter than its content wants
+     (the stones are absolutely positioned inside it, so it has no content of
+     its own to insist on), and `auto` is where `.storm__over` stands once
+     there is an ending to show — nothing before that, so an `auto` track with
+     no child in it is zero and the sky has the whole screen.
+
+     There was a board in that track until #197 and it was taking about 45% of
+     the height (decision 64). What it was taking it from is the fall, which is
+     the only thing on this screen that gives a child time to read a letter and
+     find its key — so the sky roughly doubled when it went, and the row it
+     left behind is the one the ending was already using. */
   grid-template-rows: minmax(0, 1fr) auto;
   gap: clamp(0.35rem, 1.5vh, 1rem);
   padding: clamp(0.4rem, 1.5vh, 1rem) clamp(0.5rem, 2vw, 1rem);

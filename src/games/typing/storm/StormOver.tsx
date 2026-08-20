@@ -55,12 +55,18 @@ import type { StormState } from "@/engine/typing/storm";
  * whole time anyway; the XP beside it can only ever have gone up (§8.6),
  * which is the honest thing a losing run has to say.
  *
- * ── Where the board was ──────────────────────────────────────────────────────
- * The panel stands in the board's own grid track, because the board is the gun
- * (`StormField`) and the gun is dead. That leaves the sky above it whole: the
- * hail frozen where it was, and the shield with the hole still in it under the
- * finger this screen is naming. A panel drawn over the sky would have covered
- * the one picture that explains the sentence.
+ * ── Under the sky, not over it ───────────────────────────────────────────────
+ * The panel stands in `.storm`'s second grid track, which is empty for the
+ * whole of a live run — this is the only thing the screen ever puts below the
+ * sky (`StormField`). That leaves the sky above it whole: the hail frozen
+ * where it was, and the shield with the hole still in it under the finger this
+ * screen is naming. A panel drawn over the sky would have covered the one
+ * picture that explains the sentence.
+ *
+ * It used to share that track with the keyboard, which stood there while the
+ * gun was live and handed it over on the ending. There is no board now
+ * (decision 64), so the track is the panel's alone and an ending taller than
+ * five rows of keycaps costs the sky nothing.
  */
 export function StormOver({
   state,

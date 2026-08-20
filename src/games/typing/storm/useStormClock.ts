@@ -5,7 +5,7 @@ import { fire, progressAt, startStorm, tick } from "@/engine/typing/storm";
 
 import { HELD } from "../keyboard/useKeyEcho";
 
-import { aimedAt, isDrawn } from "./StormField";
+import { isDrawn } from "./StormField";
 
 import type { StormState, Wave } from "@/engine/typing/storm";
 
@@ -146,12 +146,16 @@ function onField(state: StormState): number {
  * state says "changed" sixty times a second and means nothing. What the screen
  * is actually a function of is every field of a run except the clock and the
  * wave — so `resolved`, `shield`, `combo`, `score`, `misses` and `ending`,
- * compared here — plus the two things the clock alone moves: a letter
- * appearing (no field of `StormState` records a spawn; it is a time crossing)
- * and the target changing, which two letters at different speeds can do
- * mid-air with nothing else happening at all (decision 32). Miss that one and
- * the board goes on marking a child's keys against a letter that is no longer
- * the lowest.
+ * compared here — plus the one thing the clock alone moves: a letter appearing,
+ * which no field of `StormState` records because it is a time crossing.
+ *
+ * The target used to be compared here as well, because two letters at
+ * different speeds can cross mid-air with nothing else happening at all
+ * (decision 32) and the board went on marking a child's keys against a letter
+ * that was no longer the lowest. There is no board now (decision 64), and
+ * nothing else on this screen is a function of which letter is the target —
+ * the stones carry no target class and the HUD does not name it — so the
+ * crossing changes no picture and is no longer a redraw.
  *
  * `score` and `misses` move on **every** miss; `missTintAt` moves only on the
  * ones the throttle lets light, which is `MIN_TINT_GAP_MS` apart at the most
@@ -188,7 +192,6 @@ export function redrawn(drawn: StormState, next: StormState): boolean {
     drawn.misses !== next.misses ||
     drawn.missTintAt !== next.missTintAt ||
     drawn.ending !== next.ending ||
-    aimedAt(drawn) !== aimedAt(next) ||
     onField(drawn) !== onField(next)
   );
 }
@@ -311,18 +314,19 @@ export function useStormClock(
      * The default is taken for the keys the board draws, and only those: this
      * screen has no input to swallow a space that would otherwise scroll the
      * page, or a `/` that opens Firefox's quick-find mid-run. `keyX` answers
-     * "is this key on the board" without a second list of codes. Anything else
+     * "is this key on the layout" without a second list of codes — the layout
+     * being the engine's table, since this screen draws no board (decision 64). Anything else
      * — F5, F12, the browser's own — is left alone, because a game screen that
      * ate the reload key would be a screen with no way out.
      */
     const onKeyDown = (event: KeyboardEvent) => {
       // The gun dies with the run, and the listener has to know it rather than
       // leaning on `fire` refusing an ended state. What it would otherwise
-      // still do is swallow the default, and by then the board's place is
-      // taken by the ending's buttons (`StormField`) — three after a breach,
-      // two after a cleared wave, and never none: `Tab`, `Space` and `Enter`
-      // are all keys this board carries, so all three of those keys pass the
-      // very test that calls `preventDefault` below. A gun still eating them
+      // still do is swallow the default, and by then the track under the sky
+      // holds the ending's buttons (`StormField`) — three after a breach, two
+      // after a cleared wave, and never none: `Tab`, `Space` and `Enter` are
+      // all keys the LAYOUT carries, so all three of those keys pass the very
+      // test that calls `preventDefault` below. A gun still eating them
       // after the storm has stopped would leave a child who is not holding a
       // mouse unable to focus a button, let alone press one.
       if (live.current.ending !== null) return;
