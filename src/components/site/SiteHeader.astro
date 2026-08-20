@@ -57,9 +57,24 @@ const { world } = Astro.props;
           </a>
         ))
       }
-      <a class="mast__link" href="/#for-parents">For parents</a>
+      <a class="mast__link" href="/#for-parents" data-scroll>For parents</a>
     </nav>
 
-    <a class="mast__play" href="/flash-cards">Play</a>
+    {
+      /*
+       * Play goes to the map, not into a game.
+       *
+       * It used to open /flash-cards, which made the times tables the default
+       * meaning of "play" on every page of the site — including the spelling
+       * one. The named links to its left already go straight into a world for
+       * anyone who knows which they want; this is the button for everyone
+       * else, so it should ask rather than choose.
+       *
+       * Absolute, because this bar is on every page. From the home page it
+       * scrolls (the `data-scroll` script lives there); from anywhere else
+       * there is no map on screen to scroll to, so it navigates.
+       */
+    }
+    <a class="mast__play" href="/#worlds" data-scroll>Play</a>
   </div>
 </header>
