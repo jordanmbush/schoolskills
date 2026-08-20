@@ -2,8 +2,10 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 import { renderToStaticMarkup } from "react-dom/server";
+import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it } from "vitest";
 
+import { RaceProvider } from "@/components/state/RaceContext";
 import { FINGER_ZONES, KEYS, keyX, strokeFor } from "@/engine/keyboard";
 import {
   SHIELD_FINGERS,
@@ -14,6 +16,7 @@ import {
 } from "@/engine/typing/storm";
 
 import { StormField, aimedAt } from "./StormField";
+import { StormOver } from "./StormOver";
 
 import type { FingerZone, KeyDef } from "@/engine/keyboard";
 import type { StormState, WaveSpec } from "@/engine/typing/storm";
@@ -336,7 +339,7 @@ describe("StormField", () => {
     expect(/:root\s*{\s*--key:/.test(css)).toBe(true);
   });
 
-  it("fills the viewport minus the ad band, and does not scroll", () => {
+  it("fills the viewport minus the ad band, and does not scroll while the storm is falling", () => {
     const field = /\.storm\s*{[^}]*}/.exec(storm)![0];
 
     // `height`, not `min-height`: a field that may grow is a field that
@@ -344,6 +347,68 @@ describe("StormField", () => {
     expect(field).toContain("height: calc(100dvh - var(--ad-h))");
     expect(field).not.toContain("min-height");
     expect(field).toContain("overflow: hidden");
+  });
+
+  it("lets the field scroll once the run is over, and only then", () => {
+    // The rule above is the hazard while letters are falling; after the run it
+    // is a different one, because what stands in the board's track by then is
+    // the ending, and it is taller than the five rows of keycaps it replaced.
+    // Measured in Chromium at 740×390 on a breached run, `.storm` wants 299px
+    // of a 270px box — the sky has already given everything it has (§8.2) —
+    // and the last button, which is the way off this screen for a child who is
+    // not holding a mouse, is below the fold until this one declaration brings
+    // it back. So it is asserted here rather than left to the comment beside
+    // it: deleted, nothing else in the suite notices, and the screen keeps its
+    // exit somewhere no thumb can reach.
+    expect(declaration(".storm:has(.storm__over)", "overflow-y")).toBe("auto");
+
+    // Lifted for the ending and for nothing else. Two overflow declarations in
+    // the whole field: the field's own `hidden`, and this one asking `:has`. A
+    // third — on the sky, on the board, or on a rule that forgot to ask — is
+    // either a field that scrolls mid-run or a second opinion about when it
+    // may, and both are read off this list rather than off any one selector.
+    const overflows = [...storm.matchAll(/([^{}]+)\{([^{}]*)\}/g)].flatMap(
+      ([, selector, body]) =>
+        [...body.matchAll(/(?:^|;)\s*(overflow[\w-]*)\s*:\s*([^;]+)/g)].map(
+          ([, prop, value]) =>
+            `${selector.trim()} { ${prop}: ${value.trim()} }`,
+        ),
+    );
+    expect(overflows).toEqual([
+      ".storm { overflow: hidden }",
+      ".storm:has(.storm__over) { overflow-y: auto }",
+    ]);
+
+    // And it waits on a class something actually renders. `:has` is the whole
+    // mechanism — a renamed panel is a selector that matches nothing, which
+    // fails silently and only on the viewport where it mattered — so the
+    // ending is drawn into the field it is scrolling, through the same `over`
+    // slot the route fills, and the class is read back out of the markup.
+    const dead: StormState = {
+      ...frameOf(only("f", 3), 500),
+      ending: { kind: "breached", finger: "l-index", index: 0 },
+    };
+    const html = renderToStaticMarkup(
+      <MemoryRouter>
+        <RaceProvider>
+          <StormField
+            state={dead}
+            skyRef={{ current: null }}
+            over={
+              <StormOver
+                state={dead}
+                mode="typing:L39"
+                profileId="p1"
+                onRetry={() => {}}
+              />
+            }
+          />
+        </RaceProvider>
+      </MemoryRouter>,
+    );
+
+    expect(html).toContain('class="storm"');
+    expect(html).toContain('class="storm__over');
   });
 
   it("is drawn out of ice tokens, with no colour of its own", () => {

@@ -293,6 +293,44 @@ export const FINGER_ZONES: Readonly<
   return zones as Record<Exclude<Finger, "thumb">, FingerZone>;
 })();
 
+/**
+ * What to call a finger out loud, for the one screen that has to name one.
+ *
+ * Hailstorm's shield is eight finger zones, and when a letter gets through a
+ * hole the run ends with the screen saying which finger let it in
+ * (docs/typing.md §8.5). "Your right ring finger" is the entire value of that
+ * feedback: it is a thing a child can look down at, and `r-ring` is not.
+ *
+ * Here rather than in the component that renders the sentence, for the same
+ * reason `FINGER_ZONES` is here — the id and the name are one fact about the
+ * hands, and a second opinion about which finger `r-ring` is would put the
+ * blame on the wrong one. It is also why the words are plain and lowercase:
+ * they are a fragment a sentence is built around ("Your ___ let two through"),
+ * not a label, so the caller supplies the capital.
+ *
+ * **Little finger, not pinky**, and index rather than pointing: the rest of
+ * this site is written in British English, and these are the words a UK
+ * five-year-old is taught to name their own hand with.
+ *
+ * No thumb, deliberately. The thumb is the one entry in `Finger` that is not a
+ * finger of one hand — it covers the space bar and both Alts, so there is no
+ * "left" or "right" to say — and nothing that names a finger to a child ever
+ * needs it: the shield has no thumb segment, because nothing falls on the
+ * space bar (§8.5). Excluding it here means the eight zones and the eight
+ * names are the same eight, checked by the compiler rather than by a reader.
+ */
+export const FINGER_NAMES: Readonly<Record<Exclude<Finger, "thumb">, string>> =
+  {
+    "l-pinky": "left little finger",
+    "l-ring": "left ring finger",
+    "l-middle": "left middle finger",
+    "l-index": "left index finger",
+    "r-index": "right index finger",
+    "r-middle": "right middle finger",
+    "r-ring": "right ring finger",
+    "r-pinky": "right little finger",
+  };
+
 export type Stroke = {
   /** The letter key. */
   code: string;

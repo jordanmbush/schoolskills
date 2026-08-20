@@ -728,6 +728,50 @@ try {
   );
 
   /*
+   * And the screen the run stops on (docs/typing.md §8.5, decision 47).
+   *
+   * A browser is the only place two halves of it can be checked at once. The
+   * panel stands in the BOARD's grid track rather than over the sky, which is
+   * what leaves the shield — with its three holes still in it — on screen
+   * beside the sentence about it; the unit suite renders the panel alone and
+   * cannot see either the board it replaced or the eight segments it left
+   * behind. This run is the cleared ending, because nothing was pressed at it
+   * and every letter therefore resolved; the breach ending has no reachable
+   * wave in the stand-in (three zones take three letters each and the shield
+   * is three deep), and its wording is `StormOver.test.tsx`'s.
+   */
+  const over = await page.evaluate(() => {
+    const panel = document.querySelector(".storm__over");
+    return {
+      text: panel?.textContent.replace(/\s+/g, " ").trim() ?? null,
+      buttons: [...document.querySelectorAll(".storm__over .btn")].map((b) =>
+        b.textContent.trim(),
+      ),
+      keys: document.querySelectorAll(".keyboard__key").length,
+      zones: document.querySelectorAll(".storm__zone").length,
+      // The panel is inside the field and in the track the board had, so the
+      // sky is still the sky: same element, same shield, nothing overlapping.
+      belowSky:
+        panel &&
+        panel.getBoundingClientRect().top >=
+          document.querySelector(".storm__sky").getBoundingClientRect().bottom,
+    };
+  });
+  check(
+    "a run that ends says what the storm did, where the board was",
+    over.text?.includes("Wave cleared") &&
+      over.text.includes("Shield left") &&
+      // Twelve landed and the shield is eight zones of three deep.
+      over.text.includes("12/24") &&
+      over.buttons.join("|") === "Try this wave again|Back to the ladder" &&
+      over.keys === 0 &&
+      over.zones === 8 &&
+      over.belowSky === true,
+    `${JSON.stringify(over.buttons)} over ${over.zones} zones, ` +
+      `${over.keys} keycaps left: ${over.text}`,
+  );
+
+  /*
    * The same wave again, with a child's hands on it: the gun, the combo and
    * what a wrong key costs (docs/typing.md §8.6).
    *
@@ -893,7 +937,12 @@ try {
         combo: combo.textContent,
         hot: combo.hasAttribute("data-hot"),
         stones: document.querySelectorAll(".storm__letter").length,
-        xp: document.querySelector(".storm__xp")?.textContent ?? null,
+        // The payout is on the ending panel, which stands where the board did
+        // once the gun is dead (§8.5) — so it is null for the whole of a run
+        // and a number the instant one is over.
+        xp:
+          document.querySelector(".storm__over .stat--xp .stat__value")
+            ?.textContent ?? null,
         flares: window.__flares,
       };
     });
@@ -1096,11 +1145,51 @@ try {
     .catch(() => {});
   await page.waitForTimeout(300);
   const paid = await hud();
-  const earned = Number(/\+(\d+) XP/.exec(paid.xp ?? "")?.[1]);
+  const earned = Number(/\+(\d+)/.exec(paid.xp ?? "")?.[1]);
   check(
     "score can fall; XP cannot — a negative run still pays what it hit",
     paid.score < 0 && paid.xp !== null && earned > 0,
     `score ${paid.score}, ${paid.xp}`,
+  );
+
+  /*
+   * The gun dies with the run, and the proof of it is a `Tab`.
+   *
+   * `fire` refuses an ended state, so a stray letter costs nothing whether or
+   * not the listener is still armed — which is worth checking and is not what
+   * this is for. What a listener left armed would still do is swallow the
+   * DEFAULT: every key the board carries is `preventDefault`ed while the gun
+   * is live, and `Tab`, `Space` and `Enter` are three of them. Those are the
+   * keys a child reaches the ending's buttons with, and nothing in the unit
+   * suite has a focus ring to lose. So this presses `Tab` and asks where the
+   * focus went: into the panel is the pass, and stuck on `<body>` is the
+   * regression. Five at most, because whatever else is focusable on this page
+   * comes before it and the count is not the claim.
+   */
+  await press("j");
+  const inert = await scored(paid.score, 1000);
+  let landed = null;
+  for (let i = 0; i < 5 && !landed?.inPanel; i++) {
+    await press("Tab");
+    landed = await page.evaluate(() => ({
+      inPanel:
+        document
+          .querySelector(".storm__over")
+          ?.contains(document.activeElement) ?? false,
+      on: document.activeElement?.textContent?.trim().slice(0, 30) ?? null,
+    }));
+  }
+  const stillThere = await page.evaluate(() => ({
+    panel: document.querySelectorAll(".storm__over").length,
+    score: Number(document.querySelector(".storm__score").textContent),
+  }));
+  check(
+    "the gun is dead: a key costs nothing, and Tab reaches the ending",
+    inert === null &&
+      stillThere.panel === 1 &&
+      stillThere.score === paid.score &&
+      landed.inPanel,
+    `${paid.score} → ${stillThere.score}, focus on "${landed.on}"`,
   );
 
   const played = await page.evaluate(() => window.__tints);

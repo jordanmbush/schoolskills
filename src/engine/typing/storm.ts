@@ -760,3 +760,200 @@ export function fire(state: StormState, code: string): StormState {
     shield: repaired(state.shield, state.wave.spec, combo),
   });
 }
+
+/* ═══ What a run came to (§8.5, §8.7) ════════════════════════════════════════
+ *
+ * The screen a child meets when the storm stops asks a handful of questions
+ * the reducer can already answer, and one it cannot. Which finger let it
+ * through, how many that finger let through, what that finger's keys are, how
+ * much armour is left and how long the best streak ran are all `state` — so
+ * they are decided here, and the screen puts them on a page. What is NOT here
+ * is XP: `stormXp` lives in `progress.ts`, which reaches `decks/index.ts`, and
+ * this module is one hop from the deck layer from STM10 onwards (see the file
+ * header).
+ */
+
+/** What one zone has been through: the two things worth drawing an event for. */
+export type ZoneTally = {
+  /** Letters that reached this zone. Each is one damage tint. */
+  readonly hit: number;
+  /** Points repaired back into it (§8.5). Each is one mend pulse. */
+  readonly mend: number;
+};
+
+/**
+ * The eight zones' histories, from the run itself.
+ *
+ * `hit` is a filter over `resolved` — the tally `StormState` deliberately does
+ * not keep, because a second copy of it is a second thing to hold in step
+ * sixty times a second.
+ *
+ * **`resolved`, and never `hasLanded`.** After a breach the clock stops at the
+ * fatal `landMs` rather than at the end of the tick that found it, so a letter
+ * from a higher index tying that exact millisecond is left unresolved while
+ * `hasLanded(letter, state.timeMs)` reads true of it. Counting the clock
+ * instead of the outcomes would over-report what got through, on the one
+ * screen where that number is the whole point (`tick`, and STM07's ending).
+ *
+ * `mend` is arithmetic over the same: a zone's hit points are
+ * `spec.shield - absorbed + repairs` by construction, so solving for repairs
+ * needs nothing that is not already on screen. **Absorbed, not landed**: the
+ * letter that ends a run lands on a zone that is already at nothing and takes
+ * no point off it (`tick` breaks before the decrement), so counting it would
+ * read as a phantom repair on the frame a child dies. It still tints — it is
+ * the loudest thing that ever gets through — which is why the two counters are
+ * separate rather than one.
+ *
+ * Here beside the reducer rather than in the shield that draws it, because it
+ * is the same arithmetic the ending screen names a finger with: "your right
+ * ring finger let three through" is `hit` on one zone, and two files working
+ * it out separately is two chances to count a landing differently.
+ */
+export function zoneTally(state: StormState): Record<ShieldFinger, ZoneTally> {
+  const full = state.wave.spec.shield;
+  const fatal = state.ending?.kind === "breached" ? state.ending.index : -1;
+
+  const hit = {} as Record<ShieldFinger, number>;
+  const absorbed = {} as Record<ShieldFinger, number>;
+  for (const finger of SHIELD_FINGERS) {
+    hit[finger] = 0;
+    absorbed[finger] = 0;
+  }
+
+  state.resolved.forEach((outcome, index) => {
+    if (outcome?.outcome !== "landed") return;
+    const { finger } = state.wave.letters[index];
+    hit[finger] += 1;
+    if (index !== fatal) absorbed[finger] += 1;
+  });
+
+  return Object.fromEntries(
+    SHIELD_FINGERS.map((finger) => [
+      finger,
+      {
+        hit: hit[finger],
+        mend: state.shield[finger] + absorbed[finger] - full,
+      },
+    ]),
+  ) as Record<ShieldFinger, ZoneTally>;
+}
+
+/**
+ * The characters this wave could drop on one finger — the drill a hole earns.
+ *
+ * `spec.keys` and not the whole board, which is the difference between a drill
+ * and a punishment. A zone covers four rows of keys, and a child who has just
+ * died at lesson 13 has met exactly one of the right ring finger's — `l`.
+ * Handing them `o`, `.`, `9` and `(` as well, because the plastic says those
+ * are that finger's, would be a practice deck of keys nobody has taught them.
+ * The wave's own pool is exactly "what this level draws from", so the drill is
+ * the keys they were being asked for and missed.
+ *
+ * It can never come back empty for a finger that has just breached: the letter
+ * that got through came out of this same pool wearing this same finger.
+ *
+ * Filtered through `fallable`, so this and the wave agree by construction
+ * about which finger types what — including the two kinds of character a wave
+ * drops silently: the ones this board cannot produce, and the thumb's.
+ */
+export function zoneKeys(wave: Wave, finger: ShieldFinger): string[] {
+  // The `Set` is the de-duplication and the order in one: it keeps first-seen
+  // order, and `filter` keeps whatever order it is handed — so a pool's own
+  // sequence survives into the drill it earns.
+  return [...new Set(wave.spec.keys)].filter(
+    (ch) => fallable(ch)?.finger === finger,
+  );
+}
+
+/**
+ * The longest streak the run ever reached.
+ *
+ * Recovered from `resolved` rather than kept on the run, for the reason
+ * everything else about a finished storm is: `LetterOutcome.combo` is the
+ * streak each hit landed on and a streak only ever climbs by one, so the
+ * largest of them IS the longest run of clean hits. A `bestCombo` field on
+ * `StormState` would be a second number to move on every hit and a second
+ * thing to get wrong in `fire`.
+ *
+ * Zero for a run that never hit anything, which is the same zero a run that
+ * never started has — and the right answer to both.
+ */
+export function bestCombo(state: StormState): number {
+  return state.resolved.reduce<number>(
+    (best, outcome) =>
+      outcome?.outcome === "shot" ? Math.max(best, outcome.combo) : best,
+    0,
+  );
+}
+
+/**
+ * Everything the ending screen says, decided (§8.5, STM07).
+ *
+ * `null` while the run is live, so a screen cannot draw an ending that has not
+ * happened: the one call answers "is it over" and "what happened" together,
+ * where two would let a caller ask the second without the first.
+ *
+ * The screen holds no rules at all, and this is the list of them it would
+ * otherwise have had to hold: which finger failed, how many it let through,
+ * which keys to practise, and how much of the shield came through. Same
+ * division as the loop and `tick` — the picture is the view's, the arithmetic
+ * is the model's (§8.9).
+ */
+export type StormReport = {
+  /** How the run finished. Never `null` — there is no report without one. */
+  readonly ending: StormEnding;
+  /**
+   * The zone that let the storm through, or `null` on a wave that was cleared.
+   *
+   * `through` counts every letter that got past this finger and not only the
+   * fatal one: the run of them is the story, and the last is just the one that
+   * found the hole they had already made.
+   */
+  readonly breach: {
+    readonly finger: ShieldFinger;
+    readonly through: number;
+    /** What to practise: this finger's keys, out of the wave's own pool. */
+    readonly keys: string[];
+  } | null;
+  /** Hit points left across all eight zones… */
+  readonly shieldLeft: number;
+  /** …out of the eight-of-`shield` every run starts with (§8.5). */
+  readonly shieldFull: number;
+  /**
+   * Letters that got past the shield anywhere, the fatal one included.
+   *
+   * Not `shieldFull - shieldLeft`: a zone that was hit and then repaired is
+   * back to full, and a run that was hit and mended is not a run that was
+   * never hit. Zero is what "the shield came through untouched" is (§8.5).
+   */
+  readonly through: number;
+  /** The longest run of clean hits. See `bestCombo`. */
+  readonly bestCombo: number;
+};
+
+export function stormReport(state: StormState): StormReport | null {
+  const { ending, shield, wave } = state;
+  if (ending === null) return null;
+
+  const tally = zoneTally(state);
+  const shieldLeft = SHIELD_FINGERS.reduce(
+    (sum, finger) => sum + shield[finger],
+    0,
+  );
+
+  return {
+    ending,
+    breach:
+      ending.kind === "breached"
+        ? {
+            finger: ending.finger,
+            through: tally[ending.finger].hit,
+            keys: zoneKeys(wave, ending.finger),
+          }
+        : null,
+    shieldLeft,
+    shieldFull: SHIELD_FINGERS.length * wave.spec.shield,
+    through: SHIELD_FINGERS.reduce((sum, finger) => sum + tally[finger].hit, 0),
+    bestCombo: bestCombo(state),
+  };
+}

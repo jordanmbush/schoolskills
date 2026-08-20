@@ -8,9 +8,10 @@ import {
   fire,
   startStorm,
   tick,
+  zoneTally,
 } from "@/engine/typing/storm";
 
-import { StormShield, zoneTally } from "./StormShield";
+import { StormShield } from "./StormShield";
 
 import type { ShieldFinger, StormState, WaveSpec } from "@/engine/typing/storm";
 

@@ -1,5 +1,4 @@
 import { comboMultiplier } from "@/engine/combo";
-import { stormXp } from "@/engine/progress";
 
 import type { StormState } from "@/engine/typing/storm";
 
@@ -55,7 +54,7 @@ import type { StormState } from "@/engine/typing/storm";
  * own keystrokes.
  */
 export function StormHud({ state }: { state: StormState }) {
-  const { combo, ending, misses, score } = state;
+  const { combo, misses, score } = state;
 
   return (
     <div className="storm__hud">
@@ -72,18 +71,6 @@ export function StormHud({ state }: { state: StormState }) {
         className="storm__combo u-mono"
         data-hot={combo > 0 ? "" : undefined}
       >{`×${comboMultiplier(combo).toFixed(1)}`}</p>
-
-      {/*
-        The payout, once the storm is over — the run's XP, computed at the end
-        from its hits and floored at zero, which is the whole of §8.6's second
-        half. It is here rather than on a screen of its own because there is no
-        screen of its own yet: STM07 puts a proper ending in front of a child,
-        names the finger that let the storm through and offers the drill for
-        it, and this line is what tells them what they earned until it does.
-      */}
-      {ending !== null && (
-        <p className="storm__xp u-mono">{`+${stormXp(state)} XP`}</p>
-      )}
     </div>
   );
 }
