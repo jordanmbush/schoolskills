@@ -178,16 +178,21 @@ describe("redrawn", () => {
     expect(redrawn(dead, fire(dead, "KeyQ"))).toBe(false);
   });
 
-  it("says yes when the target changes mid-air with nothing else", () => {
-    // Two letters at different speeds cross (decision 32), and from that
-    // instant the board is marked against a different key. Nothing is
-    // resolved, nothing spawns, and the count of stones on the field is the
-    // same on both sides of it.
+  it("says no when only the target changes mid-air", () => {
+    // Two letters at different speeds cross (decision 32), and nothing else
+    // moves: nothing is resolved, nothing spawns, and the count of stones on
+    // the field is the same on both sides of it.
+    //
+    // That crossing used to be a redraw, because the board was marked against
+    // the lowest letter and would go on marking against the wrong one. There
+    // is no board now (decision 64) and nothing else on the screen names the
+    // target — a stone carries no target class and the HUD does not print it —
+    // so the picture is identical and React is not asked to draw it again.
     const before = tick(startStorm(crossing), 600);
     const after = tick(before, 200);
 
     expect(after.resolved).toBe(before.resolved);
-    expect(redrawn(before, after)).toBe(true);
+    expect(redrawn(before, after)).toBe(false);
   });
 });
 

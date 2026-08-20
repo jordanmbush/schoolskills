@@ -856,8 +856,9 @@ describe("a wrong key costs", () => {
 
   it("charges the same for a shot at an empty sky", () => {
     // Spraying between letters is the same strategy by another route (§8.4),
-    // so it costs the same. The screen has to say so too, which is what
-    // `emptyIsWrong` is for — a key that costs points must not light `--lime`.
+    // so it costs the same. The screen says so with the `--flare` wash over the
+    // score, which is every miss's signal now that the storm draws no board to
+    // turn red (decision 64).
     const empty = runOf([at("f", 1000, 500)]);
     expect(targetIndex(empty), "the premise: nothing is falling").toBeNull();
 

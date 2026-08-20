@@ -149,30 +149,6 @@ describe("createKeyEcho", () => {
     expect(keys.wrong()).toEqual([]);
   });
 
-  it("blames everything when the caller says nothing is right", () => {
-    // Hailstorm's empty sky (§8.4, decision 43). The same `null` a lesson
-    // means "there is nothing to judge" by, the storm means "there is nothing
-    // that COULD be right" — the stroke was a shot, it hit nothing, and it
-    // cost points. A key that costs a child points must not light `--lime`.
-    const keys = board();
-    keys.press("KeyQ", null, true);
-    expect(keys.down()).toEqual(["KeyQ"]);
-    expect(keys.wrong()).toEqual(["KeyQ"]);
-
-    // Held keys are still never wrong, whatever the caller says: reaching for
-    // the far shift is the technique, not the mistake, and in the storm it is
-    // not a shot either (`useStormClock`).
-    keys.press("ShiftRight", null, true);
-    expect(keys.wrong()).toEqual(["KeyQ"]);
-
-    // And a real target still marks against itself rather than against the
-    // flag — which is what stops the storm flaring every key it is aimed with.
-    keys.press("KeyF", "f", true);
-    expect(keys.wrong()).toEqual(["KeyQ"]);
-    keys.press("KeyD", "f", true);
-    expect(keys.wrong()).toEqual(["KeyD", "KeyQ"]);
-  });
-
   it("clears a wrong key's flare when that key is struck correctly", () => {
     const keys = board();
     keys.press("KeyD", "f");

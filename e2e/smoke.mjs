@@ -554,51 +554,51 @@ try {
   );
 
   /*
-   * The shield, measured against the board it is defending.
+   * The shield, measured against the sky it closes off.
    *
-   * "Segments align with the finger zones of the keyboard beneath them" is an
-   * acceptance criterion with a number behind it, and this is the only place
-   * that number exists. `StormField.test.tsx` runs game.css's arithmetic in
-   * key units, which is the right altitude for the claim but resolves no
-   * `--key` and lays out no boxes; only a browser turns both into pixels at a
-   * viewport and can be asked whether one is actually over the other.
+   * "Segments align with the finger zones of the keyboard" is an acceptance
+   * criterion with a number behind it, and a browser is the only place both
+   * sides of it become pixels at a real viewport.
    *
-   * Each segment is compared with the HOME-ROW keycaps of its own finger,
-   * because the home row is where the zones are cut (docs/typing.md §8.5,
-   * decision 41) — `a` and Caps under the left pinky's segment, `f` and `g`
-   * under the left index's. Half a pixel of tolerance, which is a rounding
-   * error and not room for a segment to have drifted a key.
+   * It used to be checked against the drawn keycaps under the shield. There
+   * are none now (docs/typing.md §8.2, decision 64), and what is left is the
+   * stronger half of the claim anyway: the eight segments must TILE the field
+   * — no gap for a letter to fall through unjudged, no overlap for two fingers
+   * to be blamed for one landing — and together they must be the full fifteen
+   * key units the lanes are laid out in. Which segment belongs to which finger
+   * is `StormField.test.tsx`'s, in key units off the same stylesheet, along
+   * with "every letter lands within a quarter unit of its own segment"; what
+   * only a browser can answer is whether the boxes actually meet.
+   *
+   * Half a pixel of tolerance, which is a rounding error and not room for a
+   * segment to have drifted a key. The whole strip sits half a `--key-gap`
+   * left of the sky, which is the correction a lane takes too (decision 36),
+   * so the span is compared and the origin is not.
    */
   const shield = await page.evaluate(() => {
-    const home = document.querySelector(".keyboard__row:nth-child(3)");
-    return [...document.querySelectorAll(".storm__zone")].map((zone) => {
-      const box = zone.getBoundingClientRect();
-      const caps = [
-        ...home.querySelectorAll(
-          `.keyboard__key[data-finger="${zone.dataset.finger}"]`,
-        ),
-      ].map((cap) => cap.getBoundingClientRect());
-      return {
-        finger: zone.dataset.finger,
-        left: box.left,
-        right: box.right,
-        capLeft: Math.min(...caps.map((cap) => cap.left)),
-        capRight: Math.max(...caps.map((cap) => cap.right)),
-        keys: caps.length,
-      };
-    });
+    const sky = document.querySelector(".storm__sky").getBoundingClientRect();
+    return {
+      skyWidth: sky.width,
+      zones: [...document.querySelectorAll(".storm__zone")].map((zone) => {
+        const box = zone.getBoundingClientRect();
+        return {
+          finger: zone.dataset.finger,
+          left: box.left,
+          right: box.right,
+        };
+      }),
+    };
   });
   check(
-    "each segment covers the home keys of its own finger, edge to edge",
-    shield.length === 8 &&
-      shield.every(
+    "the eight segments tile the field edge to edge, with nothing between them",
+    shield.zones.length === 8 &&
+      shield.zones.every(
         (zone, i) =>
-          zone.keys > 0 &&
-          zone.left <= zone.capLeft + 0.5 &&
-          zone.right >= zone.capRight - 0.5 &&
-          (i === 0 || Math.abs(zone.left - shield[i - 1].right) < 0.5),
-      ),
-    shield
+          i === 0 || Math.abs(zone.left - shield.zones[i - 1].right) < 0.5,
+      ) &&
+      Math.abs(shield.zones[7].right - shield.zones[0].left - shield.skyWidth) <
+        0.5,
+    shield.zones
       .map((z) => `${z.finger} ${z.left.toFixed(1)}→${z.right.toFixed(1)}`)
       .join(" "),
   );
@@ -771,10 +771,14 @@ try {
       buttons: [...document.querySelectorAll(".storm__over .btn")].map((b) =>
         b.textContent.trim(),
       ),
+      // No board on this screen, live or ended (decision 64). Counted rather
+      // than assumed, because the component that draws one is still imported
+      // two files away and a storm that quietly grew a keyboard back would
+      // change nothing else this walk can see.
       keys: document.querySelectorAll(".keyboard__key").length,
       zones: document.querySelectorAll(".storm__zone").length,
-      // The panel is inside the field and in the track the board had, so the
-      // sky is still the sky: same element, same shield, nothing overlapping.
+      // The panel is inside the field, in the track below the sky, so the sky
+      // is still the sky: same element, same shield, nothing overlapping.
       belowSky:
         panel &&
         panel.getBoundingClientRect().top >=
@@ -782,7 +786,7 @@ try {
     };
   });
   check(
-    "a run that ends says what the storm did, where the board was",
+    "a run that ends says what the storm did, under the sky it froze",
     over.text?.includes("Wave cleared") &&
       over.text.includes("Shield left") &&
       // Twelve landed, and lesson 4's shield is eight zones of four deep.
@@ -792,7 +796,7 @@ try {
       over.zones === 8 &&
       over.belowSky === true,
     `${JSON.stringify(over.buttons)} over ${over.zones} zones, ` +
-      `${over.keys} keycaps left: ${over.text}`,
+      `${over.keys} keycaps anywhere: ${over.text}`,
   );
 
   /*
@@ -845,19 +849,23 @@ try {
    */
   await page.evaluate(() => {
     window.__tints = [];
-    // Every cap that goes red, kept rather than caught: `useKeyEcho` releases
-    // a key 120ms after the press (§4.3), and a check that read the DOM after
-    // a round trip would be racing that timer for its evidence.
+    // Every `--flare` wash over the score, kept rather than caught: the wash
+    // is a 220ms animation on a node React mounts and drops (`StormHud`), and
+    // a check that read the DOM after a round trip would be racing it.
+    //
+    // This is where a wrong key SHOWS now. It used to be the keycap going red
+    // under the child's finger, which was the better signal and is gone with
+    // the board (decision 64) — so the one that is left is worth watching
+    // exactly as closely.
     window.__flares = [];
-    new window.MutationObserver((records) => {
-      for (const record of records)
-        if (record.target.classList.contains("is-wrong"))
-          window.__flares.push(record.target.textContent);
-    }).observe(document.body, {
-      subtree: true,
-      attributes: true,
-      attributeFilter: ["class"],
-    });
+    document.addEventListener(
+      "animationstart",
+      (event) => {
+        if (event.animationName === "storm-miss")
+          window.__flares.push(Math.round(window.performance.now()));
+      },
+      true,
+    );
   });
 
   /**
@@ -970,9 +978,9 @@ try {
         combo: combo.textContent,
         hot: combo.hasAttribute("data-hot"),
         stones: document.querySelectorAll(".storm__letter").length,
-        // The payout is on the ending panel, which stands where the board did
-        // once the gun is dead (§8.5) — so it is null for the whole of a run
-        // and a number the instant one is over.
+        // The payout is on the ending panel, which stands in the track under
+        // the sky once the gun is dead (§8.5) — so it is null for the whole of
+        // a run and a number the instant one is over.
         xp:
           document.querySelector(".storm__over .stat--xp .stat__value")
             ?.textContent ?? null,
@@ -1112,18 +1120,35 @@ try {
   const wrongKey = missKey(aimedAt.chars);
   await press(wrongKey);
   await scored(combo.score);
+
+  /*
+   * And then wait for the wash, which the score settling does NOT imply.
+   *
+   * `scored` returns on the re-render that moved the number; the `--flare`
+   * element mounts in that same render but its `animationstart` does not
+   * dispatch until the frame after it is painted. Reading `__flares` on the
+   * round trip straight after `scored` is therefore a coin flip, and it landed
+   * tails: 0 washes for a miss that had plainly happened.
+   *
+   * Waited for rather than slept on, and swallowed rather than thrown, so that
+   * the check below is what reports a wash that never came — with the score
+   * and the combo beside it, which is what says whether the miss was scored at
+   * all or only drawn quietly.
+   */
+  await page
+    .waitForFunction(() => window.__flares.length > 0, { timeout: 2000 })
+    .catch(() => {});
   const missed = await hud();
   check(
-    "a wrong key costs a hit's worth, breaks the combo, and flares the board",
+    "a wrong key costs a hit's worth, breaks the combo, and washes the score",
     aimedAt.chars.length > 0 &&
       missed.score === combo.score - 10 &&
       missed.combo === "×1.0" &&
       !missed.hot &&
-      missed.flares.length === 1 &&
-      missed.flares[0].toLowerCase() === wrongKey,
+      missed.flares.length === 1,
     `"${wrongKey}" into a sky of ${aimedAt.chars.join("")}: ` +
       `${combo.score} → ${missed.score} at ${missed.combo}, ` +
-      `flared ${JSON.stringify(missed.flares)}`,
+      `${missed.flares.length} score wash(es)`,
   );
 
   // Seven more, at a rate a child could actually hammer at. The point of them

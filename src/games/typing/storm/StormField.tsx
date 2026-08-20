@@ -1,6 +1,4 @@
-import { isAirborne, progressAt, targetIndex } from "@/engine/typing/storm";
-
-import { LiveKeyboard } from "../keyboard/LiveKeyboard";
+import { isAirborne, progressAt } from "@/engine/typing/storm";
 
 import { StormHud } from "./StormHud";
 import { StormShield } from "./StormShield";
@@ -9,8 +7,8 @@ import type { StormState } from "@/engine/typing/storm";
 import type { CSSProperties } from "react";
 
 /**
- * Hailstorm's field: the sky the letters fall through, and the gun under it
- * (docs/typing.md §8.2, decision 19).
+ * Hailstorm's field: the sky the letters fall through, and the shield they
+ * land on (docs/typing.md §8.2, decision 19).
  *
  * ── A letter falls down the column of its own key ────────────────────────────
  * `f` falls onto `f`. `y` falls between `g` and `h`, because that is where `y`
@@ -23,23 +21,28 @@ import type { CSSProperties } from "react";
  *
  * Nothing here computes a lane. `StormLetter.lane` is `keyX(code)` resolved
  * once when the wave was built (§8.3), and this writes it into a custom
- * property that `game.css` multiplies by `--key`. So the field and the drawn
- * board cannot disagree about where a key is: they read one `KEY_ROWS` table
- * and one `--key` unit, and neither of them holds a pixel.
+ * property that `game.css` multiplies by `--key`. So a lane and the finger
+ * zone it lands on cannot disagree about where a key is: they read one
+ * `KEY_ROWS` table and one `--key` unit, and neither of them holds a pixel.
  *
- * ── The board is the gun ─────────────────────────────────────────────────────
- * `LiveKeyboard` — the same component and the same `useKeyEcho` the lessons
- * put under the passage — rather than a second keyboard drawn for the game.
- * One board means one layout, one echo listener and one set of finger colours;
- * a child who has spent forty lessons learning to glance at that picture
- * should meet the same picture here.
+ * ── There is no board here, and that is the point ────────────────────────────
+ * The lessons draw one under the passage; this does not (§8.2, decision 64).
+ * A storm is the exam for the forty lessons that taught the layout, and §8.1's
+ * whole claim is that it drills the one thing a passage cannot — finding a key
+ * nobody told you about, at speed. A picture of the keyboard on that screen is
+ * the answer sheet: the fastest way to shoot a falling `y` becomes reading the
+ * board for where `y` is, which is hunt-and-peck with a countdown on it.
  *
- * `mode="keys"` is doing real work. It keeps the echo's expectation — so the
- * key you fire with lights `--lime` and a wrong one flares `--flare` — while
- * withholding the next-key HINT, which the storm must never show: a board that
- * pointed at the answer would be playing the game for the child, and §8.1's
- * whole claim is that this drills the one thing a passage cannot, which is
- * finding a key you were not told about.
+ * What is left at the bottom is the shield, and it is a better teacher for
+ * being the only thing there. Eight finger zones rather than forty-odd keys,
+ * so what a child watches crumble is a FINGER — the thing that is a lesson, a
+ * drill and a habit (§8.5). The lane still says which key; the zone under it
+ * still says which finger; nothing that was doing work has gone.
+ *
+ * It buys the sky, too. The board was five rows of keycaps at real pitch
+ * (§4.7) and it was taking about 45% of the screen from the only track that
+ * gives — so the fall is now roughly twice as long as it was, on the screen
+ * whose entire job is giving a child time to read a letter and find its key.
  *
  * ── Still a pure function of one frame ───────────────────────────────────────
  * Hand it a `StormState` and it draws that state; it holds no clock of its
@@ -90,36 +93,9 @@ export function isDrawn(state: StormState, index: number): boolean {
 }
 
 /**
- * The character the gun is marked against, or `null` for none.
- *
- * Only the lowest letter on screen can be shot (§8.4), so it is the only one a
- * key can be right for — and the echo needs exactly that character to tell a
- * hit from a miss on the press, before anything has re-rendered (§4.3).
- *
- * The `ending` guard is the whole reason this is a function. `targetIndex`
- * deliberately does not read it: the reducer's question is "which letter is
- * lowest", not "is this run still alive", and a run that ended mid-wave still
- * has letters in the air for it to answer with — frozen where the clock
- * stopped, which is exactly what the ending screen leaves on show. So
- * anything drawn off that index has to guard for itself, and this is where
- * that guard lives for the whole screen.
- *
- * The board is no longer the caller that needs it: a run with an ending hands
- * the board's place to `over` (below), so there is no keyboard left to mark a
- * child's keys against a letter nothing can shoot. It is still the honest
- * answer to "what is the gun on", which is a question `redrawn` asks on every
- * frame and the next screen to ask will be asking of a run that may be over.
- */
-export function aimedAt(state: StormState): string | null {
-  if (state.ending !== null) return null;
-  const index = targetIndex(state);
-  return index === null ? null : state.wave.letters[index].ch;
-}
-
-/**
- * The field, as markup: the HUD, the sky, whatever is falling through it, the
- * shield they land on and the board at the bottom. A pure function of one
- * `StormState` — see the file header for why.
+ * The field, as markup: the HUD, the sky, whatever is falling through it and
+ * the shield they land on. A pure function of one `StormState` — see the file
+ * header for why.
  */
 export function StormField({
   state,
@@ -139,17 +115,18 @@ export function StormField({
    */
   onQuit?: () => void;
   /**
-   * What stands where the board does once the run is over (§8.5, STM07).
+   * What stands under the sky once the run is over (§8.5, STM07).
    *
-   * The board is the gun, so it goes when the gun does — and the ending takes
-   * its track rather than being drawn over the sky, which leaves the hail
-   * frozen where it stopped and the hole still open under the finger that let
-   * it through. The panel itself is the route's, because everything it offers
-   * is navigation: a drill, a retry, the way out.
+   * The ending takes a track of its own rather than being drawn over the sky,
+   * which leaves the hail frozen where it stopped and the hole still open
+   * under the finger that let it through. While the run is live that track is
+   * empty and the sky has the whole field; the ending is the only thing this
+   * screen ever puts below it. The panel itself is the route's, because
+   * everything it offers is navigation: a drill, a retry, the way out.
    *
    * WHEN it appears is decided here and not by the caller, off the same
-   * `ending` the gun dies on — one rule, in the file that draws both halves of
-   * it.
+   * `ending` the gun dies on — one rule, in the file that draws the sky it
+   * appears under.
    */
   over?: React.ReactNode;
 }) {
@@ -224,22 +201,12 @@ export function StormField({
         <StormShield state={state} />
       </div>
 
-      {/*
-        The board while the gun is live, and the ending in its place afterwards
-        (see `over`). `emptyIsWrong` is the honest answer to firing at an empty
-        sky (§8.4, decision 43): the reducer charges that stroke `MISS_POINTS`
-        and breaks the streak, so the board cannot be allowed to light it
-        `--lime` for "that was right" — with nothing in the air there is
-        nothing that could be right, and every key flares. It is `true`
-        wherever this is drawn at all, because this is drawn while the run is
-        live and only then; `aimedAt` is what goes null on the last letter of a
-        wave that is still being played.
-      */}
-      {state.ending === null ? (
-        <LiveKeyboard mode="keys" next={aimedAt(state)} emptyIsWrong />
-      ) : (
-        over
-      )}
+      {/* Nothing at all while the run is live — the sky has the whole field,
+          and what a child looks at is the letters and their own hands (see
+          the header). The ending is the one thing this screen ever puts below
+          the sky, and it is rendered rather than overlaid so the frozen hail
+          and the broken shield stay readable above it. */}
+      {state.ending !== null && over}
     </main>
   );
 }
