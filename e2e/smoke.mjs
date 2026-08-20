@@ -478,6 +478,21 @@ try {
    * through a whole wave is why the FIRST storm is the one measured.
    */
   const STORM_LESSON = "L04";
+
+  /*
+   * `QUEUE_MS` from `engine/typing/storm.ts` — how long a letter hangs at the
+   * top of the sky, perfectly still, before it starts to fall (§8.3, decision
+   * 67). Restated rather than imported because this file is plain Node driving
+   * a built page and cannot reach the engine's TypeScript; if the two ever
+   * part company the fall check below fails on a resting stone, which is the
+   * right way for that to be found.
+   *
+   * Three things here have to wait it out: the two that measure a stone moving
+   * (a resting one gives one position and no travel, which reads exactly like
+   * a broken loop) and the card times a landed letter saves, which are its
+   * whole life on screen and therefore include the beat.
+   */
+  const STORM_QUEUE_MS = 1000;
   const storm = async () => {
     // Out to the ladder first, so this is a fresh mount every time it is
     // called: a hash set to the one it already holds fires no navigation, and
@@ -514,12 +529,16 @@ try {
    * as its letter is airborne — and this level's first letter falls for 900ms,
    * which is why the window below is 700 and not a second.
    */
-  const fall = await page.evaluate(async () => {
+  const fall = await page.evaluate(async (queueMs) => {
     // The first stone in DOM order, which is wave-index (spawn) order because
     // the sky renders `wave.letters` in place — NOT lane order, and the lanes
     // in DOM order are not sorted. All this relies on is that the wave never
     // reorders, so it is the same element on every reading below.
     const stone = document.querySelector(".storm__letter");
+    // Let the beat pass first. A queued stone is doing exactly what it should
+    // by not moving, and sampling across it would report a working loop as a
+    // dead one. A little over, so the first reading is already falling.
+    await new Promise((done) => window.setTimeout(done, queueMs + 60));
     const tops = [];
     for (let i = 0; i < 28; i++) {
       tops.push(stone.getBoundingClientRect().top);
@@ -540,7 +559,7 @@ try {
       attached: stone.isConnected,
       pending: window.__pendingFrames(),
     };
-  });
+  }, STORM_QUEUE_MS);
   check(
     "a stone moves on every frame, not once per spawn",
     fall.distinct >= 12 && fall.forwards && fall.attached,
@@ -1370,12 +1389,18 @@ try {
     "a wave nobody pressed at saves twelve letters that all got through",
     untouched?.correct === 0 &&
       untouched?.incorrect === 12 &&
-      // `ms` is the letter's own time in the air and the total is the sum of
+      // `ms` is the letter's own time on screen and the total is the sum of
       // them, not a wall clock — which is the whole of §8.7's `durationMs` for
       // a wave whose letters can overlap. Derived rather than a number written
       // here, because every level draws its falls from a range (§8.3): what is
       // asserted is that each is one of lesson 4's, and that the total is
       // exactly what they add up to.
+      //
+      // On screen, not falling: a letter nobody pressed at was there for the
+      // beat it hung as well as the fall it took, and `ms` is `atMs -
+      // spawnMs` — time from a child first SEEING it, which is what it has
+      // always been (§8.7). A letter that is shot during the beat still saves
+      // the small number it took.
       untouched?.durationMs ===
         untouched?.cards.reduce((sum, c) => sum + c.ms, 0) &&
       untouched?.cards.every(
@@ -1385,8 +1410,8 @@ try {
           c.given === null &&
           c.ok === false &&
           c.timedOut === true &&
-          c.ms >= 900 &&
-          c.ms <= 1200,
+          c.ms >= STORM_QUEUE_MS + 900 &&
+          c.ms <= STORM_QUEUE_MS + 1200,
       ),
     `${untouched?.correct}/${untouched?.incorrect} in ${untouched?.durationMs}ms`,
   );
@@ -1449,12 +1474,14 @@ try {
   await page.evaluate(() => (window.__tints = []));
   await storm();
 
-  const calm = await page.evaluate(async () => {
+  const calm = await page.evaluate(async (queueMs) => {
     // The same measurement as the fall at the top of section 9, on a page that
     // has asked for less motion: distinct positions are what a re-render alone
     // cannot fake, because without the loop a stone would not move at all
-    // between two spawns a second and a half apart.
+    // between two spawns a second and a half apart. The beat is waited out
+    // here for the same reason it is there.
     const stone = document.querySelector(".storm__letter");
+    await new Promise((done) => window.setTimeout(done, queueMs + 60));
     const tops = [];
     for (let i = 0; i < 20; i++) {
       tops.push(stone.getBoundingClientRect().top);
@@ -1485,7 +1512,7 @@ try {
         .transform,
       particles: document.querySelectorAll(".confetti, .confetti__bit").length,
     };
-  });
+  }, STORM_QUEUE_MS);
   check(
     "a stone still falls, frame by frame, for a child who asked for less motion",
     calm.distinct >= 12 && calm.forwards && calm.travelled > 0,

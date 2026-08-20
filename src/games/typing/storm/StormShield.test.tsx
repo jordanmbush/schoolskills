@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import { FINGER_ZONES } from "@/engine/keyboard";
 import {
   MIN_FALL_MS,
+  QUEUE_MS,
   SHIELD_FINGERS,
   buildWave,
   fire,
@@ -40,8 +41,15 @@ const only = (ch: string, over: Partial<WaveSpec> = {}): WaveSpec => ({
   ...over,
 });
 
+/*
+ * Every absolute moment in this file is measured from the instant the first
+ * letter starts to DROP, not from the start of the wave — hence the offset.
+ * A real letter hangs at the top for `QUEUE_MS` before it moves (§8.3), and
+ * that beat is the same for every letter of every level, so folding it in here
+ * once leaves each schedule below saying exactly what it always said.
+ */
 const frameOf = (spec: WaveSpec, atMs: number): StormState =>
-  tick(startStorm(buildWave(spec, 7)), atMs);
+  tick(startStorm(buildWave(spec, 7)), QUEUE_MS + atMs);
 
 /** One rendered segment, as the attributes the stylesheet reads. */
 type Drawn = {
@@ -145,7 +153,7 @@ describe("StormShield", () => {
     // 30ms of gap and an 800ms fall puts two landings inside one 16ms frame.
     const together = tick(
       startStorm(buildWave(only("f", { gap: [30, 30] }), 7)),
-      830,
+      QUEUE_MS + 830,
     );
     expect(together.resolved.filter(Boolean)).toHaveLength(2);
     expect(zoneTally(together)["l-index"].hit).toBe(2);

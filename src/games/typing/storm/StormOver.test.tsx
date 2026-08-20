@@ -34,6 +34,11 @@ const at = (ch: string, spawnMs: number, fallMs: number): StormLetter => {
     lane: keyX(stroke.code) ?? 0,
     spawnMs,
     fallMs,
+    // No queue: a hand-placed letter falls the instant it appears, so every
+    // absolute moment below is the one the test wrote down. The beat a real
+    // wave gives a letter (`QUEUE_MS`) is `buildWave`'s, and it belongs to the
+    // tests of the schedule rather than to every test of what a landing costs.
+    dropMs: spawnMs,
     landMs: spawnMs + fallMs,
   };
 };

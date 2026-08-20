@@ -9,6 +9,7 @@ import { RaceProvider } from "@/components/state/RaceContext";
 import { FINGER_ZONES, KEYS, keyX, strokeFor } from "@/engine/keyboard";
 import {
   MIN_FALL_MS,
+  QUEUE_MS,
   SHIELD_FINGERS,
   buildWave,
   fire,
@@ -166,8 +167,15 @@ const only = (ch: string, count = 1, fallMs = 1000): WaveSpec => ({
   repairAt: 0,
 });
 
+/*
+ * Every absolute moment in this file is measured from the instant the first
+ * letter starts to DROP, not from the start of the wave — hence the offset.
+ * A real letter hangs at the top for `QUEUE_MS` before it moves (§8.3), and
+ * that beat is the same for every letter of every level, so folding it in here
+ * once leaves each schedule below saying exactly what it always said.
+ */
 const frameOf = (spec: WaveSpec, atMs: number): StormState =>
-  tick(startStorm(buildWave(spec, 7)), atMs);
+  tick(startStorm(buildWave(spec, 7)), QUEUE_MS + atMs);
 
 /**
  * A frame of the field, on its own. The `skyRef` is where `useStormClock`
@@ -177,15 +185,16 @@ const frameOf = (spec: WaveSpec, atMs: number): StormState =>
 const draw = (state: StormState) =>
   renderToStaticMarkup(<StormField state={state} skyRef={{ current: null }} />);
 
-/** Every falling letter in a rendered field, as `{ ch, lane }`. */
+/** Every falling letter in a rendered field, as `{ ch, lane, fallMs, drop }`. */
 const stones = (state: StormState) =>
   [
     ...draw(state).matchAll(
-      /class="storm__letter" style="--lane:([\d.]+);--drop:([\d.e-]+)"[^>]*>(.)</g,
+      /class="storm__letter" style="--lane:([\d.]+);--fall-ms:(\d+);--drop:([\d.e-]+)"[^>]*>(.)</g,
     ),
-  ].map(([, lane, drop, ch]) => ({
+  ].map(([, lane, fallMs, drop, ch]) => ({
     ch,
     lane: Number(lane),
+    fallMs: Number(fallMs),
     drop: Number(drop),
   }));
 
@@ -316,19 +325,52 @@ describe("StormField", () => {
     expect(declaration(".storm__letter", "transform")).toBe(
       "translateY(calc(var(--drop) * var(--fall)))",
     );
-    // `top` anchors the stone at the top of the sky and nothing else; the fall
-    // is not written there.
-    expect(declaration(".storm__letter", "top")).toBe("0");
+    // `top` is where the fall begins and nothing else; the fall itself is not
+    // written there. It is the sky's whole travel minus this letter's, so a
+    // stone that is capped comes into view lower — and `top + --fall` is
+    // `--sky-fall` for every letter, which is the promise that a capped stone
+    // still lands exactly on the shield rather than short of it.
+    expect(declaration(".storm__letter", "top")).toBe(
+      "calc(var(--sky-fall) - var(--fall))",
+    );
 
     // A percentage inside a transform resolves against the element being
-    // moved, so the travel is the sky's own height — which is only a length a
+    // moved, so the sky's travel is its own height — which is only a length a
     // stone can read because the sky is a size container. Floored at zero,
     // because the sky minus a stone goes negative on a viewport shorter than
     // about 265px, and an unfloored travel runs the storm upwards.
     expect(declaration(".storm__sky", "container-type")).toBe("size");
+    expect(
+      declaration(".storm__letter", "--sky-fall").replace(/\s+/g, " "),
+    ).toBe("max(0cqh, 100cqh - var(--stone))");
+  });
+
+  it("caps how fast a stone falls, in stone heights rather than pixels", () => {
+    // The travel is the SHORTER of the sky and what the speed cap allows
+    // (decision 65). Without the `min` the fall is whatever the viewport
+    // happens to be, so the same level is faster on a bigger monitor — which
+    // is how a 900ms fall came to cross about 720px a second once #197 took
+    // the board off the screen, and how `i` and `l` stopped being different
+    // letters at speed.
     expect(declaration(".storm__letter", "--fall").replace(/\s+/g, " ")).toBe(
-      "max(0cqh, 100cqh - var(--stone))",
+      "min( var(--sky-fall), " +
+        "calc(var(--fall-ms, 1000) / 1000 * var(--hail-speed) * var(--stone)) )",
     );
+
+    // In stone heights a second, and therefore a number with no unit: what
+    // blurs a moving glyph is how far it travels against its own size, so a
+    // cap written in pixels would mean something different at every `--key`.
+    // High enough that an ordinary screen uses the whole sky — the reading
+    // time is the beat a letter hangs for first (`QUEUE_MS`), not a slower
+    // fall — and low enough that a very tall one cannot run away with it.
+    expect(declaration(".storm", "--hail-speed")).toBe("9");
+
+    // And the letter's own fall time is a render's to write, not the loop's:
+    // it is fixed when the wave is built, where `--drop` moves every frame.
+    for (const fallMs of [900, 2600]) {
+      const [stone] = stones(frameOf(only("f", 1, fallMs), 100));
+      expect(stone.fallMs).toBe(fallMs);
+    }
   });
 
   it("draws one key unit, shared with the board it is aiming at", () => {

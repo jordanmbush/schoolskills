@@ -212,4 +212,141 @@ export const sfx = {
     tone({ freq: C.a4, dur: 0.12, wave: "triangle", gain: 0.3 });
     tone({ freq: C.e5, dur: 0.3, delay: 0.1, wave: "triangle", gain: 0.3 });
   },
+
+  /* ── Hailstorm ───────────────────────────────────────────────────────────
+   *
+   * Six sounds for one screen, and what makes them a set rather than six
+   * effects is that they have to stay apart from each other while three or
+   * four of them happen a second (docs/typing.md §8.12).
+   *
+   * They are laid out along two axes a five-year-old can hear without being
+   * taught either. **Pitch says whose it is**: the gun and the stones are
+   * bright and short, the shield is low and long, so "I did something" and
+   * "something happened to me" never have to be told apart by timbre alone.
+   * **Length says how much it cost**: 50ms for a shot, 90 for a stone, 160
+   * for armour absorbing a letter, 340 for the last point of a zone, and
+   * three quarters of a second for the run ending. Nothing else on the
+   * screen is allowed to be the longest sound in it.
+   *
+   * Gains are deliberately below the rest of the kit. A race plays a handful
+   * of sounds a minute; a storm plays one per keystroke, and a mixer summing
+   * six of those into a limiter is a mush that teaches nothing.
+   */
+
+  /**
+   * The trigger, on every stroke the gun takes — the hit and the miss are
+   * layered over the top of it rather than replacing it.
+   *
+   * That layering is the point. A child who presses a key gets an answer
+   * within a frame whatever else is true, so the sound never has to wait on
+   * whether the shot landed, and the quietest, shortest thing on the screen
+   * is the one that happens most often.
+   *
+   * Two parts, because a single glide read as a blip rather than as a shot.
+   * The click is what makes it one — a 20ms burst of high noise is the report,
+   * and the ear places it as a *release* rather than as a note. The glide
+   * under it is the shot leaving: fast, an octave and a half, and over before
+   * the next key can be pressed. Deliberately not dramatic — it fires several
+   * times a second and anything with a tail would be a drone.
+   */
+  shoot: () => {
+    noise({ dur: 0.02, gain: 0.16, sweepFrom: 7000, sweepTo: 4200 });
+    tone({ freq: 1700, dur: 0.07, wave: "square", gain: 0.16, glideTo: 480 });
+  },
+
+  /**
+   * A hailstone shot out of the sky: a bright tone and a glassy noise burst.
+   *
+   * The pitch climbs with the streak exactly as `correct` does, and for the
+   * same reason — it is the same streak, and the multiplier it is paying at
+   * is the number the HUD is already showing (§8.6). Capped at an octave, so
+   * a long run stops climbing rather than ending up somewhere only a dog can
+   * hear it.
+   */
+  shatter: (streak = 1) => {
+    const step = Math.min(streak - 1, 11);
+    tone({
+      freq: C.e5 * Math.pow(2, step / 12),
+      dur: 0.08,
+      wave: "triangle",
+      gain: 0.3,
+    });
+    noise({ dur: 0.11, gain: 0.1, sweepFrom: 7000, sweepTo: 2200 });
+  },
+
+  /**
+   * A stroke that hit nothing — the wrong key, or any key at an empty sky
+   * (§8.6).
+   *
+   * **A shot going past**, and the shape is the whole of how it reads that
+   * way. A thing that passes you gets brighter as it comes and darker as it
+   * goes, so this is two noise sweeps back to back — up through the near
+   * field, then down and away, the second longer than the first because that
+   * is what receding sounds like. Nothing else in the set moves in two
+   * directions, which is what makes a miss unmistakable next to the shot that
+   * caused it.
+   *
+   * Under it, a short low fall: the sound has to *cost* something as well as
+   * describe something, and ten points off is not a neutral event. Quiet
+   * enough not to be the thing you hear, present enough that a run of misses
+   * sags.
+   *
+   * `wrong`'s 260ms sawtooth would be both the wrong length and the wrong
+   * feeling. A child losing a storm mashes, and eight harsh buzzes a second is
+   * a drone; a flurry of whizzes is a flurry.
+   */
+  misfire: () => {
+    noise({ dur: 0.05, gain: 0.13, sweepFrom: 800, sweepTo: 2800 });
+    noise({
+      dur: 0.17,
+      delay: 0.045,
+      gain: 0.13,
+      sweepFrom: 2800,
+      sweepTo: 500,
+    });
+    tone({ freq: 190, dur: 0.1, wave: "triangle", gain: 0.12, glideTo: 120 });
+  },
+
+  /** A letter got through, and that finger's armour took it (§8.5). */
+  shieldHit: () => {
+    tone({ freq: 160, dur: 0.16, wave: "sine", gain: 0.3, glideTo: 84 });
+    noise({ dur: 0.22, gain: 0.15, sweepFrom: 1500, sweepTo: 220 });
+  },
+
+  /**
+   * …and that was the zone's last point: there is a hole under one finger now.
+   *
+   * The loudest thing that is not the end of the run, because it is the
+   * moment a child can still do something about — the next letter on that
+   * finger ends the storm, and every clean hit from here is a chance to mend
+   * it (§8.5). A sound that were merely a bigger crunch would leave the one
+   * turning point in a run indistinguishable from the four hits before it.
+   */
+  shieldBreak: () => {
+    tone({ freq: 300, dur: 0.34, wave: "sawtooth", gain: 0.26, glideTo: 88 });
+    noise({ dur: 0.4, gain: 0.2, sweepFrom: 3200, sweepTo: 150 });
+  },
+
+  /**
+   * A stone came through the hole. The run is over.
+   *
+   * A falling minor figure under a long collapse of noise, and it is the one
+   * sound on this screen that is allowed to be sad. It is also why the storm
+   * does not play `finish`: a race ends by being finished and a storm can end
+   * by being lost, and a major triad over a broken shield would be the game
+   * congratulating a child for dying (`useRaceFinish`'s `fanfare`).
+   */
+  breach: () => {
+    noise({ dur: 0.75, gain: 0.24, sweepFrom: 4800, sweepTo: 110 });
+    [392, 311, 233].forEach((freq, i) =>
+      tone({
+        freq,
+        dur: 0.34,
+        delay: i * 0.11,
+        wave: "triangle",
+        gain: 0.3,
+        glideTo: freq * 0.5,
+      }),
+    );
+  },
 };

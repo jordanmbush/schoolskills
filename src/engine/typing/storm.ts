@@ -64,10 +64,13 @@ export type ShieldFinger = Exclude<Finger, "thumb">;
  * spawn delay and its own fall time. The relationship between the two ranges is
  * the level's whole difficulty shape:
  *
- *   - `gap` at or above `fall` → a letter lands before the next one spawns, so
- *     there is never more than one on screen and the game is pure reaction.
- *     That is what the early levels are (see `buildWave` for the arithmetic).
- *   - `gap` below `fall` → two or three in the air at once, and the child has
+ *   - `gap` at or above `fall` → a letter lands before the next one starts to
+ *     drop, so there is never more than one FALLING and the game is pure
+ *     reaction. That is what the early levels are (see `buildWave` for the
+ *     arithmetic). There may still be one queued above it — every letter waits
+ *     a beat before it moves (`QUEUE_MS`) — which is the next one waiting its
+ *     turn rather than a second thing to track.
+ *   - `gap` below `fall` → two or three coming down at once, and the child has
  *     to work bottom-up. Which is reading ahead, which is the thing that makes
  *     a fast typist.
  */
@@ -144,10 +147,17 @@ export type StormLetter = {
   lane: number;
   /** ms from the start of the wave to this letter appearing at the top. */
   spawnMs: number;
+  /**
+   * `spawnMs + QUEUE_MS` — when it stops hanging and starts to fall.
+   *
+   * A letter is **on the field, and shootable, from `spawnMs`**; it does not
+   * move until this. See `QUEUE_MS` for why there is a difference at all.
+   */
+  dropMs: number;
   /** ms it takes to cross the field, drawn from `spec.fall`. */
   fallMs: number;
   /**
-   * `spawnMs + fallMs` — when it reaches the shield.
+   * `dropMs + fallMs` — when it reaches the shield.
    *
    * A letter occupies the field on the **half-open** interval
    * `[spawnMs, landMs)`: it is there the instant it spawns and gone the instant
@@ -158,7 +168,7 @@ export type StormLetter = {
    *
    * Derived, and stored anyway, because it is read on every tick. One warning
    * belongs with it: the *lowest* letter on screen is the one with the greatest
-   * `(t - spawnMs) / fallMs`, which is not the same order as `landMs` once two
+   * `(t - dropMs) / fallMs`, which is not the same order as `landMs` once two
    * letters fall at different speeds. Two orderings that look interchangeable
    * and part company exactly where it matters are worth a sentence — and, now
    * that something depends on the difference, a function: `targetIndex` aims by
@@ -263,6 +273,66 @@ function fallable(ch: string): Fallable | null {
 export const MIN_FALL_MS = 800;
 
 /**
+ * How long a letter hangs at the top of the sky before it starts to fall
+ * (decision 67).
+ *
+ * ── The problem it solves ────────────────────────────────────────────────────
+ * A letter has to be **read** before it can be aimed at, and until this it had
+ * to be read while moving. That is the hardest possible moment to do it: the
+ * display smears a moving glyph across whatever it crosses in one frame, and
+ * the letters a child confuses — `i` and `l`, `1` and `l`, `O` and `0` — are
+ * exactly the ones told apart by a detail that survives least. Capping the
+ * fall speed (§8.2, decision 65) makes the smear smaller; this removes it for
+ * the one moment it matters most, which is the moment a letter is new.
+ *
+ * So a letter appears, hangs perfectly still for this long, and only then
+ * falls. What a child does in that beat is the actual skill the mode teaches:
+ * read the character, and find the key.
+ *
+ * ── It is time added, and it has to be ───────────────────────────────────────
+ * The obvious cheaper version is to hold a letter inside its own fall time —
+ * hang for a beat, then cover the same distance in what is left. That is
+ * strictly worse than doing nothing: the same sky in less time is a FASTER
+ * drop, which is the problem it was meant to fix, at its most urgent point.
+ * There is no version of this that does not add time to the letter's life.
+ *
+ * ── Shootable the whole time ─────────────────────────────────────────────────
+ * A queued letter is on the field: `isAirborne` says so, `targetIndex` will
+ * aim at it, and `fire` will take it. That is not a detail. A game that showed
+ * a child a letter and then charged them ten points for pressing it too early
+ * would be punishing them for doing the thing the queue exists to let them do.
+ * What the queue is NOT is a head start on the schedule — the letters still
+ * arrive at the same intervals, so a child who reads fast simply gets to spend
+ * the beat, and one who does not still has the whole fall.
+ *
+ * ── What it does not disturb ─────────────────────────────────────────────────
+ * The value is the same for every letter of every level, so it shifts the
+ * whole schedule and warps none of it. Three things fall out of that, and each
+ * is a thing that would otherwise have needed re-tuning:
+ *
+ *   - **The twenty levels keep their shapes.** `gap` against `fall` is the
+ *     difficulty (`WaveSpec`), both are untouched, and the seeds are drawn in
+ *     the same order from the same generator — so every level rains the same
+ *     letters in the same lanes at the same speeds it did before.
+ *   - **"One at a time" survives, as a claim about falling.** Levels 4, 9 and
+ *     13 promise pure reaction, and what that has always meant is that no two
+ *     letters are coming DOWN at once — which `gap[0] >= fall[1]` still buys
+ *     exactly, because every fall is shifted by the same amount. A letter
+ *     queued above a falling one is the next one waiting its turn, which is
+ *     what makes it a queue.
+ *   - **A run's own times mean what they did.** `CardResult.ms` is
+ *     `atMs - spawnMs` (§8.7) — time from a child first *seeing* the letter,
+ *     which is what it always was. A fast player's card is the same number it
+ *     would have been; only a slow one has longer to be slow in.
+ *
+ * A second is a judgement, not a measurement, and it is the same order as the
+ * fastest fall on the ladder (900ms, lessons 4, 9 and 13). Round, long enough
+ * to read an unfamiliar glyph without hurrying, and short enough that a level
+ * with a 300ms gap still has a queue rather than a crowd.
+ */
+export const QUEUE_MS = 1000;
+
+/**
  * The fall times a spec can actually produce — its own range, floored at
  * `MIN_FALL_MS`.
  *
@@ -295,19 +365,20 @@ export function fallRange(spec: WaveSpec): [number, number] {
  * which is free today and is not free the moment a level's seed is written down
  * beside a saved run (STM08).
  *
- * ── Why `gap ≥ fall` means one letter at a time ──────────────────────────────
- * Letter _i_ is on the field over `[spawn_i, spawn_i + fall_i)` and letter
- * _i+1_ spawns at `spawn_i + gap_{i+1}`, so the two share the screen exactly
- * when `gap_{i+1} < fall_i`. If every gap a spec can draw is at least every
- * fall it can draw — `gap[0] ≥ fall[1]` — that is never true, and since spawn
- * times only increase, no *later* letter can overlap letter _i_ either. So the
- * early levels' "never more than one on screen" is a property of the spec, not
- * a hope about the draw.
+ * ── Why `gap ≥ fall` means one letter falling at a time ──────────────────────
+ * Letter _i_ is coming down over `[drop_i, drop_i + fall_i)` and letter _i+1_
+ * drops at `drop_i + gap_{i+1}` — the queue shifts both by the same
+ * `QUEUE_MS`, so it cancels out of this entirely — and the two are therefore
+ * falling together exactly when `gap_{i+1} < fall_i`. If every gap a spec can
+ * draw is at least every fall it can draw — `gap[0] ≥ fall[1]` — that is never
+ * true, and since spawn times only increase, no *later* letter can overlap
+ * letter _i_ either. So the early levels' "never more than one falling" is a
+ * property of the spec, not a hope about the draw.
  *
  * The boundary goes to safety: `gap` exactly equal to `fall` still leaves one
- * letter on screen, because the interval is half-open — the outgoing letter
- * lands on the same millisecond the next one spawns, and landing is the tick
- * that takes it off the field.
+ * letter coming down, because the interval is half-open — the outgoing letter
+ * lands on the same millisecond the next one starts to drop, and landing is
+ * the tick that takes it off the field.
  *
  * That arithmetic is read against `fallRange(spec)` and not against
  * `spec.fall`: the fall a letter gets is floored at `MIN_FALL_MS`, and a floor
@@ -338,7 +409,11 @@ export function buildWave(spec: WaveSpec, seed: number): Wave {
     if (i > 0) spawnMs += between(spec.gap[0], spec.gap[1], rand);
     const from = pool[between(0, pool.length - 1, rand)];
     const fallMs = between(fall[0], fall[1], rand);
-    letters.push({ ...from, spawnMs, fallMs, landMs: spawnMs + fallMs });
+    // Every letter waits the same beat before it moves (`QUEUE_MS`), so this
+    // shifts the whole schedule and warps none of it — and draws nothing from
+    // `rand`, which is what keeps every level's weather exactly what it was.
+    const dropMs = spawnMs + QUEUE_MS;
+    letters.push({ ...from, spawnMs, dropMs, fallMs, landMs: dropMs + fallMs });
   }
 
   return {
@@ -360,7 +435,7 @@ export function buildWave(spec: WaveSpec, seed: number): Wave {
  */
 
 /**
- * Is this letter on the field at `timeMs`?
+ * Is this letter on the field at `timeMs` — queued or falling?
  *
  * A letter occupies the **half-open** interval `[spawnMs, landMs)`: there the
  * instant it spawns, gone the instant it lands, because landing is the tick
@@ -369,11 +444,17 @@ export function buildWave(spec: WaveSpec, seed: number): Wave {
  * That convention is exported as a pair of predicates rather than written out
  * where it is needed, because it is one `<` against one `<=` and more than one
  * thing reads it: `targetIndex` decides what can be shot with `isAirborne`,
- * `tick` decides what damages the shield with `hasLanded`, and the field will
- * draw whatever `isAirborne` says is there (STM03). Spelled out at each of
- * those, it would be three chances to pick the wrong side of a millisecond —
- * and the wrong side of a millisecond is a letter that is both shootable and
- * already spent.
+ * `tick` decides what damages the shield with `hasLanded`, and the field draws
+ * whatever `isAirborne` says is there (STM03). Spelled out at each of those,
+ * it would be three chances to pick the wrong side of a millisecond — and the
+ * wrong side of a millisecond is a letter that is both shootable and already
+ * spent.
+ *
+ * **Airborne, and not yet falling, is a real state** (`QUEUE_MS`): a letter
+ * hangs at the top of the sky for a beat before it moves. It is on the field
+ * throughout — drawn, aimed at and shootable — because a queue a child may not
+ * shoot into is a letter the game shows them and then charges them ten points
+ * for pressing.
  *
  * `hasLanded` is deliberately not `!isAirborne`: a letter that has not spawned
  * yet is neither on the field nor landed, and the reducer must not charge the
@@ -381,6 +462,23 @@ export function buildWave(spec: WaveSpec, seed: number): Wave {
  */
 export function isAirborne(letter: StormLetter, timeMs: number): boolean {
   return letter.spawnMs <= timeMs && timeMs < letter.landMs;
+}
+
+/**
+ * Is this letter actually coming down at `timeMs`, rather than waiting to?
+ *
+ * The narrower half of `isAirborne`, and what "one letter at a time" is a
+ * claim about: the early levels promise pure reaction, and what that has
+ * always meant is that no two letters are FALLING at once (`buildWave`). A
+ * letter queued above a falling one is the next one waiting its turn.
+ *
+ * Nothing in the reducer reads it — the rules care about what is on the field
+ * and what has landed, and neither of those is this. It is here because the
+ * property it names is one the twenty levels are held to, and a test that
+ * restated the interval would be a second opinion about `QUEUE_MS`.
+ */
+export function isFalling(letter: StormLetter, timeMs: number): boolean {
+  return letter.dropMs <= timeMs && timeMs < letter.landMs;
 }
 
 /** Has this letter reached the shield by `timeMs`? See `isAirborne`. */
@@ -397,13 +495,22 @@ export function hasLanded(letter: StormLetter, timeMs: number): boolean {
  * what the gun is aimed at. A child aims by looking, so the letter the game
  * thinks is lowest has to be the letter that is drawn lowest.
  *
- * `fallMs` cannot be 0 while a letter is airborne — `spawn <= t < spawn +
- * fall` has no solutions at `fall = 0` — so the division is safe everywhere
- * the value is a position. Off the interval it still answers, and answers
- * honestly: negative before the spawn, past 1 after the landing.
+ * **Floored at zero, which is what a queued letter is** (`QUEUE_MS`). Both
+ * readers need that and for the same reason. The renderer would otherwise
+ * carry a queued stone UP out of the sky, since `--drop` is multiplied by the
+ * travel and a negative one is a negative offset. And `targetIndex` would rank
+ * two letters hanging side by side at the top — visibly at the same height —
+ * by how long each has left before it drops divided by how long its fall is,
+ * which is a number nothing on screen shows. Floored, they tie, and a tie goes
+ * to the earlier spawn like every other dead heat (decision 33).
+ *
+ * `fallMs` cannot be 0 while a letter is falling — `drop <= t < drop + fall`
+ * has no solutions at `fall = 0` — so the division is safe everywhere the
+ * value is a position. Past the landing it still answers, and answers
+ * honestly: greater than 1.
  */
 export function progressAt(letter: StormLetter, timeMs: number): number {
-  return (timeMs - letter.spawnMs) / letter.fallMs;
+  return Math.max(0, (timeMs - letter.dropMs) / letter.fallMs);
 }
 
 /**
