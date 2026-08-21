@@ -1,17 +1,13 @@
 /**
  * Letterforms to trace, without a tracing font.
  *
- * Dotted and dim letters are the point of a handwriting sheet, and every
- * commercial tracing font is licensed per seat. None is needed: SVG `<text>`
- * can be stroked instead of filled, and a dash pattern applies **along the
- * glyph outline** — so one ordinary font gives all five appearances in §6, the
- * dash pitch is a number rather than a purchase, and the same face the rest of
- * the sheet is set in is the one the child traces.
+ * SVG `<text>` can be stroked instead of filled, and a dash pattern applies
+ * **along the glyph outline** — which is how one ordinary font gives all five
+ * appearances in §6.
  *
  * Fill and opacity are CSS, because neither scales. Stroke width and dash
  * pattern are attributes in mil, because both do — see `units.ts`. Which
- * numbers they take is the face's business: `faces.ts` holds the proportions
- * measured out of each font file, and this only draws them.
+ * numbers they take is the face's business (`faces.ts`).
  */
 import {
   faceOf,
@@ -94,23 +90,19 @@ export type TracedCell = TraceCell;
  * across one repeat, and a line of copywork is one cell across one repeat.
  *
  * The type size is derived from the ruling rather than from the sheet's body
- * size, because on a handwriting sheet the ruling *is* the type size. How big
- * an em that takes is the face's own proportion and nothing else's: Playwrite's
- * tallest ascender is a whole em and Andika's 0.79 of one, so the same rule
- * holds two quite different type sizes (`faces.ts`).
+ * size, because on a handwriting sheet the ruling *is* the type size — and how
+ * big an em that takes is the face's own proportion and nothing else's (§6,
+ * `faces.ts`).
  *
- * The rule fixed here is the top line: `glyphEm` sizes the em so the tallest
- * thing *on this row* stands on the baseline and reaches it. Which of the
- * face's heights that is depends on what is written — a row of capitals is set
- * off `capHeight` and a row with an `l` on it off `ascent`, because a capital
- * a tenth under the top line is a smaller error than an ascender through it
- * (`glyphHeight`). That leaves the midline as a consequence rather than a
- * second constraint, and letter bodies clear it — by 0.13 of the writing space
- * in Andika, 0.16 in OpenDyslexic, 0.01 in Playwrite (`Face.xHeight`, and a
- * test that bounds it). Two lines cannot both be exact unless the face was
- * drawn to that ruling, and a body that overshoots the midline is the right
- * way round to miss: the child still has a line to write up to, which they
- * would not if the model stopped below it.
+ * **The rule fixed here is the top line.** `glyphEm` sizes the em so the
+ * tallest thing *on this row* stands on the baseline and reaches it, which is
+ * `capHeight` for a row of capitals and `ascent` for a row with an `l` on it:
+ * a capital a tenth under the top line is a smaller error than an ascender
+ * through it (`glyphHeight`). The midline is then a consequence rather than a
+ * second constraint. Two lines cannot both be exact unless the face was drawn
+ * to that ruling, and a body that overshoots the midline is the right way round
+ * to miss — the child still has a line to write up to, which they would not if
+ * the model stopped below it.
  */
 export function TracedRow({
   rule,
@@ -126,10 +118,8 @@ export function TracedRow({
   const lines = ruledLines({ x: 0, y: 0, width, height: pitch }, rule);
   const face = faceOf(metrics.font);
 
-  // A row is usually one word written four times, and sometimes three letters
-  // written four times each. Either way it is announced by what is on it and
-  // not by how many places it is written in — and it is sized by what is on it
-  // for the same reason.
+  // A row is announced by what is on it rather than by how many places it is
+  // written in — and it is sized by what is on it for the same reason.
   const said = [...new Set(cells.map((entry) => entry.text))]
     .filter((text) => text !== "")
     .join(" ");
@@ -169,19 +159,16 @@ export function TracedRow({
         A second viewport, one em taller than the row at each end and exactly
         as wide as it.
 
-        Letting the row overflow is the *vertical* concession above, and it has
-        to stay vertical. Two things run off the sides otherwise: the isometric
-        ruling deliberately draws its diagonals half a side past each edge
-        (`Ruling.tsx`) on the understanding that the viewport takes them off
-        again, and `Face.advance` is a declared mean rather than a measurement,
-        so a wide word typed into the builder — `M` is 0.876em against a
-        declared 0.506 — can run past the margin the sheet reserved.
+        The overflow above is *vertical* and has to stay vertical. Two things
+        run off the sides otherwise: the isometric ruling deliberately draws its
+        diagonals half a side past each edge (`Ruling.tsx`) on the understanding
+        that the viewport takes them off again, and `Face.advance` is a declared
+        mean rather than a measurement, so a wide word typed into the builder
+        can run past the margin the sheet reserved.
 
         A nested `<svg>` clips to itself whatever the outer one does, and with
         the viewBox restating the same rectangle the coordinates inside it are
-        the coordinates outside it, so nothing here has to move. An em of slack
-        clears the deepest tail any of the three faces draws (0.52em) twice
-        over.
+        the coordinates outside it, so nothing here has to move.
       */}
       <svg
         x={0}

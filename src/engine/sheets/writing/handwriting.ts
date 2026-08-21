@@ -1,48 +1,22 @@
 /**
  * Handwriting: trace it, copy it, then write it alone.
  *
- * The first family where the ruling is the exercise rather than the paper. A
- * maths sheet printed a thousandth of an inch out is a maths sheet; a ⅝ rule
- * that is not ⅝ of an inch is teaching a child the wrong size of letter, and
- * they were taught to write between two lines by somebody who will notice. So
- * everything here is geometry: the rows are one repeat of the ruling apart
- * because that is what the ruling says, and the model that sits on them is
- * sized off the face's own measured proportions (`faces.ts`) rather than off
- * the body type — off whichever of them the tallest thing on the sheet is
- * drawn to, so a page of capitals reaches the top line as surely as a page of
- * `Aa` does.
+ * The family where the ruling is the exercise rather than the paper, so
+ * everything here is geometry: a row is one repeat of the ruling, and the model
+ * that sits on it is sized off the face's own measured proportions rather than
+ * off the body type (§6).
  *
  * **One progression, two directions.** A row is `["solid", "dotted", "none"]` —
- * a model to trace, a trace, and the place where the child is on their own —
- * and that sequence is the whole of what a handwriting sheet does. Something
- * short enough to write several times on one line runs *across* the row, and as
- * many of them fit as the paper is wide enough for, which is what puts a whole
- * alphabet on one page. A line of a passage fills the row on its own, so the
- * same sequence runs *down* the page instead. Nothing else differs between the
- * five styles.
+ * a model to trace, a trace, and the place where the child is on their own.
+ * Something short enough to write several times on one line runs *across* the
+ * row; a line of a passage fills the row on its own, so the same sequence runs
+ * *down* the page instead. Nothing else differs between the five styles.
  *
- * **Copywork is the passage style, and its words come from one of two doors.**
- * Either the library (`passages/`) by id, or a paste — `copyworkSource` is the
- * only place either is read, and by the time a row is built the sheet cannot
- * tell which it got. That is what makes choosing Psalm 23 and choosing the
- * Gettysburg Address the same interaction (§12); what a library passage adds is
- * a credit line at the foot of the page, where its source asks for one.
- *
- * **Cursive is not a sixth style.** A cursive sheet is these same sheets set in
- * a joining face (`SheetOptions.font`), because a letter, a word and a passage
- * are the same exercises whether or not the letters touch — and a cell is one
- * `<text>` element, so the face's own `calt` table sees the pair either side of
- * every join and draws the form that belongs there. What joined writing does
- * add is a set to practise that print has no use for, and that is `joins`: the
- * one style that is only a cursive exercise, and the one that resolves its own
- * face rather than printing two letters standing apart under the word "join".
- *
- * Everything the other families promise holds unchanged: the page comes out of
- * `(config, seed)` and nothing else, and no row is put on the page that the
- * capacity arithmetic did not reserve room for.
- *
- * There are no answers. A key is the same page — see the note on `key` below,
- * which is the same one blank paper makes.
+ * Copywork is the passage style, and its words come from the library or from a
+ * paste — `copyworkSource` is the only place either is read (§12). Cursive is
+ * not a sixth style either: it is these same sheets set in a joining face, and
+ * what joined writing adds is `joins`, the one style that is only a cursive
+ * exercise and the one that resolves its own face.
  */
 import {
   cursiveOf,
@@ -78,11 +52,8 @@ import { joinFamily, joinPairs } from "./joins";
 /* ── What the family will and won't do ─────────────────────────────────── */
 
 /**
- * The most times one thing is written.
- *
  * Eight is already a row of eight letters and a page of nothing else; past that
- * the cells are narrower than the letters in them and the sheet stops being
- * legible before it stops being generatable.
+ * the cells are narrower than the letters in them.
  */
 export const MAX_REPEATS = 8;
 
@@ -95,10 +66,7 @@ const MAX_LETTERS = 24;
 const clamp = (value: number, low: number, high: number): number =>
   Math.max(low, Math.min(high, Math.floor(value)));
 
-/**
- * ⅝ with a dashed midline and room for a tail: the commonest primary size, and
- * what the shop's own handwriting paper defaults to.
- */
+/** ⅝ dashed, with room for a tail: the commonest primary size (§5). */
 export const DEFAULT_HAND_RULE: Rule = {
   style: "hand-5-8",
   midline: "dashed",
@@ -110,11 +78,9 @@ export const DEFAULT_HAND_RULE: Rule = {
  *
  * Every ruling in §5 is legal here, notebook rules and squares included — a
  * child asked to write a sentence on college-ruled paper is being set a real
- * exercise. Blank paper is the only one that cannot work: a handwriting sheet
- * is rows of a repeating ruling, and a ruling with no pitch has no rows, so a
- * sheet on it would be a page with a title and nothing under it. It resolves to
- * the ⅝ rule instead, which is the same promise `rulingOf` makes — answer with
- * something that prints rather than with nothing.
+ * exercise. Blank is the one that cannot work: a handwriting sheet is rows of a
+ * repeating ruling, and blank has no pitch, so it resolves to the ⅝ rule
+ * rather than printing a title over an empty page.
  */
 export function ruleOf(config: HandwritingConfig): Rule {
   const rule = config.rule ?? DEFAULT_HAND_RULE;
@@ -130,10 +96,10 @@ const NUMERALS = "0123456789";
 /**
  * The alphabets, in the order they are taught.
  *
- * `both` is the pair written as one thing — `Aa`, then `Bb` — rather than the
- * capitals and then the small letters. That is how a letter is introduced, and
- * it is also the only shape in which twenty-six of them fit on one page: fifty-
- * two rows of one letter each is four sheets of ⅝ paper.
+ * `both` is the pair written as one thing — `Aa`, then `Bb` — because that is
+ * how a letter is introduced, and because it is the only shape in which
+ * twenty-six of them fit on one page: fifty-two rows of one letter each is four
+ * sheets of ⅝ paper.
  */
 const ALPHABETS: Record<LetterCase, string[]> = {
   upper: [...UPPER],
@@ -144,11 +110,10 @@ const ALPHABETS: Record<LetterCase, string[]> = {
 /**
  * The word list, made safe to print from whatever a saved config says.
  *
- * Trimmed, capped and de-duplicated, the way `wordsOf` holds a spelling list —
- * but **case-sensitively**, which is the one difference and the reason this is
- * not that function. A spelling marker sees "Because" and "because" as one
- * word; a handwriting sheet is about the shape of the letters, and a capital B
- * is a different shape from a small one.
+ * Trimmed, capped and de-duplicated the way `wordsOf` holds a spelling list,
+ * but **case-sensitively**, which is the whole reason this is not that
+ * function: a handwriting sheet is about the shape of the letters, and a
+ * capital B is a different shape from a small one.
  */
 export function handwritingWords(config: HandwritingConfig): string[] {
   const seen = new Set<string>();
@@ -168,14 +133,12 @@ export function handwritingWords(config: HandwritingConfig): string[] {
  * A passage broken into lines that fit the ruling.
  *
  * The family's job rather than the renderer's, because there is nothing to
- * measure in (§4): a row is one repeat of the ruling and holds one line of a
- * passage — `TracedRow` draws what it is handed and never rewraps it — so
- * where a verse breaks has to be decided here or not at all. A
- * newline in the source is a break the author asked for and is kept; everything
- * else breaks at the last space before the paper runs out. A word longer than a
- * whole line gets one of its own, and `fittedEm` sets it small enough to reach
- * the margin — the only place on a handwriting sheet where the type is not the
- * ruling's size, and better than a word running off the page.
+ * measure in (§4): `TracedRow` draws the line it is handed and never rewraps
+ * it, so where a verse breaks has to be decided here or not at all. A newline
+ * in the source is a break the author asked for and is kept. A word longer than
+ * a whole line gets one of its own, and `fittedEm` sets it small enough to
+ * reach the margin — the only place on a handwriting sheet where the type is
+ * not the ruling's size, and better than a word running off the page.
  */
 export function wrapPassage(text: string, characters: number): string[] {
   const width = Math.max(1, characters);
@@ -202,10 +165,10 @@ export function wrapPassage(text: string, characters: number): string[] {
 /**
  * The four styles that are a model to follow rather than the child's own.
  *
- * Exported because two suites check a sheet against it and a third list would
- * be a third chance to disagree. Named for what it means here rather than for
- * how it is drawn: `Traced.tsx` has its own `STROKED`, which is a *different*
- * set — `dim` is a model but it is a filled shape, not an outline.
+ * Exported because two suites check a sheet against it. Named for what it means
+ * here rather than for how it is drawn: `Traced.tsx` has its own `STROKED`,
+ * which is a *different* set — `dim` is a model, but it is a filled shape
+ * rather than an outline.
  */
 export const MODELLED = new Set<TraceStyle>([
   "dim",
@@ -217,11 +180,9 @@ export const MODELLED = new Set<TraceStyle>([
 /**
  * How each repeat of one thing is drawn: trace → copy → write.
  *
- * The first is a solid model, the last is left empty, and everything between is
- * the style the sheet was set in. Turning the progression off draws every
- * repeat the same way, which is the sheet for a child who is still tracing —
- * and asking for one repeat gives the model on its own, because a progression
- * needs somewhere to progress to.
+ * Turning the progression off draws every repeat the same way, which is the
+ * sheet for a child who is still tracing. Asking for one repeat gives the model
+ * on its own, because a progression needs somewhere to progress to.
  */
 export function traceStyles(config: HandwritingConfig): TraceStyle[] {
   const times = clamp(config.repeats ?? 3, 1, MAX_REPEATS);
@@ -234,9 +195,9 @@ export function traceStyles(config: HandwritingConfig): TraceStyle[] {
 }
 
 /**
- * One cell. An empty place carries no text, so a row of nothing but empty
- * places announces itself as a line to write on rather than as the word the
- * child is supposed to have thought of.
+ * An empty place carries no text, so a row of nothing but empty places
+ * announces itself as a line to write on rather than as the word the child was
+ * supposed to have thought of.
  */
 const cellOf = (text: string, style: TraceStyle): TraceCell => ({
   text: style === "none" ? "" : text,
@@ -265,21 +226,16 @@ export type HandwritingLayout = {
  * Arithmetic rather than measurement, so the answer is the same in a unit test,
  * in the build of a catalog page and in the builder's live preview (§4).
  *
- * `longest` is the longest thing that will be written, in characters, and it is
- * what decides how many fit beside each other: a group takes its own width plus
- * one character of air, so three letters written four times each is a row of
- * twelve cells and two words written three times each is a row of six. The
- * mean advance it is counted in is the face's own (`faces.ts`), because
- * OpenDyslexic is half as wide again as Andika and one shared guess would push
- * a word off the end of the line in one of them — and it is the face's mean
- * *for what this sheet writes*, because a row of `Aa` is not a sample of
- * `a`–`z` (`glyphAdvance`).
+ * `longest` is the longest thing that will be written, in characters, and a
+ * group takes its own width plus one character of air — so three letters
+ * written four times each is a row of twelve cells. It is counted in the face's
+ * own mean advance, and in that face's mean *for what this sheet writes*,
+ * because a row of `Aa` is not a sample of `a`–`z` (§6).
  *
  * The em is worked out against everything the sheet writes rather than against
- * one row, and that is the conservative direction: a page of capitals is set
- * larger than a page of `Aa` on the same ruling (`glyphHeight`), so measuring
- * the packing off the whole page can only reserve more room per group than any
- * one row goes on to need.
+ * one row, which is the conservative direction: a page of capitals is set
+ * larger than a page of `Aa` on the same ruling, so measuring the packing off
+ * the whole page can only reserve more room per group than any one row needs.
  */
 export function handwritingLayout(
   config: HandwritingConfig,
@@ -289,7 +245,7 @@ export function handwritingLayout(
   // Against the header and the footer the sheet will print rather than the ones
   // the config holds, and with no score box: there is nothing on a handwriting
   // sheet to mark out of anything. No `note` either — this family's key is the
-  // sheet itself, so nothing is ever added to the foot after the layout.
+  // sheet itself, so nothing is added to the foot after the layout.
   const credit = sourceOf(config)?.credit;
   const box = sheetBlockBox(
     headerOf(config),
@@ -315,11 +271,6 @@ export function handwritingLayout(
     };
   }
 
-  // Packed against what this sheet writes rather than against the alphabet:
-  // `Aa`…`Zz` is half capitals, and a capital in a joined hand is drawn with
-  // an entry flourish and a stroke out to the letter after it (`glyphAdvance`).
-  // Off the small-letter mean the row comes out one group too dense and the
-  // model runs into the trace beside it.
   const across = fittedCharacters(box.width, em, face, writtenOf(config));
   const perRow = Math.max(1, Math.floor(across / (times * (longest + 1))));
   return { rule, box, face, em, rows, perRow, perPage: perRow * rows };
@@ -345,22 +296,20 @@ function contentOf(config: HandwritingConfig): string[] {
  * The face the sheet is actually set in, which is the config's own unless the
  * config asked for something that cannot be drawn.
  *
- * The one case is a joins sheet: a join is a stroke between two letters, and a
- * print face has no such stroke — it would print `in` as an `i` and an `n` with
- * a gap, under an instruction telling a child to join them. So joined content
- * resolves to a joining face, keeping whichever cursive model was chosen
- * (`cursiveOf`). Read by the layout *and* returned on the sheet, so the em the
- * page reserved room for and the face the renderer sets cannot disagree.
+ * The one case is a joins sheet: a print face has no joining stroke, so it
+ * would print `in` as an `i` and an `n` with a gap, under an instruction
+ * telling a child to join them (§6). Read by the layout *and* returned on the
+ * sheet, so the em the page reserved room for and the face the renderer sets
+ * cannot disagree.
  */
 export const fontOf = (config: HandwritingConfig): SheetFont | undefined =>
   config.style === "joins" ? cursiveOf(config.font) : config.font;
 
 /**
- * Every character the sheet will print, as one string.
- *
- * Only ever read by `glyphHeight`, which wants to know whether there is a
- * lower-case letter, a capital or a numeral anywhere on the page — so the
- * order it is joined in and the spaces between are beside the point.
+ * Every character the sheet will print, as one string. Only ever read by
+ * `glyphHeight`, which wants to know whether there is a lower-case letter, a
+ * capital or a numeral anywhere on the page — so the order it is joined in and
+ * the spaces between are beside the point.
  */
 const writtenOf = (config: HandwritingConfig): string =>
   config.style === "passage"
@@ -372,12 +321,9 @@ const longestOf = (things: string[]): number =>
   things.reduce((most, thing) => Math.max(most, thing.length), 1);
 
 /**
- * The rows of a sheet whose things are written across the line.
- *
  * Every row carries the same number of cells, the last one included: a short
- * final row left to divide the width between four cells instead of twelve
- * would set its letters three times as far apart as the row above it, which
- * looks like a mistake and is one.
+ * final row left to divide the width between four cells instead of twelve would
+ * set its letters three times as far apart as the row above it.
  */
 function rowsAcross(
   things: string[],
@@ -413,8 +359,7 @@ const rowsDown = (lines: string[], styles: TraceStyle[]): TraceRow[] =>
  *
  * One block and not two, so there is no `BLOCK_GAP` to pay for and no way for
  * the rules under a passage to drift out of step with the rules it is written
- * on — the blank places are rows of the same block, drawn by the same renderer
- * off the same ruling.
+ * on: the blank places are rows of the same block.
  */
 function bodyOf(config: HandwritingConfig): Block[] {
   const styles = traceStyles(config);
@@ -456,10 +401,9 @@ const TITLE: Record<HandwritingStyle, string> = {
  * What the same sheet is called when the letters join.
  *
  * Only the three that change: a numeral is a numeral in any hand, and a joins
- * sheet is never anything but cursive. Titles rather than a "(cursive)" suffix
+ * sheet is never anything but cursive. Titles rather than a "(cursive)" suffix,
  * because the title is what somebody reads off the paper on the fridge a week
- * later, and "Letter practice" on a page of joined letters is a sheet that
- * doesn't say what it taught.
+ * later.
  */
 const CURSIVE_TITLE: Record<string, string> = {
   letters: "Cursive letters",
@@ -478,12 +422,8 @@ const NOUN: Record<HandwritingStyle, string> = {
 
 /**
  * What the child is being asked to do, read off the row rather than off the
- * config.
- *
- * The four sentences follow from what `traceStyles` actually produced, so a
- * sheet with nothing dotted on it never says "trace", and a sheet with no empty
- * place never promises one. The same rule the integers sheet follows when it
- * decides whether to mention powers.
+ * config — so a sheet with nothing dotted on it never says "trace", and a sheet
+ * with no empty place never promises one.
  *
  * "Copy" needs a model as well as an empty place, which is the one that is easy
  * to get wrong: `trace: "none"` with the progression off draws nothing at all,
@@ -506,12 +446,10 @@ export function instructionOf(config: HandwritingConfig): string {
 }
 
 /**
- * The words a copywork sheet is set on, and nothing for the sheets that are
- * set on an alphabet.
- *
- * One function so that the four places that ask — the layout, the header, the
- * page and the one-line description — cannot disagree about which passage is
- * on the paper.
+ * The words a copywork sheet is set on, and nothing for the sheets set on an
+ * alphabet. One function, so the four places that ask — the layout, the header,
+ * the page and the one-line description — cannot disagree about which passage
+ * is on the paper.
  */
 const sourceOf = (config: HandwritingConfig): CopyworkSource | undefined =>
   config.style === "passage" ? copyworkSource(config) : undefined;
@@ -521,14 +459,10 @@ const sourceOf = (config: HandwritingConfig): CopyworkSource | undefined =>
  * what is being copied.
  *
  * Read off the face the sheet will actually be set in rather than off the one
- * the config asked for, so the title and the letterforms can't disagree — a
- * joins sheet whose config says `print` still prints joined, and still says so.
- *
- * A passage out of the library names itself in the title: "Copywork" over a
- * page of Psalm 23 is a sheet that does not say what is on it, and the title is
- * what somebody reads off the paper on the fridge a week later. A pasted
- * passage keeps the plain title, because the only name we would have for it is
- * one we invented.
+ * the config asked for, so a joins sheet whose config says `print` still prints
+ * joined and still says so. A passage out of the library names itself in the
+ * title; a pasted one keeps the plain title, because the only name we would
+ * have for it is one we invented.
  */
 function titleOf(config: HandwritingConfig): string {
   const plain = own(TITLE, config.style, TITLE.letters);
@@ -569,12 +503,9 @@ function contentLabel(config: HandwritingConfig): string {
 }
 
 /**
- * The header this sheet will actually print.
- *
- * Written once and read by both the layout and the build, so the two cannot
- * disagree about what is at the top of the page — a header the layout under-
- * reserved for is a row of writing below the bottom margin, which on ⅝ paper
- * is a second sheet out of the printer.
+ * The header this sheet will actually print — written once and read by both the
+ * layout and the build, because a header the layout under-reserved for is a row
+ * of writing below the bottom margin.
  */
 function headerOf(config: HandwritingConfig): SheetOptions {
   return {
@@ -609,10 +540,10 @@ export function buildHandwritingSheet(
   return {
     paper: config.paper,
     fontPt: config.fontPt,
-    // The one presentation field a family sets for itself, and the only one it
-    // has a reason to: `present()` in index.ts leaves a family's own answer
-    // alone, so a joins sheet keeps the joining face it has to be drawn in and
-    // every other sheet gets the parent's choice untouched.
+    // The one presentation field a family sets for itself: `present()` in
+    // index.ts leaves a family's own answer alone, so a joins sheet keeps the
+    // joining face it has to be drawn in and every other sheet gets the
+    // parent's choice untouched.
     font: fontOf(config),
     header: {
       title: head.title ?? "",
@@ -620,13 +551,13 @@ export function buildHandwritingSheet(
       fields: head.fields,
     },
     blocks: bodyOf(config),
-    // No game to point at. A handwriting sheet has no race behind it — the
-    // words on one may come from the jungle, but what is being practised is the
-    // shape of the letters and not the spelling (§16).
+    // No game to point at: the words on a handwriting sheet may come from the
+    // jungle, but what is being practised is the shape of the letters and not
+    // the spelling (§16).
     //
-    // `source` is where the words came from, on the sheets that quote somebody:
-    // printed on every page that carries a passage the library asks credit for,
-    // which for Scripture is a condition rather than a courtesy (§12).
+    // `source` is where the words came from, printed on every page that carries
+    // a passage the library asks credit for — which for Scripture is a
+    // condition rather than a courtesy (§12).
     footer: {
       credit: SHEET_CREDIT,
       url: SHEET_URL,

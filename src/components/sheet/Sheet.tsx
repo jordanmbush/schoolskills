@@ -1,21 +1,15 @@
 /**
  * A `Sheet`, as HTML.
  *
- * This is the component the whole Print Shop rests on. A sheet is real
- * elements laid out in real inches — not a canvas, not a PDF blob, not an image
- * — and everything good about the feature falls out of that one decision (§2):
- * the catalog pages ship zero JavaScript, the problems on a multiplication
- * sheet are text a search engine can read, the page is selectable and
- * accessible at any zoom, and it works offline through the existing service
- * worker with nothing added.
+ * Real elements laid out in real inches — not a canvas, not a PDF blob, not an
+ * image (§2).
  *
  * **It takes a `Sheet` and nothing else.** No context, no service, no storage,
  * no state. That is what lets the same component render at build time on a
- * prerendered catalog page and at runtime inside the builder — exactly the
- * trick `App.tsx` already pulls by mounting twice — and it is why the zero-JS
- * property is structural rather than a rule someone has to remember. A renderer
- * with nothing to hydrate needs no `client:*` directive; if one of these ever
- * needs a hook, the hook belongs in the builder around it, not in here.
+ * prerendered catalog page and at runtime inside the builder, and it is why the
+ * zero-JavaScript property is structural rather than a rule someone has to
+ * remember. If one of these ever needs a hook, the hook belongs in the builder
+ * around it, not in here.
  *
  * The stylesheets travel with the component rather than with a layout, so a
  * page that renders a sheet cannot forget to print it properly.
@@ -46,14 +40,11 @@ export function SheetView({ sheet }: { sheet: Sheet }) {
   return (
     <article
       className="sheet"
-      // Not a class, because a key is the same sheet in a different state
-      // rather than a different kind of sheet — and a stylesheet that wants to
-      // mark up the answers can reach it either way.
+      // Attributes rather than classes. A key is the same sheet in a different
+      // state, and a face and a boxed answer place are how this sheet is drawn
+      // rather than what is on it — so each is one attribute here and one rule
+      // in sheet.css, instead of a class threaded down through every block.
       data-answers={sheet.answers ? "true" : undefined}
-      // The same reasoning twice more. A face and a boxed answer place are how
-      // this sheet is drawn rather than what is on it, so both are one
-      // attribute here and one rule in sheet.css — where a font stack belongs
-      // anyway — instead of a class threaded down through every block.
       data-font={sheet.font}
       data-answer-box={sheet.answerBox ? "true" : undefined}
       style={
@@ -69,9 +60,9 @@ export function SheetView({ sheet }: { sheet: Sheet }) {
       {sheet.cutLines && <CutLines paper={sheet.paper} />}
       <SheetHead header={sheet.header} />
       <div className="sheet__blocks">
-        {/* Indexed keys: a block has no identity of its own, the list is
-            rebuilt whole on every change of config, and nothing in it is
-            stateful — there is nothing for a stable key to preserve. */}
+        {/* Indexed keys: the list is rebuilt whole on every change of config
+            and nothing in it is stateful, so there is nothing for a stable key
+            to preserve. */}
         {sheet.blocks.map((block, index) => (
           <BlockView key={index} block={block} metrics={metrics} />
         ))}
@@ -82,20 +73,6 @@ export function SheetView({ sheet }: { sheet: Sheet }) {
 }
 
 /**
- * `@page` for a sheet that isn't on the default stock.
- *
- * `print.css` sets Letter portrait with no margin, which is what most of this
- * audience prints on. `@page` is a document rule with no way to scope it to a
- * class, so the only way a sheet can state its own stock is to emit one — and
- * getting this wrong is not a cosmetic bug: print is the whole of the output
- * path here (§10), so a sheet whose paper and page size disagree is one that
- * prints across two pages or gets scaled down to fit, and there is no PDF to
- * fall back on.
- *
- * A `<style>` element, not a script. It costs nothing at run time and keeps the
- * page free of JavaScript.
- */
-/**
  * Where to cut, drawn over the paper rather than in the flow.
  *
  * The `cutline` block is the other way of saying this and the two are not
@@ -105,10 +82,9 @@ export function SheetView({ sheet }: { sheet: Sheet }) {
  * takes no height at all, which is the only reason `cutLines` can be an option
  * every family shares without any of them re-doing their capacity arithmetic.
  *
- * Both halves of the page, always. Cutting once down the middle and cutting
- * into quarters are the 2-up and 4-up layouts of §17, and which one a parent
- * wanted is a decision they make with the scissors — a guide that is not
- * followed costs nothing, and a guide that is missing costs a re-print.
+ * Both halves of the page, always: which of 2-up and 4-up a parent wanted is a
+ * decision they make with the scissors, and a guide that is not followed costs
+ * nothing where a guide that is missing costs a re-print.
  */
 function CutLines({ paper }: { paper: Paper }) {
   const { width, height } = pageSize(paper);
@@ -119,9 +95,8 @@ function CutLines({ paper }: { paper: Paper }) {
       role="img"
       aria-label="Cut along these lines"
     >
-      {/* HEAVY and the long dash for the same reason `Cutline` uses them: a cut
-          line is read before it is used, and it must not be mistaken for a rule
-          to write on. */}
+      {/* HEAVY and the long dash: a cut line is read before it is used, and it
+          must not be mistaken for a rule to write on. */}
       <line
         className="sheet__rule sheet__rule--cut"
         x1={0}
@@ -144,6 +119,17 @@ function CutLines({ paper }: { paper: Paper }) {
   );
 }
 
+/**
+ * `@page` for a sheet that isn't on the default stock.
+ *
+ * `print.css` sets Letter portrait with no margin. `@page` is a document rule
+ * with no way to scope it to a class, so the only way a sheet can state its own
+ * stock is to emit one — and print is the whole of the output path here (§10),
+ * so a sheet whose paper and page size disagree prints across two pages or
+ * scaled down to fit, with no PDF to fall back on.
+ *
+ * A `<style>` element, not a script, so the page stays free of JavaScript.
+ */
 function PageSize({ paper }: { paper: Paper }) {
   if (paper.size === "letter" && paper.orientation === "portrait") return null;
   const { width, height } = pageSize(paper);

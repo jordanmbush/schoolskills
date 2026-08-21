@@ -5,15 +5,11 @@ import { GRAMMAR_SHEETS, grammarShelf, pathFor } from "../_grammar";
 import HubLinks from "../_HubLinks.astro";
 
 /**
- * The grammar subject hub — a peer of `/printables/spelling`,
- * `/printables/math`, `/printables/handwriting`, `/printables/cursive` and
- * `/printables/bible`.
+ * The grammar subject hub.
  *
- * A listing rather than a sheet, like the other hubs, and that is the right
- * split: nobody searches for "printable list of grammar worksheets". What it is
- * for is the two jobs a hub does — giving a parent who arrived on
- * `/printables/grammar/punctuation-worksheets` somewhere to go next, and giving
- * the five topic pages a crawlable parent that says what they have in common.
+ * A listing rather than a sheet, like the other hubs: nobody searches for
+ * "printable list of grammar worksheets". It gives a parent who arrived on one
+ * topic somewhere to go next, and gives the topic pages a crawlable parent.
  *
  * What they have in common is worth a section of its own here, because it is
  * the argument for the whole shelf being small: grammar answers are judgements
@@ -69,9 +65,7 @@ const groups = grammarShelf();
   {
     /*
       What exists, first — before the page explains itself. Somebody who came
-      looking for punctuation should be one link from punctuation, and the
-      argument for how these sheets are built reads better after you have seen
-      one than before.
+      looking for punctuation should be one link from punctuation.
     */
   }
   <section class="band band--tight wrap">

@@ -1,8 +1,9 @@
 /**
  * Mean, median, mode and range.
  *
- * The one maths family whose question is a *set* rather than a sum, and the one
- * where the usual generator bug is invisible on the page. Three of them:
+ * The shared machinery unchanged (§7, §11), over the one maths family whose
+ * question is a *set* rather than a sum — and the one where the usual generator
+ * bug is invisible on the page. Three of them:
  *
  * **A set with two modes has two right answers.** `3, 3, 7, 7, 9` has no mode
  * worth asking for, and a key naming either of them marks half the class wrong.
@@ -19,10 +20,6 @@
  * **A mean that isn't whole is a decimals sheet in disguise.** So a set whose
  * mean is asked for is drawn until its total divides by its size, and the sheet
  * a parent gets is the one they chose.
- *
- * Everything else the maths families established holds: the answers are
- * computed when the problem is built, the key only decides to print them, and
- * the page comes out of `(config, seed)`.
  */
 import { between, mulberry32, shuffled } from "@/engine/random";
 
@@ -59,7 +56,6 @@ const WORKSPACE = inches(0.55);
 /** The four answers an "all four" problem asks for, one ruled line each. */
 const ALL_LINES = 4;
 
-/** The room those four lines take, which is what the row reserves for them. */
 const allSpace = (fontPt: number): Mil => ALL_LINES * answerLine(fontPt);
 
 /**
@@ -293,13 +289,7 @@ function answerOf(summary: Summary, style: StatisticStyle): string {
 
 /* ── The page ──────────────────────────────────────────────────────────── */
 
-/**
- * How many problems the paper holds, and how wide a column of them is.
- *
- * Arithmetic, not measurement, so `npm run test:unit` can answer "did it fit?"
- * without a browser — and so the same answer serves the catalog page built at
- * build time and the builder's preview (§4).
- */
+/** How many problems the paper holds, and how wide a column of them is (§4). */
 export function statisticsLayout(config: StatisticsConfig): {
   box: Box;
   columns: number;
@@ -333,8 +323,7 @@ export function statisticsLayout(config: StatisticsConfig): {
 /**
  * Every problem on the sheet, in the order they are printed.
  *
- * Exported because it is the whole of what a test has to check, and checking it
- * through the `Sheet` means unwrapping a block union to reach it.
+ * Exported because it is the whole of what a test has to check.
  */
 export function statisticsProblems(
   config: StatisticsConfig,
@@ -358,10 +347,9 @@ export function statisticsProblems(
   let misses = 0;
   while (problems.length < wanted && misses < MISS_BUDGET) {
     const drawn = drawSet(config, rand);
-    // Not what was asked for, or already on the page. Either way the budget
-    // ticks down, and a pool that has run out ends the draw rather than
-    // repeating itself: there are ten sets of three numbers from one to three,
-    // and ten is the honest answer to a request for twenty.
+    // A pool that has run out ends the draw rather than repeating itself:
+    // there are ten sets of three numbers from one to three, and ten is the
+    // honest answer to a request for twenty.
     if (drawn === null || seen.has(drawn.key)) {
       misses += 1;
       continue;
@@ -400,12 +388,8 @@ const titleOf = (config: StatisticsConfig): string =>
   TITLE[config.style] ?? TITLE.all;
 
 /**
- * The header this sheet will actually print.
- *
- * A generated family names its own sheet, so `config.title` is an override and
- * is usually absent — which makes it the wrong thing to reserve space against.
- * Written once and read by both the layout and the build, so the two cannot
- * disagree about what is at the top of the page.
+ * The header this sheet will actually print, which is what the layout reserves
+ * space against — see the note in `arithmetic.ts`.
  */
 function headerOf(config: StatisticsConfig): SheetOptions {
   return {
@@ -450,8 +434,6 @@ export function buildStatisticsSheet(
       title: head.title ?? "",
       instructions: head.instructions,
       fields: head.fields,
-      // Out of what is actually on the page, not out of what was asked for: a
-      // sheet that says "/ 20" over eighteen problems is wrong twice.
       score: { outOf: items.length },
     },
     blocks: [{ kind: "problems", columns, items }],
@@ -465,9 +447,6 @@ export const STATISTICS_SHEET: SheetSpec<StatisticsConfig> = {
   label: "Mean, median and mode",
   world: SHEET_WORLD,
   build: buildStatisticsSheet,
-  // The whole of the answer-key mechanism: all four statistics were worked out
-  // from the set when the problem was built, so a key prints what is already
-  // there rather than summarising the numbers a second time.
   key: (sheet) => ({
     ...sheet,
     answers: true,

@@ -7,12 +7,9 @@
  * face's own (`faces.ts`), so a heading that fits in the print face is not
  * clipped in the dyslexic one — which is half a line wider per character.
  *
- * It lives on its own because three blocks now ask it. `Grid.tsx` was first —
- * a place-value chart's "Hundred thousands" set at half the height of its own
- * column runs four columns wide, and an `<svg>` clips to its viewBox, so what
- * printed was a chart with most of its headings sliced off. A table's headings
- * and a card's big line have exactly the same problem, and three copies of the
- * arithmetic would be three chances to write the division the other way up.
+ * What it guards on a drawn block is a clip rather than an overflow: a heading
+ * set in an `<svg>` is cut off at the viewBox rather than spilling into the
+ * column beside it, so it prints sliced.
  */
 import { glyphAdvance, type Face } from "@/engine/sheets/faces";
 import type { Mil } from "@/engine/sheets/types";

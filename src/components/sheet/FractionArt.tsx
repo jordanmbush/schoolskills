@@ -6,17 +6,15 @@
  * so they have to be visible on the blank sheet a child is handed, not only on
  * the key.
  *
- * That is why the shading is an SVG `fill` and not a CSS background. A browser
- * drops background paint when printing unless the reader has hunted down the
- * "Background graphics" checkbox (§5), and a naming sheet whose pictures came
- * out as a row of empty boxes asks a question that isn't there. `fill` is
- * graphics content: it prints either way. It is also set at a fraction of the
- * ink so that thirty of these a week is not thirty pages of toner.
+ * That is why the shading is an SVG `fill` and not a CSS background: a browser
+ * drops background paint when printing (§5), and a naming sheet whose pictures
+ * came out as a row of empty boxes asks a question that isn't there. `fill` is
+ * graphics content and prints either way. It is set at a fraction of the ink so
+ * that thirty of these a week is not thirty pages of toner.
  *
- * Where the cuts fall is arithmetic and the sizes come from the engine
- * (`fractionart.ts`), which is the same module the family reserved the row
- * height with — so the drawing cannot come out taller than the space that was
- * kept for it.
+ * The sizes come from the engine (`fractionart.ts`), which is the same module
+ * the family reserved the row height with — so the drawing cannot come out
+ * taller than the space that was kept for it.
  */
 import { artHeight, artWidth } from "@/engine/sheets/fractionart";
 import type { FractionArt, Mil } from "@/engine/sheets/types";

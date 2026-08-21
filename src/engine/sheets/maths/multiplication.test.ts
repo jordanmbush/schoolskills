@@ -70,10 +70,9 @@ const config = (
 });
 
 /**
- * Every shape of *problem* the family can print, which is every acceptance
- * criterion of the story bar the grid: tables and mixed sets, both operations
- * and the two together, written along a line and worked the way they are
- * worked, missing numbers, and both long forms with and without remainders.
+ * Every shape of *problem* the family can print: tables and mixed sets, both
+ * operations and the two together, written along a line and worked the way they
+ * are worked, missing numbers, and both long forms with and without remainders.
  *
  * The grid is not here because it has no problems — it is one block with a
  * hundred and forty-four answers inside it — and it gets a section of its own.
@@ -102,8 +101,7 @@ const EVERY_SHAPE: Array<Partial<MultiplicationConfig>> = [
   // Equal digit counts, which is the case the folding question turns on: it is
   // the only shape where a sheet can draw both `26 × 47` and `47 × 26`, and
   // this family says those are two exercises rather than one repetition. Two
-  // digits by two is also the long multiplication most children are set, so
-  // leaving it out left the headline ask of the story untested.
+  // digits by two is also the long multiplication most children are set.
   { style: "long", digits: { into: 2, by: 2 }, count: 6 },
   { style: "long", operation: "divide", digits: { into: 3, by: 1 }, count: 6 },
   { style: "long", operation: "divide", digits: { into: 3, by: 2 }, count: 6 },
@@ -535,7 +533,7 @@ describe("what may be on the page", () => {
   });
 
   it("keeps a division's two questions apart, and folds a multiplication's", () => {
-    // The note the story turns on: 7 × 8 and 8 × 7 are one problem, while
+    // 7 × 8 and 8 × 7 are one problem, while
     // 56 ÷ 7 and 56 ÷ 8 are two questions with two answers — `masteryKey`
     // against `drillKey`, and a worksheet is a drill. Read off the page rather
     // than out of the family's own key.
@@ -606,7 +604,7 @@ describe("what may be on the page", () => {
   it("prints nothing rather than something wrong when the ask is impossible", () => {
     // No tables at all, and a long division of a one-digit number by a
     // two-digit one. Both are empty sheets, which is the honest answer and the
-    // builder's job to prevent (PRINT13).
+    // builder's job to prevent.
     expect(problemsOf({ tables: [] }, 1)).toEqual([]);
     expect(
       problemsOf(

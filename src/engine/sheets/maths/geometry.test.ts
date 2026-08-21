@@ -59,9 +59,9 @@ const config = (over: Partial<GeometryConfig> = {}): GeometryConfig => ({
 });
 
 /**
- * Every shape the family can print, which is every acceptance criterion of the
- * story: area, perimeter and volume in both systems, angles, shape names, and
- * the coordinate plane in one quadrant and in four.
+ * Every shape the family can print: area, perimeter and volume in both
+ * systems, angles, shape names, and the coordinate plane in one quadrant and
+ * in four.
  */
 const EVERY_SHAPE: Array<Partial<GeometryConfig>> = [
   {},

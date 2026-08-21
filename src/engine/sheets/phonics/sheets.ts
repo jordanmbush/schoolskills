@@ -3,35 +3,14 @@
  *
  * Seven sheets over one inventory, and the inventory is the whole of what makes
  * them different from a word list: **nothing on any of these pages uses a
- * spelling that has not been ticked.** That promise is the reason the model in
- * `inventory.ts` exists, it is what every style here is a view of, and it is
- * what `sheets.test.ts` re-derives from the finished page rather than taking on
- * trust — the same independence the word search buys by reading its own grid
- * (§11).
+ * spelling that has not been ticked** (§13). `sheets.test.ts` re-derives that
+ * from the finished page rather than taking it on trust, which is the same
+ * independence the word search buys by reading its own grid.
  *
- * Nothing here is named after a programme and nothing reproduces one. There is
- * no lesson number, no level, and no shipped inventory: a parent's own list is
- * the only one there is (`services/phonics.ts`), and the three typographic
- * marks are independent switches rather than somebody's modified alphabet
- * (`cards.ts`, §13).
- *
- * ── Accent, and what these sheets do not ask ───────────────────────────────
- *
- * `bank.ts` records where General American and RP disagree instead of resolving
- * it, and leaves out the words that have no honest cut in both places. Nothing
- * below filters on `variesByAccent`, and that is a decision rather than an
- * oversight: the one exercise that would need it is asking a child to *hear the
- * difference* between two sounds, and there is no such style here. Every style
- * that prints a word asks about its **spelling** — which spellings it is made
- * of, which spelling is in it, how it is written down when it is read out — and
- * a spelling is the same on both sides of the Atlantic. A sheet that asked
- * whether `cot` and `caught` sound alike would mark half the children who saw
- * it wrong, so it is not one of the seven.
- *
- * Everything the other families promise holds: the page comes out of
- * `(config, seed)` and nothing else, the answers are decided when the sheet is
- * built and the key only prints them, and no row goes on the page that the
- * capacity arithmetic did not reserve.
+ * Nothing below filters on `variesByAccent`, and that is a decision rather than
+ * an oversight: every style here asks about a word's **spelling**, which is the
+ * same on both sides of the Atlantic, and the one exercise that would need the
+ * filter — hearing two sounds apart — is not one of the seven (§13).
  */
 import { mulberry32, shuffled } from "@/engine/random";
 
@@ -97,20 +76,15 @@ const MAX_COLUMNS = 6;
 /** And more than this many columns of words is a page nobody can write on. */
 const MAX_WORD_COLUMNS = 4;
 
-/**
- * As many pairs as a matching sheet may ask for.
- *
- * A cap of its own because the supply is the *spellings* rather than the words,
- * and thirty lines joined across one page is a tangle rather than an exercise.
- */
+/** Thirty lines joined across one page is a tangle rather than an exercise. */
 const MAX_MATCHES = 12;
 
 /**
  * How many words a family needs before it is a family.
  *
- * Two, because a rime with one word behind it is not a pattern — it is a word.
- * A sheet printing "b + ecause = because" under the heading "word families"
- * would be teaching the opposite of what the exercise is for.
+ * Two, because a rime with one word behind it is a word rather than a pattern:
+ * "b + ecause = because" under the heading "word families" teaches the opposite
+ * of what the exercise is for.
  */
 const MIN_FAMILY = 2;
 
@@ -127,9 +101,9 @@ const clamp = (value: number, low: number, high: number): number =>
  *
  * Through `readInventory` on every build rather than once at a door, because
  * there is no door: a config arrives from a saved sheet, from a link, or from
- * the builder, and only one of those has been anywhere near a validator. It
- * drops what this build no longer teaches instead of refusing, so a sheet made
- * before a spelling was retired prints a narrower page rather than none.
+ * the builder, and only one of those has been near a validator. It drops what
+ * this build no longer teaches rather than refusing, so a sheet made before a
+ * spelling was retired prints a narrower page rather than none.
  */
 export const inventoryOf = (config: PhonicsConfig): Inventory =>
   readInventory(config.inventory);
@@ -145,10 +119,10 @@ const markingOf = (config: PhonicsConfig): PhonicsMarking => {
 };
 
 /* ── Word families ────────────────────────────────────────────────────────
-   Derived from the bank rather than authored, and that is safe here in a way
-   it would not be in `words/bank.ts`: a rime is a fact about the cut, and the
-   cuts were made by hand. `cat` is `c` + `at` because somebody wrote down that
-   `cat` is `c a t`, not because anything here decided where a word divides.  */
+   Derived from the bank rather than authored, which is safe here in a way it
+   would not be in `words/bank.ts`: a rime is a fact about the cut, and the cuts
+   were made by hand. `cat` is `c` + `at` because somebody wrote down that `cat`
+   is `c a t`, not because anything here decides where a word divides (§13).  */
 
 type Family = {
   /** The letters a child adds. */
@@ -174,8 +148,8 @@ const isVowel = (part: string): boolean => {
  * three kinds. A word starting on its vowel (`at`, `up`) has no onset to add.
  * A word with no vowel spelling in it is not a word this can reason about. And
  * a word whose rime holds a split vowel (`cake`) has a rime whose letters are
- * not next to each other, so `a_e` + `k` is not "ake" — printing it as though
- * it were would be a spelling sum that does not add up.
+ * not next to each other, so `a_e` + `k` is not "ake" — a spelling sum that
+ * does not add up.
  */
 function splitWord(entry: Word): Family | undefined {
   const at = entry.parts.findIndex(isVowel);
@@ -209,10 +183,9 @@ function splitWord(entry: Word): Family | undefined {
 /**
  * The families a child can read, each one a rime with the words behind it.
  *
- * Grouped by the rime's **spellings** and not by its letters, which is the same
- * distinction the whole model turns on: `be` and `the` end in the same letter
- * and not in the same sound, and a family sheet that put them in one group
- * would be teaching a rhyme that isn't one.
+ * Grouped by the rime's **spellings** and not by its letters: `be` and `the`
+ * end in the same letter and not in the same sound, and a family sheet that put
+ * them in one group would be teaching a rhyme that isn't one (§13).
  *
  * Sight words never reach here, and that is not the `tricky` list being
  * overruled: a word is in a family because it can be *built* out of an onset
@@ -259,9 +232,9 @@ export const phonicsKeyed = (style: PhonicsStyle): boolean => MARKED.has(style);
  *
  * Over the whole bank rather than over the sentences that were drawn, because
  * the reservation is made before the draw: a strip height that depended on the
- * seed would be a layout that disagreed with its own arithmetic from one sheet
- * to the next. It over-reserves on a page whose longest sentence stayed in the
- * bank, which is the cheap side to be wrong on (`chrome.ts`).
+ * seed would disagree with its own arithmetic from one sheet to the next. It
+ * over-reserves on a page whose longest sentence stayed in the bank, which is
+ * the cheap side to be wrong on (`chrome.ts`).
  */
 function stripRows(config: PhonicsConfig, box: Box): number {
   if (box.width <= 0) return 1;
@@ -277,12 +250,7 @@ function stripRows(config: PhonicsConfig, box: Box): number {
   );
 }
 
-/**
- * How much of the page one item of this style takes, and how many fit.
- *
- * Arithmetic rather than measurement, so a unit test, a catalog page built at
- * build time and the builder's live preview all get the same answer (§4).
- */
+/** How much of the page one item of this style takes, and how many fit (§4). */
 export function phonicsLayout(config: PhonicsConfig): {
   box: Box;
   columns: number;
@@ -291,9 +259,8 @@ export function phonicsLayout(config: PhonicsConfig): {
   perPage: number;
 } {
   // Against the header the sheet will print rather than the one the config
-  // holds, and with the score box where there is one. Reserving for the wrong
-  // header is a last row below the bottom margin — invisible on screen, and a
-  // second sheet out of the printer.
+  // holds, and with the score box only where there is one: reserving for the
+  // wrong header is a last row below the bottom margin, invisible on screen.
   const style = styleOf(config);
   const box = sheetBlockBox(headerOf(config), MARKED.has(style));
   const columns = DOWN_THE_PAGE.has(style)
@@ -329,18 +296,15 @@ export function phonicsLayout(config: PhonicsConfig): {
  * How many items this style has to offer, before the paper is asked.
  *
  * Read at seed zero for the three that draw from a shuffled pool, because the
- * *size* of that pool is what is wanted and a shuffle does not change it. Which
- * means the count in `describe` and the count on the paper are one number: a
- * line promising twenty over a page of fourteen would be wrong in the record
- * book and in the picker at once.
+ * *size* of that pool is what is wanted and a shuffle does not change it. So
+ * the count in `describe` and the count on the paper are one number.
  *
  * Matching is the one style where a shuffle *can* change the size, because its
  * rows are paired greedily and a different order knocks out a different
- * spelling. So its supply is the pairing run rather than the spellings counted:
- * counting them said twelve over a page of eleven, which is exactly the line
- * this comment promises does not exist. Seed zero is not the sheet's own seed,
- * so a row either way is still possible there — what is gone is the style
- * systematically over-promising by the width of everything it discards.
+ * spelling. Its supply is therefore the pairing run rather than the spellings
+ * counted: counting them said twelve over a page of eleven. Seed zero is not
+ * the sheet's own seed, so a row either way is still possible — what is gone is
+ * the style systematically over-promising by everything it discards.
  */
 export function phonicsSupply(config: PhonicsConfig): number {
   const inventory = inventoryOf(config);
@@ -376,10 +340,10 @@ const wantedOf = (config: PhonicsConfig): number =>
 
 /** A spelling over the word it is in — a card, and a line of the wall chart. */
 function cardOf(entry: Correspondence, marking: PhonicsMarking): SoundCard {
-  // The table's own example, chosen so the sound is unmistakable when it is
-  // said aloud. Marked like everything else where the bank has a cut for it,
-  // and printed plainly where it hasn't — `measure` and `giant` are examples
-  // this build can name and has never cut.
+  // The table's own example word — the one deliberate exception to "nothing on
+  // the page uses a spelling that has not been ticked" (§13). Marked where the
+  // bank has a cut for it and printed plainly where it hasn't: `measure` and
+  // `giant` are examples this build can name and has never cut.
   const example = WORD_BY_SPELLING.get(entry.example);
   return {
     big: markGrapheme(entry, marking),
@@ -391,8 +355,8 @@ function cardOf(entry: Correspondence, marking: PhonicsMarking): SoundCard {
  * A word cut into its spellings, to be said slowly and then quickly.
  *
  * The prompt is the segmentation, which is why nothing on a blending line is
- * ever *marked*: cutting the word up carries the same information a join would,
- * and a sheet that did both would be telling a child twice.
+ * ever *marked*: cutting the word up carries the same information a join would
+ * (§13).
  */
 const blendingOf = (entry: Word): Problem => ({
   prompt: entry.parts
@@ -452,46 +416,32 @@ function wordPool(config: PhonicsConfig, seed: number): Word[] {
  * **Every word on the right shows exactly one of the spellings on the left**,
  * which is what makes the key the only possible answer rather than the one the
  * generator happened to mean. A sheet with `s` and `sh` down one side and `shop`
- * down the other has two lines a child could defensibly draw, and the honest fix
- * is not to print that sheet: a spelling with no word that avoids the others is
- * dropped rather than paired with an ambiguous one.
+ * down the other has two lines a child could defensibly draw, so a spelling with
+ * no word that avoids the others is dropped rather than paired with an ambiguous
+ * one.
  *
  * **"Shows" is about letters on paper and not about sounds**, and getting that
- * wrong is the whole failure this exercise can have. A child holding a pencil
- * sees `n` on the left and hunts the right-hand column for an `n`; `strong` has
- * one, whatever the table says the `ng` in it is doing. Excluding by
- * correspondence rather than by letters would leave `n` → `land` keyed and
- * `strong` sitting three lines below it, and the child who joined `n` to
- * `strong` read the page correctly and would be marked wrong. So a word is out
- * when another chosen spelling's letters appear *anywhere* in it — `much` bars
- * `h`, `fell` bars `l`, `chief` bars both `c` and `i`.
+ * wrong is the whole failure this exercise can have. A child sees `n` on the
+ * left and hunts the right-hand column for an `n`; `strong` has one, whatever
+ * the table says the `ng` in it is doing. Excluding by correspondence would
+ * leave `n` → `land` keyed with `strong` three lines below it, and the child who
+ * joined `n` to `strong` read the page correctly. So a word is out when another
+ * chosen spelling's letters appear *anywhere* in it — `much` bars `h`, `fell`
+ * bars `l`, `chief` bars both `c` and `i`. A split vowel is the exception,
+ * because its letters are not next to each other and there is nothing to search
+ * for: `a-e` is excluded by the cut instead, which errs the safe way.
  *
- * A split vowel is the one spelling whose letters are not next to each other, so
- * there is nothing to search a word for: `a-e` is excluded by the cut instead —
- * a word is out when the bank says it is spelled with that correspondence. It is
- * the only case where the two rules differ, and it differs in the safe
- * direction.
+ * The pairing itself still goes by the cut: `shop` contains the letters of `s`
+ * and not the sound, so it can never be the *answer* to `s`.
  *
- * The pairing itself still goes by the cut and not by the letters, which is the
- * other half of the same care: `shop` contains the letters of `s` and does not
- * contain the *sound*, so it can never be the answer to `s` however it is
- * spelled.
+ * **The left column is letters, not correspondences**, and this is the one place
+ * in the family where that is the right unit. `th` is two tick boxes — `thin`
+ * and `this` are different sounds — and one thing on paper, so a sheet printing
+ * `th` twice down the left would ask a child to tell two identical lines apart.
  *
- * **The left column is letters, not correspondences**, and this is the one
- * place in the family where that is the right unit. `th` is two tick boxes —
- * `thin` and `this` are different sounds — but they are one thing on paper, and
- * a sheet printing `th` twice down the left would be asking a child to tell two
- * identical lines apart. So the column is deduplicated by its letters and a
- * word is excluded when it shows those letters at all.
- *
- * All of that costs rows — the spellings made of the commonest letters knock
- * each other out — which is why `phonicsSupply` counts this style by running
- * the pairing rather than by counting the spellings it could draw from. A page
- * of nine where ten were asked for is the sheet being honest, and the catalog
- * page says so in as many words.
- *
- * Nothing here is marked either, and for the reason a blending line isn't — a
- * joined `sh` inside `shop` would print the answer beside the question.
+ * All of that costs rows, which is why `phonicsSupply` counts this style by
+ * running the pairing rather than by counting the spellings it could draw from.
+ * A page of nine where ten were asked for is the sheet being honest.
  */
 function matchingOf(
   inventory: Inventory,
@@ -525,9 +475,9 @@ function matchingOf(
   // Built a row at a time rather than chosen and then filled, because the
   // exclusivity runs both ways: a spelling can only join the sheet if a word
   // exists that avoids everything already on it *and* nothing already on it
-  // shows the new spelling. Choosing ten and then looking for words would
-  // print seven rows and throw three away, which is a shorter sheet for no
-  // reason. Every candidate is tried once, so this terminates.
+  // shows the new spelling. Choosing ten and then looking for words would print
+  // seven rows and throw three away. Every candidate is tried once, so this
+  // terminates.
   const pairs: Array<{ grapheme: string; word: string }> = [];
   const chosen = new Set<string>();
   const used = new Set<string>();
@@ -581,11 +531,10 @@ function bodyOf(
         ? pickSentences(inventory, wanted, seed).map((sentence) =>
             stripOf(sentence, marking),
           )
-        : // The chart keeps the table's own order, because a chart is read down
-          // a wall and that order is what makes it readable — the consonants,
-          // then the vowels, each grapheme's sounds together. Cards are
-          // shuffled, so a pack of twelve out of forty is a different twelve on
-          // the next seed.
+        : // The chart keeps the table's own order — consonants, then vowels,
+          // each grapheme's sounds together — because that order is what makes
+          // it readable down a wall. Cards are shuffled, so a pack of twelve out
+          // of forty is a different twelve on the next seed.
           (style === "chart"
             ? taughtSounds(inventory)
             : shuffled(taughtSounds(inventory), mulberry32(seed))
@@ -616,16 +565,12 @@ function bodyOf(
 
   if (style === "families") {
     // One word from each family before a second from any, so a page of twelve
-    // is twelve rimes rather than four rimes three times over — which is the
-    // shape a word-family sheet is set in, and the reason the draw is over the
-    // groups rather than over the words.
+    // is twelve rimes rather than four rimes three times over.
     //
-    // A round at a time, not family after family. Concatenating the groups
-    // would put the whole of `-ip` on the page before `-at` was reached: the
-    // draw would still be over the groups and the paper would still be eleven
-    // `-ip` words out of twenty, which is a spelling list rather than a set of
-    // patterns. Both loops are over arrays the seed has already shuffled, so
-    // the page stays deterministic in `(config, seed)`.
+    // A round at a time, not family after family: concatenating the groups
+    // would put the whole of `-ip` on the page before `-at` was reached, which
+    // is a spelling list rather than a set of patterns. Both loops are over
+    // arrays the seed has already shuffled, so the page stays deterministic.
     const rand = mulberry32(seed);
     const families = familiesOf(inventory);
     const rimes = shuffled([...families.keys()], rand);
@@ -752,9 +697,8 @@ export function buildPhonicsSheet(config: PhonicsConfig, seed: number): Sheet {
       ...(outOf > 0 ? { score: { outOf } } : {}),
     },
     blocks,
-    // The jungle: phonics is the reading half of the word world, and a child
-    // who has just blended twenty words on paper is the one likeliest to run
-    // the race that reads them aloud (§16).
+    // The jungle: a child who has just blended twenty words on paper is the one
+    // likeliest to run the race that reads them aloud (§16).
     footer: { credit: SHEET_CREDIT, url: gameUrl("jungle"), seed },
     answers: false,
   };
@@ -767,9 +711,9 @@ export const PHONICS_SHEET: SheetSpec<PhonicsConfig> = {
   build: buildPhonicsSheet,
   // Every answer was decided when the sheet was built — which words were drawn,
   // which spelling each was paired with, which column it landed in — so a key
-  // cannot disagree with the sheet it belongs to. On the three styles that
-  // withhold nothing it is the same page twice, which is why `phonicsKeyed`
-  // exists for the pages that have to decide whether to print one.
+  // cannot disagree with its sheet. On the three styles that withhold nothing
+  // it is the same page twice, which is what `phonicsKeyed` exists to tell a
+  // page deciding whether to print one.
   key: (sheet) => ({
     ...sheet,
     answers: true,
@@ -785,10 +729,9 @@ export const PHONICS_STYLES = Object.keys(TITLE) as PhonicsStyle[];
 export const phonicsStyleLabel = (style: PhonicsStyle): string => TITLE[style];
 
 /**
- * How many columns this style can honestly be laid out in.
- *
- * Out of the engine rather than named in the option panel, so a style laid out
- * down the page cannot get a stepper that moves a number the paper ignores.
+ * How many columns this style can honestly be laid out in — read by the option
+ * panel rather than restated there, so a style laid out down the page cannot
+ * get a stepper that moves a number the paper ignores.
  */
 export const phonicsColumns = (style: PhonicsStyle): number =>
   DOWN_THE_PAGE.has(style)

@@ -13,24 +13,18 @@ import {
 } from "../_grammar";
 
 /**
- * One prerendered grammar sheet per topic — and the page is the sheet.
+ * One prerendered grammar sheet per topic — and the page is the sheet (§8),
+ * with prose above it and nothing to click before pressing ⌘P.
  *
- * The shape §8 describes, on the shelf where the *lesson* is the thing somebody
- * searched for: "free printable parts of speech worksheets" and "punctuation
- * worksheets" are queries a parent types, and a page that answers one of them
- * has prose above the sheet, the sheet itself as HTML under it, and nothing to
- * click before pressing ⌘P.
+ * **Every page here has a key, unlike the spelling shelf.** There is no copying
+ * sheet and no write-your-own-sentence sheet in this family: every topic
+ * withholds an answer the bank knows, so `answerKey` prints on all of them. It
+ * is the same build with `answers` flipped, so it cannot disagree with the
+ * sheet it belongs to (§7).
  *
- * **Every page here has a key, unlike the spelling shelf.** There is no
- * copying sheet and no write-your-own-sentence sheet in this family: all five
- * topics withhold an answer the bank knows, so `answerKey` prints on every one
- * of them. It is the same build with `answers` flipped, so it cannot disagree
- * with the sheet it belongs to (§7).
- *
- * **One stock, as with maths and spelling.** Nothing on a grammar sheet is a
- * measurement, so there is no A4 twin to keep in step — which is also why this
- * is a single-segment `[slug]` under `grammar/` rather than a rest pattern:
- * there is no second segment to carry.
+ * **One stock, as with maths and spelling** (§8), which is why this is a
+ * single-segment `[slug]` rather than a rest pattern: there is no second
+ * segment to carry.
  *
  * **No client directive on `SheetView`, ever.** `@astrojs/react` renders a
  * component with no `client:*` to HTML at build time, so these pages ship zero

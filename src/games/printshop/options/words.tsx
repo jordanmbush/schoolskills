@@ -1,19 +1,16 @@
 /**
  * A spelling list, and what the sheet asks a child to do with it.
  *
- * The only panel whose first control is the *content* of the sheet rather than
- * a setting on it: every other family draws its problems from a range the
- * engine owns, and this one is handed a list somebody else wrote. So the box
- * comes first, and it is the same box the bootstrap pastes into — see
- * `WordList` in parts.tsx for why there is only one of them.
+ * The first panel whose first control is the *content* of the sheet rather than
+ * a setting on it: every other family draws its problems from a range the engine
+ * owns, and this one is handed a list somebody else wrote. So the box comes
+ * first, and it is the same box the bootstrap pastes into.
  *
  * Two of the steppers are conditional, and neither is a nicety. Nothing is
  * written three times on a sheet that is only numbered lines, and nothing has
- * letters taken out of it unless the gaps are the exercise. An option that does
- * nothing teaches a parent that the panel doesn't do what it says — which is
- * also why the columns stepper disappears on the two styles that are a list down
- * the page rather than a grid across it (`wordsLayout` is the half of this that
- * decides).
+ * letters taken out of it unless the gaps are the exercise — which is also why
+ * the columns stepper disappears on the two styles that are a list down the page
+ * rather than a grid across it (`wordsLayout` decides).
  */
 import { FieldSet, NumberStepper } from "@/components/ui/kit";
 import type { WordSheetStyle, WordsConfig } from "@/engine/sheets/types";

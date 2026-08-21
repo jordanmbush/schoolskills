@@ -1,25 +1,18 @@
 /**
- * The record book, as paper.
+ * The record book, as paper — a deck mode and the fact ids it ranked in, a sheet
+ * a parent can print out (§14).
  *
- * The headline of §14 and the thing no other worksheet site can do: nobody
- * else knows what the child got wrong. Here that is one function — a deck mode
- * and the fact ids the record book already ranked, in, a sheet a parent can
- * print, out — and the whole of the trick is that neither side has to learn
- * the other's shape. `troubleFacts` speaks in `DeckSpec.drillKey`; a family
- * turns those ids into problems through `Problem.factId`; this module is the
- * only place that knows which family answers for which deck.
+ * Neither side has to learn the other's shape: `troubleFacts` speaks in
+ * `DeckSpec.drillKey`, a family turns those ids into problems through
+ * `Problem.factId`, and this module is the only place that knows which family
+ * answers for which deck. The counterpart is `src/games/printshop/defaults.ts`,
+ * which holds what a parent probably wants when they are choosing for
+ * themselves; this holds what the record book already decided for them.
  *
- * It sits in the engine and not in the builder because three screens ask for
- * it — the race results, the progress screen and the bench — and a sheet built
- * from the same facts has to be the same sheet whichever door it came through.
- * The counterpart is `src/games/printshop/defaults.ts`, which holds what a
- * parent probably wants when they are choosing for themselves; this holds what
- * the record book already decided for them.
- *
- * **Nothing about a child is in what comes out.** A config carries facts,
- * paper and type — never a name, an age or a profile id — which matters more
- * here than anywhere else in the shop, because `practiceHref` puts it in a URL
- * (§14) and this is the one sheet built out of a child's own history.
+ * **Nothing about a child is in what comes out.** A config carries facts, paper
+ * and type — never a name, an age or a profile id — which matters more here than
+ * anywhere else in the shop, because `practiceHref` puts it in a URL and this is
+ * the one sheet built out of a child's own history.
  */
 import { WORD_MODE_PREFIX, deckWordsOf, listIdOf } from "@/engine/decks/words";
 import { WORLDS } from "@/engine/worlds";
@@ -30,11 +23,9 @@ import { DEFAULT_FONT_PT, DEFAULT_PAPER } from "./paper";
 import { encodeSharedSheet } from "./share";
 
 /**
- * What a sheet made out of the record book opens on.
- *
- * The same paper and the same blank name line every other sheet starts with —
- * there is nowhere in a config to put a child's name (§1), which is exactly
- * why this one is safe to hand round as a link.
+ * What a sheet made out of the record book opens on: the same paper and the same
+ * blank name line every other sheet starts with (§1), which is exactly why this
+ * one is safe to hand round as a link.
  */
 const BASE: SheetOptions = {
   paper: DEFAULT_PAPER,
@@ -135,12 +126,12 @@ export function practiceSheet(
 }
 
 /**
- * A spelling sheet from a list, whoever chose it: the record book, a saved
- * deck, or a parent's paste (§14's second and third bootstraps).
+ * A spelling sheet from a list, whoever chose it: the record book, a saved deck,
+ * or a parent's paste (§14's second and third bootstraps).
  *
- * Copying is the style it opens on because it is the one that works for any
- * list at all — a word too short to take a letter out of is still a word to
- * write three times — and the other two styles are one control away.
+ * Copying is the style it opens on because it is the one that works for any list
+ * at all — a word too short to take a letter out of is still a word to write
+ * three times — and the other two styles are one control away.
  */
 export function wordsSheet(words: string[]): SheetConfig {
   return {
@@ -171,11 +162,11 @@ const BENCH = WORLDS.find((world) => world.id === "paper")?.island ?? "/";
 /**
  * The bench, already loaded with this sheet.
  *
- * A link and not a handover, which is what a static site makes cheap: the
- * config *is* the id (§14), so a game screen can send a parent to the builder
- * with the facts already on the paper without anything being stored, posted or
- * kept between two pages. The fragment never leaves the browser either, which
- * is the part that matters for a sheet built out of a child's own history.
+ * A link and not a handover: the config *is* the id (§14), so a game screen can
+ * send a parent to the builder with the facts already on the paper without
+ * anything being stored, posted or kept between two pages. The fragment never
+ * leaves the browser either, which is the part that matters for a sheet built
+ * out of a child's own history.
  */
 export function practiceHref(
   config: SheetConfig,

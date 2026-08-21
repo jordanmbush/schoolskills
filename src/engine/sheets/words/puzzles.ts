@@ -1,26 +1,12 @@
 /**
- * Puzzles, over whatever list a parent already has.
+ * Puzzles, over whatever list a parent already has: the same box of words as
+ * `words/spelling.ts`, set as a game instead of as an exercise.
  *
- * The third family on the words shelf, and the sibling of `words/spelling.ts`
- * rather than a replacement for it: the same box of words, set as a game
- * instead of as an exercise. Three of them — a letter grid to hunt in, a
- * crossword clued from the sentences the sight-word lists already carry, and
- * the letters of a word out of order.
- *
- * Everything the shelf promises holds here unchanged. The page comes out of
- * `(config, seed)` and nothing else; the answers are computed when the sheet is
- * built and the key only decides to print them; no row goes on the page that
- * the capacity arithmetic did not reserve room for.
- *
- * What is different is where the risk sits. A page of sums is checked by doing
- * the sums, and a page of spellings is checked by reading them. A word search
- * is checked by *finding twelve words in a grid*, which nobody does — so a word
- * that quietly failed to place looks exactly like a word that placed well, and
- * the sheet goes out asking a child to find something that is not there. That
- * is the failure this family is built around, and the two generators it leans
- * on (`search.ts`, `crossword.ts`) answer it the same way: the answer key is
- * read out of the finished puzzle, and a word the finished puzzle does not
- * contain is **named on the sheet** rather than dropped.
+ * A word search is checked by finding twelve words in a grid, which nobody
+ * does, so this family is built around one rule and most of the arithmetic
+ * below exists to keep it: **the answer key is read out of the finished puzzle,
+ * and a word the finished puzzle does not contain is named on the sheet rather
+ * than dropped** (§11).
  */
 import { fillClue, shippedClue } from "@/engine/decks/words";
 import { mulberry32, shuffled } from "@/engine/random";
@@ -50,9 +36,8 @@ import { wordsOf } from "./spelling";
 
 /* ── What a puzzle takes on the page ──────────────────────────────────────
    Declared, not measured (§4), and every number here trails sheet.css. The
-   failure is the usual one and it is silent on screen: a block an eighth of an
-   inch taller than the space reserved for it prints its last row on a second
-   sheet of paper.                                                           */
+   failure is silent on screen: a block an eighth of an inch taller than the
+   space reserved for it prints its last row on a second sheet of paper.     */
 
 /** A scrambled word and the rule it is written on: one line of body type. */
 const ROW_EMS = 1.7;
@@ -78,12 +63,10 @@ const MISSING_MARGIN = inches(0.1);
  *
  * Three rows names thirty words at body size, which is the whole list a puzzle
  * may carry — so on an ordinary sheet the cap is not reached and every missing
- * word is named. It bites at the far end, where the type is large and the list
- * is long: at 36pt on a wide margin a single row is a fifth of the writing
- * space, and thirty words would be nine of them. A puzzle that gave nine rows
- * to a paragraph about what is *not* on the page would be a page with no puzzle
- * on it, so past this the line says "… and 22 more" and the count carries what
- * the names cannot.
+ * word is named. It bites where the type is large and the list is long: at 36pt
+ * a single row is a fifth of the writing space, and a page that gave nine of
+ * them to a paragraph about what is *not* on it would be a page with no puzzle
+ * on it. Past this the line says "… and 22 more".
  */
 const MISSING_ROWS = 3;
 
@@ -140,10 +123,8 @@ export type PuzzleWord = {
 /**
  * The words this family works in, and the ones it cannot use at all.
  *
- * Sanitised by the spelling family's own `wordsOf`, because a puzzle config
- * comes through the same three doors a spelling one does — a parent's paste, a
- * saved sheet, a link somebody was sent — and two sanitisers would be two
- * answers to whether `Cat` and `cat` are one word.
+ * Sanitised by the spelling family's own `wordsOf`, because two sanitisers
+ * would be two answers to whether `Cat` and `cat` are one word.
  *
  * Then de-duplicated a second time, on the *grid* form. "its" and "it's" are
  * two words to a marker and one word to a letter grid, and a puzzle that
@@ -180,19 +161,12 @@ export function puzzleWords(config: PuzzleConfig): {
 const CLUE_BLANK = "___";
 
 /**
- * The word's own letters, turned so they no longer spell it.
- *
- * The clue for a word this build has never met. A crossword needs a clue for
- * every entry and a parent's list of Tuesday's spellings comes with none, so
- * the honest fallback is the one clue that can be written for any word at all:
- * its letters, out of order. It is a real clue — the crossings and the square
- * count settle it — and it is the same question the scramble style asks, which
- * is the right kind of coincidence on a shelf where one list makes seven
- * sheets.
+ * The word's own letters, turned so they no longer spell it — the clue for a
+ * word this build has never met (§11).
  *
  * A rotation rather than a shuffle, because the *layout* has to measure the
- * clue list before a seed has chosen anything, and a clue whose length depends
- * on the seed would be a page whose capacity does too. Half the word round,
+ * clue list before a seed has chosen anything, and a clue whose length depended
+ * on the seed would be a page whose capacity did too. Half the word round,
  * falling back to reversing it in the one case where that lands where it
  * started ("abab"). A word of one repeated letter cannot be disguised, and is
  * printed as it is.
@@ -205,14 +179,8 @@ export function letterHint(word: string): string {
 }
 
 /**
- * The clue for one entry: the list's own sentence where there is one.
- *
- * Every shipped sight-word list gives each of its words a short sentence with
- * the word taken out of it — written for the race, where it is what makes a
- * homophone answerable at all — and a crossword clue is *exactly* that shape.
- * So the sheet and the game ask one question of one list, and a crossword set
- * on "First words" is clued in sentences somebody wrote for a five-year-old
- * rather than in dictionary definitions nobody would.
+ * The clue for one entry: the list's own sentence where there is one, so the
+ * sheet and the race ask one question of one list (§11).
  *
  * Looked up on the word as typed first and on the grid form second, so a list
  * written in capitals still finds its sentences and `DONT` still finds the one
@@ -275,14 +243,12 @@ function listHeight(words: string[], head: SheetOptions, width: Mil): Mil {
 }
 
 /* ── The line that admits a word did not fit ──────────────────────────────
-   Declared like every other row on a sheet, which for a while it was not, and
-   this is the one row where that could not come out in the wash: `<Omitted>`
-   renders it *under* a block the trim loops below have just shrunk to exactly
-   the room available, and the trimming is what creates the list it prints. An
-   unreserved line was guaranteed to be there precisely when there was nothing
-   left to put it in. So both halves are here, and they have to agree — what
-   the arithmetic measures and what the renderer sets are the same tokens, out
-   of the same function.                                                      */
+   The one row on a sheet where an unreserved line could not come out in the
+   wash: `<Omitted>` renders it *under* a block the trim loops below have just
+   shrunk to exactly the room available, and the trimming is what creates the
+   list it prints — so it is guaranteed to be there precisely when there is
+   nothing left to put it in. What the arithmetic measures and what the renderer
+   sets are therefore the same tokens, out of the same function.              */
 
 /** What `<Omitted>` puts in front of the list. */
 const MISSING_HEAD = "Not in the grid:";
@@ -294,11 +260,10 @@ type Missing = { words: string[]; more: number };
  * The missing line, as the words it is set from.
  *
  * Tokens rather than a sentence because both halves need it in this shape: the
- * renderer joins them with a space, and the reservation packs them the way a
- * wrapping line of text packs — by whole words, greedily, exactly as
- * `packRows` does for the three wrapping rows in the chrome. A copy of the
- * sentence in `Omitted.tsx` would be a paragraph measured at one length and
- * printed at another, which on this shelf is a line below the bottom margin.
+ * renderer joins them with a space, and the reservation packs them by whole
+ * words, greedily, exactly as `packRows` does for the wrapping rows in the
+ * chrome. A copy of the sentence in `Omitted.tsx` would be a paragraph measured
+ * at one length and printed at another.
  */
 export function missingTokens(words: string[], more: number): string[] {
   return [
@@ -339,12 +304,11 @@ function missingHeight(rows: number, fontPt: number): Mil {
  * right here — the trim loops below are what create them — and are measured.
  * The placer's are not known until the grid has been built, by which point the
  * room is spent, and they get **one row, always**: a sheet where everything
- * fits gives up a row it will not use, which costs a line of white space, and
- * the other side of that trade is a paragraph on a second sheet of paper.
+ * fits gives up a row it will not use, and the other side of that trade is a
+ * paragraph on a second sheet of paper.
  *
  * `anyWords` is what distinguishes "nothing could go wrong" from "nothing has
- * yet": a puzzle with no words at all reserves nothing, because there is
- * nothing that could fail to be in it.
+ * yet": a puzzle with no words at all reserves nothing.
  */
 function missingReserve(
   known: string[],
@@ -361,10 +325,8 @@ function missingReserve(
  *
  * The reservation is made against `MISSING_ROWS`, and a page can be too small
  * to honour it even with the grid at `MIN_GRID` and no word list at all. Then
- * the line takes what remains rather than what it asked for — never none of it,
- * because a page whose grid alone overspills has already lost, and the one
- * thing worse than a line below the bottom margin is a word that vanished
- * without one.
+ * the line takes what remains — never none of it, because the one thing worse
+ * than a line below the bottom margin is a word that vanished without one.
  */
 function missingRoom(reserve: number, left: Mil, fontPt: number): number {
   if (reserve === 0) return 0;
@@ -414,13 +376,12 @@ function omittedOf({ words, more }: Missing): {
 /**
  * The grid, and the words there is room to hunt for in it.
  *
- * Two passes, and they are in this order because they are not equally cheap to
- * be wrong about. A grid one row smaller is a puzzle nobody notices; a word
- * list one word shorter is a word the parent asked for and did not get. So the
- * grid gives way first, down to `MIN_GRID`, and only then are words dropped —
- * and the ones dropped are reported on the sheet with the ones the placer could
- * not fit, because "not in the grid" is true of both and is the only thing the
- * person marking it needs to know.
+ * Two passes, in this order because they are not equally cheap to be wrong
+ * about: a grid one row smaller is a puzzle nobody notices, and a word list one
+ * word shorter is a word the parent asked for and did not get. So the grid
+ * gives way first, down to `MIN_GRID`, and only then are words dropped — and
+ * those are reported on the sheet alongside the ones the placer could not fit,
+ * because "not in the grid" is true of both.
  */
 export function searchLayout(config: PuzzleConfig): {
   box: Box;
@@ -514,23 +475,19 @@ function clueHeight(clues: string[], head: SheetOptions, width: Mil): Mil {
  *
  * Reserved against the **largest** grid the config allows rather than against
  * the one the words turn out to need, because the finished grid is cropped to
- * what landed and cannot be known before it is built. That over-reserves — a
- * dozen short words in a thirteen-square bound crop to eight or nine — and
- * over-reserving costs a row of white space at the foot of the page, where
- * under-reserving costs a second sheet of paper. `chrome.ts` makes the same
- * trade for the same reason.
- *
- * The clue list is reserved as though every clue landed in one column, for the
- * same reason again: it prints in two, and which of them a clue falls in is a
- * question about how many across entries there turned out to be.
+ * what landed and cannot be known before it is built. Over-reserving costs a
+ * row of white space at the foot of the page, where under-reserving costs a
+ * second sheet of paper. `chrome.ts` makes the same trade. The clue list is
+ * reserved as though every clue landed in one column for the same reason: it
+ * prints in two, and which of them a clue falls in is a question about how many
+ * across entries there turned out to be.
  *
  * And the square is reserved at `SEARCH_CELL` rather than at the size the bound
  * would come out at, which is the one piece of this that is not merely
  * cautious. A cropped grid has *fewer columns*, and fewer columns is a bigger
  * square — ten columns of a twenty-square bound get the full 0.34in where the
  * bound itself would have got 0.325in — so a reservation made at the bound's
- * own square would be a grid taller than the room made for it, which is exactly
- * the failure this arithmetic exists to prevent.
+ * own square would be a grid taller than the room made for it.
  */
 export function crosswordLayout(config: PuzzleConfig): {
   box: Box;
@@ -634,7 +591,7 @@ function searchBlocks(
       overlap: config.overlap !== false,
       // The words the *page* had no room for. `buildSearch` keeps the filler
       // off them and then reads the grid to see which are genuinely absent, so
-      // what comes back on `omitted` is both kinds of missing and no lies.
+      // `omitted` comes back holding both kinds of missing and no lies.
       avoid: dropped,
     },
     mulberry32(seed),
@@ -786,8 +743,7 @@ export function buildPuzzleSheet(config: PuzzleConfig, seed: number): Sheet {
     },
     blocks,
     // The jungle, as the spelling sheet's is: a puzzle made of a word list is
-    // the same list the jungle races, and it is the one game a child holding
-    // this page would recognise the words from (§16).
+    // the same list the jungle races (§16).
     footer: { credit: SHEET_CREDIT, url: gameUrl("jungle"), seed },
     answers: false,
   };
@@ -799,8 +755,7 @@ export const PUZZLE_SHEET: SheetSpec<PuzzleConfig> = {
   world: SHEET_WORLD,
   build: buildPuzzleSheet,
   // Every answer here was decided when the sheet was built — which is to say,
-  // read out of the finished puzzle — so a key cannot disagree with the paper
-  // it belongs to. `key` only turns the printing on.
+  // read out of the finished puzzle — so a key cannot disagree with its paper.
   key: (sheet) => ({
     ...sheet,
     answers: true,

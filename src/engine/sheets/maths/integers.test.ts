@@ -219,9 +219,9 @@ const config = (over: Partial<IntegerConfig> = {}): IntegerConfig => ({
 });
 
 /**
- * Every shape the family can print, which is every acceptance criterion of the
- * story: the four operations over the integers, order of operations with two
- * operations and with three, and powers with the roots that undo them.
+ * Every shape the family can print: the four operations over the integers,
+ * order of operations with two operations and with three, and powers with the
+ * roots that undo them.
  */
 const EVERY_SHAPE: Array<Partial<IntegerConfig>> = [
   {},

@@ -54,10 +54,10 @@ const config = (over: Partial<ArithmeticConfig> = {}): ArithmeticConfig => ({
 });
 
 /**
- * Every shape the family can print, which is every acceptance criterion of the
- * story: both layouts, both operations and the two together, regrouping on,
- * off and either, missing numbers, fact families, number lines and workspace.
- * The sweeps below run over all of it rather than over the default.
+ * Every shape the family can print: both layouts, both operations and the two
+ * together, regrouping on, off and either, missing numbers, fact families,
+ * number lines and workspace. The sweeps below run over all of it rather than
+ * over the default.
  */
 const EVERY_SHAPE: Array<Partial<ArithmeticConfig>> = [
   {},
@@ -404,7 +404,7 @@ describe("what may be on the page", () => {
     // Nothing between 1 and 3 carries. A generator that kept drawing would
     // either hang or print a sum that does not regroup on a sheet that says it
     // does; an empty sheet is the honest answer, and the builder's job to
-    // prevent (PRINT13).
+    // prevent.
     const problems = problemsOf(
       { range: { min: 1, max: 3 }, regrouping: "always" },
       1,

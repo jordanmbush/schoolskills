@@ -1,25 +1,16 @@
 /**
  * Handwriting: the ruling, the model, and how many times over.
  *
- * Four questions, and every one of them is on the page rather than behind a
- * mode: which paper, what is written on it, how the model is drawn, and how
- * many times each thing is written before the child is left on their own.
- * Cursive added an answer to the second rather than a fifth question — the
- * joins are one more thing a sheet can be a page of.
- *
- * The paper one is `RulingControls`, the same control the paper family uses —
- * literally the same one, because on ruled paper the spacing between the lines
- * *is* the ruling and there is no version of that question specific to
- * handwriting. All it passes is a shorter list: blank paper has no pitch, so it
- * has no rows to write on, and offering it would name a ruling the sheet then
- * quietly refuses (`ruleOf`).
+ * The paper question is `RulingControls`, literally the control the paper family
+ * uses, because on ruled paper the spacing between the lines *is* the ruling.
+ * All it passes is a shorter list: blank paper has no pitch, so it has no rows
+ * to write on, and offering it would name a ruling the sheet then quietly
+ * refuses (`ruleOf`).
  *
  * What is written changes with the style and nothing else does, which is why
- * only one content control is on screen at a time: a word list on a sheet of
- * the alphabet is a box that does nothing, and a box that does nothing is worse
- * than a missing one. Copywork is the one whose content is a picker rather than
- * a box — every passage in the library, Scripture first, and "your own words"
- * as the last entry in the same list (`passages.tsx`).
+ * only one content control is on screen at a time: a word list on a sheet of the
+ * alphabet is a box that does nothing, and a box that does nothing is worse than
+ * a missing one.
  *
  * The one thing not on this panel is the hand. Cursive is a *face* rather than a
  * style of handwriting sheet — the letters, words and passages above are the
@@ -60,11 +51,9 @@ const CASES = [
 
 /**
  * Every family, or one of them — and "every" first, because the whole
- * progression on one page is what a parent means by a joins sheet.
- *
- * The value for "every" is the empty string rather than a seventh id: absent is
- * what the config means by all of them, and inventing an `"all"` to store would
- * be a second way of saying the same thing in every saved sheet.
+ * progression on one page is what a parent means by a joins sheet. The empty
+ * string rather than a seventh id: absent is what the config already means by
+ * all of them.
  */
 const ALL_JOINS = "";
 

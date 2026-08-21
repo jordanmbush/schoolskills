@@ -54,9 +54,8 @@ const config = (over: Partial<TimeConfig> = {}): TimeConfig => ({
 });
 
 /**
- * Every shape the family can print, which is every acceptance criterion of the
- * story: a dial read, a dial drawn, and the time between two of them — at each
- * of the five steps a clock is taught in.
+ * Every shape the family can print: a dial read, a dial drawn, and the time
+ * between two of them — at each of the five steps a clock is taught in.
  */
 const EVERY_SHAPE: Array<Partial<TimeConfig>> = [
   {},

@@ -113,10 +113,9 @@ const config = (over: Partial<StatisticsConfig> = {}): StatisticsConfig => ({
 });
 
 /**
- * Every shape the family can print, which is every acceptance criterion of the
- * story — including the two that are usually got wrong: a set of an even size,
- * whose median falls between two numbers, and a mode that has to be the only
- * one.
+ * Every shape the family can print, including the two that are usually got
+ * wrong: a set of an even size, whose median falls between two numbers, and a
+ * mode that has to be the only one.
  */
 const EVERY_SHAPE: Array<Partial<StatisticsConfig>> = [
   {},

@@ -1,12 +1,10 @@
 /**
  * Which lesson about words, and how the question is put.
  *
- * Two controls, and the second one depends on the first: a topic states the
- * styles it can honestly be asked in (`studyStyles`), so the row of shapes below
- * is built from the topic rather than being a fixed three with one of them
- * greyed out. "Write a word that rhymes with cat" is a fine thing to ask a child
- * and cannot be printed with an answer key, so rhyming does not offer it — and a
- * control that offered it anyway would be a control that lies.
+ * Two controls, and the second depends on the first: a topic states the styles
+ * it can honestly be asked in (`studyStyles`). "Write a word that rhymes with
+ * cat" is a fine thing to ask a child and cannot be printed with an answer key,
+ * so rhyming does not offer it.
  *
  * Switching to a topic that cannot do the style already chosen sets the style as
  * well, in the same patch. The engine resolves it either way (`styleOf` never

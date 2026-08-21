@@ -123,9 +123,8 @@ const config = (over: Partial<MeasureConfig> = {}): MeasureConfig => ({
 const EVERY_QUANTITY: Quantity[] = ["length", "mass", "capacity"];
 
 /**
- * Every shape the family can print, which is every acceptance criterion of the
- * story: converting and comparing, in both systems, over each of the three
- * things a child measures.
+ * Every shape the family can print: converting and comparing, in both systems,
+ * over each of the three things a child measures.
  */
 const EVERY_SHAPE: Array<Partial<MeasureConfig>> = [
   {},
@@ -395,7 +394,7 @@ describe("what may be on the page", () => {
 
   it("prints nothing rather than something wrong when the ask is impossible", () => {
     // A sheet with no quantity on it has nothing to measure. An empty sheet is
-    // the honest answer, and the builder's job to prevent (PRINT13).
+    // the honest answer, and the builder's job to prevent.
     expect(problemsOf({ quantities: [] }, 1)).toEqual([]);
     expect(problemsOf({ quantities: ["weight" as Quantity] }, 1)).toEqual([]);
   });

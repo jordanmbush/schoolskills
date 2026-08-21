@@ -359,7 +359,7 @@ describe("what may be on the page", () => {
 
   it("prints nothing rather than something wrong when the ask is impossible", () => {
     // A sheet with no topic on it has nothing to write about. An empty sheet is
-    // the honest answer, and the builder's job to prevent (PRINT13).
+    // the honest answer, and the builder's job to prevent.
     expect(problemsOf({ topics: [] }, 1)).toEqual([]);
     expect(problemsOf({ topics: ["algebra" as WordTopic] }, 1)).toEqual([]);
   });

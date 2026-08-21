@@ -1,36 +1,20 @@
 /**
- * A sound inventory: what this child has been taught, and nothing else.
+ * A sound inventory: what this child has been taught, and nothing else — the
+ * mechanism the whole phonics family is built on (docs/printables.md §13).
  *
- * The mechanism the whole phonics family is built on, and the reason there is
- * no sheet in the shop called after anybody's programme (docs/printables.md
- * §13). A parent following a scheme — Direct Instruction, Orton-Gillingham,
- * Jolly Phonics, a school's own — is always at some point in a sequence, and
- * the only thing a worksheet has to know about that sequence is where they have
- * got to. Ticking the sounds says it, works for every programme, and belongs to
- * nobody.
+ * Two lists, because English has two kinds of word. `sounds` is what has been
+ * *taught to decode*, as correspondence ids from `sounds.ts`, and a word is
+ * available when every spelling in it is on that list — not when its letters
+ * are, which is the distinction the whole model turns on: a child who knows
+ * `c`, `a`, `t` and `h` can read `cat` and cannot read `chat`.
  *
- * ── Two lists, because English has two kinds of word ────────────────────────
+ * `tricky` is the parent's own list of words taught by sight, and it is the
+ * only door a word with an `odd` spelling can come through. The rule is never
+ * bent to admit one: `said` is not decodable because a parent ticked `ai`, and
+ * never becomes so.
  *
- * `sounds` is what has been *taught to decode*, as correspondence ids from
- * `sounds.ts`. A word is available when every spelling in it is on that list —
- * not when its letters are, which is the distinction the whole model turns on:
- * a child who knows `c`, `a`, `t` and `h` can read `cat` and cannot read `chat`.
- *
- * `tricky` is the parent's own list of words taught by sight — the "tricky
- * words", "heart words" or "red words" every programme has, under one name or
- * another, because `said` and `one` cannot be sounded out on any day of the
- * course. It is the only door a word with an `odd` spelling in it can come
- * through, so the rule is never bent to admit one: `said` is not decodable
- * because a parent ticked `ai`, and never becomes so.
- *
- * ── Presets ────────────────────────────────────────────────────────────────
- *
- * A saved inventory *is* the preset. There are none in this build and there
- * will not be: a preset is a name plus a set of sounds, both of which the
- * parent writes. Shipping "Lesson 47" would be reproducing somebody's
- * copyrighted sequence by reference, and shipping "Level 3" would be pretending
- * there is one sequence when the whole point of the model is that there isn't.
- * `services/phonics.ts` is where a named one is kept.
+ * A saved inventory *is* the preset — a name plus a set of sounds, both of them
+ * the parent's, kept by `services/phonics.ts`. None is shipped.
  */
 import { mulberry32, shuffled } from "@/engine/random";
 
@@ -52,10 +36,9 @@ export type Inventory = {
 /**
  * A named inventory a parent kept.
  *
- * The same shape as a `SavedSheet` for the same reasons: an id that can't
- * collide with another store's, a name the parent chose, and two timestamps.
- * It belongs to the household rather than to a child — one family teaches one
- * sequence, and a second child arriving at the same point uses the same list.
+ * The same shape as a `SavedSheet`, and scoped the same way: to the household
+ * rather than to a child, because one family teaches one sequence and a second
+ * child arriving at the same point uses the same list.
  */
 export type SavedInventory = Inventory & {
   id: string;
@@ -74,12 +57,12 @@ export const MAX_TRICKY = 200;
 const MAX_TRICKY_LETTERS = 20;
 
 /**
- * Everything the table can teach — the "no constraint" answer.
+ * Everything the table can teach — what a sheet uses when a parent hasn't said
+ * where they are, and what "tick them all" produces.
  *
- * Not a preset, and deliberately unnamed: it is what a sheet uses when a parent
- * hasn't said where they are, and what "tick them all" produces. The `odd`
- * spellings stay out, because they are not teachable in the first place, and
- * every word behind them is reachable through `tricky` anyway.
+ * Deliberately unnamed, so that it is not a preset. The `odd` spellings stay
+ * out because they are not teachable in the first place, and every word behind
+ * them is reachable through `tricky` anyway.
  */
 export function allSounds(): Inventory {
   return {
@@ -95,8 +78,8 @@ export function allSounds(): Inventory {
  * sheet from a build ago, and a record read back out of IndexedDB. Everything
  * that isn't a spelling this build knows about is dropped rather than refused —
  * a sound retired between two releases must narrow the sheet, not stop it
- * printing — and an `odd` spelling is dropped for the reason the header gives:
- * ticking `ai:e` would make `said` decodable, and it isn't.
+ * printing — and an `odd` spelling is dropped because ticking `ai:e` would make
+ * `said` decodable, and it isn't.
  */
 export function readInventory(value: unknown): Inventory {
   const raw = (value ?? {}) as Partial<Inventory>;
@@ -143,11 +126,8 @@ export function canRead(
 }
 
 /**
- * Every word in the bank this child can read. The whole point of the model.
- *
- * Bank order, which is roughly teaching order — a caller wanting a spread takes
- * `pickWords` instead, which shuffles from a seed the way every other family in
- * the shop draws its problems.
+ * Every word in the bank this child can read, in bank order — which is roughly
+ * teaching order. A caller wanting a spread takes `pickWords` instead.
  */
 export function decodable(inventory: Inventory): Word[] {
   const taught = new Set(inventory.sounds);
@@ -183,12 +163,8 @@ export type WordPick = {
 
 /**
  * Words for a sheet: readable, matching the options, in an order the seed
- * decides.
- *
- * Deterministic in `(inventory, options, seed)` like every other generator in
- * the shop, so the same sheet prints the same page and `seed + 1` is "another
- * one like this". No word twice — a page with `cat` on it twice reads as a
- * mistake to the parent and as a trick to the child.
+ * decides — deterministic in `(inventory, options, seed)`, so `seed + 1` is
+ * "another one like this" (§7). No word twice.
  */
 export function pickWords(
   inventory: Inventory,

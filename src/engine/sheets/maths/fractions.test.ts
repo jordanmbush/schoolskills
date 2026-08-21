@@ -65,9 +65,9 @@ const config = (over: Partial<FractionConfig> = {}): FractionConfig => ({
 });
 
 /**
- * Every shape the family can print, which is every acceptance criterion of the
- * story: naming from bars and from circles, equivalence, simplifying, the four
- * operations, like and unlike denominators, and mixed numbers through all of it.
+ * Every shape the family can print: naming from bars and from circles,
+ * equivalence, simplifying, the four operations, like and unlike denominators,
+ * and mixed numbers through all of it.
  */
 const EVERY_SHAPE: Array<Partial<FractionConfig>> = [
   {},
@@ -558,7 +558,7 @@ describe("what may be on the page", () => {
   it("prints nothing rather than something wrong when the ask is impossible", () => {
     // No denominators at all, and unlike denominators from a pool with one
     // denominator in it. Both are empty sheets, which is the honest answer and
-    // the builder's job to prevent (PRINT13).
+    // the builder's job to prevent.
     expect(problemsOf({ denominators: [] }, 1)).toEqual([]);
     expect(problemsOf({ denominators: [4], pairing: "unlike" }, 1)).toEqual([]);
     // And a nought in a saved config is not a slow sheet — it is a fraction

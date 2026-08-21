@@ -183,9 +183,8 @@ const config = (over: Partial<PreAlgebraConfig> = {}): PreAlgebraConfig => ({
 });
 
 /**
- * Every shape the family can print, which is every acceptance criterion of the
- * story: expressions, one- and two-step equations, inequalities, slope from a
- * pair of points and slope from a graph.
+ * Every shape the family can print: expressions, one- and two-step equations,
+ * inequalities, slope from a pair of points and slope from a graph.
  */
 const EVERY_SHAPE: Array<Partial<PreAlgebraConfig>> = [
   {},

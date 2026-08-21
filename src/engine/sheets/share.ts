@@ -1,35 +1,21 @@
 /**
- * A sheet, as something that fits in a link.
+ * A sheet, as something that fits in a link: `#s=<base64url(JSON)>` in the URL
+ * fragment, which §14 settles and §1 is the reason for.
  *
- * §14 settles the mechanism: the builder's config lives in the URL fragment,
- * `#s=<base64url(JSON)>`. That is a static site's whole sharing story — there
- * is no server to hold a saved configuration and hand back a short id, so the
- * configuration *is* the id — and it costs nothing: a fragment is never sent to
- * a server at all, which is the same promise §1 makes about everything else
- * here.
- *
- * It buys three things at once. A catalog page can offer "change what is on
- * this sheet" as an ordinary link, a configured sheet can be passed round a
- * class group, and a bug report is reproducible because the report carries the
- * sheet rather than a description of it.
- *
- * The seed travels with the config for the reason §7 gives: a sheet is
- * reproducible from its URL only if the URL says which one of the infinitely
- * many sheets that config makes was meant. Without it, a parent who followed a
- * link would get the same *kind* of sheet and different problems, which is a
- * feature (`seed + 1`) offered by accident.
- *
- * **A child's name is never in here.** The name line is printed blank and
- * filled in by hand (§1), there is nowhere in a `SheetConfig` to put one, and a
- * shared link is exactly the surface where that would otherwise leak.
+ * The seed travels with the config, because a sheet is reproducible from its URL
+ * only if the URL says which one of the infinitely many sheets that config makes
+ * was meant. Without it a parent who followed a link would get the same *kind*
+ * of sheet with different problems, which is `seed + 1` (§7) offered by
+ * accident. A child's name never travels: there is nowhere in a `SheetConfig` to
+ * put one, and a shared link is the surface where that would otherwise leak.
  *
  * Reading one back is a different job from writing one, and the harder half: a
  * payload that arrives from outside this build is untrusted input, so the
- * decoder is length-capped, checks what it decoded against the spec, and
- * answers `null` rather than throwing. It sits here with the encoder because
- * the two are one format — a guard written in the builder would be a second
- * place the shape of `#s=` is written down, and the pair can be tested in plain
- * Node without a browser to open a link in.
+ * decoder is length-capped, checks what it decoded against the spec, and answers
+ * `null` rather than throwing. It sits here with the encoder because the two are
+ * one format — a guard written in the builder would be a second place the shape
+ * of `#s=` is written down, and the pair can be tested in plain Node without a
+ * browser to open a link in.
  */
 import type {
   HeaderField,
@@ -52,10 +38,10 @@ export type SharedSheet = { config: SheetConfig; seed: number };
  * The payload half of `#s=…` — base64url, so it survives a URL, an email and a
  * printed page without being escaped into something a reader can't retype.
  *
- * Base64url rather than plain base64 for the usual three characters: `+` and
- * `/` are legal in a fragment but travel badly through anything that re-encodes
- * a link, and `=` padding is noise a decoder can restore for itself. The bytes
- * are UTF-8 first, because `btoa` speaks in code units below 256 and a title
+ * Base64url rather than plain base64 for the usual three characters: `+` and `/`
+ * are legal in a fragment but travel badly through anything that re-encodes a
+ * link, and `=` padding is noise a decoder can restore for itself. The bytes are
+ * UTF-8 first, because `btoa` speaks in code units below 256 and a title
  * somebody typed in another language would otherwise throw.
  */
 export function encodeSharedSheet(shared: SharedSheet): string {
@@ -70,10 +56,10 @@ export function encodeSharedSheet(shared: SharedSheet): string {
 
 /* ── Reading one back ──────────────────────────────────────────────────────
    Everything below treats the payload as hostile, because it is: a fragment is
-   whatever was in the address bar. The failure mode being guarded against is
-   not a stolen secret — there is nothing here to steal, and the fragment never
+   whatever was in the address bar. The failure mode being guarded against is not
+   a stolen secret — there is nothing here to steal, and the fragment never
    reaches a server — it is a builder that throws on load and shows a parent a
-   blank page instead of a worksheet.                                        */
+   blank page instead of a worksheet.                                         */
 
 /**
  * The longest payload worth decoding.

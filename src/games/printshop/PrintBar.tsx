@@ -1,12 +1,10 @@
 /**
  * What you do with a sheet once it is right: print it, or take a copy of it.
  *
- * **Print is the entire output path.** There is no PDF library here and there
- * never will be — it would cost about 600KB and a second rendering path that
- * drifts from the first (§10, decided) — so the browser's own dialog is the
- * download as well as the print, and the one line of hint under the button says
- * so in the words the dialog itself uses. A parent who wants a file and does not
- * know that "Save as PDF" is in there will conclude the site cannot make one.
+ * Print is the entire output path and the browser's own dialog is the download
+ * as well as the print (§10), which is what the hint under the button is for: a
+ * parent who does not know "Save as PDF" is in there will conclude the site
+ * cannot make a file at all.
  *
  * The link button copies the address bar, which already holds the whole
  * configuration: `useBuilder` rewrites `#s=` on every change, so there is
@@ -19,12 +17,9 @@ import { Button, Checkbox, FieldSet, NumberStepper } from "@/components/ui/kit";
 import { MAX_VARIANTS } from "./useBuilder";
 
 /**
- * The button's three labels.
- *
- * "Copy it from the address bar" is the refusal, and it is an instruction
- * rather than an apology: the link the button would have copied is already
- * visible, so the one useful thing to say is where. It is held for the same
- * 2400ms as the success, then the button goes back to offering.
+ * The button's three labels. "Copy it from the address bar" is the refusal, and
+ * it is an instruction rather than an apology: the link the button would have
+ * copied is already visible, so the one useful thing to say is where.
  */
 const COPY_LABEL = {
   nothing: "Copy link",
@@ -47,9 +42,8 @@ export function PrintBar({
   onAnswers: (on: boolean) => void;
   onReroll: () => void;
 }) {
-  // What the button last did, which is the only thing it has to say. Three
-  // states rather than a boolean because the failure has to be visible: see
-  // `copyLink`.
+  // Three states rather than a boolean, because the failure has to be visible:
+  // see `copyLink`.
   const [said, setSaid] = useState<"nothing" | "copied" | "refused">("nothing");
 
   const copyLink = async () => {
@@ -60,8 +54,7 @@ export function PrintBar({
       // Clipboard access is refused often enough — an insecure origin, a
       // browser that wants a gesture it didn't see — that failing silently
       // would be a button that does nothing. The URL is in the address bar
-      // either way, so the honest fallback is to say so, and the label is
-      // where it gets said.
+      // either way, so the honest fallback is to say so.
       setSaid("refused");
     }
     window.setTimeout(() => setSaid("nothing"), 2400);

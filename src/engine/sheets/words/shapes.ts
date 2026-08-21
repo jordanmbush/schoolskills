@@ -1,21 +1,11 @@
 /**
- * A word as the outline its letters make.
+ * A word as the outline its letters make: three bands, a box per letter.
  *
- * The one spelling exercise that is a drawing rather than a sentence, and the
- * reason it earns a module: `bed` and `bad` are the same three sounds and a
- * different picture, so a child who has learnt to read the *shape* of a word has
- * a second way in when the letters have not stuck. Every reading scheme calls
- * these word boxes, and the boxes are always the same three bands — a letter
- * reaching the top line, one stopping at the midline, and one with a tail below
- * the baseline.
- *
- * Which band a letter is in is a fact about the letterform, so it is written
- * down here once. It is deliberately *not* read out of a face's own metrics
- * (`faces.ts`): a word shape is the shape a child is taught, and `f` is drawn
- * with a descender in some hands and none in others — a box that changed height
+ * Which band a letter is in is deliberately *not* read out of a face's own
+ * metrics (`faces.ts`). It is the printed convention — `f` is drawn with a
+ * descender in some hands and none in others, and a box that changed height
  * when a parent switched to the cursive face would make the same word two
- * different puzzles. So the classification is the printed convention, and the
- * face only decides how the letter inside the box is drawn.
+ * different puzzles. The face only decides how the letter inside is drawn.
  *
  * The geometry is here too, in shares of one row, because both halves have to
  * agree: the family reserves the row (§4) and `WordShapes.tsx` draws the boxes
@@ -29,8 +19,7 @@ import type { LetterShape, WordShape } from "../types";
  *
  * `t` is in it, though it is drawn shorter than a `b` in most hands: the
  * question a word shape asks is "is this letter taller than an `o`", and a `t`
- * plainly is. Capitals and numerals are added by the test below rather than
- * listed, because there are fifty-two of them and one rule.
+ * plainly is.
  */
 const TALL = new Set([..."bdfhklt"]);
 
@@ -41,14 +30,12 @@ const TAIL = new Set([..."gjpqy"]);
 export function letterShape(letter: string): LetterShape {
   if (TAIL.has(letter)) return "tail";
   if (TALL.has(letter)) return "tall";
-  // A space is not a band, it is the absence of one: a box is a thing a child
-  // writes a letter into, and a two-word entry like "1 Samuel" or "Song of
-  // Solomon" would otherwise print boxes nothing can go in. The slot is still
-  // counted so the boxes either side keep their positions — see `LetterShape`.
+  // A space is the absence of a band: a two-word entry like "1 Samuel" would
+  // otherwise print a box nothing can go in. The slot is still counted so the
+  // boxes either side keep their positions — see `LetterShape`.
   if (/\s/.test(letter)) return "gap";
-  // A capital or a numeral is drawn from the top line to the baseline, which is
-  // the tall box — and `letter.toLowerCase() !== letter` is the whole test,
-  // rather than a range, so an accented capital is not read as a small letter.
+  // A capital or a numeral gets the tall box. `toLowerCase() !== letter` rather
+  // than a range, so an accented capital is not read as a small letter.
   if (/[0-9]/.test(letter) || letter.toLowerCase() !== letter) return "tall";
   return "small";
 }
@@ -60,20 +47,18 @@ export const wordShape = (word: string): WordShape => ({
 });
 
 /* ── How tall a row of boxes is ────────────────────────────────────────────
-   Three bands stacked, as shares of the whole row, and the row itself as a
-   multiple of the body type. The proportions are the ones a primary ruling
-   uses: rather more than a third above the midline, rather more than a third
-   between midline and baseline, and the rest for a tail — which is what makes a
-   `tall` box visibly twice a `small` one at a glance across a page.          */
+   The proportions a primary ruling uses: rather more than a third above the
+   midline, rather more than a third between midline and baseline, and the rest
+   for a tail — which is what makes a `tall` box visibly twice a `small` one at
+   a glance across a page.                                                    */
 
 /**
  * How tall one row of boxes stands, in ems of the body size.
  *
- * Rather taller than a line of type, because a box is not a letterform: what
- * goes in it is a letter written by hand, and a child of five writes larger than
- * the sheet is set in. At the 12pt default this is a shade over four tenths of
- * an inch to the row, which puts a small letter's box at about an eighth of an
- * inch high and a tall one at a third — the size a reading scheme prints them.
+ * Rather taller than a line of type, because what goes in a box is a letter
+ * written by hand and a child of five writes larger than the sheet is set in.
+ * At the 12pt default this is a shade over four tenths of an inch to the row —
+ * the size a reading scheme prints them.
  */
 export const SHAPE_ROW_EMS = 2.6;
 
@@ -86,22 +71,19 @@ export const BANDS = {
 
 /**
  * How wide one box is, in ems — wider than the letter it holds, for the reason
- * the row is taller: it is written in by hand rather than set in type. A box
- * measured to the face's own mean advance would be a box a child cannot write a
- * `w` in.
+ * the row is taller. A box measured to the face's own mean advance would be a
+ * box a child cannot write a `w` in.
  */
 export const SHAPE_BOX_EMS = 1.3;
 
-/** The air between one box and the next, in ems. */
 export const SHAPE_BOX_GAP_EMS = 0.1;
 
 /**
  * The top and the bottom of one letter's box, as shares of the row.
  *
- * `gap` has no box, so it has no band. It answers with the body one anyway
- * rather than throwing or widening the return type: the caller that meets a
- * gap skips drawing before it ever asks, and a total function here is what
- * keeps that the renderer's one decision instead of two.
+ * `gap` has no box, and answers with the body band anyway rather than throwing
+ * or widening the return type: the caller that meets a gap skips drawing before
+ * it ever asks, and a total function keeps that the renderer's one decision.
  */
 export function shapeBand(shape: LetterShape): { top: number; bottom: number } {
   if (shape === "tall")

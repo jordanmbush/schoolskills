@@ -175,8 +175,9 @@ describe("the sheet on a catalog page", () => {
   });
 
   it("walks the child from a model to an empty line, on every page", () => {
-    // The story in one assertion. Every catalog sheet has a solid model to look
-    // at, something to trace, and a place where nobody is helping.
+    // Trace, then copy, then write, in one assertion: every catalog sheet has a
+    // solid model to look at, something to trace, and a place where nobody is
+    // helping.
     for (const sheet of HANDWRITING_SHEETS) {
       const [block] = buildSheet(sheet.config, HANDWRITING_SEED).blocks;
       expect(block.kind, sheet.slug).toBe("trace");

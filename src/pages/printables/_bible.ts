@@ -2,37 +2,16 @@
  * The Scripture sheets the Print Shop has set, and the words that go round
  * them.
  *
- * Underscored so Astro leaves it out of the routing table: it is data two pages
- * share — `bible/[...slug].astro`, which prerenders one sheet per entry, and
- * `bible/index.astro`, which is the subject hub — rather than a route of its
- * own. `_catalog.ts` does the same job for paper, `_maths.ts` for maths, and
- * `_handwriting.ts` and `_cursive.ts` for the two hands.
+ * **A shelf of its own, and a peer of the others** (§12) — not because
+ * Scripture is set apart, but because a shelf is how somebody arrives: "bible
+ * verse copywork printable" is a query a parent types, and a page that answers
+ * it has to exist to be found. The engine has no Scripture family and does not
+ * need one; these are the copywork and memory families with a passage id on
+ * them.
  *
- * **A shelf of its own, and a peer of the others** (§12). Not because Scripture
- * is set apart — the whole design decision is that it isn't; a verse sits in the
- * same passage picker as the Gettysburg Address, and the sheets below are the
- * ordinary copywork and memory families with a passage id on them. It is a
- * shelf because a shelf is how somebody arrives: "bible verse copywork
- * printable" and "scripture handwriting practice" are queries a parent types,
- * and a page that answers one of them has to exist to be found. The engine has
- * no Scripture family and does not need one.
- *
- * **Where it doesn't go is in `_maths.ts`.** A verse reference bolted to a long
- * division serves neither, and that is a craft judgement rather than a
- * positioning one (§12).
- *
- * **The credit prints on every page here.** A public-domain text needs none,
- * and eBible.org attaches one condition to the World English Bible's name that
- * a credit line is the easiest way to keep honestly. The line is the engine's
- * own constant, read off the passage rather than typed here, so the sheet
- * footer and the page around it cannot drift apart.
- *
- * **Two stocks, as with paper and handwriting.** Most of this shelf is ruled,
- * and a ⅝ rule sent to a printer loaded with A4 is scaled to fit — which is no
- * longer a ⅝ rule. The memory sheets have no ruling to distort and could have
- * lived on one stock, as the maths sheets do; they come on both anyway, because
- * a shelf where some pages have an A4 twin and some don't is a shelf a parent
- * has to check.
+ * **Two stocks, two routes, as with paper and handwriting** (§8). Most of this
+ * shelf is ruled, and the memory sheets that are not come on both anyway
+ * because a shelf answers that question once for all of its pages.
  */
 import { DEFAULT_FONT_PT } from "@/engine/sheets/paper";
 import { passage as passageById } from "@/engine/sheets/passages";
@@ -82,11 +61,9 @@ export type BibleSheet = {
   ages: string;
   group: BibleGroup;
   /**
-   * Which passage, by its id in the library.
-   *
-   * Here rather than inside `config` so that the page and the sheet cannot
-   * quote two different verses: `configFor` is what puts it on the config, and
-   * it is also what the page reads to print the passage's own credit line.
+   * Which passage, by its id in the library. Here rather than inside `config`
+   * so that the page and the sheet cannot quote two different verses —
+   * `configFor` is what puts it on the config.
    */
   passage: string;
   /** The sheet itself, less the passage. Prerendered — this IS the page (§8). */
@@ -384,24 +361,15 @@ export const BIBLE_GROUPS: Array<{
   },
 ];
 
-/**
- * The sheet, measured for a stock and pointed at its passage.
- *
- * The passage is put on here rather than written into each config for the
- * reason `BibleSheet.passage` gives: one field, so the verse the page names and
- * the verse the sheet prints cannot come apart.
- */
+/** The sheet, measured for a stock and pointed at its passage. */
 export function configFor(sheet: BibleSheet, size: PaperSize): SheetConfig {
   return { ...sheet.config, passage: sheet.passage, paper: paperOf(size) };
 }
 
 /**
- * The credit the sheet will print, read off the passage itself.
- *
- * Never typed on a page. §12 puts the line in one constant in the engine
- * precisely so that the footer of the sheet and the prose around it cannot
- * disagree, and a catalog page that quoted it by hand would be the second copy
- * that goes stale.
+ * The credit the sheet will print, read off the passage itself — never typed on
+ * a page. §12 keeps the line in one constant in the engine so that the sheet's
+ * footer and the prose around it cannot disagree.
  */
 export const creditFor = (sheet: BibleSheet): string | undefined =>
   passageById(sheet.passage)?.credit;

@@ -5,16 +5,9 @@ import { countNote } from "./Find";
 /**
  * What the search box is allowed to say before it can answer.
  *
- * The island paints its field on the first render and the index arrives after
- * it — deliberately, so the facets are visible rather than secret — which opens
- * a window where a parent can type into a search that has nothing to search
- * yet. Everything below is about that window and the one after a failed fetch.
- * The count is a claim about the whole catalog; making it early or making it
- * after the catalog failed to arrive turns the slow-phone case this feature
- * exists for into a shop that appears to be empty.
- *
- * Testing the sentence rather than the component: it is the whole of the
- * decision, and a `client:only` island would need a DOM to render at all.
+ * The island paints its field before the index arrives, which opens a window
+ * where a parent can type into a search that has nothing to search yet.
+ * Everything below is about that window and the one after a failed fetch.
  */
 describe("countNote", () => {
   it("says nothing until something has been asked for", () => {

@@ -1,7 +1,7 @@
 /**
- * Paper and rulings, in real units.
+ * Paper and rulings, in real units (§4).
  *
- * Everything here is a whole number of thousandths of an inch (`Mil`). The
+ * Everything here is a whole number of thousandths of an inch (`Mil`), and the
  * conversions are one-way on purpose: a size is written in whichever unit it is
  * genuinely specified in — 8.5 inches, 210 millimetres, 12 points — and stored
  * as mil, so nothing downstream has to remember which stock came from which
@@ -71,9 +71,8 @@ export function own<T>(table: Record<string, T>, key: string, fallback: T): T {
  * downstream. Rounding rather than truncating, so a stepper that has been
  * through a JSON round trip lands where the parent left it.
  *
- * It was the chart family's private helper until four more families in the same
- * tier wanted it. A copy each would be four chances to write `??` instead, which
- * is the mistake `own` exists to stop.
+ * One copy for all of them, because a copy each would be another chance to write
+ * the `??` that `own` exists to stop.
  */
 export function whole(
   value: unknown,
@@ -95,11 +94,7 @@ export type PaperStock = {
   height: Mil;
 };
 
-/**
- * Letter is the default because most of the audience is American. A4 is a
- * switch rather than an afterthought (§4): a sheet whose last rule falls off
- * the bottom of the page is worse than no sheet at all.
- */
+/** Letter is the default because most of the audience is American (§4). */
 export const PAPERS: Record<PaperSize, PaperStock> = {
   letter: {
     id: "letter",
@@ -192,10 +187,8 @@ export type Ruling = {
 /**
  * Every ruling in §5, and nothing else claims to be one.
  *
- * Handwriting sizes are named by their pitch because that is what a teacher
- * says out loud — "we're on ⅝ paper this year" — and what a parent searches
- * for. Wide and college ruled carry the margin line at 1.25in that makes a
- * page look like notebook paper rather than lined paper.
+ * Handwriting sizes are named by their pitch because that is what a teacher says
+ * out loud — "we're on ⅝ paper this year" — and what a parent searches for.
  */
 export const RULINGS: Record<RuleStyle, Ruling> = {
   blank: {
@@ -240,7 +233,6 @@ export const RULINGS: Record<RuleStyle, Ruling> = {
     grid: false,
     handwriting: true,
   },
-  // 11/32in and 9/32in — the two rulings a notebook is actually printed at.
   wide: {
     id: "wide",
     label: "Wide ruled",
@@ -309,8 +301,7 @@ export function rulingOf(rule: Rule): Ruling {
  *
  * With descender space on, the writing space (top line down to the baseline)
  * takes two thirds of the repeat and the tail space below it one third — the
- * proportion primary paper is printed at, and the difference between a sheet a
- * child can write a `g` on and one they can't. With it off there is no tail
+ * proportion primary paper is printed at (§5). With it off there is no tail
  * space, so one set's baseline is the next set's top line.
  */
 const DESCENDER_SHARE = 1 / 3;
@@ -350,10 +341,9 @@ export function gridPitch(rule: Rule): Mil {
  * writing space is the whole repeat — you write on the line, and everything
  * above it is the room you have.
  *
- * Here rather than in the family that first needed it: the trace renderer, the
- * handwriting family and the suite that holds the faces to their files all ask
- * the same question, and three copies of it would be three chances to disagree
- * about where a letter sits.
+ * The trace renderer, the handwriting family and the suite that holds the faces
+ * to their files all ask this, and three copies of it would be three chances to
+ * disagree about where a letter sits.
  */
 export function writingSpace(rule: Rule): Mil {
   const lines = ruleLines(rule);

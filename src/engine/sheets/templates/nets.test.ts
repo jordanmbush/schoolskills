@@ -27,23 +27,15 @@ import {
 /**
  * The die, folded.
  *
- * Which two squares of a net end up opposite each other is a fact about
- * *folding*, not about the drawing, and the whole reason a numbered net is
- * worth testing at all: a cube whose opposite faces do not add to seven is not
- * a die, and nobody finds that out until it has been cut out and glued.
+ * `fold()` below walks the net face by face, carrying an orientation, and works
+ * out which way each square ends up pointing in three dimensions — a completely
+ * different route to the answer from the table in `nets.ts`, which is what
+ * makes the claim independent rather than a restatement. Everything else about
+ * the die falls out of the same walk: the seven joins are the seven cube edges
+ * no fold covers, and the seven tabs are one per join.
  *
- * So this suite folds it. `fold()` below walks the net face by face, carrying
- * an orientation, and works out which way each square ends up pointing in
- * three dimensions — which is a completely different route to the answer from
- * the table in `nets.ts`, and is what makes the claim independent rather than a
- * restatement. Everything else about the die falls out of the same walk: the
- * seven joins are the seven cube edges no fold covers, and the seven tabs are
- * one per join.
- *
- * The spinner has one claim and it is a claim about arithmetic that isn't
- * there: the block carries a radius and a list of labels and no angles at all,
- * so the sectors are equal by construction and there is nowhere for a longer
- * word to have bought itself a wider slice.
+ * The spinner's one claim is a claim about arithmetic that isn't there — see
+ * §11 — so what the suite checks is that the block carries no angles.
  */
 
 const config = (over: Partial<NetConfig> = {}): NetConfig => ({

@@ -3,12 +3,12 @@
  *
  * The one place in the maths set where generated *text* is read by a person.
  * Everywhere else a template failure is a sum that looks odd; here it is a page
- * that reads as machinery, and a parent who notices stops trusting the rest of
- * the shop. §11 says it plainly: ship fewer templates rather than repetitive
- * ones. So there are twenty, four to a topic, and each one draws its own cast —
- * a different child, a different thing being counted — because a page of four
- * templates wearing eight names reads as eight questions and a page of one
- * template wearing eight names reads as a form letter.
+ * that reads as machinery — the worksheet farm §11 exists to keep out of the
+ * shop, arrived at from the inside. So there are twenty templates, four to a
+ * topic, and each one draws its own cast — a different child, a different thing
+ * being counted — because a page of four templates wearing eight names reads as
+ * eight questions and a page of one template wearing eight names reads as a form
+ * letter.
  *
  * **Every number a story uses is printed in it, as digits.** Not for the child's
  * sake — for the key's. The suite reads the numbers back out of the sentence in
@@ -606,9 +606,9 @@ export function wordStories(
       spot: pick(SPOTS, rand),
     };
     const drawn = template.draw(range, cast, rand);
-    // Not a question with a whole answer, too long for the row the layout
-    // reserved, or the same numbers as one already on the page. Either way the
-    // budget ticks down and a pool that has run out ends the draw.
+    // Rejected for one of three things: not a question with a whole answer, too
+    // long for the row the layout reserved, or the same numbers as one already
+    // on the page.
     const key =
       drawn === null ? null : `${template.id}:${numbersIn(drawn.text)}`;
     if (drawn === null || key === null || seen.has(key)) {
@@ -675,12 +675,8 @@ function titleOf(config: WordProblemConfig): string {
 }
 
 /**
- * The header this sheet will actually print.
- *
- * A generated family names its own sheet, so `config.title` is an override and
- * is usually absent — which makes it the wrong thing to reserve space against.
- * Written once and read by both the layout and the build, so the two cannot
- * disagree about what is at the top of the page.
+ * The header this sheet will actually print, which is what the layout reserves
+ * space against — see the note in `arithmetic.ts`.
  */
 function headerOf(config: WordProblemConfig): SheetOptions {
   return {
@@ -720,8 +716,6 @@ export function buildWordProblemSheet(
       title: head.title ?? "",
       instructions: head.instructions,
       fields: head.fields,
-      // Out of what is actually on the page, not out of what was asked for: a
-      // sheet that says "/ 20" over eighteen problems is wrong twice.
       score: { outOf: items.length },
     },
     blocks: [{ kind: "problems", columns, items }],
@@ -735,9 +729,6 @@ export const WORD_PROBLEMS_SHEET: SheetSpec<WordProblemConfig> = {
   label: "Word problems",
   world: SHEET_WORLD,
   build: buildWordProblemSheet,
-  // The whole of the answer-key mechanism: every story's answer was worked out
-  // from the same numbers the sentence was printed from, so a key prints what is
-  // already there rather than reading the story back.
   key: (sheet) => ({
     ...sheet,
     answers: true,

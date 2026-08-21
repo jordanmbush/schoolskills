@@ -204,8 +204,8 @@ describe("the grammar family", () => {
       expect(room, where(one)).toBeGreaterThan(5);
       expect(sheet.header.score?.outOf, where(one)).toBe(room);
       expect(sheet.blocks, where(one)).toHaveLength(1);
-      // No game on the other side of a grammar sheet, so the footer says the
-      // site rather than sending a parent to the times tables (§16).
+      // §16's footer URL is the game that matches the sheet, and there is no
+      // grammar race — so this one says the site.
       expect(sheet.footer.url, where(one)).toBe("schoolskills.app");
     }
   });
@@ -218,7 +218,7 @@ describe("the grammar family", () => {
   });
 
   it("falls back to a style the topic has rather than throwing", () => {
-    // A saved sheet outlives the table it was made from (§7): there has never
+    // A saved sheet outlives the table it was made from (§3): there has never
     // been a list of capital letters to circle, and a config that says so still
     // has to print something.
     const circled = config({ topic: "capitals", style: "choose" });

@@ -13,11 +13,6 @@
  * gap in the page and compile perfectly. `ReactNode` would not have fixed it
  * either, because `undefined` is a member of that union. `ReactElement` is not,
  * so a missing arm is `ts(2366)`.
- *
- * Every arm is a prop-driven component that imports no service and no storage,
- * which is what the zero-JavaScript property in §2 rests on — a renderer with
- * nothing to hydrate needs no `client:*` directive, so a catalog page ships the
- * markup and nothing else.
  */
 import type { ReactElement } from "react";
 

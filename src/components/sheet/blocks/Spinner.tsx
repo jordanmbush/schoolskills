@@ -99,6 +99,9 @@ export function Spinner({
       <polygon
         className="sheet__rule sheet__rule--cut"
         points={[
+          // A tail at the left and a barbed tip at the right, so which end
+          // points is still readable once it is cut out and the dial it was
+          // printed under is no longer beside it.
           [middle.x - pointer.length / 2, 2 * radius + gap + pointer.width],
           [middle.x + pointer.length / 2 - pointer.width, 2 * radius + gap],
           [middle.x + pointer.length / 2, 2 * radius + gap + pointer.width],

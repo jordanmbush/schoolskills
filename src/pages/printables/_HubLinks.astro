@@ -6,22 +6,17 @@ import { HUBS, type ShelfId } from "./_shelves";
  * The two rows every hub in the Print Shop ends with: the other shelves, and
  * the ten school years.
  *
- * Underscored so Astro leaves it out of the routing table — the same trick the
- * catalogs use, applied to markup rather than to data. It lives beside
- * `_shelves.ts` and `_grades.ts` rather than in `src/components/` because that
- * is where the data it reads lives, and a component in the shared directory
- * would have to import from `src/pages/` to build itself, which is the
- * dependency direction the layer rules exist to prevent.
+ * It sits beside `_shelves.ts` and `_grades.ts` rather than in
+ * `src/components/` because a component in the shared directory would have to
+ * import from `src/pages/` to build itself, which is the dependency direction
+ * the layer rules exist to prevent.
  *
  * **A page nothing links to is a page nothing ranks**, which is why this is a
- * component rather than a paragraph typed eleven times. The grade hubs are new
- * and every one of them is reachable in one click from every other hub here;
- * the day a shelf is added it appears at the foot of all of them without any
- * page being edited.
+ * component rather than a paragraph typed eleven times: a shelf added tomorrow
+ * appears at the foot of every hub without a page being edited.
  *
- * The current page is marked rather than dropped. A nav that silently omits
- * where you are is a nav a reader has to count, and `.stone[aria-current]`
- * already has a look — the same one the neighbouring-sheet rows use.
+ * The current page is marked rather than dropped — a nav that silently omits
+ * where you are is a nav a reader has to count.
  */
 interface Props {
   /** The shelf this page is, where it is one. */

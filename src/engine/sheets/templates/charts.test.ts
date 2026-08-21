@@ -17,16 +17,15 @@ import type {
 /**
  * The family where being one out is the whole of the bug.
  *
- * Every sheet here is something a child measures against or counts on, so the
- * suite is arithmetic rather than judgement: a 1–100 chart has a hundred
+ * The suite is arithmetic rather than judgement: a 1–100 chart has a hundred
  * squares numbered 1 to 100 in order, a 0–100 line marked every 10 has eleven
  * ticks and not ten, a first-quadrant plane to 10 has eleven gridlines each
  * way, and a heading sits over the column it names.
  *
  * **Counted off the finished blocks.** Nothing below asks the builder what it
- * built — every count is recovered from the `Block[]` a page would render, the
- * way `search.test.ts` reads a word search's key back out of the grid. A
- * generator asserting its own arithmetic agrees with itself whatever it does.
+ * built — every count is recovered from the `Block[]` a page would render,
+ * because a generator asserting its own arithmetic agrees with itself whatever
+ * it does.
  */
 
 const config = (over: Partial<ChartConfig> = {}): ChartConfig => ({

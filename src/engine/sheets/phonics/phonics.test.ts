@@ -35,14 +35,10 @@ import {
 /**
  * The sound inventory, held to the one bar that matters.
  *
- * **Nothing on the page uses a sound that hasn't been taught.** That is the
- * only promise this family makes to a parent, it is the reason the model exists
- * rather than a word list, and it is the promise every case below is a way of
- * checking. A maths sheet with a wrong answer on it is embarrassing; a phonics
- * sheet with an untaught spelling on it hands a five-year-old a word they have
- * been set up to fail, which is worse.
+ * **Nothing on the page uses a sound that hasn't been taught** (§13), and every
+ * case below is a way of checking it.
  *
- * The bank is checked by an independent path in the same spirit the maths
+ * The bank is checked by an independent path, in the same spirit the maths
  * families check their answer keys: the spellings are put back together *from
  * the table* and compared with the word as it is printed, so a mis-cut word
  * fails here rather than on somebody's kitchen table.

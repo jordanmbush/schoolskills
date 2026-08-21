@@ -1,63 +1,15 @@
 /**
  * The sounds of English, and the letters that spell them.
  *
- * The table a sound inventory is ticked out of, and the only place in the
- * Print Shop where a spelling is claimed to say anything. Everything phonics
- * generates is constrained by a set of the ids below, so an error here is a
- * word on a page that a child has not been taught to read yet — which is the
- * one failure this whole family exists to prevent (docs/printables.md §13).
+ * The table a sound inventory is ticked out of, so an error here is a word on a
+ * page a child has not been taught to read yet. **The unit a parent ticks is a
+ * correspondence — a grapheme _and_ the sound it makes — not a grapheme**
+ * (docs/printables.md §13).
  *
- * ── Which accent this describes ────────────────────────────────────────────
- *
- * **The contrasts shared by General American and standard southern British
- * (RP).** Stated rather than assumed, because a phoneme table always describes
- * *somebody's* speech, and a table that quietly described only one of the two
- * would tell half the children using this site that a sound is different from
- * another sound they say identically — or the same as one they don't.
- *
- * A shared table is possible because the two varieties agree about far more
- * than they disagree about: all twenty-four consonants, and the vowel of every
- * word below except where marked. Where they genuinely differ, the divergence
- * is named on the phoneme in `varies` rather than resolved by picking a side:
- *
- *   - **cot / caught.** `/o/` and `/aw/` are two sounds in RP and for many
- *     Americans, and one sound for most of the western and midland United
- *     States and nearly all of Canada. Both are listed, and a sheet that asks a
- *     child to *hear the difference* between them can ask `variesByAccent`
- *     first (see `bank.ts`).
- *   - **father / bother.** `/ah/` and `/o/` are one sound in General American
- *     and two in RP. Same treatment.
- *   - **bath / trap.** The vowel of `bath`, `grass`, `ask` and `after` is `/a/`
- *     in America and `/ah/` in southern England. There is no honest single
- *     answer, so those words are simply not in the bank — see the note there.
- *   - **Rhoticity.** `car`, `her` and `four` end in an r-sound in America and
- *     in most of Ireland, Scotland and the English south-west, and in a longer
- *     vowel in RP. It makes no difference to *spelling*, which is what this
- *     table is for: the letters are the same either way. So the r-coloured
- *     vowels are one entry each, with the difference recorded on them.
- *   - **which / witch.** A minority of speakers keep `wh` as a separate sound.
- *     `wh` is listed as spelling `/w/`, with the note.
- *
- * ── One spelling is not one sound ──────────────────────────────────────────
- *
- * English is many-to-many in both directions and the table says so rather than
- * flattening it. `/k/` is spelled six ways; `ea` spells three different vowels
- * (`eat`, `bread`, `great`) and `ear` three more (`hear`, `earth`, `bear`).
- * So **the unit a parent ticks is a correspondence — a grapheme _and_ the sound
- * it makes — not a grapheme.** That is not a modelling nicety: every systematic
- * programme teaches `ea` as `/ee/` months before it teaches `ea` as `/e/`, and
- * an inventory that could only hold "we've done ea" would put `bread` on a page
- * for a child who can only read `eat`.
- *
- * ── What is not tickable ───────────────────────────────────────────────────
- *
- * A spelling that appears in a handful of words is not a rule, and pretending
- * otherwise is how a generator ends up printing `said` as if it rhymed with
- * `paid`. Those correspondences are recorded — truthfully, because `ai` really
- * does spell `/e/` in `said` — and marked `odd`. An `odd` correspondence can
- * never be in an inventory, so the only door a word using one comes through is
- * the parent's own list of words taught by sight (`Inventory.tricky`), which is
- * exactly how every programme handles them.
+ * What it covers is the sound contrasts General American and standard southern
+ * British hold in common; the handful of places they part company are named on
+ * the phoneme itself, in `varies`, and a word with no honest answer in both is
+ * kept out of `bank.ts` altogether. §13 is where that scope is argued.
  */
 
 /** A sound. `id` is what a correspondence names and what a sheet prints by. */
@@ -72,7 +24,7 @@ export type Phoneme = {
   /**
    * How the varieties in the header differ over this sound, when they do.
    *
-   * Present on eight of the forty-five, absent on the rest — which is the
+   * Present on eight of the forty-five and absent on the rest, which is the
    * point of writing it down: it makes the eight visible instead of leaving a
    * reader to wonder about all forty-five.
    */
@@ -81,8 +33,9 @@ export type Phoneme = {
 
 /* ── Consonants ───────────────────────────────────────────────────────────
    All twenty-four, and the two varieties agree about every one of them. The
-   only footnote in the set is `wh`, and it is a footnote about a *spelling*
-   rather than about a sound — it lives on the correspondence below.        */
+   only footnote is `wh`, and it is about a *spelling* rather than about a sound
+   — a minority of speakers keep it separate from `w`, which is recorded on the
+   correspondence below.                                                     */
 
 const CONSONANT_PHONEMES: Phoneme[] = [
   { id: "b", ipa: "b", example: "bat", kind: "consonant" },
@@ -206,10 +159,8 @@ export const PHONEMES: Phoneme[] = [...CONSONANT_PHONEMES, ...VOWEL_PHONEMES];
 export const PHONEME_BY_ID = new Map(PHONEMES.map((p) => [p.id, p]));
 
 /**
- * A spelling, and the sound it makes *in the words this build prints*.
- *
- * The unit a parent ticks. See the header for why it is this rather than a
- * grapheme, and `odd` for the ones that are recorded but never offered.
+ * A spelling, and the sound it makes *in the words this build prints* — the
+ * unit a parent ticks. See `odd` for the ones recorded but never offered.
  */
 export type Correspondence = {
   /**
@@ -235,9 +186,11 @@ export type Correspondence = {
   /** When the spelling is restricted to a position or a neighbour. */
   note?: string;
   /**
-   * Recorded, but never tickable: a spelling with too few words behind it to
-   * be a rule. See the header — this is the flag that keeps `said` out of a
-   * sheet built for a child who has been taught `ai` as in `rain`.
+   * Recorded, but never tickable: a spelling with too few words behind it to be
+   * a rule. The cut is still honest — `ai` really does spell `/e/` in `said` —
+   * and the flag is what keeps `said` off a sheet built for a child who has
+   * been taught `ai` as in `rain`. The only door a word using one comes through
+   * is the parent's own list of words taught by sight (`Inventory.tricky`).
    */
   odd?: true;
 };
@@ -456,9 +409,9 @@ export const CORRESPONDENCE_BY_ID = new Map(
  * Every spelling of a grapheme, in the order the table lists them.
  *
  * What a tick list is drawn from: a parent looks for the letters they taught
- * this week, and the sounds those letters make are the boxes under them. Built
- * here so the screen never has to group the table itself and get a different
- * answer from the one the shorthand resolver got.
+ * this week, and the sounds those letters make are the boxes under them.
+ * Grouped here so a screen doing it itself cannot get a different answer from
+ * the one the shorthand resolver got.
  */
 export const CORRESPONDENCES_BY_GRAPHEME = CORRESPONDENCES.reduce<
   Map<string, Correspondence[]>
@@ -515,19 +468,15 @@ export function graphemeParts(grapheme: string): [head: string, tail: string] {
 /**
  * A split vowel as it is *printed*: `a-e`, not `a_e`.
  *
- * Beside `graphemeParts` because the two are the same fact seen twice — the
- * underscore is the table's notation for "the consonant goes here", and neither
- * a page nor a tick box may show it. It cannot survive onto a sheet for two
- * separate reasons: it reads as a blank to fill in, which is the opposite of
- * what it means, and `Problem.prompt` uses a single `_` to mark where the answer
- * goes, so a prompt carrying one would have a ruled slot drawn through the
- * middle of a spelling.
+ * The underscore is the table's notation for "the consonant goes here", and it
+ * cannot survive onto a sheet for two reasons: it reads as a blank to fill in,
+ * which is the opposite of what it means, and `Problem.prompt` uses a single
+ * `_` to mark where the answer goes, so a prompt carrying one would have a
+ * ruled slot drawn through the middle of a spelling.
  *
- * Here rather than in `sheets.ts` because a sound card is drawn in `cards.ts`,
- * which the family imports rather than the other way round: a card's big line
- * needs this, and reaching up to the family for it would be a cycle. Everything
- * that prints a grapheme — card, chart, blending prompt, matching column, tick
- * list — goes through it.
+ * Here rather than in `sheets.ts` because `cards.ts` needs it for a card's big
+ * line and the family imports `cards.ts` rather than the other way round.
+ * Everything that prints a grapheme goes through it.
  */
 export const graphemeText = (grapheme: string): string =>
   grapheme.replace("_", "-");

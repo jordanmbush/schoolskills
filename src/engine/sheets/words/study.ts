@@ -1,25 +1,13 @@
 /**
- * Word study: the ten lessons about words that are not spelling a list.
+ * Word study: the ten lessons about words that are not spelling a list, and the
+ * mirror image of `spelling.ts` — there the content is a parent's, here it is
+ * ours, out of the authored bank beside this file (§11).
  *
- * The mirror image of `spelling.ts`. There the content is a parent's and the
- * exercise is ours; here the exercise is a parent's and the content is ours —
- * rhyming, syllables, word families, prefixes and suffixes, plurals,
- * contractions, homophones, synonyms and antonyms, out of the authored bank
- * beside this file (`bank.ts`, which is where the reason for authoring rather
- * than generating is written down).
- *
- * One family rather than ten, because the ten differ only in what is on the
- * paper. Every topic reduces to the same three-field question — what is given,
- * what is wanted, and the short form of the same thing for a column — and from
- * that the three shapes of sheet fall out: a prompt with a ruled slot, four
- * options to circle, or two columns to join with a pencil. What a topic *cannot*
- * honestly be asked in it does not offer (`Topic.styles`): "write a word that
- * rhymes with cat" has a hundred right answers and no answer key.
- *
- * Everything the other families promise holds: the page comes out of
- * `(config, seed)` and nothing else, the answers are decided when the sheet is
- * built and the key only prints them, and no row goes on the page that the
- * capacity arithmetic did not reserve.
+ * One family rather than ten, because every topic reduces to the same
+ * three-field question and from that the three shapes of sheet fall out: a
+ * prompt with a ruled slot, four options to circle, or two columns to join with
+ * a pencil. What a topic *cannot* honestly be asked in it does not offer
+ * (`Topic.styles`).
  */
 import { mulberry32, shuffled } from "@/engine/random";
 
@@ -65,9 +53,8 @@ import {
 } from "./bank";
 
 /* ── What a row takes on the page ─────────────────────────────────────────
-   Declared, not measured (§4), and the three numbers are the three blocks this
-   family prints through — the same ones `spelling.ts` reserves for, because the
-   blocks are the same blocks.                                                */
+   Declared, not measured (§4). The same numbers `spelling.ts` reserves by,
+   because the blocks are the same blocks.                                    */
 
 /** A prompt and its ruled slot, on one line of body type. */
 const ROW_EMS = 1.7;
@@ -99,8 +86,7 @@ const clamp = (value: number, low: number, high: number): number =>
  * two _" — and carries a `_` where the answer belongs inside it rather than
  * after it, the convention `Problem.prompt` already uses. `cue` is the same
  * question with the scaffolding off, for the left of a matching column and the
- * line above a row of options, where the verb has already been said once in the
- * instruction. `answer` is the one right answer somebody wrote down.
+ * line above a row of options, where the instruction has said the verb already.
  */
 type Question = { ask: string; cue: string; answer: string };
 
@@ -113,7 +99,7 @@ type Topic = {
    * The styles this topic can honestly be asked in, its default first.
    *
    * A style a topic does not offer is not an error — a saved sheet outlives the
-   * table below, exactly as it outlives the registry (§7) — so `styleOf`
+   * table below, exactly as it outlives the registry (§3) — so `styleOf`
    * resolves it to the first of these rather than refusing to print.
    */
   styles: WordStudyStyle[];
@@ -125,8 +111,7 @@ type Topic = {
    *
    * A syllable sheet offers one, two, three or four in that order: drawing three
    * "near misses" from the other questions would offer a child the numbers 1, 4
-   * and 2 and call it a choice, and shuffling them would make the row read
-   * differently on every line for no reason.
+   * and 2 and call it a choice.
    */
   options?: string[];
 };
@@ -136,11 +121,9 @@ type Topic = {
 /**
  * Rhyming, one question to a family.
  *
- * One per family and never two, because a matching column of "cat" and "hat"
- * against "mat" and "bat" is a question with two right answers — and the whole
- * point of a rime is that every word in the family answers it. Which family
- * lands on a sheet is the seed's business, which is what makes "another sheet
- * like this one" mean something here.
+ * One per family and never two: the whole point of a rime is that every word in
+ * the family answers it, so a matching column of "cat" and "hat" against "mat"
+ * and "bat" is a question with two right answers.
  */
 const rhymes = (): Question[] =>
   FAMILIES.map((family) => {
@@ -166,11 +149,9 @@ const syllables = (): Question[] =>
   }));
 
 /**
- * A prefix or a suffix, added on the side it goes on.
- *
- * `un + happy` and `care + ful` rather than one order for both: which end the
- * part joins is the difference between the two topics, and a suffix sheet that
- * printed "ful + care" would be teaching the wrong thing in the first line.
+ * A prefix or a suffix, added on the side it goes on: `un + happy` but
+ * `care + ful`, because which end the part joins is the difference between the
+ * two topics.
  */
 const sums = (list: Sum[], before: boolean): Question[] =>
   list.map(({ part, base, word }) => {
@@ -195,11 +176,9 @@ const contractions = (): Question[] =>
 /**
  * A homophone, as a sentence with the pair printed beside it.
  *
- * The pair is on the paper because without it the question has no answer: both
- * spellings are the same sound, so a child who has only heard the sentence
- * cannot be wrong. It rides on `ask` rather than on the instruction line for the
- * same reason a clue does in `wordlists.ts` — the choice belongs to the
- * sentence, and every sentence has a different pair.
+ * The pair rides on `ask` rather than on the instruction line because every
+ * sentence has a different pair — the same reason a clue does in
+ * `wordlists.ts`.
  */
 const homophones = (): Question[] =>
   HOMOPHONES.map(({ pair, sentence, answer }) => ({
@@ -346,9 +325,9 @@ export const styleOf = (config: WordStudyConfig): WordStudyStyle => {
  * How many lines the longest prompt in a topic wraps onto.
  *
  * Taken over the whole bank rather than over the questions that were drawn,
- * because the reservation is made before the draw: a row height that depended on
- * the seed would be a layout that disagreed with `sheetWords`' own arithmetic
- * from one sheet to the next. It over-reserves by a line on a page whose longest
+ * because the reservation is made before the draw: a row height that depended
+ * on the seed would be a layout that disagreed with its own arithmetic from one
+ * sheet to the next. It over-reserves by a line on a page whose longest
  * homophone sentence stayed in the bank, which is the cheap side to be wrong on
  * (`chrome.ts`).
  */
@@ -366,12 +345,11 @@ function promptRows(topic: Topic, config: WordStudyConfig, cell: Mil): number {
 }
 
 /**
- * How many questions the paper holds, and how wide a column of them is.
+ * How many questions the paper holds, and how wide a column of them is (§4).
  *
- * Arithmetic rather than measurement, so a unit test, a catalog page built at
- * build time and the builder's live preview all get the same answer (§4). The
- * three styles are three different shapes of page: a grid of prompts across it,
- * a list of choices down it, or two columns of pairs the width of the paper.
+ * The three styles are three different shapes of page: a grid of prompts across
+ * it, a list of choices down it, or two columns of pairs the width of the
+ * paper.
  */
 export function studyLayout(config: WordStudyConfig): {
   box: Box;
@@ -381,9 +359,8 @@ export function studyLayout(config: WordStudyConfig): {
   perPage: number;
 } {
   // Against the header the sheet will print rather than the one the config
-  // holds, and with the score box, because a word-study sheet is marked out of
-  // its questions. Reserving for the wrong header is a last row below the
-  // bottom margin — invisible on screen, and a second sheet out of the printer.
+  // holds, as `spelling.ts` does: reserving for the wrong header is a last row
+  // below the bottom margin, invisible on screen and a second sheet of paper.
   const box = sheetBlockBox(headerOf(config), true);
   const topic = topicOf(config.topic);
   const style = styleOf(config);
@@ -418,8 +395,7 @@ export function studyLayout(config: WordStudyConfig): {
  * Shuffled rather than taken in order, because the bank is written in teaching
  * order — every plain `-s` plural first — and a sheet of the first twelve would
  * be a sheet of the easy half. Never more than the bank holds and never more
- * than the page holds, so the count is a request exactly as it is everywhere
- * else in the shop.
+ * than the page holds, so the count is a request rather than a promise.
  */
 export function studyQuestions(
   config: WordStudyConfig,
@@ -442,10 +418,9 @@ const written = (question: Question): Problem => ({
  * A question with four things it could be.
  *
  * The near misses are the other answers in the same topic, which is what makes
- * them near: the opposite of "hot" is asked against "small", "night" and "slow"
- * rather than against three words picked out of the dictionary. That the three
- * are never *also* right is a fact about the bank rather than about this
- * function — see the house rules in `bank.ts`.
+ * them near: the opposite of "hot" is asked against "small", "night" and
+ * "slow". That the three are never *also* right is a fact about the bank rather
+ * than about this function — see the house rules in `bank.ts`.
  */
 function chosen(question: Question, topic: Topic, rand: () => number): Choice {
   if (topic.options) {
@@ -478,13 +453,11 @@ function bodyOf(
   const outOf = drawn.length;
   const style = styleOf(config);
   // A second generator off the same seed — `studyQuestions` made its own for
-  // the draw and this one shuffles the options. Two streams rather than one, as
-  // in `spelling.ts`, and reproducibility comes from the seed being fixed
-  // rather than from there being a single sequence: same seed, same draw, same
-  // options, every build (§7). What it costs is that the options replay values
-  // the draw already spent, which is harmless — they are consumed against
-  // different lengths — but it does mean anything reaching for statistical
-  // independence between the two has to thread one generator through instead.
+  // the draw and this one shuffles the options. Reproducibility comes from the
+  // seed being fixed rather than from there being a single sequence (§7). What
+  // it costs is that the options replay values the draw already spent, which is
+  // harmless here, but anything wanting the two streams to be independent has
+  // to thread one generator through instead.
   const rand = mulberry32(seed);
 
   if (style === "choose") {
@@ -581,9 +554,8 @@ export function buildStudySheet(config: WordStudyConfig, seed: number): Sheet {
       score: { outOf },
     },
     blocks,
-    // The jungle, as a spelling sheet does: it is the word world, and a child
-    // who has just sorted twenty plurals on paper is the one likeliest to run
-    // the race that reads words aloud (§16).
+    // The jungle, as a spelling sheet does: a child who has just sorted twenty
+    // plurals on paper is the one likeliest to run the word race (§16).
     footer: { credit: SHEET_CREDIT, url: gameUrl("jungle"), seed },
     answers: false,
   };
@@ -596,7 +568,7 @@ export const WORD_STUDY_SHEET: SheetSpec<WordStudyConfig> = {
   build: buildStudySheet,
   // Every answer was decided when the sheet was built — which questions were
   // drawn, which options they were printed against, which column the pair
-  // landed in — so a key cannot disagree with the sheet it belongs to.
+  // landed in — so a key cannot disagree with its sheet.
   key: (sheet) => ({
     ...sheet,
     answers: true,

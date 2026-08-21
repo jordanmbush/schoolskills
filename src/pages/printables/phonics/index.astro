@@ -5,15 +5,11 @@ import { PHONICS_SHEETS, pathFor, phonicsShelf } from "../_phonics";
 import HubLinks from "../_HubLinks.astro";
 
 /**
- * The phonics subject hub — a peer of `/printables/spelling`,
- * `/printables/grammar`, `/printables/math`, `/printables/handwriting`,
- * `/printables/cursive` and `/printables/bible`.
+ * The phonics subject hub.
  *
- * A listing rather than a sheet, like the other hubs, and that is the right
- * split: nobody searches for "printable list of phonics worksheets". What it is
- * for is the two jobs a hub does — giving a parent who arrived on
- * `/printables/phonics/cvc-words-worksheets` somewhere to go next, and giving
- * the seven pages a crawlable parent that says what they have in common.
+ * A listing rather than a sheet, like the other hubs: nobody searches for
+ * "printable list of phonics worksheets". It gives a parent who arrived on one
+ * sheet somewhere to go next, and gives the pages under it a crawlable parent.
  *
  * What they have in common is worth a section of its own here, because it is
  * the argument for the whole shelf: a phonics worksheet is only worth printing
@@ -69,9 +65,7 @@ const groups = phonicsShelf();
   {
     /*
       What exists, first — before the page explains itself. Somebody who came
-      looking for CVC words should be one link from CVC words, and the argument
-      for how these sheets are built reads better after you have seen one than
-      before.
+      looking for CVC words should be one link from CVC words.
     */
   }
   <section class="band band--tight wrap">

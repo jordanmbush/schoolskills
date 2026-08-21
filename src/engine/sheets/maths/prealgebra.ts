@@ -22,11 +22,9 @@
  * completely plausible.
  *
  * **Algebra folds a sign into the operator.** The integers sheet writes
- * `7 + (−4)`, because two operators in a row cannot be read aloud; algebra
- * writes `3x − 4`, because that is what a textbook, a board and an exam paper
- * print. Both conventions are right for their sheet and neither is right for the
- * other, which is why `factorText` is imported by one of these files and not the
- * other.
+ * `7 + (−4)`; algebra writes `3x − 4`. Both are right for their own sheet and
+ * neither is right for the other, which is why `factorText` is imported by one
+ * of these two files and not the other.
  */
 import { between, mulberry32, shuffled } from "@/engine/random";
 
@@ -563,11 +561,7 @@ const clamp = (value: number, low: number, high: number): number =>
 
 /**
  * How many problems the paper holds, how wide a column of them is, and — on a
- * graph sheet — the plane they are asked about.
- *
- * Arithmetic, not measurement, so `npm run test:unit` can answer "did it fit?"
- * without a browser — and so the same answer serves the catalog page built at
- * build time and the builder's preview (§4).
+ * graph sheet — the plane they are asked about (§4).
  */
 export function preAlgebraLayout(config: PreAlgebraConfig): {
   box: Box;
@@ -606,8 +600,7 @@ export function preAlgebraLayout(config: PreAlgebraConfig): {
 /**
  * Every problem on the sheet, and the points marked on the plane above them.
  *
- * Exported because it is the whole of what a test has to check, and checking it
- * through the `Sheet` means unwrapping a block union to reach it. The marks come
+ * Exported because it is the whole of what a test has to check. The marks come
  * back with the problems rather than being worked out again from them, so a dot
  * on the grid and the slope it is answered with cannot disagree.
  */
@@ -632,10 +625,9 @@ export function preAlgebraProblems(
   let misses = 0;
   while (items.length < wanted && misses < MISS_BUDGET) {
     const drawn = drawOne(config, points, rand);
-    // Not what was asked for, or already on the page. Either way the budget
-    // ticks down, and a pool that has run out ends the draw rather than
-    // repeating itself: six points make fifteen pairs, and fifteen is the
-    // honest answer to a request for twenty.
+    // A pool that has run out ends the draw rather than repeating itself:
+    // six points make fifteen pairs, and fifteen is the honest answer to a
+    // request for twenty.
     if (drawn === null || seen.has(drawn.key)) {
       misses += 1;
       continue;
@@ -701,12 +693,8 @@ const INSTRUCTION: Record<AlgebraStyle, string> = {
 };
 
 /**
- * The header this sheet will actually print.
- *
- * A generated family names its own sheet, so `config.title` is an override and
- * is usually absent — which makes it the wrong thing to reserve space against.
- * Written once and read by both the layout and the build, so the two cannot
- * disagree about what is at the top of the page.
+ * The header this sheet will actually print, which is what the layout reserves
+ * space against — see the note in `arithmetic.ts`.
  */
 function headerOf(config: PreAlgebraConfig): SheetOptions {
   return {
@@ -762,8 +750,6 @@ export function buildPreAlgebraSheet(
       title: head.title ?? "",
       instructions: head.instructions,
       fields: head.fields,
-      // Out of what is actually on the page, not out of what was asked for: a
-      // sheet that says "/ 20" over eighteen problems is wrong twice.
       score: { outOf: items.length },
     },
     blocks: [
@@ -785,9 +771,6 @@ export const PREALGEBRA_SHEET: SheetSpec<PreAlgebraConfig> = {
   label: "Pre-algebra",
   world: SHEET_WORLD,
   build: buildPreAlgebraSheet,
-  // The whole of the answer-key mechanism: every equation was built around the
-  // number that solves it, so a key prints what is already there rather than
-  // solving anything a second time.
   key: (sheet) => ({
     ...sheet,
     answers: true,

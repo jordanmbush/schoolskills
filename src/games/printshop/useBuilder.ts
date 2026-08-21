@@ -1,17 +1,14 @@
 /**
  * Everything the bench holds: a config, a seed, and how many copies of it.
  *
- * The state is deliberately small — five values — because everything else on
- * the screen is derived from them. `buildSheet(config, seed)` is deterministic
- * (§7), so the preview, the answer key, the variants and the shareable URL are
- * all functions of the same five values rather than four things kept in step.
+ * Five values, and everything else on the screen is derived from them.
+ * `buildSheet(config, seed)` is deterministic (§7), so the preview, the answer
+ * key, the variants and the shareable URL are all functions of the same five
+ * rather than four things kept in step.
  *
- * **The URL is the save file.** A static site has no server to hand back a
- * short id for a configuration, so the configuration *is* the id (§14): every
- * change rewrites `#s=`, which makes the address bar a bookmark, a way to send
- * a sheet to somebody, and a reproducible bug report. `replaceState` and not
- * `pushState` — a builder that pushed a history entry per keystroke would take
- * a hundred presses of Back to leave.
+ * The config lives in the URL (§14), and every change rewrites `#s=` with
+ * `replaceState` rather than `pushState` — a builder that pushed a history entry
+ * per keystroke would take a hundred presses of Back to leave.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -52,10 +49,9 @@ export type Builder = {
  * from then on, so re-reading it would be reading its own handwriting.
  *
  * Test-built before it is trusted. `decodeSharedSheet` rebuilds the half of a
- * config every family shares and leaves each family's own fields alone, on the
- * grounds that a family already treats them as untrusted — so this is the belt
- * to that pair of braces, and the one place the promise in §14 ("fall back to
- * defaults rather than throwing") is actually kept.
+ * config every family shares and leaves each family's own fields alone, so this
+ * is the belt to that pair of braces — and the one place §14's "fall back to
+ * defaults rather than throwing" is actually kept.
  */
 function fromHash(): { config: SheetConfig; seed: number } | null {
   if (typeof window === "undefined") return null;
@@ -67,10 +63,9 @@ function fromHash(): { config: SheetConfig; seed: number } | null {
 
   try {
     // Both halves, because a family reaches into its own config twice: once to
-    // make the page and once to say in a line what is on it. `services/sheets`
-    // guards `describeSheet` for exactly this reason, and a bench that built
-    // the paper and then threw on the caption would be no better than one that
-    // threw on the paper.
+    // make the page and once to say in a line what is on it. A bench that built
+    // the paper and then threw on the caption is no better than one that threw
+    // on the paper.
     buildSheet(shared.config, shared.seed);
     describeSheet(shared.config);
   } catch {
@@ -153,13 +148,12 @@ export function useBuilder(): Builder {
 
 /**
  * A value that lags behind by `delay`, so the preview redraws once a parent has
- * stopped rather than once per keystroke.
+ * stopped rather than once per keystroke (§14). Every generator here
+ * draws-and-rejects rather than enumerating, so the cost of two hundred problems
+ * is real at the top of a range.
  *
- * §14 asks for this by name: a sheet of two hundred problems is cheap to build
- * and not free, and every generator here draws-and-rejects rather than
- * enumerating, so the cost is real at the top of a range. The controls
- * themselves are never debounced — a stepper that answered a sixth of a second
- * late would feel broken — only the paper is.
+ * The controls themselves are never debounced — a stepper that answered a sixth
+ * of a second late would feel broken — only the paper is.
  */
 export function useDebounced<T>(value: T, delay = REDRAW_DELAY): T {
   const [settled, setSettled] = useState(value);

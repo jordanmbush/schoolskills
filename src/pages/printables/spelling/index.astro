@@ -5,14 +5,11 @@ import { SPELLING_SHEETS, pathFor, spellingShelf } from "../_spelling";
 import HubLinks from "../_HubLinks.astro";
 
 /**
- * The spelling subject hub — a peer of `/printables/math`,
- * `/printables/handwriting`, `/printables/cursive` and `/printables/bible`.
+ * The spelling subject hub.
  *
- * A listing rather than a sheet, like the other hubs, and that is the right
- * split: nobody searches for "printable list of spelling worksheets". What it is
- * for is the two jobs a hub does — giving a parent who arrived on
- * `/printables/spelling/homophone-worksheets` somewhere to go next, and giving
- * the topic pages a crawlable parent that says what they have in common.
+ * A listing rather than a sheet, like the other hubs: nobody searches for
+ * "printable list of spelling worksheets". It gives a parent who arrived on one
+ * topic somewhere to go next, and gives the topic pages a crawlable parent.
  *
  * It is also the one hub with a game on the other side of it. `/spelling` is the
  * page about Word Jungle and this is the page about its paper, and the two link
@@ -67,9 +64,7 @@ const groups = spellingShelf();
   {
     /*
       What exists, first — before the page explains itself. Somebody who came
-      looking for homophones should be one link from homophones, and the
-      argument for how these sheets are put together reads better after you
-      have seen one than before.
+      looking for homophones should be one link from homophones.
     */
   }
   <section class="band band--tight wrap">

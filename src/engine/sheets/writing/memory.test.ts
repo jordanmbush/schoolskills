@@ -25,21 +25,18 @@ import {
  * repository:
  *
  * **The progression only ever takes.** A word missing in one round is missing
- * in every round after it. A round that handed one back would read as a
- * misprint, and a child correcting themselves against it would be learning the
- * wrong thing.
+ * in every round after it, because a round that handed one back would read as a
+ * misprint.
  *
- * **The answer key is the passage, whole.** Which is the second half of what
- * §12 asks of a sheet that deliberately removes words from a text it names —
- * the first half being the instruction line that says so. Both are checked
- * here, because both are the licence rather than the layout.
+ * **The answer key is the passage, whole** — and the instruction line says the
+ * words were left out on purpose. Both halves are checked here, because both
+ * are the licence rather than the layout (§12).
  *
- * **The last round is the empty one.** A count is a request capped at what the
- * page holds everywhere in the shop, but this family caps the number of rounds
+ * **The last round is the empty one.** This family caps the number of rounds
  * and re-spreads them rather than dropping the end off the progression.
  *
- * **It fits.** Print is the whole of the output path (§10), and a gap is wider
- * than the word it replaces, so the rounds get taller as the sheet goes on.
+ * **It fits.** A gap is wider than the word it replaces, so the rounds get
+ * taller as the sheet goes on.
  */
 
 const VERSE = "for-god-so-loved-the-world";

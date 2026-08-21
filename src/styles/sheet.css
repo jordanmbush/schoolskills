@@ -242,7 +242,7 @@
   overflow: visible;
 }
 
-/* ── The five faces (§17) ───────────────────────────────────────────────────
+/* ── The five faces (§6) ────────────────────────────────────────────────────
    Files now, self-hosted beside the site's own three — see `fonts.css` for
    which face does which job and why none of them is a request to a CDN. What
    is left in here is the part that belongs in a stylesheet: the stack, and the
@@ -264,7 +264,7 @@
    teaches
    are three different models, and picking one would be calling the other two
    wrong. `cursive` stays unqualified because it is the id saved sheets already
-   carry (§7).
+   carry (§6).
 
    Their system fallbacks are a courtesy and nothing more. A script face a
    reader happens to have installed joins where it likes, which on a sheet of
