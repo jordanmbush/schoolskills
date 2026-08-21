@@ -86,6 +86,30 @@ const FRAMEWORK_BAN =
 const CORPUS_BAN =
   "The typing corpus and its generator must not be REACHABLE from src/engine/decks/. decks/index.ts is the front door for every island — flash cards, spelling, the record book, the print shop — and a module in its import graph ships to all of them: an import of the passage library from decks/typing.ts took the shared chunk from 46 KB to 222 KB once already, which is why thirty-three verses are written out by hand in that file today. Reachability is transitive, so the ban covers the whole engine and not decks/ alone — engine/typing/lessons.ts is deliberately importable from the deck layer, so a corpus import there would ship to every island one hop away, with nothing in decks/ looking wrong. Only lexicon.ts, generate.ts and their tests may read the corpus. Everywhere else: generate the words inside the typing island and hand them over in TypingConfig.words — the deck layer builds cards from config.words and never has to know where they came from (docs/typing.md §5.3, decision 7).";
 
+// The one boundary between islands rather than between layers. Everything a
+// second game would otherwise copy already lives in `src/games/race/`, so the
+// message names it: the fix for a violation is nearly always a move, not a new
+// abstraction.
+const CROSS_GAME_BAN =
+  "Games don't import each other — one island reaching into another makes that island a dependency of every game after it, and the timing code is the last thing that should acquire callers by accident. src/games/race/ is the kit they share (the clock and its pause, the 3·2·1, the ghost lane, the HUD, the quit sheet, the rival list, scoring-and-saving), and @/games/race is importable from any game. If what you need is true of any timed run, move it there and import it from @/games/race. If it is about how an answer is entered, marked or displayed, it stays with the game — the second game writes its own.";
+
+/**
+ * A specifier as a repo-relative path, or null if it names a package.
+ *
+ * Shared by the two rules below that judge the RESOLVED target rather than the
+ * specifier as written, which they have to: which module a relative specifier
+ * names depends on the file doing the importing.
+ */
+const resolveSpecifier = (context, specifier) => {
+  if (specifier.startsWith("@/")) return `src/${specifier.slice(2)}`;
+  if (!specifier.startsWith(".")) return null;
+  const here = path.relative(context.cwd, context.filename);
+  return path.posix.join(
+    path.dirname(here).split(path.sep).join("/"),
+    specifier,
+  );
+};
+
 /**
  * Local rules, defined ONCE and registered in a single global block below.
  *
@@ -183,17 +207,6 @@ const localPlugin = {
         // ever have matched.
         const BANNED = /^src\/engine\/typing\/(lexicon|generate)(\.[jt]s)?$/;
 
-        /** A specifier as a repo-relative path, or null if it names a package. */
-        const resolve = (specifier) => {
-          if (specifier.startsWith("@/")) return `src/${specifier.slice(2)}`;
-          if (!specifier.startsWith(".")) return null;
-          const here = path.relative(context.cwd, context.filename);
-          return path.posix.join(
-            path.dirname(here).split(path.sep).join("/"),
-            specifier,
-          );
-        };
-
         // Every way a module can end up in the graph: the import, the
         // re-export — which bloats the chunk exactly as an import does — and
         // the dynamic form, which would get its own chunk but cannot be read
@@ -203,9 +216,54 @@ const localPlugin = {
           const source = node.source;
           if (source?.type !== "Literal") return;
           if (typeof source.value !== "string") return;
-          const target = resolve(source.value);
+          const target = resolveSpecifier(context, source.value);
           if (target && BANNED.test(target))
             context.report({ node: source, messageId: "banned" });
+        };
+        return {
+          ImportDeclaration: check,
+          ImportExpression: check,
+          ExportNamedDeclaration: check,
+          ExportAllDeclaration: check,
+        };
+      },
+    },
+    // The game-to-game ban (CROSS_GAME_BAN above). A local rule because its
+    // file set is `src/games/**`, which block C already covers with the
+    // `@typescript-eslint` no-restricted-imports id and block D with the base
+    // one: a third block over either would silently switch that boundary off
+    // for every game (see the header). A pattern list could not express it
+    // either — `../flashcards/App` and `@/games/flashcards/App` are the same
+    // hop written two ways, and only a rule holding `context.filename` can tell
+    // that the first one leaves the importer's own game.
+    "no-cross-game-imports": {
+      meta: {
+        type: "problem",
+        docs: {
+          description:
+            "Ban imports between game islands; only src/games/race/ is shared.",
+        },
+        schema: [],
+        messages: { banned: CROSS_GAME_BAN },
+      },
+      create(context) {
+        /** Which game a repo-relative path sits in, or null if it sits in none. */
+        const gameOf = (repoPath) =>
+          repoPath.match(/^src\/games\/([^/]+)(?:\/|$)/)?.[1] ?? null;
+
+        const here = path.relative(context.cwd, context.filename);
+        const own = gameOf(here.split(path.sep).join("/"));
+
+        const check = (node) => {
+          const source = node.source;
+          if (source?.type !== "Literal") return;
+          if (typeof source.value !== "string") return;
+          const target = resolveSpecifier(context, source.value);
+          const game = target && gameOf(target);
+          // Not a game import, this game's own, or the shared kit — the one
+          // game directory every other game may read.
+          if (!game || game === own || game === "race") return;
+          context.report({ node: source, messageId: "banned" });
         };
         return {
           ImportDeclaration: check,
@@ -390,6 +448,22 @@ export default defineConfig([
         },
       ],
     },
+  },
+
+  // ── C2 · The game-to-game boundary ─────────────────────────────────────────
+  // Inside the view, and about coupling between islands rather than direction
+  // between layers. A game owns how its answers are entered, marked and shown;
+  // what every timed run shares lives in `src/games/race/`. So `@/games/race`
+  // is the only game import a game may write — see CROSS_GAME_BAN for what a
+  // violation usually means, and `local/no-cross-game-imports` for why it is a
+  // local rule rather than another `no-restricted-imports` block.
+  //
+  // No allowlist. The two imports that broke this — typing reading the flash
+  // cards' `SplitsTable` — were fixed by moving the table into the kit first
+  // (DEBT09), so the rule goes in green with nothing to grandfather.
+  {
+    files: ["src/games/**/*.{ts,tsx}"],
+    rules: { "local/no-cross-game-imports": "error" },
   },
 
   // ── D · The storage primitive ───────────────────────────────────────────────
