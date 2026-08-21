@@ -983,11 +983,14 @@ easier than 95% of anything that comes later. The bar being constant is what
 makes it teach — it says accuracy is not the thing that varies, speed is.
 
 **It bends late, and the table in §5.6 is the authority.** From block 8 the bar
-is 96% rather than 95% — for the endurance lessons, for checkpoint 90, and for
-block 10's prose (91–96) — because holding a rate over a hundred words is a
-different thing from holding it over thirty. Lesson 97 bends the other way,
-asking 99% at a deliberately modest pace, so that "slow down and get it right"
-is a thing the ladder has asked for explicitly at least once. An accuracy
+is 96% rather than 95% — for the endurance lessons and for block 10's prose
+(91–96) — because holding a rate over a hundred words is a different thing from
+holding it over thirty. Checkpoint 90 reaches the same 96% from the other side:
+a checkpoint asks 97%, and this one trades a point away because thirty-five
+words a minute is the whole subject of block 9, and that point is the price of
+asking for it. Lesson 97 bends the other way, asking 99% at a deliberately
+modest pace, so that "slow down and get it right" is a thing the ladder has
+asked for explicitly at least once. An accuracy
 column "corrected" back to a flat 95/97 would be wrong from block 8 to the end.
 
 ### 6.3 · Speed scales, and dips

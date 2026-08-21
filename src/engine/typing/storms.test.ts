@@ -26,7 +26,7 @@ import {
 } from "./storms";
 
 /**
- * The twenty Hailstorm levels (§5.6, §8.1, §8.3, §8.10).
+ * The twenty Hailstorm levels (§5.6, §5.7, §8.1, §8.3, §8.10).
  *
  * Three kinds of claim live here: **reachability**, that a storm only rains
  * keys the ladder has taught by its own rung; **safety**, which is a count of

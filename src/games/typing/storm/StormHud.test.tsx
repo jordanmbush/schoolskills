@@ -115,7 +115,7 @@ describe("StormHud", () => {
   });
 
   /*
-   * The way out (§8.8). A storm fills the viewport with no site chrome over
+   * The way out (§8.11). A storm fills the viewport with no site chrome over
    * it, so until the run ends this is the only exit there is.
    */
 

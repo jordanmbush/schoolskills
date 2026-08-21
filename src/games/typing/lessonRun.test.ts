@@ -49,8 +49,9 @@ describe("lessonConfig", () => {
   /**
    * The choice made in the brief, travelling with the run (§4.2). In the
    * config rather than in memory because the run outlives the navigation that
-   * starts it, and because `eyes-up` (§6.7) is a badge for having made it.
-   * Absent when nobody chose: a locked lesson, or a route with no brief.
+   * starts it, and because `eyes-up` (§6.7) is a badge for what the run was
+   * typed under. Absent when nobody chose: a locked lesson, or a route with no
+   * brief.
    */
   it("carries the keyboard the child chose, and nothing when they didn't", () => {
     expect(lessonConfig(L01, 1, "off").keyboard).toBe("off");

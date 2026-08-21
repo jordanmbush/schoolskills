@@ -644,7 +644,7 @@ describe("StormField", () => {
 
   it("hands the way out to the HUD, and says which key does it too", () => {
     // Forwarding, which is all this file does with it — where the control goes
-    // and when it goes away are `StormHud`'s (§8.8). What is pinned here is
+    // and when it goes away are `StormHud`'s (§8.11). What is pinned here is
     // that a screen which offers a destination gets one, and that the key
     // doing the same job is named: while the gun is live, `Tab` is one of the
     // keys it swallows, so the button cannot be tabbed to.
