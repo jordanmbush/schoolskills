@@ -7,6 +7,7 @@ import { catalogAudit } from "./src/pages/printables/_search";
 import { pathOf, sitemapGuard } from "./scripts/sitemap-guard.mjs";
 import { searchIndexGuard } from "./scripts/search-index-guard.mjs";
 import { sectionGuard } from "./scripts/section-guard.mjs";
+import { bundleGuard } from "./scripts/bundle-guard.mjs";
 
 /**
  * Static output, deliberately.
@@ -67,6 +68,14 @@ export default defineConfig({
      * the start and a wrong citation costs seconds rather than a full build.
      */
     sectionGuard(),
+    /*
+     * And the fourth, over what each island weighs. It reads dist/ like the
+     * first two, and for the same reason they do: what an island costs is
+     * decided by the chunks that shipped, not by anything the source can be
+     * asked. See scripts/bundle-guard.mjs for why the budget is the whole
+     * static import closure and not the entry chunk.
+     */
+    bundleGuard(),
   ],
   // Emit `/about/index.html` rather than `/about.html` so CloudFront can serve
   // clean URLs from S3 without a rewrite function.
