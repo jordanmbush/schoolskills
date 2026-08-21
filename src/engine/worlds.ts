@@ -149,7 +149,7 @@ export const WORLDS: WorldInfo[] = [
     subject: "Worksheets to print",
     tagline: "For the grown-up. Pick a sheet, tune it, print it.",
     blurb:
-      "Times tables, handwriting rules, spelling lists and Scripture copywork, as paper you can hand over. Sheets print straight from the browser with an answer key — no download, no account, and nothing about your child in the file.",
+      "Times tables, handwriting rules, spelling lists and Scripture copywork, as paper you can hand over. Sheets print straight from the browser with an answer key, or save as a PDF — no account, and nothing about your child in the file.",
     icon: "🖨️",
     href: "/printables",
     island: "/printables/make",

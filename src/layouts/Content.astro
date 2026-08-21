@@ -20,6 +20,8 @@ interface Props {
   description: string;
   image?: string;
   jsonLd?: Record<string, unknown>;
+  /** The trail to this page — see `Base.astro`. */
+  breadcrumb?: Array<{ name: string; href: string }>;
   /** Which world this page is in. Drives every colour on it. */
   world: World;
   /**
@@ -35,7 +37,8 @@ interface Props {
   noindex?: boolean;
 }
 
-const { title, description, image, jsonLd, world, noindex } = Astro.props;
+const { title, description, image, jsonLd, breadcrumb, world, noindex } =
+  Astro.props;
 
 // Line world and Empty world have no scenery, so their pages tighten the
 // measure and drop the display type a size. See content.css.
@@ -47,6 +50,7 @@ const pause = world === "line" || world === "empty";
   description={description}
   image={image}
   jsonLd={jsonLd}
+  breadcrumb={breadcrumb}
   world={world}
   noindex={noindex}
 >

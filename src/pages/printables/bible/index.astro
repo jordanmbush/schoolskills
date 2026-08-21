@@ -1,5 +1,6 @@
 ---
 import Content from "@/layouts/Content.astro";
+import { trailTo } from "../_shelves";
 import AdSlot from "@/components/site/AdSlot.astro";
 import { SCRIPTURE_CREDIT } from "@/engine/sheets/passages";
 import { BIBLE_SHEETS, STOCKS, bibleShelf, hrefFor } from "../_bible";
@@ -21,7 +22,7 @@ import HubLinks from "../_HubLinks.astro";
 const title =
   "Free printable Bible copywork, handwriting and memory verse worksheets | School Skills";
 const description =
-  "Printable Scripture practice: verses to trace, copywork at every ruling, and memory sheets with progressive blanks and the full verse on the answer key. Public-domain text, free, no account, and nothing to download.";
+  "Printable Scripture practice: verses to trace, copywork at every ruling, and memory sheets with progressive blanks and the full verse on the answer key. Public-domain text, free, no account, print or save as PDF.";
 
 const groups = bibleShelf();
 const letter = STOCKS[0];
@@ -31,6 +32,7 @@ const letter = STOCKS[0];
   title={title}
   description={description}
   world="paper"
+  breadcrumb={trailTo("bible")}
   jsonLd={{
     "@context": "https://schema.org",
     "@type": "CollectionPage",
