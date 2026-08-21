@@ -9,14 +9,7 @@ import { LESSONS } from "./lessons";
 import type { Lesson } from "./lessons";
 
 /**
- * What deriving progress has to prove (docs/typing.md §6.5, §6.6, §8.8).
- *
- * Four of these are the reason the module exists rather than a stored
- * `passedLessons` set, and each of them is a bug a stored one would have:
- * unlocking on `max` survives the day the oldest sessions are pruned; a storm
- * level never holds a child up; a checkpoint passed out of order carries them
- * to it; and re-tuning a lesson's criteria clears the runs that were one wpm
- * short without anything being written back.
+ * What deriving progress has to prove (§6.5, §6.6, §8.8).
  *
  * The runs below are built against the shipped ladder on purpose — unlike
  * `verdict.test.ts`, which dictates its own criteria because what it tests is
@@ -43,12 +36,9 @@ const card = (answer: string, given: string | null): CardResult => ({
 let saved = 0;
 
 /**
- * A run of `lesson`, filed exactly as the island files one: `typing:L44` for
- * its mode, its cards, counters that follow them, and its own copy of how long
- * the passage — or the wave — was.
- *
- * `durationMs` is worked back from the words per minute asked for, so a test
- * can sit a run exactly on a lesson's speed bar or exactly one under it.
+ * A run of `lesson`, filed exactly as the island files one. `durationMs` is
+ * worked back from the words per minute asked for, so a test can sit a run
+ * exactly on a lesson's speed bar or exactly one under it.
  */
 function run(
   of: Lesson,
@@ -110,11 +100,9 @@ const diedInTheStorm = (of: Lesson) =>
   );
 
 /**
- * Re-tune a lesson's speed bar for the length of one test, and put it back.
- *
- * Standing in for the deploy that lowers lesson 41 from 18 wpm to 17 after a
- * hundred children have found it too fast. Nothing else about the world
- * changes — least of all the sessions, which is the point.
+ * Re-tune a lesson's speed bar for the length of one test, and put it back:
+ * the deploy that lowers lesson 41 from 18 wpm to 17. Nothing else changes —
+ * least of all the sessions, which is the point.
  */
 function retuned(n: number, wpm: number, body: () => void) {
   const pass = lesson(n).pass;
@@ -137,10 +125,8 @@ describe("a child who has done nothing", () => {
   });
 
   /**
-   * The ladder is the hundred and nothing else is on it. A typing *level*, a
-   * parent's drill and a spelling race all sit in the same record book — and
-   * `typing:home-row` is one `typing:` prefix away from a lesson, which is the
-   * mistake worth pinning.
+   * Everything shares one record book, and `typing:home-row` is one `typing:`
+   * prefix away from a lesson — which is the mistake worth pinning.
    */
   it("is not advanced by runs that are not lessons", () => {
     const notALesson = (mode: string): Session => ({
@@ -157,15 +143,10 @@ describe("a child who has done nothing", () => {
   });
 
   /**
-   * A drill is filed under the mode it came from, and is not that lesson.
-   *
-   * `buildDrill(keys, "typing:L41")` builds ten to forty words of trouble
-   * keys with a `wordCount` of its own and **no `lessonId`** — the practice
-   * deck a child takes from lesson 41's results, or from the finger a storm
-   * broke (§8.5). Filed by mode alone it would clear the lesson it was offered
-   * from without the lesson ever being run: the ladder would fill in behind a
-   * child who only ever practised. `progress.ts` already reads its badges off
-   * `config.lessonId` for the same reason; this is that rule, one module over.
+   * A drill carries the mode it was offered from and **no `lessonId`** (§8.5).
+   * Filed by mode alone it would clear the lesson without the lesson ever
+   * being run — the ladder filling in behind a child who only ever practised.
+   * `progress.ts` reads its badges off `config.lessonId` for the same reason.
    */
   it("is not advanced by a drill filed under a lesson's mode", () => {
     const drill = {
@@ -201,14 +182,10 @@ describe("unlocking", () => {
   });
 
   /**
-   * §6.6, and the whole of the placement test. A nine-year-old who already
-   * types opens checkpoint 30, passes it, and starts at 31 — with no session
-   * for a single lesson below it.
-   *
-   * Note what `cleared` does *not* say: 1–29 are not in it, because nothing
-   * was ever run at them and this set is proof rather than permission. They
-   * are behind the child all the same, because `best` is what the ladder locks
-   * against and `best` is a maximum.
+   * §6.6's placement test. Note what `cleared` does *not* say: 1–29 are not in
+   * it, because nothing was ever run at them and this set is proof rather than
+   * permission. They are behind the child all the same, because `best` is what
+   * the ladder locks against and `best` is a maximum.
    */
   it("carries a child to the checkpoint they passed", () => {
     const progress = ladderProgress([passing(lesson(30))]);
@@ -236,10 +213,9 @@ describe("unlocking", () => {
   });
 
   /**
-   * §6.6's reason for `max` over `count`. `MAX_SESSIONS_PER_PROFILE` prunes
+   * §6.6's reason for `max` over `count`: `MAX_SESSIONS_PER_PROFILE` prunes
    * the *oldest* runs, so the first thing a child 2000 runs in loses is the
-   * proof that they ever passed lesson 1 — and a tally would answer "you have
-   * cleared three lessons, go and do lesson 4".
+   * proof that they ever passed lesson 1.
    */
   it("does not re-lock anything when the oldest session is pruned", () => {
     const runs = [
@@ -261,11 +237,6 @@ describe("unlocking", () => {
 });
 
 describe("Hailstorm never gates the ladder", () => {
-  /**
-   * §8.8 and decision 24. A tablet has no keys to press, so a child who can do
-   * the whole course cannot play the game — and a reward that blocks you is
-   * not a reward.
-   */
   it("opens lesson 46 when 44 is cleared, whatever happened at 45", () => {
     const failed = ladderProgress([
       passing(lesson(44)),
@@ -281,13 +252,8 @@ describe("Hailstorm never gates the ladder", () => {
   });
 
   /**
-   * All twenty, and not only the one §8.8 uses as its example.
-   *
-   * The rule is a property of the ladder rather than of lesson 45: every storm
-   * sits between two lessons, and clearing the one below it has to open the
-   * one above it — at rung 4, where a child has met four keys, and at rung 99,
-   * where the only thing above is the Ice Exam. A table re-cut so that two
-   * storms sat side by side would break this and nothing else.
+   * All twenty, not only the one §8.8 uses as its example: a table re-cut so
+   * that two storms sat side by side would break this and nothing else.
    */
   it("is stepped over at every one of the twenty rungs", () => {
     const storms = LESSONS.filter((l) => l.kind.type === "storm");
@@ -304,9 +270,8 @@ describe("Hailstorm never gates the ladder", () => {
 
   /**
    * A storm level is a `Session` like any other (§8.7), so surviving one is a
-   * pass like any other. It is worth nothing extra and costs nothing to
-   * honour: reaching lesson 45 needed 44, and keeping the storm's proof is one
-   * more run that can hold a child's place after the older ones are pruned.
+   * pass like any other — one more run that can hold a child's place after the
+   * older ones are pruned.
    */
   it("still clears a wave that was survived", () => {
     const progress = ladderProgress([passing(lesson(45))]);
@@ -318,10 +283,9 @@ describe("Hailstorm never gates the ladder", () => {
 
 describe("criteria that change", () => {
   /**
-   * §6.5's second claim, which is the one a stored flag cannot make: tune
-   * lesson 41's speed bar down and every child who was one wpm short is
-   * through — with no backfill, no migration and nothing written back to a
-   * record book that holds the only copy there is.
+   * §6.5's second claim: tune lesson 41's speed bar down and every child who
+   * was one wpm short is through, with nothing written back to a record book
+   * that holds the only copy there is.
    */
   it("clears a run that was one wpm short, without touching it", () => {
     const asked = lesson(41).pass;

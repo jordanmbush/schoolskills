@@ -5,16 +5,11 @@ import { LESSONS, lessonById } from "@/engine/typing/lessons";
 import { keyboardFor, keyboardLock } from "./lessonKeyboard";
 
 /**
- * Who wins the keyboard, and the bug this file exists to keep dead
- * (docs/typing.md §4.2).
+ * Who wins the keyboard, and the bug this file exists to keep dead (§4.2).
  *
- * §4.2 reads as `lesson.keyboard ?? profile.keyboard ?? "guide"`, which looks
- * like a chain with three live arms. It is not: **every one of the hundred
- * lessons names a mode**, so read as an override the lesson wins on all
- * hundred rungs, the player's setting is ignored the length of the ladder, and
- * `keyboardLocked` marks no difference between the lessons that insist and the
- * ninety-odd that were only making a suggestion. #142's review reproduced it —
- * profile on Off, lesson 7 unlocked, board still on.
+ * The bug is that every one of the hundred lessons names a mode, so a resolver
+ * read as a plain override beats the player's setting on all hundred rungs
+ * while looking like a chain with three live arms.
  *
  * So the sweeps below are the point of the file rather than decoration. One
  * asserts that every unlocked lesson hands the choice back; the other that
@@ -41,7 +36,6 @@ describe("keyboardFor", () => {
     expect(keyboardFor(L07, "off")).toBe("guide");
   });
 
-  /** The bug, exactly as #142's review found it. */
   it("lets an unlocked lesson be run the way the child chose", () => {
     expect(keyboardFor(L07, "off", "off")).toBe("off");
     expect(keyboardFor(L07, undefined, "keys")).toBe("keys");
@@ -74,11 +68,7 @@ describe("keyboardLock", () => {
     expect(keyboardLock(L07)).toBeNull();
   });
 
-  /**
-   * The two ends of the ladder, and the two reasons worth giving. A control
-   * greyed out with no reason is the same bug as one that silently ignores the
-   * setting; it just looks tidier.
-   */
+  /** A control greyed out with no reason is the bug that looks tidier. */
   it("gives the reason at both ends of the ladder", () => {
     expect(keyboardLock(L01)).toContain("new keys");
     expect(keyboardLock(L10)).toContain("Checkpoints");

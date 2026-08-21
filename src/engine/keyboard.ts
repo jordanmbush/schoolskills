@@ -1,40 +1,20 @@
 /**
  * The physical keyboard, as data.
  *
- * A *picture* of a keyboard belongs in the view. The keyboard itself does not,
- * because three of its four consumers are not pictures (docs/typing.md §3.1):
+ * In the engine and not the view because three of its four consumers are not
+ * pictures — the curriculum, the generator's `reachable()`, and Hailstorm's
+ * lanes (§3.1, decision 1). Only the fourth draws it, and putting the layout
+ * there would make the other three import upwards.
  *
- *   - The **curriculum** needs to know that `e` is the left middle finger on
- *     the top row, so "introduce one key per hand" is a rule the lesson list
- *     can be checked against rather than a claim in a comment.
- *   - The **generator** needs `reachable()` — is every character of this word
- *     producible from the keys unlocked so far? That is the invariant which
- *     makes a hundred lessons safe to re-order (§5.2), and it is a pure
- *     function over this table.
- *   - **Hailstorm** needs a key's horizontal position, because that is the lane
- *     its letter falls down (§8.2): `f` falls onto `f`, and `y` falls between
- *     `g` and `h` because that is where `y` is. The game is not themed around a
- *     keyboard, it is teaching the layout geometrically the whole time.
- *
- * Only the fourth consumer draws it. Put the layout in the view and the other
- * three have to import upwards, which the lint boundary correctly forbids.
- *
- * ── US ANSI QWERTY, and nothing else ─────────────────────────────────────────
- * The site is `en` and typing marks punctuation exactly, so a UK board — where
- * `"` is shift-`2` and `@` is shift-`'` — would fail a punctuation lesson for a
- * child who is doing everything right. That is a real limitation and it is
- * written down here rather than discovered later. It is also a cheap one to
- * lift: the layout is data behind one function, so a second board is a second
- * table plus a profile field, and `strokeFor` is the only caller that would
- * have to learn about it (§3.4).
+ * US ANSI QWERTY and nothing else: a real limit, written down rather than
+ * discovered, and a cheap one to lift (§3.4, decision 26).
  */
 
 /**
  * Which finger presses a key, in touch-typing's standard assignment.
  *
- * `thumb` is one finger rather than two because either thumb will do for the
- * keys it covers — the space bar and the two Alts — and nothing downstream
- * needs to know which.
+ * `thumb` is one finger rather than two: either thumb will do for the space bar
+ * and the two Alts, and nothing downstream needs to know which.
  */
 export type Finger =
   | "l-pinky"
@@ -51,20 +31,17 @@ export type KeyDef = {
   /**
    * `KeyboardEvent.code`. "KeyF", "Semicolon", "Digit4", "Space".
    *
-   * `code`, not `key`. `KeyboardEvent.key` reports the character that was
-   * produced, which is the wrong question for "light up the key that was
-   * pressed": shift+`4` produces `$` and there is no `$` key to light. `code`
-   * is the physical switch, which is exactly what the picture draws and
-   * exactly what the falling-letter lane is a column of.
+   * `code`, not `key`: shift+`4` produces `$` and there is no `$` key to light
+   * (§3.2).
    */
   code: string;
   /**
    * Unshifted and shifted legends: ["a","A"], ["4","$"], ["/","?"].
    *
    * A key that produces no character carries a word — "Tab", "Shift", "Bksp" —
-   * never a glyph like "⌫". `strokeFor` indexes the legends that are a single
-   * character, so a word legend is what keeps a modifier out of the answer to
-   * "which key types this?" without needing a second field to exclude it.
+   * never a glyph like "⌫". `strokeFor` indexes only the single-character
+   * legends, so a word legend is what keeps a modifier out of "which key types
+   * this?" without a second field to exclude it.
    */
   cap: [string, string];
   /** 0 = number row, 1 = top, 2 = home, 3 = bottom, 4 = space. */
@@ -81,10 +58,8 @@ export type KeyDef = {
 /**
  * One row's worth of keys, left to right.
  *
- * `x` is written down rather than accumulated because the row stagger is not
- * derivable from anything — it is a fact about the plastic. Row 1 starts a
- * third of a unit in, row 2 a little further, row 3 further still. Storing it
- * costs one number per key and leaves no arithmetic for anybody to trust.
+ * `x` is written down rather than accumulated: the row stagger is a fact about
+ * the plastic and is derivable from nothing (§3.2).
  */
 const key = (
   code: string,
@@ -99,10 +74,8 @@ const key = (
  * The board, as rows — 15 key units wide, which is what the view scales off a
  * single `--key` custom property and what Hailstorm measures its lanes in.
  *
- * Fingers are the standard assignment: the index fingers take two columns
- * each (`4 5 r t f g v b` on the left, `6 7 y u h j n m` on the right) and the
- * pinkies take everything outboard of `q a z` and `p ; /`. That is the thing
- * being taught, so it is written once here rather than inferred from `x`.
+ * The finger assignment is touch-typing's standard one, and it is the thing
+ * being taught: written per key here rather than inferred from `x`.
  */
 export const KEY_ROWS: KeyDef[][] = [
   // Row 0 — the number row.
@@ -194,42 +167,26 @@ const BY_CODE = new Map(KEYS.map((k) => [k.code, k]));
  * carry — a numpad key, a media key, `F7`, or anything from a layout that is
  * not US ANSI (§3.4).
  *
- * The `null` is the useful half. "Is this code on the board?" is a question two
- * consumers ask for reasons that have nothing to do with geometry — the clack
- * plays only for keys the picture draws (§4.8) — and answering it with
- * `keyX(code) !== null` would be reading a horizontal position to find out
- * whether a key exists. Same lookup, one name for it.
+ * The `null` is the useful half. "Is this code on the board?" is asked for
+ * reasons that have nothing to do with geometry — the clack plays only for keys
+ * the picture draws (§4.8) — and `keyX(code) !== null` would answer it by
+ * reading a horizontal position. Same lookup, one name for it.
  */
 export function keyFor(code: string): KeyDef | null {
   return BY_CODE.get(code) ?? null;
 }
 
 /**
- * Where a key sits across the board: the middle of it, in key units.
+ * Where a key sits across the board: the middle of it, in key units, or `null`
+ * for a code this board does not carry (§3.4).
  *
  * The board is 15 units wide, so this is a number from 0 to 15 that scales off
- * the same single `--key` custom property the picture of the keyboard does —
- * which is the point. Hailstorm's lanes are this function (docs/typing.md §8.2,
- * decision 19): a letter falls down the column of the key that produces it, so
- * `keyX("KeyF")` is where `f` falls and `keyX("KeyY")` lands between `g` and
- * `h` because that is where `y` is.
- *
- * The field and the drawn board cannot disagree about where a key is because
- * both read the same `KEY_ROWS` table and both measure in key units off that
- * one `--key`. It is one *table*, not one function: `keyX` is the field's
- * convenience for the centre of a key's slot, while the board wants a left
- * edge and a width and takes `KeyDef.x` / `KeyDef.width` straight from the
- * same rows without calling this. A lane half a unit out would be a spatial
- * hint that teaches the wrong thing, and the shared table is what rules that
- * out. The keycap drawn inside a slot is inset by `--key-gap`, so a slot's
- * centre and a cap's centre are 0.045 units apart — §8.2 has that number.
+ * the same single `--key` the picture does. Hailstorm's lanes are this function
+ * (§3.2, §8.2, decision 19).
  *
  * The **middle** rather than the left edge, because a falling glyph is centred
  * on its column and the wide keys are where the difference shows: the space bar
  * is 6.25 units, so its edge and its middle are three keys apart.
- *
- * `null` for a code this board does not carry — a numpad key, a media key, or
- * anything from a layout that is not US ANSI (§3.4).
  */
 export function keyX(code: string): number | null {
   const key = keyFor(code);
@@ -256,35 +213,16 @@ export type FingerZone = {
 };
 
 /**
- * How much of the board each finger is responsible for, in key units.
+ * How much of the board each finger is responsible for, in key units: each
+ * finger's home-row span, which is a choice between four staggered rows rather
+ * than a derivation (§8.5, decision 41). Hailstorm's shield is these eight.
  *
- * The second thing Hailstorm needs from this table, after the lane: its shield
- * is eight segments across the bottom of the field, one per finger, and each
- * one has to sit over the keys whose misses break it (docs/typing.md §8.5).
- * Here rather than in the component that draws it for the same reason `keyX`
- * is here — it is a fact about the plastic, and a second opinion about which
- * keys the right ring finger covers would put the hole over the wrong hand.
+ * Here rather than in the component that draws that shield, for the same reason
+ * `keyX` is here — a second opinion about which keys the right ring finger
+ * covers would put the hole over the wrong hand.
  *
- * ── The home row is the zone ────────────────────────────────────────────────
- * The eight spans are the home row's keys grouped by finger, and that is a
- * choice between four rows rather than a derivation. Every row divides into
- * eight runs — no row hands a key back to a finger it has already passed — but
- * the four rows do not agree about WHERE the divisions fall, because the rows
- * are staggered. The left pinky gives way to the left ring at 2 on the number
- * row, at 2.5 on the top row, at 2.75 on the home row and at 3.25 on the
- * bottom row. A vertical seam can honour one of those four, so the question
- * is which row's seams the shield is drawn on.
- *
- * The home row, because it is the row the hands are literally on: `a s d f`
- * and `j k l ;` is where a touch typist's fingers rest and what every reach
- * returns to, so "your right ring finger" and "the column over `l`" are the
- * same statement to the child being told it. The other rows are then off by
- * the stagger and no more — a key never sits further than a quarter unit
- * outside its own finger's zone, which is `keyboard.test.ts`'s to pin.
- *
- * The thumbs have no zone. Nothing falls on the space bar (§8.3), so the eight
- * here are exactly the eight the shield is divided into, and the home row
- * carries no thumb key for the cast below to have to exclude.
+ * The thumbs have no zone: nothing falls on the space bar (§8.3), and the home
+ * row carries no thumb key for the cast below to have to exclude.
  */
 export const FINGER_ZONES: Readonly<
   Record<Exclude<Finger, "thumb">, FingerZone>
@@ -309,30 +247,22 @@ export const FINGER_ZONES: Readonly<
 })();
 
 /**
- * What to call a finger out loud, for the one screen that has to name one.
- *
- * Hailstorm's shield is eight finger zones, and when a letter gets through a
- * hole the run ends with the screen saying which finger let it in
- * (docs/typing.md §8.5). "Your right ring finger" is the entire value of that
- * feedback: it is a thing a child can look down at, and `r-ring` is not.
+ * What to call a finger out loud, for the one screen that has to name one:
+ * Hailstorm's ending says which finger let a letter through (§8.5).
  *
  * Here rather than in the component that renders the sentence, for the same
  * reason `FINGER_ZONES` is here — the id and the name are one fact about the
- * hands, and a second opinion about which finger `r-ring` is would put the
- * blame on the wrong one. It is also why the words are plain and lowercase:
- * they are a fragment a sentence is built around ("Your ___ let two through"),
- * not a label, so the caller supplies the capital.
+ * hands. Lowercase and plain because each is a fragment a sentence is built
+ * around ("Your ___ let two through"), so the caller supplies the capital.
  *
  * **Little finger, not pinky**, and index rather than pointing: the rest of
  * this site is written in British English, and these are the words a UK
  * five-year-old is taught to name their own hand with.
  *
- * No thumb, deliberately. The thumb is the one entry in `Finger` that is not a
- * finger of one hand — it covers the space bar and both Alts, so there is no
- * "left" or "right" to say — and nothing that names a finger to a child ever
- * needs it: the shield has no thumb segment, because nothing falls on the
- * space bar (§8.5). Excluding it here means the eight zones and the eight
- * names are the same eight, checked by the compiler rather than by a reader.
+ * No thumb. It is the one entry in `Finger` that is not a finger of one hand,
+ * so there is no "left" or "right" to say, and the shield has no thumb segment
+ * (§8.5) — which leaves the eight zones and the eight names the same eight,
+ * checked by the compiler rather than by a reader.
  */
 export const FINGER_NAMES: Readonly<Record<Exclude<Finger, "thumb">, string>> =
   {
@@ -356,13 +286,8 @@ export type Stroke = {
 };
 
 /**
- * The shift on the other hand from this finger.
- *
- * Typing `A` with the left pinky on shift and the left pinky on `a` is
- * impossible; the technique is right-shift plus left-`a`, and teaching it is
- * the single most-skipped thing in typing courses aimed at children. So the
- * hint highlights the shift a child can actually reach, which means knowing
- * which hand the letter is on.
+ * The shift on the other hand from this finger — the technique the hint teaches
+ * rather than merely locating the key (§3.3).
  *
  * `thumb` falls to the same branch as the right hand and never reaches it: no
  * thumb key carries a single-character *shifted* legend — the space bar's two
@@ -399,10 +324,8 @@ for (const k of KEYS) {
 /**
  * How to type one character, or `null` if this layout cannot produce it.
  *
- * That null is load-bearing rather than defensive: it is what `reachable()` is
- * built out of, and it is what would have caught the curly quotation marks
- * that `decks/typing.ts` had to hand-exclude from the Scripture pool — a verse
- * containing one is unpassable rather than hard, because typing marks exactly.
+ * That null is load-bearing rather than defensive: `reachable()` is built out
+ * of it (§3.3).
  */
 export function strokeFor(ch: string): Stroke | null {
   return STROKES.get(ch) ?? null;
@@ -414,14 +337,11 @@ export function strokeFor(ch: string): Stroke | null {
  * `keys` is the unlocked *alphabet* — the characters those keys produce, which
  * is the form a lesson declares (`Lesson.introduces`) and the form the ladder
  * accumulates. A capital is its own entry because shift is its own lesson:
- * unlocking `a` does not hand a child `A`, and a generator that assumed it
- * would write a word nobody at that lesson can type.
+ * unlocking `a` does not hand a child `A`.
  *
  * Both halves matter. The `keys` check is the curriculum's — don't use a key
  * they haven't met. The `strokeFor` check is the layout's — don't use a
- * character this board cannot produce at all, which is how prose pulled from
- * the passage library gets its curly quotes and dashes caught before a child
- * meets them.
+ * character this board cannot produce at all (§5.2).
  */
 export function reachable(text: string, keys: ReadonlySet<string>): boolean {
   for (const ch of text) {

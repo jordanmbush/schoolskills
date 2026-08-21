@@ -8,12 +8,7 @@ import { verdictFor } from "./verdict";
 import type { Run } from "./verdict";
 
 /**
- * What the three bars have to prove (docs/typing.md §6.1, §6.4).
- *
- * The interesting tests here are all the same shape: a run that a single
- * blended score would wave through, which one of the three bars has to catch.
- * A child who is fast and accurate and never once gets the letter the lesson
- * was about is the case §6.4 exists for, and it is the first test below.
+ * What the three bars have to prove (§6.1, §6.4).
  *
  * The criteria are built here rather than taken from the ladder, because what
  * is under test is the gate and not lesson 25's tuning — a test that read
@@ -86,12 +81,9 @@ const lessonWith = (over: Partial<Lesson> = {}): Lesson => ({
 });
 
 /**
- * A storm level, dictated like the lesson above it rather than read off the
- * ladder — what is on trial here is the criteria and not the table.
- *
- * `wordCount` is the wave's length (§8.3), which is what `survived` reads back
- * off a run's own config; twelve is a first storm's shape and every case below
- * says which of the twelve a run faced.
+ * A storm level, dictated like the lesson above rather than read off the
+ * ladder. `wordCount` is the wave's length (§8.3), which is what `survived`
+ * reads back off a run's own config.
  */
 const stormWith = (over: Partial<Lesson> = {}): Lesson => ({
   n: 4,
@@ -118,10 +110,9 @@ const stormWith = (over: Partial<Lesson> = {}): Lesson => ({
 
 describe("the new-key gate", () => {
   /**
-   * §6.4, in one test. Forty-two words at 95% and 26 wpm is a pass by every
-   * measure a typing test has — and the child got `z` wrong half the times
-   * they met it, which is the only thing lesson 25 was for. Two wrong words
-   * out of forty-two is 5% of the run and 50% of the letter.
+   * §6.4, in one test: two wrong words out of forty-two is 5% of the run and
+   * 50% of the letter, so the run passes on accuracy and on speed and fails on
+   * the only thing lesson 25 was for.
    */
   it("fails a run that was fast and accurate but fumbled the new key", () => {
     const lesson = lessonWith({
@@ -221,16 +212,13 @@ describe("the new-key gate", () => {
   });
 
   /**
-   * A character never reached is a miss, not an absence: a word abandoned
-   * halfway, or a `given` of null, has to cost the keys it never got to.
-   *
-   * The run therefore mixes one `p` that *was* struck with two that were not,
-   * so what is asserted is the fraction and not just a bar that reads empty.
-   * An implementation that skipped past the end of `given` — counting neither
-   * a strike nor a hit — would leave `p` at 1/1 rather than 1/3, and a bar
+   * The run mixes one `p` that *was* struck with two that were not, so what is
+   * asserted is the fraction and not just a bar that reads empty. An
+   * implementation that skipped past the end of `given` — counting neither a
+   * strike nor a hit — would leave `p` at 1/1 rather than 1/3, and a bar
    * asserted only as `got: 0, ok: false` would go green for both. That is the
-   * lenient direction and it matters: abandoned words containing the new key
-   * would simply stop counting against it.
+   * lenient direction: abandoned words containing the new key would stop
+   * counting against it.
    */
   it("counts a character that was never reached as a miss", () => {
     const lesson = lessonWith({
@@ -257,12 +245,10 @@ describe("the new-key gate", () => {
   });
 
   /**
-   * The documented approximation (§6.4): per-key stats come from the cards, so
-   * what the gate sees is what ended up on the line. A key struck wrong and
-   * backspaced away is invisible here *by construction* — the card records the
-   * word, not the keystrokes — which is the whole trade. What can be asserted
-   * is the rule that makes it true: a word the run marked right is a hit in
-   * every character, whatever `given` happens to read.
+   * §6.4's documented approximation: a key struck wrong and backspaced away is
+   * invisible here, because the card records the word and not the keystrokes.
+   * What can be asserted is the rule that makes it true — a word marked right
+   * is a hit in every character, whatever `given` reads.
    */
   it("counts every character of a word marked right as a hit", () => {
     const lesson = lessonWith({
@@ -311,10 +297,9 @@ describe("accuracy and speed", () => {
   });
 
   /**
-   * Gross wpm, with accuracy beside it rather than folded in (§6.1). The two
-   * runs typed the same number of characters in the same time, so they type at
-   * the same speed; what separates them is the accuracy bar, which is the
-   * distinction a blended net figure would hide.
+   * The two runs typed the same characters in the same time, so they type at
+   * the same speed; what separates them is the accuracy bar, which a blended
+   * net figure would hide (§6.1).
    */
   it("reports speed gross, and accuracy separately", () => {
     const lesson = lessonWith();

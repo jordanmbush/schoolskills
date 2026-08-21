@@ -29,17 +29,11 @@ import type { KeyboardMode, TypingConfig } from "@/engine/types";
 const LENGTHS = [20, 30, 50, 80];
 
 /**
- * The ladder, and free play under it (docs/typing.md §9).
+ * The ladder, and free play under it (§9).
  *
- * `#/p/:id` is the way into the typing world, and after LES10 that means the
- * hundred lessons first: `LessonLadder` is the screen's subject and the panel
- * below it is the game that was here before the course existed.
- *
- * **Free play stays, and stays whole** — the five levels, the four lengths,
- * the keyboard setting and the rival list, unchanged. A hundred lessons is a
- * course, and a child who has come here to type a psalm and race their brother
- * has not asked to be enrolled in one. Nothing on the ladder gates it, and
- * nothing about it is worse than it was the day before the ladder landed.
+ * `LessonLadder` is the screen's subject and the panel below it is the game
+ * that was here before the course existed. Free play stays whole and nothing on
+ * the ladder gates it (§7).
  *
  * The two halves share this screen and nothing else. A lesson is not a race
  * (§7): it carries its own words, no ghost and no rival, which is why the
@@ -63,26 +57,24 @@ export default function TypingSetup() {
   /**
    * The lesson whose brief is up, or `null` for none (§9).
    *
-   * A tile no longer starts a run — it opens the door and the brief is what is
-   * written on it. Holding the lesson rather than a boolean is what lets the
-   * brief be mounted per lesson below, which is how the keyboard control gets
-   * seeded afresh each time instead of carrying the last lesson's choice onto
-   * one that suggests something else.
+   * Holding the lesson rather than a boolean is what lets the brief be mounted
+   * per lesson below, which is how the keyboard control gets seeded afresh each
+   * time instead of carrying the last lesson's choice onto one that suggests
+   * something else.
    *
    * One piece of state for both kinds of rung, and the lesson itself decides
-   * which brief opens over it (`isStormLesson`). Two flags would be two ways
-   * to have both open at once, over a ladder where a tile is exactly one of
-   * the two.
+   * which brief opens over it (`isStormLesson`). Two flags would be two ways to
+   * have both open at once, over a ladder where a tile is exactly one of the
+   * two.
    */
   const [briefing, setBriefing] = useState<Lesson | null>(null);
 
   /**
-   * Whether this device looks like it can play Hailstorm at all (§8.8, #155).
+   * Whether this device looks like it can play Hailstorm at all (§8.8).
    *
    * Asked here rather than inside the ladder so that screen stays a pure
-   * function of its props, and asked at all because a storm tile that opened a
-   * game a child physically cannot play is the "fails mysteriously" this is
-   * against. It is a guess that costs a keystroke to overturn — see the hook.
+   * function of its props. It is a guess that costs a keystroke to overturn —
+   * see the hook.
    */
   const hasKeyboard = useKeyboardPresence();
 
@@ -100,8 +92,7 @@ export default function TypingSetup() {
 
   /**
    * Where this child is on the ladder, from the runs the hub has already
-   * loaded (§6.5). Nothing is stored: pass a lesson and the tile fills because
-   * the session it was passed in is in this array.
+   * loaded (§6.5).
    *
    * Memoised over the slice as well as the derivation, because `sessionsFor`
    * builds a fresh array every call and `ladderProgress` remembers its answer
@@ -122,9 +113,8 @@ export default function TypingSetup() {
 
   /**
    * Saved to the profile the moment it moves, unlike everything else on this
-   * screen: a level and a length describe one run, but how much of the
-   * keyboard you need is about the child, and it should still be true next
-   * week without being chosen again. Same shape as the sound toggle in
+   * screen: a level and a length describe one run, but how much of the keyboard
+   * you need is about the child (§4.2). Same shape as the sound toggle in
    * `TopBar` — write, and say so if the write didn't land, because the pills
    * are drawn from the profile and would otherwise silently spring back.
    */
@@ -146,10 +136,9 @@ export default function TypingSetup() {
    * its own results are the same run, filed under the same `configKey`, or a
    * child's best would depend on which button they reached it by.
    *
-   * `keyboard` is what the child chose in the brief, and it is absent when
-   * they were not offered a choice — a locked lesson hands back nothing rather
-   * than handing back the mode it insisted on, so what is saved with the run
-   * says "chosen" and not merely "shown" (§4.2).
+   * `keyboard` is absent when the child was not offered a choice — a locked
+   * lesson hands back nothing rather than the mode it insisted on — so what is
+   * saved with the run says "chosen" and not merely "shown" (§4.2).
    */
   function runLesson(lesson: Lesson, keyboard?: KeyboardMode) {
     sfx.whoosh();
@@ -232,8 +221,7 @@ export default function TypingSetup() {
 
           {/* Said once, under the ladder, because a screen that led with a
               hundred lessons and then showed a level picker without a word
-              would read as the course being over. Free play is the other
-              game here, not the leftovers of this one. */}
+              would read as the course being over. */}
           <p className="muted">
             No lesson, no bars to meet — a passage, a clock, and anyone
             you&apos;ve raced before.

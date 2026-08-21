@@ -7,14 +7,10 @@ import { KEYS, strokeFor } from "../keyboard";
 
 /**
  * The unlocked alphabet, asserted as a set of characters rather than a size
- * (docs/typing.md §5.1, §5.2).
- *
- * A count is the wrong assertion here: "thirty-one characters at lesson 30" is
- * satisfied by thirty-one *wrong* characters, and the failure this module
- * exists to prevent is one specific key being in a set it has no business
- * being in. So every expectation below is spelled out, and the ones that
- * cannot be — the hundredth lesson's — are computed from the ladder itself so
- * that re-ordering it re-derives the answer instead of breaking the test.
+ * (§5.1, §5.2). A count is satisfied by thirty-one *wrong* characters, and the
+ * failure this module exists to prevent is one specific key being in a set it
+ * has no business being in. The hundredth lesson's expectation is computed
+ * from the ladder, so re-ordering it re-derives the answer.
  */
 
 /** A set of characters as one sorted string, so a diff prints readably. */
@@ -45,10 +41,9 @@ const capitalsIn = (set: ReadonlySet<string>) =>
 
 describe("unlockedAt", () => {
   /**
-   * Block 1 is the eight home keys plus the inside reach, and `;` is one of
-   * the eight — the right pinky rests on it (§5.6, lesson 5 · Both pinkies).
-   * Lessons 7–10 introduce nothing, so the alphabet block 1 ends on is the
-   * alphabet lesson 6 left behind.
+   * `;` is one of the eight home keys — the right pinky rests on it. Lessons
+   * 7–10 introduce nothing, so the alphabet block 1 ends on is the one lesson
+   * 6 left behind (§5.6).
    */
   it("is exactly the home row and the space bar at the end of block 1", () => {
     expect(chars(unlockedAt(10))).toBe(sorted("asdfghjkl; "));
@@ -56,11 +51,9 @@ describe("unlockedAt", () => {
   });
 
   /**
-   * Block 3 finishes the alphabet, and it brings the comma and the full stop
-   * with it because that is physically where they are (§5.5) — plus the slash,
-   * which came in at lesson 25 alongside `z` as the last bottom-row corner.
-   * `;` and `/` both come back in block 7 in their punctuation role; the union
-   * does not care, which is the point of that note in the table.
+   * The comma, the full stop and the slash are in a letters-only expectation
+   * because they sit on the bottom row and arrive with it (§5.5). `;` and `/`
+   * come back in block 7 as punctuation; a union does not double-count.
    */
   it("is every letter, and no capital, at the end of block 3", () => {
     expect(chars(unlockedAt(30))).toBe(
@@ -70,10 +63,9 @@ describe("unlockedAt", () => {
   });
 
   /**
-   * The whole ladder, against the ladder's own `introduces`. This is the
-   * assertion that says nothing is silently dropped anywhere in the hundred:
-   * every shifted character block 7 teaches has its base key and its shift
-   * behind it, or it would be missing here.
+   * Nothing is silently dropped anywhere in the hundred: every shifted
+   * character block 7 teaches has its base key and its shift behind it, or it
+   * would be missing here.
    */
   it("covers everything the hundred lessons introduce", () => {
     expect(chars(unlockedAt(100))).toBe(chars(EVER_INTRODUCED));
@@ -81,23 +73,16 @@ describe("unlockedAt", () => {
   });
 
   /**
-   * And covers nothing else. The ten legends on the board that no lesson ever
-   * teaches: the backquote key, both bracket keys, and the four shifted
-   * characters — `^ < > |` — whose base keys the ladder does teach. A closure
-   * over unlocked *keys* rather than a union of introduced *characters* would
-   * hand all four of those over for free, `<` and `>` from lesson 31.
+   * The ten legends no lesson ever teaches: the backquote, both brackets, and
+   * the four shifted characters — `^ < > |` — whose base keys the ladder does
+   * teach. A closure over unlocked *keys* rather than a union of introduced
+   * *characters* would hand all four over for free, `<` and `>` from lesson 31.
    */
   it("never hands over a character no lesson taught", () => {
     const untaught = [...EVERYTHING].filter((ch) => !unlockedAt(100).has(ch));
     expect(sorted(untaught.join(""))).toBe(sorted("`~[]{}|^<>"));
   });
 
-  /**
-   * The union, stated one lesson at a time. Every step of the ladder adds
-   * exactly what that lesson introduces and takes nothing away — which is what
-   * "computed, never written down" has to mean if moving a lesson is to move
-   * its alphabet with it.
-   */
   it("grows by exactly what each lesson introduces, and never shrinks", () => {
     for (let n = 1; n <= 100; n++) {
       const expected = new Set([...unlockedAt(n - 1), ...introducedBy(n)]);
@@ -106,9 +91,9 @@ describe("unlockedAt", () => {
   });
 
   /**
-   * Total, like `deckSpec(mode)`: a session saved against a ladder that has
-   * since been re-tuned still has to open its record book, and the number in
-   * its mode string may not be on the ladder any more — or may not parse.
+   * Total, like `deckSpec(mode)`: a session saved against a ladder since
+   * re-tuned still has to open its record book, and the number in its mode
+   * string may not be on the ladder any more — or may not parse.
    */
   it("clamps a lesson number that is not on the ladder", () => {
     expect(chars(unlockedAt(0))).toBe(" ");
@@ -117,8 +102,6 @@ describe("unlockedAt", () => {
     expect(chars(unlockedAt(101))).toBe(chars(unlockedAt(100)));
     expect(chars(unlockedAt(1e6))).toBe(chars(unlockedAt(100)));
     expect(chars(unlockedAt(10.9))).toBe(chars(unlockedAt(10)));
-    // Off the end is off the end however far off it is, which is what the doc
-    // block says and what `NaN` — a mode string that did not parse — is not.
     expect(chars(unlockedAt(Number.POSITIVE_INFINITY))).toBe(
       chars(unlockedAt(100)),
     );
@@ -128,10 +111,9 @@ describe("unlockedAt", () => {
 
 describe("the shift rule", () => {
   /**
-   * The subtle one. Every letter is unlocked at lesson 26 and every capital
-   * needs one of them, so a rule that only checked the letter would hand a
-   * child the whole of block 4 four lessons early — and with it the one
-   * technique the block exists to teach.
+   * Every letter is unlocked at lesson 26 and every capital needs one of them,
+   * so a rule that only checked the letter would hand a child the whole of
+   * block 4 four lessons early.
    */
   it("gives no capital before block 4, however old the letter is", () => {
     for (let n = 0; n <= 30; n++)
@@ -141,10 +123,8 @@ describe("the shift rule", () => {
   });
 
   /**
-   * And gives them one shift at a time. Lesson 31 is the right shift, which
-   * reaches the left hand's letters and only those; `M` is a left-shift
-   * capital and waits for lesson 32. Two lessons, twenty-six characters, and
-   * the opposite-hand rule as the only way either of them works.
+   * Lesson 31 is the right shift, which reaches the left hand's letters and
+   * only those; `M` is a left-shift capital and waits for lesson 32.
    */
   it("arrives one shift at a time, in the hand each shift reaches", () => {
     expect(sorted(capitalsIn(unlockedAt(31)).join(""))).toBe(
@@ -158,11 +138,9 @@ describe("the shift rule", () => {
   });
 
   /**
-   * Both halves, over the whole ladder: nothing needing a shift is unlocked
-   * without its base key, and nothing needing a shift is unlocked before a
-   * capital has taught that shift. Block 7's `!` and `?` are the ones this
-   * covers that block 4's capitals do not — they arrive assuming the child
-   * already knows to hold shift, and this is the assertion that they do.
+   * Block 7's `!` and `?` are what this covers that block 4's capitals do not:
+   * they arrive assuming the child already knows to hold shift, and this is
+   * the assertion that they do.
    */
   it("needs both the base key and a shift, everywhere on the ladder", () => {
     for (let n = 0; n <= 100; n++) {
@@ -217,11 +195,8 @@ describe("canType", () => {
   });
 
   /**
-   * The story's whole point, stated as one loop: no lesson asks for a key it
-   * has not taught. The generator's own reachability test (§5.2) is this
-   * assertion over the words it produces; this is it over the keys the lesson
-   * declares, which is the half that can be checked before the generator
-   * exists.
+   * The generator's own reachability test (§5.2) is this assertion over the
+   * words it produces; this is it over the keys the lesson declares.
    */
   it("can type the new keys of every lesson, at that lesson", () => {
     for (const lesson of LESSONS)
@@ -236,9 +211,9 @@ describe("canType", () => {
  *
  * Today's hundred never introduce a shifted character before its base key or
  * before block 4 has taught a shift, so every assertion above still passes
- * with the rule deleted — the union alone satisfies them. That is exactly why
- * these two are here: the rule is for the ladder somebody re-orders, and a
- * rule with no test is a rule the next reader deletes as dead weight.
+ * with the rule deleted — the union alone satisfies them. These two are for
+ * the ladder somebody re-orders, and a rule with no test is a rule the next
+ * reader deletes as dead weight.
  */
 describe("a ladder that introduces a key too early", () => {
   const lesson = (n: number, introduces: string): Lesson => ({

@@ -7,7 +7,7 @@ import { lessonById } from "@/engine/typing/lessons";
 import { lessonConfig, lessonKey } from "./lessonRun";
 
 /**
- * Starting a lesson from inside the island (docs/typing.md §5.3, §5.4).
+ * Starting a lesson from inside the island (§5.3, §5.4).
  *
  * Two things have to hold of the config this hands back, and both of them are
  * about runs that already exist rather than about the one about to start: the
@@ -47,13 +47,10 @@ describe("lessonConfig", () => {
   });
 
   /**
-   * The choice made in the brief, travelling with the run (§4.2, #145).
-   *
-   * In the config rather than in memory because the run outlives the
-   * navigation that starts it — and because a lesson passed with the board off
-   * is a different thing from one passed reading the answers, which is what
-   * `eyes-up` (§6.7) is a badge for. Absent when nobody chose, which is a
-   * locked lesson and every route that starts a run without a brief.
+   * The choice made in the brief, travelling with the run (§4.2). In the
+   * config rather than in memory because the run outlives the navigation that
+   * starts it, and because `eyes-up` (§6.7) is a badge for having made it.
+   * Absent when nobody chose: a locked lesson, or a route with no brief.
    */
   it("carries the keyboard the child chose, and nothing when they didn't", () => {
     expect(lessonConfig(L01, 1, "off").keyboard).toBe("off");

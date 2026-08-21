@@ -6,19 +6,10 @@ import { sfx } from "@/services/sound";
 import { HELD } from "./useKeyEcho";
 
 /**
- * What the board sounds like under a child's hands (docs/typing.md §4.8).
+ * What the board sounds like under a child's hands (§4.8).
  *
- * `useKeyEcho` is the board's eyes — which key went down, and whether it was
- * the wrong one. This is the board's ears, and it is deliberately the simpler
- * of the two: it looks at one keystroke, in isolation, and says which of three
- * noises a typewriter would have made. It knows nothing about the passage, the
- * expectation, the streak or the clock, and that is the point — see
- * `soundForKey` below.
- *
- * ── Why it is a second hook and not a line in `useKeyEcho` ────────────────────
- * The two are mounted and unmounted together and listen to the same event, so
- * merging them would work. They are apart for two reasons that outlast the
- * convenience:
+ * A second hook rather than a line in `useKeyEcho`, though the two mount
+ * together and listen to the same event:
  *
  *   - **The echo publishes React state on every keystroke; this publishes
  *     nothing.** A clack is a side effect with no render behind it, and
@@ -33,61 +24,34 @@ import { HELD } from "./useKeyEcho";
 /**
  * One thing a keystroke can sound like.
  *
- * Three, and not one per key, because a typewriter only has three voices: the
- * typebars, the space bar, and the bell-and-carriage on Return. Everything
- * else on the board — every letter, every digit, `Tab`, `Caps`, `Backspace` —
- * is a lever that swings and hits the paper, and they sound alike because they
- * *are* alike.
+ * Three, and not one per key: a typewriter has three voices, and every other
+ * key on the board is a lever that swings and hits the paper (§4.8).
  */
 export type KeySound = "strike" | "space" | "return";
 
 /**
  * What this keystroke sounds like, or `null` for one that makes no sound.
  *
- * ── It is not told whether the key was right ─────────────────────────────────
- * The signature takes the event and nothing else: no expectation, no verdict.
- * A wrong key clacks exactly like a right one, and that is a decision rather
- * than an omission. The board already flares the wrong key `--flare` (§4.3),
- * the passage already goes red behind you, and the run already plays
- * `sfx.wrong` at the word. A keyboard that scolded a child on the way *down*
- * would be a fourth opinion about one keystroke, arriving before any of the
- * other three knew the answer — and it would make the one sound a child hears
- * constantly into a running commentary on their mistakes.
+ * The signature takes the event and nothing else: a wrong key clacks exactly
+ * like a right one, which is a decision rather than an omission (§4.8).
  *
- * So the clack says "that key went down" and nothing more. It is the sound of
- * a machine working, which is what makes it bearable eight times a second.
- *
- * ── Three silences ───────────────────────────────────────────────────────────
- * Split from the player below so all three are testable without a mixer, in
- * the same shape `stormSounds.ts` uses for the same reason.
+ * Split from the player below so the three silences are testable without a
+ * mixer, in the same shape `stormSounds.ts` uses for the same reason.
  */
 export function soundForKey(
   event: Pick<KeyboardEvent, "code" | "repeat">,
 ): KeySound | null {
-  // 1. A held key is one stroke, not thirty a second of it.
-  //
-  // The board relights on auto-repeat, because its light is a timer that has
-  // to be re-armed by something (`HOLD_MS`). The sound has the opposite
-  // failure: a flash re-fired every 33ms reads as a key still held, and a
-  // clack re-fired every 33ms is a drone. Hailstorm made the same call for the
-  // same reason — a held key is not a shot there either (decision 44).
+  // 1. A held key is one stroke. The board relights on auto-repeat because its
+  // light is a timer that has to be re-armed (`HOLD_MS`); a clack re-fired
+  // every 33ms is a drone instead (§4.8, decision 44).
   if (event.repeat) return null;
 
-  // 2. A modifier is held, not struck.
-  //
-  // The same `HELD` set the echo never flares, so one rule covers both: a
-  // capital is right-shift and a left-hand letter (§3.3), and it should be one
-  // sound, on the letter — not a clack for the reach and a clack for the key.
-  // It also keeps a child switching windows with Cmd-Tab from typing at their
-  // own desktop.
+  // 2. A modifier is held, not struck — the same `HELD` set the echo never
+  // flares, so one list covers both (§4.8).
   if (HELD.has(event.code)) return null;
 
-  // 3. A key the board does not draw makes no sound.
-  //
-  // The clack is the board's voice, so it says exactly what the picture says:
-  // a numpad `7`, a media key or `F7` lights nothing and so clacks nothing. It
-  // is the same rule that keeps a keyboard shortcut on some layout this build
-  // has never heard of from sounding like a letter being typed.
+  // 3. The clack is the picture's voice, so a key the board does not draw — a
+  // numpad `7`, a media key, `F7` — makes no sound (§4.8).
   const key = keyFor(event.code);
   if (!key) return null;
 

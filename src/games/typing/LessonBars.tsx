@@ -4,15 +4,7 @@ import type { CardResult, RaceConfig } from "@/engine/types";
 import { PassBars } from "./PassBars";
 
 /**
- * What the lesson is asking for, filling as the child does it
- * (docs/typing.md §7, §6.1).
- *
- * This is what a lesson has where a race has the ghost lane. Nothing is
- * chasing you here — what you are chasing is the criteria, and the point of
- * putting them on screen while the run is live is that you can watch yourself
- * meet them. Three bars rather than one number for the reason the whole
- * verdict exists: a single score tells a seven-year-old that they failed and
- * not what to do, where "fast enough, not accurate enough" is an instruction.
+ * What the lesson is asking for, filling as the child does it (§7, §6.1).
  *
  * The bars are the SAME ones the results screen draws — literally `PassBars`,
  * off the same `verdictFor` over the run so far: cards in, elapsed in, three
@@ -24,13 +16,12 @@ import { PassBars } from "./PassBars";
  */
 
 /**
- * The verdict is recomputed every time the clock ticks — about sixteen times a
- * second — so it walks the cards that often. That is a pass over at most
- * `lesson.wordCount` (150 at the top of the ladder) doing character compares,
- * next to a screen that is already re-rendering the passage at that rate. It is
- * measured in microseconds and it buys the one thing worth having: there is no
- * second definition of "how it is going" to disagree with the one that decides
- * whether the lesson was passed.
+ * The verdict is recomputed every clock tick — about sixteen times a second —
+ * so it walks the cards that often: at most `lesson.wordCount` (150 at the top
+ * of the ladder) character compares, beside a screen already re-rendering the
+ * passage at that rate. Microseconds, and it buys the one thing worth having —
+ * no second definition of "how it is going" to disagree with the one that
+ * decides whether the lesson was passed.
  */
 export function LessonBars({
   lesson,

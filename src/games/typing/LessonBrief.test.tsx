@@ -9,18 +9,17 @@ import type { CardResult, KeyboardMode } from "@/engine/types";
 import { LessonBrief } from "./LessonBrief";
 
 /**
- * What is written on the door (docs/typing.md §9, §4.2).
+ * What is written on the door (§9, §4.2).
  *
  * Three things are on trial here and only one of them is copy:
  *
  *   - **The keyboard is seeded, not imposed.** An unlocked lesson opens on its
- *     own suggestion with three pills a child may press; a locked one shows the
- *     same three, disabled, with the reason. That distinction is the whole of
- *     #145's folded-in half, and before it `keyboardLocked` marked nothing.
+ *     own suggestion with three pills a child may press; a locked one shows
+ *     the same three, disabled, with the reason.
  *   - **What starts, and what cannot.** A locked lesson has no Start, and
- *     **every checkpoint is startable at any time** — the express lane (§6.6)
- *     runs through this screen now, and a brief that gated on `n <= next` would
- *     take it out with nothing on the ladder looking broken.
+ *     every checkpoint is startable at any time — the express lane (§6.6) runs
+ *     through this screen, and a brief that gated on `n <= next` would take it
+ *     out with nothing on the ladder looking broken.
  *   - **What it says it wants**, which is the three bars, in §6.1's order.
  */
 
@@ -88,9 +87,8 @@ describe("LessonBrief", () => {
   });
 
   /**
-   * The three bars as targets. In §6.1's order, and the new-key row absent
-   * exactly where its bar is — a lesson that introduces nothing is not being
-   * asked a third thing, and a row for it could never be met or missed.
+   * In §6.1's order, and the new-key row absent exactly where its bar is: a
+   * row a lesson could never meet or miss is not a target.
    */
   it("asks for the three bars, in the order they matter", () => {
     const html = render(L01);
@@ -120,8 +118,7 @@ describe("LessonBrief", () => {
 
   it("opens on the lesson's mode, with the choice left open", () => {
     // The lesson suggests `guide`; the child's own setting is `off`. Seeded
-    // from the lesson, and every pill still pressable — which is the half that
-    // was missing: before #145 the lesson's mode was simply imposed.
+    // from the lesson, and every pill still pressable.
     const html = render(L07, { profileKeyboard: "off" });
 
     expect(pills(html).filter((pill) => pill.on)).toEqual([
@@ -143,9 +140,9 @@ describe("LessonBrief", () => {
   });
 
   it("falls through to the player's own setting where a lesson defers", () => {
-    // No lesson in the shipped hundred defers, which is exactly why the chain
-    // read as an override for so long. Free play is the live caller of this
-    // arm; this pins that the arm still exists for a lesson that ever does.
+    // No lesson in the shipped hundred defers, so free play is this arm's only
+    // live caller. Pinned here so the arm survives for a lesson that ever
+    // does.
     const html = render({ ...L07, keyboard: null }, { profileKeyboard: "off" });
 
     expect(pills(html).find((pill) => pill.on)?.value).toBe("off");
@@ -168,9 +165,8 @@ describe("LessonBrief", () => {
   });
 
   /**
-   * Decision 16, through the brief. A nine-year-old who already types opens
-   * checkpoint 40 from a standing start, passes it, and begins at 41 — and
-   * that only works if this screen offers them Start.
+   * Decision 16, through the brief (§6.6): the placement test only works if
+   * this screen offers Start on a checkpoint nothing has unlocked.
    */
   it("starts any checkpoint, on a profile with no runs at all", () => {
     expect(started(render(L10))).toBe(true);

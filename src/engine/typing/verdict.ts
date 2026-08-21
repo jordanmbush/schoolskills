@@ -8,17 +8,11 @@ import type { Lesson, PassCriteria } from "./lessons";
  * Did this run pass this lesson, and if not, which part missed
  * (docs/typing.md §6.1, §6.4)?
  *
- * Three bars rather than one score, for a reason that is about a seven-year-old
- * and not about statistics: **a single number tells you that you failed and not
- * what to do**. Three bars, each either full or not, say "you were fast enough
- * and not accurate enough" or "you have `x` but not `z`", which is an
- * instruction a child can act on. A blended "net WPM" — the industry default —
- * hides exactly the distinction a beginner most needs.
- *
- * So this module never returns a percentage and a verdict. It returns the three
- * criteria side by side, each with what was asked and what arrived, and leaves
- * `passed` as the conjunction of them. What draws them is LES09's problem; what
- * they mean is this file's.
+ * Three bars rather than one score (§6.1), so this module never returns a
+ * percentage and a verdict: it returns the three criteria side by side, each
+ * with what was asked and what arrived, and leaves `passed` as the conjunction
+ * of them. What draws them is the results screen's problem; what they mean is
+ * this file's.
  */
 
 /**
@@ -38,9 +32,8 @@ export type KeyBar = Bar & { key: string };
 /**
  * The three bars and their conjunction.
  *
- * The order they are *shown* in is the order they matter — accuracy, then the
- * new keys, then speed (§6.1) — and the order they are written in here is the
- * doc's. A renderer should follow §6.1 rather than the field order.
+ * The order they are *shown* in is not the field order: a renderer follows
+ * §6.1, which is accuracy, then the new keys, then speed.
  */
 export type Verdict = {
   passed: boolean;
@@ -76,15 +69,12 @@ const bar = (got: number, need: number): Bar => ({
 /**
  * Did the wave get all the way through, or did the run end early (§8.7)?
  *
- * A Hailstorm run is a `Session` like any other, and the one thing that is
- * different about it is that it can stop in the middle: dying at letter 18 of
- * 40 saves a session with eighteen cards, `correct`, `incorrect` and
- * `durationMs` all honest, and the `survive` criterion simply not met. So
- * surviving is "you faced every letter the wave had", and the wave's length
- * (§8.3's `count`) is read off the run's own config rather than off today's
- * ladder — the same rule `configKey` follows (§5.4). A wave re-tuned from forty
- * letters to thirty next year must not hand a pass, in hindsight, to a run that
- * died at eighteen.
+ * A Hailstorm run is the one kind of `Session` that can stop in the middle:
+ * dying at letter 18 of 40 saves eighteen cards with `correct`, `incorrect`
+ * and `durationMs` all honest. So surviving is "you faced every letter the
+ * wave had", and the wave's length is read off the run's **own config** rather
+ * than off today's ladder — a wave re-tuned from forty letters to thirty next
+ * year must not hand a pass, in hindsight, to a run that died at eighteen.
  *
  * A run whose config carries no length counts as survived. That is the lenient
  * direction on purpose: a storm level opens no door on the ladder (§8.8), so
@@ -97,36 +87,13 @@ const survived = (run: Run) =>
 /**
  * The new-key gate, one bar per character the lesson introduces (§6.4).
  *
- * This is the criterion that turns a hundred typing tests into a hundred
- * lessons. Accuracy and speed together still miss the thing the lesson was
- * *for*: a lesson that introduces `z` can be passed at 95% and 12 wpm while
- * getting `z` wrong every single time it appears, because `z` is 3% of the
- * text. So every introduced character must be struck correctly at least
- * `keyAccuracy` of the time, over at least `keyStrikes` strikes — and the
- * generator is tested to put that many occurrences in the passage at every
- * seed (§5.2), so the gate can never be unpassable through bad luck.
- *
  * No lesson introduces the space bar — it is unlocked from lesson 1, in
  * `keys.ts` — so the key that commits every word is never one of these bars.
  *
- * ── Per-key stats come from the cards, not from keystrokes ───────────────────
- * A `CardResult` carries `answer` and `given`, so a word typed right
- * contributes a hit to each of its characters and a word typed wrong
- * contributes a miss to each character that differs from the answer.
- *
- * That is a deliberate, documented approximation, and what it forgives is a
+ * The tally comes from the cards rather than from keystrokes, which forgives a
  * **correction**: a key struck wrong and then backspaced away counts as a hit,
- * because what ended up on the line is right. The trade was taken knowingly.
- * Recording raw keystrokes would mean a new field on `Session` — a shared
- * engine type that every game on this site reads and writes — for one game's
- * benefit; and it would mean the gate measures something the child cannot see
- * on the results screen, which lists the words they typed. Being failed on `z`
- * by a `z` that is not in any of them is unexplainable at seven. Measuring what
- * ended up on the line is both simpler and more explicable, and if it ever
- * proves too soft the fix is a `noBackspace` flag on the lesson rather than a
- * schema change.
- *
- * The comparison is positional, which errs the other way: `zip` typed as `zzip`
+ * because what ended up on the line is right. §6.4 argues that trade. The
+ * comparison is positional, which errs the other way: `zip` typed as `zzip`
  * marks every character after the insertion wrong. Both halves are the same
  * bargain — this describes the text, not the fingers.
  */
@@ -178,16 +145,9 @@ function keyBars(
 /**
  * Three bars and a pass, for one run of one lesson.
  *
- * Pure, and stored nowhere. A lesson is passed if a session exists that meets
- * its criteria, which is a filter over sessions the hub has already loaded
- * (§6.5) — so there is no `passedLessons` field, no new object store and no
- * `DB_VERSION` bump behind this. Tune lesson 40's wpm down next year and every
- * child who was one wpm short is through, with no backfill, and with nothing
- * that can disagree with the record book.
- *
- * `deckSpec` never throws on a mode it does not know, and this is the same
- * promise one layer up: a `Lesson` is the only thing that says what passing it
- * means, so a run and the lesson it was played on are all there is to ask.
+ * Pure, and stored nowhere: a lesson is passed if a session exists that meets
+ * its criteria (§6.5). A run and the lesson it was played on are all there is
+ * to ask — nothing here reads a profile, a clock or a store.
  */
 export function verdictFor(run: Run, lesson: Lesson): Verdict {
   // Whole-lesson accuracy, from the run's own counters — `accuracyOf` is the
@@ -201,10 +161,9 @@ export function verdictFor(run: Run, lesson: Lesson): Verdict {
       // Survive plus accuracy, which is all a storm level is marked on.
       passed: accuracy.ok && survived(run),
       accuracy,
-      // A storm has no passage, so it has no words per minute — §5.6 prints —
-      // in that column. Zero against a need of zero says "not a passage"
-      // rather than "typed nothing", the same thing `wordCount: 0` says about
-      // a storm level on the ladder, and `ok` stays true so a bar a storm does
+      // A storm has no passage, so it has no words per minute (§5.6 prints —
+      // in that column). Zero against a need of zero says "not a passage"
+      // rather than "typed nothing", and `ok` stays true so a bar a storm does
       // not have can never fail one.
       wpm: { got: 0, need: 0, ok: true },
       // A storm level introduces nothing, and its criteria carry no
@@ -214,8 +173,7 @@ export function verdictFor(run: Run, lesson: Lesson): Verdict {
 
   // Gross wpm, reused unchanged from the deck family that already counts it:
   // every keystroke counts, right or wrong, and accuracy stands beside it as
-  // its own bar instead of being folded in. A child who types fast and misses
-  // half of it should see both numbers, not one that hides which is which.
+  // its own bar instead of being folded in (§6.1).
   const wpm = bar(wordsPerMinute(run.cards, run.durationMs), lesson.pass.wpm);
   const keys = keyBars(run.cards, lesson.introduces, lesson.pass);
 

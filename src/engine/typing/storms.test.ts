@@ -26,44 +26,23 @@ import {
 } from "./storms";
 
 /**
- * The twenty Hailstorm levels (docs/typing.md §5.6, §8.1, §8.3, §8.10).
+ * The twenty Hailstorm levels (§5.6, §8.1, §8.3, §8.10).
  *
- * Three kinds of claim live here and they are worth separating before reading
- * any of them:
- *
- *   - **Reachability**, which is the one a child would meet. A storm may only
- *     rain keys the ladder has taught by its own rung — the same invariant
- *     §5.2 holds the generated passages to, asked of the waves.
- *   - **Safety**, which nobody would ever meet as a bug report. §8.10's "no
- *     strobe, ever, in any mode" is a promise about how often one shield zone
- *     can light up, and #155 established by measurement that no floor on `gap`
- *     buys it — two letters spawned a second apart can land together, because
- *     `fall` is a range too. So the rule is a **count of tint starts per zone
- *     per second, read off the built schedule**, and this is where the twenty
- *     specs meet it.
- *   - **Shape**, which is what makes twenty levels a ladder rather than twenty
- *     copies: one letter at a time at the bottom, five or more in the air at
- *     the top, repairs that stop, and a shield that thins.
+ * Three kinds of claim live here: **reachability**, that a storm only rains
+ * keys the ladder has taught by its own rung; **safety**, which is a count of
+ * tint starts per zone per second read off the *built* schedule rather than
+ * off a spec's ranges; and **shape**, which is what makes twenty levels a
+ * ladder rather than twenty copies.
  */
 
 /**
- * A sample of the space a spec can draw from, and honestly no more than that.
- *
- * The same spread `storm.test.ts` and `generate.test.ts` use. What it is for
- * differs by claim, and the difference is worth stating once here rather than
- * being inferred at each assertion below:
- *
- *   - **Reachability** really is universal over seeds — a wave can only ever
- *     draw from `stormPool`, whatever the roll — so asking it at sixteen is
- *     asking it of the generator, and a seventeenth would only be slower.
- *   - **The tint rate is not.** A `WaveSpec` is a pair of *ranges*, so it is a
- *     built wave and not a spec that is safe or unsafe, and sixteen seeds are
- *     sixteen measurements rather than a bound. Swept far more widely, four of
- *     the twenty specs (83, 89, 93, 99) do reach four or five starts a second
- *     at seeds nobody is ever served. What makes the shipped twenty safe is
- *     that a level's seed is derived to keep the rule and frozen (decision 58,
- *     re-derived in "each level's seed" below), not that the specs cannot roll
- *     a bad wave.
+ * The same spread `storm.test.ts` and `generate.test.ts` use, and what it
+ * proves differs by claim. Reachability really is universal over seeds — a
+ * wave can only ever draw from `stormPool`, whatever the roll. The tint rate
+ * is not: a `WaveSpec` is a pair of *ranges*, so sixteen seeds are sixteen
+ * measurements rather than a bound (§8.10). What makes the shipped twenty safe
+ * is that a level's seed is derived to keep the rule and frozen (decision 58,
+ * re-derived in "each level's seed" below).
  */
 const SEEDS = [
   0, 1, 2, 7, 42, 99, 128, 1000, 4242, 65535, 123456, 999983, 2147483647,
@@ -93,15 +72,10 @@ const SAMPLED: [name: string, spec: WaveSpec, wave: Wave][] =
 /**
  * When each zone lights up, in ms: one entry per letter that lands on it.
  *
- * Read off the **built schedule** and not off the spec, which is the whole
- * point (§8.10, `fallRange`). A zone tints when a letter *lands* on the finger
- * above it, and a landing is `spawnMs + fallMs` — two draws, not one — so a
- * question about how often a zone lights can only be answered after the wave
- * exists.
- *
- * Every letter counts, because a run in which nothing is shot is the worst
- * case and the one a child who cannot keep up is actually having. A letter
- * that IS shot never lands and never tints.
+ * A landing is `spawnMs + fallMs` — two draws, not one — so this can only be
+ * read off the built schedule (§8.10). Every letter counts, because a run in
+ * which nothing is shot is the worst case and the one a child who cannot keep
+ * up is actually having; a letter that IS shot never lands and never tints.
  */
 function tintsByZone(wave: Wave): Map<ShieldFinger, number[]> {
   const zones = new Map<ShieldFinger, number[]>();
@@ -119,13 +93,9 @@ function tintsByZone(wave: Wave): Map<ShieldFinger, number[]> {
  *
  * A sliding window anchored at each landing, which is where every window's
  * maximum sits: moving the window's start off a landing can only drop letters
- * from the front.
- *
- * Deliberately an over-count. §8.10 measured the tint's own curve — 40% of
- * peak gone by 20ms, 90% by 50ms — so two landings within ~20ms of each other
- * re-peak one lit tint and are one visible episode rather than two flashes.
- * Counting them separately errs towards the strobe, which is the direction to
- * be wrong in.
+ * from the front. Deliberately an over-count — two landings within ~20ms are
+ * one visible episode (§8.10), and counting them separately errs towards the
+ * strobe.
  */
 function peakTintRate(wave: Wave, windowMs = 1000): number {
   let peak = 0;
@@ -164,13 +134,9 @@ function peakZonesLit(wave: Wave, windowMs = 150): number {
  * The count only ever rises when a letter starts to drop, so asking
  * `isFalling` at every drop instant finds the maximum without sweeping the
  * clock — and it asks the engine's own half-open interval rather than
- * restating it (§8.3).
- *
- * Falling and not merely drawn, because that is the claim the early levels
- * make. Every letter hangs at the top for the same beat before it moves
- * (`QUEUE_MS`), so a reaction level shows one letter coming down with the next
- * queued above it — which is a queue, not a second thing to track. `maxOnField`
- * is the other count, and the pair of them is what says so.
+ * restating it (§8.3). Falling and not merely drawn: a letter hanging at the
+ * top (`QUEUE_MS`) is a queue rather than a second thing to track, which is
+ * what `maxOnField` beside it says.
  */
 const maxFalling = (wave: Wave): number =>
   Math.max(
@@ -207,18 +173,12 @@ const mean = (values: number[]) =>
 
 describe("the twenty levels", () => {
   /**
-   * **§5.7 is checked, not trusted.**
-   *
-   * "The design doc and the shipped specs agree" is an acceptance criterion of
-   * this story and it is the kind that rots in a week — twenty rows of numbers
-   * in prose, beside twenty rows of numbers in code, with nothing between them
-   * but somebody's diligence. So the doc's own table is read off disk and
-   * compared column by column, exactly as `StormField.test.tsx` reads
-   * `game.css` rather than restating its arithmetic.
-   *
-   * The doc is the source being checked and not the other way round: if these
-   * ever part company, one of them is wrong and this says which two cells to
-   * look at.
+   * §5.7 is checked, not trusted: twenty rows of numbers in prose beside
+   * twenty rows in code, with nothing between them but somebody's diligence.
+   * The doc's table is read off disk and compared column by column, the same
+   * way `StormField.test.tsx` reads `game.css` rather than restating its
+   * arithmetic. Neither side is the authority — if they part company, one of
+   * them is wrong and this says which two cells to look at.
    */
   it("matches §5.7's table in docs/typing.md, column by column", () => {
     const doc = readFileSync("docs/typing.md", "utf8");
@@ -293,15 +253,10 @@ describe("the twenty levels", () => {
 
 describe("a storm can only rain what the ladder has taught", () => {
   /**
-   * **The acceptance criterion, and the same guarantee §5.2 gives the
-   * passages.** A child at lesson 13 has met fifteen characters, and a wave
-   * that dropped a `9` on them would be asking for a key nobody has shown them
-   * — unshootable, and unfair in the one mode where a letter you cannot find
-   * costs you a shield point.
-   *
-   * It is checked over the pool rather than over a built wave because the pool
-   * is the stronger statement: a wave is a sample of it, and a seed that
-   * happened not to draw the bad key would hide the fault until a re-tune.
+   * The same guarantee §5.2 gives the passages. Checked over the pool rather
+   * than over a built wave because the pool is the stronger statement: a wave
+   * is a sample of it, and a seed that happened not to draw the bad key would
+   * hide the fault until a re-tune.
    */
   it("draws every key from `unlockedAt(n)`", () => {
     for (const lesson of STORM_LESSONS) {
@@ -360,29 +315,19 @@ describe("a storm can only rain what the ladder has taught", () => {
 
 describe("no zone can strobe", () => {
   /**
-   * **WCAG 2.3.1's own line: more than three flashes in any one second.**
-   *
-   * The unit is one shield zone, because that is the thing that lights: a
-   * `.storm__hit` tint is mounted per landing on one segment (§8.10, decision
-   * 42), and eight segments taking one letter each in a second is eight small
-   * patches lighting in turn rather than a flash. A zone taking four is the
-   * failure.
-   *
-   * Three is the standard's line and not a preference — but it is asserted
-   * here over a *sample* of sixteen seeds per spec, which is a measurement and
-   * not a property of the specs (see `SEEDS`). The claim that carries a child
-   * is the next one down: `SHIPPED` is held to two, at the seed each level
-   * freezes, and "each level's seed" re-derives that seed from the rule rather
-   * than reading it off the table.
+   * WCAG 2.3.1's line: more than three flashes in any one second. The unit is
+   * one shield zone, because that is the thing that lights (§8.10, decision
+   * 42) — eight segments taking one letter each is eight small patches
+   * lighting in turn, and a zone taking four is the failure. Asserted here
+   * over a sample of sixteen seeds per spec rather than as a property of them
+   * (see `SEEDS`).
    */
   const MAX_TINTS_PER_ZONE_PER_SECOND = 3;
 
   /**
-   * And what the shipped twenty are actually at.
-   *
-   * The seed on each row is derived to keep it (decision 58, re-derived
-   * below), so this is not a hope about a draw: it is the wave that is served,
-   * and the one claim here that is a guarantee rather than a sample.
+   * What the shipped twenty are actually at. The seed on each row is derived
+   * to keep it (decision 58, re-derived below), so this is the wave that is
+   * served — a guarantee rather than a sample.
    */
   const SHIPPED_MAX = 2;
 
@@ -535,19 +480,13 @@ describe("the ladder's difficulty climbs", () => {
 
 describe("each level's seed", () => {
   /**
-   * **The twenty seeds are derived, not chosen** (decision 58).
-   *
-   * A level is the same weather every time it is opened, so twenty numbers sit
-   * in the table — and twenty unexplained numbers would be twenty things
-   * nobody could ever safely edit. So the rule is written here and the table
-   * is checked against it: **the level's own number, or the first seed above
-   * it whose wave keeps the level's promises.** Fourteen of the twenty are the
-   * lesson number itself; the other six are within six of it.
-   *
-   * The promises are the three things this file has already asserted about
-   * every shipped wave, which is what makes this a derivation rather than a
-   * second opinion: the tint rate under two, at least six of the eight fingers
-   * used, and no zone taking more than a third of the letters.
+   * The twenty seeds are derived, not chosen (decision 58): the level's own
+   * number, or the first seed above it whose wave keeps the level's promises.
+   * Fourteen of the twenty are the lesson number itself; the other six are
+   * within six of it. The promises are the three things this file has already
+   * asserted about every shipped wave — the tint rate under two, at least six
+   * of the eight fingers used, and no zone taking more than a third of the
+   * letters.
    */
   const keeps = (wave: Wave, spec: WaveSpec) =>
     peakTintRate(wave) <= 2 &&
@@ -577,10 +516,9 @@ describe("each level's seed", () => {
   });
 
   it("is the same storm on every machine and in every session", () => {
-    // Decision 58, said as the thing a child would notice: opening lesson 45
-    // twice is opening the same level twice. `buildWave` is deterministic in
-    // `(spec, seed)` and both halves come off the rung, so this is what makes
-    // "I beat Whiteout" a sentence about a thing rather than about a roll.
+    // `buildWave` is deterministic in `(spec, seed)` and both halves come off
+    // the rung, so opening lesson 45 twice is opening the same level twice
+    // (decision 58).
     for (const [name, lesson, wave] of SHIPPED)
       expect(stormWave(lesson), name).toEqual(wave);
   });

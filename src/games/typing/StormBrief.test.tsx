@@ -8,19 +8,17 @@ import { isStormLesson, type StormLesson } from "@/engine/typing/storms";
 import { StormBrief } from "./StormBrief";
 
 /**
- * What is written on a storm's door (docs/typing.md §8.1, §8.8, §9).
+ * What is written on a storm's door (§8.1, §8.8, §9).
  *
  * A storm gets a brief of its own rather than an arm inside `LessonBrief`,
  * because the three things that screen is made of — the bars, the best and the
- * keyboard control — are three things a storm does not have. What this one has
- * to carry instead is on trial here:
+ * keyboard control — are three things a storm does not have. What it carries
+ * instead is on trial here:
  *
- *   - **How it is played**, for the child meeting a falling-letter game at
- *     lesson 4 who cannot guess §8.4's rule by watching.
+ *   - **How it is played**, since §8.4's rule cannot be guessed by watching.
  *   - **What THIS storm is**, so that "First ice" and "Whiteout" are not the
  *     same screen with different numbers behind them.
- *   - **That nothing waits on it** (§8.8, decision 24), which is the promise
- *     the tile can only carry as a phrase.
+ *   - **That nothing waits on it** (§8.8, decision 24).
  */
 
 const storm = (id: string): StormLesson => {
@@ -103,13 +101,10 @@ describe("StormBrief", () => {
 
   it("names the shift on every storm that can rain a capital", () => {
     /*
-     * Decision 70. A capital is shot with a shift held, and it was not always
-     * — so the level a child meets it on has to say so, or it is a rule that
-     * announces itself by taking ten points.
-     *
-     * Asked of the pool and not of `focus`: capitals are unlocked at lesson
-     * 34 and are in every wave's pool from there up (§5.6), so "Pairs" rains
-     * them without being about them and needs the sentence exactly as much.
+     * Decision 70. Asked of the pool and not of `focus`: capitals are
+     * unlocked at lesson 34 and are in every wave's pool from there up
+     * (§5.6), so "Pairs" rains them without being about them and needs the
+     * sentence exactly as much.
      */
     for (const id of ["L34", "L39", "L45", "L99"])
       expect(words(storm(id)), id).toContain("A capital needs a shift");
@@ -120,10 +115,8 @@ describe("StormBrief", () => {
   });
 
   /**
-   * §8.8, said in full on the one screen with room for it. The tile carries
-   * "worth playing, never required" and this says what that MEANS: the rung
-   * above opens off the rung below, so a storm can be skipped, failed or never
-   * opened at no cost at all.
+   * §8.8, said in full on the one screen with room for it — the tile only has
+   * room for the phrase.
    */
   it("promises that nothing on the ladder waits on it", () => {
     expect(words(L04)).toContain("worth playing, never required");
@@ -137,9 +130,9 @@ describe("StormBrief", () => {
   });
 
   /**
-   * And refuses on one they have not — the same `tileState` the tile is drawn
-   * from, asked twice on purpose: a screen that can say "locked" must not also
-   * be able to start the thing it just called locked.
+   * The same `tileState` the tile is drawn from, asked twice on purpose: a
+   * screen that can say "locked" must not also be able to start the thing it
+   * just called locked.
    */
   it("refuses a storm above the pointer, and says what opens it", () => {
     const shut = render(L04, FRESH);

@@ -7,7 +7,7 @@ import type { Verdict } from "@/engine/typing/verdict";
 import { PassBars } from "./PassBars";
 
 /**
- * The bars, drawn (docs/typing.md §6.1).
+ * The bars, drawn (§6.1).
  *
  * The lesson arm is exercised end to end next door in `LessonBars.test.tsx`,
  * over a real `verdictFor` — three bars, their order, and a bar that cannot
@@ -39,11 +39,10 @@ const deadInTheStorm: Verdict = {
 describe("PassBars", () => {
   /**
    * The bug this arm exists to avoid. §6.1's verdict gives a storm `wpm: {
-   * got: 0, need: 0, ok: true }` — a bar a storm cannot fail — and a `need` of
-   * zero draws as a full one. Three full bars over the word "failed" is a
-   * child being shown a screen that contradicts itself, so the column a storm
-   * was never asked for is not drawn at all and `missNote` says what the wave
-   * did instead.
+   * got: 0, need: 0, ok: true }`, and a `need` of zero draws as a full bar —
+   * so three full bars over the word "failed" is a screen contradicting
+   * itself. The column a storm was never asked for is not drawn at all, and
+   * `missNote` says what the wave did instead.
    */
   it("draws no speed bar on a Hailstorm level", () => {
     expect(labels(deadInTheStorm)).toEqual(["Accuracy"]);

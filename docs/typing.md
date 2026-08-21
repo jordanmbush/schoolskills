@@ -232,6 +232,12 @@ One field rather than `showKeyboard` + `showHint`, because three of the four
 boolean combinations are meaningful and the fourth ("hint on, board hidden")
 is nonsense. A union cannot express the nonsense.
 
+The middle mode is what makes the union worth having. "Keys" is the rung a
+child climbs before turning the board off entirely, and it is where most of the
+learning happens — so it must not be the thing you reach by unchecking half a
+pair. The control is a `SegmentedControl` for the same reason: a switch can
+only say on or off.
+
 ### 4.2 · Where the setting lives, and who wins
 
 The player's own preference is a field on `Profile`, alongside `soundOn`:
@@ -559,6 +565,14 @@ are otherwise found by a seven-year-old:
   characters. Below that it isn't a lesson about them; above it, it is a memory
   test rather than typing.
 
+The second has one exception, and it is a fact about the ladder rather than a
+concession by the generator: at lesson 1 the unlocked alphabet is `f`, `j` and
+the space bar, so there is no review to be had and the whole drill is the two
+new keys — which is exactly what §5.5 asks for there. So the test states the
+band in derived terms: a lesson **with review available** is 15–35% new. A
+re-ordered ladder that left lesson 40 with nothing to review would then be
+named by the test rather than quietly excused by it.
+
 ### 5.3 · The lexicon, and the 222 KB lesson
 
 Filtering "words using only `f j d k s l`" needs a corpus. The Dolch lists in
@@ -651,6 +665,23 @@ Three things about that order are deliberate:
 - **Comma and full stop come in with the bottom row**, because that is where
   they physically are. It costs nothing and it means real sentences are
   available at the end of block 3 rather than needing their own lesson.
+
+Two rows in that table are not what they look like:
+
+- **Block 4 introduces capitals, not shifts.** A shift is not a character, and
+  the unit of this curriculum is a character — so what lessons 31 and 32 hand
+  over is the set of capitals each shift _reaches_. The right shift is held by
+  the right pinky and capitalises the left hand's letters; the left shift the
+  right hand's. Two lessons, twenty-six characters, and the opposite-hand rule
+  (§3.3) taught as the only way either of them works. `keys.ts` reads the
+  shifts back out of those two rows, and there is nowhere else they are
+  written down.
+- **Block 7 re-introduces two characters the ladder already unlocked.** `;`
+  arrived at lesson 5 as a home key and `/` at lesson 25 as a bottom-row reach,
+  and both come back here in their punctuation role. The unlocked alphabet is a
+  union, so saying it twice changes nothing about what a child may type; what
+  it does is put the character back under the new-key gate (§6.4), which is the
+  point. Knowing where `;` is and knowing what it is for are two lessons.
 
 ### 5.6 · The hundred
 
@@ -943,17 +974,21 @@ keys, then speed.
 
 ### 6.2 · Accuracy is nearly flat, and high
 
-**95%** for a lesson, **97%** for a checkpoint, all the way up. It does not
-scale with the material, and it does not scale with age.
+**95%** for a lesson, **97%** for a checkpoint. It does not scale with the
+material, and it does not scale with age.
 
 The temptation is to make it easy at the start, because the child is five.
 That gets it backwards: lesson 1 has _two keys_, and 95% of a two-key drill is
 easier than 95% of anything that comes later. The bar being constant is what
 makes it teach — it says accuracy is not the thing that varies, speed is.
 
-The one exception is lesson 97, which asks for 99% at a deliberately modest
-pace. It exists so that "slow down and get it right" is a thing the ladder has
-asked for explicitly at least once.
+**It bends late, and the table in §5.6 is the authority.** From block 8 the bar
+is 96% rather than 95% — for the endurance lessons, for checkpoint 90, and for
+block 10's prose (91–96) — because holding a rate over a hundred words is a
+different thing from holding it over thirty. Lesson 97 bends the other way,
+asking 99% at a deliberately modest pace, so that "slow down and get it right"
+is a thing the ladder has asked for explicitly at least once. An accuracy
+column "corrected" back to a flat 95/97 would be wrong from block 8 to the end.
 
 ### 6.3 · Speed scales, and dips
 
@@ -982,6 +1017,16 @@ every seed (§5.2), so the gate can never be unpassable through bad luck.
 
 This is the criterion that turns a hundred typing tests into a hundred
 lessons, and it is the one no other course on the internet has.
+
+**Twelve wherever twelve fits.** That is every lesson arriving two keys at a
+time: 24 strikes in a 24-word lesson is a fifth of the characters, comfortably
+inside §5.2's band. Four lessons hand over more than a pair at once — 31, 32,
+67 and 68 — and three of them cannot also ask twelve of each. Lesson 31's
+fifteen capitals would want 180 strikes in 150 characters, so there the demand
+is divided between the new keys rather than being made unreachable. Lesson 68's
+four keys still fit twelve apiece inside its 175, which is why the ceiling is a
+`min` against the room rather than a rule about how many keys arrived. Two is
+the floor: below it the gate cannot tell a typist from a lucky guess.
 
 **Per-key stats come from the cards, not from keystrokes.** A `CardResult`
 carries `answer` and `given`, so a word typed right contributes a hit to each
@@ -1387,6 +1432,14 @@ moment it is new, and this is the moment it is not moving. Reading the letter
 and racing it down become two things instead of one, and a child who has
 already identified an `i` does not need it to be legible on the way past.
 
+A second is a judgement rather than a measurement, and what anchors it is that
+it is the same order as the fastest fall on the ladder (900ms, at lessons 4, 9
+and 13). Round, long enough to read an unfamiliar glyph without hurrying, and
+short enough that a level with a 300ms gap still has a queue rather than a
+crowd. What the beat is **not** is a head start on the schedule: the letters
+still arrive at the same intervals, so a child who reads fast simply gets to
+spend it, and one who does not still has the whole fall.
+
 Four things about it, and the first is the one that matters most:
 
 - **A queued letter is shootable.** `isAirborne` says it is on the field,
@@ -1484,6 +1537,14 @@ Whether a shift was down is read off `event.shiftKey` on the keydown itself,
 never tracked across keydown and keyup. A shift released while the tab was in
 the background is a `keyup` this window never saw, and a gun trusting its own
 bookkeeping would go on demanding a shift nobody was holding.
+
+**The brief has to say so.** A rule that announces itself by taking ten points
+is not a rule a child was taught, so every storm whose wave can rain a capital
+carries "A capital needs a shift" on the screen before it starts. The
+obligation is read off the wave's **pool** rather than its `focus`: capitals
+are in every pool from lesson 34 up (§5.6), so a level like Pairs rains them
+without being about them, and a brief keyed to what the level is _for_ would
+miss exactly those.
 
 ### 8.5 · The shield is your fingers
 

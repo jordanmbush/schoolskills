@@ -7,39 +7,21 @@ import type { Lesson } from "./lessons";
 import { WORDS } from "./lexicon";
 
 /**
- * The three invariants that make a hundred generated lessons safe
- * (docs/typing.md §5.2, §12).
- *
- * This is the test the three stories before it were for. The hundred specs
- * gave it something to walk, `unlockedAt` gave it the question to ask of every
- * character, and the corpus gave the generator something to answer with — and
- * what it buys is the ladder being *editable*: move a lesson, re-order a
- * block, hand a key over two lessons earlier, and the text follows or this
- * file says which lesson it stopped following at.
- *
- *   1. **Reachability.** Every character of every lesson, at every seed, is
- *      producible on the board and unlocked by that lesson.
- *   2. **The new key shows up enough.** Every introduced character occurs at
- *      least `pass.keyStrikes` times, at every seed, so the new-key gate
- *      (§6.4) can never be unpassable through bad luck.
- *   3. **A lesson is mostly review.** New keys are 15–35% of the characters:
- *      below that it is not a lesson about them, above it a memory test.
+ * The three invariants that make a hundred generated lessons safe (§5.2, §12):
+ * reachability, `pass.keyStrikes` met at every seed, and new keys at 15–35% of
+ * the characters.
  *
  * Each is asserted over all hundred lessons crossed with a spread of seeds,
  * because a generator is a distribution and one seed is an anecdote. Failures
  * are collected rather than thrown at the first one: "lessons 61, 63 and 67
- * are short of strikes" is a finding about the ladder, where "lesson 61 is"
- * is a bug report you have to fix three times.
+ * are short of strikes" is a finding about the ladder, where "lesson 61 is" is
+ * a bug report you have to fix three times.
  *
- * ── The one lesson invariant 3 cannot cover, and why that is not a licence ───
- * At lesson 1 the unlocked alphabet is `f`, `j` and the space bar. There is no
- * review to be had, so a lesson that is 15–35% new keys is not merely
- * undesirable there, it is arithmetically impossible — and §5.5 asks for
- * exactly what the ladder does instead: "three lessons of `fff jjj fjf` is
- * standard and correct". So the band is asserted wherever the ladder has
- * anything to review and a *stronger* claim — every character is a new key —
- * where it has not. Both halves are derived from `unlockedAt`, never from a
- * list of excused lesson numbers, which is what keeps the exception honest: a
+ * At lesson 1 the unlocked alphabet is `f`, `j` and the space bar, so the
+ * 15–35% band is arithmetically impossible there. The band is asserted
+ * wherever the ladder has anything to review, and a stronger claim — every
+ * character is a new key — where it has not. Both halves are derived from
+ * `unlockedAt` rather than from a list of excused lesson numbers, so a
  * re-ordered ladder that leaves lesson 40 with nothing to review is reported
  * by the same line rather than covered by it.
  */
@@ -49,11 +31,9 @@ const MIN_NEW_SHARE = 0.15;
 const MAX_NEW_SHARE = 0.35;
 
 /**
- * Enough seeds that a rare draw is not a lucky pass.
- *
- * Sixteen crossed with a hundred lessons is sixteen hundred generations, which
- * runs in under a second because the corpus is filtered once per lesson. The
- * seeds are spread rather than 0–15: `mulberry32` is well-behaved over
+ * Enough seeds that a rare draw is not a lucky pass. Sixteen crossed with a
+ * hundred lessons runs in under a second, because the corpus is filtered once
+ * per lesson. Spread rather than 0–15: `mulberry32` is well-behaved over
  * neighbouring seeds, but the numbers a run actually uses come from
  * `randomSeed()` and look nothing like a counter.
  */
@@ -63,12 +43,10 @@ const SEEDS = [
 ];
 
 /**
- * Every lesson that has text — the storms have a wave instead (§8.3).
- *
- * Read off the *kind* and not off `wordCount`, which stopped being able to
- * answer this the day the twenty waves landed: a storm level's `wordCount` is
- * its wave's `count` (§5.6), so "has a length" is now true of all hundred and
- * "has words" is true of eighty.
+ * Every lesson that has text — the storms have a wave instead (§8.3). Read off
+ * the *kind* and not off `wordCount`: a storm level's `wordCount` is its
+ * wave's `count` (§5.6), so "has a length" is true of all hundred and "has
+ * words" of eighty.
  */
 const WITH_TEXT = LESSONS.filter((lesson) => lesson.kind.type !== "storm");
 
@@ -93,9 +71,6 @@ const countOf = (text: string, chars: readonly string[]) => {
 
 describe("the reachability invariant", () => {
   /**
-   * The one §5.2 calls "the test that makes the ladder editable", and the only
-   * one whose failure a child would meet as a key they have never been shown.
-   *
    * `canType` is asked per character rather than per word so the report names
    * the character: "L27 needs 'q'" is a curriculum bug you can act on.
    */
@@ -113,14 +88,10 @@ describe("the reachability invariant", () => {
   });
 
   /**
-   * Reachability is about characters; this is about the words they make.
-   *
    * A lesson asks for `wordCount` words because that is what its wpm bar is
-   * computed against (§6.3): a lesson that quietly ran nine words short would
-   * report a speed nobody typed. Storm levels are the exception, and their
-   * `wordCount` means something else entirely — the letters in the wave — so
-   * they are asked the question they do have an answer to instead, three tests
-   * down: a storm generates no text at all.
+   * computed against (§6.3): one that quietly ran nine words short would
+   * report a speed nobody typed. Storms are excluded here and asked the
+   * question they do have an answer to — no text at all — three tests down.
    */
   it("produces exactly the number of words the lesson asks for", () => {
     const offenders: string[] = [];
@@ -140,10 +111,9 @@ describe("the reachability invariant", () => {
 
 describe("the new-key invariant", () => {
   /**
-   * The gate in §6.4 waits for `keyStrikes` strikes of each new character
-   * before it will judge that key at all. If the text does not contain that
-   * many, the lesson cannot be passed however well it is typed — and the child
-   * has no way of knowing why, because everything they typed was right.
+   * §6.4's gate will not judge a key until `keyStrikes` strikes of it. Text
+   * short of that is a lesson that cannot be passed however well it is typed,
+   * with nothing on screen to say why.
    */
   it("strikes every new key at least as often as its gate demands", () => {
     const offenders: string[] = [];
@@ -164,13 +134,6 @@ describe("the new-key invariant", () => {
     expect(offenders).toEqual([]);
   });
 
-  /**
-   * §5.2's band, everywhere the ladder has review to give.
-   *
-   * The floor and the ceiling fail differently and both matter: under 15% the
-   * lesson is not about the keys it claims to introduce, and over 35% it has
-   * stopped being typing practice and become a memory test of two keys.
-   */
   it("keeps the new keys between 15% and 35% of the characters", () => {
     const offenders: string[] = [];
     for (const lesson of INTRODUCING) {
@@ -188,13 +151,9 @@ describe("the new-key invariant", () => {
   });
 
   /**
-   * The other side of that exception, asserted rather than assumed.
-   *
-   * Lesson 1 is the whole of it today: `f`, `j` and the space bar, so every
-   * character that is not a space is a new key by necessity. Writing it down
-   * as its own expectation is what stops "the ladder had nothing to review" —
-   * true and unavoidable at lesson 1 — from becoming a silent excuse the day
-   * somebody moves a lesson into a place where it is neither.
+   * The exception the header describes, asserted rather than assumed: pinning
+   * the list to `L01` is what stops "nothing to review" becoming a silent
+   * excuse the day somebody moves a lesson.
    */
   it("spends a lesson with nothing to review entirely on its new keys", () => {
     const nothingToReview = INTRODUCING.filter(
@@ -215,8 +174,6 @@ describe("the new-key invariant", () => {
 
 describe("generate", () => {
   /**
-   * Deterministic in `(lesson, seed)`, like every other deck on this site.
-   *
    * Not a nicety: a lesson is re-rendered on every mount of the results screen
    * and re-read out of the record book months later, and a run whose text
    * changed underneath it would show a child a passage they never typed.
@@ -227,9 +184,6 @@ describe("generate", () => {
   });
 
   /**
-   * …and a different one for a different seed, or the ladder is a hundred
-   * fixed passages a child could learn by heart.
-   *
    * Counted across the ladder rather than asserted per lesson: lesson 8 draws
    * from ten words and lesson 1 from two keys, so a handful of collisions is
    * the pool being small rather than the seed being ignored.
@@ -254,8 +208,8 @@ describe("a lesson's kind decides its text", () => {
 
   /**
    * A drill is groups of one length, so the lesson is as long in characters as
-   * `strikesFor` assumed when it sized the gate (five to a word, the space
-   * included). It is also what a drill looks like on the page.
+   * `strikesFor` assumed when it sized the gate — five to a word, the space
+   * included.
    */
   it("keys · lays the new keys into even letter groups", () => {
     for (const lesson of LESSONS.filter((l) => l.kind.type === "keys"))
@@ -365,14 +319,10 @@ describe("a bag is exhausted before it repeats", () => {
   });
 
   /**
-   * And where the pool is smaller than the lesson it is emptied before it is
-   * refilled, which is the only reason a tiny bag is usable at all.
-   *
-   * Lesson 8 is the smallest on the ladder: `ll`, `ss` and `dd` at nine
-   * unlocked letters is ten words in the whole corpus, one of them for `ss`.
-   * Its twenty-five slots therefore *have* to repeat — repetition is what a
-   * pairs lesson is — and what the bag rule buys is that every one of the ten
-   * is met before any of them comes round a third time.
+   * Lesson 8 is the smallest pool on the ladder: `ll`, `ss` and `dd` at nine
+   * unlocked letters is ten words in the whole corpus. Its twenty-five slots
+   * therefore have to repeat, and what the bag rule buys is that every one of
+   * the ten is met before any comes round a third time.
    */
   it("empties a small pool before drawing from it again", () => {
     const lesson = LESSONS.find((l) => l.n === 8) as Lesson;

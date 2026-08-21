@@ -4,12 +4,10 @@ import type { Lesson } from "@/engine/typing/lessons";
 import { lockNote } from "./lessonNotes";
 
 /**
- * One rung of the ladder, as a square on a map (docs/typing.md §9).
+ * One rung of the ladder, as a square on a map (§9).
  *
- * A tile carries three things and only three: which lesson it is, what state
- * that lesson is in for this child, and what happens when it is pressed. The
- * shape of the map — ten rows, blocks named down the side — is `LessonLadder`'s
- * problem; a tile does not know it has ninety-nine neighbours.
+ * The shape of the map is `LessonLadder`'s problem; a tile does not know it has
+ * ninety-nine neighbours.
  *
  * **Every state is in the accessible name, not only in the colour.** The number
  * is the visible label and the sentence beside it is the spoken one, which is
@@ -21,37 +19,22 @@ import { lockNote } from "./lessonNotes";
 /**
  * What a tile is, in the order the states are decided.
  *
- * Four rather than a pair of booleans because they are exclusive on screen —
- * a tile is filled, or lit, or outlined, or dim — and a component that took
- * `cleared` and `open` separately would have to answer what a cleared-but-
- * locked tile looks like, which is not a thing.
+ * Four rather than a pair of booleans because they are exclusive on screen, and
+ * a component that took `cleared` and `open` separately would have to answer
+ * what a cleared-but-locked tile looks like, which is not a thing.
  */
 export type TileState = "cleared" | "next" | "open" | "locked";
 
 /**
  * Which of the four this lesson is, for this child — **the whole unlock rule**
- * (docs/typing.md §6.6, decision 16).
+ * (§6.6, decision 16): everything up to and including `next`, plus every
+ * checkpoint always.
  *
- * `LadderProgress.next` is the pointer and NOT the rule, and its own docstring
- * says so at length. A screen that opened a tile on `n <= next` alone would
- * pass every test anyone thought to write and quietly delete the placement
- * test, because the thing it removes is not on screen to look broken. So, in
- * full:
- *
- *   - **Everything up to and including `next` is open.** The pointer is
- *     carried over Hailstorm levels rather than made to jump them (§8.8), so
- *     the storm it stepped past is at or below `next` and stays playable —
- *     skippable is not the same as skipped, and no storm ever gates the
- *     lesson after it.
- *   - **Every checkpoint is open, always.** All ten, at every value of `next`,
- *     including on a profile that has never run anything. That is the express
- *     lane: a nine-year-old who already types opens checkpoint 40, passes it,
- *     and starts at 41 rather than spending a week on `fff jjj`. Passing one
- *     clears everything below it by the same `max` rule that opens the next
- *     lesson, so it is a placement test without a placement test existing.
- *
- * Nothing else gates, and a failed attempt costs nothing (§6.6) — which is
- * what makes "just try one" the whole of the levelling advice.
+ * `LadderProgress.next` is the pointer and NOT the rule. A screen that opened a
+ * tile on `n <= next` alone would pass every test anyone thought to write and
+ * quietly delete the placement test, because what it removes is not on screen
+ * to look broken. The pointer is also carried over Hailstorm levels rather than
+ * made to jump them (§8.8), so a storm it stepped past stays playable.
  */
 export function tileState(lesson: Lesson, progress: LadderProgress): TileState {
   if (progress.cleared.has(lesson.n)) return "cleared";
@@ -65,28 +48,19 @@ export function tileState(lesson: Lesson, progress: LadderProgress): TileState {
  *
  * The tile's accessible name and the ladder's legend both open with it, and a
  * third copy would be one to keep in step: a legend that described a different
- * kind of tile from the tiles it is a legend for is a legend that has quietly
- * stopped being one.
+ * kind of tile from the tiles it is a legend for has quietly stopped being one.
  */
 export const STORM_NOTE = "Hailstorm — worth playing, never required.";
 
 /**
- * Why a Hailstorm tile cannot be entered, or `null` when it can be.
+ * Why a Hailstorm tile cannot be entered, or `null` when it can be. One reason,
+ * and it is about the child's device (§8.8).
  *
- * **One reason now, and it is about the child's device** (docs/typing.md §8.8,
- * #155, #156). The "coming soon" arm this had while the twenty waves were
- * being built is gone with them: a keyboard is the only thing between a child
- * and a storm, and the tile opens off this same answer.
- *
- * It is deliberately not "you have no keyboard" said as a fact. The detection
- * is a guess (`useKeyboardPresence`), and a guess that has been wrong is
- * undone by one keystroke — which is why the ladder's legend, where there is
- * room to say it once rather than a hundred times, offers exactly that.
- *
- * The lock is only ever the reason a storm cannot be *entered*, and never a
- * reason it cannot be skipped: nothing on the ladder waits on a storm (§8.8,
- * decision 24), so a device with no keys costs a child twenty tiles and not
- * one rung of the course.
+ * Deliberately not "you have no keyboard" said as a fact: the detection is a
+ * guess (`useKeyboardPresence`) undone by one keystroke, which is what the
+ * ladder's legend offers, once, where there is room to say it. And it is never
+ * a reason a storm cannot be *skipped* (§8.8), so a device with no keys costs a
+ * child twenty tiles and not one rung of the course.
  */
 export function stormReason(hasKeyboard: boolean): string | null {
   return hasKeyboard
@@ -118,24 +92,16 @@ function tileLabel(
 ): string {
   const what = `Lesson ${lesson.n}, ${lesson.title}`;
 
-  // What unlocks it, on the tile as well as in the brief (#145). The tile is
-  // the only place a locked rung is met by a child who never presses it, and
-  // "Locked" on its own is a state rather than a way out of one. One
-  // definition for both kinds of tile: a diamond a child has not climbed to
-  // yet needs the same sentence a square does, and `lockNote` is already the
-  // one that walks down past any storm in the way.
+  // What unlocks it, on the tile as well as in the brief: the tile is the only
+  // place a locked rung is met by a child who never presses it, and "Locked" on
+  // its own is a state rather than a way out of one. `lockNote` is one
+  // definition for both kinds of tile.
   const how = state === "locked" ? ` ${lockNote(lesson)}` : "";
 
-  // A storm level says what it is, and — where there is one — why it cannot be
-  // entered, rather than being a tile that does nothing when pressed. Its
-  // place on the map is worth drawing either way: it is what makes lesson 4
-  // arriving before the first word look deliberate.
-  //
-  // Its state is the same `tileState` every other rung is drawn from, which is
-  // what a storm this far up the ladder needs. What it can never say is that
-  // something is waiting on it — a storm opens no door and closes none (§8.8),
-  // and `STORM_NOTE` is the sentence that carries that, first, on every one of
-  // the twenty.
+  // A storm says what it is, and — where there is one — why it cannot be
+  // entered, rather than being a tile that does nothing when pressed. What it
+  // can never say is that something is waiting on it (§8.8), which is what
+  // `STORM_NOTE` carries, first, on every one of the twenty.
   if (lesson.kind.type === "storm")
     return `${what}. ${STORM_NOTE} ${blocked ?? `${SAID[state]}.${how}`}`;
 

@@ -20,17 +20,12 @@ import { strokeFor } from "../keyboard";
 /**
  * The corpus, checked against the board it will be typed on.
  *
- * One assertion here matters more than the rest: **every character of every
- * word, sentence and passage has a `strokeFor`**. Typing marks exactly, so a
- * curly quotation mark, an accent or an em dash that reached this file by way
- * of a copy-paste is not a typo — it is a lesson a child cannot pass, however
- * well they type it, and they will be the one who finds it. `decks/typing.ts`
- * had to hand-exclude exactly that from the Scripture pool; here it is a test
- * instead of a reading rule.
- *
- * The rest of the suite is about the ladder actually being able to use what is
- * here — a bigram lesson with no words in it, or a first words lesson whose
- * alphabet leaves an empty bag, fails silently in front of a five-year-old.
+ * One assertion matters more than the rest: every character of every word,
+ * sentence and passage has a `strokeFor`. A curly quotation mark or an accent
+ * that arrived by copy-paste is not a typo but a lesson a child cannot pass,
+ * and they will be the one who finds it. The rest of the suite is about the
+ * ladder being able to use what is here — a bigram lesson with no words in it
+ * fails silently in front of a five-year-old.
  */
 
 /** Every string this file offers, in one place, so nothing escapes the check. */
@@ -112,17 +107,15 @@ describe("WORDS", () => {
   });
 
   /**
-   * Letters and the apostrophe, and capitals only where English insists on
-   * them: `I`, and the days and months. Anything else with a capital in it is
-   * a proper noun that has wandered in from `NAMES` or the sentence pool,
-   * where names belong.
+   * Capitals only where English insists on them: `I`, and the days and months.
+   * Anything else with a capital in it is a proper noun that has wandered in
+   * from `NAMES` or the sentence pool, where names belong.
    *
    * The permitted set is enumerated rather than described by a shape. A regex
-   * ending in `[A-Z][a-z]+` — which is what this test used to carry — admits
-   * "London", "Ravi" and "England" while claiming to admit only the calendar,
-   * and it also cannot see the failure in the other direction: eleven of the
-   * twelve months, with the missing one noticed by whichever child types the
-   * year out.
+   * ending in `[A-Z][a-z]+` admits "London", "Ravi" and "England" while
+   * claiming to admit only the calendar, and it cannot see the failure in the
+   * other direction either: eleven of the twelve months, with the missing one
+   * noticed by whichever child types the year out.
    */
   it("is lowercase but for I, the days and the months", () => {
     const days = [
@@ -199,12 +192,9 @@ describe("the focus sets", () => {
   });
 
   /**
-   * The cross-check that keeps the ladder and the corpus in step: every
-   * sequence a bigram lesson names is one of the sets here, and the corpus can
-   * offer at least one word containing it *at that lesson's alphabet*. Both
-   * halves are needed — a focus nobody stocked and a focus whose only words
-   * use a letter the child has not met fail identically, as a lesson that
-   * cannot be generated.
+   * Both halves are needed: a focus nobody stocked and a focus whose only
+   * words use a letter the child has not met fail identically, as a lesson
+   * that cannot be generated.
    */
   it.each(FOCUSES)("stocks lesson $n's $focus", ({ n, focus }) => {
     const known = new Set([...BIGRAMS, ...DOUBLES, ...HARD_PAIRS, ...TRIGRAMS]);
@@ -249,11 +239,9 @@ describe("the hand sets", () => {
 });
 
 /**
- * Lesson 33, "Names, and the word I", is a **words** lesson — it hands over a
- * list, not prose — and its entire subject is the one thing `WORDS` is
- * deliberately empty of. Without a pool of its own it is a lesson about names
- * with no name in anything it can reach, which is what these cases are here to
- * stop coming back.
+ * Lesson 33, "Names, and the word I", is a **words** lesson whose entire
+ * subject is the one thing `WORDS` is deliberately empty of. Without a pool of
+ * its own it is a lesson about names with no name in anything it can reach.
  */
 describe("NAMES", () => {
   const LESSON_33 = LESSONS.find((lesson) => lesson.n === 33);
@@ -269,10 +257,9 @@ describe("NAMES", () => {
   });
 
   /**
-   * The apostrophe does not arrive until lesson 35 and the shifts land at 31
-   * and 32, so lesson 33 is the first place a capital is typeable at all. A
-   * name here that needed a key the child has not met would fail exactly as a
-   * word does (§5.2) — as a lesson that cannot be generated.
+   * The shifts land at 31 and 32 and the apostrophe not until 35, so lesson 33
+   * is the first place a capital is typeable at all — and a name needing a key
+   * the child has not met is a lesson that cannot be generated (§5.2).
    */
   it("is typeable at the lesson that asks for it", () => {
     for (const name of NAMES) expect(canType(name, 33)).toBe(true);
@@ -318,14 +305,10 @@ describe("SENTENCES", () => {
 
 describe("PASSAGES", () => {
   /**
-   * Counted against the ladder, not against a constant. The window this used to
-   * assert — fifty to a hundred and sixty — was one no lesson had asked for
-   * since the ladder was written, and a pool that topped out at ninety-six
-   * passed it while lessons 80, 94, 96 and 100 (a hundred, a hundred, a hundred
-   * and twenty, a hundred and fifty) had nothing they could be generated from.
-   * A number in a test is a claim about the curriculum, and this is the same
-   * mistake the FOCUSES cases above exist to avoid: drive the case off LESSONS
-   * and the assertion cannot drift away from what the ladder wants.
+   * Counted against the ladder, not against a constant: a number in a test is
+   * a claim about the curriculum, and a fixed window goes green while lessons
+   * 80, 94, 96 and 100 have nothing they can be generated from. Driving the
+   * case off LESSONS is what the FOCUSES cases above do, for the same reason.
    */
   it.each(PASSAGE_LESSONS)(
     "is long enough for lesson $n, $title ($wordCount words)",
@@ -336,10 +319,8 @@ describe("PASSAGES", () => {
   );
 
   /**
-   * And the exam is not a pool of one. Lesson 100 is the longest ask on the
-   * ladder, so a single passage clearing it would mean every child's Ice Exam
-   * is the same text, every attempt — which §5.4 does not require and nobody
-   * would enjoy.
+   * The exam is not a pool of one: a single passage clearing lesson 100 would
+   * mean every child's Ice Exam is the same text, every attempt.
    */
   it("gives the longest lesson on the ladder a choice", () => {
     const longest = Math.max(...PASSAGE_LESSONS.map((l) => l.wordCount));
@@ -377,13 +358,11 @@ describe("PASSAGES", () => {
 });
 
 /**
- * The bundle rule, from the corpus's side.
- *
  * `eslint.config.mjs` bans the import and `eslint.config.test.mjs` proves the
- * ban fires; this is the other half — that nothing here needs the deck layer
- * either, so the wall has no reason to be climbed from this direction. A
- * corpus that imported `decks/wordlists.ts` for its sight words would put the
- * two modules in one graph again, from the end nobody is watching.
+ * ban fires; this is the other half — nothing here needs the deck layer, so
+ * the wall has no reason to be climbed from this direction. A corpus that
+ * imported `decks/wordlists.ts` for its sight words would put the two modules
+ * in one graph again, from the end nobody is watching.
  */
 describe("the layer it must not reach into", () => {
   it("imports nothing from the deck layer", async () => {

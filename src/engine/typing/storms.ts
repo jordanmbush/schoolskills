@@ -3,33 +3,28 @@ import { LESSONS, type Lesson, type StormFocus } from "./lessons";
 import { buildWave, type Wave, type WaveSpec } from "./storm";
 
 /**
- * The twenty Hailstorm levels, as waves (docs/typing.md §5.6, §8.1, §8.3).
+ * The twenty Hailstorm levels, as waves (docs/typing.md §5.7, §8.1, §8.3).
  *
- * `lessons.ts` writes down what each storm *is* — how many letters, how far
- * apart, how fast, how deep the shield, whether it repairs — and this module
- * is where that becomes a `WaveSpec` the engine can build. The split is not
- * bookkeeping. It is the whole of the acceptance criterion that **a storm can
- * never ask for a key the ladder has not taught** (decision 56): a
- * `StormShape` has no `keys` field and the table `satisfies` it, so there is
- * nowhere to write a character down, and the pool can only ever come from
- * `unlockedAt(n)` — the same computed alphabet every lesson's words are drawn
- * from (§5.2). Move lesson 39's storm to rung 12 and it rains what a child at
- * lesson 12 has met, with nothing to edit.
+ * `lessons.ts` writes down what each storm *is* and this module turns that
+ * into a `WaveSpec` the engine can build. The split is the acceptance
+ * criterion rather than bookkeeping: a `StormShape` has no `keys` field and
+ * the table `satisfies` it, so there is nowhere to write a character down and
+ * the pool can only ever come from `unlockedAt(n)` — **a storm can never ask
+ * for a key the ladder has not taught** (decision 56). Move lesson 39's storm
+ * to rung 12 and it rains what a child at lesson 12 has met, with nothing to
+ * edit.
  *
- * ── Why it is not in `lessons.ts` ────────────────────────────────────────────
- * That module is the one file in `engine/typing/` the deck layer may import
- * (§5.3, decision 7), and `unlockedAt` lives in `keys.ts`, which imports the
- * ladder to build the alphabets from it. A pool computed in `lessons.ts` would
- * therefore be a cycle at module load — the alphabets being built out of a
- * table that is still being built. Here, the direction is one way:
- * `lessons.ts` → `storm.ts` (a type, erased), `storms.ts` → both.
+ * It cannot live in `lessons.ts`. That module is the one file in
+ * `engine/typing/` the deck layer may import (§5.3, decision 7), and
+ * `unlockedAt` lives in `keys.ts`, which imports the ladder to build the
+ * alphabets from it — so a pool computed there would be a cycle at module
+ * load. Here the direction is one way: `lessons.ts` → `storm.ts` (a type,
+ * erased), `storms.ts` → both.
  *
- * ── And why the seed is here too ─────────────────────────────────────────────
- * A Hailstorm level is a **level**: the same weather every time it is opened
- * (decision 58). So the wave a child meets at lesson 45 is a function of the
- * ladder and nothing else — not of the visit, not of the clock — which is what
- * lets the no-strobe rule (§8.10) be measured on the twenty waves that
- * actually ship rather than on a sample of what the generator might roll.
+ * The seed is here for the same reason: a level's weather is a function of the
+ * ladder and nothing else (decision 58), which is what lets the no-strobe rule
+ * (§8.10) be measured on the twenty waves that actually ship rather than on a
+ * sample of what the generator might roll.
  */
 
 /**
@@ -66,12 +61,10 @@ export const STORM_LESSONS: readonly StormLesson[] =
  * Named classes rather than character lists, because the list is always "the
  * ones this child has met" — `unlockedAt(n)` filtered, never a set written
  * down beside it. Lesson 53 is the case that makes the difference: the digits
- * a child has at lesson 53 are `3 4 5 6`, because 54, 55 and 56 are still
- * ahead of them, and a hand-written `0123456789` would rain four keys the
- * ladder has not taught.
+ * a child has by then are `3 4 5 6`, and a hand-written `0123456789` would
+ * rain four keys the ladder has not taught.
  *
- * `marks` is everything that is neither a letter nor a digit nor the space —
- * which is what "punctuation and symbols" is, and is stated as the complement
+ * `marks` is stated as the complement — neither letter nor digit nor space —
  * so that a symbol added to the layout is in it without an edit here.
  */
 const FOCUS: Record<StormFocus, (ch: string) => boolean> = {
@@ -81,21 +74,14 @@ const FOCUS: Record<StormFocus, (ch: string) => boolean> = {
 };
 
 /**
- * How much of a focused level is its focus: **about half**.
+ * How much of a focused level is its focus: **about half** (§5.7).
  *
- * A share rather than a fixed multiplier, and the reason is lesson 53. Four
- * digits have arrived by then — `3 4 5 6` — against a good sixty letters and
- * marks, so "three copies of each digit" would put 17% of "Hailstorm · Digits"
- * on the number row and the level would be a review lesson wearing a title.
- * At lesson 34 the opposite is true: 26 capitals against 30 other characters
- * means the alphabet is already nearly half capitals and a multiplier that
- * ignored that would rain almost nothing else.
- *
- * So the number of copies is solved for rather than chosen: repeat the focus
- * until it is about as much of the pool as everything else put together. It is
- * still a weighting and never a replacement — a storm is practice at
- * everything the child has, and a "Digits" that rained only digits would be a
- * number-row drill with a shield in front of it.
+ * A share rather than a fixed multiplier, because the two ends of the ladder
+ * pull opposite ways. At lesson 53 four digits stand against sixty letters and
+ * marks, so "three copies of each" would put 17% of "Hailstorm · Digits" on
+ * the number row; at lesson 34 the alphabet is already nearly half capitals,
+ * and the same multiplier would rain almost nothing else. So the number of
+ * copies is solved for rather than chosen.
  */
 const FOCUS_SHARE = 0.5;
 
@@ -138,16 +124,15 @@ export function stormPool(lesson: StormLesson): string[] {
  * decides.
  *
  * **The level's shape is spread first and `keys` is written last**, so the
- * pool this module computes is the last word and a level cannot override it —
- * which is the guarantee this module exists for (decision 56). The ordering is
- * the enforcement at runtime; `satisfies StormShape` on the table in
- * `lessons.ts` is what makes writing a stray `keys` there a type error rather
- * than an inert field that this line quietly discards.
+ * pool this module computes is the last word and a level cannot override it
+ * (decision 56). The ordering is the enforcement at runtime; `satisfies
+ * StormShape` on the table in `lessons.ts` is what makes writing a stray
+ * `keys` there a type error rather than an inert field this line discards.
  *
- * `focus` and `seed` ride along into the spec harmlessly. They are inert to
- * `buildWave` (it reads `count`, `gap`, `fall` and `keys`, and carries the rest
- * for the reducer), and having them on the spec means a wave in hand can still
- * say which level it is — which is what a retry rebuilds from (§8.3).
+ * `focus` and `seed` ride along harmlessly — `buildWave` reads `count`, `gap`,
+ * `fall` and `keys` and carries the rest for the reducer — and having them on
+ * the spec means a wave in hand can still say which level it is, which is what
+ * a retry rebuilds from (§8.3).
  */
 export function waveSpecFor(lesson: StormLesson): WaveSpec {
   return { ...lesson.kind.wave, keys: stormPool(lesson) };

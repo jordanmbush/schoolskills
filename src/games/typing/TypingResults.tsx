@@ -14,17 +14,15 @@ import { sfx } from "@/services/sound";
 import LessonResults from "./LessonResults";
 
 /**
- * What the run was worth.
+ * What a free-play run was worth.
  *
  * Words per minute leads, because that's the number a typist thinks in — but
- * accuracy sits beside it rather than being folded into a single "net WPM".
- * A child who types fast and gets half of it wrong should see both, not one
- * blended figure that hides which half is the problem.
+ * accuracy sits beside it rather than being folded into a single "net WPM"
+ * (§6.1). A child who types fast and gets half of it wrong should see both.
  *
  * That is **free play**, which is a race. A run from the ladder is marked
  * against three criteria rather than ranked against a rival, so it gets a
- * screen of its own (`LessonResults`, docs/typing.md §6.1) and this one is
- * left exactly as it was — the wpm, the accuracy, the splits and the ghost.
+ * screen of its own (`LessonResults`) and this one is left to the race.
  */
 export default function TypingResults() {
   const { profileId } = useParams();
@@ -38,11 +36,8 @@ export default function TypingResults() {
    * the navigate that follows it is batched with that update. So there is
    * exactly one render where the outcome has gone and the route is still
    * here — and without the `pending` arm below, this guard fires in that gap
-   * and replaces the navigation to the track with one back to setup.
-   *
-   * That is not theoretical: it is what "Type it again" did on this screen from the day
-   * it shipped. The mirror image of it is guarded in `TypingTrack`, and this is the half
-   * that was missed.
+   * and replaces the navigation to the track with one back to setup. The
+   * mirror image of it is guarded in `TypingTrack`.
    */
   if (!outcome) {
     return <Navigate to={`/p/${profile.id}${pending ? "/go" : ""}`} replace />;
@@ -139,11 +134,10 @@ export default function TypingResults() {
         <div className="stat">
           <span className="stat__value">{clock(raceTimeMs(session))}</span>
           {/* `raceTimeMs` is the clock plus three seconds a miss, and that is
-              the truth about a free-play run: it is a race, the penalty is
-              what stops "guess fast" beating "know it", and it is the number
-              the personal best and the ghost are decided on. A lesson has no
-              penalty at all (§7) and says so with a plain "Time" — the label
-              is per-screen because the thing it names is. */}
+              the truth about a free-play run: it is a race, the penalty is what
+              stops "guess fast" beating "know it", and it is the number the
+              personal best and the ghost are decided on. A lesson has no
+              penalty at all (§7) and says so with a plain "Time". */}
           <span className="stat__label">
             {session.incorrect > 0 ? "Time + penalties" : "Time"}
           </span>
