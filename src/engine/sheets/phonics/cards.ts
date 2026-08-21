@@ -1,11 +1,11 @@
 /**
  * A word as it is *printed*: cut into its spellings, and marked.
  *
- * Two jobs that are one idea, which is why they are one module. The marking
- * pass turns a word into the pieces a sheet sets it in, and the proportions
- * below are how tall that lands on the page — a family reserves the page
- * against them and `Cards.tsx` draws against them, so a second copy in either
- * place would be a card overhanging the one beneath it.
+ * The marking pass turns a word into the pieces a sheet sets it in. How tall
+ * that lands on the page is the other half of the same idea, and it lives next
+ * door in `metrics.ts`: `Cards.tsx` draws against those proportions and has no
+ * use for the word bank this module reads, so the numbers are a module of their
+ * own and this one imports them like everybody else.
  *
  * The three marks are independent switches, derived from `sounds.ts` rather
  * than authored, so there is nowhere here for a programme's own spelling of a
@@ -27,46 +27,6 @@ import {
   graphemeText,
   type Correspondence,
 } from "./sounds";
-
-/* ── How big a card is ────────────────────────────────────────────────────
-   Declared, not measured (§4), and in ems of the body size — so a parent who
-   wants cards twice the size raises the type size and the whole card grows
-   with it, which is also how one block prints both a flash card an inch high
-   and a sentence strip a child reads across a room.                         */
-
-/** The spelling on a sound card, and on the wall chart. */
-export const CARD_BIG_EMS = 3.2;
-
-/** A sentence strip: a whole sentence, so a great deal smaller than a card. */
-export const STRIP_BIG_EMS = 1.6;
-
-/** The example word under the spelling. */
-export const CARD_SMALL_EMS = 0.95;
-
-/** The leading each of the two lines is set on. */
-export const CARD_BIG_LEADING = 1.1;
-export const CARD_SMALL_LEADING = 1.35;
-
-/** The air inside a card's box, top and bottom each. */
-export const CARD_PAD_EMS = 0.42;
-
-/**
- * How tall one card stands, in ems of the body size.
- *
- * Written here and read by both the family that reserves the page and the
- * renderer that draws the box, for the reason `answerLine` gives: the failure
- * is silent on screen and is the last row of cards on a second sheet of paper.
- *
- * `rows` is how many lines the big line wraps onto — one for a spelling, and
- * however many the longest sentence needs for a strip.
- */
-export function cardRowEms(big: number, rows: number, small: boolean): number {
-  return (
-    rows * big * CARD_BIG_LEADING +
-    (small ? CARD_SMALL_EMS * CARD_SMALL_LEADING : 0) +
-    CARD_PAD_EMS * 2
-  );
-}
 
 /* ── The marks ──────────────────────────────────────────────────────────── */
 

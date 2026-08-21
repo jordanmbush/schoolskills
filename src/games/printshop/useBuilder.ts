@@ -12,8 +12,9 @@
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { buildSheet, describeSheet } from "@/engine/sheets";
+import { loadedSheet } from "@/engine/sheets/families";
 import { decodeSharedSheet, encodeSharedSheet } from "@/engine/sheets/share";
+import { buildWith } from "@/engine/sheets/spec";
 import type { SheetConfig } from "@/engine/sheets/types";
 
 import { defaultConfig, FIRST_SHEET } from "./defaults";
@@ -42,49 +43,59 @@ export type Builder = {
   setAnswers: (on: boolean) => void;
 };
 
+/** A whole sheet: a family tuned some way, and which draw of it (§7). */
+export type SharedSheet = { config: SheetConfig; seed: number };
+
 /**
  * What the fragment held when the page opened, if it held a sheet.
  *
- * Read once, on mount, and never again: the hook rewrites `#s=` on every change
- * from then on, so re-reading it would be reading its own handwriting.
- *
- * Test-built before it is trusted. `decodeSharedSheet` rebuilds the half of a
- * config every family shares and leaves each family's own fields alone, so this
- * is the belt to that pair of braces — and the one place §14's "fall back to
- * defaults rather than throwing" is actually kept.
+ * Read once, before the bench mounts, and never again: the hook rewrites `#s=`
+ * on every change from then on, so re-reading it would be reading its own
+ * handwriting. `App` is what reads it, because the family it names has to be
+ * fetched before there is anything to test-build.
  */
-function fromHash(): { config: SheetConfig; seed: number } | null {
+export function openingSheet(): SharedSheet | null {
   if (typeof window === "undefined") return null;
   const match = /^#s=(.*)$/.exec(window.location.hash);
-  if (!match) return null;
-
-  const shared = decodeSharedSheet(match[1]);
-  if (!shared) return null;
-
-  try {
-    // Both halves, because a family reaches into its own config twice: once to
-    // make the page and once to say in a line what is on it. A bench that built
-    // the paper and then threw on the caption is no better than one that threw
-    // on the paper.
-    buildSheet(shared.config, shared.seed);
-    describeSheet(shared.config);
-  } catch {
-    return null;
-  }
-  return shared;
+  return match ? decodeSharedSheet(match[1]) : null;
 }
 
-export function useBuilder(): Builder {
-  // Lazily, so the fragment is read once rather than on every render — and so
-  // the very first paint is already the shared sheet rather than the default
-  // one replaced a tick later.
-  const [state, setState] = useState(() => {
-    const shared = fromHash();
-    return {
-      config: shared?.config ?? defaultConfig(FIRST_SHEET),
-      seed: shared?.seed ?? 1,
-    };
-  });
+/**
+ * Whether a shared sheet survives being built.
+ *
+ * `decodeSharedSheet` rebuilds the half of a config every family shares and
+ * leaves each family's own fields alone, so this is the belt to that pair of
+ * braces — and the one place §14's "fall back to defaults rather than throwing"
+ * is actually kept.
+ *
+ * Both halves, because a family reaches into its own config twice: once to make
+ * the page and once to say in a line what is on it. A bench that built the paper
+ * and then threw on the caption is no better than one that threw on the paper.
+ *
+ * Synchronous, and entitled to be: `App` renders nothing until this family's
+ * module has landed, so there is always a spec in hand by the time the bench
+ * first mounts.
+ */
+function survivesBuilding({ config, seed }: SharedSheet): boolean {
+  const spec = loadedSheet(config.kind);
+  if (!spec) return false;
+  try {
+    buildWith(spec, config, seed);
+    spec.describe(config);
+  } catch {
+    return false;
+  }
+  return true;
+}
+
+export function useBuilder(opening: SharedSheet | null): Builder {
+  // Lazily, so the very first paint is already the shared sheet rather than the
+  // default one replaced a tick later.
+  const [state, setState] = useState<SharedSheet>(() =>
+    opening && survivesBuilding(opening)
+      ? opening
+      : { config: defaultConfig(FIRST_SHEET), seed: 1 },
+  );
   const [variants, setVariants] = useState(1);
   const [answers, setAnswers] = useState(false);
 

@@ -4,12 +4,11 @@ import { mulberry32 } from "@/engine/random";
 
 import type { Found } from "../types";
 
+import { SEARCH_CELL, searchCell } from "./metrics";
 import {
-  SEARCH_CELL,
   buildSearch,
   findWord,
   gridForm,
-  searchCell,
   searchSteps,
   type Step,
 } from "./search";

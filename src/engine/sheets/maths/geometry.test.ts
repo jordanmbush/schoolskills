@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { answerKey, buildSheet, describeSheet, sheetSpec } from "../index";
+import { sheetFamily } from "../families";
 import { figureBox, figureRow } from "../figure";
 import { BLOCK_GAP, PROBLEM_GAP } from "../layout";
 import type {
@@ -216,7 +217,7 @@ const question = (problem: Problem): string => {
 describe("the geometry family", () => {
   it("is in the registry under the kind its config carries", () => {
     expect(sheetSpec("geometry")).toBe(GEOMETRY_SHEET);
-    expect(sheetSpec("geometry").label).toBe("Shape and space");
+    expect(sheetFamily("geometry")?.label).toBe("Shape and space");
   });
 
   it("names the sheet in the words a parent chose it by", () => {

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { answerKey, buildSheet, describeSheet, sheetSpec } from "../index";
+import { sheetFamily } from "../families";
 import type { Block, Paper, WordStudyConfig, WordStudyStyle } from "../types";
 
 import {
@@ -155,7 +156,7 @@ describe("the word bank", () => {
 describe("the word-study family", () => {
   it("is in the registry under the kind its config carries", () => {
     expect(sheetSpec("word-study")).toBe(WORD_STUDY_SHEET);
-    expect(sheetSpec("word-study").label).toBe("Word study");
+    expect(sheetFamily("word-study")?.label).toBe("Word study");
   });
 
   it("prints a titled, marked page for every topic and style", () => {

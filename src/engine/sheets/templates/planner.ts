@@ -17,7 +17,7 @@
 import { declaredWidth, sheetBlockBox } from "../chrome";
 import { BLOCK_GAP, type Box } from "../layout";
 import { own, points, whole } from "../paper";
-import { cardRowEms } from "../phonics/cards";
+import { cardRowEms } from "../phonics/metrics";
 import { SHEET_CREDIT, SHEET_URL, SHEET_WORLD, type SheetSpec } from "../spec";
 import type {
   Block,
@@ -682,8 +682,6 @@ export function describePlanner(config: PlannerConfig): string {
 }
 
 export const PLANNER_SHEET: SheetSpec<PlannerConfig> = {
-  id: "planner",
-  label: "Calendars, planners and charts",
   world: SHEET_WORLD,
   build: buildPlannerSheet,
   key: (sheet) => ({

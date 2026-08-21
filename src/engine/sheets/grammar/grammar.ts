@@ -558,8 +558,6 @@ export function buildGrammarSheet(config: GrammarConfig, seed: number): Sheet {
 }
 
 export const GRAMMAR_SHEET: SheetSpec<GrammarConfig> = {
-  id: "grammar",
-  label: "Grammar",
   world: SHEET_WORLD,
   build: buildGrammarSheet,
   // Every answer was decided when the sheet was built — which sentences were

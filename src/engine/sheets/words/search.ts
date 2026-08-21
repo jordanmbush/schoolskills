@@ -14,28 +14,10 @@
  */
 import { shuffled } from "@/engine/random";
 
-import type { Found, Mil, SearchDirections } from "../types";
-
-import { inches } from "../paper";
+import type { Found, SearchDirections } from "../types";
 
 /** One step along a word, per letter. `(1, 0)` reads left to right. */
 export type Step = { dx: number; dy: number };
-
-/**
- * A letter big enough for a five-year-old to find, and small enough that a
- * ten-by-ten puzzle doesn't take the whole page.
- *
- * Here rather than in `WordSearch.tsx` because both halves need it and they
- * have to agree: the family reserves the page against the height the grid will
- * take, and the renderer draws it. A copy in each would be a grid taller than
- * the space reserved for it — invisible on screen, and the word list on a
- * second sheet of paper.
- */
-export const SEARCH_CELL: Mil = inches(0.34);
-
-/** How wide one cell comes out at, given the room and the number of them. */
-export const searchCell = (width: Mil, size: number): Mil =>
-  size <= 0 ? 0 : Math.min(SEARCH_CELL, Math.floor(width / size));
 
 /**
  * The directions a word may run, before `reverse` is applied.

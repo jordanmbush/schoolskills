@@ -402,8 +402,6 @@ export function describeCards(config: CardsConfig): string {
 }
 
 export const CARDS_SHEET: SheetSpec<CardsConfig> = {
-  id: "cards",
-  label: "Cards, tags and bookmarks",
   world: SHEET_WORLD,
   build: buildCardsSheet,
   key: (sheet) => ({

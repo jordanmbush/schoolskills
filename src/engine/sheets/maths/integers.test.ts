@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { answerKey, buildSheet, describeSheet, sheetSpec } from "../index";
+import { sheetFamily } from "../families";
 import { PROBLEM_GAP } from "../layout";
 import type {
   IntegerConfig,
@@ -271,7 +272,7 @@ const everyProblem = function* (
 describe("the integers family", () => {
   it("is in the registry under the kind its config carries", () => {
     expect(sheetSpec("integers")).toBe(INTEGERS_SHEET);
-    expect(sheetSpec("integers").label).toBe("Integers and powers");
+    expect(sheetFamily("integers")?.label).toBe("Integers and powers");
   });
 
   it("names the sheet in the words a parent chose it by", () => {

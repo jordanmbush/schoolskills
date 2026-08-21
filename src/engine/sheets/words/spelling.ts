@@ -436,8 +436,6 @@ export function buildWordsSheet(config: WordsConfig, seed: number): Sheet {
 }
 
 export const WORDS_SHEET: SheetSpec<WordsConfig> = {
-  id: "words",
-  label: "Spelling list",
   world: SHEET_WORLD,
   build: buildWordsSheet,
   // Every answer was decided when the sheet was built — which letters came out,

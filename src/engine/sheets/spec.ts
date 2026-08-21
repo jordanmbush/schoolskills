@@ -52,7 +52,7 @@ export const LONGEST_SHEET_URL: string = WORLDS.map((world) =>
 );
 
 /**
- * `C` is the family's own config, and the registry in index.ts is what ties it
+ * `C` is the family's own config, and the table in families.ts is what ties it
  * back to the union: a spec is only ever handed the config whose `kind` looked
  * it up. Declaring `build` and `describe` as methods rather than as arrow
  * properties is load-bearing — TypeScript checks method parameters
@@ -60,11 +60,11 @@ export const LONGEST_SHEET_URL: string = WORLDS.map((world) =>
  * of `SheetSpec<SheetConfig>` without a cast at every entry. Rewrite either as
  * `build: (config: C, seed: number) => Sheet` and the registry stops
  * compiling.
+ *
+ * Behaviour only: what a family is called and which `kind` reaches it are in
+ * `SheetFamily`, because the picker names every family without loading one.
  */
 export type SheetSpec<C extends SheetConfig = SheetConfig> = {
-  /** Matches `SheetConfig.kind`, so a saved sheet finds its way back here. */
-  id: string;
-  label: string;
   world: World;
   /** Build the sheet. Deterministic in (config, seed) — see §7. */
   build(config: C, seed: number): Sheet;
@@ -78,7 +78,7 @@ export type SheetSpec<C extends SheetConfig = SheetConfig> = {
 };
 
 /**
- * Stands in for a sheet family that isn't in the registry.
+ * Stands in for a sheet family that isn't in the table.
  *
  * Saved sheets outlive the families they were made on, the same way sessions
  * outlive their decks: a config from a URL somebody bookmarked in March must
@@ -87,8 +87,6 @@ export type SheetSpec<C extends SheetConfig = SheetConfig> = {
  * inside a build that would otherwise have shipped a catalog (§3).
  */
 export const UNKNOWN_SHEET: SheetSpec = {
-  id: "unknown",
-  label: "Retired sheet",
   world: SHEET_WORLD,
   build: (config, seed) => ({
     // The one place a config is treated as untrusted rather than as its type.
@@ -108,3 +106,62 @@ export const UNKNOWN_SHEET: SheetSpec = {
   key: (sheet) => sheet,
   describe: () => "A sheet this build no longer makes",
 };
+
+/**
+ * The presentation half of `SheetOptions`, copied onto what a family built.
+ *
+ * Here rather than in every `build` function: every family would otherwise write
+ * the same three lines, and the next one added would be the one that forgot. It
+ * is safe to do after the fact because none of the three changes a length — the
+ * face is set in points, a bordered slot is the same line box as a ruled one,
+ * and the cut guides are drawn over the paper rather than in the flow — so
+ * nothing here can make a sheet the layout arithmetic already fitted stop
+ * fitting.
+ *
+ * A family that has already said something wins, which is what keeps this a
+ * default rather than an override: `UNKNOWN_SHEET` sets nothing and gets the
+ * parent's choices, and a family that one day sets its own is not quietly
+ * undone from out here.
+ */
+function present(config: SheetConfig, sheet: Sheet): Sheet {
+  return {
+    ...sheet,
+    font: sheet.font ?? config.font,
+    answerBox: sheet.answerBox ?? config.answerBox,
+    cutLines: sheet.cutLines ?? config.cutLines,
+  };
+}
+
+/**
+ * Build a sheet from a family already in hand. Deterministic in
+ * `(config, seed)`, which is the mechanism behind three of the features in §7
+ * rather than one: an answer key is the same build, "another sheet like this
+ * one" is `seed + 1`, and a sheet is reproducible from a shared URL because the
+ * seed is in it.
+ *
+ * Takes the spec rather than looking one up, because there are two ways to
+ * reach a family — the whole press at once in index.ts, one at a time through
+ * `loadSheet` — and only one of them may decide what "built" means.
+ */
+export function buildWith(
+  spec: SheetSpec,
+  config: SheetConfig,
+  seed: number,
+): Sheet {
+  return present(config, spec.build(config, seed));
+}
+
+/**
+ * The same sheet with the answers drawn in.
+ *
+ * A second build from the same seed, not a second generation of the answers:
+ * they were computed when the sheet was built and `key` only decides to print
+ * them, so a key cannot disagree with the sheet it belongs to.
+ */
+export function keyWith(
+  spec: SheetSpec,
+  config: SheetConfig,
+  seed: number,
+): Sheet {
+  return present(config, spec.key(spec.build(config, seed)));
+}

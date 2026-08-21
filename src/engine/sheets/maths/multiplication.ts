@@ -660,8 +660,6 @@ export function buildMultiplicationSheet(
 }
 
 export const MULTIPLICATION_SHEET: SheetSpec<MultiplicationConfig> = {
-  id: "multiplication",
-  label: "Multiplication and division",
   world: SHEET_WORLD,
   build: buildMultiplicationSheet,
   key: (sheet) => ({

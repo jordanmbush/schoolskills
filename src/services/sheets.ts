@@ -1,5 +1,5 @@
-import { describeSheet, sheetSpec } from "@/engine/sheets";
-import { UNKNOWN_SHEET } from "@/engine/sheets/spec";
+import { loadSheet, sheetFamily } from "@/engine/sheets/families";
+import type { SheetSpec } from "@/engine/sheets/spec";
 import type { SavedSheet, SheetConfig } from "@/engine/sheets/types";
 
 import * as store from "./storage/db";
@@ -26,7 +26,7 @@ export class InvalidSheet extends Error {}
  * Long enough for the name the engine gives a sheet when a parent doesn't.
  *
  * Generous next to a word list's 40, because it is not only a thing somebody
- * types: `describeSheet` produces lines like "Multiplication — 3-digit by
+ * types: a family's own `describe` produces lines like "Multiplication — 3-digit by
  * 2-digit — worked in columns", and the default name has to fit inside its own
  * cap.
  */
@@ -43,7 +43,13 @@ const nextId = () =>
 /** What a caller hands over. The record's id and timestamps are ours to make. */
 export type SheetInput = { name: string; config: SheetConfig; seed: number };
 
-function validate(input: SheetInput): SheetInput {
+/**
+ * `spec` is passed in rather than looked up, because a family is a chunk of its
+ * own now (`engine/sheets/families.ts`) and only an `await` can produce one.
+ * Every door into this file is already async, so the wait costs nothing here —
+ * and keeping the rules themselves synchronous keeps them one function.
+ */
+function validate(input: SheetInput, spec: SheetSpec): SheetInput {
   // Guarded rather than trusted, because this is also the door a shared file
   // comes through. A config with no `kind` at all is not a sheet from a family
   // that retired — it is a record that can never start printing.
@@ -55,8 +61,9 @@ function validate(input: SheetInput): SheetInput {
     throw new InvalidSheet(`Name must be ${MAX_NAME} characters or fewer`);
 
   // A blank name is not an error here, unlike a blank word-list name: the
-  // engine can already say in one line what a config prints, and `describeSheet`
-  // is documented as the line for the catalog *and the record*. Clipped rather
+  // engine can already say in one line what a config prints, and
+  // `SheetSpec.describe` is documented as the line for the catalog *and the
+  // record*. Clipped rather
   // than checked against the cap, because a name the service chose for itself
   // must never be the thing that refuses the save.
   //
@@ -69,7 +76,7 @@ function validate(input: SheetInput): SheetInput {
   let name = typed;
   if (!name) {
     try {
-      name = describeSheet(input.config).slice(0, MAX_NAME);
+      name = spec.describe(input.config).slice(0, MAX_NAME);
     } catch {
       throw new InvalidSheet("That sheet has nothing to print");
     }
@@ -99,7 +106,7 @@ export async function all(): Promise<SavedSheet[]> {
 }
 
 export async function create(input: SheetInput): Promise<SavedSheet> {
-  const clean = validate(input);
+  const clean = validate(input, await loadSheet(input.config.kind));
   const now = new Date().toISOString();
   const sheet: SavedSheet = {
     id: nextId(),
@@ -119,7 +126,7 @@ export async function update(
   if (!existing) throw new InvalidSheet("That sheet no longer exists");
   const sheet: SavedSheet = {
     ...existing,
-    ...validate(input),
+    ...validate(input, await loadSheet(input.config.kind)),
     updatedAt: new Date().toISOString(),
   };
   await store.putSheet(sheet);
@@ -180,7 +187,7 @@ export const toFile = (sheet: SavedSheet): SheetFile => ({
  * Two families' copies are separate sheets, and keeping the id would silently
  * overwrite a sheet of the same origin that the reader had since re-tuned.
  */
-export function readSheetFile(parsed: unknown): SheetInput {
+export async function readSheetFile(parsed: unknown): Promise<SheetInput> {
   const file = parsed as Partial<SheetFile>;
   if (
     typeof parsed !== "object" ||
@@ -199,12 +206,19 @@ export function readSheetFile(parsed: unknown): SheetInput {
   // already in storage are never held to this — `UNKNOWN_SHEET` exists so a
   // sheet outlives the family it was made on, and renaming an old one must not
   // fail because that family has since retired.
-  if (sheetSpec(file.config.kind) === UNKNOWN_SHEET)
+  //
+  // Asked of the family table rather than of a loaded spec: whether this build
+  // makes that kind of sheet is a fact about the table, so it costs no download
+  // to answer and answers before one starts.
+  if (!sheetFamily(file.config.kind))
     throw new InvalidSheet("This version doesn't make that kind of sheet");
 
-  return validate({
-    name: typeof file.name === "string" ? file.name : "",
-    config: file.config,
-    seed: file.seed,
-  });
+  return validate(
+    {
+      name: typeof file.name === "string" ? file.name : "",
+      config: file.config,
+      seed: file.seed,
+    },
+    await loadSheet(file.config.kind),
+  );
 }

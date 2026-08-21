@@ -556,8 +556,6 @@ export function buildFractionSheet(
 }
 
 export const FRACTIONS_SHEET: SheetSpec<FractionConfig> = {
-  id: "fractions",
-  label: "Fractions",
   world: SHEET_WORLD,
   build: buildFractionSheet,
   key: (sheet) => ({

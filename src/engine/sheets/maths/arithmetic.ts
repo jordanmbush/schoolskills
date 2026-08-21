@@ -588,8 +588,6 @@ export function buildArithmeticSheet(
 }
 
 export const ARITHMETIC_SHEET: SheetSpec<ArithmeticConfig> = {
-  id: "arithmetic",
-  label: "Addition and subtraction",
   world: SHEET_WORLD,
   build: buildArithmeticSheet,
   key: (sheet) => ({

@@ -1,4 +1,4 @@
-import { searchCell } from "@/engine/sheets/words/search";
+import { searchCell } from "@/engine/sheets/words/metrics";
 
 import { HEAVY, inch } from "../units";
 import type { BlockProps } from "./block";

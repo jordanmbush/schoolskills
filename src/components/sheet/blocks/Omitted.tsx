@@ -12,7 +12,7 @@
  * printed at another is the last line of a sheet on a second sheet of paper.
  * `more` is what the reservation could not name — see `Block.omittedMore`.
  */
-import { missingTokens } from "@/engine/sheets/words/puzzles";
+import { missingTokens } from "@/engine/sheets/words/metrics";
 
 export function Omitted({ words, more }: { words?: string[]; more?: number }) {
   const named = words ?? [];

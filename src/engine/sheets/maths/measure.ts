@@ -358,8 +358,6 @@ export function buildMeasureSheet(config: MeasureConfig, seed: number): Sheet {
 }
 
 export const MEASURE_SHEET: SheetSpec<MeasureConfig> = {
-  id: "measure",
-  label: "Measurement",
   world: SHEET_WORLD,
   build: buildMeasureSheet,
   key: (sheet) => ({

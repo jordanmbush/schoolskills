@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { declaredWidth, printedBlockBox } from "../chrome";
 import { BLOCK_GAP } from "../layout";
 import { MARGINS } from "../paper";
-import { cardRowEms } from "../phonics/cards";
+import { cardRowEms } from "../phonics/metrics";
 import { SCRIPTURE_CREDIT } from "../passages";
 import type {
   Block,

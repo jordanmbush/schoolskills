@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { answerKey, buildSheet, describeSheet, sheetSpec } from "../index";
+import { sheetFamily } from "../families";
 import { DIAL, MINUTES_A_TURN } from "../clockface";
 import { PROBLEM_GAP } from "../layout";
 import type {
@@ -149,7 +150,7 @@ function faceOf(problem: Problem): ClockFace {
 describe("the time family", () => {
   it("is in the registry under the kind its config carries", () => {
     expect(sheetSpec("time")).toBe(TIME_SHEET);
-    expect(sheetSpec("time").label).toBe("Telling the time");
+    expect(sheetFamily("time")?.label).toBe("Telling the time");
   });
 
   it("names the sheet by how precise it is, which is what makes it hard", () => {

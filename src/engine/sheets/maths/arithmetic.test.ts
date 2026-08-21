@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { answerKey, buildSheet, describeSheet, sheetSpec } from "../index";
+import { sheetFamily } from "../families";
 import { PROBLEM_GAP } from "../layout";
 import { LINE_INSET, labelRoom, ticks } from "../numberline";
 import { inches } from "../paper";
@@ -206,7 +207,7 @@ function factOf(sentence: string): string {
 describe("the arithmetic family", () => {
   it("is in the registry under the kind its config carries", () => {
     expect(sheetSpec("arithmetic")).toBe(ARITHMETIC_SHEET);
-    expect(sheetSpec("arithmetic").label).toBe("Addition and subtraction");
+    expect(sheetFamily("arithmetic")?.label).toBe("Addition and subtraction");
   });
 
   it("names what it prints, in the terms a parent chose it by", () => {

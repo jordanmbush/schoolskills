@@ -324,8 +324,6 @@ export function buildRatioSheet(config: RatioConfig, seed: number): Sheet {
 }
 
 export const RATIO_SHEET: SheetSpec<RatioConfig> = {
-  id: "ratio",
-  label: "Ratio and rate",
   world: SHEET_WORLD,
   build: buildRatioSheet,
   key: (sheet) => ({

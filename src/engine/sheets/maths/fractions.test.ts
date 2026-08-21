@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { answerKey, buildSheet, describeSheet, sheetSpec } from "../index";
+import { sheetFamily } from "../families";
 import { PROBLEM_GAP } from "../layout";
 import type {
   FractionConfig,
@@ -210,7 +211,7 @@ function holds(sentence: string): boolean {
 describe("the fractions family", () => {
   it("is in the registry under the kind its config carries", () => {
     expect(sheetSpec("fractions")).toBe(FRACTIONS_SHEET);
-    expect(sheetSpec("fractions").label).toBe("Fractions");
+    expect(sheetFamily("fractions")?.label).toBe("Fractions");
   });
 
   it("names what it prints, in the terms a parent chose it by", () => {

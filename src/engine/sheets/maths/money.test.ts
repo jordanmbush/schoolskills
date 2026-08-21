@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { answerKey, buildSheet, describeSheet, sheetSpec } from "../index";
+import { sheetFamily } from "../families";
 import { PROBLEM_GAP } from "../layout";
 import type {
   Currency,
@@ -155,7 +156,7 @@ function amountsOn(problem: Problem): string[] {
 describe("the money family", () => {
   it("is in the registry under the kind its config carries", () => {
     expect(sheetSpec("money")).toBe(MONEY_SHEET);
-    expect(sheetSpec("money").label).toBe("Money");
+    expect(sheetFamily("money")?.label).toBe("Money");
   });
 
   it("names the sheet in the words the country it is for uses", () => {

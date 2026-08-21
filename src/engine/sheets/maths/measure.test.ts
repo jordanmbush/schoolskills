@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { answerKey, buildSheet, describeSheet, sheetSpec } from "../index";
+import { sheetFamily } from "../families";
 import { PROBLEM_GAP } from "../layout";
 import type {
   MarginSize,
@@ -191,7 +192,7 @@ const sentence = (problem: Problem): string =>
 describe("the measurement family", () => {
   it("is in the registry under the kind its config carries", () => {
     expect(sheetSpec("measure")).toBe(MEASURE_SHEET);
-    expect(sheetSpec("measure").label).toBe("Measurement");
+    expect(sheetFamily("measure")?.label).toBe("Measurement");
   });
 
   it("names the sheet in the words the system it is for uses", () => {

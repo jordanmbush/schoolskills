@@ -34,6 +34,14 @@ export {
 } from "./bank";
 
 export {
+  markGrapheme,
+  markSentence,
+  markSpelling,
+  markWord,
+  markedText,
+} from "./cards";
+
+export {
   CARD_BIG_EMS,
   CARD_BIG_LEADING,
   CARD_PAD_EMS,
@@ -41,12 +49,7 @@ export {
   CARD_SMALL_LEADING,
   STRIP_BIG_EMS,
   cardRowEms,
-  markGrapheme,
-  markSentence,
-  markSpelling,
-  markWord,
-  markedText,
-} from "./cards";
+} from "./metrics";
 
 export {
   SENTENCES,

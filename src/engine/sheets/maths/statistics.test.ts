@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { answerKey, buildSheet, describeSheet, sheetSpec } from "../index";
+import { sheetFamily } from "../families";
 import { PROBLEM_GAP, answerLine } from "../layout";
 import type {
   MarginSize,
@@ -163,7 +164,7 @@ const shapesOf = (style: string): Array<Partial<StatisticsConfig>> =>
 describe("the statistics family", () => {
   it("is in the registry under the kind its config carries", () => {
     expect(sheetSpec("statistics")).toBe(STATISTICS_SHEET);
-    expect(sheetSpec("statistics").label).toBe("Mean, median and mode");
+    expect(sheetFamily("statistics")?.label).toBe("Mean, median and mode");
   });
 
   it("names the sheet in the words a parent chose it by", () => {

@@ -10,7 +10,7 @@
  * The clues are real HTML under it, so they are selectable, they wrap, and a
  * crawler reads them as the text they are.
  */
-import { searchCell } from "@/engine/sheets/words/search";
+import { searchCell } from "@/engine/sheets/words/metrics";
 import type { CrosswordEntry } from "@/engine/sheets/types";
 
 import { HAIRLINE, inch } from "../units";

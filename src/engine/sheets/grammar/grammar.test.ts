@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { answerKey, buildSheet, describeSheet, sheetSpec } from "../index";
+import { sheetFamily } from "../families";
 import type { Block, GrammarConfig, GrammarStyle, Paper } from "../types";
 
 import { END_MARK, KINDS, PARTS, SENTENCES, type Tagged } from "./bank";
@@ -185,7 +186,7 @@ describe("the sentence bank", () => {
 describe("the grammar family", () => {
   it("is in the registry under the kind its config carries", () => {
     expect(sheetSpec("grammar")).toBe(GRAMMAR_SHEET);
-    expect(sheetSpec("grammar").label).toBe("Grammar");
+    expect(sheetFamily("grammar")?.label).toBe("Grammar");
   });
 
   it("prints a titled, marked page for every topic and style", () => {

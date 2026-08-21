@@ -25,13 +25,8 @@ import { PROBLEM_GAP, columnWidth, fitAcross, type Box } from "../layout";
 import { inches, points } from "../paper";
 import { SHEET_CREDIT, SHEET_WORLD, gameUrl, type SheetSpec } from "../spec";
 import { buildCrossword, type Clued } from "./crossword";
-import {
-  SEARCH_CELL,
-  buildSearch,
-  gridForm,
-  searchCell,
-  searchSteps,
-} from "./search";
+import { SEARCH_CELL, missingTokens, searchCell } from "./metrics";
+import { buildSearch, gridForm, searchSteps } from "./search";
 import { wordsOf } from "./spelling";
 
 /* ── What a puzzle takes on the page ──────────────────────────────────────
@@ -248,32 +243,12 @@ function listHeight(words: string[], head: SheetOptions, width: Mil): Mil {
    shrunk to exactly the room available, and the trimming is what creates the
    list it prints — so it is guaranteed to be there precisely when there is
    nothing left to put it in. What the arithmetic measures and what the renderer
-   sets are therefore the same tokens, out of the same function.              */
-
-/** What `<Omitted>` puts in front of the list. */
-const MISSING_HEAD = "Not in the grid:";
+   sets are therefore the same tokens, out of the same function — `missingTokens`,
+   which is in `metrics.ts` so that reading it costs `Omitted.tsx` a leaf rather
+   than this whole family (§3).                                               */
 
 /** As much of the list as the page can hold, and a count of the rest. */
 type Missing = { words: string[]; more: number };
-
-/**
- * The missing line, as the words it is set from.
- *
- * Tokens rather than a sentence because both halves need it in this shape: the
- * renderer joins them with a space, and the reservation packs them by whole
- * words, greedily, exactly as `packRows` does for the wrapping rows in the
- * chrome. A copy of the sentence in `Omitted.tsx` would be a paragraph measured
- * at one length and printed at another.
- */
-export function missingTokens(words: string[], more: number): string[] {
-  return [
-    MISSING_HEAD,
-    // The last word takes no comma, the tail included: "CAT, DOG … and 3 more"
-    // is a list that ran out, and "DOG, … and 3 more" is a typo.
-    ...words.map((word, at) => (at === words.length - 1 ? word : `${word},`)),
-    ...(more > 0 ? [`… and ${more} more`] : []),
-  ];
-}
 
 /** How many rows those tokens wrap onto, in the room they are given. */
 function missingRowsOf(
@@ -750,8 +725,6 @@ export function buildPuzzleSheet(config: PuzzleConfig, seed: number): Sheet {
 }
 
 export const PUZZLE_SHEET: SheetSpec<PuzzleConfig> = {
-  id: "puzzle",
-  label: "Word puzzle",
   world: SHEET_WORLD,
   build: buildPuzzleSheet,
   // Every answer here was decided when the sheet was built — which is to say,

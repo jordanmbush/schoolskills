@@ -1,12 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  answerKey,
-  buildSheet,
-  describeSheet,
-  listSheets,
-  sheetSpec,
-} from "./index";
+import { answerKey, buildSheet, describeSheet, sheetSpec } from "./index";
+import { SHEET_FAMILIES, sheetFamily } from "./families";
 import { SHEET_CREDIT, SHEET_URL, SHEET_WORLD, UNKNOWN_SHEET } from "./spec";
 import { DEFAULT_PAPER } from "./paper";
 import type { BlankConfig, SheetConfig } from "./types";
@@ -21,7 +16,7 @@ const config = (over: Partial<BlankConfig> = {}): SheetConfig => ({
 
 describe("the registry", () => {
   it("routes a kind to its family", () => {
-    expect(sheetSpec("blank").label).toBe("Blank page");
+    expect(sheetFamily("blank")?.label).toBe("Blank page");
     expect(describeSheet(config())).toBe("A blank page");
   });
 
@@ -53,14 +48,25 @@ describe("the registry", () => {
     expect(UNKNOWN_SHEET.build(stale, 7).paper).toEqual(DEFAULT_PAPER);
   });
 
+  it("has a module behind every family it offers", () => {
+    // The picker names all twenty-seven before any of them has loaded, so a
+    // loader pointing at a path that no longer exports what it says would stay
+    // invisible until a parent picked that family. This door has awaited every
+    // one of them by the time the suite runs.
+    for (const { id } of SHEET_FAMILIES) {
+      expect(sheetSpec(id), id).not.toBe(UNKNOWN_SHEET);
+    }
+  });
+
   it("prints in the world every sheet prints in", () => {
-    for (const spec of [...listSheets(), UNKNOWN_SHEET]) {
+    const specs = SHEET_FAMILIES.map((family) => sheetSpec(family.id));
+    for (const spec of [...specs, UNKNOWN_SHEET]) {
       expect(spec.world).toBe(SHEET_WORLD);
     }
   });
 
   it("lists what this build can make", () => {
-    expect(listSheets().map((spec) => spec.id)).toContain("blank");
+    expect(SHEET_FAMILIES.map((family) => family.id)).toContain("blank");
   });
 });
 

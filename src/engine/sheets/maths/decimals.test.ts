@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { answerKey, buildSheet, describeSheet, sheetSpec } from "../index";
+import { sheetFamily } from "../families";
 import { PROBLEM_GAP } from "../layout";
 import type {
   DecimalConfig,
@@ -229,7 +230,7 @@ function decimalsOn(problem: Problem): string[] {
 describe("the decimals family", () => {
   it("is in the registry under the kind its config carries", () => {
     expect(sheetSpec("decimals")).toBe(DECIMALS_SHEET);
-    expect(sheetSpec("decimals").label).toBe("Decimals and percents");
+    expect(sheetFamily("decimals")?.label).toBe("Decimals and percents");
   });
 
   it("names what it prints, in the terms a parent chose it by", () => {

@@ -681,8 +681,6 @@ export function buildIntegerSheet(config: IntegerConfig, seed: number): Sheet {
 }
 
 export const INTEGERS_SHEET: SheetSpec<IntegerConfig> = {
-  id: "integers",
-  label: "Integers and powers",
   world: SHEET_WORLD,
   build: buildIntegerSheet,
   key: (sheet) => ({

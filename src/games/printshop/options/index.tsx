@@ -1,44 +1,22 @@
 /**
  * The option panels' front door.
  *
- * A registry keyed by `kind`, exactly as `engine/sheets/index.ts` is, and for
- * the same reason: looking a panel up *is* the narrowing, so there is no
- * `switch` over `SheetConfig` here to keep in step with the union. Adding a
- * family is a module beside this one and a line in the table.
+ * A registry keyed by `kind`, exactly as `engine/sheets/families.ts` is, and for
+ * the same two reasons: looking a panel up *is* the narrowing, so there is no
+ * `switch` over `SheetConfig` here to keep in step with the union — and each
+ * entry is a `import()` rather than an import, so a panel arrives with the
+ * family it belongs to instead of with the twenty-six it doesn't. Several of
+ * them are the expensive half: the passage picker under copywork reads the
+ * whole library, Scripture included. Adding a family is a module beside this
+ * one and a line in the table.
  */
-import type { ReactNode } from "react";
+import { Suspense, lazy, type ComponentType, type ReactNode } from "react";
 
 import type { SheetConfig } from "@/engine/sheets/types";
 
-import { ArithmeticPanel } from "./arithmetic";
-import { CardsPanel } from "./cards";
-import { ChartsPanel } from "./charts";
-import { DecimalsPanel } from "./decimals";
-import { FormsPanel } from "./forms";
-import { FractionsPanel } from "./fractions";
-import { GeometryPanel } from "./geometry";
-import { GrammarPanel } from "./grammar";
-import { HandwritingPanel } from "./handwriting";
-import { IntegersPanel } from "./integers";
-import { MeasurePanel } from "./measure";
-import { MemoryPanel } from "./memory";
-import { MoneyPanel } from "./money";
-import { MultiplicationPanel } from "./multiplication";
-import { NetsPanel } from "./nets";
-import { PaperPanel } from "./paper";
-import { PlannerPanel } from "./planner";
-import { PhonicsPanel } from "./phonics";
-import { PreAlgebraPanel } from "./prealgebra";
-import { PuzzlesPanel } from "./puzzles";
-import { RatioPanel } from "./ratio";
-import { StatisticsPanel } from "./statistics";
-import { TimePanel } from "./time";
-import { WordProblemsPanel } from "./wordproblems";
-import { WordsPanel } from "./words";
-import { WordStudyPanel } from "./wordstudy";
 import type { PanelProps } from "./parts";
 
-type FamilyPanel = (props: PanelProps) => ReactNode;
+type FamilyPanel = ComponentType<PanelProps>;
 
 /**
  * Files a family's panel under the union, which the lookup then honours — the
@@ -56,8 +34,9 @@ type FamilyPanel = (props: PanelProps) => ReactNode;
  * a `MoneyPanel` that reached for `regrouping` still fails to compile.
  */
 const panel = <C extends SheetConfig>(
-  Panel: (props: PanelProps<C>) => ReactNode,
-): FamilyPanel => Panel as unknown as FamilyPanel;
+  load: () => Promise<(props: PanelProps<C>) => ReactNode>,
+): FamilyPanel =>
+  lazy(async () => ({ default: await load() })) as unknown as FamilyPanel;
 
 /**
  * A family with nothing of its own to choose — blank paper, whose every option
@@ -69,32 +48,38 @@ const NO_OPTIONS: FamilyPanel = () => null;
 
 const PANELS: Record<string, FamilyPanel> = {
   blank: NO_OPTIONS,
-  paper: panel(PaperPanel),
-  chart: panel(ChartsPanel),
-  form: panel(FormsPanel),
-  planner: panel(PlannerPanel),
-  cards: panel(CardsPanel),
-  net: panel(NetsPanel),
-  arithmetic: panel(ArithmeticPanel),
-  multiplication: panel(MultiplicationPanel),
-  fractions: panel(FractionsPanel),
-  decimals: panel(DecimalsPanel),
-  money: panel(MoneyPanel),
-  time: panel(TimePanel),
-  measure: panel(MeasurePanel),
-  geometry: panel(GeometryPanel),
-  integers: panel(IntegersPanel),
-  prealgebra: panel(PreAlgebraPanel),
-  ratio: panel(RatioPanel),
-  statistics: panel(StatisticsPanel),
-  "word-problems": panel(WordProblemsPanel),
-  words: panel(WordsPanel),
-  "word-study": panel(WordStudyPanel),
-  puzzle: panel(PuzzlesPanel),
-  grammar: panel(GrammarPanel),
-  phonics: panel(PhonicsPanel),
-  handwriting: panel(HandwritingPanel),
-  memory: panel(MemoryPanel),
+  paper: panel(async () => (await import("./paper")).PaperPanel),
+  chart: panel(async () => (await import("./charts")).ChartsPanel),
+  form: panel(async () => (await import("./forms")).FormsPanel),
+  planner: panel(async () => (await import("./planner")).PlannerPanel),
+  cards: panel(async () => (await import("./cards")).CardsPanel),
+  net: panel(async () => (await import("./nets")).NetsPanel),
+  arithmetic: panel(async () => (await import("./arithmetic")).ArithmeticPanel),
+  multiplication: panel(
+    async () => (await import("./multiplication")).MultiplicationPanel,
+  ),
+  fractions: panel(async () => (await import("./fractions")).FractionsPanel),
+  decimals: panel(async () => (await import("./decimals")).DecimalsPanel),
+  money: panel(async () => (await import("./money")).MoneyPanel),
+  time: panel(async () => (await import("./time")).TimePanel),
+  measure: panel(async () => (await import("./measure")).MeasurePanel),
+  geometry: panel(async () => (await import("./geometry")).GeometryPanel),
+  integers: panel(async () => (await import("./integers")).IntegersPanel),
+  prealgebra: panel(async () => (await import("./prealgebra")).PreAlgebraPanel),
+  ratio: panel(async () => (await import("./ratio")).RatioPanel),
+  statistics: panel(async () => (await import("./statistics")).StatisticsPanel),
+  "word-problems": panel(
+    async () => (await import("./wordproblems")).WordProblemsPanel,
+  ),
+  words: panel(async () => (await import("./words")).WordsPanel),
+  "word-study": panel(async () => (await import("./wordstudy")).WordStudyPanel),
+  puzzle: panel(async () => (await import("./puzzles")).PuzzlesPanel),
+  grammar: panel(async () => (await import("./grammar")).GrammarPanel),
+  phonics: panel(async () => (await import("./phonics")).PhonicsPanel),
+  handwriting: panel(
+    async () => (await import("./handwriting")).HandwritingPanel,
+  ),
+  memory: panel(async () => (await import("./memory")).MemoryPanel),
 };
 
 /**
@@ -104,10 +89,19 @@ const PANELS: Record<string, FamilyPanel> = {
  * arrives from a URL somebody may have typed, and plain `PANELS[kind]` answers
  * `"toString"` with a function off `Object.prototype` — truthy, not a panel, and
  * rendered as a component one line later.
+ *
+ * Nothing while a panel is on its way, rather than a spinner: the heading above
+ * it stays put and the shared options below it never move, so what a parent sees
+ * is one group filling in — and the paper beside it is waiting on the same
+ * fetch anyway.
  */
 export function FamilyOptions({ config, set }: PanelProps) {
   const Panel = Object.hasOwn(PANELS, config.kind)
     ? PANELS[config.kind]
     : NO_OPTIONS;
-  return <Panel config={config} set={set} />;
+  return (
+    <Suspense fallback={null}>
+      <Panel config={config} set={set} />
+    </Suspense>
+  );
 }

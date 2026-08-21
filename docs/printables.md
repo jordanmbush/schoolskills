@@ -62,8 +62,11 @@ written before there were any worksheets. It is still the right shape.
 
 ```
 src/engine/sheets/
-  spec.ts          SheetSpec — what every family of sheets must say about itself
-  index.ts         the front door: sheetSpec(kind), buildSheet(config, seed)
+  spec.ts          SheetSpec — how a family builds, keys and describes a sheet
+  families.ts      the family table: which kinds there are, what each is
+                   called, and the import() that fetches one
+  index.ts         the front door for Node: every family awaited, then
+                   sheetSpec(kind), buildSheet(config, seed)
   types.ts         SheetConfig union, Sheet, Block
   paper.ts         page sizes, margins, ruling geometry — all in real units
   layout.ts        how many problems fit on a page (pure arithmetic, no DOM)
@@ -106,9 +109,6 @@ problem, so it gets the same shape of answer:
 
 ```ts
 export type SheetSpec = {
-  /** Matches SheetConfig.kind, so a saved sheet finds its way back here. */
-  id: string;
-  label: string;
   /** Which world it prints in — always "paper", but stated, not assumed. */
   world: World;
   /** Build the sheet. Deterministic in (config, seed). */
@@ -123,6 +123,46 @@ export type SheetSpec = {
 `sheetSpec(kind)` never throws, for the same reason `deckSpec(mode)` never
 throws: a sheet saved six months ago must still open after its family is
 renamed. Return an `UNKNOWN_SHEET` that renders a blank page and says so.
+
+### One table, two doors
+
+Behaviour is all a spec carries. Which `kind` reaches a family and what it is
+called are in `families.ts`, beside a `() => import(...)` for the module itself,
+because a family reached by a static import is a family in every bundle that can
+see the registry — and several carry a corpus. Eagerly, opening the builder
+fetched **696,078 B** of JavaScript, the passage library alone being 174 KB of
+text: a parent choosing a times-table sheet downloaded the King James Bible to
+do it. It now fetches **340,503 B**, and the rest arrives a family at a time.
+
+**Both numbers are the whole static import closure, walked from
+`dist/printables/make/index.html` — not the island's entry chunk.** The entry
+chunk fell much further, 431,805 B to 66,315 B, but most of that is code that
+moved into siblings the entry still imports statically; a budget set on the
+entry alone would sit at 66 KB and never notice 300 KB of new siblings beside
+it. Two thirds of what remains is React (184,057 B, the same file on both
+sides): the sheet code itself is 512,021 B → 156,446 B. Whatever enforces a
+budget here has to walk the closure for the same reason (DEBT12).
+
+The closure is also the only thing that can say whether a family is _actually_
+lazy. A block renderer that reaches into a family module for one pure helper
+puts that whole family in the closure, and its `() => import(...)` then resolves
+from memory — lazy in the registry, eager in the browser. That is what
+`phonics/metrics.ts` and `words/metrics.ts` exist to prevent, and
+`components/sheet/blocks/index.test.ts` is the guard that fails when a renderer
+reaches past them.
+
+So the table is read two ways:
+
+- **`index.ts` awaits all of it**, once, at module load. The catalog build and
+  the tests keep an ordinary synchronous `buildSheet`, and nothing that ships
+  to a browser imports this module.
+- **The builder island loads one at a time**, through `loadSheet(kind)`, and
+  renders no paper until the family that draws it has landed. The picker still
+  names all twenty-seven, because naming them is what the table is for.
+
+The option panels split on the same seam (`games/printshop/options/index.tsx`),
+which is the half that matters for the passage picker: it reads the whole
+library to list it.
 
 ### `Sheet` is plain data
 
@@ -1529,3 +1569,7 @@ The engine is pure, so most of this is cheap and worth having:
   catalog page's sheet.
 - **Sitemap.** `/printables` and every catalog slug are in it; `/printables/make`
   is not.
+- **The island's import graph.** Nothing under `src/components/sheet/` reaches a
+  sheet family or a corpus by a static import, so a helper borrowed from a
+  family module fails the suite instead of quietly re-fattening the builder
+  (§3).
