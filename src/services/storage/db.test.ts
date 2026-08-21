@@ -1,39 +1,30 @@
-import {
-  IDBCursor,
-  IDBDatabase,
-  IDBFactory,
-  IDBIndex,
-  IDBKeyRange,
-  IDBObjectStore,
-  IDBRequest,
-  IDBTransaction,
-} from "fake-indexeddb";
 import { openDB, type IDBPDatabase } from "idb";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import { DEFAULT_FONT_PT, DEFAULT_PAPER } from "@/engine/sheets/paper";
 import type { SavedInventory } from "@/engine/sheets/phonics";
 import type { SavedSheet } from "@/engine/sheets/types";
 import type { CustomDeck, Profile, Session } from "@/engine/types";
 
+import { freshIndexedDB, loadDb, openVersion2 } from "./fakedb";
+
 /**
  * The store itself, against a fake IndexedDB.
  *
- * The one file in the suite that opens a database, and it exists because this
- * layer holds the only copy of a child's record book there is. An upgrade that
- * dropped a store, an index that came back missing, or a backup that restored
- * four of five collections cannot be caught by reading the diff — the failure
- * is in what the browser did with the data, not in what the code says.
+ * The only suite that opens one at a version this build no longer writes, and
+ * it exists because this layer holds the only copy of a child's record book
+ * there is. An upgrade that dropped a store, an index that came back missing,
+ * or a backup that restored four of five collections cannot be caught by
+ * reading the diff — the failure is in what the browser did with the data, not
+ * in what the code says.
  *
  * `fake-indexeddb` rather than the browser suite: the interesting case is a
  * database that already has data in it *at the old version*, which means
  * building version 2 by hand before the app ever opens it. There is no way to
  * arrange that from a page that has already booted.
  *
- * Every case starts from a brand-new `IDBFactory` and a fresh module registry,
- * because `db.ts` memoises its connection and exports no way to drop it — which
- * is right for the app and means a test that reused it could only ever see
- * whatever version the first case happened to open.
+ * Every case starts from a brand-new database and a fresh module registry —
+ * see `fakedb.ts`, which is where that is arranged and why.
  */
 
 const profile: Profile = {
@@ -118,51 +109,11 @@ const inventory: SavedInventory = {
 const EXPORTED_AT = "2026-03-03T09:00:00.000Z";
 
 /**
- * Node has no IndexedDB at all, so the whole family goes on the global object
- * rather than only the factory: `idb` unwraps what a request hands back by
- * asking `instanceof IDBDatabase`, `instanceof IDBCursor` and so on, and a fake
- * factory whose results fail every one of those checks is worse than none.
- */
-Object.assign(globalThis, {
-  IDBCursor,
-  IDBDatabase,
-  IDBFactory,
-  IDBIndex,
-  IDBKeyRange,
-  IDBObjectStore,
-  IDBRequest,
-  IDBTransaction,
-});
-
-/** A device nobody has ever run School Skills on. */
-function freshIndexedDB(): void {
-  globalThis.indexedDB = new IDBFactory();
-}
-
-/** `db.ts` as the browser would load it on that device. */
-async function loadDb() {
-  vi.resetModules();
-  return import("./db");
-}
-
-/**
- * The database exactly as version 2 shipped it, with a kid's data already in
- * it — written by hand rather than by an older copy of `db.ts`, because the
- * point is to upgrade *from what is on disk*, not from what this build would
- * have created. The connection is left open for the caller to close: a tab
- * that never lets go is one of the cases below.
+ * Version 2 with a kid's data already in it. The connection is left open for
+ * the caller to close: a tab that never lets go is one of the cases below.
  */
 async function seedVersion2(): Promise<IDBPDatabase> {
-  const old = await openDB("schoolskills", 2, {
-    upgrade(database) {
-      database.createObjectStore("profiles", { keyPath: "id" });
-      const sessions = database.createObjectStore("sessions", {
-        keyPath: "id",
-      });
-      sessions.createIndex("byProfile", "profileId");
-      database.createObjectStore("decks", { keyPath: "id" });
-    },
-  });
+  const old = await openVersion2();
   await old.put("profiles", profile);
   await old.put("sessions", session);
   await old.put("decks", deck);
