@@ -6,11 +6,10 @@ import { Button, Confetti } from "@/components/ui/kit";
 import { isTyping } from "@/engine/decks";
 import { levelCredit, wordsPerMinute } from "@/engine/decks/typing";
 import { clock, delta, percent } from "@/engine/format";
-import { cumulativeSplits, raceTimeMs } from "@/engine/records";
 import { randomSeed } from "@/engine/random";
+import { cumulativeSplits, raceTimeMs } from "@/engine/records";
 import { lessonById } from "@/engine/typing/lessons";
-import { Rewards } from "@/games/race";
-import { SplitsTable } from "@/games/flashcards/results/SplitsTable";
+import { Rewards, SplitsTable } from "@/games/race";
 import { sfx } from "@/services/sound";
 import LessonResults from "./LessonResults";
 

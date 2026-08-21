@@ -16,6 +16,11 @@
  * doesn't: how an answer is entered, marked or displayed. Those stay with the
  * game — `AnswerPad`, `CardFace` and `useCardSubmit` are still flash-cards
  * only, and typing has its own.
+ *
+ * `SplitsTable` sits on the right side of that line even though it prints
+ * answers, because it reads a finished `Session` and nothing else: prompt,
+ * answer, what was given, how long it took. It is the record of a run, not the
+ * surface a run is played on.
  */
 
 export { Hud } from "./Hud";
@@ -24,6 +29,7 @@ export { QuitSheet } from "./QuitSheet";
 export { Rewards } from "./Rewards";
 export { RivalList } from "./RivalList";
 export { SaveFailed } from "./SaveFailed";
+export { SplitsTable } from "./SplitsTable";
 export { useCountdown } from "./useCountdown";
 export { useGhostGap } from "./useGhostGap";
 export { useRaceClock, type RaceClock } from "./useRaceClock";
