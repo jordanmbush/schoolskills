@@ -359,11 +359,11 @@ export function passageFor(config: TypingConfig, seed: number): string[] {
    * Both arrive in the same field, because both are a config that carries its
    * own words (docs/typing.md §5.3) — but they are not the same kind of thing.
    * The ladder generates a lesson's text in order and at length, sentences and
-   * their full stops included (§5.1), so dealing it out again would shuffle the
-   * stops into the middle of it. A parent's five tricky words are the opposite:
-   * there is no order to keep and the bag is short, so it is drawn from until
-   * the run is long enough. The lesson id is what tells the two apart, exactly
-   * as it does in `typingConfigKey` below.
+   * their full stops included (docs/typing.md §5.1), so dealing it out again
+   * would shuffle the stops into the middle of it. A parent's five tricky words
+   * are the opposite: there is no order to keep and the bag is short, so it is
+   * drawn from until the run is long enough. The lesson id is what tells the
+   * two apart, exactly as it does in `typingConfigKey` below.
    */
   if (config.lessonId && config.words?.length)
     return config.words.slice(0, config.wordCount);

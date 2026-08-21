@@ -121,6 +121,14 @@ describe("resolving § references", () => {
     ]);
   });
 
+  it("reads a citation that wrapped onto the next line", () => {
+    // Still named. Read as bare, it would be resolved by where the file sits
+    // when it already said where it points.
+    expect(sectionRefs("the record book (docs/typing.md\n * §5.4)")).toEqual([
+      { doc: "typing", section: "5.4" },
+    ]);
+  });
+
   it("reads a bare reference without guessing a doc", () => {
     expect(sectionRefs("the invariant in §5.3")).toEqual([
       { doc: null, section: "5.3" },

@@ -6,6 +6,7 @@ import { WORLDS } from "./src/engine/worlds";
 import { catalogAudit } from "./src/pages/printables/_search";
 import { pathOf, sitemapGuard } from "./scripts/sitemap-guard.mjs";
 import { searchIndexGuard } from "./scripts/search-index-guard.mjs";
+import { sectionGuard } from "./scripts/section-guard.mjs";
 
 /**
  * Static output, deliberately.
@@ -60,6 +61,12 @@ export default defineConfig({
      * sitemapGuard(WORLDS) makes one line up.
      */
     searchIndexGuard(catalogAudit()),
+    /*
+     * The third of the same kind, over the `§` citations in the comments. It
+     * needs nothing from the build — it reads src/ and docs/ — so it runs at
+     * the start and a wrong citation costs seconds rather than a full build.
+     */
+    sectionGuard(),
   ],
   // Emit `/about/index.html` rather than `/about.html` so CloudFront can serve
   // clean URLs from S3 without a rewrite function.

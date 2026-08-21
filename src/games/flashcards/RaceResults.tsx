@@ -137,9 +137,9 @@ export default function RaceResults() {
   const selfGhost = { session, profile: outcome.profileAfter, isSelf: true };
   const practiceFirst = missedFacts.length > 0;
   /**
-   * The same facts as a worksheet (§14) — the one thing no other worksheet
-   * site can print, offered at the moment it is most obviously wanted. Null
-   * for a deck this build has no sheet family for.
+   * The same facts as a worksheet (docs/printables.md §14) — the one thing no
+   * other worksheet site can print, offered at the moment it is most obviously
+   * wanted. Null for a deck this build has no sheet family for.
    */
   const printable = practiceFirst
     ? practiceSheet(session.mode, missedFacts)
