@@ -7,6 +7,7 @@ import {
   glyphEm,
   isCursive,
 } from "../faces";
+import { describeSheetFamily } from "../contract";
 import { ruleCapacity, ruledLines } from "../layout";
 import { RULINGS, inches, rulePitch, toInches, writingSpace } from "../paper";
 import {
@@ -85,6 +86,20 @@ const written = (rows: TraceRow[]): string[] => [
     ),
   ),
 ];
+
+describeSheetFamily("handwriting", {
+  label: "Handwriting practice",
+  spec: HANDWRITING_SHEET,
+  config,
+  shapes: [
+    {},
+    { style: "numbers" },
+    { style: "joins", font: "cursive" },
+    { style: "words", words: ["cat", "dog"] },
+    { style: "passage", text: "One line." },
+  ],
+  keyed: () => false,
+});
 
 describe("what goes on a handwriting sheet", () => {
   it("writes the whole alphabet, upper and lower, on one page", () => {
@@ -745,16 +760,6 @@ describe("copywork out of the passage library", () => {
 /* ── The sheet itself ──────────────────────────────────────────────────── */
 
 describe("the sheet", () => {
-  it("is the same page on every build", () => {
-    // §7, and what lets a catalog page be prerendered: a parent who printed
-    // this in March prints the identical sheet in June.
-    for (const seed of [0, 1, 4242]) {
-      expect(JSON.stringify(HANDWRITING_SHEET.build(config(), seed))).toBe(
-        JSON.stringify(HANDWRITING_SHEET.build(config(), seed)),
-      );
-    }
-  });
-
   it("has nothing to mark and no key to disagree with it", () => {
     const sheet = HANDWRITING_SHEET.build(config(), 1);
     // No score box: a handwriting sheet is not marked out of anything, and a

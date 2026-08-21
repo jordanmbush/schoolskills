@@ -12,9 +12,10 @@ import type {
   Sheet,
 } from "../types";
 import { buildSheet, describeSheet, sheetSpec } from "../index";
+import { describeSheetFamily } from "../contract";
 
 import { WRITING_PROMPTS, promptAt } from "./prompts";
-import { MAX_FORM_ROWS, formKeyed } from "./forms";
+import { FORM_SHEET, MAX_FORM_ROWS, formKeyed } from "./forms";
 
 /**
  * The forms, and the one thing a blank form can get wrong.
@@ -344,16 +345,15 @@ describe("a writing prompt", () => {
 
 /* ── The promises every family makes ───────────────────────────────────── */
 
-describe("the forms family", () => {
-  it("is deterministic in (config, seed)", () => {
-    for (const style of STYLES) {
-      const built = config({ style });
-      expect(JSON.stringify(buildSheet(built, 9))).toBe(
-        JSON.stringify(buildSheet(built, 9)),
-      );
-    }
-  });
+describeSheetFamily("form", {
+  label: "Logs, reports and forms",
+  spec: FORM_SHEET,
+  config,
+  shapes: STYLES.map((style) => ({ style })),
+  keyed: formKeyed,
+});
 
+describe("the forms family", () => {
   it("withholds nothing, and says so where a page can ask", () => {
     // The whole of §11's third tier: these are supposed to be empty, so a key
     // is the same paper with a word in the footer. A page asks the family

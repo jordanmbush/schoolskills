@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { answerKey, buildSheet, describeSheet } from "../index";
+import { describeSheetFamily } from "../contract";
 import { printedBlockBox, sheetBlockBox } from "../chrome";
 import { ticks } from "../numberline";
 import { MARGINS, PAPERS, toInches } from "../paper";
@@ -13,6 +14,8 @@ import type {
   PaperSize,
   Sheet,
 } from "../types";
+
+import { CHART_SHEET, chartKeyed } from "./charts";
 
 /**
  * The family where being one out is the whole of the bug.
@@ -376,6 +379,14 @@ const STYLES: ChartStyle[] = [
   "coordinate",
   "place-value",
 ];
+
+describeSheetFamily("chart", {
+  label: "Charts, number lines and grids",
+  spec: CHART_SHEET,
+  config,
+  shapes: STYLES.map((style) => ({ style })),
+  keyed: chartKeyed,
+});
 
 describe("every reference sheet", () => {
   it("is the same sheet on every build, and on every seed", () => {

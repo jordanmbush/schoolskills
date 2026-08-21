@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { chromeHeight, sheetBlockBox, type FootLine } from "../chrome";
+import { describeSheetFamily } from "../contract";
 import { faceOf } from "../faces";
 import { contentBox } from "../layout";
 import { DEFAULT_FONT_PT, DEFAULT_PAPER, points } from "../paper";
@@ -73,6 +74,18 @@ function filled(round: Blank): string {
     .map((word) => (word === "_" ? round.answers[at++] : word))
     .join(" ");
 }
+
+describeSheetFamily("memory", {
+  label: "Memory verse",
+  spec: MEMORY_SHEET,
+  config,
+  shapes: [
+    {},
+    { rounds: 1 },
+    { passage: "bed-in-summer" },
+    { passage: undefined, text: "Mine." },
+  ],
+});
 
 describe("what goes on a memory sheet", () => {
   it("writes the passage out whole first, and empty last", () => {
