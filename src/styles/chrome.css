@@ -3,12 +3,12 @@
    game there is one exit door in the top bar and nothing else — a nav bar over
    a race is a nav bar in a child's way.
 
-   It reads as a HUD rather than a website header: a flag, a dot per world
+   It reads as a HUD rather than a website header: the mark, a dot per world
    colour-coded to match the map, and one button that plays. The header renders
    one link per entry in the world registry, so the row grows with it rather
-   than with anything written down here. The flag's pennant takes
-   the current world's accent, so walking from the jungle to the glacier
-   recolours the thing you navigate by. That is the only ornament in here. */
+   than with anything written down here. The dots are the only colour that
+   moves; the mark is the same in every world, because a logo that changed
+   colour as you walked would stop reading as the way home. */
 
 .skip {
   position: absolute;
@@ -54,14 +54,11 @@
   color: var(--chalk);
 }
 
-.mast__flag {
+/* The plate is drawn with its own corner radius, so nothing here shapes it.
+   `flex: none` is what stops a narrow phone squashing it to make room for the
+   name beside it. */
+.mast__logo {
   flex: none;
-  overflow: visible;
-}
-
-/* The pennant is the world you're standing in. */
-.mast__pennant {
-  fill: var(--accent);
 }
 
 .mast__name {
