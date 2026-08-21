@@ -130,6 +130,62 @@ describe("view layer (src/components/, src/games/, src/pages/)", () => {
   });
 });
 
+/**
+ * The boundary between islands, which runs between DIRECTORIES rather than
+ * between layers. `src/games/race/` is the kit every timed run shares, and a
+ * game reaching past it into another game makes that game a dependency of every
+ * game after it.
+ *
+ * Both spellings of the same hop are pinned. The aliased one is what was really
+ * there — typing read the flash cards' splits table until the table moved into
+ * the kit — and the relative one is what a neighbour would write instead if
+ * only the alias were banned.
+ */
+describe("game islands (src/games/)", () => {
+  const CROSS_GAME = "local/no-cross-game-imports";
+
+  it("allows @/games/race, the kit every game shares", async () => {
+    const fired = await rulesFiredFor(
+      "src/games/typing/TypingResults.tsx",
+      `import { Rewards, SplitsTable } from "@/games/race";\nexport const x = [Rewards, SplitsTable];\n`,
+    );
+    expect(fired).not.toContain(CROSS_GAME);
+  });
+
+  it("allows a game its own modules", async () => {
+    const fired = await rulesFiredFor(
+      "src/games/typing/TypingResults.tsx",
+      `import { Keys } from "./Keys";\nexport const x = Keys;\n`,
+    );
+    expect(fired).not.toContain(CROSS_GAME);
+  });
+
+  it.each([
+    [
+      'import { SplitsTable } from "@/games/flashcards/results/SplitsTable";\nexport const x = SplitsTable;\n',
+    ],
+    [
+      'import { SplitsTable } from "../flashcards/results/SplitsTable";\nexport const x = SplitsTable;\n',
+    ],
+    ['export * from "@/games/flashcards/results/SplitsTable";\n'],
+  ])("rejects %s from the typing island", async (code) => {
+    const fired = await rulesFiredFor(
+      "src/games/typing/TypingResults.tsx",
+      code,
+    );
+    expect(fired).toContain(CROSS_GAME);
+  });
+
+  /** The kit is shared, not privileged: it may not read a game either. */
+  it("rejects the race kit reaching back into a game", async () => {
+    const fired = await rulesFiredFor(
+      "src/games/race/Hud.tsx",
+      `import { AnswerPad } from "@/games/flashcards/race/AnswerPad";\nexport const x = AnswerPad;\n`,
+    );
+    expect(fired).toContain(CROSS_GAME);
+  });
+});
+
 describe("primitive kit (src/components/ui/)", () => {
   it("rejects service imports — primitives are prop-driven", async () => {
     const fired = await rulesFiredFor(
