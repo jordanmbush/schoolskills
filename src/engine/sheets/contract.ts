@@ -100,6 +100,20 @@ export function describeSheetFamily<C extends SheetConfig>(
   const where = (one: C) => `${kind}: ${describeSheet(one)}`;
 
   describe(`the ${kind} family keeps the contract`, () => {
+    it("is swept over at least one shape and one seed", () => {
+      // This clause is about the suite rather than the family: every clause
+      // below is a loop over these two, so emptying either would report the
+      // family as keeping the whole contract while nothing below it ran.
+      expect(
+        configs.length,
+        `${kind}: shapes is empty, so every clause below loops zero times and asserts nothing — pass the shapes this family builds, or leave shapes off to sweep its defaults`,
+      ).toBeGreaterThan(0);
+      expect(
+        seeds.length,
+        `${kind}: seeds is empty, so every clause that builds at a seed asserts nothing — pass the seeds to sweep, or leave seeds off for the defaults`,
+      ).toBeGreaterThan(0);
+    });
+
     it("is in the registry under the kind its config carries", () => {
       expect(
         sheetSpec(kind),

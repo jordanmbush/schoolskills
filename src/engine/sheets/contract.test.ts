@@ -39,9 +39,10 @@ function suitesIn(dir: string): string[] {
 /**
  * The kind each suite runs the contract on, and which suite runs it.
  *
- * This file is left out of the walk deliberately: the messages below quote the
- * call a suite is missing, and a guard that read its own error text would report
- * every family as covered.
+ * This file is left out of the walk deliberately: the failure message below
+ * quotes the call a suite is missing, `${id}` and all, so a scan that read this
+ * file would take that literal `${id}` for a covered kind, and the stray-kind
+ * test would fail on it.
  */
 function covered(): Map<string, string> {
   const found = new Map<string, string>();
@@ -65,7 +66,7 @@ describe("the sheet-family contract", () => {
     (id: string) => {
       expect(
         COVERED.get(id) ?? null,
-        `no suite calls describeSheetFamily("${id}", …). Add it to that family's test file — the eight assertions in contract.ts are what every other family is held to, and a family added to families.ts without them is checked by nothing they cover.`,
+        `no suite calls describeSheetFamily("${id}", …). Add it to that family's test file — the nine clauses in contract.ts are what every other family is held to, and a family added to families.ts without them is checked by nothing they cover.`,
       ).not.toBeNull();
     },
   );
