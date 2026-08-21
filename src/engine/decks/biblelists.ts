@@ -51,11 +51,11 @@
  * are where a memory list actually gets used — print every one of the sixty-six
  * as it is written here.
  *
- * One of those seven had to learn what a space is to do that. Word shapes draws
- * a box per character, and a box is a thing a child writes a letter into — so
- * `1 Samuel` used to ask for a letter in the box where the space is. A space is
- * a `gap` in `words/shapes.ts` now: the slot is still reserved, so the boxes
- * either side of it stay where they were, and nothing is drawn in it.
+ * One of those seven needs to know what a space is to do that. Word shapes
+ * draws a box per character, and a box is a thing a child writes a letter into,
+ * so a space is a `gap` in `words/shapes.ts` rather than a box: the slot is
+ * still reserved, so the boxes either side of it stay put, and nothing is drawn
+ * in it. Without that, `1 Samuel` asks for a letter where the space is.
  *
  * ── Why these lists break two of the Dolch rules ────────────────────────────
  * `wordlists.ts` holds its entries to lower case and to one word each, and the

@@ -24,7 +24,7 @@ import type { World } from "@/engine/worlds";
  * an origin, not a route, so `/spelling/play` and `/flash-cards` share one
  * IndexedDB and one profile list — which is the whole reason a child's level,
  * badges and record book follow them between subjects. Splitting by subdomain
- * would have partitioned that; splitting by path costs nothing. See CLAUDE.md.
+ * would have partitioned that; splitting by path costs nothing.
  */
 export type SubjectId = "numbers" | "words";
 
@@ -32,8 +32,7 @@ export type Subject = {
   id: SubjectId;
   /**
    * The world this app is played in — and, because a deck names its own world,
-   * the test for which saved runs belong here. One rule, no mode prefixes
-   * duplicated outside the deck front door.
+   * the test for which saved runs belong here.
    */
   world: World;
   /** How the hub introduces itself. */
@@ -66,7 +65,7 @@ export const SUBJECTS: Record<SubjectId, Subject> = {
       "Hear a word and spell it from memory, against the clock — or against a ghost of your best run, or one of your siblings'.",
     // Borrows the age tuning the maths presets already do: how long a race is,
     // whether it's typed or tapped, and how tight the card clock starts. Only
-    // what's ON the cards is different, which is the point of the split.
+    // what's ON the cards is different.
     startingConfig: (age) => {
       const { cardCount, inputMode, timeLimitMs } = presetForAge(age).config;
       return {
@@ -80,7 +79,6 @@ export const SUBJECTS: Record<SubjectId, Subject> = {
   },
 };
 
-/** Whether a saved run belongs to this app. */
 export const ownsMode = (subject: Subject, mode: string) =>
   deckSpec(mode).world === subject.world;
 

@@ -11,10 +11,10 @@ import prettier from "eslint-config-prettier/flat";
 /**
  * Architecture enforced by lint, not by convention.
  *
- * Ported from monilibrium_2's `apps/web/eslint.config.mjs`, whose own rule
- * comments record why: the boundary that was merely a convention drifted from
- * 30 to 37 violating files while the lint-enforced one held perfectly. So every
- * boundary that matters here is a rule with a message naming the alternative.
+ * A boundary that is only a convention drifts. Measured on a codebase carrying
+ * both kinds side by side, the convention went from 30 violating files to 37
+ * while the lint-enforced one held at zero. So every boundary that matters here
+ * is a rule, with a message naming the alternative.
  *
  * The layers, and what plays each MVC role in this codebase:
  *
@@ -32,9 +32,9 @@ import prettier from "eslint-config-prettier/flat";
  * ── The flat-config clobbering hazard ────────────────────────────────────────
  * Flat config REPLACES same-rule options across matching blocks rather than
  * merging them. Two blocks naming `no-restricted-imports` over overlapping file
- * sets means the later one silently wins and the earlier one is dead. This bit
- * monilibrium (its MVC view boundary was inert for a while), so the rule ids
- * here are allocated deliberately:
+ * sets means the later one silently wins and the earlier one is dead. A whole
+ * view boundary can sit inert that way without anything failing, so the rule
+ * ids here are allocated deliberately:
  *
  *   `@typescript-eslint/no-restricted-imports`  layer boundaries (A/B/C/E),
  *                                               whose file sets are DISJOINT —
@@ -62,27 +62,19 @@ import prettier from "eslint-config-prettier/flat";
 // describes.
 const MAX_COMPONENT_LINES = 300;
 
-// Storage is an implementation detail of the service layer — the direct
-// analogue of monilibrium's "Prisma client only in services/" boundary. A React
-// component that reaches for `localStorage` bypasses the profile/session
-// schema, the quota handling, and `navigator.storage.persist()`.
+// Storage is an implementation detail of the service layer. A React component
+// that reaches for `localStorage` bypasses the profile/session schema, the
+// quota handling, and `navigator.storage.persist()`.
 const STORAGE_BAN =
   "Storage is owned by src/services/storage/. Don't touch localStorage, sessionStorage or indexedDB directly — call a service (e.g. profiles.load(), sessions.record()). Storage shape, migrations and quota handling live in one place on purpose.";
 
 const FRAMEWORK_BAN =
   "This layer must stay framework-agnostic so it can be reused by a build-time script, a test, or a future native app. Don't import React or Astro here — return plain data and let the view render it.";
 
-// The typing corpus, banned from the one layer every island imports. This is
-// the only boundary here that was drawn by a measurement rather than by a
-// principle, so the measurement is in the message: a reader who deletes the
-// rule should have to argue with the number.
-//
-// The requirement is REACHABILITY, not a direct import ("this file must never
-// become reachable from decks/index.ts", docs/typing.md §5.3), so the message
-// names the one hop that would otherwise slip through: `engine/typing/
-// lessons.ts` is deliberately importable from the deck layer, and a corpus
-// import inside it lands in the shared chunk exactly as a corpus import inside
-// `decks/typing.ts` would.
+// The typing corpus, banned from the one layer every island imports
+// (docs/typing.md §5.3, which owns the reasoning). The only boundary here drawn
+// by a measurement rather than by a principle, so the measurement is in the
+// message: a reader who deletes the rule should have to argue with the number.
 const CORPUS_BAN =
   "The typing corpus and its generator must not be REACHABLE from src/engine/decks/. decks/index.ts is the front door for every island — flash cards, spelling, the record book, the print shop — and a module in its import graph ships to all of them: an import of the passage library from decks/typing.ts took the shared chunk from 46 KB to 222 KB once already, which is why thirty-three verses are written out by hand in that file today. Reachability is transitive, so the ban covers the whole engine and not decks/ alone — engine/typing/lessons.ts is deliberately importable from the deck layer, so a corpus import there would ship to every island one hop away, with nothing in decks/ looking wrong. Only lexicon.ts, generate.ts and their tests may read the corpus. Everywhere else: generate the words inside the typing island and hand them over in TypingConfig.words — the deck layer builds cards from config.words and never has to know where they came from (docs/typing.md §5.3, decision 7).";
 
@@ -311,8 +303,8 @@ export default defineConfig([
   // ── A · MODEL boundary ──────────────────────────────────────────────────────
   // src/engine/ is pure logic over plain data: build a deck, score a run, rank
   // trouble facts. Keeping React out of it is what lets the same functions run
-  // in a vitest unit test and in a build-time script that pre-renders a
-  // worksheet PDF. It may not import services either — the dependency direction
+  // in a vitest unit test and in the build-time pass that prerenders a
+  // worksheet. It may not import services either — the dependency direction
   // is services → engine, never back.
   {
     files: ["src/engine/**/*.{ts,tsx}"],
@@ -458,9 +450,8 @@ export default defineConfig([
   // violation usually means, and `local/no-cross-game-imports` for why it is a
   // local rule rather than another `no-restricted-imports` block.
   //
-  // No allowlist. The two imports that broke this — typing reading the flash
-  // cards' `SplitsTable` — were fixed by moving the table into the kit first
-  // (DEBT09), so the rule goes in green with nothing to grandfather.
+  // No allowlist and nothing grandfathered: a game that needs another game's
+  // code needs it in `src/games/race/` instead.
   {
     files: ["src/games/**/*.{ts,tsx}"],
     rules: { "local/no-cross-game-imports": "error" },

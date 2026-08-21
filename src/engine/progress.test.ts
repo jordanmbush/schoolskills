@@ -416,12 +416,11 @@ describe("Eyes Up", () => {
 /**
  * Run one test against a storm level whose wave is a given length.
  *
- * The twenty waves are real now (#156), so this is no longer standing in for a
- * deploy — it is how a test about the badge's *guard* asks its question
- * without being a test about lesson 4's `count`. Three of the cases below turn
- * on the relationship between a run's cards and the wave's length, and pinning
- * them to whatever the table says today would make a difficulty pass look like
- * a badge regression.
+ * How a test about the badge's *guard* asks its question without becoming a
+ * test about lesson 4's `count`. Three of the cases below turn on the
+ * relationship between a run's cards and the wave's length, and pinning them to
+ * whatever the table says today would make a difficulty pass look like a badge
+ * regression.
  */
 function withWave(n: number, count: number, body: () => void) {
   const of = lesson(n);
@@ -436,14 +435,11 @@ function withWave(n: number, count: number, body: () => void) {
 
 describe("Unbroken", () => {
   /**
-   * The premise of the guard, the other way up from how it started life.
-   *
-   * It used to read "no storm level has a wave yet", which is what made the
-   * badge unearnable before the waves landed (decision 29). Now every one of
-   * the twenty has a length, so what has to stay true is that they all do: a
-   * storm whose `count` slipped back to zero would be a rung that quietly
-   * cannot earn a badge it advertises, and `survived` would pass every run of
-   * it — including one that died at letter one.
+   * The premise of the guard (decision 29): every one of the twenty storms has
+   * a wave length, and all twenty have to keep one. A storm whose `count`
+   * slipped to zero would be a rung that quietly cannot earn a badge it
+   * advertises, and `survived` would pass every run of it — including one that
+   * died at letter one.
    */
   it("has a wave on every Hailstorm level to fire on", () => {
     const storms = LESSONS.filter((l) => l.pass.kind === "storm");

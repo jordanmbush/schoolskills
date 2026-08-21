@@ -8,9 +8,9 @@ import { useId } from "react";
  * at the one they want rather than opening a list, reading it and remembering
  * what was in it. `Select` exists for the long lists where that stops working.
  *
- * **Radios, not buttons.** The screens that grew this pattern each built it
- * from `<Button pressed>`, which announces as a row of unrelated toggles and
- * tabs through one stop per option. Real radios sharing a `name` are announced
+ * **Radios, not buttons.** A row of `<Button pressed>` announces as unrelated
+ * toggles and tabs through one stop per option. Real radios sharing a `name`
+ * are announced
  * as "one of four", move with the arrow keys and skip to the chosen one with a
  * single Tab — none of which is worth hand-rolling when the platform ships it.
  * The inputs are visually hidden (not `display: none`, which would remove them
@@ -49,7 +49,6 @@ export type SegmentedOption<T extends string> = {
 };
 
 export interface SegmentedControlProps<T extends string> {
-  /** Names the group. Required — see the doc block. */
   label: string;
   value: T;
   onChange: (value: T) => void;
@@ -107,9 +106,7 @@ export function SegmentedControl<T extends string>({
             {option.symbol ? (
               <span aria-hidden="true">{option.symbol}</span>
             ) : null}
-            {/* `.segmented__word` hides under 560px, so it is worn only when a
-                symbol is there to take the pill's place. A row of words that
-                all vanished at once would be a row of empty pills. */}
+            {/* Worn only when a symbol is there to take the pill's place. */}
             <span className={option.symbol ? "segmented__word" : undefined}>
               {option.label}
             </span>

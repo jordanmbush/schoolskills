@@ -118,8 +118,8 @@ describe("factLabel", () => {
 
   it("names a division fact as the question it asks, not as its two numbers", () => {
     // The pair behind "21 ÷ 3 = 7" is [3, 7]. Rendering that literally gives
-    // "3 ÷ 7", which is a different — and wrong — sum. The trouble list and
-    // the drill chips both used to show it that way.
+    // "3 ÷ 7", which is a different — and wrong — sum, on both the trouble
+    // list and the drill chips.
     expect(OPERATIONS.divide.factLabel("3:7")).toBe("21 ÷ 3");
   });
 

@@ -239,11 +239,9 @@
 
 /* ── Modal ──────────────────────────────────────────────────────────────────
    The panel behind the player editor, the deck editor and the quit
-   confirmation. It was `.sheet` until The Print Shop arrived, and the rename is
-   recorded in the header of sheet.css: `/printables/make` is an island that
-   loads this file *and* the sheet renderer's, and two `.sheet` rules meeting
-   means an 8.5-inch-wide `position: fixed` modal. In a codebase with a print
-   shop in it, a sheet is a piece of paper.                                   */
+   confirmation. Not `.sheet`: `/printables/make` is an island that loads this
+   file *and* the sheet renderer's, and two `.sheet` rules meeting there is an
+   8.5-inch-wide `position: fixed` modal.                                     */
 
 .modal {
   position: fixed;

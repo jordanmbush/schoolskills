@@ -24,14 +24,10 @@ const guides = WORLDS.flatMap((w) => (w.guide ? [w.guide] : []));
  * The signature under the fine print — a reference, and deliberately not a
  * verse (docs/printables.md §12).
  *
- * This is the author's own voice already ("Made for four kids, then shared"),
- * which is the whole reason it is the one piece of chrome a reference belongs
- * in: it reads as a signature rather than a banner, and it is on every page
- * without being on any one page's pitch. Nothing is quoted, so nothing needs
- * crediting — but the reference is still read out of the passage library
- * rather than typed here, so the footer cannot name a passage the site does
- * not actually hold. `passage()` answers `undefined` rather than throwing, and
- * a footer that lost its signature is a footer, so this renders nothing.
+ * Read out of the passage library rather than typed here, so the footer cannot
+ * name a passage the site does not hold. `passage()` answers `undefined`
+ * rather than throwing, and a footer that lost its signature is still a
+ * footer, so a retired id renders nothing.
  */
 const signature = passage("the-day-of-small-things")?.title;
 ---

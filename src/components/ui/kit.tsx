@@ -201,10 +201,10 @@ export function usePrefersReducedMotion() {
 /**
  * The dimmed backdrop behind a modal, as a real control.
  *
- * It was a <div onClick> in the original, which is mouse-only: no focus, no
- * Enter/Space, invisible to a screen reader. Rendering a button gives all of
- * that for free — and since the kit is the one place native controls belong,
- * the feature code loses a raw <button> too.
+ * A <div onClick> is mouse-only: no focus, no Enter/Space, invisible to a
+ * screen reader. A real button gives all three for free — and since the kit is
+ * the one place native controls belong, the feature code loses a raw <button>
+ * too.
  */
 export function Scrim({
   onClose,

@@ -6,11 +6,9 @@
  * quit sheet, and scoring-and-saving at the end. None of it knows what a card
  * asks.
  *
- * It lived in `src/games/flashcards/race/` until the typing game needed it.
- * The alternative was one island importing from another, which would have made
- * the flash-card game a dependency of every game after it — and the timing
- * code in `useRaceClock` is the last thing that should acquire callers by
- * accident.
+ * Shared from here rather than imported across islands, which would make one
+ * game a dependency of every game after it — and the timing code in
+ * `useRaceClock` is the last thing that should acquire callers by accident.
  *
  * **What belongs here:** anything a second game would otherwise copy. What
  * doesn't: how an answer is entered, marked or displayed. Those stay with the

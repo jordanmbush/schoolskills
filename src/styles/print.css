@@ -1,13 +1,11 @@
 /* ── What happens when somebody presses ⌘P ──────────────────────────────────
-   Print only. There is no PDF library here and there never will be: it would
-   cost ~600KB and a second rendering path that drifts from the first, and the
-   browser's own "Save as PDF" is already the download path (§10, decided).
+   Print only, and no PDF library (§10, decided) — so the print dialog is the
+   *whole* of the output path.
 
-   That makes the print dialog the *whole* of the output. Everything in this
-   file is therefore load-bearing rather than cosmetic — a masthead that
-   survives onto paper is a masthead a parent pays for in toner, and a page box
-   that disagrees with the sheet on it prints across two pages or gets silently
-   scaled to fit.
+   That is why everything in this file is load-bearing rather than cosmetic — a
+   masthead that survives onto paper is a masthead a parent pays for in toner,
+   and a page box that disagrees with the sheet on it prints across two pages or
+   gets silently scaled to fit.
 
    This file is imported by the sheet renderer rather than by a layout, so it
    lands on exactly the pages that have a sheet on them, and nowhere else. That

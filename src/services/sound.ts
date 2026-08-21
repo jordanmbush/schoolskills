@@ -215,39 +215,22 @@ export const sfx = {
 
   /* ── Hailstorm ───────────────────────────────────────────────────────────
    *
-   * Six sounds for one screen, and what makes them a set rather than six
-   * effects is that they have to stay apart from each other while three or
-   * four of them happen a second (docs/typing.md §8.12).
-   *
-   * They are laid out along two axes a five-year-old can hear without being
-   * taught either. **Pitch says whose it is**: the gun and the stones are
-   * bright and short, the shield is low and long, so "I did something" and
-   * "something happened to me" never have to be told apart by timbre alone.
-   * **Length says how much it cost**: 50ms for a shot, 90 for a stone, 160
-   * for armour absorbing a letter, 340 for the last point of a zone, and
-   * three quarters of a second for the run ending. Nothing else on the
-   * screen is allowed to be the longest sound in it.
-   *
-   * Gains are deliberately below the rest of the kit. A race plays a handful
-   * of sounds a minute; a storm plays one per keystroke, and a mixer summing
-   * six of those into a limiter is a mush that teaches nothing.
+   * Six sounds for one screen, kept apart from each other by pitch and by
+   * length while three or four of them happen a second (docs/typing.md §8.12).
+   * The lengths there are the contract; the comments below are how each one is
+   * built to hit it.
    */
 
   /**
-   * The trigger, on every stroke the gun takes — the hit and the miss are
-   * layered over the top of it rather than replacing it.
+   * The trigger, on every stroke the gun takes, with the hit or the miss
+   * layered over it (§8.12).
    *
-   * That layering is the point. A child who presses a key gets an answer
-   * within a frame whatever else is true, so the sound never has to wait on
-   * whether the shot landed, and the quietest, shortest thing on the screen
-   * is the one that happens most often.
-   *
-   * Two parts, because a single glide read as a blip rather than as a shot.
+   * Two parts, because a single glide reads as a blip rather than as a shot.
    * The click is what makes it one — a 20ms burst of high noise is the report,
    * and the ear places it as a *release* rather than as a note. The glide
    * under it is the shot leaving: fast, an octave and a half, and over before
-   * the next key can be pressed. Deliberately not dramatic — it fires several
-   * times a second and anything with a tail would be a drone.
+   * the next key can be pressed. Nothing with a tail, because it fires several
+   * times a second and a tail is a drone.
    */
   shoot: () => {
     noise({ dur: 0.02, gain: 0.16, sweepFrom: 7000, sweepTo: 4200 });
@@ -257,11 +240,10 @@ export const sfx = {
   /**
    * A hailstone shot out of the sky: a bright tone and a glassy noise burst.
    *
-   * The pitch climbs with the streak exactly as `correct` does, and for the
-   * same reason — it is the same streak, and the multiplier it is paying at
-   * is the number the HUD is already showing (§8.6). Capped at an octave, so
-   * a long run stops climbing rather than ending up somewhere only a dog can
-   * hear it.
+   * The pitch climbs with the streak exactly as `correct` does, because it is
+   * the same streak and the same multiplier the HUD is showing (§8.6). Capped
+   * at an octave, so a long run stops climbing rather than ending up somewhere
+   * only a dog can hear it.
    */
   shatter: (streak = 1) => {
     const step = Math.min(streak - 1, 11);
@@ -278,22 +260,17 @@ export const sfx = {
    * A stroke that hit nothing — the wrong key, or any key at an empty sky
    * (§8.6).
    *
-   * **A shot going past**, and the shape is the whole of how it reads that
-   * way. A thing that passes you gets brighter as it comes and darker as it
-   * goes, so this is two noise sweeps back to back — up through the near
-   * field, then down and away, the second longer than the first because that
+   * **A shot going past.** A thing that passes you gets brighter as it comes
+   * and darker as it goes, so this is two noise sweeps back to back — up
+   * through the near field, then down and away, the second longer because that
    * is what receding sounds like. Nothing else in the set moves in two
    * directions, which is what makes a miss unmistakable next to the shot that
-   * caused it.
+   * caused it. Under it a short low fall, because ten points off is not a
+   * neutral event.
    *
-   * Under it, a short low fall: the sound has to *cost* something as well as
-   * describe something, and ten points off is not a neutral event. Quiet
-   * enough not to be the thing you hear, present enough that a run of misses
-   * sags.
-   *
-   * `wrong`'s 260ms sawtooth would be both the wrong length and the wrong
-   * feeling. A child losing a storm mashes, and eight harsh buzzes a second is
-   * a drone; a flurry of whizzes is a flurry.
+   * `wrong`'s 260ms sawtooth is the wrong length and the wrong feeling. A child
+   * losing a storm mashes, and eight harsh buzzes a second is a drone; a flurry
+   * of whizzes is a flurry.
    */
   misfire: () => {
     noise({ dur: 0.05, gain: 0.13, sweepFrom: 800, sweepTo: 2800 });
@@ -316,11 +293,10 @@ export const sfx = {
   /**
    * …and that was the zone's last point: there is a hole under one finger now.
    *
-   * The loudest thing that is not the end of the run, because it is the
-   * moment a child can still do something about — the next letter on that
-   * finger ends the storm, and every clean hit from here is a chance to mend
-   * it (§8.5). A sound that were merely a bigger crunch would leave the one
-   * turning point in a run indistinguishable from the four hits before it.
+   * The loudest thing that is not the end of the run, because it is the last
+   * moment a child can still do something about (§8.5). A merely bigger crunch
+   * would leave the one turning point in a run sounding like the four hits
+   * before it.
    */
   shieldBreak: () => {
     tone({ freq: 300, dur: 0.34, wave: "sawtooth", gain: 0.26, glideTo: 88 });
@@ -330,11 +306,9 @@ export const sfx = {
   /**
    * A stone came through the hole. The run is over.
    *
-   * A falling minor figure under a long collapse of noise, and it is the one
-   * sound on this screen that is allowed to be sad. It is also why the storm
-   * does not play `finish`: a race ends by being finished and a storm can end
-   * by being lost, and a major triad over a broken shield would be the game
-   * congratulating a child for dying (`useRaceFinish`'s `fanfare`).
+   * A falling minor figure under a long collapse of noise — the one sound on
+   * this screen allowed to be sad, and what a lost storm plays instead of
+   * `finish` (§8.12).
    */
   breach: () => {
     noise({ dur: 0.75, gain: 0.24, sweepFrom: 4800, sweepTo: 110 });
@@ -353,33 +327,15 @@ export const sfx = {
   /* ── Typewriter ──────────────────────────────────────────────────────────
    *
    * The board's own voice: what a key sounds like going down, played whenever
-   * the keyboard is on screen (docs/typing.md §4.8).
+   * the keyboard is on screen (docs/typing.md §4.8). Quietest in the kit and
+   * pitchless, because at eight strokes a second it has to sit under `correct`
+   * and `wrong` without arguing with either.
    *
-   * These are the most frequent sounds on the site by an order of magnitude —
-   * a race plays a handful a minute, a storm one per stroke, and this one plays
-   * eight a second under a child who has got good. Two consequences run through
-   * every number below.
-   *
-   * **They are the quietest things in the kit**, quieter even than the storm's
-   * gun. Anything that could be noticed once is a headache after a passage.
-   *
-   * **They carry no pitch.** Every other sound here means something — the
-   * streak chime climbs, the miss falls, the bell rings. A clack means only
-   * "that key went down", which is a fact and not a verdict, and it has to keep
-   * saying that eight times a second underneath `correct` and `wrong` without
-   * arguing with either. So a strike is three noise bursts and no oscillator:
-   * a typewriter is percussion, and percussion is the one thing that can sit
-   * under a melody without being part of it. It is also why the clack does not
-   * change when a key is wrong — the board already flares `--flare` for that
-   * and the run plays `wrong` at the word, so a keyboard that scolded a child
-   * on the way down would be a third opinion, arriving before either of the
-   * other two knew the answer (`keySounds.ts`).
-   *
-   * `noise` is the right generator for a second reason: its envelope starts at
-   * full gain and decays, where `tone` ramps up over 12ms. Twelve milliseconds
-   * of attack on a forty-millisecond sound is a blip; percussion has no attack
-   * at all, and that difference is the whole distance between a click and a
-   * boop.
+   * `noise` and no oscillator, which is what pitchless costs — and it buys the
+   * envelope as well: `noise` starts at full gain and decays, where `tone`
+   * ramps up over 12ms. Twelve milliseconds of attack on a forty-millisecond
+   * sound is a blip; percussion has no attack at all, and that difference is
+   * the whole distance between a click and a boop.
    */
 
   /**
@@ -408,12 +364,10 @@ export const sfx = {
   /**
    * The space bar, which is a bigger lever and sounds like one.
    *
-   * The same three layers, moved down and lengthened. This is not decoration:
-   * space is the key that commits a word (`TypingTrack`), so it is the one
-   * stroke in a passage that is also a beat, and a child hearing the run tick
-   * over word by word is hearing something true about where they are. Making
-   * it deeper rather than louder is what keeps that from becoming a metronome
-   * they type to.
+   * The same three layers, moved down and lengthened. Space commits a word
+   * (`TypingTrack`), so it is the one stroke in a passage that is also a beat.
+   * Deeper rather than louder, so that beat does not become a metronome a child
+   * types to.
    */
   keySpace: () => {
     noise({ dur: 0.022, gain: 0.11, sweepFrom: 2600, sweepTo: 1100 });
@@ -430,22 +384,20 @@ export const sfx = {
   /**
    * Return: the bell, and the carriage going back.
    *
-   * The one sound in this block that is allowed a pitch, because a bell is a
-   * bell — two sine partials a fifth and a bit apart, which is what stops it
-   * reading as a beep. On the real machine the bell rings a few characters
-   * BEFORE the margin, as a warning, and the carriage is thrown afterwards by
-   * hand; putting both on one key merges a warning and an action that a child
-   * has never had to tell apart. What they get is the sound everybody means by
-   * "typewriter", on the key that ends the passage.
+   * The one sound in this block allowed a pitch (§4.8) — two sine partials a
+   * fifth and a bit apart, which is what stops it reading as a beep. On the
+   * real machine the bell warns a few characters before the margin and the
+   * carriage is thrown afterwards by hand; both on one key merges a warning
+   * and an action a child has never had to tell apart, and what they get is
+   * the sound everybody means by "typewriter".
    *
-   * Under the bell, the return itself: a rising sweep as the carriage flies
-   * left, and a low knock as it hits the stop. Rising, because nothing else in
-   * the kit does — `misfire` goes up and then down and is the only near
-   * neighbour, and it lives on a screen that has no keyboard on it.
+   * Under it, the return: a rising sweep as the carriage flies left, and a low
+   * knock as it hits the stop. Rising, because nothing else in the kit is —
+   * `misfire` is the only near neighbour and lives on a screen with no keyboard
+   * on it.
    *
-   * It is quiet for its length, and deliberately quieter than `finish`: Enter
-   * commits the last word of a passage, so this and the fanfare land together
-   * and the bell must not be the thing that wins.
+   * Quieter than `finish`, because Enter commits the last word of a passage, so
+   * the two land together and the bell must not be the one that wins.
    */
   keyReturn: () => {
     tone({ freq: 2093, dur: 0.4, wave: "sine", gain: 0.13 });

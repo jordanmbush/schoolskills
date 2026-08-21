@@ -172,14 +172,12 @@ const SENTENCES = [
  *     that trails off mid-list would arrive as a fragment with a comma on it.
  *
  * ── Why the words are written out here ──────────────────────────────────────
- * Because `decks/index.ts` is the front door for every island — the flash
- * cards, the spelling mount, the record book, the print shop — and a module is
- * assigned to a chunk whole. An import of the passage library from this file
- * puts all of it into all of them: the WEBu, the KJV beside it and thirty
- * other passages, shipped to every game to type thirty-three verses in one of
- * them. It was measured on the way past — 46KB of shared chunk became 222KB —
- * which is also why the credit comes from `passages/credit.ts` and not from
- * the file the verses are in.
+ * A module is assigned to a chunk whole, and this file is reachable from
+ * `decks/index.ts`, so an import of the passage library here puts the WEBu,
+ * the KJV beside it and thirty other passages into every island on the site to
+ * type thirty-three verses in one of them (docs/typing.md §5.3, which has the
+ * measurement). It is also why the credit comes from `passages/credit.ts` and
+ * not from the file the verses are in.
  *
  * So the text is repeated, and `typing.test.ts` pins every line of it to
  * `passage()` character for character. That is the arrangement `scripture.ts`

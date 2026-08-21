@@ -76,10 +76,9 @@ export function useRaceClock({
 
   /**
    * The four below touch nothing but refs, so they're pinned with an empty
-   * dependency list. That isn't a micro-optimisation: `submit` in RaceTrack
-   * must keep a stable identity or the per-card timer effect would tear down
-   * and restart on every one of the ~16 renders a second the ticker causes,
-   * and never fire. Handing it unstable callbacks would break that from here.
+   * dependency list — for the reason above, one level up: `submit` in
+   * `RaceTrack` must keep a stable identity, and handing it unstable callbacks
+   * from here would break that.
    */
   const onCard = useCallback(() => performance.now() - cardStart.current, []);
 

@@ -75,7 +75,10 @@ export function RecordBook({
   );
 }
 
-/** The last 40 runs, newest first. Older ones live in the record book above. */
+/**
+ * The last 40 runs, newest first. Capped because beyond that it is a scroll
+ * nobody reads; anything older survives only as a best in the table above.
+ */
 export function RunList({ sessions }: { sessions: Session[] }) {
   return (
     <section className="panel anim-rise">
