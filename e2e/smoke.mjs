@@ -505,6 +505,23 @@ try {
       ([id, lesson]) => (location.hash = `#/p/${id}/storm/${lesson}`),
       [player, STORM_LESSON],
     );
+
+    /*
+     * A storm does not begin on mount: it hangs at time zero with an empty sky
+     * and "press any key to start" in it, until a child says they are ready
+     * (§8.13, decision 71). So the entry every section below shares is two
+     * steps, and the wait on the panel is the first half of the proof that the
+     * gate is really there — the second half is that no `.storm__letter`
+     * exists until after the press, which section 13 asserts on a device that
+     * cannot make one.
+     *
+     * The key is spent starting the wave and is never fired at it, so what
+     * follows begins with a clean streak and nothing off the score. `Space` is
+     * a key the board carries and is not one of the two the gate ignores
+     * (`Tab`, and anything off the layout).
+     */
+    await page.waitForSelector(".storm__ready", { timeout: 8000 });
+    await page.keyboard.press("Space");
     await page.waitForSelector(".storm__letter", { timeout: 8000 });
   };
 
@@ -1435,6 +1452,11 @@ try {
   // more session — where a screen that kept its finish guard across the retry
   // would write none, and one that re-fired the old one would write two.
   await page.getByRole("button", { name: /try this wave again/i }).click();
+  // A retry is a remount, so it gets the beat before it falls again (§8.13) —
+  // which is the point of the flag starting false: just after a loss is when a
+  // child is likeliest to have taken a hand off the keys.
+  await page.waitForSelector(".storm__ready", { timeout: 8000 });
+  await page.keyboard.press("Space");
   await page.waitForSelector(".storm__letter", { timeout: 8000 });
   await page
     .waitForFunction(() => document.querySelector(".storm__over") !== null, {
@@ -1764,8 +1786,14 @@ try {
     (lesson) => (location.hash = `${location.hash}/storm/${lesson}`),
     STORM_LESSON,
   );
-  await tablet.waitForSelector(".storm__letter", { timeout: 8000 });
+  await tablet.waitForSelector(".storm__ready", { timeout: 8000 });
   const reachable = await tablet.evaluate(() => ({
+    // What a storm opens on now: the beat before it falls, and no hail at all
+    // until a key starts it (§8.13, decision 71). On this device that is also
+    // the honest ending — a tablet cannot press the key, and the panel it is
+    // left looking at carries the way out rather than twelve letters it has
+    // no way to shoot.
+    ready: document.querySelectorAll(".storm__ready").length,
     stones: document.querySelectorAll(".storm__letter").length,
     quit: document.querySelectorAll(".storm__quit").length,
   }));
@@ -1779,14 +1807,15 @@ try {
   const proved = await ladder();
   check(
     "and one keystroke lets a keyboard in, with nothing reloaded",
-    reachable.stones > 0 &&
+    reachable.ready === 1 &&
+      reachable.stones === 0 &&
       reachable.quit === 1 &&
       proved.touchOnly === true &&
       proved.said === 0 &&
       // What the legend says on a device that can play them, which is the one
       // fact a child needs before pressing a diamond (§8.8).
       proved.legend.includes("Nothing on the ladder waits on one"),
-    `the route opened ${reachable.stones} stone(s) either way; ` +
+    `the route opened the ready panel and ${reachable.stones} stone(s); ` +
       `after one key ${proved.said}/${proved.storms} still name a keyboard`,
   );
   await tabletCtx.close();

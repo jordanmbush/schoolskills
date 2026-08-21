@@ -1458,6 +1458,33 @@ resolve a dead heat the same way every time.
 Firing at an empty field is a miss too. It is the same spray by another route,
 and a streak that survived it would have found the strategy again.
 
+**A shot is a key and a shift, because between them that is what a character
+is** (decision 70). `A` and `a` are one key and two letters (§3.3), so a target
+is matched on `code` _and_ on whether its character is that key's shifted
+legend. Shift-`a` shoots a falling `A`; bare `a` at the same letter is a miss;
+and shift-`f` at a falling `f` is a miss too, because what that produced was an
+`F`. The same holds for every shifted mark — `?` is shift-`/`, and lessons 65
+and 69 rain them.
+
+The storm compared the code alone to begin with, which made lessons 34 and 39 —
+"Capitals" and "Shift under fire" — waves that never once asked for a shift,
+and credited a child with typing a character they had not typed. The passage
+lessons were always strict about it: they judge what arrived in a real
+`<input>`, so `a` for `A` is simply wrong there. The exam does not get to be
+easier than the course it examines.
+
+**Either shift, and never a named one.** `strokeFor` returns the shift on the
+opposite hand because that is the technique worth teaching, and the passage's
+next-key hint highlights exactly that key (§3.3) — but a capital typed with the
+near shift still produces the character, and the lessons take it. A storm that
+marked the same stroke wrong would be stricter than the course that taught it,
+on the one screen with no board to explain itself with (decision 64).
+
+Whether a shift was down is read off `event.shiftKey` on the keydown itself,
+never tracked across keydown and keyup. A shift released while the tab was in
+the background is a `keyup` this window never saw, and a gun trusting its own
+bookkeeping would go on demanding a shift nobody was holding.
+
 ### 8.5 · The shield is your fingers
 
 The shield spans the bottom of the field in **eight segments, one per finger**
@@ -2209,6 +2236,71 @@ Nothing here needs a guard for the player who has sound off. `sfx` is silent
 when `soundOn` is false and in any environment with no `AudioContext`, which is
 also why the storm's tests never stub it.
 
+### 8.13 · The beat before it falls
+
+**A storm does not begin on mount. It waits for a key** (decision 71).
+
+Every other run on this site opens with the 3·2·1 (`useCountdown`), and there
+that works because a race is entered with the hands already where they are
+going to be: a flash card is answered on the number row or with a tap, and a
+passage lesson puts the caret in an input the child has just clicked into. A
+storm is entered from a tile with a mouse and then asks, in its first second,
+for eight fingers on the home row and a reaction time. Three seconds of counter
+is three seconds of a child moving one hand off a trackpad while the first
+letter is already scheduled.
+
+A clock cannot fix that, because the thing being waited on is not an amount of
+time — it is a child being ready, which only they know. So the wave hangs at
+time zero, indefinitely, with no counter running, until the one signal that
+proves the hands are where they need to be arrives: a key.
+
+**Nothing of the storm is on screen while it waits.** A wave's first letter
+spawns at time zero (§8.3), so a field that merely froze the clock would be
+showing it — an unlimited, untimed look at the first target, where every other
+letter of the run gets exactly `QUEUE_MS` to be read in. The same prop that
+puts the panel in the sky is what takes the stones out of it, so the two cannot
+drift apart. What IS drawn is the rest of the field: the HUD at nothing and the
+shield whole, both already where the run will find them, so that pressing a key
+starts a storm rather than rearranging a screen.
+
+What the panel says is the other half of it, and it is the one place this game
+tells a child how to put their hands down. The storm draws no keyboard
+(decision 64), so it names what a real keyboard has instead of a picture — the
+ridges on `F` and `J`. That is the actual technique for finding the home row
+without looking, which is the habit every lesson below is trying to build, and
+a five-year-old can do it in the two seconds they spend reading the line.
+
+"Any key" has two exceptions, and both are the screen's other promises:
+
+- **`Tab`**, which is how the `Quit` in the HUD is reached without a mouse. The
+  gun swallows `Tab` once the run is live (§8.11), which is precisely why being
+  able to reach that button beforehand is worth protecting — a storm that began
+  the instant a child went looking for the exit would be the trap the button
+  exists to prevent.
+- **Anything the layout does not carry** — `F5`, `F12`, a media key. They are
+  not a child putting their hands down, and treating them as one would mean
+  swallowing the reload key on a screen whose whole state is "nothing has
+  happened yet".
+
+`Escape` is not a start key either; it is the way out, exactly as it is
+mid-wave, and it is taken before everything above for the reason §8.11 gives.
+
+**The key that starts a run is spent starting it.** `fire` is not called, no
+wave time has passed, and nothing is on the field to be missed — so the press
+that says "I'm ready" can never also be the first ten points off the score. It
+is answered by the gun's own listener rather than by a second one beside it,
+which is the same one-listener rule `Escape` is taken under: on this screen a
+press answered twice is a press that both starts the wave and misses at it.
+
+A retry gets the beat again, for free: an attempt is a remount (decision 51),
+so the flag starts false — and just after a loss is exactly when a child is
+most likely to have taken a hand off the keys.
+
+The screen a device with no keyboard is left on is now this panel and its way
+out, rather than twelve letters it has no means to shoot. That is not the
+reason the gate exists, but it is a better answer to §8.8 than the one it
+replaced.
+
 ---
 
 ## 9 · Routes and screens
@@ -2241,7 +2333,8 @@ syllabus, and it is the one piece of UI in this epic worth spending real design
 time on.
 
 Component budget: `LessonLadder`, `LessonTile`, `LessonBrief`, `StormBrief`,
-`PassBars`, `Keyboard`, `StormRun`, `StormField`, `StormShield`, `StormOver`.
+`PassBars`, `Keyboard`, `StormRun`, `StormField`, `StormShield`, `StormReady`,
+`StormOver`.
 All under the 300-line cap;
 the ladder is the only one that will come close, and the brief splitting out is
 why it won't. `StormRun` is the route and `StormField` is the screen it draws:
@@ -2358,6 +2451,8 @@ which is what every run saved before this is.
 | 67  | A letter hangs at the top for a second before it falls                                       | A glyph is hardest to read exactly when it is new; standing it still first beats any amount of slowing it down, and it costs the twenty levels nothing                  |
 | 68  | The board's clack is on exactly when the board is                                            | One rule, no fourth setting — and it falls out that the checkpoints, which force the board off, are the runs that go quiet                                              |
 | 69  | A clack has no pitch and does not know if the key was right                                  | It plays eight times a second under `correct` and `wrong`; a fourth opinion on a keystroke, arriving before the other three knew, is a commentary on a child's mistakes |
+| 70  | A shot is matched on the key AND the shift                                                   | `A` and `a` are one key and two letters, so the code alone let a wave of capitals fall to the bare alphabet — and the passage lessons were strict about it all along    |
+| 71  | A storm waits for a key, and shows no letter until it gets one                               | It is the one run entered with the hands in the wrong place, and what is being waited on is a child being ready — which is not an amount of time a counter can spend    |
 
 ---
 

@@ -50,6 +50,7 @@ const at = (ch: string, spawnMs: number, fallMs: number): StormLetter => {
   return {
     ch,
     code: stroke.code,
+    shifted: stroke.shift !== null,
     finger: stroke.finger,
     lane: keyX(stroke.code) ?? 0,
     spawnMs,

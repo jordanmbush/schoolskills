@@ -19,9 +19,11 @@ import {
 
 import { StormField } from "./StormField";
 import { StormOver } from "./StormOver";
+import { StormReady } from "./StormReady";
 
 import type { FingerZone, KeyDef } from "@/engine/keyboard";
 import type { StormState, WaveSpec } from "@/engine/typing/storm";
+import type { ComponentProps } from "react";
 
 /**
  * The one claim this screen exists to keep: a letter falls down the column of
@@ -182,8 +184,13 @@ const frameOf = (spec: WaveSpec, atMs: number): StormState =>
  * writes the fall (§8.9); a still frame has no clock, so it is handed an empty
  * ref rather than the component being made to work without one.
  */
-const draw = (state: StormState) =>
-  renderToStaticMarkup(<StormField state={state} skyRef={{ current: null }} />);
+const draw = (
+  state: StormState,
+  over: Partial<ComponentProps<typeof StormField>> = {},
+) =>
+  renderToStaticMarkup(
+    <StormField state={state} skyRef={{ current: null }} {...over} />,
+  );
 
 /** Every falling letter in a rendered field, as `{ ch, lane, fallMs, drop }`. */
 const stones = (state: StormState) =>
@@ -630,6 +637,41 @@ describe("StormField", () => {
     // And one that was shot leaves at the press rather than at its landing —
     // `resolved` is what is drawn from, not the clock alone.
     expect(stones(fire(state, "KeyJ"))).toHaveLength(1);
+  });
+
+  it("draws no letter at all while the wave is waiting to be started", () => {
+    /*
+     * The beat before it falls (§8.13, decision 71). A wave's first letter
+     * spawns at time zero (`buildWave`), so a field that only held the clock
+     * would be showing it — an untimed look at the first target, where every
+     * other letter of the run gets exactly `QUEUE_MS` to be read in. One prop
+     * both puts the panel in the sky and takes the stones out of it, so the
+     * two cannot come apart.
+     */
+    const state = frameOf(only("j", 4, MIN_FALL_MS), 0);
+    expect(
+      stones(state).length,
+      "the premise: there is hail to be hidden",
+    ).toBeGreaterThan(0);
+
+    const waiting = draw(state, { ready: <StormReady /> });
+    expect(waiting).not.toContain("storm__letter");
+    expect(waiting).toContain("storm__ready");
+    expect(waiting).toContain("Press any key to start");
+  });
+
+  it("draws the rest of the field while it waits, so nothing moves on start", () => {
+    // The HUD at nothing and the shield whole, both exactly where the run will
+    // find them: pressing a key has to start a storm, not rearrange a screen.
+    // The way out is in there too, which is the whole of what a device that
+    // cannot press a key is left with (§8.8).
+    const waiting = draw(frameOf(only("j"), 0), {
+      ready: <StormReady />,
+      onQuit: () => {},
+    });
+    expect(waiting).toContain("storm__hud");
+    expect(waiting).toContain("storm__shield");
+    expect(waiting).toContain("storm__quit");
   });
 
   it("puts a stone at the top when it spawns and at the line when it lands", () => {
