@@ -34,8 +34,9 @@ export type Box = { x: Mil; y: Mil; width: Mil; height: Mil };
  * type needs: at 18pt the type is a quarter inch on its own, and a key printed
  * onto lines shorter than its own letters is a row taller than was reserved for.
  *
- * Two different things a child writes on are this tall — a fact family's four
- * number sentences, and the partial products of a long multiplication.
+ * More than one thing a child writes on is this tall — a fact family's four
+ * number sentences and the partial products of a long multiplication among
+ * them.
  */
 export const answerLine = (fontPt: number): Mil =>
   Math.max(inches(0.25), points(fontPt * 1.35));

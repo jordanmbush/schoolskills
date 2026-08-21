@@ -306,10 +306,10 @@ export const fontOf = (config: HandwritingConfig): SheetFont | undefined =>
   config.style === "joins" ? cursiveOf(config.font) : config.font;
 
 /**
- * Every character the sheet will print, as one string. Only ever read by
- * `glyphHeight`, which wants to know whether there is a lower-case letter, a
- * capital or a numeral anywhere on the page — so the order it is joined in and
- * the spaces between are beside the point.
+ * Every character the sheet will print, as one string. Read by `glyphHeight`
+ * and by `glyphAdvance`, which want to know whether there is a lower-case
+ * letter, a capital or a numeral anywhere on the page — so the order it is
+ * joined in and the spaces between are beside the point.
  */
 const writtenOf = (config: HandwritingConfig): string =>
   config.style === "passage"

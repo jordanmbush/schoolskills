@@ -42,8 +42,9 @@ export function SheetView({ sheet }: { sheet: Sheet }) {
       className="sheet"
       // Attributes rather than classes. A key is the same sheet in a different
       // state, and a face and a boxed answer place are how this sheet is drawn
-      // rather than what is on it — so each is one attribute here and one rule
-      // in sheet.css, instead of a class threaded down through every block.
+      // rather than what is on it — so the face and the answer box are one
+      // attribute here and one rule in sheet.css, instead of a class threaded
+      // down through every block.
       data-answers={sheet.answers ? "true" : undefined}
       data-font={sheet.font}
       data-answer-box={sheet.answerBox ? "true" : undefined}

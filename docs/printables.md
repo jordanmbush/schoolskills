@@ -393,11 +393,11 @@ on a hundred chart or a multiplication square that fits only in Andika: three
 characters is the widest thing either puts in a square, and only Andika's
 numerals clear the shared size at that width — 400 mil against a shared 375 on
 the hundred chart's ¾in square, 307 against 288 on the 13×13. The other four
-faces are wider per numeral (a digit measures at `capAdvance`, not `advance`),
-so they are set smaller, which is the answer rather than a miss: three
-OpenDyslexic numerals at half the square measure 0.89in across a 0.75in square.
-Every catalog page is set in the print face, so all of them print at the shared
-size.
+faces are wider per numeral (a digit measures at the wider of `advance` and
+`capAdvance`), so they are set smaller, which is the answer rather than a miss:
+three OpenDyslexic numerals at half the square measure 0.89in across a 0.75in
+square. Every catalog page is set in the print face, so all of them print at
+the shared size.
 
 ---
 
@@ -907,14 +907,15 @@ One thing every family on this shelf does that none of them needs to: it lays
 its page out against a footer carrying the note a key prints, whether or not it
 has anything to reveal. A key keeps its sheet's blocks and is laid out against
 the same box, so a footer that wraps to two rows on the key and one on the
-sheet is a key whose last row prints on a second page — and `SheetSpec.key`
-stamps "Answer key" onto any sheet it is handed, including the blank forms,
-because a parent may press the button on a coordinate grid and what they should
-get is the same paper with a word in the footer. Reserving unconditionally
-costs one footer row on the sheets that withhold nothing, and only at the type
-sizes where that row wraps at all; at every size a catalog page prints, it
-costs nothing. That is the cheap side to be wrong on: a row over-reserved is a
-rule line, and a row under-reserved is a second sheet of paper.
+sheet is a key whose last row prints on a second page — and on this shelf
+`SheetSpec.key` stamps "Answer key" onto any sheet it is handed, including the
+blank forms, because a parent may press the button on a coordinate grid and
+what they should get is the same paper with a word in the footer. Reserving
+unconditionally costs one footer row on the sheets that withhold nothing, and
+only at the type sizes where that row wraps at all; at every size a catalog
+page prints, it costs nothing. That is the cheap side to be wrong on: a row
+over-reserved is a rule line, and a row under-reserved is a second sheet of
+paper.
 
 ### Not ours to fake
 

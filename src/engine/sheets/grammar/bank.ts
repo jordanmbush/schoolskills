@@ -387,7 +387,7 @@ const COMMANDS: Tagged[] = [
 ];
 
 /* ── Exclamations ──────────────────────────────────────────────────────────
-   All four are exclamative clauses — `What a …!` or `How …!` — which makes the
+   All five are exclamative clauses — `What a …!` or `How …!` — which makes the
    mark on the end a fact about the grammar rather than about tone. It is also
    why they are the one kind the punctuation sheet never draws from: a child who
    wrote a full stop after "What a mess" has made no mistake anybody can point

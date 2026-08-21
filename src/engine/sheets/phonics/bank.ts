@@ -892,7 +892,7 @@ export function isTricky(entry: Word): boolean {
  * are fine. It matters for exactly one kind of exercise: asking a child to
  * *tell two sounds apart*, where a merged pair makes the question unanswerable
  * for half the children who see it. Nothing in the shipped styles does that, so
- * nothing filters on it (§13).
+ * none of them asks `pickWords` for the `sameEverywhere` filter (§13).
  */
 export function variesByAccent(entry: Word): boolean {
   return wordSounds(entry).some((sound) => PHONEME_BY_ID.get(sound)?.varies);

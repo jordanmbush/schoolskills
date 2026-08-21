@@ -11,13 +11,12 @@ const CELL_TO_EM = 0.5;
  * How much of a column a word at the head of one may take.
  *
  * Half a square is the right size for the numerals a grid was built for and far
- * too big for a word — and an `<svg>` clips to its viewBox, so a heading too
- * wide for its column prints sliced off rather than spilling into the one
- * beside it. A cell that cannot hold its text at the shared size is set at the
- * size that fits, measured off the face's own declared mean advance
- * (`faces.ts`). Through `glyphAdvance` rather than off `advance` directly,
- * because every word here starts with a capital and the plain mean is taken
- * over `a`–`z`.
+ * too big for a word — a heading too wide for its column overlaps its
+ * neighbours and is sliced off at the edge of the drawing. A cell that cannot
+ * hold its text at the shared size is set at the size that fits, measured off
+ * the face's own declared mean advance (`faces.ts`). Through `glyphAdvance`
+ * rather than off `advance` directly, because every word here starts with a
+ * capital and the plain mean is taken over `a`–`z`.
  */
 const CELL_FILL = 0.86;
 

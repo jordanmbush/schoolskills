@@ -7,9 +7,9 @@
  * face's own (`faces.ts`), so a heading that fits in the print face is not
  * clipped in the dyslexic one — which is half a line wider per character.
  *
- * What it guards on a drawn block is a clip rather than an overflow: a heading
- * set in an `<svg>` is cut off at the viewBox rather than spilling into the
- * column beside it, so it prints sliced.
+ * What it guards on a drawn block is an overflow nothing tidies up afterwards:
+ * a heading set in an `<svg>` is cut off at the edge of the drawing, and
+ * overlaps the column beside it before that.
  */
 import { glyphAdvance, type Face } from "@/engine/sheets/faces";
 import type { Mil } from "@/engine/sheets/types";
