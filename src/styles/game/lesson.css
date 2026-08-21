@@ -169,17 +169,33 @@
   margin-inline: auto;
   width: 100%;
 
+  /* One line of the passage, named once because the frame below is three of
+     them and the floor here is one: `.passage__text` sets `line-height: 2`,
+     so a line is twice the size the text is set at. */
+  --passage-size: clamp(1.05rem, 3.2vw, 1.5rem);
+  --passage-line: calc(2 * var(--passage-size));
+
   /* The passage is the row of the race grid that gives — `.race` makes it
      `minmax(0, 1fr)` while every other row is `auto`, and the keyboard below
-     the input is one of those. But a grid item still refuses to be shorter
-     than its own content unless it is told it may, so without these two a
-     short screen with the board on would grow the page instead of the row:
-     the line you type on, and then the board, would slide under the fold.
+     the input is one of those. What makes it give is `contain: size`: `.race`
+     is a `min-height`, so a row asking for the height of its own content is
+     handed it and the page grows instead of the row — the line you type on,
+     and then the board, sliding under the fold, which is the one thing that
+     `min-height` is there to prevent (§7). Size containment answers that
+     question without reading the passage: the row takes what the grid has
+     left over, and the frame inside it is cut to fit rather than the other
+     way round.
 
-     Clipping is the right end to lose. `Passage` is already a window on the
-     deck — six words behind, fourteen ahead — so what goes is more read-ahead,
-     and the live word sits near the top of it either way. */
-  min-height: 0;
+     A floor of one line, because a screen with nothing left over would give
+     a contained row nothing at all, and the line being typed on is the one
+     thing a child cannot do without. `Passage` counts the lines the frame
+     really has, so a squeezed frame reads a line at a time rather than
+     showing half of one.
+
+     `overflow` clips what hangs below the frame — the credit line, on a row
+     too short to hold both. The frame does its own clipping. */
+  contain: size;
+  min-height: var(--passage-line);
   overflow: hidden;
 }
 
@@ -188,15 +204,71 @@
    needs to be at speed. */
 .passage__text {
   font-family: var(--font-mono);
-  font-size: clamp(1.05rem, 3.2vw, 1.5rem);
+  font-size: var(--passage-size);
   line-height: 2;
   letter-spacing: 0.01em;
   color: var(--chalk-soft);
   text-align: left;
+
+  /* Room either side for the highlight on a word that starts or ends a line.
+     Every word carries a quarter-em of padding it does not pay for in width
+     (see `.passage__word`), so the line breaks where the letters say it should
+     and the highlight of the last word on a line hangs a quarter-em past them.
+     Overflow is clipped at the padding edge, so a quarter-em of padding here
+     is exactly the room that hang needs. */
+  padding-inline: 0.25em;
+
+  /* Three lines — one read back, the one being typed on, and one to read
+     ahead on — or the whole row where a short screen has left less than
+     three, which is the `100%` half of the minimum. Both halves are settled
+     before the first word and neither moves again during a run, so the
+     passage holds the same lines from the first word to the last: nothing
+     under it is nudged as the block fills up, where a run that simply drew
+     every word typed so far would grow this row a line at a time and push
+     the keyboard off the bottom of a laptop.
+
+     A height and not a maximum: a maximum would let the frame grow with the
+     passage — a line at a time as the words arrive — and take the credit
+     line under it along for the ride. The `100%` resolves because `.passage`
+     is size-contained above and so has a height of its own to be a
+     percentage of; `Passage` reads this frame back rather than assuming
+     three lines, and holds the cursor on the last row with a line still
+     under it.
+
+     `hidden` still scrolls when it is asked to in script, which is the whole
+     arrangement: no scrollbar, nothing a child can drag, and a view that
+     moves only when the cursor has run out of room. */
+  height: min(calc(3 * var(--passage-line)), 100%);
+  overflow: hidden;
 }
 
+/* A word breaks only where it has to.
+
+   `anywhere` is a last resort and not the usual case: a browser reaches for it
+   only when a word has no ordinary break to fall back on, so a word that would
+   fit a line of its own still travels down to the next line whole. What it
+   covers is the word wider than the column — a long one at a large text size,
+   or a parent-authored drill — which has no next line to travel to.
+
+   `white-space: nowrap` is what it replaces, and the trap. It keeps a
+   hyphenated word in one piece, which is presumably why it was reached for,
+   but it also forbids that last resort: the word overflows instead, and the
+   `overflow: hidden` above takes the end off it. So the trade is a hyphenated
+   word that may now split at its hyphen, against a word a child can only half
+   see — and half a word is a dead end, because they cannot type what they
+   cannot read. */
 .passage__word {
-  white-space: nowrap;
+  overflow-wrap: anywhere;
+
+  /* Room for the live word's highlight, kept on EVERY word so that lighting
+     one costs no width. The highlight is drawn inside the flow, so a padding
+     only the live word carried would push every word after it along by half
+     an em and pull them back a word later — the passage twitching sideways
+     once per word, under the eye that is trying to read ahead on it. The
+     margin takes the same half em straight back off, so the gap between two
+     words is the space between them and nothing else. */
+  padding: 0.1em 0.25em;
+  margin-inline: -0.25em;
 }
 
 .passage__word.is-done {
@@ -209,11 +281,11 @@
   text-underline-offset: 0.28em;
 }
 
+/* Nothing here may change the word's size — see the padding above. */
 .passage__word.is-live {
   color: var(--chalk);
   background: color-mix(in oklab, var(--accent) 16%, transparent);
   border-radius: 6px;
-  padding: 0.1em 0.25em;
   box-shadow: inset 0 -2px 0 var(--accent);
 }
 

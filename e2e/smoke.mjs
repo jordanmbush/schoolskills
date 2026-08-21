@@ -1820,6 +1820,234 @@ try {
   );
   await tabletCtx.close();
 
+  /**
+   * The passage under a cursor: what it shows, and what it is allowed to move.
+   *
+   * Two things a child depends on, and only a browser can be asked about
+   * either. `Passage.test.tsx` pins the markup both are built on.
+   *
+   * **The word being typed is on screen, whole.** Whether the passage wraps at
+   * all comes down to where the space between two words lives: a browser
+   * breaks a line at a space and will not break inside an element that calls
+   * its own content one unbreakable run. Get that wrong and the words lay out
+   * as a single line several times the width of the column, `overflow: hidden`
+   * takes the end off it, and the live word — a few committed words in, so
+   * already near the right edge — is cut in half. A child who cannot see the
+   * word cannot type it, and the only way out is quitting the run.
+   *
+   * **Nothing moves sideways.** The cursor runs left to right and the block
+   * scrolls up a whole line at a time, and that is the whole of the motion a
+   * child should ever see here. A word that shifts left as another is
+   * committed — a sliding window reflowing, or a highlight that costs width —
+   * takes away the one thing an eye reading ahead relies on, which is knowing
+   * where the cursor will be next.
+   */
+  log("\n14. The passage moves only where a passage should");
+
+  /** Type a free-play passage, watching every word in it for movement. */
+  const walkPassage = async (width, height, words) => {
+    const ctx = await browser.newContext({ viewport: { width, height } });
+    const p = await ctx.newPage();
+    p.on("pageerror", (e) => errors.push(`pageerror: ${e.message}`));
+    await p.goto(`${BASE}/typing`, { waitUntil: "networkidle" });
+    await p
+      .getByRole("button", { name: /add a player/i })
+      .first()
+      .click();
+    await p.waitForSelector(".modal__panel", { timeout: 8000 });
+    await p.locator(".modal__panel input").first().fill("Track");
+    await p.getByRole("button", { name: /^add player$/i }).click();
+    await p.waitForSelector(".modal__panel", {
+      state: "detached",
+      timeout: 8000,
+    });
+    await p.getByText("Track", { exact: false }).first().click();
+    // The longest free-play run there is. The block only moves once the cursor
+    // has run out of lines below it, so a walk that never filled the frame
+    // would be watching a passage that had no reason to move yet — and the
+    // widest viewport here fits the most words to a line, so it is the one
+    // that decides how many words buy a scroll.
+    await p.getByRole("button", { name: /^80$/ }).click();
+    await p.getByRole("button", { name: /start race/i }).click();
+    // The 3·2·1 is on screen before the run is live and a key pressed at it is
+    // thrown away, so wait for it to arrive and then to leave.
+    await p.waitForSelector(".countdown", { timeout: 9000 });
+    await p.waitForSelector(".countdown", { state: "detached", timeout: 9000 });
+
+    /**
+     * Where every word is, and where the live one is against its frame.
+     *
+     * Positions are measured against the frame rather than the viewport, so
+     * that a scroll of the frame reads as the words moving and a scroll of the
+     * page reads as nothing — which is the right way round for what is being
+     * asked here.
+     */
+    const readPassage = () =>
+      p.evaluate(() => {
+        const frame = document.querySelector(".passage__text");
+        const live = document.querySelector(".passage__word.is-live");
+        if (!frame || !live) return null;
+        const f = frame.getBoundingClientRect();
+        const at = [...frame.children].map((w) => {
+          const r = w.getBoundingClientRect();
+          return [r.left - f.left, r.top - f.top];
+        });
+        // Every side, and every rectangle the live word is drawn in: a word
+        // too long for the column breaks across two lines, and both halves
+        // have to be on screen for it to be readable.
+        const past = (r) =>
+          Math.max(
+            r.right - f.right,
+            f.left - r.left,
+            r.bottom - f.bottom,
+            f.top - r.top,
+          );
+        // Which row of the frame the cursor is drawn on, 0 being the top
+        // one. The line's height comes off the last word sitting higher than
+        // the live one, which is the reading `Passage` scrolls by.
+        const n = [...frame.children].indexOf(live);
+        let step = 0;
+        for (let i = n - 1; i >= 0; i--) {
+          if (at[i][1] < at[n][1] - 1) {
+            step = at[n][1] - at[i][1];
+            break;
+          }
+        }
+        return {
+          word: live.textContent.trim(),
+          at,
+          row: step ? Math.round(at[n][1] / step) : 0,
+          past: Math.round(Math.max(...[...live.getClientRects()].map(past))),
+          // A passage that wraps has nothing to scroll sideways to. This is
+          // the mechanism rather than the symptom, and unlike the reading
+          // above it does not depend on which words this seed dealt.
+          sideways: frame.scrollWidth - frame.clientWidth,
+        };
+      });
+
+    let out = -Infinity;
+    let word = "";
+    let sideways = 0;
+    /** The furthest any word slid left or right after it was first drawn. */
+    let slid = 0;
+    /** Every distance the block moved by, so they can be shown to be lines. */
+    const steps = [];
+    /** Words actually measured, so a walk that measured none cannot pass. */
+    let read = 0;
+    /** The row the cursor sat on, once the block had started moving. */
+    const heldRows = [];
+    let before = await readPassage();
+    for (let i = 0; i < words && before; i++) {
+      await p.keyboard.type(before.word, { delay: 5 });
+      await p.keyboard.press("Space");
+      await p.waitForTimeout(40);
+      const now = await readPassage();
+      // A live word with no client rects reads as `-Infinity`, which is a
+      // reading of nothing that every comparison below would wave through as
+      // comfortably inside the frame. Only a real number counts as a word
+      // measured, and the count is what the checks are held to.
+      if (!now || !Number.isFinite(now.past)) break;
+      read++;
+      if (now.past > out) {
+        out = now.past;
+        word = now.word;
+      }
+      sideways = Math.max(sideways, now.sideways);
+      for (let n = 0; n < Math.min(before.at.length, now.at.length); n++) {
+        slid = Math.max(slid, Math.abs(now.at[n][0] - before.at[n][0]));
+        const up = before.at[n][1] - now.at[n][1];
+        // A pixel of slack: a live word is drawn a letter to a span, and a row
+        // of separately-rounded letters is not always the exact width of the
+        // same word as one run of text.
+        if (Math.abs(up) > 1) steps.push(up);
+      }
+      // Only once the block has moved does the row mean anything. Before that
+      // the passage is barely longer than its frame, so a scroll asked for is
+      // a scroll the browser clamps away, and the cursor sits low whether it
+      // is being held there or not — which flatters exactly the bug below.
+      if (steps.length > 0) heldRows.push(now.row);
+      before = now;
+    }
+    await ctx.close();
+    return { out, word, sideways, slid, steps, read, words, heldRows };
+  };
+
+  // A laptop and the narrowest phone the site is built for. The narrow one is
+  // not the harder case here — a short column wraps sooner — but it is where a
+  // word is most likely to be wider than the room it has.
+  const laptop = await walkPassage(1280, 1000, 26);
+  const phone = await walkPassage(320, 640, 26);
+  check(
+    "the live word stays inside the passage, and the passage never runs off sideways",
+    laptop.read === laptop.words &&
+      phone.read === phone.words &&
+      laptop.out <= 0 &&
+      phone.out <= 0 &&
+      laptop.sideways === 0 &&
+      phone.sideways === 0,
+    `1280px: ${laptop.out}px past the edge on "${laptop.word}" over ` +
+      `${laptop.read}/${laptop.words} words, ${laptop.sideways}px of sideways ` +
+      `overflow; 320px: ${phone.out}px on "${phone.word}" over ` +
+      `${phone.read}/${phone.words} words, ${phone.sideways}px`,
+  );
+
+  /**
+   * Every move the block made, as the one distance it should be.
+   *
+   * The walk covers several lines at both sizes, so this is not a claim about
+   * one move: a two-line jump, a half-line drift and a scroll back down would
+   * each be a second distance, and a scroll that never happened leaves none at
+   * all. Compared unrounded and to within a pixel, because a line at the
+   * smallest text size is 33.6px and lands on either side of 34.
+   */
+  const oneLine = (walk) => {
+    if (walk.steps.length === 0) return "never moved";
+    const lo = Math.min(...walk.steps);
+    const hi = Math.max(...walk.steps);
+    return lo > 0 && hi - lo <= 1
+      ? null
+      : `${lo.toFixed(1)}–${hi.toFixed(1)}px`;
+  };
+  const laptopLines = oneLine(laptop);
+  const phoneLines = oneLine(phone);
+  check(
+    "and it moves only upwards, a line at a time, with no word sliding sideways",
+    laptop.slid <= 1 && phone.slid <= 1 && !laptopLines && !phoneLines,
+    `1280px: worst sideways slide ${laptop.slid.toFixed(1)}px, ` +
+      `${laptop.steps.length} moves up${laptopLines ? ` of ${laptopLines}` : " of one line"}; ` +
+      `320px: ${phone.slid.toFixed(1)}px, ${phone.steps.length} moves` +
+      `${phoneLines ? ` of ${phoneLines}` : " of one line"}`,
+  );
+
+  /**
+   * The row the cursor keeps while the block scrolls under it.
+   *
+   * A three-line frame is worth having because the cursor sits on the middle
+   * line of it: a line already typed above, a line still to come below. That
+   * only holds if three lines are counted as three, and between roughly 525px
+   * and 750px of width the passage is sized by the `3.2vw` term of its clamp,
+   * where a line is a fraction of a pixel rounded up — so three of them come
+   * to marginally more than the frame cut to hold them. Counted without
+   * forgiveness that reads as two lines: the cursor is pinned to the top row
+   * and the block scrolls under every word.
+   *
+   * Neither check above can see it: the block still moves upwards, a line at a
+   * time, just always. The row is what gives it away, taken from the readings
+   * after the block first moved and at its lowest — one 640px walk inside the
+   * band, and the two widths the other checks already use.
+   */
+  const heldRow = (walk) =>
+    walk.heldRows.length ? Math.min(...walk.heldRows) : 0;
+  const band = await walkPassage(640, 800, 26);
+  check(
+    "and the cursor keeps a row below the first while the block moves under it",
+    heldRow(laptop) >= 1 && heldRow(phone) >= 1 && heldRow(band) >= 1,
+    `rows kept while scrolling — 1280px: ${heldRow(laptop)} over ` +
+      `${laptop.heldRows.length} readings, 320px: ${heldRow(phone)} over ` +
+      `${phone.heldRows.length}, 640px: ${heldRow(band)} over ` +
+      `${band.heldRows.length}`,
+  );
+
   log(
     `\nconsole errors: ${errors.length ? errors.slice(0, 5).join(" | ") : "none"}`,
   );
