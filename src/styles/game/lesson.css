@@ -176,9 +176,11 @@
      short screen with the board on would grow the page instead of the row:
      the line you type on, and then the board, would slide under the fold.
 
-     Clipping is the right end to lose. `Passage` is already a window on the
-     deck — six words behind, fourteen ahead — so what goes is more read-ahead,
-     and the live word sits near the top of it either way. */
+     Clipping is the right end to lose, and it is also what the passage is
+     read through: `Passage` lifts the block by whole lines so the line being
+     typed on is the second one showing, which puts the lines already typed
+     above the top edge and the read-ahead below the bottom one. Both are
+     clipped here. The line the cursor is on never is. */
   min-height: 0;
   overflow: hidden;
 }
@@ -193,6 +195,31 @@
   letter-spacing: 0.01em;
   color: var(--chalk-soft);
   text-align: left;
+
+  /* Room either side for the highlight on a word that starts or ends a line.
+     Every word carries a quarter-em of padding it does not pay for in width
+     (see `.passage__word`), so the line breaks where the letters say it should
+     and the highlight of the last word on a line hangs a quarter-em past them.
+     Overflow is clipped at the padding edge, so a quarter-em of padding here
+     is exactly the room that hang needs. */
+  padding-inline: 0.25em;
+
+  /* Exactly three lines — one read back, the one being typed on, and one to
+     read ahead on — which `Passage` scrolls a whole line at a time. Six em is
+     three of them because a line box here is the 2 of `line-height` and `em`
+     on this rule is this element's own size.
+
+     A height rather than a maximum, and a height rather than a word count:
+     the passage holds the same three lines from the first word to the last,
+     so nothing under it is nudged as the block fills up, and a run that drew
+     every word typed so far would otherwise grow this row a line at a time
+     and push the keyboard off the bottom of a laptop.
+
+     `hidden` still scrolls when it is asked to in script, which is the whole
+     arrangement: no scrollbar, nothing a child can drag, and a view that
+     moves only when the cursor has run out of room. */
+  height: 6em;
+  overflow: hidden;
 }
 
 /* A word breaks only where it has to.
@@ -212,6 +239,16 @@
    cannot read. */
 .passage__word {
   overflow-wrap: anywhere;
+
+  /* Room for the live word's highlight, kept on EVERY word so that lighting
+     one costs no width. The highlight is drawn inside the flow, so a padding
+     only the live word carried would push every word after it along by half
+     an em and pull them back a word later — the passage twitching sideways
+     once per word, under the eye that is trying to read ahead on it. The
+     margin takes the same half em straight back off, so the gap between two
+     words is the space between them and nothing else. */
+  padding: 0.1em 0.25em;
+  margin-inline: -0.25em;
 }
 
 .passage__word.is-done {
@@ -224,11 +261,11 @@
   text-underline-offset: 0.28em;
 }
 
+/* Nothing here may change the word's size — see the padding above. */
 .passage__word.is-live {
   color: var(--chalk);
   background: color-mix(in oklab, var(--accent) 16%, transparent);
   border-radius: 6px;
-  padding: 0.1em 0.25em;
   box-shadow: inset 0 -2px 0 var(--accent);
 }
 

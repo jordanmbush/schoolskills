@@ -6,19 +6,24 @@ import type { Card, CardResult } from "@/engine/types";
 import { Passage } from "./Passage";
 
 /**
- * The passage, and the one thing about its markup that is not cosmetic.
+ * The passage, and the two things about its markup that are not cosmetic.
  *
- * A browser breaks a line at a space, and it will not break inside an element
- * that says its content is one unbreakable run. So where the space between two
- * words is rendered decides whether the passage wraps at all: keep it inside a
- * word span and there is no break to take, the twenty-word window lays out as
- * one line several times the width of the column, and `overflow: hidden` takes
- * the end off it — including the word the child is on. That is a dead end for a
- * five-year-old, who cannot type what they cannot see, so it is pinned here.
+ * **Where the space between two words goes.** A browser breaks a line at a
+ * space, and it will not break inside an element that says its content is one
+ * unbreakable run. Keep the space inside a word span and there is no break to
+ * take: the passage lays out as one line several times the width of the
+ * column, and `overflow: hidden` takes the end off it — including the word the
+ * child is on. That is a dead end for a five-year-old, who cannot type what
+ * they cannot see.
+ *
+ * **Which word the passage starts at.** Always the first, so a word laid out
+ * once keeps its place. A window that slid to follow the cursor would reflow
+ * the whole block a word to the left on every commit, walking a word up to the
+ * line above while the cursor dropped to the start of the line below.
  *
  * What this file cannot check is the layout itself — there is no browser in
  * this suite. Section 14 of `e2e/smoke.mjs` measures the live word against the
- * box it is drawn in, in a real one.
+ * frame it is drawn in, and watches for a word that moves, in a real one.
  */
 
 const card = (answer: string): Card => ({
@@ -82,6 +87,25 @@ describe("Passage", () => {
     expect(live).toContain('class="passage__ch is-hit">s</span>');
     expect(live).toContain('class="passage__ch is-hit">n</span>');
     expect(live).toContain('class="passage__ch">h</span>');
+  });
+
+  it("draws from the first word however far in the cursor is", () => {
+    // The cursor is twenty words in and the passage still starts at word
+    // zero, so nothing already on screen has to move. A window that slid six
+    // words behind the cursor would start at "w14" instead.
+    const long = Array.from({ length: 60 }, (_, n) => card(`w${n}`));
+    const deep = renderToStaticMarkup(
+      <Passage
+        deck={long}
+        results={long.slice(0, 20).map((c) => typed(c.answer))}
+        entry=""
+      />,
+    );
+    const drawn = readsAs(deep).split(" ");
+    expect(drawn[0]).toBe("w0");
+    // And it stops a bounded way past the cursor rather than drawing the rest
+    // of a hundred-word lesson: twenty typed, fourteen to read ahead on.
+    expect(drawn.at(-1)).toBe("w33");
   });
 
   it("shows what was typed past the end of a word", () => {
