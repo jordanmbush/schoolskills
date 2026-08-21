@@ -12,12 +12,14 @@ import type {
   Sheet,
 } from "../types";
 import { buildSheet, describeSheet, sheetSpec } from "../index";
+import { describeSheetFamily } from "../contract";
 
 import { CARD_STEP } from "./cards";
 import {
   DICE_PAIR,
   DICE_TABS,
   JOINS,
+  NET_SHEET,
   OPPOSITE,
   SECTORS,
   cubeEdge,
@@ -426,16 +428,18 @@ describe("a spinner", () => {
 
 /* ── The promises every family makes ───────────────────────────────────── */
 
-describe("the nets family", () => {
-  it("is deterministic in (config, seed)", () => {
-    for (const style of ["dice", "spinner"] as NetStyle[]) {
-      const built = config({ style, labels: ["a", "b"] });
-      expect(JSON.stringify(buildSheet(built, 9))).toBe(
-        JSON.stringify(buildSheet(built, 9)),
-      );
-    }
-  });
+describeSheetFamily("net", {
+  label: "Dice and spinners",
+  spec: NET_SHEET,
+  config,
+  shapes: (["dice", "spinner"] as NetStyle[]).map((style) => ({
+    style,
+    labels: ["a", "b"],
+  })),
+  keyed: netKeyed,
+});
 
+describe("the nets family", () => {
   it("withholds nothing, and says so where a page can ask", () => {
     expect(netKeyed()).toBe(false);
     const sheet = buildSheet(config(), 1);

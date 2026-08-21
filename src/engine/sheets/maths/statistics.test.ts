@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { answerKey, buildSheet, describeSheet, sheetSpec } from "../index";
-import { sheetFamily } from "../families";
+import { buildSheet, describeSheet } from "../index";
+import { describeSheetFamily } from "../contract";
 import { PROBLEM_GAP, answerLine } from "../layout";
 import type {
   MarginSize,
@@ -136,6 +136,14 @@ const EVERY_SHAPE: Array<Partial<StatisticsConfig>> = [
 
 const SEEDS = [0, 1, 2, 7, 4242];
 
+describeSheetFamily("statistics", {
+  label: "Mean, median and mode",
+  spec: STATISTICS_SHEET,
+  config,
+  shapes: EVERY_SHAPE,
+  seeds: SEEDS,
+});
+
 /** The one block a statistics sheet has, narrowed for the reader. */
 function problemsOf(over: Partial<StatisticsConfig>, seed: number): Problem[] {
   const block = buildSheet(config(over), seed).blocks[0];
@@ -162,11 +170,6 @@ const shapesOf = (style: string): Array<Partial<StatisticsConfig>> =>
 /* ── The registry ──────────────────────────────────────────────────────── */
 
 describe("the statistics family", () => {
-  it("is in the registry under the kind its config carries", () => {
-    expect(sheetSpec("statistics")).toBe(STATISTICS_SHEET);
-    expect(sheetFamily("statistics")?.label).toBe("Mean, median and mode");
-  });
-
   it("names the sheet in the words a parent chose it by", () => {
     expect(describeSheet(config())).toBe(
       "Finding the mean — sets of 5 — numbers to 20",
@@ -263,22 +266,6 @@ describe("the answer key", () => {
       const order = ordered(values);
       expect(Number(written.range), said).toBe(
         order[order.length - 1] - order[0],
-      );
-    }
-  });
-
-  it("prints the answers only when the sheet is a key", () => {
-    const sheet = buildSheet(config(), 5);
-    const key = answerKey(config(), 5);
-    expect(sheet.answers).toBe(false);
-    expect(key.answers).toBe(true);
-    expect(key.footer.note).toBe("Answer key");
-  });
-
-  it("is the same sheet keyed, never a second generation", () => {
-    for (const shape of EVERY_SHAPE) {
-      expect(answerKey(config(shape), 11).blocks).toEqual(
-        buildSheet(config(shape), 11).blocks,
       );
     }
   });
@@ -413,17 +400,6 @@ describe("what may be on the page", () => {
 /* ── Determinism, and the three features it buys (§7) ──────────────────── */
 
 describe("(config, seed)", () => {
-  it("builds the same sheet twice", () => {
-    for (const shape of EVERY_SHAPE) {
-      for (const seed of SEEDS) {
-        const once = buildSheet(config(shape), seed);
-        const twice = buildSheet(config(shape), seed);
-        expect(once).not.toBe(twice);
-        expect(once).toEqual(twice);
-      }
-    }
-  });
-
   it("draws the same problems for a seed as it did the day it shipped", () => {
     expect(problemsOf({ count: 3 }, 7).map(said)).toEqual(GOLDEN.mean);
     expect(

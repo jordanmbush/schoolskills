@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { answerKey, buildSheet, describeSheet, sheetSpec } from "../index";
-import { sheetFamily } from "../families";
+import { buildSheet, describeSheet } from "../index";
+import { describeSheetFamily } from "../contract";
 import { PROBLEM_GAP } from "../layout";
 import type {
   MarginSize,
@@ -93,6 +93,14 @@ const EVERY_SHAPE: Array<Partial<RatioConfig>> = [
 
 const SEEDS = [0, 1, 2, 7, 4242];
 
+describeSheetFamily("ratio", {
+  label: "Ratio and rate",
+  spec: RATIO_SHEET,
+  config,
+  shapes: EVERY_SHAPE,
+  seeds: SEEDS,
+});
+
 /** The one block a ratio sheet has, narrowed for the reader. */
 function problemsOf(over: Partial<RatioConfig>, seed: number): Problem[] {
   const block = buildSheet(config(over), seed).blocks[0];
@@ -119,11 +127,6 @@ const shapesOf = (style: string): Array<Partial<RatioConfig>> =>
 /* ── The registry ──────────────────────────────────────────────────────── */
 
 describe("the ratio family", () => {
-  it("is in the registry under the kind its config carries", () => {
-    expect(sheetSpec("ratio")).toBe(RATIO_SHEET);
-    expect(sheetFamily("ratio")?.label).toBe("Ratio and rate");
-  });
-
   it("names the sheet in the words a parent chose it by", () => {
     expect(describeSheet(config())).toBe("Simplifying ratios — numbers to 12");
     expect(describeSheet(config({ style: "rate" }))).toBe(
@@ -196,22 +199,6 @@ describe("the answer key", () => {
       expect(said?.[2], problem.prompt).toBe(`${said?.[4]}s`);
     }
   });
-
-  it("prints the answers only when the sheet is a key", () => {
-    const sheet = buildSheet(config(), 5);
-    const key = answerKey(config(), 5);
-    expect(sheet.answers).toBe(false);
-    expect(key.answers).toBe(true);
-    expect(key.footer.note).toBe("Answer key");
-  });
-
-  it("is the same sheet keyed, never a second generation", () => {
-    for (const shape of EVERY_SHAPE) {
-      expect(answerKey(config(shape), 11).blocks).toEqual(
-        buildSheet(config(shape), 11).blocks,
-      );
-    }
-  });
 });
 
 /* ── Bounds (§20) ──────────────────────────────────────────────────────── */
@@ -272,17 +259,6 @@ describe("what may be on the page", () => {
 /* ── Determinism, and the three features it buys (§7) ──────────────────── */
 
 describe("(config, seed)", () => {
-  it("builds the same sheet twice", () => {
-    for (const shape of EVERY_SHAPE) {
-      for (const seed of SEEDS) {
-        const once = buildSheet(config(shape), seed);
-        const twice = buildSheet(config(shape), seed);
-        expect(once).not.toBe(twice);
-        expect(once).toEqual(twice);
-      }
-    }
-  });
-
   it("draws the same problems for a seed as it did the day it shipped", () => {
     expect(problemsOf({ count: 3 }, 7).map(said)).toEqual(GOLDEN.simplify);
     expect(problemsOf({ style: "rate", count: 3 }, 7).map(said)).toEqual(

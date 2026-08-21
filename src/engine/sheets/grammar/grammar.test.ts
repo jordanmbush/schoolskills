@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { answerKey, buildSheet, describeSheet, sheetSpec } from "../index";
-import { sheetFamily } from "../families";
+import { buildSheet, describeSheet } from "../index";
+import { describeSheetFamily } from "../contract";
 import type { Block, GrammarConfig, GrammarStyle, Paper } from "../types";
 
 import { END_MARK, KINDS, PARTS, SENTENCES, type Tagged } from "./bank";
@@ -183,12 +183,14 @@ describe("the sentence bank", () => {
 
 /* ── The family ────────────────────────────────────────────────────────── */
 
-describe("the grammar family", () => {
-  it("is in the registry under the kind its config carries", () => {
-    expect(sheetSpec("grammar")).toBe(GRAMMAR_SHEET);
-    expect(sheetFamily("grammar")?.label).toBe("Grammar");
-  });
+describeSheetFamily("grammar", {
+  label: "Grammar",
+  spec: GRAMMAR_SHEET,
+  config,
+  shapes: EVERY_SHEET,
+});
 
+describe("the grammar family", () => {
   it("prints a titled, marked page for every topic and style", () => {
     for (const one of EVERY_SHEET) {
       const sheet = buildSheet(one, 1);
@@ -423,21 +425,6 @@ describe("circling one of a closed list", () => {
         expect(chosen, question.prompt) //
           .toBe(topic === "parts" ? entry.focus?.part : entry.kind);
       }
-    }
-  });
-});
-
-/* ── The key ───────────────────────────────────────────────────────────── */
-
-describe("the answer key", () => {
-  it("is the same sheet keyed, never a second generation", () => {
-    for (const one of EVERY_SHEET) {
-      const sheet = buildSheet(one, 7);
-      const key = answerKey(one, 7);
-      expect(key.answers, where(one)).toBe(true);
-      expect(key.footer.note, where(one)).toBe("Answer key");
-      expect({ ...key, answers: false, footer: sheet.footer }, where(one)) //
-        .toEqual(sheet);
     }
   });
 });

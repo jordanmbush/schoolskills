@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { answerKey, buildSheet, describeSheet, sheetSpec } from "../index";
-import { sheetFamily } from "../families";
+import { buildSheet, describeSheet } from "../index";
+import { describeSheetFamily } from "../contract";
 import { BLOCK_GAP, PROBLEM_GAP } from "../layout";
 import type {
   GridMark,
@@ -206,6 +206,14 @@ const EVERY_SHAPE: Array<Partial<PreAlgebraConfig>> = [
 
 const SEEDS = [0, 1, 2, 7, 4242];
 
+describeSheetFamily("prealgebra", {
+  label: "Pre-algebra",
+  spec: PREALGEBRA_SHEET,
+  config,
+  shapes: EVERY_SHAPE,
+  seeds: SEEDS,
+});
+
 /** The problems block, which is the last one whatever else is on the sheet. */
 function problemsOf(over: Partial<PreAlgebraConfig>, seed: number): Problem[] {
   const blocks = buildSheet(config(over), seed).blocks;
@@ -241,11 +249,6 @@ const shapesOf = (style: string): Array<Partial<PreAlgebraConfig>> =>
 /* ── The registry ──────────────────────────────────────────────────────── */
 
 describe("the pre-algebra family", () => {
-  it("is in the registry under the kind its config carries", () => {
-    expect(sheetSpec("prealgebra")).toBe(PREALGEBRA_SHEET);
-    expect(sheetFamily("prealgebra")?.label).toBe("Pre-algebra");
-  });
-
   it("names the sheet in the words a parent chose it by", () => {
     expect(describeSheet(config({ style: "equation", steps: 2 }))).toBe(
       "Two-step equations — positive and negative — numbers to 12",
@@ -391,22 +394,6 @@ describe("the answer key", () => {
           expectSlope(problem.answer, from, to, problem.prompt);
         }
       }
-    }
-  });
-
-  it("prints the answers only when the sheet is a key", () => {
-    const sheet = buildSheet(config(), 5);
-    const key = answerKey(config(), 5);
-    expect(sheet.answers).toBe(false);
-    expect(key.answers).toBe(true);
-    expect(key.footer.note).toBe("Answer key");
-  });
-
-  it("is the same sheet keyed, never a second generation", () => {
-    for (const shape of EVERY_SHAPE) {
-      expect(answerKey(config(shape), 11).blocks).toEqual(
-        buildSheet(config(shape), 11).blocks,
-      );
     }
   });
 });
@@ -568,17 +555,6 @@ describe("what may be on the page", () => {
 /* ── Determinism, and the three features it buys (§7) ──────────────────── */
 
 describe("(config, seed)", () => {
-  it("builds the same sheet twice", () => {
-    for (const shape of EVERY_SHAPE) {
-      for (const seed of SEEDS) {
-        const once = buildSheet(config(shape), seed);
-        const twice = buildSheet(config(shape), seed);
-        expect(once).not.toBe(twice);
-        expect(once).toEqual(twice);
-      }
-    }
-  });
-
   it("draws the same problems for a seed as it did the day it shipped", () => {
     expect(problemsOf({ style: "equation", steps: 2, count: 3 }, 7).map(said)) //
       .toEqual(GOLDEN.equation);

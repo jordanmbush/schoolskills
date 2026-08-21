@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { answerKey, buildSheet, describeSheet, sheetSpec } from "../index";
-import { sheetFamily } from "../families";
+import { buildSheet, describeSheet } from "../index";
+import { describeSheetFamily } from "../contract";
 import type { Block, Paper, WordStudyConfig, WordStudyStyle } from "../types";
 
 import {
@@ -153,12 +153,14 @@ describe("the word bank", () => {
 
 /* ── The family ────────────────────────────────────────────────────────── */
 
-describe("the word-study family", () => {
-  it("is in the registry under the kind its config carries", () => {
-    expect(sheetSpec("word-study")).toBe(WORD_STUDY_SHEET);
-    expect(sheetFamily("word-study")?.label).toBe("Word study");
-  });
+describeSheetFamily("word-study", {
+  label: "Word study",
+  spec: WORD_STUDY_SHEET,
+  config,
+  shapes: EVERY_SHEET,
+});
 
+describe("the word-study family", () => {
   it("prints a titled, marked page for every topic and style", () => {
     for (const one of EVERY_SHEET) {
       const sheet = buildSheet(one, 1);
@@ -299,21 +301,6 @@ describe("joining two columns", () => {
       block.left.forEach((cue, at) => {
         expect(block.right[block.answer[at]], cue).toBe(bank.get(cue));
       });
-    }
-  });
-});
-
-/* ── The key ───────────────────────────────────────────────────────────── */
-
-describe("the answer key", () => {
-  it("is the same sheet keyed, never a second generation", () => {
-    for (const one of EVERY_SHEET) {
-      const sheet = buildSheet(one, 7);
-      const key = answerKey(one, 7);
-      expect(key.answers, where(one)).toBe(true);
-      expect(key.footer.note, where(one)).toBe("Answer key");
-      expect({ ...key, answers: false, footer: sheet.footer }, where(one)) //
-        .toEqual(sheet);
     }
   });
 });

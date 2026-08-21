@@ -1,13 +1,14 @@
 import { describe, expect, it } from "vitest";
 
-import { answerKey, buildSheet, describeSheet, sheetSpec } from "../index";
-import { sheetFamily } from "../families";
+import { buildSheet, describeSheet } from "../index";
+import { describeSheetFamily } from "../contract";
 import { answerLine } from "../layout";
 import type {
   Blank,
   Choice,
   Paper,
   Problem,
+  WordSheetStyle,
   WordShape,
   WordsConfig,
 } from "../types";
@@ -97,12 +98,24 @@ function refilled(blank: Blank): string {
 
 /* ── The registry ──────────────────────────────────────────────────────── */
 
-describe("the spelling family", () => {
-  it("is in the registry under the kind its config carries", () => {
-    expect(sheetSpec("words")).toBe(WORDS_SHEET);
-    expect(sheetFamily("words")?.label).toBe("Spelling list");
-  });
+const STYLES: WordSheetStyle[] = [
+  "copy",
+  "missing",
+  "test",
+  "abc",
+  "shapes",
+  "sentence",
+  "find",
+];
 
+describeSheetFamily("words", {
+  label: "Spelling list",
+  spec: WORDS_SHEET,
+  config,
+  shapes: STYLES.map((style) => ({ style })),
+});
+
+describe("the spelling family", () => {
   it("names what it prints, in the terms it was chosen by", () => {
     expect(describeSheet(config())) //
       .toBe("Spelling practice — 5 words — written 3 times");
@@ -353,25 +366,6 @@ describe("finding the word", () => {
   });
 });
 
-/* ── The key ───────────────────────────────────────────────────────────── */
-
-describe("the answer key", () => {
-  it("prints the answers only when the sheet is a key", () => {
-    expect(buildSheet(config(), 3).answers).toBe(false);
-    const key = answerKey(config(), 3);
-    expect(key.answers).toBe(true);
-    expect(key.footer.note).toBe("Answer key");
-  });
-
-  it("is the same sheet keyed, never a second generation", () => {
-    // The gaps are drawn from the seed, so a key that regenerated them would
-    // ask for one letter and answer with another.
-    const sheet = buildSheet(config({ style: "missing" }), 7);
-    const key = answerKey(config({ style: "missing" }), 7);
-    expect({ ...key, answers: false, footer: sheet.footer }).toEqual(sheet);
-  });
-});
-
 /* ── The list ──────────────────────────────────────────────────────────── */
 
 describe("the list itself", () => {
@@ -388,12 +382,6 @@ describe("the list itself", () => {
     // A spelling list is often taught in order, and a list of missed words
     // arrives ranked worst-first. Neither is ours to shuffle.
     expect(wordsOf(config())).toEqual(WORDS);
-  });
-
-  it("builds the same sheet twice", () => {
-    expect(buildSheet(config({ style: "missing" }), 12)).toEqual(
-      buildSheet(config({ style: "missing" }), 12),
-    );
   });
 
   it("never prints more words than the paper holds", () => {
