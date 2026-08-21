@@ -54,11 +54,12 @@ import prettier from "eslint-config-prettier/flat";
 // No view-layer module may exceed 300 lines. The real test is whether a reader
 // can tell what a component does at a glance; the number is the proxy.
 //
-// Counted with `skipComments` + `skipBlankLines` DELIBERATELY. This codebase is
-// comment-dense on purpose and that density is valued — a raw line count would
-// quietly pressure people to strip documentation to pass the rule. Never delete
-// an explanatory comment to hit the number; relocate the doc block onto the
-// module it now describes.
+// Counted with `skipComments` + `skipBlankLines` DELIBERATELY: the cap is about
+// how much a module DOES, so documenting it well must never count against it.
+// Nor is it a reason to keep a comment — whether one belongs is decided by the
+// standard in CLAUDE.md ("Comments"), which this rule says nothing about.
+// Over the number, split the module or move the doc block onto the thing it now
+// describes.
 const MAX_COMPONENT_LINES = 300;
 
 // Storage is an implementation detail of the service layer — the direct
@@ -460,11 +461,8 @@ export default defineConfig([
   // tone — and hit targets are not cosmetic here, the youngest player is five.
   {
     files: ["**/*.tsx"],
-    // No exceptions. There WAS an allowlist here — 55 hand-rolled controls
-    // across 8 files, inherited from the local-only app where no kit existed.
-    // It was drained to zero by the KIT01–KIT04 stories and then deleted, so
-    // adding a file back means editing this rule rather than appending to a
-    // list, which is the point.
+    // The kit is the only exception, and there is no allowlist beside it to
+    // add a file to: an exemption means editing this rule, which is the point.
     ignores: ["src/components/ui/**"],
     rules: {
       "no-restricted-syntax": [
@@ -492,10 +490,7 @@ export default defineConfig([
   // is coverage, not scannability.
   {
     files: ["src/components/**/*.{ts,tsx}", "src/games/**/*.{ts,tsx}"],
-    // Tests only. There WAS an allowlist here too — RaceTrack (655), RaceSetup
-    // (473), Progress (392) and RaceResults (351), inherited from the
-    // local-only app where nothing enforced a cap. All four were split along
-    // their seams by the KIT03/KIT04 stories and the list was deleted.
+    // Tests only, and no allowlist beside it: a module over the cap is split.
     ignores: ["**/*.test.{ts,tsx}"],
     rules: {
       "max-lines": [

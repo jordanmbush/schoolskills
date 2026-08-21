@@ -40,11 +40,61 @@ Two rules people trip over:
   the youngest player is five. If the kit lacks a primitive, add it to the kit.
 
 Components cap at **300 lines**, counted with `skipComments` and
-`skipBlankLines`. The comment density in this codebase is deliberate and valued:
-**never delete an explanatory comment to pass the cap** — split the module, or
-move the doc block onto the thing it now describes. Files over the cap sit in
-`maxLinesAllowlist` against the story that retires them; delete the entry in the
-same PR that splits the file.
+`skipBlankLines`. The cap measures how much a module _does_, so documenting it
+well never counts against it — and padding it with commentary never buys room,
+because whether a comment belongs is settled by the standard below, not by this
+rule. Over the cap, split the module or move the doc block onto the thing it now
+describes. There is no allowlist to add a file to; an exemption means editing
+the rule.
+
+## Comments
+
+Almost every line here was written by an agent, and an agent works from the
+context it is handed. Too little and it guesses; too much and the one line it
+needed is buried in prose restating the code around it. So comments are
+scrutinised rather than accumulated, and each has to pass the same test:
+
+**Does it say something the code cannot?** An invariant, a constraint, an
+alternative that was tried and rejected, or a consequence a reader would not see
+coming. If it does, it can be as long as it needs to be. If it doesn't, the fix
+isn't a shorter comment — it's no comment.
+
+Three questions before writing one:
+
+- **Would a rename do this instead?** A comment that exists to explain what a
+  name means is a naming bug. Change the name and delete the comment.
+- **Could a reader work this out from the code, its neighbours and its
+  callers?** If so, let them.
+- **Are these plain words?** Reaching for the precise technical term reads as
+  authority and lands as fog.
+
+Four habits to delete on sight — the ones this codebase actually grew:
+
+- **Restating the code.** `// bump the streak` over `streak + 1`.
+- **Narrating history.** "There WAS an allowlist here…" A comment says what is
+  true now; git holds what used to be true.
+- **Repeating `docs/`.** Design rationale lives in `docs/`, written once. A
+  module comment may summarise the decision it implements and cite the section
+  (`docs/typing.md §8.6`), but copying the reasoning across gives one fact two
+  owners, and two owners drift.
+- **Ornate phrasing.** The plain word beats the exact one. From
+  `BackupPanel.tsx`:
+
+  > **Before:** Ids are preserved on both sides, so re-importing the same file
+  > is idempotent rather than duplicating every run.
+  >
+  > **After:** Ids are preserved on both sides, so importing the same file twice
+  > adds nothing the second time.
+
+Never trade clarity for brevity, though: a short comment that loses the point is
+worse than the long one it replaced.
+
+**The standard cuts both ways.** A 245-line component carrying three comment
+lines fails it as surely as a page of narration does — whatever makes that file
+long, an ordering that matters or a browser quirk worked around, is going
+undocumented. Ratio alone is a smell rather than a verdict: run
+`npm run audit:comments` to find the files worth reading, then apply the test
+above one comment at a time.
 
 ## Worlds — one game, several biomes
 
