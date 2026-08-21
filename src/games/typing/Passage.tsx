@@ -6,6 +6,23 @@ import type { Card, CardResult } from "@/engine/types";
 const AHEAD = 14;
 
 /**
+ * The fraction of a line that counting lines forgives.
+ *
+ * Chromium rounds a line box up to the next sixty-fourth of a pixel, so three
+ * lines come to marginally more than a frame cut to hold three: at 640px wide
+ * the frame is 122.88 and a line 40.96875, and three lines are 122.90625. The
+ * division lands at 2.9992 and floors to two — a whole line lost, which takes
+ * away the row the cursor holds and scrolls the block under every word.
+ *
+ * It happens wherever the text size is a fraction of a pixel, which is the
+ * whole `3.2vw` middle of the clamp `.passage__text` is sized by: roughly
+ * 525px to 750px of width, so portrait tablets and phones held sideways. The
+ * shortfall is arithmetic and never a real line, so counting forgives a
+ * fiftieth of one.
+ */
+const SNAP = 0.02;
+
+/**
  * The passage, with the current word live under the cursor.
  *
  * Per-character colouring on the current word only. Doing it on the whole
@@ -119,11 +136,14 @@ export function Passage({
     // The three lines the frame is cut to, unless a short screen has squeezed
     // the row below them — `.passage` is what gives when the board wants the
     // height, so what is really on screen is whichever of the two is smaller.
+    // Counted with `SNAP`, or three lines in a three-line frame count as two.
     const showing = Math.floor(
       Math.min(
         text.getBoundingClientRect().height,
         box.getBoundingClientRect().height,
-      ) / step,
+      ) /
+        step +
+        SNAP,
     );
     // The row the cursor may reach before the block starts moving: the last
     // one that still has a line under it. A screen squeezed to a single line

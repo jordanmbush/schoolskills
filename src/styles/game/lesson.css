@@ -169,19 +169,33 @@
   margin-inline: auto;
   width: 100%;
 
+  /* One line of the passage, named once because the frame below is three of
+     them and the floor here is one: `.passage__text` sets `line-height: 2`,
+     so a line is twice the size the text is set at. */
+  --passage-size: clamp(1.05rem, 3.2vw, 1.5rem);
+  --passage-line: calc(2 * var(--passage-size));
+
   /* The passage is the row of the race grid that gives — `.race` makes it
      `minmax(0, 1fr)` while every other row is `auto`, and the keyboard below
-     the input is one of those. But a grid item still refuses to be shorter
-     than its own content unless it is told it may, so without these two a
-     short screen with the board on would grow the page instead of the row:
-     the line you type on, and then the board, would slide under the fold.
+     the input is one of those. What makes it give is `contain: size`: `.race`
+     is a `min-height`, so a row asking for the height of its own content is
+     handed it and the page grows instead of the row — the line you type on,
+     and then the board, sliding under the fold, which is the one thing that
+     `min-height` is there to prevent (§7). Size containment answers that
+     question without reading the passage: the row takes what the grid has
+     left over, and the frame inside it is cut to fit rather than the other
+     way round.
 
-     Clipping is the right end to lose, and it is also what the passage is
-     read through: `Passage` lifts the block by whole lines so the line being
-     typed on is the second one showing, which puts the lines already typed
-     above the top edge and the read-ahead below the bottom one. Both are
-     clipped here. The line the cursor is on never is. */
-  min-height: 0;
+     A floor of one line, because a screen with nothing left over would give
+     a contained row nothing at all, and the line being typed on is the one
+     thing a child cannot do without. `Passage` counts the lines the frame
+     really has, so a squeezed frame reads a line at a time rather than
+     showing half of one.
+
+     `overflow` clips what hangs below the frame — the credit line, on a row
+     too short to hold both. The frame does its own clipping. */
+  contain: size;
+  min-height: var(--passage-line);
   overflow: hidden;
 }
 
@@ -190,7 +204,7 @@
    needs to be at speed. */
 .passage__text {
   font-family: var(--font-mono);
-  font-size: clamp(1.05rem, 3.2vw, 1.5rem);
+  font-size: var(--passage-size);
   line-height: 2;
   letter-spacing: 0.01em;
   color: var(--chalk-soft);
@@ -204,21 +218,27 @@
      is exactly the room that hang needs. */
   padding-inline: 0.25em;
 
-  /* Exactly three lines — one read back, the one being typed on, and one to
-     read ahead on — which `Passage` scrolls a whole line at a time. Six em is
-     three of them because a line box here is the 2 of `line-height` and `em`
-     on this rule is this element's own size.
+  /* Three lines — one read back, the one being typed on, and one to read
+     ahead on — or the whole row where a short screen has left less than
+     three, which is the `100%` half of the minimum. Both halves are settled
+     before the first word and neither moves again during a run, so the
+     passage holds the same lines from the first word to the last: nothing
+     under it is nudged as the block fills up, where a run that simply drew
+     every word typed so far would grow this row a line at a time and push
+     the keyboard off the bottom of a laptop.
 
-     A height rather than a maximum, and a height rather than a word count:
-     the passage holds the same three lines from the first word to the last,
-     so nothing under it is nudged as the block fills up, and a run that drew
-     every word typed so far would otherwise grow this row a line at a time
-     and push the keyboard off the bottom of a laptop.
+     A height and not a maximum: a maximum would let the frame grow with the
+     passage — a line at a time as the words arrive — and take the credit
+     line under it along for the ride. The `100%` resolves because `.passage`
+     is size-contained above and so has a height of its own to be a
+     percentage of; `Passage` reads this frame back rather than assuming
+     three lines, and holds the cursor on the last row with a line still
+     under it.
 
      `hidden` still scrolls when it is asked to in script, which is the whole
      arrangement: no scrollbar, nothing a child can drag, and a view that
      moves only when the cursor has run out of room. */
-  height: 6em;
+  height: min(calc(3 * var(--passage-line)), 100%);
   overflow: hidden;
 }
 
