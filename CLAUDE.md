@@ -96,6 +96,36 @@ undocumented. Ratio alone is a smell rather than a verdict: run
 `npm run audit:comments` to find the files worth reading, then apply the test
 above one comment at a time.
 
+### The three documents, and what a bare `§` means
+
+Rationale that outgrew a comment lives in `docs/`, written once:
+
+- **`docs/typing.md`** — Frost Keys. The keyboard as a model, the board on
+  screen, the hundred-lesson ladder, what passing is, badges, and Hailstorm.
+- **`docs/printables.md`** — The Print Shop. Paper in real inches, the rulings,
+  tracing without a tracing font, answer keys and seeds, the catalog routes and
+  the sitemap landmine, Scripture, phonics, and the builder.
+- **`docs/analytics.md`** — counting visits with no analytics service: the
+  CloudFront logs, the rollup, Athena, and the 90-day ceiling.
+
+Most citations name no document — `(§8.6)` — and resolve by where the file
+sits:
+
+| Subtree                                                                                        | Document             |
+| ---------------------------------------------------------------------------------------------- | -------------------- |
+| `src/engine/sheets/`, `src/components/sheet/`, `src/games/printshop/`, `src/pages/printables/` | `docs/printables.md` |
+| `src/engine/typing/`, `src/games/typing/`                                                      | `docs/typing.md`     |
+
+A file outside those that still belongs to one subject resolves the same way:
+`src/styles/game.css` and `src/engine/keyboard.ts` are typing's,
+`src/styles/sheet.css` and `src/styles/print.css` are the Print Shop's.
+Anywhere genuinely shared, name the document — `docs/typing.md §8.6` — because
+a bare number in a file with two subjects has no rule to resolve it by.
+`docs/analytics.md` numbers nothing, so it is always cited by name.
+`audit:comments` reports the named references that point at a section which
+doesn't exist; the bare ones are yours to keep right until the guard that
+resolves them lands.
+
 ## Worlds — one game, several biomes
 
 The site presents itself as a single game with a map and a world per subject.
@@ -107,6 +137,7 @@ That is a real structure, not a metaphor in the copy:
 | `grid`   | `/flash-cards`, `/multiplication/*` | times tables (space)       |
 | `jungle` | `/spelling/play`, `/spelling`       | spelling and sight words   |
 | `ice`    | `/typing`                           | touch typing (glacier)     |
+| `paper`  | `/printables/*`                     | worksheets (a press room)  |
 | `line`   | `/privacy`, `/terms`, `/about`      | the pause menu             |
 | `empty`  | `/404`                              | literally nothing          |
 
@@ -129,13 +160,31 @@ Three rules:
   engine never interprets the value — to it a world id is an opaque string.
   `useWorld()` in `src/components/state/` is what writes it from the client.
 - **World blocks are scoped to `[data-world]`, not `:root[data-world]`.** That is
-  what lets the overworld map render three worlds at once: each card carries
+  what lets the overworld map render every world at once: each card carries
   `data-world` and is built out of that world's own tokens.
 
-Content pages use `src/layouts/Content.astro` (masthead + footer). The two games
-use `Base.astro` directly, so **site chrome can never appear over a race** —
-there is no prop to set wrong. The way out of an island is the map icon in its
-top bar.
+Content pages use `src/layouts/Content.astro` (masthead + footer). The two
+racing islands — flash cards at `/flash-cards` and `/spelling/play`, typing at
+`/typing` — use `Base.astro` directly, so **site chrome can never appear over a
+race** and there is no prop to set wrong. The way out of one is the map icon in
+its top bar.
+
+The third island is the sheet builder at `/printables/make`, and it keeps
+`Content.astro` on purpose: `print.css` hides the masthead, the footer and
+everything marked `.no-print`, so the builder can have the site around it while
+choosing and lose it at the moment a sheet goes to paper.
+
+**`href` is the front door; `island` is the app.** Both live on `WorldInfo`,
+and only `island` decides what search engines are kept away from — it carries
+`noindex` via `Base.astro`, and `astro.config.mjs` filters the sitemap on that
+field. For the three game worlds the two are the same route, because the game
+_is_ the front door. The Print Shop is why the field had to exist: its `href` is
+`/printables`, a catalog of prerendered worksheets and the largest crawlable
+surface on the site, while its `island` is the builder, which must stay out of
+the sitemap. Filtering on `href` instead would have deleted the whole catalog
+with nothing failing, so `scripts/sitemap-guard.mjs` reads the registry back
+against the sitemap that actually shipped and fails the build instead
+(docs/printables.md §8).
 
 ## Validation
 
@@ -216,3 +265,54 @@ the only copy there is. Adding a store is a `DB_VERSION` bump with an
 without the engine knowing storage exists. Every write goes through
 `HubContext.saveDeck` — a service call that bypasses it lands in IndexedDB and
 stays invisible until the next reload.
+
+## Adding a sheet
+
+The Print Shop is the paper half of the site and the larger half of the code:
+`src/engine/sheets/` builds worksheets, `src/components/sheet/` draws them,
+`src/pages/printables/` publishes them and `src/games/printshop/` is the bench
+a parent tunes one on. Everything below is the short version of
+`docs/printables.md`.
+
+**A `Sheet` is plain data** (`src/engine/sheets/types.ts`): paper size, body
+type size, a header, a list of blocks and a footer. `src/components/sheet/`
+renders one as real elements in real inches — not a canvas, not a PDF, not an
+image — and takes a `Sheet` and nothing else. No context, no service, no
+storage. That is what lets one renderer run at build time on a catalog page and
+at runtime in the builder, and why a catalog page ships zero JavaScript: a
+component with nothing to hydrate needs no `client:*` directive.
+
+**A `SheetSpec` is `DeckSpec` for paper** (`src/engine/sheets/spec.ts`). Paper,
+rulings, capacity, the header and the footer generalise; what a problem is,
+what its answer is, and how to describe the sheet in one line do not, so a
+family states those: `build(config, seed)`, `key(sheet)` and `describe(config)`.
+`key` is not optional on any family — an answer key is the most expected feature
+of a worksheet and the most commonly botched one.
+
+**`src/engine/sheets/index.ts` is the front door, and the registry _is_ the
+narrowing.** A spec is keyed by the same string its config carries as `kind`, so
+looking one up is the only place the `SheetConfig` union is narrowed — there is
+no `if (isLined)` chain to keep in step. Adding a family is a `kind` in
+`types.ts` plus an entry in that table. `sheetSpec(kind)` never throws for the
+same reason `deckSpec(mode)` doesn't: a config bookmarked in March must still
+open in June, so an unknown kind gets `UNKNOWN_SHEET`, which prints a page
+saying so. `buildSheet` is deterministic in `(config, seed)`, and three
+features fall out of that one property — the answer key is the same build with
+the answers switched on, "another like this one" is `seed + 1`, and a shared URL
+reproduces a sheet exactly because the seed is in it.
+
+**The catalog pages are curated, not permuted.** Every page under
+`/printables` is prerendered from an underscored data module in
+`src/pages/printables/` — `_catalog.ts` for paper, `_maths.ts` for the
+worksheets, one per shelf, with `_shelves.ts` naming the shelves so the grade
+hubs can cut across them. Underscored means Astro leaves them out of the routing
+table; each names the handful of sheets a parent actually searches for, and
+`getStaticPaths` turns them into pages. The page **is** the sheet: prose that
+answers the query, the paper itself as HTML under it, and ⌘P produces something
+usable with nothing to click. Generating a page per permutation of a config
+would be a doorway farm, which is what the builder exists for instead.
+
+Saved sheets go through `src/services/sheets.ts`, the only writer of the
+`sheets` store. Unlike custom decks, nothing is mirrored back into the engine —
+a sheet's name and description are computable from the config it already
+carries.
