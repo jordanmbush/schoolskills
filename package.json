@@ -21,6 +21,7 @@
     "test:e2e": "playwright test",
     "prepare": "husky",
     "test:smoke": "node e2e/smoke.mjs",
+    "audit:comments": "node scripts/comment-audit.mjs",
     "scripture:pull": "node scripts/pull-scripture.mjs",
     "analytics": "node scripts/analytics.mjs",
     "analytics:geoip": "node scripts/build-geoip.mjs"
