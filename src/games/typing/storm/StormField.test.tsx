@@ -33,16 +33,27 @@ import type { ComponentProps } from "react";
  * that forgets the keycap is drawn inset inside its slot, both type-check and
  * both render. So the geometry is checked in KEY UNITS end to end — the lane
  * the component writes against the cap the board draws, through the arithmetic
- * game.css actually performs. No pixels are involved on either side, which is
- * the property being defended.
+ * the stylesheets actually perform. No pixels are involved on either side, so
+ * that is the property being defended.
  */
 
-const css = readFileSync(
-  fileURLToPath(new URL("../../../styles/game.css", import.meta.url)),
-  "utf8",
-);
+/**
+ * The board's stylesheet and the storm's, in cascade order (`index.css`).
+ *
+ * Both, because the claim under test spans them: a lane is drawn in storm.css
+ * against a `--key` and a keycap inset declared in keyboard.css, and a test
+ * that read either one alone would be checking half an equation.
+ */
+const css = ["game/keyboard.css", "game/storm.css"]
+  .map((name) =>
+    readFileSync(
+      fileURLToPath(new URL(`../../../styles/${name}`, import.meta.url)),
+      "utf8",
+    ),
+  )
+  .join("\n");
 
-/** Where the field's own rules start in the game stylesheet. */
+/** Where the field's own rules start in the storm's half. */
 const STORM_BLOCK = "/* ── Hailstorm: the field";
 
 /**
@@ -58,7 +69,7 @@ const storm = css
 const sheet = css.replace(/\/\*[\s\S]*?\*\//g, "");
 
 /**
- * The one value game.css declares for `prop` on exactly `selector`.
+ * The one value the two sheets declare for `prop` on exactly `selector`.
  *
  * Exactly one, deliberately. A second declaration of the cap's width in a
  * later block is the drift this whole file is about, and read leniently it
@@ -139,7 +150,7 @@ const unitsOf = (expr: string, vars: Record<string, number>): number => {
 };
 
 /**
- * The keycap inset, as the fraction of a key unit game.css sets it to. Read
+ * The keycap inset, as the fraction of a key unit keyboard.css sets it to. Read
  * out of the stylesheet because the point of the arithmetic below is that one
  * number governs both the cap and the lane; a test carrying its own copy could
  * agree with neither.

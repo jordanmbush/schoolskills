@@ -1,0 +1,827 @@
+/* ── Hailstorm: the field ────────────────────────────────────────────────
+   The sky the letters fall through, and the board underneath that shoots
+   them (docs/typing.md §8.2, decision 19).
+
+   **A letter falls down the column of its own key.** `f` falls onto `f`; `y`
+   falls between `g` and `h`, because that is where `y` is. Everything in this
+   block is in service of that one claim, and everything it needs to keep it
+   is already here: `StormLetter.lane` is `keyX(code)` in key units, and the
+   caps below are `KeyDef.x` in the same units against the same `--key`. Two
+   readings of one table, so there is no arithmetic in this file for a lane
+   and a cap to disagree about.
+
+   No pixel constant appears anywhere in the geometry — a lane, a hailstone
+   and the fall are all multiples of `--key`, so the field and the board
+   change size together or not at all. And no colour here is a literal: the
+   ice world's tokens draw the sky and the stones, and the telemetry five stay
+   out of it until there is something to signal. A hailstone in `--lime` would
+   be telling a child something was right about it.                        */
+
+.storm {
+  /* A hailstone, in key units: a little wider than the cap it is aimed at, so
+     the glyph reads at the top of the screen. Named because the fall
+     arithmetic needs it too — a letter travels the sky MINUS its own height,
+     which is what leaves it whole at the top and resting on the line at the
+     bottom rather than half off each end. */
+  --stone: calc(var(--key) * 1.15);
+
+  /* The fastest a hailstone is ever allowed to fall, in **stone heights per
+     second** (decision 65).
+
+     A backstop rather than a knob, and the same kind of thing as the
+     generator's `MIN_FALL_MS`: what makes a letter readable while it moves is
+     the beat it spends standing still first (`QUEUE_MS`, decision 67), and
+     this only has to stop the one case that beat cannot cover.
+
+     That case is real. A wave says how LONG a letter falls for and never how
+     far, so the distance is whatever sky there is, which is the whole viewport
+     (decision 64). A 900ms fall crosses about 640px on a 1512×850 laptop and
+     about 1100px on a 27-inch monitor, so without a ceiling the same level is a
+     different game depending on what a child opens it on. Nine stone heights a
+     second is a shade above what the tallest ordinary screen asks for, so on
+     anything a child is likely to be sitting at the stone uses the full sky and
+     this changes nothing; on a display taller than that it starts lower and
+     falls at the ceiling.
+
+     Stone heights and not pixels, because what smears a moving glyph is how
+     far it travels against its own size — a cap written in pixels would mean
+     something different at every `--key`.
+
+     **It caps the speed and does not change the clock.** A letter still falls
+     for exactly the `fallMs` its wave drew (§8.3), so every level's timing,
+     and therefore its difficulty, is untouched. */
+  --hail-speed: 9;
+
+  /* One viewport minus the ad band above it, exactly as `.race` is sized and
+     for a sharper version of the same reason. `height`, not `min-height`: a
+     field that may grow is a field that scrolls, and a page that scrolls
+     under a thumb mid-run is worse here than in a race — the letters would
+     still be falling somewhere off screen. */
+  height: calc(100dvh - var(--ad-h));
+  /* …while the storm is falling. Lifted below, once it has stopped. */
+  overflow: hidden;
+
+  display: grid;
+  /* The sky takes the field, and the second track is empty until the run ends.
+
+     `minmax(0, 1fr)` is what lets the sky be shorter than its content wants
+     (the stones are absolutely positioned inside it, so it has no content of
+     its own to insist on), and `auto` is where `.storm__over` stands once
+     there is an ending to show — nothing before that, so an `auto` track with
+     no child in it is zero and the sky has the whole screen.
+
+     Nothing but the ending may go in that second track. Height taken there
+     comes out of the fall, which is the only thing on this screen that gives a
+     child time to read a letter and find its key (decision 64). */
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: clamp(0.35rem, 1.5vh, 1rem);
+  padding: clamp(0.4rem, 1.5vh, 1rem) clamp(0.5rem, 2vw, 1rem);
+}
+
+/* A field that scrolls under a thumb mid-run is the hazard above; a field
+   that cannot scroll once the run is over is a different one, because what is
+   in the board's track by then is three buttons (`.storm__over`). Measured on
+   a 740×360 landscape phone, the ending wants about 280px where the five rows
+   of keycaps it replaced took 180 — and the difference is where the only way
+   off this screen is. So the rule is lifted exactly when there is nothing left
+   falling to lose track of, which is what `:has` asks. Nothing scrolls at any
+   viewport that fits, and a browser too old to answer `:has` keeps today's
+   behaviour rather than getting a worse one. */
+.storm:has(.storm__over) {
+  overflow-y: auto;
+}
+
+/* Fifteen key units of sky, centred over fifteen key units of board, so a
+   lane and its cap are the same column of the screen and not merely the same
+   number. `.keyboard` centres itself the same way at the same width — that
+   shared width is the alignment, and it is why the sky is not simply the full
+   width of the field.
+
+   The line the letters land on is the shield, at the bottom of this box and
+   inside it (below) — eight elements rather than a `border-bottom`, because
+   the eight have to be able to break one at a time. */
+.storm__sky {
+  position: relative;
+  width: calc(15 * var(--key));
+  margin-inline: auto;
+
+  /* A size container, so the fall below can be written in the height of the
+     sky. It has to be: the fall is a transform, and a percentage inside a
+     transform resolves against the element being MOVED — a stone, one key
+     unit tall — rather than against the box it is moving down. `cqh` is the
+     one length that means "of this sky" from inside a child of it, and it
+     keeps the field's geometry where the lanes already are: in the stylesheet,
+     off the elements' own sizes, with no pixel passing through the loop. */
+  container-type: size;
+
+  /* Nothing in here is an interface. A drag should not select a hailstorm,
+     and a tap should not land on a letter — the only thing that fires in this
+     game is a key (§8.11). */
+  pointer-events: none;
+  user-select: none;
+}
+
+.storm__letter {
+  position: absolute;
+
+  /* ── The lane ──────────────────────────────────────────────────────────
+     `--lane` is `keyX(code)`: the centre of the key's SLOT, in key units from
+     the left edge of the board. The cap is drawn INSIDE that slot, inset by
+     `--key-gap` on its width, so the middle of the plastic a child is looking
+     at sits half a gap to the left of the middle of the slot. Half a
+     `--key-gap` back is therefore the difference between a letter over its
+     key and a letter over the seam beside it (§8.2, decision 36).
+
+     Written as `var(--key-gap) / 2` and never as the 0.045 it currently works
+     out to: the offset is half of whatever the board insets its caps by, so
+     expressed this way a chunkier keyboard moves the lanes with it, and there
+     is no second number to keep in step. */
+  left: calc(var(--lane) * var(--key) - var(--key-gap) / 2);
+
+  /* ── The fall ──────────────────────────────────────────────────────────
+     `--drop` is `progressAt`: 0 for as long as a letter hangs at the top
+     waiting to go (`QUEUE_MS`, decision 67), then 0 → 1 across its fall.
+     `useStormClock` writes it onto each stone every frame and nothing else —
+     the whole fall is this one multiplication, so the loop never learns how
+     tall the sky is and cannot hold a second opinion about it (§8.9). The
+     queue therefore costs this rule nothing at all: a stone that is not
+     moving is a stone whose `--drop` is not moving.
+
+     A transform rather than `top` — the same trade `.fuse__fill` takes when it
+     scales instead of setting a width: the layout property is the honest one
+     to read and the expensive one to write, and twelve stones moving sixty
+     times a second is twelve layouts a frame where a transform is none.
+     The centring is the `translate` property and not part of this, so the two
+     never write over each other — a stone is centred on its lane and moved
+     down the sky by two independent declarations, and the loop can own one of
+     them without touching the other.
+
+     `--sky-fall` is the whole travel the sky can offer: its height minus one
+     stone, which is what leaves a letter whole at the top and resting on the
+     line at the bottom rather than half off each end. Floored at zero because
+     that subtraction goes NEGATIVE once the sky is shorter than a hailstone —
+     around 265px of viewport height, below anything real, but the difference
+     between a still frame and a loop is that a loop would animate it, and a
+     storm that falls upwards is not a degradation anybody would read as one.
+
+     **`--fall` is the shorter of that and what `--hail-speed` allows** — the
+     cap declared on `.storm`, in stone heights a second, which is what stops
+     a bigger monitor from being a faster storm (decision 65). `--fall-ms` is
+     the letter's own fall time, written inline by `StormField` beside its
+     lane: it is fixed for the life of a letter, so it is a render's to write
+     and never the loop's. The fallback is a second rather than nothing on
+     purpose — a `min()` over a missing variable is invalid at computed-value
+     time, and an invalid `--fall` is a stone that does not move at all.
+
+     `top` is where the fall BEGINS and the transform is the fall itself, so
+     a capped stone comes into view lower in the sky and still lands exactly
+     on the shield. Two declarations, one moving and one not, which is the
+     same split `translate: -50% 0` takes for the lane: the loop owns the
+     transform and touches neither of the others.
+
+     No clamp on `--drop` itself: `isDrawn` mounts a stone only on the
+     half-open `[spawnMs, landMs)` the reducer resolves it over (decision 30),
+     so every stone this rule can apply to has a fraction in [0, 1). */
+  --sky-fall: max(0cqh, 100cqh - var(--stone));
+  --fall: min(
+    var(--sky-fall),
+    calc(var(--fall-ms, 1000) / 1000 * var(--hail-speed) * var(--stone))
+  );
+  top: calc(var(--sky-fall) - var(--fall));
+  transform: translateY(calc(var(--drop) * var(--fall)));
+  translate: -50% 0;
+
+  /* A layer of its own, for the one element on this site that moves every
+     frame and carries text. Without it the glyph is re-rasterised at a new
+     sub-pixel offset sixty times a second, and sub-pixel antialiasing puts
+     the colour fringes somewhere different each time — which is a shimmer on
+     top of the smear the cap above is already fighting. Promoted, it is
+     rasterised once and the compositor moves the texture; the cost is
+     greyscale antialiasing, which is very slightly softer standing still and
+     much steadier moving. Twelve stones at the very most, and only while a
+     wave is running. */
+  will-change: transform;
+
+  display: grid;
+  place-items: center;
+  width: var(--stone);
+  height: var(--stone);
+
+  border: 1px solid color-mix(in oklab, var(--accent) 42%, transparent);
+  border-radius: calc(var(--key) * 0.3);
+  /* Opaque rather than translucent. The only thing a stone ever crosses is the
+     HUD (see below), and the glyph inside it is the one thing on this screen
+     that has to be read at a glance while it is moving — a score showing
+     faintly through the `l` a child is trying to tell from an `i` is a contrast
+     cost for no gain. The HUD is still legible: what it is drawn in is
+     `--chalk-dim`, and what passes over it is one stone. */
+  background: var(--ink-800);
+  box-shadow: 0 0 calc(var(--key) * 0.45)
+    color-mix(in oklab, var(--accent) 18%, transparent);
+
+  font-family: var(--font-mono);
+  font-size: calc(var(--key) * 0.6);
+  /* Bold, and this is legibility rather than emphasis. A moving glyph is
+     smeared across however far it travels in one frame, and what survives
+     that is stroke WIDTH — so the two letters this game confuses, `l` and
+     `i`, are told apart by a thicker stem long after a thin one has washed
+     out. Space Mono ships 700 and the storm is the one screen that needs it;
+     everything else on the site reads standing still. */
+  font-weight: 700;
+  line-height: 1;
+  color: var(--chalk);
+}
+
+/* ── Hailstorm: the HUD ──────────────────────────────────────────────────
+   The two numbers a run keeps: the score, and the multiplier the last clean
+   hit was paid at — which is also the streak the next one builds on
+   (docs/typing.md §8.6, decision 45).
+
+   **It is drawn inside the sky, and takes none of it.** `.storm` is a
+   two-track grid — a sky that gives and a board that never does — and the sky
+   is what gives: about 78px of it at 1280×360, and about 21px at 1280×250
+   (see the shield below). A HUD row would be taken out of the only track with
+   anything left, so this is absolutely positioned over the sky instead: no
+   track, no height, and no fall shortened by the height of a number.
+
+   The cost of that is an overlap, and the order settles it. The HUD is the
+   FIRST child of the sky, so every hailstone paints over it — a number must
+   never hide a letter that has to be shot — and it is drawn in `--chalk-dim`
+   rather than `--chalk` so a stone crossing it reads as the thing in front.
+
+   Two of the telemetry five are borrowed here, both meaning exactly what they
+   mean everywhere else on this site. `--flare` washes the score for one 220ms
+   pass when a wrong key takes points off it, because that is a wrong. `--lime`
+   colours the multiplier while a streak is running, because that is a run of
+   rights and it is what the streak IS. The other three would each be a lie:
+   nothing on this screen is a ghost, a record or a badge.
+
+   Everything here is a multiple of `--key`, like the lanes and the caps, so
+   the numbers grow and shrink with the board they are being shot from.     */
+
+.storm__hud {
+  position: absolute;
+  inset: 0;
+
+  /* Three columns and one row: the score at one end, the multiplier at the
+     other, and the way out between them — what a run PAID is the ending
+     screen's to say (`StormOver`), where there is room to say it beside the
+     finger that let the storm through.
+
+     Each child names its own column rather than being placed in order,
+     because the middle one is not always there: the quit goes when the gun
+     does (`StormHud`), and auto-placement would then slide the multiplier
+     into the middle of the sky on the frame a run ends. */
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: start;
+  padding: calc(var(--key) * 0.12) calc(var(--key) * 0.1);
+
+  font-size: calc(var(--key) * 0.5);
+  line-height: 1;
+  color: var(--chalk-dim);
+}
+
+/* The run's own score, which may be negative — a wrong key takes points off
+   it (§8.6). Positioned, because the miss flash below is drawn over exactly
+   this box and nothing wider: the thing that went down is the thing that
+   lights up. */
+.storm__score {
+  position: relative;
+  grid-column: 1;
+  justify-self: start;
+  padding: calc(var(--key) * 0.08) calc(var(--key) * 0.16);
+  border-radius: calc(var(--key) * 0.14);
+}
+
+/* One wash of `--flare` per wrong key, and never a sequence: a single pass on
+   an element `StormHud` mounts from a counter that only goes up, exactly as
+   the shield's damage tint is (§8.10, decision 42). It rests at zero and
+   animates down to it, so nothing is lost by taking it off entirely — which
+   is what the reduced-motion block below does, `animation: none` rather than
+   base.css's 0.001ms clamp (§8.10). Do not read that block as redundant with
+   the clamp: the clamp shortens this animation, the block stops it existing,
+   and the difference is one `animationstart` the smoke suite counts. What a
+   child who asked for less motion still gets is the number itself, which has
+   already fallen. */
+.storm__miss {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--flare);
+  opacity: 0;
+  animation: storm-miss 220ms var(--ease-out);
+}
+
+@keyframes storm-miss {
+  from {
+    opacity: 0.75;
+  }
+}
+
+/* The multiplier, and the prominent half of the HUD on purpose: the score is a
+   running total, and `×1.7` is the streak behind it — what the last clean hit
+   was paid at, and the step the next one builds on. Bigger than the score for
+   that reason, and green only while there is a streak to be paid for — at ×1
+   it is a fact about the rules, at ×1.6 it is a thing a child earned.
+
+   The step up is a transition and not an animation: it happens when a combo
+   starts and when one breaks, which is twice a run and not once a hit, so
+   there is nothing here that could become a flash sequence. */
+.storm__combo {
+  grid-column: 3;
+  justify-self: end;
+  scale: 1;
+
+  font-size: calc(var(--key) * 0.8);
+  font-weight: 700;
+  transition:
+    color 200ms var(--ease-out),
+    scale 200ms var(--ease-out);
+}
+
+.storm__combo[data-hot] {
+  scale: 1.12;
+  color: var(--lime);
+}
+
+/* The way out, mid-run (docs/typing.md §8.11, decision 54).
+
+   `pointer-events` are handed back here and nowhere else in the sky — the one
+   thing in there a finger is meant to hit, and on a tablet the only thing on
+   the screen that does anything at all (§8.8).
+
+   Drawn like the race's quit and dimmer than the numbers beside it: it is the
+   least urgent thing in the sky, and the letters have to stay the loudest. */
+.storm__quit {
+  grid-column: 2;
+  pointer-events: auto;
+
+  font-family: var(--font-mono);
+  font-size: calc(var(--key) * 0.32);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--chalk-dim);
+  padding: 0.35em 0.9em;
+  /* In key units like everything else in this field, and NOT the race's pill:
+     a pixel radius here would be the one length in the storm that did not
+     move with `--key`. */
+  border-radius: calc(var(--key) * 0.18);
+  border: 1px solid var(--hairline);
+}
+
+/* Brighter, not redder. The race's quit goes to `--flare` on hover and this
+   one must not: `--flare` is a wrong, and on this screen it is already damage,
+   a hole and a wrong key. Leaving a storm is none of those. */
+.storm__quit:hover {
+  color: var(--chalk);
+  border-color: color-mix(in oklab, var(--accent) 45%, transparent);
+}
+
+/* ── Hailstorm: the beat before it falls ─────────────────────────────────
+   What stands in an empty sky while a wave waits to be started
+   (docs/typing.md §8.13, decision 71).
+
+   It is laid over the sky rather than given a track of its own, for the same
+   reason the HUD is: `.storm` has one track that gives and one that never
+   does, and a row taken here is a row taken out of the fall. Absolutely
+   positioned inside the sky, it costs the field nothing and vanishes without
+   moving a single thing — the shield below it and the numbers above it are
+   already exactly where the run will find them, so pressing a key starts a
+   storm rather than rearranging a screen.
+
+   Everything is in `--key` units like the rest of this field, so the panel
+   scales with the board it is about to be played on, and every colour is the
+   world's: `--chalk` for the line a child has to read, `--chalk-dim` for the
+   two that explain it. None of the telemetry five appear — nothing here is
+   right, wrong, a record or a ghost, and a "Get ready" in `--go` would be a
+   button that isn't one.                                                   */
+
+.storm__ready {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: calc(var(--key) * 0.3);
+  padding: calc(var(--key) * 0.5);
+
+  /* The shield is `min(0.34 × --key, 20cqh)` at the bottom of this same box
+     (below), so the panel is nudged up by about that much to sit centred in
+     the sky a child is actually looking at rather than in the box the shield
+     shares. */
+  padding-bottom: calc(var(--key) * 1.2);
+
+  text-align: center;
+  text-wrap: balance;
+}
+
+/* The one line that has to be read from across the room. Mono and bold like a
+   hailstone, because it stands exactly where the hailstones are about to. */
+.storm__ready-head {
+  font-family: var(--font-mono);
+  font-size: calc(var(--key) * 0.62);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  color: var(--chalk);
+}
+
+/* How to put the hands down. The prose face, not the mono one: it is a
+   sentence to read once, and the F and the J inside it are the only thing in
+   here that wants picking out. */
+.storm__ready-note {
+  max-width: calc(var(--key) * 11);
+  font-size: calc(var(--key) * 0.3);
+  line-height: 1.45;
+  color: var(--chalk-dim);
+}
+
+.storm__ready-note b {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: var(--chalk);
+}
+
+/* The instruction, drawn like the way out in the HUD — the same small mono
+   caps, because it is the same kind of thing: a key to press, said quietly
+   under the sentence that matters. It breathes rather than blinking; a pulse
+   on a screen whose next act is falling hail would be motion spent on the one
+   moment nothing is moving (§8.10). */
+.storm__ready-go {
+  margin-top: calc(var(--key) * 0.2);
+  font-family: var(--font-mono);
+  font-size: calc(var(--key) * 0.32);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--chalk-dim);
+  padding: 0.45em 1em;
+  border-radius: calc(var(--key) * 0.18);
+  border: 1px solid var(--hairline);
+}
+
+/* ── Hailstorm: the shield ───────────────────────────────────────────────
+   The eight segments the letters land on, one per finger (docs/typing.md
+   §8.5, decisions 21 and 41).
+
+   **A segment sits over its own finger's keys.** `--zone-x` and `--zone-w`
+   are `FINGER_ZONES` — the home row grouped by finger, in the same key units
+   as a lane and a keycap, off the same one `--key`. So the shield, the board
+   and the falling letters are three readings of one table, and there is no
+   arithmetic here for them to disagree about. The whole rail is 15 units,
+   which is the width of the sky and of the board.
+
+   The half `--key-gap` is the lane's correction (§8.2, decision 36) applied
+   to a span instead of a point, and for the same reason: a keycap is drawn
+   inset inside its slot, so the gutter a child sees between `s` and `d` is
+   half a gap to the left of the slot boundary between them. Stepping the
+   whole rail back by that puts every seam in a gutter rather than down the
+   middle of a cap, and — because both the lane and the segment step back by
+   the same amount — a letter is over its own segment exactly when its key is
+   in its own zone, with the correction cancelling out of the comparison.
+
+   Colour is the other half of "over its own finger": a segment is the hue of
+   the keys beneath it, out of the same eight `--finger-*` tokens the board
+   uses, so the sage block over `h` and `j` is the sage keys' block and
+   nothing has to be counted to see it. Two of the telemetry five are here and no
+   others, both meaning what they mean everywhere else on this site: `--flare`
+   for damage and for a hole, which are the two wrongs this game has, and
+   `--lime` for a repair, which is paid for by a run of right answers.    */
+
+/* The rail: the bottom of the sky, and never more than a fifth of it.
+
+   The `cqh` term is not defensive. The sky is a `minmax(0, 1fr)` track (see
+   `.storm` above) and it is what gives when the viewport is short: about 78px
+   of sky at 1280×360 and about 21px at 1280×250. A shield in key units alone
+   would be a fixed slab of a field that had almost nothing left, so it is the
+   smaller of the two — a third of a key where there is room, and a fifth of
+   the sky where there is not. */
+.storm__shield {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: min(calc(var(--key) * 0.34), 20cqh);
+}
+
+/* One finger's segment: the socket, which is what a zone at zero is reduced
+   to, and the armour drawn inside it below. */
+.storm__zone {
+  /* Overwritten per finger below. The neutral is never drawn — every zone
+     carries a `data-finger` and the thumbs have no zone — but a segment with
+     no hue at all would be invisible rather than obviously wrong. */
+  --finger: var(--chalk-dim);
+  /* Hit points left, as a fraction of the level's own `shield`. The component
+     divides, so nothing here knows how deep this wave's shield is. */
+  --hp: 1;
+
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(var(--zone-x) * var(--key) - var(--key-gap) / 2);
+  width: calc(var(--zone-w) * var(--key));
+
+  border: 1px solid color-mix(in oklab, var(--hairline) 85%, transparent);
+  border-radius: calc(var(--key) * 0.09);
+  background: color-mix(in oklab, var(--ink-900) 60%, transparent);
+}
+
+/* The armour. Its height IS the hit points — a skyline of eight blocks, which
+   is a quantity a five-year-old can read across a field without counting
+   anything, and which goes to nothing at zero and leaves the socket empty.
+
+   `height` rather than a transform, unlike the stones above: this changes when
+   a letter lands or a repair pays out, not sixty times a second, so the layout
+   property is the honest one and costs nothing. The transition is what makes a
+   repair visible as a repair — the block grows back where damage drops it —
+   and it ends where `--hp` says either way, so it is switched off outright
+   under `prefers-reduced-motion` (`transition: none`, in the block below —
+   §8.10) and the movement goes while none of the reading does. The block is
+   what does that here, not base.css's 0.001ms clamp: the clamp would still
+   run this transition, only faster. */
+.storm__zone::before {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: calc(var(--hp) * 100%);
+
+  border-radius: inherit;
+  background: color-mix(in oklab, var(--finger) 62%, var(--ink-800));
+  box-shadow: 0 0 calc(var(--key) * 0.2)
+    color-mix(in oklab, var(--finger) 30%, transparent);
+
+  transition: height 200ms var(--ease-out);
+}
+
+/* A hole: no armour left, and the next letter down this column ends the run.
+   The socket stays — it is what keeps the eight readable, so a child can still
+   see WHICH finger the gap belongs to — but it goes to `--flare`, which is
+   what a wrong reads as everywhere else on this site. Faint on purpose: this
+   sits on screen for the rest of the run, and it must not compete with the
+   150ms tint of something actually happening. */
+.storm__zone[data-hole] {
+  border-color: color-mix(in oklab, var(--flare) 38%, transparent);
+  background: color-mix(in oklab, var(--flare) 10%, transparent);
+}
+
+/* ── One tint, once ──────────────────────────────────────────────────────
+   Damage is a single ~150ms wash of `--flare` over the segment that took it,
+   and a repair a slightly longer one of `--lime`. Neither is a flash sequence
+   and neither can become one: the animation is a single pass — no
+   `alternate`, nothing infinite — and the element it runs on is mounted by
+   `StormShield` from a counter that only goes up, so it exists exactly once
+   per landing and once per repair. Two letters landing on one zone inside a
+   single `tick` move that counter by two, which is still one element and
+   therefore still one tint (§8.10). What that rules out is the tint
+   restarting on a frame where nothing happened; how often a WAVE may land on
+   one zone is a separate question, and it is answered by the twenty levels
+   rather than here — each of them ships at a seed whose wave starts no more
+   than two tints on one zone in a second, under WCAG 2.3.1's line of more than
+   three (`storms.test.ts`, §8.10).
+
+   The score's `--flare` below is the third of the three, and the one no wave
+   can shape: its cadence is a child's own keystrokes, so its floor is in the
+   reducer instead (`MIN_TINT_GAP_MS`, decision 57).
+
+   Both rest at `opacity: 0` and animate down to it, so the animation adds
+   nothing to the picture once it is over — which is why the reduced-motion
+   block below can take both off outright with `animation: none` and leave the
+   segment exactly as it would have found it. That block, and not base.css's
+   0.001ms clamp, is what suppresses these two under the setting; the clamp
+   only shortens them, and a shortened animation still starts. What a child
+   who asked for less motion still gets is the block's own height, which is
+   the damage itself rather than a report of it.                           */
+.storm__hit,
+.storm__mend {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  opacity: 0;
+}
+
+.storm__hit {
+  background: var(--flare);
+  animation: storm-hit 150ms var(--ease-out);
+}
+
+.storm__mend {
+  background: var(--lime);
+  animation: storm-mend 240ms var(--ease-out);
+}
+
+@keyframes storm-hit {
+  from {
+    opacity: 0.85;
+  }
+}
+
+@keyframes storm-mend {
+  from {
+    opacity: 0.7;
+  }
+}
+
+/* ── Hailstorm under `prefers-reduced-motion` ────────────────────────────
+   What comes off, and the one thing that cannot (docs/typing.md §8.10, #155).
+
+   **The falling stays.** A falling-letter game cannot honour the setting by
+   removing the falling, and this is why the fall was never written as an
+   animation in the first place: `useStormClock` writes `--drop` onto each
+   stone from a `requestAnimationFrame` loop and the rule above multiplies it
+   by the height of the sky, so base.css's blanket clamp — every animation to
+   one 0.001ms pass, every transition likewise — has nothing of the storm's
+   motion to reach. That is the same reason `.fuse__fill` scales rather than
+   animating: a clock a player asked less motion of still has to run.
+
+   **What comes off is decoration, and there is almost none of it.** Nothing
+   translates but the stones, the sky is one flat box rather than layers at
+   different speeds, and the only thing resembling a particle is a hailstone,
+   which is the game — so §8.10's guarantee is kept by not having built any of
+   it. It is measured rather than promised: `e2e/smoke.mjs` runs the same
+   twelve-landing wave twice and counts `animationstart` over the whole of
+   each, twelve under normal motion and zero under this setting. Both censuses
+   filter on `animationName` starting `storm-`, so an animation added under any
+   other prefix is invisible to them and needs its own check.
+
+   What is left is the three tints, and they are switched off rather than
+   left to the blanket clamp. Under the clamp they still start and still fire
+   an `animationstart`, 0.001ms of a wash nobody sees; `animation: none` is
+   the same picture with the event and the work gone, and it is what makes
+   "zero storm animations ran" a thing the browser can be asked. Nothing is
+   lost by it: both damage tints rest at `opacity: 0` and animate DOWN to it,
+   so what a child who asked for less motion still gets is the block's own
+   height — the damage itself rather than a report of it — and a score that
+   has already fallen.                                                      */
+@media (prefers-reduced-motion: reduce) {
+  .storm__hit,
+  .storm__mend,
+  .storm__miss {
+    animation: none;
+  }
+
+  /* The armour's height and the multiplier's step still change; they just
+     arrive rather than travel. Both end where the state says either way. */
+  .storm__zone::before,
+  .storm__combo {
+    transition: none;
+  }
+}
+
+/* ── Hailstorm: the ending ───────────────────────────────────────────────
+   What the storm came to, and what to do about it (docs/typing.md §8.5,
+   decision 47).
+
+   **It stands where the board stood.** `.storm` is two tracks — a sky that
+   gives and a board that never does — and this takes the board's, because the
+   board is the gun and the gun is dead. That is what keeps the sky above it
+   whole: the hail frozen where the clock stopped, and the shield with the
+   hole still open under the finger this panel is naming. A panel drawn OVER
+   the sky would have covered the one picture that explains its own sentence,
+   and one added as a third row would have taken the space out of the sky
+   instead — which on a short viewport is the whole of it (§8.2).
+
+   The heading, the sentence and the keys line are in `--key` units like
+   everything else on this screen, so they shrink with the board they replaced
+   rather than against it. The two rows under them do not: the figures are the
+   site's own `.stat`, at the size a score is drawn at on every other results
+   screen, and the buttons are the kit's at the kit's hit targets — the
+   youngest player is five, and a control that shrinks with the viewport is
+   the one thing here that must not. So the panel does cost the sky a little
+   more than the board did — about 45px of it at 1280×380, measured — and the
+   `:has` rule up at `.storm` is what keeps that from ever becoming a button
+   nobody can reach.
+
+   Colour says nothing about how well the run went. There is no `--flare` on a
+   loss and no `--lime` on a win: the two endings are the same panel with the
+   same four figures in the same order, because a child who has just lost is
+   reading it and nothing here is a mark out of ten (§8.5). The one hue in it
+   is the named finger's own, which is identity and not judgement — the same
+   hue as the block that broke and the keys under it. `--lime` appears exactly
+   once, on the XP, where it means what it means on every other results screen
+   on this site: this is what you earned, and it could not have gone down.  */
+
+.storm__over {
+  /* Overwritten by the eight below when a finger is named. A cleared wave
+     names none, and the neutral is what the keys line and the finger word
+     fall back to — neither of which a cleared wave draws. */
+  --finger: var(--chalk-dim);
+
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: calc(var(--key) * 0.22);
+  text-align: center;
+}
+
+/* The words are held to fifteen key units — the width of the sky above them
+   and of the board they replaced, which is the column everything else in this
+   game is read in. The panel itself is NOT: it is the full width of the
+   field, so that the three buttons at the bottom of it sit on one row wherever
+   there is room for one. That is worth more than the alignment, and it is
+   worth it on exactly the viewport where it is hardest — three buttons
+   wrapping to two rows is sixty-five more pixels out of the sky, and at
+   1280×380 there are about fifty of it left to take. */
+.storm__lede,
+.storm__keys {
+  max-width: calc(15 * var(--key));
+}
+
+.storm__verdict {
+  font-size: calc(var(--key) * 0.95);
+  color: var(--chalk);
+}
+
+.storm__lede {
+  font-size: calc(var(--key) * 0.55);
+  line-height: 1.25;
+  color: var(--chalk-soft);
+}
+
+/* The finger, in the finger's own colour — see the eight below. Bold because
+   it is the subject of the sentence and the thing a child is meant to go and
+   look at on their own hand. */
+.storm__finger {
+  font-weight: 700;
+  color: var(--finger);
+}
+
+.storm__keys {
+  font-size: calc(var(--key) * 0.46);
+  color: var(--chalk-dim);
+}
+
+/* The keys themselves, in the same hue as the finger that owns them and
+   spaced out, because they are read one at a time rather than as a word. */
+.storm__keys .u-mono {
+  letter-spacing: 0.22em;
+  color: var(--finger);
+}
+
+/* The run's four figures, in one row while there is room for one. The same
+   `.stat` the record book and every results screen use, so a score here and a
+   score there are the same size and the same shape of thing. */
+.storm__stats {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--gap-2) var(--gap-5);
+}
+
+.storm__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--gap-2);
+}
+
+/* The same eight hues the keycaps carry, on the same closed set of fingers —
+   see the board's block above, and tokens.css for why none of them is one of
+   the telemetry five. There is no thumb segment: nothing falls on the space
+   bar (§8.5).
+
+   The ending panel is on this list because it NAMES one of the eight, and the
+   name has to be the colour of the block that broke and of the keys under it:
+   "your right ring finger" in steel, over a steel socket, over steel keycaps,
+   is one sentence said three ways. It reads `--finger` and never a token, so
+   there is no ninth place a hue could be picked. */
+.storm__zone[data-finger="l-index"],
+.storm__over[data-finger="l-index"] {
+  --finger: var(--finger-l-index);
+}
+
+.storm__zone[data-finger="l-middle"],
+.storm__over[data-finger="l-middle"] {
+  --finger: var(--finger-l-middle);
+}
+
+.storm__zone[data-finger="l-ring"],
+.storm__over[data-finger="l-ring"] {
+  --finger: var(--finger-l-ring);
+}
+
+.storm__zone[data-finger="l-pinky"],
+.storm__over[data-finger="l-pinky"] {
+  --finger: var(--finger-l-pinky);
+}
+
+.storm__zone[data-finger="r-index"],
+.storm__over[data-finger="r-index"] {
+  --finger: var(--finger-r-index);
+}
+
+.storm__zone[data-finger="r-middle"],
+.storm__over[data-finger="r-middle"] {
+  --finger: var(--finger-r-middle);
+}
+
+.storm__zone[data-finger="r-ring"],
+.storm__over[data-finger="r-ring"] {
+  --finger: var(--finger-r-ring);
+}
+
+.storm__zone[data-finger="r-pinky"],
+.storm__over[data-finger="r-pinky"] {
+  --finger: var(--finger-r-pinky);
+}

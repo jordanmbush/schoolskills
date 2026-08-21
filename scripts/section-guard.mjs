@@ -57,7 +57,13 @@ const HOMES = {
     "src/engine/typing",
     "src/games/typing",
     "src/engine/keyboard.ts",
-    "src/styles/game.css",
+    // Four of the game's seven stylesheets, and not the directory above them:
+    // setup, race and card are drawn by both islands, so a bare § in one of
+    // those has no subject to resolve by and has to name its document.
+    "src/styles/game/ladder.css",
+    "src/styles/game/lesson.css",
+    "src/styles/game/keyboard.css",
+    "src/styles/game/storm.css",
   ],
 };
 

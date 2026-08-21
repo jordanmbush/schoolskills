@@ -1,11 +1,22 @@
 /* The game's stylesheet. Content pages load site.css instead; both start from
    the same four files, which is what keeps the game and the pages around it
-   looking like one product. */
+   looking like one product.
+
+   **This list is the cascade.** Rules of equal weight are settled by which one
+   the browser read first, so the order below is behaviour and not filing — a
+   file moved up this list can restyle a screen without failing a test. The
+   game's own seven are the screens in the order a child meets them. */
 @import "./fonts.css";
 @import "./tokens.css";
 @import "./worlds.css";
 @import "./base.css";
 @import "./components.css";
 @import "./screens.css";
-@import "./game.css";
+@import "./game/setup.css";
+@import "./game/race.css";
+@import "./game/card.css";
+@import "./game/ladder.css";
+@import "./game/lesson.css";
+@import "./game/keyboard.css";
+@import "./game/storm.css";
 @import "./ads.css";

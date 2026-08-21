@@ -1,0 +1,341 @@
+/* ── Typing: the keyboard on screen ──────────────────────────────────────
+   A picture of the board, drawn from the layout in engine/keyboard.ts so a
+   child never has to look down at the real one (docs/typing.md §4).
+
+   Every colour here is a world token or a finger token mixed into one, which
+   is what lets the same board sit in the glacier without a single `[data-
+   world="ice"]` rule underneath it. The keycaps are the world's ink, the
+   legends are its chalk, and the eight hues on top are the same in all of
+   them because a finger doesn't change biome.                             */
+
+/* The one dial, and it is at the ROOT because two screens scale off it.
+
+   Fifteen key units is the width of a keyboard, and everything either screen
+   draws knows its own left edge in those units — a keycap from `KeyDef.x`, a
+   falling letter from `keyX(code)`, a shield segment from `FINGER_ZONES`. So
+   one number sets the scale of all of it, floored so it stays legible on a
+   narrow phone.
+
+   **The 4.5rem cap is a measurement, not a taste** (§4.7): key pitch on every
+   full-size keyboard a child will meet is 19.05mm, which CSS makes exactly
+   72px. In rem rather than mm — identical lengths — so a child who turned
+   their text up gets a board that grew with them. Hailstorm draws lanes rather
+   than keycaps and keeps the same ceiling, because a lane claims to be where
+   that key is.
+
+   ── What this value is, and what overrides it ──────────────────────────────
+   THIS one is the storm's: the lanes, the hailstones and the eight shield
+   segments, which is every reader of `--key` that is not a keycap. Its height
+   term is loose (`15dvh`) because the storm's only other track is the ending
+   panel, which is absent while a wave is falling — the sky is the whole field,
+   so what the dvh term is protecting is not the layout but the FALL: a stone
+   is 1.15 units, and past about a sixth of the viewport per unit a letter is
+   big enough that there is no sky left to read it against.
+
+   The passage screen overrides it below, because that screen draws five rows
+   of keycaps under a HUD, three bars and a line of words. The declaration is
+   at the ROOT and not on `.keyboard`, because a custom property inherits
+   downwards only: a value declared on the board is a value the sky above it
+   cannot read (docs/typing.md §8.2, decision 37). At the root both screens
+   reach it and each sees one value, which is the property that matters —
+   within a screen a lane and the segment it lands on are never free to
+   disagree about how wide a key is.
+
+   `--key-gap` is here for the same reason and one more: it is the inset that
+   turns a key's slot into the keycap drawn inside it, so it is also what the
+   field subtracts half of to centre a letter over the CAP rather than over
+   the slot (decision 36). One declaration, and both halves of that stay
+   true at every size. */
+:root {
+  --key: clamp(1.05rem, min(6vw, 15dvh), 4.5rem);
+  --key-gap: calc(var(--key) * 0.09);
+}
+
+/* …and one extra term on the passage screen: what is left after the words.
+
+   The height term is a subtraction rather than a proportion — the constant
+   this screen's chrome costs, taken off the viewport and divided by the
+   board's own height in key units, `5 + 4 × 0.09` (§4.7 does the arithmetic).
+   A dvh fraction cannot do it: `.race` is `min-height`, so a board that stops
+   fitting grows the PAGE, and a race that scrolls under a child's thumb
+   mid-word is the exact thing `min-height` is there to prevent.
+
+   This is a second declaration of `--key`, which the note above rules out —
+   and it is not the one it rules out. What may never happen is a falling
+   letter's lane and the cap it names coming from two numbers. The passage
+   screen has no lanes: the board is the only thing on it that reads `--key`,
+   and a screen only ever sees one of these two values.                    */
+.race.typing {
+  --key: clamp(
+    1.05rem,
+    min(6vw, 9dvh, calc((100dvh - var(--ad-h) - 26.5rem) / 5.36)),
+    4.5rem
+  );
+}
+
+.keyboard {
+  display: grid;
+  gap: var(--key-gap);
+  width: calc(15 * var(--key));
+  margin-inline: auto;
+
+  /* Never tappable, on any device (§4.5). There is no handler on any of these
+     spans to fire; `pointer-events` is what stops one added later from having
+     anywhere to fire, and stops the board eating a tap meant for the field
+     underneath it. `user-select` is the other half — a long press on a phone
+     should not offer to copy the letter `f`. */
+  pointer-events: none;
+  user-select: none;
+}
+
+/* A board at pitch is wider than the column it sits in, and is allowed to be.
+
+   `.race` is `min(720px, 100%)` because that is a comfortable measure for the
+   things above it — a clock, a rival's gap, a line of words to read. A
+   life-size keyboard is 1080px, and squeezing it back into 720 would be
+   letting a column width that exists for reading decide the size of a piece
+   of hardware. So it doesn't: the board is centred on its grid area and
+   overflows it evenly on both sides, which is also how the desk it is a
+   picture of is arranged — a screen, and a wider keyboard underneath it.
+
+   The centring is arithmetic rather than an alignment property, because
+   neither alignment property survives the overflow. `margin-inline: auto` is
+   defined to resolve to ZERO against negative free space, so the board would
+   hug the left edge of the column and hang off the right; `justify-self:
+   center` is start-aligned by Chrome for the same overflowing item, measured
+   rather than assumed. Half the column minus half the board is the one
+   expression that means the same thing in both directions — a positive margin
+   on a phone where the board still fits inside the column, the same number
+   negative on a laptop where it doesn't.
+
+   Nothing ends up off screen, because `--key` is capped by `6vw` first: the
+   widest the board can be is 90vw, whatever the column underneath it says.
+
+   The storm is not scoped in here on purpose. Its board is already centred in
+   a full-width field, so it has nothing to break out of, and `.storm__sky`
+   centres itself at the same fifteen units by the same `margin-inline: auto`
+   — a lane and its cap stay one column of the screen (§8.2).             */
+.typing .keyboard {
+  margin-inline: calc(50% - 7.5 * var(--key));
+}
+
+/* A viewport too short to hold both, where the board is what goes.
+   `.race` is `min-height: calc(100dvh - var(--ad-h))` so that a race never
+   scrolls under a child's thumb, and five rows of keys are 45% of a phone
+   held in landscape — enough to break that on its own. What they would be
+   taking the height from is the passage and the line you type on, which are
+   the game; the board is the aid. So below the height at which it stops
+   fitting it isn't drawn, and it is back the moment there is room.
+
+   Nothing is written and the setting doesn't move: this is the same profile
+   in the same mode, on a screen that can't show it. Turning the pill off for
+   them would be answering a question about their eyes with a fact about
+   their window. The number is measured rather than guessed: a portrait phone
+   keeps the board and about two lines of passage down to here, and below it
+   the words are down to one line before the keys have cost anything.       */
+@media (max-height: 520px) {
+  .typing .keyboard {
+    display: none;
+  }
+}
+
+.keyboard__row {
+  position: relative;
+  height: var(--key);
+}
+
+/* Positioned off the `x` the engine writes down rather than laid out by flex,
+   because the row stagger is a fact about the plastic and not something gap
+   arithmetic arrives at: the home row starts 1.75 units in, the top row 1.5,
+   and no rule relates the two. */
+
+.keyboard__key {
+  /* The thumb has no hue of its own — see tokens.css. Its keys inherit this
+     neutral, which is the world's own quiet grey. */
+  --finger: var(--chalk-dim);
+
+  /* The lip under a keycap. Named because every rule that adds a shadow of
+     its own has to restate it — `box-shadow` replaces rather than adds — and
+     a key that lost its lip while being pointed at would look pressed. */
+  --key-lip: inset 0 -0.1em 0 rgb(0 0 0 / 22%);
+
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(var(--x) * var(--key));
+  width: calc(var(--w) * var(--key) - var(--key-gap));
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 1px solid color-mix(in oklab, var(--finger) 38%, transparent);
+  border-radius: calc(var(--key) * 0.2);
+  background: color-mix(in oklab, var(--finger) 13%, var(--ink-800));
+  box-shadow: var(--key-lip);
+
+  font-family: var(--font-mono);
+  font-size: calc(var(--key) * 0.42);
+  line-height: 1;
+  color: color-mix(in oklab, var(--finger) 45%, var(--chalk));
+
+  /* The fade is on the way out only: the lit states below turn it off, so a
+     strike lands on the frame it happened. A flash that eased in would be
+     late, and late is the one thing the press echo can't be (§4.3). */
+  transition:
+    background 150ms var(--ease-out),
+    border-color 150ms var(--ease-out),
+    color 150ms var(--ease-out);
+}
+
+/* Modifiers and the ones that do something rather than type something carry a
+   word — "Shift", "Bksp", "Caps" — which has to fit the same cap as one
+   letter without shrinking the letters a child is actually reading. */
+.keyboard__key.is-word {
+  font-size: calc(var(--key) * 0.26);
+  color: var(--chalk-dim);
+}
+
+/* Where the hands rest. On real plastic only `f` and `j` are ridged; here all
+   eight home keys and the space bar carry the bar, because on screen the
+   thing being shown is the whole resting position rather than the two keys
+   you find it by touch with. */
+.keyboard__key.is-home::after {
+  content: "";
+  position: absolute;
+  bottom: calc(var(--key) * 0.11);
+  width: calc(var(--key) * 0.34);
+  height: max(1.5px, calc(var(--key) * 0.06));
+  border-radius: 2px;
+  background: color-mix(in oklab, var(--finger) 70%, var(--chalk));
+}
+
+/* The eight hues, attached to the closed set of fingers the engine assigns.
+   `thumb` is absent on purpose and falls through to the neutral above. */
+.keyboard__key[data-finger="l-index"] {
+  --finger: var(--finger-l-index);
+}
+
+.keyboard__key[data-finger="l-middle"] {
+  --finger: var(--finger-l-middle);
+}
+
+.keyboard__key[data-finger="l-ring"] {
+  --finger: var(--finger-l-ring);
+}
+
+.keyboard__key[data-finger="l-pinky"] {
+  --finger: var(--finger-l-pinky);
+}
+
+.keyboard__key[data-finger="r-index"] {
+  --finger: var(--finger-r-index);
+}
+
+.keyboard__key[data-finger="r-middle"] {
+  --finger: var(--finger-r-middle);
+}
+
+.keyboard__key[data-finger="r-ring"] {
+  --finger: var(--finger-r-ring);
+}
+
+.keyboard__key[data-finger="r-pinky"] {
+  --finger: var(--finger-r-pinky);
+}
+
+/* ── Typing: the next-key hint ───────────────────────────────────────────
+   Go here next (docs/typing.md §3.3, §4.1). Drawn in `--go`, which is the
+   world's own "press this" — the same colour as the button that started the
+   run and the focus ring around it — so the hint is per-world scenery rather
+   than a sixth telemetry signal a child has to be taught.
+
+   It is not shaped like a press, but the difference is degree and shape
+   rather than fill and no fill: both tint the cap. A strike floods it at 78%
+   `--lime` for 120ms and is gone; the hint is a 20% `--go` wash — a fifth of
+   that — under a ring that breathes, and it stays until the key is struck.
+   Two fills of the same weight would read as one flashing board however
+   different their hues, so the hint's is kept well under the echo's and
+   carries the one thing the echo has not got. The child has to be able to
+   tell "you just pressed that" from "press this next" while looking at the
+   board rather than at their hands.
+
+   For a capital, TWO keys carry this at once — the letter, and the shift on
+   the opposite hand. That pair is the technique being taught and the reason
+   the hint exists at all; `strokeFor` picks the hand, and Keyboard.tsx records
+   why.
+
+   The fade is allowed here, unlike on the echo: the hint moves from key to key
+   as a passage is typed, and easing that move reads as the pointer travelling
+   rather than teleporting. A press has to be instant; an instruction does not.
+
+   Placed ABOVE the press echo so the cascade lands the right way round on the
+   three properties the two blocks share: border, fill and legend are declared
+   again below and win the cap, so a hinted key that is struck flashes. The
+   ring and its breath are not in that contest — the echo declares neither
+   `box-shadow` nor `animation`, and an animation would outrank a normal
+   declaration even if it did — so the strike lands inside a still-breathing
+   `--go` halo. That is the wanted reading: for those 120ms the strike is the
+   louder of the two, not the only one, and the ring leaves with the hint when
+   the passage moves on.                                                    */
+.keyboard__key.is-next {
+  border-color: var(--go);
+  background: color-mix(in oklab, var(--go) 20%, var(--ink-800));
+  color: var(--go);
+
+  /* Two shadows: the cap's own lip, restated so the key still looks
+     pressable, plus an outward ring that is the hint. */
+  box-shadow:
+    var(--key-lip),
+    0 0 0 max(2px, calc(var(--key) * 0.06))
+      color-mix(in oklab, var(--go) 34%, transparent);
+
+  /* A slow breath, not a blink. Fast enough to draw the eye down to the board
+     and back, slow enough that five rows of it aren't a strobe. The keyframe
+     ends where it starts, so `prefers-reduced-motion` — which globally clamps
+     every animation to one 0.001ms pass (base.css) — leaves the static ring
+     above exactly as it is, and the hint survives with only its motion gone. */
+  animation: key-hint 1.6s var(--ease-out) infinite;
+}
+
+@keyframes key-hint {
+  50% {
+    box-shadow:
+      var(--key-lip),
+      0 0 0 max(2px, calc(var(--key) * 0.06))
+        color-mix(in oklab, var(--go) 8%, transparent);
+  }
+}
+
+/* ── Typing: press echo ──────────────────────────────────────────────────
+   The two states on this board that are signal rather than scenery
+   (docs/typing.md §4.3, §4.6). Everything above is a world token or a finger
+   hue, deliberately quiet so the board reads as a map; these two borrow from
+   the telemetry five and are the only rules here allowed to, because they
+   already mean this everywhere else on the site — `--lime` is "that was
+   right", `--flare` is "that was wrong". A child glancing down at the board
+   is reading the two colours the flash-card loop taught them.
+
+   Neither is `:active`. The board is never tappable (§4.5), so the only
+   thing that can light a key is a keystroke, and the class goes out on a
+   120ms timer in `useKeyEcho.ts` rather than on `keyup`.                  */
+.keyboard__key.is-down,
+.keyboard__key.is-wrong {
+  /* The hue goes dark rather than away, so the home-row bar drawn out of
+     `--finger` stays visible against a lit cap instead of dissolving into it. */
+  --finger: var(--ink-900);
+
+  transition: none;
+  color: var(--ink-900);
+}
+
+.keyboard__key.is-down {
+  border-color: var(--lime);
+  background: color-mix(in oklab, var(--lime) 78%, var(--ink-800));
+}
+
+/* Last, so a key that is both — every wrong key is also down — flares. */
+.keyboard__key.is-wrong {
+  border-color: var(--flare);
+  background: color-mix(in oklab, var(--flare) 78%, var(--ink-800));
+}

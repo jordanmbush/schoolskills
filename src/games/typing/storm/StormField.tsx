@@ -13,7 +13,7 @@ import type { CSSProperties } from "react";
  * Each letter falls down its own key's column, and no keyboard is drawn under
  * it (§8.2, decision 64). Nothing here computes a lane: `StormLetter.lane` was
  * resolved when the wave was built (§8.3), and this writes it into a custom
- * property `game.css` multiplies by `--key`, so a lane and the finger zone it
+ * property `storm.css` multiplies by `--key`, so a lane and the finger zone it
  * lands on cannot disagree about where a key is.
  *
  * **A pure function of one frame.** Hand it a `StormState` and it draws that

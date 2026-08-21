@@ -143,7 +143,7 @@ describe("StormHud", () => {
   });
 
   it("keeps the numbers where they were when it goes", () => {
-    // Both are placed by column rather than by order (`game.css`), so the
+    // Both are placed by column rather than by order (`storm.css`), so the
     // multiplier does not slide into the middle of the sky on the frame the
     // quit disappears.
     const live = hud(played(2), () => {});
