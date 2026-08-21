@@ -40,11 +40,98 @@ Two rules people trip over:
   the youngest player is five. If the kit lacks a primitive, add it to the kit.
 
 Components cap at **300 lines**, counted with `skipComments` and
-`skipBlankLines`. The comment density in this codebase is deliberate and valued:
-**never delete an explanatory comment to pass the cap** — split the module, or
-move the doc block onto the thing it now describes. Files over the cap sit in
-`maxLinesAllowlist` against the story that retires them; delete the entry in the
-same PR that splits the file.
+`skipBlankLines`. The cap measures how much a module _does_, so documenting it
+well never counts against it — and padding it with commentary never buys room,
+because whether a comment belongs is settled by the standard below, not by this
+rule. Over the cap, split the module or move the doc block onto the thing it now
+describes. There is no allowlist to add a file to; an exemption means editing
+the rule.
+
+## Comments
+
+Almost every line here was written by an agent, and an agent works from the
+context it is handed. Too little and it guesses; too much and the one line it
+needed is buried in prose restating the code around it. So comments are
+scrutinised rather than accumulated, and each has to pass the same test:
+
+**Does it say something the code cannot?** An invariant, a constraint, an
+alternative that was tried and rejected, or a consequence a reader would not see
+coming. If it does, it can be as long as it needs to be. If it doesn't, the fix
+isn't a shorter comment — it's no comment.
+
+Three questions before writing one:
+
+- **Would a rename do this instead?** A comment that exists to explain what a
+  name means is a naming bug. Change the name and delete the comment.
+- **Could a reader work this out from the code, its neighbours and its
+  callers?** If so, let them.
+- **Are these plain words?** Reaching for the precise technical term reads as
+  authority and lands as fog.
+
+Four habits to delete on sight — the ones this codebase actually grew:
+
+- **Restating the code.** `// bump the streak` over `streak + 1`.
+- **Narrating history.** "There WAS an allowlist here…" A comment says what is
+  true now; git holds what used to be true.
+- **Repeating `docs/`.** Design rationale lives in `docs/`, written once. A
+  module comment may summarise the decision it implements and cite the section
+  (`docs/typing.md §8.6`), but copying the reasoning across gives one fact two
+  owners, and two owners drift.
+- **Ornate phrasing.** The plain word beats the exact one. From
+  `BackupPanel.tsx`:
+
+  > **Before:** Ids are preserved on both sides, so re-importing the same file
+  > is idempotent rather than duplicating every run.
+  >
+  > **After:** Ids are preserved on both sides, so importing the same file twice
+  > adds nothing the second time.
+
+Never trade clarity for brevity, though: a short comment that loses the point is
+worse than the long one it replaced.
+
+**The standard cuts both ways.** A 245-line component carrying three comment
+lines fails it as surely as a page of narration does — whatever makes that file
+long, an ordering that matters or a browser quirk worked around, is going
+undocumented. Ratio alone is a smell rather than a verdict: run
+`npm run audit:comments` to find the files worth reading, then apply the test
+above one comment at a time.
+
+### The three documents, and what a bare `§` means
+
+Rationale that outgrew a comment lives in `docs/`, written once:
+
+- **`docs/typing.md`** — Frost Keys. The keyboard as a model, the board on
+  screen, the hundred-lesson ladder, what passing is, badges, and Hailstorm.
+- **`docs/printables.md`** — The Print Shop. Paper in real inches, the rulings,
+  tracing without a tracing font, answer keys and seeds, the catalog routes and
+  the sitemap landmine, Scripture, phonics, and the builder.
+- **`docs/analytics.md`** — counting visits with no analytics service: the
+  CloudFront logs, the rollup, Athena, and the 90-day ceiling.
+
+Most citations name no document — `(§8.6)` — and resolve by where the file
+sits:
+
+| Subtree                                                                                        | Document             |
+| ---------------------------------------------------------------------------------------------- | -------------------- |
+| `src/engine/sheets/`, `src/components/sheet/`, `src/games/printshop/`, `src/pages/printables/` | `docs/printables.md` |
+| `src/engine/typing/`, `src/games/typing/`                                                      | `docs/typing.md`     |
+
+A file outside those that still belongs to one subject resolves the same way:
+`src/engine/keyboard.ts` and typing's four stylesheets — `src/styles/game/`'s
+`ladder.css`, `lesson.css`, `keyboard.css` and `storm.css` — are typing's, and
+`src/styles/sheet.css`, `src/styles/print.css`, `src/styles/printshop.css` and
+`src/styles/fonts.css` are the Print Shop's. Shared code that names one
+document and no other — `src/engine/progress.ts`, whose citations are all
+typing's — resolves to that one. Anywhere genuinely shared, name the document —
+`docs/typing.md §8.6` — because a bare number in a file with two subjects has
+no rule to resolve it by. `docs/analytics.md` numbers nothing, so it is always
+cited by name.
+
+`scripts/section-guard.mjs` holds that convention as data and enforces it: the
+build reads every heading in `docs/` and every `§` in `src/`, resolves each one
+and fails on a reference to a section that doesn't exist. So renumbering a
+section is safe — the build names every citation that pointed at the old
+number. Adding a subtree here means adding it there in the same change.
 
 ## Worlds — one game, several biomes
 
@@ -57,6 +144,7 @@ That is a real structure, not a metaphor in the copy:
 | `grid`   | `/flash-cards`, `/multiplication/*` | times tables (space)       |
 | `jungle` | `/spelling/play`, `/spelling`       | spelling and sight words   |
 | `ice`    | `/typing`                           | touch typing (glacier)     |
+| `paper`  | `/printables/*`                     | worksheets (a press room)  |
 | `line`   | `/privacy`, `/terms`, `/about`      | the pause menu             |
 | `empty`  | `/404`                              | literally nothing          |
 
@@ -79,13 +167,31 @@ Three rules:
   engine never interprets the value — to it a world id is an opaque string.
   `useWorld()` in `src/components/state/` is what writes it from the client.
 - **World blocks are scoped to `[data-world]`, not `:root[data-world]`.** That is
-  what lets the overworld map render three worlds at once: each card carries
+  what lets the overworld map render every world at once: each card carries
   `data-world` and is built out of that world's own tokens.
 
-Content pages use `src/layouts/Content.astro` (masthead + footer). The two games
-use `Base.astro` directly, so **site chrome can never appear over a race** —
-there is no prop to set wrong. The way out of an island is the map icon in its
-top bar.
+Content pages use `src/layouts/Content.astro` (masthead + footer). The two
+racing islands — flash cards at `/flash-cards` and `/spelling/play`, typing at
+`/typing` — use `Base.astro` directly, so **site chrome can never appear over a
+race** and there is no prop to set wrong. The way out of one is the map icon in
+its top bar.
+
+The third island is the sheet builder at `/printables/make`, and it keeps
+`Content.astro` on purpose: `print.css` hides the masthead, the footer and
+everything marked `.no-print`, so the builder can have the site around it while
+choosing and lose it at the moment a sheet goes to paper.
+
+**`href` is the front door; `island` is the app.** Both live on `WorldInfo`,
+and only `island` decides what search engines are kept away from — it carries
+`noindex` via `Base.astro`, and `astro.config.mjs` filters the sitemap on that
+field. For the three game worlds the two are the same route, because the game
+_is_ the front door. The Print Shop is why the field had to exist: its `href` is
+`/printables`, a catalog of prerendered worksheets and the largest crawlable
+surface on the site, while its `island` is the builder, which must stay out of
+the sitemap. Filtering on `href` instead would have deleted the whole catalog
+with nothing failing, so `scripts/sitemap-guard.mjs` reads the registry back
+against the sitemap that actually shipped and fails the build instead
+(docs/printables.md §8).
 
 ## Validation
 
@@ -166,3 +272,54 @@ the only copy there is. Adding a store is a `DB_VERSION` bump with an
 without the engine knowing storage exists. Every write goes through
 `HubContext.saveDeck` — a service call that bypasses it lands in IndexedDB and
 stays invisible until the next reload.
+
+## Adding a sheet
+
+The Print Shop is the paper half of the site and the larger half of the code:
+`src/engine/sheets/` builds worksheets, `src/components/sheet/` draws them,
+`src/pages/printables/` publishes them and `src/games/printshop/` is the bench
+a parent tunes one on. Everything below is the short version of
+`docs/printables.md`.
+
+**A `Sheet` is plain data** (`src/engine/sheets/types.ts`): paper size, body
+type size, a header, a list of blocks and a footer. `src/components/sheet/`
+renders one as real elements in real inches — not a canvas, not a PDF, not an
+image — and takes a `Sheet` and nothing else. No context, no service, no
+storage. That is what lets one renderer run at build time on a catalog page and
+at runtime in the builder, and why a catalog page ships zero JavaScript: a
+component with nothing to hydrate needs no `client:*` directive.
+
+**A `SheetSpec` is `DeckSpec` for paper** (`src/engine/sheets/spec.ts`). Paper,
+rulings, capacity, the header and the footer generalise; what a problem is,
+what its answer is, and how to describe the sheet in one line do not, so a
+family states those: `build(config, seed)`, `key(sheet)` and `describe(config)`.
+`key` is not optional on any family — an answer key is the most expected feature
+of a worksheet and the most commonly botched one.
+
+**`src/engine/sheets/index.ts` is the front door, and the registry _is_ the
+narrowing.** A spec is keyed by the same string its config carries as `kind`, so
+looking one up is the only place the `SheetConfig` union is narrowed — there is
+no `if (isLined)` chain to keep in step. Adding a family is a `kind` in
+`types.ts` plus an entry in that table. `sheetSpec(kind)` never throws for the
+same reason `deckSpec(mode)` doesn't: a config bookmarked in March must still
+open in June, so an unknown kind gets `UNKNOWN_SHEET`, which prints a page
+saying so. `buildSheet` is deterministic in `(config, seed)`, and three
+features fall out of that one property — the answer key is the same build with
+the answers switched on, "another like this one" is `seed + 1`, and a shared URL
+reproduces a sheet exactly because the seed is in it.
+
+**The catalog pages are curated, not permuted.** Every page under
+`/printables` is prerendered from an underscored data module in
+`src/pages/printables/` — `_catalog.ts` for paper, `_maths.ts` for the
+worksheets, one per shelf, with `_shelves.ts` naming the shelves so the grade
+hubs can cut across them. Underscored means Astro leaves them out of the routing
+table; each names the handful of sheets a parent actually searches for, and
+`getStaticPaths` turns them into pages. The page **is** the sheet: prose that
+answers the query, the paper itself as HTML under it, and ⌘P produces something
+usable with nothing to click. Generating a page per permutation of a config
+would be a doorway farm, which is what the builder exists for instead.
+
+Saved sheets go through `src/services/sheets.ts`, the only writer of the
+`sheets` store. Unlike custom decks, nothing is mirrored back into the engine —
+a sheet's name and description are computable from the config it already
+carries.

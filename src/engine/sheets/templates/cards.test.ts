@@ -11,29 +11,29 @@ import type {
   Sheet,
 } from "../types";
 import { buildSheet, describeSheet, sheetSpec } from "../index";
+import { describeSheetFamily } from "../contract";
 
-import { CARD_STEP, canFold, cardsKeyed, inchLabel, layoutsFor } from "./cards";
+import {
+  CARDS_SHEET,
+  CARD_STEP,
+  canFold,
+  cardsKeyed,
+  inchLabel,
+  layoutsFor,
+} from "./cards";
 
 /**
  * The one shelf whose geometry is checked with a pair of scissors.
  *
- * Everything else in the Print Shop is read; this is cut, and a sheet that is a
- * sixteenth of an inch out is a stack of cards with a white sliver down one
- * side of every other one. Three claims, and all three are made against the
- * finished block rather than against the arithmetic that made it:
+ * Three claims, all made against the finished block rather than against the
+ * arithmetic that made it: the card is the size the sheet says it is, a whole
+ * number of eighths and never larger than the room there is; the grid is
+ * exactly `columns × width` by `rows × height`, so with no gutter the cut
+ * guides fall on the card boundaries by construction; and every card is on the
+ * page, `columns × rows` faces even where most are blank.
  *
- * **The card is the size the sheet says it is.** A whole number of eighths of
- * an inch, so a ruler can settle it, and never larger than the room there is.
- *
- * **The cuts are the card boundaries.** There is no gutter — one cut makes two
- * cards — so the grid is exactly `columns × width` by `rows × height` and the
- * guides fall on the boundaries by construction. What is left over goes round
- * the block, which is `margin-inline: auto` in sheet.css and is checked in
- * `Sheet.test.tsx` where the markup is.
- *
- * **Every card is on the page.** `columns × rows` faces, always, even when most
- * of them are blank: dropping the empty ones would be a page with a hole in it
- * and cut guides round nothing.
+ * What is left over goes round the block, which is `margin-inline: auto` in
+ * sheet.css and is checked in `Sheet.test.tsx` where the markup is.
  */
 
 const STYLES: CardStyle[] = [
@@ -357,6 +357,18 @@ describe("what a card carries", () => {
 
 /* ── The promises every family makes ───────────────────────────────────── */
 
+describeSheetFamily("cards", {
+  label: "Cards, tags and bookmarks",
+  spec: CARDS_SHEET,
+  config,
+  shapes: STYLES.map((style) => ({
+    style,
+    passage: "psalm-23",
+    words: ["a", "b"],
+  })),
+  keyed: cardsKeyed,
+});
+
 describe("the cards family", () => {
   it("names the size it actually printed", () => {
     // The catalog quotes this line, so it is a claim about the paper rather
@@ -372,15 +384,6 @@ describe("the cards family", () => {
     expect(describeSheet(config({ style: "certificate", up: 1 }))).toContain(
       "1 to a page",
     );
-  });
-
-  it("is deterministic in (config, seed)", () => {
-    for (const style of STYLES) {
-      const built = config({ style, passage: "psalm-23", words: ["a", "b"] });
-      expect(JSON.stringify(buildSheet(built, 9))).toBe(
-        JSON.stringify(buildSheet(built, 9)),
-      );
-    }
   });
 
   it("withholds nothing, and says so where a page can ask", () => {

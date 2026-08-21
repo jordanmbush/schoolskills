@@ -1,21 +1,10 @@
 /**
  * A word search, and — separately — the answer key to one.
  *
- * The two halves of this file barely speak to each other, and that is the whole
- * point of it. `place` writes words into a grid and remembers nothing;
- * `findWord` reads a finished grid and reports what is in it. The key is the
- * second of those, never the first.
- *
- * That separation is not fussiness. The classic word-search bug is a key that
- * agrees with the generator instead of with the paper: a word that failed to
- * place is still in the list of "placements" the code made a note of, or a
- * later word overwrote a letter of an earlier one and the note was never
- * corrected, and the sheet goes out claiming ROBIN is at row 4 when row 4 says
- * ROBIM. Deriving the key by searching the grid cannot make that mistake —
- * whatever the placer meant, the key says what the letters say. Which is also
- * why a word that cannot be found is *reported* rather than dropped: the search
- * is the only thing that decides which words are on the sheet's list, so a word
- * that isn't in the grid can't get onto it.
+ * The two halves barely speak to each other, and that is the point of it.
+ * `write` puts words into a grid and remembers nothing; `findWord` reads a
+ * finished grid and reports what is in it, and the word list, the key and the
+ * "not in the grid" line are all the second of those (§11).
  *
  * Nothing here retries. A word is offered every position it could occupy, in a
  * seeded order, and takes the first that is legal; if none is, it is omitted.
@@ -25,28 +14,10 @@
  */
 import { shuffled } from "@/engine/random";
 
-import type { Found, Mil, SearchDirections } from "../types";
-
-import { inches } from "../paper";
+import type { Found, SearchDirections } from "../types";
 
 /** One step along a word, per letter. `(1, 0)` reads left to right. */
 export type Step = { dx: number; dy: number };
-
-/**
- * A letter big enough for a five-year-old to find, and small enough that a
- * ten-by-ten puzzle doesn't take the whole page.
- *
- * Here rather than in `WordSearch.tsx` because both halves need it and they
- * have to agree: the family reserves the page against the height the grid will
- * take, and the renderer draws it. A copy in each would be a grid an eighth of
- * an inch taller than the space reserved for it — invisible on screen, and the
- * word list on a second sheet of paper.
- */
-export const SEARCH_CELL: Mil = inches(0.34);
-
-/** How wide one cell comes out at, given the room and the number of them. */
-export const searchCell = (width: Mil, size: number): Mil =>
-  size <= 0 ? 0 : Math.min(SEARCH_CELL, Math.floor(width / size));
 
 /**
  * The directions a word may run, before `reverse` is applied.
@@ -93,15 +64,13 @@ const EVERY_STEP: Step[] = searchSteps("all", true);
  * The word as a grid can hold it: upper case, and nothing that is not a letter.
  *
  * A square holds one letter, so there is nowhere to put the apostrophe in
- * "don't" or the space in "ice cream" — and a puzzle that quietly searched for
- * DON'T while printing "don't" under it would be asking for something that
- * cannot be there. So the transformation is done once, here, and the *grid
- * form* is what goes in the grid, on the word list and in the answer key alike:
- * what is printed under the puzzle is exactly what is findable in it.
+ * "don't" or the space in "ice cream". Done once, here, so that the grid form
+ * is what goes in the grid, on the word list and in the answer key alike: what
+ * is printed under the puzzle is exactly what is findable in it.
  *
- * Upper case for the same reason every word search ever printed is: a grid is
- * read letter by letter rather than word by word, and a lower-case `l` beside
- * an upper-case `I` is a square a child cannot mark with confidence.
+ * Upper case for the reason every word search ever printed is: a grid is read
+ * letter by letter, and a lower-case `l` beside an upper-case `I` is a square a
+ * child cannot mark with confidence.
  */
 export const gridForm = (word: string): string =>
   word.toUpperCase().replace(/\P{L}/gu, "");
@@ -213,16 +182,13 @@ function spells(
  *
  * An even draw from the alphabet rather than from the letters the words happen
  * to use. Reusing the words' own letters makes a harder puzzle — a lone Q gives
- * QUEEN away — but it also makes an accidental word far likelier, and this is
- * the one file where "looks fine" and "is right" come apart. An even draw is
- * the one that can be reasoned about, and the check below is what keeps it
- * honest.
+ * QUEEN away — but it also makes an accidental word far likelier, and an even
+ * draw is the one that can be reasoned about.
  *
  * Every letter is tried at most once per square, so a square hemmed in on all
  * sides settles for the first of them rather than looping. That square is then
  * a genuine second occurrence of some word, and it will show up in the key,
- * because the key reads the grid — which is the entire reason the key reads the
- * grid.
+ * because the key reads the grid.
  */
 function fill(cells: Cells, words: string[], rand: () => number) {
   for (let y = 0; y < cells.length; y++) {
@@ -238,10 +204,10 @@ function fill(cells: Cells, words: string[], rand: () => number) {
 /**
  * Where a word is in a finished grid, or `undefined` if it is not in it.
  *
- * The answer key, and the only thing that decides what goes on the word list.
- * Top-left first, then along the row, then by direction, so the same grid always
- * reports the same occurrence — a word that turns up twice (see `fill`) gets one
- * stroke through it rather than a key that changes its mind between builds.
+ * Top-left first, then along the row, then by direction, so the same grid
+ * always reports the same occurrence — a word that turns up twice (see `fill`)
+ * gets one stroke through it rather than a key that changes its mind between
+ * builds.
  */
 export function findWord(
   letters: string[][],
@@ -271,12 +237,11 @@ export type WordSearch = {
   /**
    * The rest, named on the sheet rather than dropped.
    *
-   * Read out of the finished grid exactly as `find` is, and for the same
-   * reason: "not in the grid" is a claim about the letters, so the letters are
-   * what settles it. A word the placer could not fit is here; so is a word from
-   * `avoid` the grid turned out not to hold. One it *does* hold is on neither
-   * list — the page has no room to ask for it, and the sheet will not say it is
-   * absent while a child can see it.
+   * Read out of the finished grid exactly as `find` is: "not in the grid" is a
+   * claim about the letters, so the letters settle it. A word the placer could
+   * not fit is here; so is a word from `avoid` the grid turned out not to hold.
+   * One it *does* hold is on neither list — the page has no room to ask for it,
+   * and the sheet will not say it is absent while a child can see it.
    */
   omitted: string[];
 };
@@ -290,18 +255,15 @@ export type WordSearch = {
  * and a three-letter word has hundreds, so placing the short ones first is how
  * a generator paints itself into a corner and drops the long ones.
  *
- * `avoid` is the other half of the sheet's honesty and it comes from outside,
- * because it has to. A word the *page* had no room for never reaches the placer
- * — the family trims the word list to what fits before the grid is built — and
- * yet it is named on the sheet as missing, in the same sentence as a word the
- * placer could not fit. So this function is told about it, and does two things
- * with it. The filler is kept from spelling it, or the sheet would print "Not
- * in the grid: HAS" over a grid with HAS in it. And the finished grid is then
- * searched for it anyway, because the filler is not the only way a word can
- * turn up: two placed words crossing spell a third nobody asked for, and no
- * amount of care over the *empty* squares can undo that. What the grid holds
- * goes on neither list; what it does not is named. Either way `find` is
- * untouched — a word the page cannot list does not get listed.
+ * `avoid` carries the words the *page* had no room for. They never reach the
+ * placer — the family trims the word list to what fits before the grid is built
+ * — and yet they are named on the sheet as missing, so this function is told
+ * about them and does two things. The filler is kept from spelling one, or the
+ * sheet would print "Not in the grid: HAS" over a grid with HAS in it. And the
+ * finished grid is searched for it anyway, because the filler is not the only
+ * way a word can turn up: two placed words crossing spell a third nobody asked
+ * for. What the grid holds goes on neither list; what it does not is named.
+ * Either way `find` is untouched — a word the page cannot list is not listed.
  */
 export function buildSearch(
   words: string[],
@@ -333,11 +295,9 @@ export function buildSearch(
     if (spot) write(cells, word, spot.x, spot.y, spot.step);
   }
 
-  // Every word, not only the ones that were placed, and not only the ones this
-  // grid was given: a word the grid has no room for — or that the page had no
-  // room for, which is what `avoid` carries — must not be spelled out by the
-  // filler either, or the sheet would name it as missing while a child stares
-  // straight at it.
+  // Every word, not only the ones that were placed and not only the ones this
+  // grid was given: a word the sheet will name as missing must not be spelled
+  // out by the filler while a child stares straight at it.
   fill(cells, [...words, ...(options.avoid ?? [])], rand);
   const letters = cells.map((row) => row.map((letter) => letter ?? "A"));
 

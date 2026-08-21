@@ -14,13 +14,10 @@ import {
 } from "../_templates";
 
 /**
- * One prerendered blank form per entry — and the page is the sheet.
- *
- * The shape §8 describes, on the shelf where what somebody searched for is a
- * piece of paper rather than an exercise: "printable reading log", "blank
- * calendar", "printable dice template" and "blank flashcards" are queries where
- * the whole of the answer is the sheet, so there is prose above it, the paper
- * itself under that, and nothing to click before pressing ⌘P.
+ * One prerendered blank form per entry — and the page is the sheet (§8). On
+ * this shelf what somebody searched for is a piece of paper rather than an
+ * exercise, so the whole of the answer is the sheet: prose above it, the paper
+ * under that, and nothing to click before pressing ⌘P.
  *
  * **Not one page here has a key, and that is the tier rather than a gap.** A
  * blank form has no answer by definition (§11: they're supposed to be empty), so
@@ -29,10 +26,9 @@ import {
  * answer, `formKeyed` and its three siblings — because a page that assumed would
  * be a page that could quietly disagree with the engine.
  *
- * **One stock.** A card's size is worked out from the paper rather than stated
- * on it, so there is no A4 twin to keep in step — which is also why this is a
- * single-segment `[slug]` rather than a rest pattern. The stock is a control in
- * the builder, and the geometry follows it.
+ * **One stock** (§8), which is why this is a single-segment `[slug]` rather
+ * than a rest pattern. The stock is a control in the builder, and the geometry
+ * follows it.
  *
  * **No client directive on `SheetView`, ever.** `@astrojs/react` renders a
  * component with no `client:*` to HTML at build time, so these pages ship zero

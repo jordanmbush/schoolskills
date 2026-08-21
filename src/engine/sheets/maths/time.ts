@@ -1,11 +1,8 @@
 /**
  * Telling the time.
  *
- * The first family in the shop whose answer is sometimes a drawing. Everything
- * the arithmetic families established holds unchanged — the answer is computed
- * when the problem is built and the key only decides to print it, the page comes
- * out of `(config, seed)` and nothing else — but two things here are genuinely
- * different.
+ * The first family in the shop whose answer is sometimes a drawing. The shared
+ * machinery is unchanged (§7, §11); two things here are genuinely different.
  *
  * **The dial is the question on one sheet and the answer place on the next.** A
  * face with hands on it is read; a face without them is drawn on. So a clock
@@ -87,13 +84,8 @@ export const stepOf = (config: TimeConfig): number =>
    Declared, not measured (§4).                                              */
 
 /**
- * How tall a problem written along a line stands: two lines of the body type,
- * and the air a wrap puts between them.
- *
- * Two rather than one, because `2:15 to 3:40 =` with a ruled blank after it does
- * not fit across a third of a page, and `.sheet__problem` wraps rather than
- * overflowing — so the second line is either inside the row the layout declared,
- * or it is the bottom of the page coming out of the printer on a second sheet.
+ * Two lines of the body type and the air a wrap puts between them: `2:15 to
+ * 3:40 =` with a ruled blank after it does not fit across a third of a page.
  */
 const writtenRow = (fontPt: number): Mil => 2 * answerLine(fontPt) + WRAP_GAP;
 
@@ -238,13 +230,7 @@ function rowHeight(config: TimeConfig): Mil {
   return body + (config.workspace ? WORKSPACE : 0);
 }
 
-/**
- * How many problems the paper holds, and how wide a column of them is.
- *
- * Arithmetic, not measurement, so `npm run test:unit` can answer "did it fit?"
- * without a browser — and so the same answer serves the catalog page built at
- * build time and the builder's preview (§4).
- */
+/** How many problems the paper holds, and how wide a column of them is (§4). */
 export function timeLayout(config: TimeConfig): {
   box: Box;
   columns: number;
@@ -269,8 +255,7 @@ export function timeLayout(config: TimeConfig): {
 /**
  * Every problem on the sheet, in the order they are printed.
  *
- * Exported because it is the whole of what a test has to check, and checking it
- * through the `Sheet` means unwrapping a block union to reach it.
+ * Exported because it is the whole of what a test has to check.
  */
 export function timeProblems(config: TimeConfig, seed: number): Problem[] {
   const { perPage } = timeLayout(config);
@@ -290,10 +275,9 @@ export function timeProblems(config: TimeConfig, seed: number): Problem[] {
       config.style === "elapsed"
         ? drawElapsed(config, step, rand)
         : drawFace(config.style, step, rand);
-    // Not what was asked for, or already on the page. Either way the budget
-    // ticks down, and a pool that has run out ends the draw rather than
-    // repeating itself: a sheet set to the hour is twelve questions, and twelve
-    // is the honest answer to a request for twenty.
+    // A pool that has run out ends the draw rather than repeating itself:
+    // a sheet set to the hour is twelve questions, and twelve is the honest
+    // answer to a request for twenty.
     if (drawn === null || seen.has(drawn.key)) {
       misses += 1;
       continue;
@@ -331,12 +315,8 @@ const INSTRUCTION: Record<TimeStyle, string> = {
 };
 
 /**
- * The header this sheet will actually print.
- *
- * A generated family names its own sheet, so `config.title` is an override and
- * is usually absent — which makes it the wrong thing to reserve space against.
- * Written once and read by both the layout and the build, so the two cannot
- * disagree about what is at the top of the page.
+ * The header this sheet will actually print, which is what the layout reserves
+ * space against — see the note in `arithmetic.ts`.
  */
 function headerOf(config: TimeConfig): SheetOptions {
   return {
@@ -356,13 +336,13 @@ function headerOf(config: TimeConfig): SheetOptions {
  * is the difference between a sheet a child counts on their fingers and one they
  * work out.
  */
-export function describeTime(config: TimeConfig): string {
+function describeTime(config: TimeConfig): string {
   if (config.style !== "elapsed") return titleOf(config);
   const { max } = spanOf(config, stepOf(config));
   return `${titleOf(config)} — up to ${durationText(max)}`;
 }
 
-export function buildTimeSheet(config: TimeConfig, seed: number): Sheet {
+function buildTimeSheet(config: TimeConfig, seed: number): Sheet {
   const items = timeProblems(config, seed);
   const { columns } = timeLayout(config);
   const head = headerOf(config);
@@ -374,8 +354,6 @@ export function buildTimeSheet(config: TimeConfig, seed: number): Sheet {
       title: head.title ?? "",
       instructions: head.instructions,
       fields: head.fields,
-      // Out of what is actually on the page, not out of what was asked for: a
-      // sheet that says "/ 20" over eighteen problems is wrong twice.
       score: { outOf: items.length },
     },
     blocks: [{ kind: "problems", columns, items }],
@@ -385,14 +363,11 @@ export function buildTimeSheet(config: TimeConfig, seed: number): Sheet {
 }
 
 export const TIME_SHEET: SheetSpec<TimeConfig> = {
-  id: "time",
-  label: "Telling the time",
   world: SHEET_WORLD,
   build: buildTimeSheet,
-  // The whole of the answer-key mechanism. On a drawing sheet the key is the
-  // same faces with their hands put on, which the renderer does from
-  // `sheet.answers` — so even there the key is the sheet rather than a second
-  // build that could disagree with it.
+  // On a drawing sheet the key is the same faces with their hands put on, which
+  // the renderer does from `sheet.answers` — so even there the key is the sheet
+  // rather than a second build that could disagree with it.
   key: (sheet) => ({
     ...sheet,
     answers: true,

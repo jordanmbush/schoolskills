@@ -1,41 +1,20 @@
 /**
  * A word as it is *printed*: cut into its spellings, and marked.
  *
- * Two jobs that are one idea, which is why they are one module. The marking
- * pass turns a word into the pieces a sheet sets it in — a macron over a vowel
- * that says its own name, a letter that says nothing set pale, two letters
- * saying one sound joined underneath — and the proportions below are how tall
- * that lands on the page. A family reserves the page against them and
- * `Cards.tsx` draws against them, so a second copy in either place would be a
- * card overhanging the one beneath it.
+ * The marking pass turns a word into the pieces a sheet sets it in. How tall
+ * that lands on the page is the other half of the same idea, and it lives next
+ * door in `metrics.ts`: `Cards.tsx` draws against those proportions and has no
+ * use for the word bank this module reads, so the numbers are a module of their
+ * own and this one imports them like everybody else.
  *
- * ── Why marking is a switch and never a preset ─────────────────────────────
+ * The three marks are independent switches, derived from `sounds.ts` rather
+ * than authored, so there is nowhere here for a programme's own spelling of a
+ * rule to be written down (docs/printables.md §13).
  *
- * The three conventions are shared across phonics traditions — every scheme
- * that marks a long vowel marks it with a bar, and every scheme that shows a
- * silent letter shows it faintly — but the *combination*, the letterforms and
- * the sequence they are introduced in are somebody's copyrighted alphabet
- * (docs/printables.md §13). So they ship as three independent switches with no
- * shipped combination of them named after anything, and the marks themselves
- * are derived from `sounds.ts` rather than authored, which means there is
- * nowhere here for a programme's own spelling of a rule to be written down.
- *
- * ── Where marking applies, and where it deliberately does not ──────────────
- *
- * **Marking is for a word a child reads, not for a word a child is working
- * out.** A sound card, a wall chart and a sentence strip are things to be read,
- * and marking them is the whole point. A blending line has already been cut
- * into its sounds — the segmentation *is* the marking — and a sound-to-word
- * matching sheet asks which word contains a spelling, so joining that spelling
- * in the word would print the answer next to the question. Those styles carry
- * plain text on purpose, and `sheets.ts` says so where it builds them.
- *
- * ── One mark to a piece ────────────────────────────────────────────────────
- *
- * The three cannot collide, and it is worth seeing why rather than trusting it:
+ * **One mark to a piece**, and it is worth seeing why rather than trusting it:
  * a silent piece is one the table gives no sounds at all, a macron goes on a
  * single letter that says one of the five long vowels, and a join needs two
- * letters or more. No spelling can satisfy two of those at once. So a piece
+ * letters or more. No spelling can satisfy two of those at once, so a piece
  * carries at most one mark and the renderer has one case to draw.
  */
 import type { MarkedPart, MarkedWord, PhonicsMarking } from "../types";
@@ -49,57 +28,14 @@ import {
   type Correspondence,
 } from "./sounds";
 
-/* ── How big a card is ────────────────────────────────────────────────────
-   Declared, not measured (§4). Everything is in ems of the body size, so a
-   parent who wants cards twice the size raises the type size and the whole
-   card grows with it — which is also how the same block prints a flash card an
-   inch high and a sentence strip a child reads across a room.               */
-
-/** The spelling on a sound card, and on the wall chart. */
-export const CARD_BIG_EMS = 3.2;
-
-/** A sentence strip: a whole sentence, so a great deal smaller than a card. */
-export const STRIP_BIG_EMS = 1.6;
-
-/** The example word under the spelling. */
-export const CARD_SMALL_EMS = 0.95;
-
-/** The leading each of the two lines is set on. */
-export const CARD_BIG_LEADING = 1.1;
-export const CARD_SMALL_LEADING = 1.35;
-
-/** The air inside a card's box, top and bottom each. */
-export const CARD_PAD_EMS = 0.42;
-
-/**
- * How tall one card stands, in ems of the body size.
- *
- * Written here and read by both the family that reserves the page and the
- * renderer that draws the box, for the reason `answerLine` gives: the failure
- * is silent on screen and is the last row of cards on a second sheet of paper.
- *
- * `rows` is how many lines the big line wraps onto — one for a spelling, and
- * however many the longest sentence needs for a strip.
- */
-export function cardRowEms(big: number, rows: number, small: boolean): number {
-  return (
-    rows * big * CARD_BIG_LEADING +
-    (small ? CARD_SMALL_EMS * CARD_SMALL_LEADING : 0) +
-    CARD_PAD_EMS * 2
-  );
-}
-
 /* ── The marks ──────────────────────────────────────────────────────────── */
 
 /**
- * The sound each single vowel letter makes when it says its own name.
+ * The sound each single vowel letter makes when it says its own name — the
+ * whole of what "long vowel" means for a marking pass.
  *
- * The whole of what "long vowel" means for a marking pass, and it is a fact
- * about the five letters rather than about any programme: the letter `a` says
- * /ai/ in `baby` and in `cake`, and the bar is what tells a child that from the
- * `a` of `cat`. A vowel *team* is not marked — `ea` and `oa` say the same
- * sounds and carry no bar in any tradition, because the second letter is
- * already the signal.
+ * A vowel *team* is not marked: `ea` and `oa` say the same sounds and carry no
+ * bar in any tradition, because the second letter is already the signal.
  */
 const SAYS_ITS_NAME = new Map<string, string>([
   ["a", "ai"],
@@ -138,17 +74,11 @@ function markOf(
  * A spelling as a card prints it: the letters as the table writes them, with a
  * split vowel written the way a page writes one — `a-e`, never `a_e`.
  *
- * Whole rather than cut in two, because on a card the spelling is the *thing*
- * — `a-e` is what a parent ticked and what the child is being shown — and a
- * card reading "a" beside a card reading "e" would be two cards that are not
- * the spelling. A macron here does real work: it is what tells the `a` of
- * `baby` from the `a` of `cat` when the two are next to each other on the wall.
- *
- * The `graphemeText` is not cosmetic and not the family's job to do afterwards:
- * a card's big line is the last thing between the table's own notation and a
- * dashed guide a parent cuts along, and an underscore an inch high reads as a
- * blank to fill in. Every other place a grapheme is printed goes through the
- * same call, so there is one answer to "how is a split vowel written down".
+ * Whole rather than cut in two, because on a card the spelling is the *thing*:
+ * `a-e` is what a parent ticked, and a card reading "a" beside a card reading
+ * "e" would be two cards that are not the spelling. A macron here does real
+ * work — it tells the `a` of `baby` from the `a` of `cat` when the two are next
+ * to each other on the wall.
  */
 export const markGrapheme = (
   entry: Correspondence,
@@ -162,9 +92,8 @@ export const markGrapheme = (
  * the word — the same reassembly `phonics.test.ts` checks the bank with — which
  * is what makes `cake` out of `c` + `a_e` + `k`, and what makes the final `e`
  * the piece the silent switch dims. A part naming a spelling this build has
- * never heard of is printed as itself and marked with nothing: a word that
- * cannot be cut is still a word, and refusing to print it would be a blank
- * space on a page where a child is expecting one.
+ * never heard of is printed as itself and marked with nothing: refusing to
+ * print it would be a blank space where a child is expecting a word.
  */
 export function markWord(entry: Word, marking: PhonicsMarking): MarkedWord {
   const head: MarkedWord = [];
@@ -179,8 +108,7 @@ export function markWord(entry: Word, marking: PhonicsMarking): MarkedWord {
     head.push(markOf(letters, found, marking));
     // The trailing half of a split vowel is silent by construction rather than
     // by anything the table says: the sound belongs to the pair, and the `e` on
-    // the end of `cake` is carrying none of it. It is also the commonest silent
-    // letter in English by a distance, which is why the switch is worth having.
+    // the end of `cake` carries none of it.
     if (trailing)
       tail.push(
         marking.silent
@@ -204,10 +132,10 @@ export const markSpelling = (
  * A whole sentence, marked word by word, with its capital and its full stop.
  *
  * The spaces are pieces of their own rather than padding on the words either
- * side, because a marked piece is drawn as a box with a rule under it: a space
- * inside a joined `sh` would draw the join across it. The capital goes on the
- * first piece and the mark on the end is a piece with nothing on it — neither
- * is part of a spelling, and neither is ever marked.
+ * side, because a marked piece is drawn as a box with a rule under it and a
+ * space inside a joined `sh` would draw the join across it. The capital goes on
+ * the first piece and the mark on the end is a piece with nothing on it —
+ * neither is part of a spelling, and neither is ever marked.
  */
 export function markSentence(
   sentence: Sentence,

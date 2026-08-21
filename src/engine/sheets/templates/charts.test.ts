@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { answerKey, buildSheet, describeSheet } from "../index";
+import { describeSheetFamily } from "../contract";
 import { printedBlockBox, sheetBlockBox } from "../chrome";
 import { ticks } from "../numberline";
 import { MARGINS, PAPERS, toInches } from "../paper";
@@ -14,19 +15,20 @@ import type {
   Sheet,
 } from "../types";
 
+import { CHART_SHEET, chartKeyed } from "./charts";
+
 /**
  * The family where being one out is the whole of the bug.
  *
- * Every sheet here is something a child measures against or counts on, so the
- * suite is arithmetic rather than judgement: a 1–100 chart has a hundred
+ * The suite is arithmetic rather than judgement: a 1–100 chart has a hundred
  * squares numbered 1 to 100 in order, a 0–100 line marked every 10 has eleven
  * ticks and not ten, a first-quadrant plane to 10 has eleven gridlines each
  * way, and a heading sits over the column it names.
  *
  * **Counted off the finished blocks.** Nothing below asks the builder what it
- * built — every count is recovered from the `Block[]` a page would render, the
- * way `search.test.ts` reads a word search's key back out of the grid. A
- * generator asserting its own arithmetic agrees with itself whatever it does.
+ * built — every count is recovered from the `Block[]` a page would render,
+ * because a generator asserting its own arithmetic agrees with itself whatever
+ * it does.
  */
 
 const config = (over: Partial<ChartConfig> = {}): ChartConfig => ({
@@ -377,6 +379,14 @@ const STYLES: ChartStyle[] = [
   "coordinate",
   "place-value",
 ];
+
+describeSheetFamily("chart", {
+  label: "Charts, number lines and grids",
+  spec: CHART_SHEET,
+  config,
+  shapes: STYLES.map((style) => ({ style })),
+  keyed: chartKeyed,
+});
 
 describe("every reference sheet", () => {
   it("is the same sheet on every build, and on every seed", () => {

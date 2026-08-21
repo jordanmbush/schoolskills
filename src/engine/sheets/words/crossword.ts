@@ -1,35 +1,24 @@
 /**
  * A crossword, grown outwards from the longest word.
  *
- * Same bargain as the word search next door and the same reason for it: the
- * squares are filled in by a placer that remembers nothing, and the numbered
- * clue list is then **read back out of the finished squares**. Nothing on the
- * sheet is taken on the placer's word.
+ * Same bargain as the word search next door: the squares are filled in by a
+ * placer that remembers nothing, and the numbered clue list is **read back out
+ * of the finished squares** (§11). Three properties come out of that and out of
+ * how words are placed, and each of them is a way a crossword ships broken:
  *
- * That buys the three properties a crossword can silently lose:
- *
- * **The crossings agree.** A square holds one letter. If 3 Across spells its
- * answer out of the grid and 1 Down spells its answer out of the same grid,
- * then wherever they meet they agree — there is only one letter there to read.
- * A generator that wrote both words into its own bookkeeping could have them
- * disagreeing about a square and never notice.
- *
- * **The numbering is the grid's.** Numbers are assigned by scanning the
- * finished squares in reading order, which is what a crossword's numbers mean.
- * They are not handed out as words are placed, which would number them in the
- * order the algorithm happened to work in.
- *
- * **It is one puzzle, not several.** Every word after the first is placed only
- * where it crosses a word already in the grid, so the finished thing is
- * connected by construction — the classic wrong answer here is a grid with two
- * unrelated islands in it, which is two half-crosswords on one page.
+ * - **The crossings agree**, because a square holds one letter and both entries
+ *   are read out of it.
+ * - **The numbering is the grid's** — assigned by scanning the finished squares
+ *   in reading order, not handed out in the order the algorithm worked in.
+ * - **It is one puzzle, not two islands**, because every word after the first is
+ *   placed only where it crosses a word already down.
  *
  * And the work is bounded twice over. A word is offered the positions its own
  * letters allow, once per pass; there are at most `PASSES` passes and at most
- * `ATTEMPTS` layouts, and both stop early when they stop helping. Nothing in
- * here waits for a random draw to come good, so a list of twenty words that
- * share no letters produces a sheet naming nineteen of them rather than a tab
- * that never finishes.
+ * `ATTEMPTS` layouts, and both stop early when they stop helping. Nothing here
+ * waits for a random draw to come good, so a list of twenty words that share no
+ * letters produces a sheet naming nineteen of them rather than a tab that never
+ * finishes.
  */
 import { shuffled } from "@/engine/random";
 
@@ -78,12 +67,12 @@ const at = (cells: Cells, x: number, y: number): string | null =>
  * - **It may not swallow an entry already in the grid.** AS sits inside ASK
  *   letter for letter, so an ASK written over an AS that a previous pass put
  *   down costs a word: every letter is still on the paper, and AS has no
- *   squares of its own to be written in and no number to be clued by. Two
- *   letters or more running the word's own way inside its span *is* an existing
- *   entry, so that is what is refused — a lone occupied square is a crossing,
- *   which is the whole point. (The sheet would still tell the truth about it
- *   without this rule, because the missing list is read off the grid. This is
- *   about keeping the word, not about admitting to losing it.)
+ *   squares of its own and no number to be clued by. Two letters or more
+ *   running the word's own way inside its span *is* an existing entry, so that
+ *   is what is refused — a lone occupied square is a crossing, which is the
+ *   whole point. (The sheet would still tell the truth without this rule,
+ *   because the missing list is read off the grid. This is about keeping the
+ *   word, not about admitting to losing it.)
  *
  * `undefined` for "no", a crossing count for "yes" — one return rather than a
  * boolean and a second pass, because the count is what the placement is scored
@@ -203,9 +192,8 @@ export type Crossword = {
  *
  * A square starts an entry across when there is nothing to its left and
  * something to its right, and down when there is nothing above and something
- * below — the rule every crossword in the world is numbered by. Numbers run in
- * reading order and a square that starts both directions takes one number for
- * the pair, which is why this is one pass and not two.
+ * below. Numbers run in reading order and a square that starts both directions
+ * takes one number for the pair, which is why this is one pass and not two.
  */
 function readEntries(
   cells: Cells,
@@ -293,13 +281,13 @@ function crop(cells: Cells): Cells {
  * by the seed.
  *
  * Then the words that found nowhere to go are offered the grid again, up to
- * `PASSES` times over. That is not the "shuffle and try again" this file is at
- * pains to avoid — nothing is re-randomised and nothing is undone. It is that
- * the question genuinely changes: a word needs a letter to cross, and every
- * word placed after it put more letters on the board. BECAUSE with no U to hang
- * on when its turn came may well have one by the time DOG and THE have landed.
- * The loop stops the moment a whole pass places nothing, so the work is bounded
- * by the words rather than by the constant.
+ * `PASSES` times over. That is not "shuffle and try again" — nothing is
+ * re-randomised and nothing is undone. The question genuinely changes: a word
+ * needs a letter to cross, and every word placed after it put more letters on
+ * the board, so BECAUSE with no U to hang on when its turn came may well have
+ * one by the time DOG and THE have landed. The loop stops the moment a whole
+ * pass places nothing, so the work is bounded by the words rather than by the
+ * constant.
  */
 const PASSES = 3;
 
@@ -354,10 +342,9 @@ function attempt(
 
   // **The missing list is read off the finished grid, not off the placer.** A
   // word is on the sheet when it has squares of its own and a number to be
-  // clued by, and that is a question about the grid rather than about whether
-  // `write` was called — the two came apart the first time ASK was laid over an
-  // AS that was already there. Asking the paper is the same discipline the
-  // answer key is derived by, and it cannot make that mistake.
+  // clued by, which is a question about the grid rather than about whether
+  // `write` was called — the two come apart when ASK is laid over an AS that
+  // was already there.
   //
   // In the order the parent typed them, because the list on the sheet is a list
   // of their words rather than of the placer's regrets.
@@ -376,16 +363,12 @@ function attempt(
 /**
  * How many layouts are tried before the best of them is kept.
  *
- * Which words land is decided almost entirely by which word is laid down first:
- * COULD shares not one letter with AFTER, AGAIN or EVERY, so a sight-word list
- * anchored on COULD places three of its twelve words and the same list anchored
- * on AFTER places nine. That is not a flaw in the placer, it is the shape of
- * English — and the fix is not a cleverer placer but a second opinion.
+ * Which words land is decided almost entirely by which word is laid down first,
+ * and by enough to be worth several goes rather than a cleverer placer (§11).
  *
  * Six goes, each off the same seeded stream, and the one with the most words in
  * it wins. Bounded work, still a pure function of `(config, seed)`, and it
- * stops early the moment a layout takes every word there is — there is nothing
- * left to beat.
+ * stops early the moment a layout takes every word there is.
  */
 const ATTEMPTS = 6;
 

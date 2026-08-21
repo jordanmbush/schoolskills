@@ -2,16 +2,14 @@
  * A whole, cut into equal parts.
  *
  * The bar and the circle a fraction is taught from before it is a pair of
- * numbers. Like a number line, it is a drawing attached to a problem rather
- * than a block of its own — the problem grid is the shared primitive every
- * maths family prints through, and a picture the question is *about* belongs
- * inside the question.
+ * numbers. Like a number line, it is a drawing attached to a problem rather than
+ * a block of its own — the problem grid is the shared primitive every maths
+ * family prints through, and a picture the question is *about* belongs inside
+ * the question.
  *
- * How big it is drawn lives here rather than in the renderer, for the same
- * reason `NUMBER_LINE_HEIGHT` does: the family reserves the height of a row
- * before anything is drawn (§4), and a diagram that came out taller than the
- * reservation is the bottom row of the page on a second sheet of paper. So
- * there is one set of dimensions and both halves read it.
+ * How big it is drawn lives here rather than in the renderer, because a family
+ * reserves the height of a row before anything is drawn (§4) — one set of
+ * dimensions, and both halves read it.
  *
  * The sizes are inches and do not scale with the body type. A diagram is a
  * physical object a child colours in — a quarter is a quarter of the same bar

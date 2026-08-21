@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { answerKey, buildSheet, describeSheet, sheetSpec } from "../index";
+import { buildSheet, describeSheet } from "../index";
+import { describeSheetFamily } from "../contract";
 import { PROBLEM_GAP } from "../layout";
 import type {
   FractionConfig,
@@ -65,9 +66,9 @@ const config = (over: Partial<FractionConfig> = {}): FractionConfig => ({
 });
 
 /**
- * Every shape the family can print, which is every acceptance criterion of the
- * story: naming from bars and from circles, equivalence, simplifying, the four
- * operations, like and unlike denominators, and mixed numbers through all of it.
+ * Every shape the family can print: naming from bars and from circles,
+ * equivalence, simplifying, the four operations, like and unlike denominators,
+ * and mixed numbers through all of it.
  */
 const EVERY_SHAPE: Array<Partial<FractionConfig>> = [
   {},
@@ -99,6 +100,14 @@ const EVERY_SHAPE: Array<Partial<FractionConfig>> = [
 ];
 
 const SEEDS = [0, 1, 2, 7, 4242];
+
+describeSheetFamily("fractions", {
+  label: "Fractions",
+  spec: FRACTIONS_SHEET,
+  config,
+  shapes: EVERY_SHAPE,
+  seeds: SEEDS,
+});
 
 /** The one block a fraction sheet has, narrowed for the reader. */
 function problemsOf(over: Partial<FractionConfig>, seed: number): Problem[] {
@@ -208,11 +217,6 @@ function holds(sentence: string): boolean {
 /* ── The registry ──────────────────────────────────────────────────────── */
 
 describe("the fractions family", () => {
-  it("is in the registry under the kind its config carries", () => {
-    expect(sheetSpec("fractions")).toBe(FRACTIONS_SHEET);
-    expect(sheetSpec("fractions").label).toBe("Fractions");
-  });
-
   it("names what it prints, in the terms a parent chose it by", () => {
     expect(describeSheet(config())).toBe(
       "Adding fractions — denominators to 12",
@@ -301,26 +305,6 @@ describe("the answer key", () => {
           ).toBe(true);
         }
       }
-    }
-  });
-
-  it("prints the answers only when the sheet is a key", () => {
-    const sheet = buildSheet(config(), 5);
-    const key = answerKey(config(), 5);
-    expect(sheet.answers).toBe(false);
-    expect(key.answers).toBe(true);
-    expect(key.footer.note).toBe("Answer key");
-  });
-
-  it("is the same sheet keyed, never a second generation", () => {
-    // The key is not built again from the seed — it is the build, told to print
-    // what it already worked out. So the blocks on the two are equal, and a key
-    // cannot disagree with the sheet it belongs to. The picture on a naming
-    // sheet is part of that: it is the question, so it is on both.
-    for (const shape of EVERY_SHAPE) {
-      expect(answerKey(config(shape), 11).blocks).toEqual(
-        buildSheet(config(shape), 11).blocks,
-      );
     }
   });
 
@@ -558,7 +542,7 @@ describe("what may be on the page", () => {
   it("prints nothing rather than something wrong when the ask is impossible", () => {
     // No denominators at all, and unlike denominators from a pool with one
     // denominator in it. Both are empty sheets, which is the honest answer and
-    // the builder's job to prevent (PRINT13).
+    // the builder's job to prevent.
     expect(problemsOf({ denominators: [] }, 1)).toEqual([]);
     expect(problemsOf({ denominators: [4], pairing: "unlike" }, 1)).toEqual([]);
     // And a nought in a saved config is not a slow sheet — it is a fraction
@@ -570,21 +554,6 @@ describe("what may be on the page", () => {
 /* ── Determinism, and the three features it buys (§7) ──────────────────── */
 
 describe("(config, seed)", () => {
-  it("builds the same sheet twice", () => {
-    for (const shape of EVERY_SHAPE) {
-      for (const seed of SEEDS) {
-        const once = buildSheet(config(shape), seed);
-        const twice = buildSheet(config(shape), seed);
-        expect(once).not.toBe(twice);
-        expect(once).toEqual(twice);
-      }
-    }
-  });
-
-  it("carries the seed into the footer, so the same sheet can be had again", () => {
-    expect(buildSheet(config(), 12_345).footer.seed).toBe(12_345);
-  });
-
   it("draws the same problems for a seed as it did the day it shipped", () => {
     // Building twice in one process only proves the draw is a function of
     // `(config, seed)`. The promise the footer makes is bigger than that: the

@@ -1,33 +1,21 @@
 /**
  * What the bench opens on, for every family it can make.
  *
- * One config each, and each one a sheet somebody would actually print: the
- * builder's first job is to show a page rather than a form, so switching family
- * has to produce a finished worksheet before a single option is touched. That
- * is the same bargain the catalog pages strike (§8) — a page that *is* the
- * sheet — reached from the other side.
- *
- * It lives in the view rather than in the engine, and that is deliberate. A
- * family's `SheetSpec` says what it can build, not what a parent probably
- * wants; "twenty-four sums with both numbers under twenty" is an editorial
- * judgement about children, of a piece with the copy in `_maths.ts`, and the
- * engine has no business holding one. `deckSpec` draws the same line.
+ * Each is a sheet somebody would print unchanged, which is the rule the rest of
+ * the file follows, and each is an editorial judgement rather than a technical
+ * one — §14 is where both are argued.
  *
  * Every value here is inside the range its own family clamps to, so nothing
- * below can produce a sheet that fails to fit — the builder never opens on a
- * page it would have to apologise for.
+ * below can open on a sheet that fails to fit.
  */
 import { WORD_LISTS, listWords } from "@/engine/decks/wordlists";
 import { DEFAULT_FONT_PT, DEFAULT_PAPER } from "@/engine/sheets/paper";
 import type { SheetConfig, SheetOptions } from "@/engine/sheets/types";
 
 /**
- * The name and date line, printed blank, always.
- *
- * There is nowhere in a config to put a value for either (§1), which is what
- * makes the shared-link half of this screen safe by construction rather than by
- * a rule somebody has to remember: a child's name is written on the paper with
- * a pencil and never travels in a URL.
+ * The name and date line, printed blank, always. There is nowhere in a config to
+ * put a value for either (§1), which is what makes the shared-link half of this
+ * screen safe by construction rather than by a rule somebody has to remember.
  */
 const BASE: SheetOptions = {
   paper: DEFAULT_PAPER,
@@ -35,48 +23,33 @@ const BASE: SheetOptions = {
   fields: ["name", "date"],
 };
 
-/** The twelve tables, which is what a fact sheet draws from unless told less. */
 const TABLES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 
-/** Halves through twelfths, skipping the ones a primary child never meets. */
+/** Halves through twelfths, less the ones a primary child never meets. */
 const DENOMINATORS = [2, 3, 4, 5, 6, 8, 10, 12];
 
 /**
- * The first sight words: what a first word list is made of, wherever one is
- * needed.
+ * The first sight words, off the list the jungle already ships, so the words a
+ * child is racing are the words they are writing. Twelve rather than the whole
+ * list, because a page of forty words written three times each fits nothing
+ * else.
  *
- * Taken from the list the jungle already ships rather than typed out again, so
- * the words a child is racing on screen are the words they are writing on
- * paper. Twelve rather than the whole list, because a page of forty words
- * written three times each is a page that fits nothing else — and because the
- * sheet is a starting point somebody replaces rather than the sheet they came
- * for.
- *
- * Exported because the catalog's own sight-word sheet is meant to be the sheet
- * the bench opens on (`pages/printables/_handwriting.ts`), and two slices of
- * the same list are two lists that can quietly stop matching.
+ * Exported so the catalog's own sight-word sheet is built from this same slice
+ * (`pages/printables/_handwriting.ts`) — two slices of one list are two lists
+ * that can quietly stop matching.
  */
 export const STARTER_WORDS = listWords(WORD_LISTS[0]).slice(0, 12);
 
 /**
- * One sound each for the letters of the alphabet — where a phonics sheet opens.
+ * The commonest sound of each of the twenty-six letters — where a phonics sheet
+ * opens, because a sheet built from an empty inventory is a blank page.
  *
- * **This is not a preset and not a sequence.** `engine/sheets/phonics/
- * inventory.ts` is explicit that shipping "Lesson 47" would be reproducing
- * somebody's copyrighted course by reference, and shipping "Level 3" would be
- * pretending there is one course when the point of the model is that there
- * isn't. What is below is neither: it is the commonest sound of each of the
- * twenty-six letters, which every scheme on earth teaches and none of them
- * owns, and it is here for exactly the reason `STARTER_WORDS` is — the bench's
- * first job is to show a sheet rather than a form, and a sheet built from an
- * empty inventory is a blank page.
+ * **Not a preset and not a sequence**: a named set of sounds is somebody's
+ * copyrighted course (§13). This one has no name at all, and a parent ticks
+ * their way to their own in the panel (`services/phonics.ts`).
  *
- * A parent ticks their way to their own list in the panel and keeps it under
- * their own name (`services/phonics.ts`). This one has no name at all.
- *
- * Exported because the catalog's phonics pages are meant to be built from the
- * same starting point (`pages/printables/_phonics.ts`), and two lists of the
- * letters would be two lists that could quietly stop matching.
+ * Exported so the catalog's phonics pages start from the same list
+ * (`pages/printables/_phonics.ts`) rather than a second copy of it.
  */
 export const FIRST_LETTERS: string[] = [
   "b:b",
@@ -108,53 +81,39 @@ export const FIRST_LETTERS: string[] = [
 ];
 
 /**
- * A passage to open the copywork style on.
+ * What the copywork *paste box* holds, not what the sheet prints: copywork opens
+ * on a passage out of the library below, and `copyworkSource` prefers the
+ * library wherever both are set. Clearing the passage is what brings this back,
+ * so the box a parent lands in is never empty.
  *
- * A pangram first, because a sentence set for handwriting is chosen for the
- * letters it uses rather than for what it says, and this one uses all of them.
- * The second line is there so the box arrives holding two lines: a passage is
- * broken where the paper runs out, and a parent who has never seen that happen
- * would not know a newline of their own is honoured.
- *
- * It is what the *paste* box holds rather than what the sheet prints: copywork
- * opens on a passage out of the library (see below), and `copyworkSource`
- * prefers the library wherever both are set. Clearing the passage is what
- * brings this back, which is the point of it being here at all — the box a
- * parent lands in is never empty.
+ * A pangram, because a sentence set for handwriting is chosen for the letters it
+ * uses rather than for what it says. The second line is there so the box arrives
+ * holding two: a passage is broken where the paper runs out, and a parent who
+ * has never seen that happen would not know a newline of their own is honoured.
  */
 const PASSAGE =
   "The quick brown fox jumps over the lazy dog.\nGood handwriting is slow before it is neat.";
 
 /**
- * The passage the two library families open on.
- *
- * Psalm 23 for copywork, because it is the piece of English most likely to be
- * the reason somebody came looking for a copywork sheet at all, and it is long
+ * The passage the two library families open on. Psalm 23 for copywork, long
  * enough that the sheet arrives looking like a page of work rather than a
- * demonstration. John 3:16 for memory work, because a memory sheet wants a
- * verse somebody would actually set to be learnt by heart, and twenty-five
- * words is what four rounds of it fit into.
+ * demonstration; John 3:16 for memory work, whose twenty-five words are what
+ * four rounds of it fit into.
  *
- * Both are one entry in the same picker as the Gettysburg Address and "The
- * Owl and the Pussy-Cat" (§12), and either is replaced in two clicks.
+ * Both are one entry in the same picker as the Gettysburg Address (§12), and
+ * either is replaced in two clicks.
  */
 const COPYWORK_PASSAGE = "psalm-23";
 const MEMORY_PASSAGE = "for-god-so-loved-the-world";
 
 /**
- * A passage to open memory work's own paste box on.
+ * What choosing "Your own words" leaves memory work holding. Without it that
+ * choice lands a parent in an empty box, `memoryLayout` finds no words to take
+ * out, and the preview goes to a header over a blank page.
  *
- * Not `PASSAGE` above, for two reasons. A memory sheet is something somebody
- * means to know by heart, where a handwriting sentence is chosen for the letters
- * it happens to use; and a round is a paragraph — `memory.ts` sets a passage's
- * own line breaks as spaces — so the second line of a pangram would arrive
- * looking like a break the sheet then ignored.
- *
- * Here for the reason `PASSAGE` is: the family opens on the library, and this is
- * what choosing "Your own words" leaves behind. Without it that choice lands a
- * parent in an empty box, `memoryLayout` finds no words to take out, and the
- * preview goes to a header over a blank page — the one thing the bench must
- * never show.
+ * One paragraph rather than `PASSAGE` above: `memory.ts` sets a passage's own
+ * line breaks as spaces, so a pangram's second line would arrive looking like a
+ * break the sheet then ignored.
  */
 const MEMORY_TEXT = "A verse is learnt by saying it, not by reading it again.";
 
@@ -164,10 +123,6 @@ const DEFAULTS: Record<string, SheetConfig> = {
   chart: {
     ...BASE,
     kind: "chart",
-    // The hundred chart, blank, 1 to 100. The reference a parent recognises
-    // from across the room, and the only one of the four that is an exercise as
-    // well as a wall chart — so the bench opens on a sheet with something to do
-    // on it and a key behind it. The other three are one control away.
     style: "hundred",
     range: { min: 1, max: 100 },
     filled: false,
@@ -175,18 +130,12 @@ const DEFAULTS: Record<string, SheetConfig> = {
   form: {
     ...BASE,
     kind: "form",
-    // The reading log, because it is the sheet on this shelf a parent
-    // recognises from across the room and the one that looks most like a thing
-    // to print at a glance. The other eight are one control away, and the
-    // control lists them in the order a week uses them.
     style: "reading-log",
     rows: 14,
   },
   planner: {
     ...BASE,
     kind: "planner",
-    // A blank month, undated. The dates are a tick box away, and a calendar
-    // with no year on it is the one a family pins up and keeps.
     style: "calendar",
     rows: 5,
     // No name line: a wall chart is not handed in.
@@ -195,9 +144,6 @@ const DEFAULTS: Record<string, SheetConfig> = {
   cards: {
     ...BASE,
     kind: "cards",
-    // Eight blank flashcards, which is the plainest thing this shelf makes and
-    // the thing "blank flashcards" is a query for. Words, verses, tags and
-    // certificates are all one control away.
     style: "flashcard",
     up: 8,
     fields: [],
@@ -205,8 +151,6 @@ const DEFAULTS: Record<string, SheetConfig> = {
   net: {
     ...BASE,
     kind: "net",
-    // The die, because it is an object rather than a page and that is the point
-    // of the pair. The spinner is one control away.
     style: "dice",
     fields: [],
   },
@@ -336,10 +280,6 @@ const DEFAULTS: Record<string, SheetConfig> = {
     ...BASE,
     kind: "words",
     style: "copy",
-    // A spelling family with an empty list is a page with nothing on it, and
-    // the bench's first job is to show a sheet rather than a form. So it opens
-    // on the first shipped sight-word list, which is a worksheet somebody would
-    // print unchanged — and the three bootstraps replace it in one press.
     words: STARTER_WORDS,
     times: 3,
     gaps: 2,
@@ -349,32 +289,23 @@ const DEFAULTS: Record<string, SheetConfig> = {
   "word-study": {
     ...BASE,
     kind: "word-study",
-    // Rhyming, circled: the youngest sheet on this shelf and the one that looks
-    // most like a worksheet at a glance, which is what the bench opening on it
-    // has to do. Every other topic is one control away, and the control lists
-    // them in the order they are taught.
     topic: "rhyming",
     style: "choose",
     count: 12,
-    // Only the written topics lay their questions out across the page, and this
-    // is what they get when a parent switches to one — a circle-one sheet is a
-    // list down the page whatever this says (`studyLayout`).
+    // What the written topics get when a parent switches to one — a circle-one
+    // sheet is a list down the page whatever this says (`studyLayout`).
     columns: 2,
   },
   puzzle: {
     ...BASE,
     kind: "puzzle",
-    // A word search, because it is the one of the three a parent recognises
-    // from across the room — and the bench's first job is to show a sheet
-    // rather than a form. The same starter list as the spelling family, so
-    // switching between the two shelves keeps the words a parent is looking at.
+    // The same starter list as the spelling family, so switching between the two
+    // shelves keeps the words a parent is looking at.
     style: "search",
     words: STARTER_WORDS,
     // Twelve squares holds a ten-letter word with room to hide it, and comes
     // out at the full cell size on both stocks.
     size: 12,
-    // The usual school puzzle. Diagonals and backwards words are each one
-    // control away, and each is a different kind of harder.
     directions: "across-down",
     reverse: false,
     overlap: true,
@@ -384,10 +315,6 @@ const DEFAULTS: Record<string, SheetConfig> = {
   grammar: {
     ...BASE,
     kind: "grammar",
-    // Parts of speech, circled: the topic a parent recognises the name of, and
-    // the one shape of grammar question that looks like a worksheet at a
-    // glance. The other four are one control away, and the control lists them
-    // in the order they are taught.
     topic: "parts",
     style: "choose",
     count: 12,
@@ -398,14 +325,10 @@ const DEFAULTS: Record<string, SheetConfig> = {
   phonics: {
     ...BASE,
     kind: "phonics",
-    // Blending, because it is the one of the seven that looks like a worksheet
-    // at a glance and the one a child does most days. Everything else — the
-    // cards to cut out, the wall chart, the dictation lines, the sentence
-    // strips — is one control away.
     style: "blending",
     inventory: { sounds: FIRST_LETTERS, tricky: ["the"] },
-    // All three off. A marked sheet is a choice a parent makes; most schemes
-    // print plain text and mark on the whiteboard.
+    // A marked sheet is a choice a parent makes; most schemes print plain text
+    // and mark on the whiteboard.
     marking: {},
     count: 20,
     columns: 2,
@@ -414,8 +337,7 @@ const DEFAULTS: Record<string, SheetConfig> = {
     ...BASE,
     kind: "handwriting",
     style: "letters",
-    // The ⅝ rule with a tail space, which is what a school means by
-    // "handwriting paper" — and the sheet a parent is likeliest to want first.
+    // The ⅝ rule with a tail space: what a school means by "handwriting paper".
     rule: { style: "hand-5-8", midline: "dashed", descender: true },
     letters: "both",
     trace: "dotted",
@@ -431,8 +353,8 @@ const DEFAULTS: Record<string, SheetConfig> = {
     kind: "memory",
     passage: MEMORY_PASSAGE,
     text: MEMORY_TEXT,
-    // The whole verse, two rounds with more of it gone, and one with none of
-    // it left — the shortest progression that is still a progression.
+    // The whole verse, two rounds with more of it gone, and one with none of it
+    // left — the shortest progression that is still a progression.
     rounds: 4,
   },
   "word-problems": {
@@ -451,12 +373,9 @@ export const FIRST_SHEET = "arithmetic";
 
 /**
  * A starting config for a family, or the first sheet's if this build has never
- * heard of it.
- *
- * Never throws, for the same reason `sheetSpec` doesn't: the kind can come from
- * a picker built out of `listSheets()`, and a family added to the registry
- * without a default here would otherwise take the whole bench down rather than
- * open on something.
+ * heard of it. Never throws, for the same reason `sheetSpec` doesn't: a family
+ * added to the registry without a default here would otherwise take the whole
+ * bench down rather than open on something.
  */
 export function defaultConfig(kind: string): SheetConfig {
   return Object.hasOwn(DEFAULTS, kind) ? DEFAULTS[kind] : DEFAULTS[FIRST_SHEET];

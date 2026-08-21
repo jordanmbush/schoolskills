@@ -5,30 +5,23 @@ import { TEMPLATE_SHEETS, pathFor, templateShelf } from "../_templates";
 import HubLinks from "../_HubLinks.astro";
 
 /**
- * The forms-and-templates hub — a peer of `/printables/math`,
- * `/printables/spelling`, `/printables/grammar`, `/printables/phonics`,
- * `/printables/handwriting`, `/printables/cursive`, `/printables/bible` and
- * `/printables/charts`.
+ * The forms-and-templates hub.
  *
- * A listing rather than a sheet, like the other hubs, and that is the right
- * split: nobody searches for "printable list of blank forms". What it is for is
- * the two jobs a hub does — giving a parent who arrived on
- * `/printables/templates/chore-chart` somewhere to go next, and giving the
- * twenty-two pages a crawlable parent that says what they have in common.
+ * A listing rather than a sheet, like the other hubs: nobody searches for
+ * "printable list of blank forms". It gives a parent who arrived on one form
+ * somewhere to go next, and gives the pages under it a crawlable parent.
  *
  * What they have in common is worth a section of its own here, because it is
  * the argument for the whole shelf and it is an unusual one: these sheets are
- * valuable *because* they are blank. There is no content on them to be wrong
- * about, which is exactly why a lab report form is honest and a page of
- * generated science would not be (§11). The three things on the shelf that are
- * worked out rather than left empty — a calendar's weekdays, a die's faces and a
- * spinner's sectors — are worked out because each is a claim a child could catch
- * us being wrong about.
+ * valuable *because* they are blank, so there is no content on them to be wrong
+ * about (§11). The three things worked out rather than left empty — a
+ * calendar's weekdays, a die's faces, a spinner's sectors — are worked out
+ * because each is a claim a child could catch us being wrong about.
  *
- * `<title>`, `description` and `jsonLd` name the shelf rather than the three
- * sheets on it that carry a verse. §12 is explicit that those surfaces are
- * marketing and that Scripture belongs in the body as content: it is listed
- * below with everything else, in the group it belongs to.
+ * `<title>`, `description` and `jsonLd` name the shelf rather than the sheets
+ * on it that carry a verse. §12 is explicit that those surfaces are marketing
+ * and that Scripture belongs in the body as content: it is listed below with
+ * everything else, in the group it belongs to.
  */
 const title =
   "Free printable forms, planners, charts and templates | School Skills";
@@ -78,9 +71,7 @@ const groups = templateShelf();
   {
     /*
       What exists, first — before the page explains itself. Somebody who came
-      looking for a chore chart should be one link from a chore chart, and the
-      argument about why a blank sheet is the honest one reads better after you
-      have seen the shelf it is about.
+      looking for a chore chart should be one link from a chore chart.
     */
   }
   <section class="band band--tight wrap no-print">

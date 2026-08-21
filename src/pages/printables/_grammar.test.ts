@@ -180,10 +180,10 @@ describe("the sheet on a catalog page", () => {
 
   it("quotes only sentences the sheet printed under the prose says", () => {
     // The page IS the sheet (§8), so a note that quotes a sentence is telling a
-    // reader to look down the page and find it. Three of them did not: the
-    // sentences were real bank sentences, and the seed-1 draw simply did not
-    // contain them. Nothing but a test can keep the two together, because a
-    // count or a seed moving is what breaks it and neither looks like prose.
+    // reader to look down the page and find it. A quotation can be a real bank
+    // sentence and still not be in this page's draw. Nothing but a test keeps
+    // the two together, because what breaks it is a count or a seed moving, and
+    // neither looks like prose.
     for (const sheet of GRAMMAR_SHEETS) {
       const printed = built(sheet).blocks.flatMap(prompts).map(same);
       const prose = [sheet.lead, sheet.summary, ...sheet.notes];

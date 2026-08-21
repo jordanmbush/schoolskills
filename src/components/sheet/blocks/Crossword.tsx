@@ -4,15 +4,13 @@
  *
  * An `<svg>` rather than a table for the reason the word search is one — the
  * letters of the key have to land in the same coordinate system as the boxes
- * they belong in — and squares drawn as strokes rather than as filled cells for
- * the reason everything on a sheet is: background paint is what a browser drops
- * when printing (§5), and a crossword whose grid came out as blank paper is not
- * a puzzle at all.
+ * they belong in — and squares drawn as strokes rather than as filled cells
+ * because background paint is what a browser drops when printing (§5).
  *
  * The clues are real HTML under it, so they are selectable, they wrap, and a
  * crawler reads them as the text they are.
  */
-import { searchCell } from "@/engine/sheets/words/search";
+import { searchCell } from "@/engine/sheets/words/metrics";
 import type { CrosswordEntry } from "@/engine/sheets/types";
 
 import { HAIRLINE, inch } from "../units";
@@ -84,8 +82,7 @@ export function Crossword({ block, metrics }: BlockProps<"crossword">) {
                 )}
                 {/* The letter is on the square whether or not this is a key;
                     `answers` decides whether it is printed. Same bargain as a
-                    ruled slot, and the reason a key cannot disagree with the
-                    sheet it came from. */}
+                    ruled slot, so a key cannot disagree with its sheet. */}
                 {metrics.answers && (
                   <text
                     className="sheet__cell sheet__cell--answered"
@@ -119,8 +116,8 @@ export function Crossword({ block, metrics }: BlockProps<"crossword">) {
  *
  * The number is a `<span>` rather than a list marker for the reason every
  * numbered list on a sheet is: markers are stripped site-wide, a marker sits
- * outside the box and therefore outside the margin, and "do 4, 7 and 12" needs
- * its numbers to be text somebody can select.
+ * outside the box and therefore outside the margin, and a child told to "do 4,
+ * 7 and 12" needs the numbers to be on the paper.
  */
 function Clues({
   heading,

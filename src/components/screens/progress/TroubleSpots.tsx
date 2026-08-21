@@ -40,8 +40,8 @@ export function TroubleSpots({
    */
   elsewhere?: WorldInfo;
   /**
-   * The same facts as a worksheet, or null where this build has no sheet for
-   * them — a typing passage is not a page of problems.
+   * The same facts as a worksheet, or null where this build has no sheet
+   * family for them. `Progress` builds it.
    */
   printable: SheetConfig | null;
 }) {

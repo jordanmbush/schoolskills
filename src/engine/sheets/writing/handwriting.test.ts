@@ -7,6 +7,8 @@ import {
   glyphEm,
   isCursive,
 } from "../faces";
+import { describeSheet } from "../index";
+import { describeSheetFamily } from "../contract";
 import { ruleCapacity, ruledLines } from "../layout";
 import { RULINGS, inches, rulePitch, toInches, writingSpace } from "../paper";
 import {
@@ -28,7 +30,6 @@ import {
   DEFAULT_HAND_RULE,
   HANDWRITING_SHEET,
   MAX_REPEATS,
-  describeHandwriting,
   fontOf,
   handwritingLayout,
   instructionOf,
@@ -41,20 +42,11 @@ import { JOIN_FAMILIES, joinPairs } from "./joins";
  * The family where the paper is the exercise.
  *
  * Three properties carry this sheet, and none of them can be seen by looking at
- * a screen:
- *
- * **The ruling is the size it says it is.** A ⅝ rule is ⅝ of an inch under a
- * ruler or the child is being taught the wrong size of letter. Every row is one
- * repeat of the ruling, so that promise is the row pitch and nothing else.
- *
- * **The model sits on the rules.** The tallest letter stands on the baseline
- * and reaches the top line, in whichever of the five faces the sheet is set
- * in — which is arithmetic over proportions measured out of the font files
- * (`faces.ts`), not a guess that happens to look right in one of them.
- *
- * **What is asked for is what is printed.** A page that quietly dropped `8` and
- * `9` off a sheet of number formation is a sheet that teaches eight numerals,
- * and nothing on screen would say so.
+ * a screen: the ruling is the size it says it is, which is the row pitch and
+ * nothing else; the tallest letter stands on the baseline and reaches the top
+ * line in whichever of the five faces the sheet is set in; and what is asked
+ * for is what is printed — a page that quietly dropped `8` and `9` off a sheet
+ * of number formation is a sheet that teaches eight numerals.
  */
 
 const BASE: HandwritingConfig = {
@@ -94,6 +86,20 @@ const written = (rows: TraceRow[]): string[] => [
     ),
   ),
 ];
+
+describeSheetFamily("handwriting", {
+  label: "Handwriting practice",
+  spec: HANDWRITING_SHEET,
+  config,
+  shapes: [
+    {},
+    { style: "numbers" },
+    { style: "joins", font: "cursive" },
+    { style: "words", words: ["cat", "dog"] },
+    { style: "passage", text: "One line." },
+  ],
+  keyed: () => false,
+});
 
 describe("what goes on a handwriting sheet", () => {
   it("writes the whole alphabet, upper and lower, on one page", () => {
@@ -595,12 +601,12 @@ describe("joined writing", () => {
   });
 
   it("names itself by the hand it is written in", () => {
-    expect(describeHandwriting(config({ style: "joins", repeats: 3 }))).toBe(
+    expect(describeSheet(config({ style: "joins", repeats: 3 }))).toBe(
       'Joining letters — the common joins — handwriting ⅝" — written 3 times',
     );
-    expect(
-      describeHandwriting(config({ style: "joins", joins: "round" })),
-    ).toContain("joins into a round letter");
+    expect(describeSheet(config({ style: "joins", joins: "round" }))).toContain(
+      "joins into a round letter",
+    );
   });
 });
 
@@ -720,7 +726,7 @@ describe("copywork out of the passage library", () => {
     );
     expect(sheet.header.title).toBe("Copywork — Proverbs 3:5-6");
     expect(
-      describeHandwriting(config({ style: "passage", passage: VERSE })),
+      describeSheet(config({ style: "passage", passage: VERSE })),
     ).toContain("Proverbs 3:5-6");
   });
 
@@ -754,16 +760,6 @@ describe("copywork out of the passage library", () => {
 /* ── The sheet itself ──────────────────────────────────────────────────── */
 
 describe("the sheet", () => {
-  it("is the same page on every build", () => {
-    // §7, and what lets a catalog page be prerendered: a parent who printed
-    // this in March prints the identical sheet in June.
-    for (const seed of [0, 1, 4242]) {
-      expect(JSON.stringify(HANDWRITING_SHEET.build(config(), seed))).toBe(
-        JSON.stringify(HANDWRITING_SHEET.build(config(), seed)),
-      );
-    }
-  });
-
   it("has nothing to mark and no key to disagree with it", () => {
     const sheet = HANDWRITING_SHEET.build(config(), 1);
     // No score box: a handwriting sheet is not marked out of anything, and a
@@ -779,10 +775,10 @@ describe("the sheet", () => {
   });
 
   it("names itself in the terms it was chosen by", () => {
-    expect(describeHandwriting(config())).toBe(
+    expect(describeSheet(config())).toBe(
       'Letter practice — capitals and small letters — handwriting ⅝" — written 3 times',
     );
-    expect(describeHandwriting(config({ style: "numbers", repeats: 4 }))).toBe(
+    expect(describeSheet(config({ style: "numbers", repeats: 4 }))).toBe(
       'Number formation — 0 to 9 — handwriting ⅝" — written 4 times',
     );
   });

@@ -7,8 +7,7 @@ import type { CardResult, TypingConfig } from "@/engine/types";
 import { LessonBars } from "./LessonBars";
 
 /**
- * The bars a lesson is run against, while it is being run
- * (docs/typing.md §7, §6.1).
+ * The bars a lesson is run against, while it is being run (§7, §6.1).
  *
  * What the numbers mean is pinned next door in `verdict.test.ts`, and this
  * file deliberately does not re-test it: these bars come from `verdictFor`
@@ -71,8 +70,7 @@ const render = (lesson = L01, cards: CardResult[] = [], elapsedMs = 60000) =>
 
 describe("LessonBars", () => {
   it("shows accuracy, then the new key, then speed", () => {
-    // §6.1's order, which is the order they matter: a child who is failing
-    // both should be told about the accuracy first.
+    // §6.1's order, which is the order they matter.
     expect(render().map((row) => row.label)).toEqual([
       "Accuracy",
       "New key f",
@@ -102,10 +100,8 @@ describe("LessonBars", () => {
   });
 
   /**
-   * The one that matters at seven. A lesson introduces two keys as a rule and
-   * fifteen at lesson 31, and the gate is every one of them at once (§6.4) —
-   * so the bar worth the room is the key that is holding you up, and naming it
-   * is the instruction.
+   * A lesson can introduce fifteen keys and the gate is every one of them at
+   * once (§6.4), so the one bar worth the room is the key holding you up.
    */
   it("names the key that is holding the run up", () => {
     const drill = [

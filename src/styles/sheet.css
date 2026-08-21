@@ -11,21 +11,10 @@
    and every length in here is an inch, a point, or an em of a size that was
    itself set in points.
 
-   ── One name collision, settled ─────────────────────────────────────────────
-   `screens.css` used to have a `.sheet` of its own: the modal panel behind the
-   player editor and the quit confirmation. The two never met while this file
-   arrived with the renderer and that one with `index.css` on the game islands —
-   but `/printables/make` is an island that loads both, and on that day an
-   8.5in-wide `position: fixed` modal is what happened. So the modal was renamed
-   to `.modal` when the builder landed, which is the right way round: in a
-   codebase with a print shop in it, a sheet is a piece of paper.
-
    ── The ink ────────────────────────────────────────────────────────────────
-   Black on white with no fills, by default and on purpose. A parent printing
-   thirty pages a week is paying for this in toner, so ink-saving is a feature
-   rather than an accident (§5) — and it composes with the fact that browsers
-   drop background paint when printing anyway. Everything a child writes on is
-   a stroke or a border, both of which are foreground and always print.       */
+   Black on white with no fills (§5). Everything a child writes on is a stroke
+   or a border — foreground paint, which prints even when a browser drops
+   background graphics.                                                       */
 
 .sheet {
   --ui-scale: 1;
@@ -242,29 +231,24 @@
   overflow: visible;
 }
 
-/* ── The five faces (§17) ───────────────────────────────────────────────────
-   Files now, self-hosted beside the site's own three — see `fonts.css` for
-   which face does which job and why none of them is a request to a CDN. What
-   is left in here is the part that belongs in a stylesheet: the stack, and the
-   fallback each id lands on while its woff2 is in flight or on a page that
-   never loaded `fonts.css`.
+/* ── The five faces (§6) ────────────────────────────────────────────────────
+   Self-hosted beside the site's own three — see `fonts.css` for which face
+   does which job and why none of them is a request to a CDN. What belongs in a
+   stylesheet is here: the stack, and the fallback each id lands on while its
+   woff2 is in flight or on a page that never loaded `fonts.css`.
 
-   The `Sheet` carries the id and never the stack. That is what let three of
-   these be system fonts for two stories and files today without a single saved
-   sheet changing its mind about which face it wanted.
+   The `Sheet` carries the id and never the stack, so a stack can change
+   without a saved sheet changing its mind about which face it wanted.
 
    The engine has measured proportions for all five (`faces.ts`) and sizes
    traced letterforms off them, so **the family named here and the family named
    there have to be the same font**. Changing one alone prints letters through
    the top rule.
 
-   Three of them are cursive, because there is no such thing as cursive: the
-   looped hand an American school teaches, the unlooped one that lifts the
-   pencil after `b f g j p q s y`, and the fully joined hand a British one
-   teaches
-   are three different models, and picking one would be calling the other two
-   wrong. `cursive` stays unqualified because it is the id saved sheets already
-   carry (§7).
+   Three of them are cursive, because the three handwriting models taught are
+   genuinely different and picking one would be calling the other two wrong
+   (§6). `cursive` stays unqualified because it is the id saved sheets already
+   carry.
 
    Their system fallbacks are a courtesy and nothing more. A script face a
    reader happens to have installed joins where it likes, which on a sheet of

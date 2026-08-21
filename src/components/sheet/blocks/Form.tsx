@@ -22,9 +22,8 @@ const LABEL_FILL = 0.98;
  *
  * The heading is real HTML text and the box under it is one `<svg>`, which is
  * the split every block on a sheet makes: what a reader reads is markup a
- * crawler can index and a screen reader can announce (§2), and what a child
- * writes on is a stroke, because a stroke is foreground paint and survives a
- * printer with background graphics switched off (§5).
+ * crawler can index (§2), and what a child writes on is a stroke, because a
+ * stroke survives a printer with background graphics switched off (§5).
  *
  * **Nothing here decides how big a box is.** The width and the height of every
  * one come off the block — `templates/forms.ts` divided the page into them and
@@ -34,9 +33,8 @@ const LABEL_FILL = 0.98;
  * a heading has to be set to stay in the box it names.
  */
 export function Form({ block, metrics }: BlockProps<"form">) {
-  // One size for every heading, and it is the smallest any of them needs — the
-  // same rule `Grid.tsx` follows for a column head. A form whose questions were
-  // each set at their own size would read as a fault whether or not it is one.
+  // One size for every heading, measured field by field because the fields are
+  // different widths — see `fitText`.
   const size = block.fields.reduce(
     (smallest, field) =>
       Math.min(

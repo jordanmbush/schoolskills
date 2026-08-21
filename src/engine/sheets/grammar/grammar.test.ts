@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { answerKey, buildSheet, describeSheet, sheetSpec } from "../index";
+import { buildSheet, describeSheet } from "../index";
+import { describeSheetFamily } from "../contract";
 import type { Block, GrammarConfig, GrammarStyle, Paper } from "../types";
 
 import { END_MARK, KINDS, PARTS, SENTENCES, type Tagged } from "./bank";
@@ -182,12 +183,14 @@ describe("the sentence bank", () => {
 
 /* ── The family ────────────────────────────────────────────────────────── */
 
-describe("the grammar family", () => {
-  it("is in the registry under the kind its config carries", () => {
-    expect(sheetSpec("grammar")).toBe(GRAMMAR_SHEET);
-    expect(sheetSpec("grammar").label).toBe("Grammar");
-  });
+describeSheetFamily("grammar", {
+  label: "Grammar",
+  spec: GRAMMAR_SHEET,
+  config,
+  shapes: EVERY_SHEET,
+});
 
+describe("the grammar family", () => {
   it("prints a titled, marked page for every topic and style", () => {
     for (const one of EVERY_SHEET) {
       const sheet = buildSheet(one, 1);
@@ -204,8 +207,8 @@ describe("the grammar family", () => {
       expect(room, where(one)).toBeGreaterThan(5);
       expect(sheet.header.score?.outOf, where(one)).toBe(room);
       expect(sheet.blocks, where(one)).toHaveLength(1);
-      // No game on the other side of a grammar sheet, so the footer says the
-      // site rather than sending a parent to the times tables (§16).
+      // §16's footer URL is the game that matches the sheet, and there is no
+      // grammar race — so this one says the site.
       expect(sheet.footer.url, where(one)).toBe("schoolskills.app");
     }
   });
@@ -218,7 +221,7 @@ describe("the grammar family", () => {
   });
 
   it("falls back to a style the topic has rather than throwing", () => {
-    // A saved sheet outlives the table it was made from (§7): there has never
+    // A saved sheet outlives the table it was made from (§3): there has never
     // been a list of capital letters to circle, and a config that says so still
     // has to print something.
     const circled = config({ topic: "capitals", style: "choose" });
@@ -422,21 +425,6 @@ describe("circling one of a closed list", () => {
         expect(chosen, question.prompt) //
           .toBe(topic === "parts" ? entry.focus?.part : entry.kind);
       }
-    }
-  });
-});
-
-/* ── The key ───────────────────────────────────────────────────────────── */
-
-describe("the answer key", () => {
-  it("is the same sheet keyed, never a second generation", () => {
-    for (const one of EVERY_SHEET) {
-      const sheet = buildSheet(one, 7);
-      const key = answerKey(one, 7);
-      expect(key.answers, where(one)).toBe(true);
-      expect(key.footer.note, where(one)).toBe("Answer key");
-      expect({ ...key, answers: false, footer: sheet.footer }, where(one)) //
-        .toEqual(sheet);
     }
   });
 });

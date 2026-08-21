@@ -14,27 +14,18 @@ import {
 } from "../_spelling";
 
 /**
- * One prerendered spelling sheet per topic — and the page is the sheet.
+ * One prerendered spelling sheet per topic — and the page is the sheet (§8),
+ * with prose above it and nothing to click before pressing ⌘P.
  *
- * The shape §8 describes, applied to the shelf where the *content* is the thing
- * somebody searched for: "free printable rhyming words worksheets" and "plural
- * nouns worksheets" are queries a parent types, and a page that answers one of
- * them has prose above the sheet, the sheet itself as HTML under it, and nothing
- * to click before pressing ⌘P.
- *
- * **One stock, as with maths and unlike the ruled shelves.** Nothing on a
- * spelling sheet is a measurement, so there is no A4 twin to keep in step — the
- * one ruled page here says so in its own prose and sends a parent to the
- * handwriting shelf, which has both. That is also why this is a single-segment
- * `[slug]` under `spelling/` rather than a rest pattern: there is no second
- * segment to carry.
+ * **One stock, as with maths and unlike the ruled shelves** (§8), which is why
+ * this is a single-segment `[slug]` rather than a rest pattern: there is no
+ * second segment to carry.
  *
  * **The answer key prints only where there is one.** A copying sheet has the
  * word at the head of every line already and a sentence sheet has no right
- * answer at all, so `keyed` decides and those two pages print one article
- * instead of two identical ones. Where a key does print it is `answerKey` —
- * `answers` flipped on the same build, so it cannot disagree with the sheet it
- * belongs to (§7).
+ * answer at all, so `keyed` decides and those pages print one article instead
+ * of two identical ones. Where a key does print it is `answers` flipped on the
+ * same build, so it cannot disagree with the sheet it belongs to (§7).
  *
  * **No client directive on `SheetView`, ever.** `@astrojs/react` renders a
  * component with no `client:*` to HTML at build time, so these pages ship zero
@@ -68,13 +59,10 @@ const groups = spellingShelf();
 const group = groups.find((entry) => entry.id === sheet.group)!;
 
 /**
- * Whether the page's words are the engine's rather than a parent's.
- *
- * The one thing the prose below cannot say the same way for every page on this
- * shelf: a spelling sheet is a list somebody can replace with their own, and a
- * word-study sheet is a bank of authored questions where what a parent changes is
- * the topic. Offering to refill the box on a homophones page would be offering
- * something the family does not do.
+ * Whether the page's words are the engine's rather than a parent's. A spelling
+ * sheet is a list somebody can replace with their own; a word-study sheet is a
+ * bank of authored questions, and offering to refill the box on a homophones
+ * page would be offering something the family does not do.
  */
 const study = sheet.config.kind === "word-study";
 ---
@@ -118,9 +106,9 @@ const study = sheet.config.kind === "word-study";
     /*
       The sheets, outside `.wrap` deliberately. A wrap adds an inline padding
       that print.css cannot take back off, and a sheet printed a centimetre in
-      from where it says it is has the wrong geometry everywhere at once. The
-      key is a sibling of the sheet with nothing between them, because
-      print.css breaks pages on `.sheet + .sheet` as well.
+      from where it says it is has the wrong geometry everywhere at once. The key
+      stays an adjacent sibling, because print.css breaks pages on
+      `.sheet + .sheet` as well.
     */
   }
   <div class="sheet-frame">

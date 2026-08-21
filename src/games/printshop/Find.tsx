@@ -13,37 +13,20 @@ import {
 } from "@/engine/sheets/search";
 
 /**
- * The search box on the front door of the Print Shop.
+ * The search box on the front door of the Print Shop — the Shop's second island,
+ * and much the smaller of the two: the bench builds a sheet, this one only finds
+ * one.
  *
- * The Shop's second island, and much the smaller of the two: the bench builds
- * a sheet, this one only finds one. It is here for the reason §18 gives —
- * a hundred and nineteen sheets is past the point where a shelf is a way of
- * finding anything — and it does the whole job in the browser, against a file
- * the build wrote. No query goes anywhere. There is nowhere for one to go.
- *
- * **It is mounted `client:only`, which is the accessibility decision as much as
- * the technical one.** Everything this island can show, `/printables` already
- * shows: ten shelves, every sheet on them, and a hub per subject and per school
- * year. So a visitor with no JavaScript gets a complete, crawlable catalog and
- * no sign that anything is missing — whereas a server-rendered search box would
- * be a control that looks live, takes a keystroke and does nothing. A crawler
- * gets the same page, which is the one that was written to be indexed.
- *
- * The state travels in the URL *fragment* and never in a query string: see
- * `writeQuery` in the engine for why that is the SEO decision this story turns
- * on, and not a matter of taste.
+ * A `client:only` island over a file the build wrote, with the query in the
+ * fragment rather than a query string (§8). The whole job happens in the
+ * browser: no query goes anywhere, because there is nowhere for one to go.
  */
 const INDEX_URL = "/printables/search-index.json";
 
 /**
- * The index, fetched once.
- *
- * On mount rather than on first keystroke. The island is `client:only`, so this
- * already happens after the page itself has loaded and painted, and the facets
- * are half of what the search is for — a row of chips that only appears once
- * you have guessed there is something to type into is not a facet, it is a
- * secret. What keeps the cost honest is the file: rows are tuples and the
- * grades are a bitmask, which is most of the reason it is the size it is.
+ * The index, fetched on mount rather than on first keystroke. The facets are
+ * half of what the search is for, and a row of chips that only appears once you
+ * have guessed there is something to type into is not a facet, it is a secret.
  *
  * A failure is shown rather than swallowed. The shelves below are the answer
  * either way, and a search box that quietly stays empty would read as a shop
@@ -78,12 +61,10 @@ function useIndex(): { index: SheetIndex | null; failed: boolean } {
  * Which of the three things the island can be doing.
  *
  * The box is typeable from the first paint and the index arrives after it, so
- * "nothing matched" and "nothing has arrived yet" are different states that
- * would otherwise render as the same sentence — and the wrong one is the one
- * that costs. A parent on the slow phone this search exists for can out-type
- * the fetch, and "0 sheets" for a shop that has their sheet reads as a shop
- * that has nothing, which is the exact failure `useIndex` above says it is
- * there to prevent.
+ * "nothing matched" and "nothing has arrived yet" would otherwise render as the
+ * same sentence. A parent on the slow phone this search exists for can out-type
+ * the fetch, and "0 sheets" over a shop that has their sheet reads as a shop
+ * that has nothing.
  */
 type Status = "loading" | "failed" | "ready";
 
@@ -91,13 +72,12 @@ type Status = "loading" | "failed" | "ready";
  * The line in the live region.
  *
  * A count is a claim about the catalog, so it is only made once the catalog is
- * here. Before that the region says what is actually true — it is still
- * loading — and after a failure it says nothing at all, because the note below
- * has already said the catalog didn't load and a polite region would otherwise
- * repeat that once per keystroke.
+ * here. Before that the region says what is true — it is still loading — and
+ * after a failure it says nothing at all, because the note below has already
+ * said so and a polite region would otherwise repeat it once per keystroke.
  *
- * Exported for the suite: this is the whole of the decision, and testing it as
- * a function is cheaper and stricter than driving a `client:only` island.
+ * Exported for the suite: testing the sentence is cheaper and stricter than
+ * driving a `client:only` island.
  */
 export function countNote(
   status: Status,
@@ -112,12 +92,9 @@ export function countNote(
 /**
  * One facet, as a row of chips.
  *
- * The same `.stones` row the hub already sets its subjects and its ten years
- * out in, because it is the same gesture: these chips sit under links that look
- * exactly like them and do the neighbouring half of the job. Pressing the
- * chosen one again clears it, which is what a row with no "any" chip has to
- * mean — and `aria-pressed` says so out loud rather than leaving the state to
- * the colour.
+ * Pressing the chosen one again clears it, which is what a row with no "any"
+ * chip has to mean — and `aria-pressed` says so out loud rather than leaving the
+ * state to the colour.
  */
 function Chips({
   legend,
@@ -155,9 +132,9 @@ function Chips({
 export default function Find() {
   /*
     Captured at first render, before the effect below starts rewriting it. A
-    shared search arrives as a fragment, and the URL is also where this
-    component writes its own state — so the incoming one has to be read out of
-    the way first or the island would erase the link it was opened with.
+    shared search arrives as a fragment, and the URL is also where this component
+    writes its own state, so the incoming one has to be read out of the way first
+    or the island would erase the link it was opened with.
   */
   const [entry] = useState(() => window.location.hash);
   const [query, setQuery] = useState<Query>(EMPTY_QUERY);
@@ -268,9 +245,8 @@ export default function Find() {
       )}
 
       {/* Only once the catalog is here to be searched: an empty result before
-          then would be a sentence about a shop nobody has looked in yet, and on
-          the failure path it would sit directly under the note above and
-          contradict it. */}
+          then is a sentence about a shop nobody has looked in yet, and on the
+          failure path it would sit under the note above and contradict it. */}
       {status === "ready" && narrowed && hits.length === 0 && (
         <p className="find__note">
           Nothing in the shop matches that. Try fewer words, or clear the rows

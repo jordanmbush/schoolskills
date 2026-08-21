@@ -359,7 +359,7 @@ describe("FINGER_ZONES", () => {
   });
 
   it("has no zone for the thumbs", () => {
-    // Nothing falls on the space bar (§8.3), so the shield has no segment for
+    // Nothing falls on the space bar (§8.5), so the shield has no segment for
     // it — and the home row this is grouped from carries no thumb key, which
     // is what lets the record be exactly the eight without excluding one.
     expect(Object.keys(FINGER_ZONES)).not.toContain("thumb");

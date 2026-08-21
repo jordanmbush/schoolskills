@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import { sheetBlockBox } from "../chrome";
-import { answerKey, buildSheet, describeSheet, sheetSpec } from "../index";
+import { answerKey, buildSheet, describeSheet } from "../index";
+import { describeSheetFamily } from "../contract";
 import { contentBox, ruledLines } from "../layout";
 import { RULINGS, inches, rulePitch } from "../paper";
 import type {
@@ -56,12 +57,15 @@ const RULED = STYLES.filter((style) => RULINGS[style].pitch > 0);
 const SIZES: PaperSize[] = ["letter", "a4", "legal"];
 const MARGINS: MarginSize[] = ["none", "narrow", "normal", "wide"];
 
-describe("the paper family", () => {
-  it("is in the registry under the kind its config carries", () => {
-    expect(sheetSpec("paper")).toBe(PAPER_SHEET);
-    expect(sheetSpec("paper").label).toBe("Lined and graph paper");
-  });
+describeSheetFamily("paper", {
+  label: "Lined and graph paper",
+  spec: PAPER_SHEET,
+  config,
+  shapes: STYLES.map((style) => ({ rule: { style } })),
+  keyed: () => false,
+});
 
+describe("the paper family", () => {
   it("rules a sheet in every ruling of §5", () => {
     for (const style of RULED) {
       const block = rulesOf({ rule: { style } });
@@ -73,12 +77,6 @@ describe("the paper family", () => {
   it("draws nothing on blank paper, rather than a zero-height box", () => {
     // Blank is a ruling with no pitch. Nought repeats is the honest answer.
     expect(rulesOf({ rule: { style: "blank" } }).lines).toBe(0);
-  });
-
-  it("is a pure function of its config, like every other family", () => {
-    for (const seed of [0, 1, 4242]) {
-      expect(buildSheet(config(), seed)).toEqual(buildSheet(config(), seed));
-    }
   });
 
   it("has nothing to answer, so its key is the sheet itself", () => {

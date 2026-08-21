@@ -4,6 +4,13 @@ import { sfx } from "@/services/sound";
 import type { Profile } from "@/engine/types";
 import { Button, Field, FieldSet, Input, Scrim } from "@/components/ui/kit";
 
+/**
+ * The faces on offer, and the order a new player's default is taken from.
+ *
+ * The default rotates on how many players already exist, so the second child
+ * in a house isn't handed the first child's fox. On the picker the face and
+ * the colour are the whole of how a five-year-old finds their own card.
+ */
 export const AVATARS = [
   "🦊",
   "🐼",
@@ -31,6 +38,11 @@ export const AVATARS = [
   "🐉",
 ];
 
+/**
+ * Rotated the same way, and not only a swatch: `usePlayer` writes the chosen
+ * one to `--accent`, so it becomes the colour of the whole app while that
+ * player is in it.
+ */
 export const COLORS = [
   "#4cc4ff",
   "#c8ff41",
@@ -43,11 +55,33 @@ export const COLORS = [
 ];
 
 type Props = {
+  /**
+   * The player being edited, or `null` for a new one. Callers hold a third
+   * state — `undefined`, meaning no dialog at all — which is why this is
+   * `Profile | null` rather than optional.
+   */
   profile: Profile | null;
   onClose: () => void;
   onDeleted?: () => void;
 };
 
+/**
+ * Add or edit a player, in one dialog.
+ *
+ * **The form pre-empts two of the three name rules and cannot pre-empt the
+ * third.** `services/profiles.ts` wants a name that is non-empty once trimmed,
+ * no longer than 24 characters, and not already taken by someone else in the
+ * house (compared without case). The first two are held here — Save stays
+ * disabled on an empty box, `maxLength` stops the 25th character — so a child
+ * never meets an error for them. A clash can only be answered by reading
+ * storage, so it arrives as a thrown `InvalidInput` and `save` shows that
+ * message verbatim: the service names who already has the name, where a
+ * generic "Could not save" would leave a child guessing.
+ *
+ * The age stepper's 3 to 18 is the same range that service validates. Widen
+ * one and the other has to move with it, or − and + start offering a value the
+ * save then rejects.
+ */
 export default function PlayerEditor({ profile, onClose, onDeleted }: Props) {
   const { createProfile, updateProfile, deleteProfile, profiles, notify } =
     useHub();
@@ -56,6 +90,10 @@ export default function PlayerEditor({ profile, onClose, onDeleted }: Props) {
   const [emoji, setEmoji] = useState(
     profile?.emoji ?? AVATARS[profiles.length % AVATARS.length],
   );
+  // Previewed live: the form below carries its own `--accent`, so the Save
+  // button and the focus rings take this colour before it is saved. The root
+  // holds the saved one (`usePlayer`), which is what makes closing without
+  // saving leave nothing behind.
   const [color, setColor] = useState(
     profile?.color ?? COLORS[profiles.length % COLORS.length],
   );
@@ -100,10 +138,17 @@ export default function PlayerEditor({ profile, onClose, onDeleted }: Props) {
       onClose();
     } catch (err) {
       notify(err instanceof Error ? err.message : "Could not save", "bad");
+      // Cleared only on the way that stays on screen. A save that worked has
+      // already closed the dialog, so there is nothing left to hand the
+      // buttons back to; a save that failed has to, because the name that
+      // caused it is still in the box waiting to be fixed.
       setSaving(false);
     }
   }
 
+  // `deleteProfile` cascades: the races go with the player, and IndexedDB
+  // holds the only copy of them. That is what the confirmation below is
+  // naming, rather than asking "are you sure?" about something unstated.
   async function remove() {
     if (!profile) return;
     setSaving(true);

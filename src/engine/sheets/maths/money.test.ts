@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { answerKey, buildSheet, describeSheet, sheetSpec } from "../index";
+import { buildSheet, describeSheet } from "../index";
+import { describeSheetFamily } from "../contract";
 import { PROBLEM_GAP } from "../layout";
 import type {
   Currency,
@@ -57,9 +58,8 @@ const config = (over: Partial<MoneyConfig> = {}): MoneyConfig => ({
 const EVERY_CURRENCY: Currency[] = ["usd", "gbp", "eur"];
 
 /**
- * Every shape the family can print, which is every acceptance criterion of the
- * story: amounts added, taken away and bought several of, along a line and in
- * columns, in each of the three currencies.
+ * Every shape the family can print: amounts added, taken away and bought
+ * several of, along a line and in columns, in each of the three currencies.
  */
 const EVERY_SHAPE: Array<Partial<MoneyConfig>> = [
   {},
@@ -82,6 +82,14 @@ const EVERY_SHAPE: Array<Partial<MoneyConfig>> = [
 ];
 
 const SEEDS = [0, 1, 2, 7, 4242];
+
+describeSheetFamily("money", {
+  label: "Money",
+  spec: MONEY_SHEET,
+  config,
+  shapes: EVERY_SHAPE,
+  seeds: SEEDS,
+});
 
 /** The one block a money sheet has, narrowed for the reader. */
 function problemsOf(over: Partial<MoneyConfig>, seed: number): Problem[] {
@@ -154,11 +162,6 @@ function amountsOn(problem: Problem): string[] {
 /* ── The registry ──────────────────────────────────────────────────────── */
 
 describe("the money family", () => {
-  it("is in the registry under the kind its config carries", () => {
-    expect(sheetSpec("money")).toBe(MONEY_SHEET);
-    expect(sheetSpec("money").label).toBe("Money");
-  });
-
   it("names the sheet in the words the country it is for uses", () => {
     // Not decoration: "adding pounds and pence" and "adding dollars and cents"
     // are two different searches, and a parent types the one their child says.
@@ -263,22 +266,6 @@ describe("the answer key", () => {
       }
     }
   });
-
-  it("prints the answers only when the sheet is a key", () => {
-    const sheet = buildSheet(config(), 5);
-    const key = answerKey(config(), 5);
-    expect(sheet.answers).toBe(false);
-    expect(key.answers).toBe(true);
-    expect(key.footer.note).toBe("Answer key");
-  });
-
-  it("is the same sheet keyed, never a second generation", () => {
-    for (const shape of EVERY_SHAPE) {
-      expect(answerKey(config(shape), 11).blocks).toEqual(
-        buildSheet(config(shape), 11).blocks,
-      );
-    }
-  });
 });
 
 /* ── Bounds (§20) ──────────────────────────────────────────────────────── */
@@ -355,7 +342,7 @@ describe("what may be on the page", () => {
   it("prints nothing rather than something wrong when the ask is impossible", () => {
     // A range with no money in it: every draw is nothing at all, which is not a
     // question about money. An empty sheet is the honest answer, and the
-    // builder's job to prevent (PRINT13).
+    // builder's job to prevent.
     expect(problemsOf({ range: { min: 0, max: 0 } }, 1)).toEqual([]);
   });
 });
@@ -363,17 +350,6 @@ describe("what may be on the page", () => {
 /* ── Determinism, and the three features it buys (§7) ──────────────────── */
 
 describe("(config, seed)", () => {
-  it("builds the same sheet twice", () => {
-    for (const shape of EVERY_SHAPE) {
-      for (const seed of SEEDS) {
-        const once = buildSheet(config(shape), seed);
-        const twice = buildSheet(config(shape), seed);
-        expect(once).not.toBe(twice);
-        expect(once).toEqual(twice);
-      }
-    }
-  });
-
   it("draws the same amounts whatever currency they are printed in", () => {
     // The currency is a symbol and a title, and nothing else. Three sheets that
     // drew different sums would be three sheets, and "the same worksheet in

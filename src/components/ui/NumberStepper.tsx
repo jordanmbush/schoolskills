@@ -23,8 +23,7 @@ import { Button } from "./Button";
  * takes the caret with it. So a keystroke only reaches the caller once it is
  * already the value a commit would produce; anything else lives in a draft
  * until blur or Enter, where `commitValue` clamps it and snaps it to the step
- * grid. `ClockPicker` does this by hand for the race clock — this is that
- * behaviour, moved somewhere it can be reused.
+ * grid.
  *
  * **At a bound the button is `aria-disabled`, not `disabled`.** The real
  * attribute would be the tidier markup and the worse control: the browser
@@ -65,8 +64,7 @@ export function NumberStepper({
   decreaseLabel = `Decrease ${label.toLowerCase()}`,
   increaseLabel = `Increase ${label.toLowerCase()}`,
 }: NumberStepperProps) {
-  // `null` means "showing the committed value". Any string means the field is
-  // mid-edit and what the person typed wins over what the caller holds.
+  // `null` means "showing the committed value"; any string is a live edit.
   const [draft, setDraft] = useState<string | null>(null);
 
   // `value` and not the draft, which is correct because blur fires — and React
@@ -75,8 +73,6 @@ export function NumberStepper({
   const nudge = (delta: number) => {
     const next = Math.min(max, Math.max(min, value + delta));
     setDraft(null);
-    // A press at the bound reaches here because the button stayed focusable;
-    // there is simply nowhere left to go, so the caller is not told anything.
     if (next !== value) onChange(next);
   };
 
@@ -113,9 +109,8 @@ export function NumberStepper({
           onChange={(event) => {
             const text = event.target.value;
             setDraft(text);
-            // Only when what is typed already *is* what a commit would
-            // produce. A half-typed "1" below the minimum, or an off-grid
-            // "12.5", waits for blur instead of fighting the caret.
+            // A half-typed "1" below the minimum, or an off-grid "12.5",
+            // waits for blur instead of fighting the caret.
             const parsed = Number(text);
             if (
               text.trim() !== "" &&
@@ -150,9 +145,9 @@ export function NumberStepper({
 }
 
 /**
- * What a draft typed into the box should become — the only real decision in
- * this module, and exported so it can be tested as a function rather than as
- * an interaction the project has no DOM to simulate.
+ * What a draft typed into the box should become. Exported so it can be tested
+ * as a function rather than as an interaction the project has no DOM to
+ * simulate.
  *
  * Returns `current` for anything that isn't a number to keep, so an empty box
  * or a typo falls back to the value already there rather than to zero, which
@@ -169,8 +164,7 @@ export function commitValue(
   if (draft.trim() === "" || !Number.isFinite(parsed)) return current;
   const clamp = (n: number) => Math.min(max, Math.max(min, n));
   // Snapped to the grid `step` describes, measured from `min` and not from
-  // zero: a stepper from 5 to 60 by 5 offers 5, 10, 15 — never 23, and never
-  // the 12.5 that "a small whole number" promised it would not hand back.
-  // Clamped a second time because rounding up from the last cell can overshoot.
+  // zero: a stepper from 5 to 60 by 5 offers 5, 10, 15 and never 23. Clamped a
+  // second time because rounding up from the last cell can overshoot.
   return clamp(min + Math.round((clamp(parsed) - min) / step) * step);
 }

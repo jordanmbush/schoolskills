@@ -52,21 +52,13 @@ export function useRaceFinish({
   resultsPath: string;
   onSaving: () => void;
   /**
-   * What a finished run sounds like. `sfx.finish` unless a game says
-   * otherwise, which is every race: reaching the end of a deck is good news
-   * whatever the time on the clock.
-   *
-   * Hailstorm is the one that says otherwise, because it is the one run that
-   * can end by being LOST — a wave gets through the shield and the storm
-   * stops there. A major triad over a broken shield is the game congratulating
-   * a child for dying, so the storm passes a fanfare that does nothing and
-   * announces its own ending from the frame that stamped it, where the
-   * difference between clearing the wave and being breached is still in hand
-   * (`stormSounds.ts`).
+   * What a finished run sounds like. `sfx.finish` for every race; Hailstorm
+   * passes one that does nothing and announces its own ending instead, because
+   * a storm can end by being lost (docs/typing.md §8.12).
    *
    * It is here and not at the call site of `complete()` because this hook owns
-   * the once-per-run guard: a sound played beside a call that may be refused
-   * is a sound that can play twice.
+   * the once-per-run guard: a sound played beside a call that may be refused is
+   * a sound that can play twice.
    */
   fanfare?: () => void;
 }) {

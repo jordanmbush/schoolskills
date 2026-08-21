@@ -9,9 +9,8 @@
    properties instead of a second stylesheet — and why re-skinning a screen
    cannot move a box on it.
 
-   What a world may NOT touch is the telemetry five in tokens.css. Wrong is the
-   same red everywhere. A child should not have to re-learn the signal because
-   the background changed.
+   What a world may NOT touch is the telemetry five — see `tokens.css`, where
+   they are declared and the rule is written down.
 
    The blocks are scoped to `[data-world]` rather than `:root[data-world]` so
    the same declarations can dress a single element. That is what lets the

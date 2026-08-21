@@ -11,10 +11,10 @@ import prettier from "eslint-config-prettier/flat";
 /**
  * Architecture enforced by lint, not by convention.
  *
- * Ported from monilibrium_2's `apps/web/eslint.config.mjs`, whose own rule
- * comments record why: the boundary that was merely a convention drifted from
- * 30 to 37 violating files while the lint-enforced one held perfectly. So every
- * boundary that matters here is a rule with a message naming the alternative.
+ * A boundary that is only a convention drifts. Measured on a codebase carrying
+ * both kinds side by side, the convention went from 30 violating files to 37
+ * while the lint-enforced one held. So every boundary that matters here is a
+ * rule, with a message naming the alternative.
  *
  * The layers, and what plays each MVC role in this codebase:
  *
@@ -32,9 +32,9 @@ import prettier from "eslint-config-prettier/flat";
  * ── The flat-config clobbering hazard ────────────────────────────────────────
  * Flat config REPLACES same-rule options across matching blocks rather than
  * merging them. Two blocks naming `no-restricted-imports` over overlapping file
- * sets means the later one silently wins and the earlier one is dead. This bit
- * monilibrium (its MVC view boundary was inert for a while), so the rule ids
- * here are allocated deliberately:
+ * sets means the later one silently wins and the earlier one is dead. A whole
+ * view boundary can sit inert that way without anything failing, so the rule
+ * ids here are allocated deliberately:
  *
  *   `@typescript-eslint/no-restricted-imports`  layer boundaries (A/B/C/E),
  *                                               whose file sets are DISJOINT —
@@ -54,36 +54,53 @@ import prettier from "eslint-config-prettier/flat";
 // No view-layer module may exceed 300 lines. The real test is whether a reader
 // can tell what a component does at a glance; the number is the proxy.
 //
-// Counted with `skipComments` + `skipBlankLines` DELIBERATELY. This codebase is
-// comment-dense on purpose and that density is valued — a raw line count would
-// quietly pressure people to strip documentation to pass the rule. Never delete
-// an explanatory comment to hit the number; relocate the doc block onto the
-// module it now describes.
+// Counted with `skipComments` + `skipBlankLines` DELIBERATELY: the cap is about
+// how much a module DOES, so documenting it well must never count against it.
+// Nor is it a reason to keep a comment — whether one belongs is decided by the
+// standard in CLAUDE.md ("Comments"), which this rule says nothing about.
+// Over the number, split the module or move the doc block onto the thing it now
+// describes.
 const MAX_COMPONENT_LINES = 300;
 
-// Storage is an implementation detail of the service layer — the direct
-// analogue of monilibrium's "Prisma client only in services/" boundary. A React
-// component that reaches for `localStorage` bypasses the profile/session
-// schema, the quota handling, and `navigator.storage.persist()`.
+// Storage is an implementation detail of the service layer. A React component
+// that reaches for `localStorage` bypasses the profile/session schema, the
+// quota handling, and `navigator.storage.persist()`.
 const STORAGE_BAN =
   "Storage is owned by src/services/storage/. Don't touch localStorage, sessionStorage or indexedDB directly — call a service (e.g. profiles.load(), sessions.record()). Storage shape, migrations and quota handling live in one place on purpose.";
 
 const FRAMEWORK_BAN =
   "This layer must stay framework-agnostic so it can be reused by a build-time script, a test, or a future native app. Don't import React or Astro here — return plain data and let the view render it.";
 
-// The typing corpus, banned from the one layer every island imports. This is
-// the only boundary here that was drawn by a measurement rather than by a
-// principle, so the measurement is in the message: a reader who deletes the
-// rule should have to argue with the number.
-//
-// The requirement is REACHABILITY, not a direct import ("this file must never
-// become reachable from decks/index.ts", docs/typing.md §5.3), so the message
-// names the one hop that would otherwise slip through: `engine/typing/
-// lessons.ts` is deliberately importable from the deck layer, and a corpus
-// import inside it lands in the shared chunk exactly as a corpus import inside
-// `decks/typing.ts` would.
+// The typing corpus, banned from the one layer every island imports
+// (docs/typing.md §5.3, which owns the reasoning). The only boundary here drawn
+// by a measurement rather than by a principle, so the measurement is in the
+// message: a reader who deletes the rule should have to argue with the number.
 const CORPUS_BAN =
   "The typing corpus and its generator must not be REACHABLE from src/engine/decks/. decks/index.ts is the front door for every island — flash cards, spelling, the record book, the print shop — and a module in its import graph ships to all of them: an import of the passage library from decks/typing.ts took the shared chunk from 46 KB to 222 KB once already, which is why thirty-three verses are written out by hand in that file today. Reachability is transitive, so the ban covers the whole engine and not decks/ alone — engine/typing/lessons.ts is deliberately importable from the deck layer, so a corpus import there would ship to every island one hop away, with nothing in decks/ looking wrong. Only lexicon.ts, generate.ts and their tests may read the corpus. Everywhere else: generate the words inside the typing island and hand them over in TypingConfig.words — the deck layer builds cards from config.words and never has to know where they came from (docs/typing.md §5.3, decision 7).";
+
+// The one boundary between islands rather than between layers. Everything a
+// second game would otherwise copy already lives in `src/games/race/`, so the
+// message names it: the fix for a violation is nearly always a move, not a new
+// abstraction.
+const CROSS_GAME_BAN =
+  "Games don't import each other — one island reaching into another makes that island a dependency of every game after it, and the timing code is the last thing that should acquire callers by accident. src/games/race/ is the kit they share (the clock and its pause, the 3·2·1, the ghost lane, the HUD, the quit sheet, the rival list, scoring-and-saving), and @/games/race is importable from any game. If what you need is true of any timed run, move it there and import it from @/games/race. If it is about how an answer is entered, marked or displayed, it stays with the game — the second game writes its own.";
+
+/**
+ * A specifier as a repo-relative path, or null if it names a package.
+ *
+ * Shared by the two rules below that judge the RESOLVED target rather than the
+ * specifier as written, which they have to: which module a relative specifier
+ * names depends on the file doing the importing.
+ */
+const resolveSpecifier = (context, specifier) => {
+  if (specifier.startsWith("@/")) return `src/${specifier.slice(2)}`;
+  if (!specifier.startsWith(".")) return null;
+  const here = path.relative(context.cwd, context.filename);
+  return path.posix.join(
+    path.dirname(here).split(path.sep).join("/"),
+    specifier,
+  );
+};
 
 /**
  * Local rules, defined ONCE and registered in a single global block below.
@@ -182,17 +199,6 @@ const localPlugin = {
         // ever have matched.
         const BANNED = /^src\/engine\/typing\/(lexicon|generate)(\.[jt]s)?$/;
 
-        /** A specifier as a repo-relative path, or null if it names a package. */
-        const resolve = (specifier) => {
-          if (specifier.startsWith("@/")) return `src/${specifier.slice(2)}`;
-          if (!specifier.startsWith(".")) return null;
-          const here = path.relative(context.cwd, context.filename);
-          return path.posix.join(
-            path.dirname(here).split(path.sep).join("/"),
-            specifier,
-          );
-        };
-
         // Every way a module can end up in the graph: the import, the
         // re-export — which bloats the chunk exactly as an import does — and
         // the dynamic form, which would get its own chunk but cannot be read
@@ -202,9 +208,54 @@ const localPlugin = {
           const source = node.source;
           if (source?.type !== "Literal") return;
           if (typeof source.value !== "string") return;
-          const target = resolve(source.value);
+          const target = resolveSpecifier(context, source.value);
           if (target && BANNED.test(target))
             context.report({ node: source, messageId: "banned" });
+        };
+        return {
+          ImportDeclaration: check,
+          ImportExpression: check,
+          ExportNamedDeclaration: check,
+          ExportAllDeclaration: check,
+        };
+      },
+    },
+    // The game-to-game ban (CROSS_GAME_BAN above). A local rule because its
+    // file set is `src/games/**`, which block C already covers with the
+    // `@typescript-eslint` no-restricted-imports id and block D with the base
+    // one: a third block over either would silently switch that boundary off
+    // for every game (see the header). A pattern list could not express it
+    // either — `../flashcards/App` and `@/games/flashcards/App` are the same
+    // hop written two ways, and only a rule holding `context.filename` can tell
+    // that the first one leaves the importer's own game.
+    "no-cross-game-imports": {
+      meta: {
+        type: "problem",
+        docs: {
+          description:
+            "Ban imports between game islands; only src/games/race/ is shared.",
+        },
+        schema: [],
+        messages: { banned: CROSS_GAME_BAN },
+      },
+      create(context) {
+        /** Which game a repo-relative path sits in, or null if it sits in none. */
+        const gameOf = (repoPath) =>
+          repoPath.match(/^src\/games\/([^/]+)(?:\/|$)/)?.[1] ?? null;
+
+        const here = path.relative(context.cwd, context.filename);
+        const own = gameOf(here.split(path.sep).join("/"));
+
+        const check = (node) => {
+          const source = node.source;
+          if (source?.type !== "Literal") return;
+          if (typeof source.value !== "string") return;
+          const target = resolveSpecifier(context, source.value);
+          const game = target && gameOf(target);
+          // Not a game import, this game's own, or the shared kit — the one
+          // game directory every other game may read.
+          if (!game || game === own || game === "race") return;
+          context.report({ node: source, messageId: "banned" });
         };
         return {
           ImportDeclaration: check,
@@ -252,8 +303,8 @@ export default defineConfig([
   // ── A · MODEL boundary ──────────────────────────────────────────────────────
   // src/engine/ is pure logic over plain data: build a deck, score a run, rank
   // trouble facts. Keeping React out of it is what lets the same functions run
-  // in a vitest unit test and in a build-time script that pre-renders a
-  // worksheet PDF. It may not import services either — the dependency direction
+  // in a vitest unit test and in the build-time pass that prerenders a
+  // worksheet. It may not import services either — the dependency direction
   // is services → engine, never back.
   {
     files: ["src/engine/**/*.{ts,tsx}"],
@@ -391,6 +442,21 @@ export default defineConfig([
     },
   },
 
+  // ── C2 · The game-to-game boundary ─────────────────────────────────────────
+  // Inside the view, and about coupling between islands rather than direction
+  // between layers. A game owns how its answers are entered, marked and shown;
+  // what every timed run shares lives in `src/games/race/`. So `@/games/race`
+  // is the only game import a game may write — see CROSS_GAME_BAN for what a
+  // violation usually means, and `local/no-cross-game-imports` for why it is a
+  // local rule rather than another `no-restricted-imports` block.
+  //
+  // No allowlist and nothing grandfathered: a game that needs another game's
+  // code needs it in `src/games/race/` instead.
+  {
+    files: ["src/games/**/*.{ts,tsx}"],
+    rules: { "local/no-cross-game-imports": "error" },
+  },
+
   // ── D · The storage primitive ───────────────────────────────────────────────
   // The `idb` package, banned everywhere except the module that wraps it. Uses
   // the BASE rule id so it doesn't collide with the layer boundaries above,
@@ -460,11 +526,8 @@ export default defineConfig([
   // tone — and hit targets are not cosmetic here, the youngest player is five.
   {
     files: ["**/*.tsx"],
-    // No exceptions. There WAS an allowlist here — 55 hand-rolled controls
-    // across 8 files, inherited from the local-only app where no kit existed.
-    // It was drained to zero by the KIT01–KIT04 stories and then deleted, so
-    // adding a file back means editing this rule rather than appending to a
-    // list, which is the point.
+    // The kit is the only exception, and there is no allowlist beside it to
+    // add a file to: an exemption means editing this rule, which is the point.
     ignores: ["src/components/ui/**"],
     rules: {
       "no-restricted-syntax": [
@@ -492,10 +555,7 @@ export default defineConfig([
   // is coverage, not scannability.
   {
     files: ["src/components/**/*.{ts,tsx}", "src/games/**/*.{ts,tsx}"],
-    // Tests only. There WAS an allowlist here too — RaceTrack (655), RaceSetup
-    // (473), Progress (392) and RaceResults (351), inherited from the
-    // local-only app where nothing enforced a cap. All four were split along
-    // their seams by the KIT03/KIT04 stories and the list was deleted.
+    // Tests only, and no allowlist beside it: a module over the cap is split.
     ignores: ["**/*.test.{ts,tsx}"],
     rules: {
       "max-lines": [

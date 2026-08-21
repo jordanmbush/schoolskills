@@ -13,7 +13,6 @@ import type { BlockProps } from "./block";
 import { Cube } from "./Cube";
 import { Spinner } from "./Spinner";
 
-/** Something to cut out and fold up, or cut out and spin. */
 export function Net({ block, metrics }: BlockProps<"net">) {
   return block.net.shape === "cube" ? (
     <Cube net={block.net} fontPt={metrics.fontPt} />

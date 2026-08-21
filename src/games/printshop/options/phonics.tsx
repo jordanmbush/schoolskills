@@ -8,15 +8,11 @@
  * once, saves it under their own name, and never sees it again until the next
  * sound is taught.
  *
- * **There are no presets in this control and there will not be.** A named set
- * of sounds is somebody's course, and the two honest names for one are the ones
- * a parent writes: their child's, and their own. `services/phonics.ts` is where
- * a named list is kept.
- *
- * The three marking switches are independent for the same reason. Each is a
- * convention shared across phonics traditions; the combination of them under a
- * programme's name is that programme's modified alphabet, and nothing here
- * ships one.
+ * **No presets, here or ever**, and the three marking switches are independent
+ * for the same reason: each is a convention shared across phonics traditions,
+ * and the combination of them under a programme's name is that programme's
+ * modified alphabet. The two honest names for a set of sounds are the ones a
+ * parent writes, and `services/phonics.ts` is where one is kept.
  */
 import { Checkbox, FieldSet } from "@/components/ui/kit";
 import {
@@ -43,12 +39,11 @@ const STYLES = PHONICS_STYLES.map((style) =>
 );
 
 /**
- * Whether a spelling is filed under the consonants or the vowels.
- *
- * By its first sound rather than by its letters, which is the same rule the
- * table itself is ordered by — `qu` is filed with the consonants because it
- * starts on /k/, and the `e` of `have`, which says nothing at all, sits with
- * the vowels where a parent would look for it.
+ * Whether a spelling is filed under the consonants or the vowels: by its first
+ * sound rather than by its letters, which is the rule the table itself is
+ * ordered by. `qu` is filed with the consonants because it starts on /k/, and
+ * the `e` of `have`, which says nothing at all, sits with the vowels where a
+ * parent would look for it.
  */
 const isConsonant = (entry: Correspondence): boolean =>
   PHONEME_BY_ID.get(entry.phonemes[0] ?? "")?.kind === "consonant";

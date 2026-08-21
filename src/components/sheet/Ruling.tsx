@@ -7,14 +7,10 @@
  * the same coordinate system as the rules they sit on, and two elements can't
  * share one.
  *
- * **Strokes, never a background.** The obvious implementation of ruled paper is
- * `repeating-linear-gradient`, which `worlds.css` already uses for the jungle's
- * terrain. Browsers drop `background-image` when printing unless the reader has
- * ticked "Background graphics", and most readers haven't — so a sheet built
- * that way prints blank and looks perfect on screen, which is the worst kind of
- * bug this feature can have. SVG strokes are foreground paint: they always
- * print, they print at the printer's resolution rather than the screen's, and
- * a dashed midline is one attribute rather than a second gradient (§5).
+ * **Strokes, never a background** (§5). Browsers drop `background-image` when
+ * printing unless the reader has ticked "Background graphics", so ruled paper
+ * drawn with `repeating-linear-gradient` looks perfect on screen and comes out
+ * of the printer blank. Strokes are foreground paint and always print.
  *
  * Coordinates are mil, matching the viewBox its caller sets up.
  */
@@ -214,7 +210,7 @@ function Isometric({
   );
 }
 
-/** `n` values from an index. Saves a hand-rolled loop in four places. */
+/** `n` values from an index. */
 function range<T>(n: number, at: (index: number) => T): T[] {
   return Array.from({ length: Math.max(0, n) }, (_, index) => at(index));
 }

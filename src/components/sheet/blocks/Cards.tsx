@@ -5,7 +5,7 @@ import {
   CARD_PAD_EMS,
   CARD_SMALL_EMS,
   CARD_SMALL_LEADING,
-} from "@/engine/sheets/phonics/cards";
+} from "@/engine/sheets/phonics/metrics";
 import type { MarkedWord } from "@/engine/sheets/types";
 
 import type { BlockProps } from "./block";
@@ -14,20 +14,20 @@ import type { BlockProps } from "./block";
  * Cards: a spelling over the word it is in, or a sentence on a strip.
  *
  * Real text in a real list, not a drawing — the half of §2 the SVG blocks
- * cannot do. A sound card is a `<li>` a search engine reads, a screen reader
- * announces and a parent can select and copy, which is exactly what a page
- * whose whole content is "the letters `sh` say /sh/" needs to be.
+ * cannot do, and exactly what a page whose whole content is "the letters `sh`
+ * say /sh/" needs to be.
  *
  * **Nothing here decides a size.** Every proportion comes out of
- * `phonics/cards.ts` — the big line's size travels on the block, because a
+ * `phonics/metrics.ts` — the big line's size travels on the block, because a
  * flash card and a sentence strip are this block at two very different sizes,
  * and the leading and the small line are the constants the family reserved the
  * page against. A second set of numbers in this file would be a card
- * overhanging the one beneath it, and the failure is silent on screen.
+ * overhanging the one beneath it, and the failure is silent on screen. From the
+ * leaf rather than from `phonics/cards.ts`, so that four constants cost this
+ * island four constants and not the phonics word bank (§3).
  *
- * The border is a real border rather than a tint, for the reason every other
- * block gives (§5): background paint is what a browser drops when printing, so
- * a page of cards to cut out would come out as words floating on nothing.
+ * The border is a real border rather than a tint (§5), so a page of cards to
+ * cut out does not come out as words floating on nothing.
  */
 export function Cards({ block }: BlockProps<"cards">) {
   const columns = Math.max(1, Math.floor(block.columns));
@@ -83,9 +83,8 @@ function Marked({ word }: { word: MarkedWord }) {
   // Consecutive unmarked pieces are joined back into one run of text. A word is
   // handed over cut into its spellings whether or not anything is being marked,
   // and rendering each piece as its own node would leave `sun` on the paper as
-  // three text nodes with React's separators between them — which is worse for
-  // the three things this block is real text *for*: what a search engine
-  // indexes, what a screen reader announces, and what a reader copies.
+  // three text nodes — worse for the three things this block is real text
+  // *for*: indexing, announcing, and copying.
   const runs: MarkedWord = [];
   for (const part of word) {
     const last = runs.at(-1);

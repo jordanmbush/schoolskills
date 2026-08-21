@@ -4,12 +4,11 @@ import { mulberry32 } from "@/engine/random";
 
 import type { Found } from "../types";
 
+import { SEARCH_CELL, searchCell } from "./metrics";
 import {
-  SEARCH_CELL,
   buildSearch,
   findWord,
   gridForm,
-  searchCell,
   searchSteps,
   type Step,
 } from "./search";
@@ -19,15 +18,11 @@ import {
  *
  * Every claim below is checked by reading the finished grid with a reader
  * written here, in the test, rather than by asking the generator what it thinks
- * it did. That is not ceremony. `buildSearch` derives its own answer key by
- * searching the grid, so a test that called `findWord` to check `solution`
- * would be comparing a function against itself and would pass on a `findWord`
- * that was wrong in exactly the same direction. `spell` below walks the letters
- * and joins them, and that is all it does.
- *
- * The three failures this is aimed at are the three a word search actually
- * ships with: a word that isn't in the grid at all, a key that points at the
- * wrong squares, and a generator that never returns on a list it cannot fit.
+ * it did. `buildSearch` derives its own answer key by searching the grid, so a
+ * test that called `findWord` to check `solution` would be comparing a function
+ * against itself and would pass on a `findWord` that was wrong in exactly the
+ * same direction. `spell` below walks the letters and joins them, and that is
+ * all it does.
  */
 
 const WORDS = ["BECAUSE", "THOUGHT", "FRIEND", "PEOPLE", "THROUGH"];

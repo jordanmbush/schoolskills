@@ -1,0 +1,432 @@
+/* ── The race ────────────────────────────────────────────────────────────
+   The run itself, minus whatever is being answered: the clock, the ghost
+   lane, the 3·2·1 and the results. `src/games/race/` is the race minus the
+   game, and this is its stylesheet — nothing in here knows what a card is,
+   which is why a lesson and a times table can both be run in it.          */
+
+/* ── The race ──────────────────────────────────────────────────────────── */
+
+.race {
+  width: min(720px, 100%);
+  margin-inline: auto;
+  /* One viewport MINUS the ad band above it (0 when there is none). Without
+     the subtraction a race gains a scrollbar the moment ads are switched on,
+     and a page that scrolls under a child's thumb mid-answer is worse than
+     the ad is worth. */
+  min-height: calc(100dvh - var(--ad-h));
+  padding: clamp(0.75rem, 2.5vw, 1.5rem) clamp(0.75rem, 3vw, 1.5rem)
+    clamp(1rem, 3vw, 2rem);
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  gap: clamp(0.75rem, 2.5vh, 1.5rem);
+}
+
+.race__hud {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--gap-2);
+}
+
+.race__quit {
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--chalk-dim);
+  padding: 0.35em 0.8em;
+  border-radius: 999px;
+  border: 1px solid var(--hairline);
+}
+
+.race__quit:hover {
+  color: var(--flare);
+  border-color: color-mix(in oklab, var(--flare) 45%, transparent);
+}
+
+.race__clock {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.race__clock-time {
+  font-size: var(--step-2);
+  font-weight: 700;
+}
+
+.race__penalty {
+  font-size: var(--step--1);
+  font-weight: 700;
+  color: var(--flare);
+}
+
+.race__count {
+  display: flex;
+  align-items: baseline;
+  gap: 0.25rem;
+  color: var(--chalk-dim);
+  font-size: var(--step--1);
+}
+
+.race__count-now {
+  font-size: var(--step-1);
+  font-weight: 700;
+  color: var(--chalk);
+}
+
+/* ── Signature: the ghost lane ─────────────────────────────────────────── */
+
+.lane {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.lane__track {
+  position: relative;
+  height: 3rem;
+  border-radius: 999px;
+  border: 1px solid var(--hairline);
+  background:
+    repeating-linear-gradient(
+      90deg,
+      rgb(255 255 255 / 7%) 0 1px,
+      transparent 1px 24px
+    ),
+    linear-gradient(180deg, rgb(0 0 0 / 35%), rgb(0 0 0 / 15%));
+}
+
+.lane__finish {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  translate: 0 -50%;
+  font-size: var(--step-0);
+  opacity: 0.7;
+}
+
+.lane__puck {
+  position: absolute;
+  top: 50%;
+  /* Keeps the marker fully inside the rail at 0% and 100%. */
+  left: calc(1.4rem + (100% - 2.8rem) * var(--p, 0));
+  translate: -50% -50%;
+  display: grid;
+  place-items: center;
+  width: 2.3rem;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  font-size: var(--step-0);
+  background: color-mix(in oklab, var(--tint) 35%, var(--ink-900));
+  border: 2px solid var(--tint);
+  transition: left 0.4s var(--ease-out);
+}
+
+.lane__puck--me {
+  z-index: 2;
+  box-shadow: 0 0 18px color-mix(in oklab, var(--tint) 45%, transparent);
+}
+
+.lane__puck--ghost {
+  opacity: 0.62;
+  border-style: dashed;
+  filter: grayscale(0.25);
+}
+
+.lane__gap,
+.lane__note {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.4rem;
+  font-size: var(--step-1);
+  font-weight: 700;
+}
+
+.lane__note {
+  font-size: var(--step--1);
+  font-weight: 400;
+  color: var(--chalk-dim);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.lane__gap.is-ahead {
+  color: var(--lime);
+}
+
+.lane__gap.is-behind {
+  color: var(--flare);
+}
+
+.lane__gap-word {
+  font-size: var(--step--2);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+
+/* ── Countdown ─────────────────────────────────────────────────────────── */
+
+.countdown {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+
+  /* `align-content` matters here because a lesson puts a second child in the
+     overlay (the home-row note, docs/typing.md §7). Left at its default the
+     two rows stretch to fill the viewport and each child centres inside its
+     own half, which drops the note hundreds of pixels below the numeral and
+     on top of the keyboard. Centring the track group keeps the two as one
+     stack. */
+  place-items: center;
+  align-content: center;
+  gap: 0.75rem;
+  background: rgb(7 8 13 / 88%);
+  backdrop-filter: blur(4px);
+}
+
+.countdown__num {
+  font-size: clamp(6rem, 30vw, 16rem);
+  color: var(--go);
+  animation: pop 0.45s var(--ease-spring) both;
+  text-shadow: 0 0 60px color-mix(in oklab, var(--go) 40%, transparent);
+}
+
+/* What the 3·2·1 is for on a lesson, where it is not a starting gun
+   (docs/typing.md §7). */
+.countdown__note {
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--chalk-dim);
+}
+
+/* ── Results ───────────────────────────────────────────────────────────── */
+
+.verdict {
+  display: grid;
+  gap: 0.3rem;
+  justify-items: center;
+  text-align: center;
+  padding: clamp(1.25rem, 4vw, 2.5rem) 1rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--hairline);
+  background:
+    radial-gradient(
+      80% 120% at 50% 0%,
+      color-mix(in oklab, var(--accent) 18%, transparent),
+      transparent 65%
+    ),
+    linear-gradient(180deg, var(--ink-800), var(--ink-900));
+}
+
+.verdict--record {
+  border-color: color-mix(in oklab, var(--gold) 55%, transparent);
+  background:
+    radial-gradient(
+      80% 120% at 50% 0%,
+      color-mix(in oklab, var(--gold) 24%, transparent),
+      transparent 65%
+    ),
+    linear-gradient(180deg, var(--ink-800), var(--ink-900));
+}
+
+.verdict__title {
+  font-size: clamp(1.9rem, 7vw, 3.6rem);
+}
+
+.verdict--record .verdict__title {
+  color: var(--gold);
+}
+
+.verdict__time {
+  font-size: clamp(3rem, 14vw, 6rem);
+  font-weight: 700;
+  line-height: 1;
+  margin-block: 0.2em 0.1em;
+}
+
+.verdict__breakdown {
+  font-size: var(--step--1);
+  color: var(--chalk-dim);
+}
+
+.verdict__pen {
+  margin-left: 0.4em;
+  color: var(--flare);
+}
+
+.verdict__pen--late {
+  color: var(--gold);
+}
+
+.verdict__vs {
+  font-size: var(--step--1);
+  color: var(--chalk-dim);
+}
+
+.verdict__vs.is-ahead {
+  color: var(--lime);
+}
+
+.verdict__vs.is-behind {
+  color: var(--chalk-soft);
+}
+
+.scoreline {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: var(--gap-3);
+  padding: var(--gap-3) var(--gap-4);
+}
+
+.scoreline__of {
+  font-size: var(--step-0);
+  color: var(--chalk-dim);
+}
+
+.stat--xp .stat__value {
+  color: var(--lime);
+}
+
+.rewards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: 0.5rem;
+}
+
+.reward {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-2);
+  padding: 0.7rem 1rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--hairline);
+  background: rgb(255 255 255 / 4%);
+  animation: pop 0.45s var(--ease-spring) both;
+}
+
+.reward__icon {
+  font-size: var(--step-2);
+  line-height: 1;
+}
+
+.reward strong {
+  display: block;
+  font-size: var(--step-0);
+}
+
+.reward__sub {
+  display: block;
+  font-size: var(--step--2);
+  color: var(--chalk-dim);
+}
+
+.reward--level {
+  border-color: color-mix(in oklab, var(--gold) 50%, transparent);
+  background: color-mix(in oklab, var(--gold) 12%, transparent);
+}
+
+.reward--badge {
+  border-color: color-mix(in oklab, var(--grape) 50%, transparent);
+  background: color-mix(in oklab, var(--grape) 12%, transparent);
+}
+
+.splits__scroll {
+  overflow-x: auto;
+  max-height: 26rem;
+  overflow-y: auto;
+}
+
+.splits {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--step--1);
+}
+
+.splits th {
+  position: sticky;
+  top: 0;
+  background: var(--ink-850);
+  text-align: left;
+  padding: 0.5rem 0.6rem;
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--chalk-dim);
+  border-bottom: 1px solid var(--hairline);
+}
+
+.splits td {
+  padding: 0.45rem 0.6rem;
+  border-bottom: 1px solid rgb(255 255 255 / 5%);
+}
+
+.splits__row--miss {
+  background: color-mix(in oklab, var(--flare) 9%, transparent);
+}
+
+.splits__row--late {
+  background: color-mix(in oklab, var(--gold) 9%, transparent);
+}
+
+.splits__given.is-late {
+  color: var(--gold);
+}
+
+.splits__n {
+  color: var(--chalk-dim);
+  width: 2.5rem;
+}
+
+.splits__card {
+  font-weight: 600;
+}
+
+.splits__given {
+  margin-left: 0.6em;
+  font-size: var(--step--2);
+  color: var(--flare);
+}
+
+.splits__rival {
+  color: var(--chalk-dim);
+}
+
+.splits__gap.is-ahead {
+  color: var(--lime);
+}
+
+.splits__gap.is-behind {
+  color: var(--flare);
+}
+
+.splits__holder {
+  white-space: nowrap;
+}
+
+.splits__who {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-left: 0.6rem;
+  font-family: var(--font-body);
+  font-size: var(--step--2);
+  color: var(--chalk-dim);
+}
+
+.splits__who.is-ahead {
+  color: var(--lime);
+}
+
+.results__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gap-2);
+  justify-content: center;
+}

@@ -5,26 +5,19 @@ import { MATHS_SHEETS, mathsShelf, pathFor } from "./_maths";
 import HubLinks from "./_HubLinks.astro";
 
 /**
- * The maths subject hub — one of the three §8 names, and the first to exist.
+ * The maths subject hub — one of the shelves §8 names.
  *
- * It is a listing rather than a sheet, which makes it the one page in this
- * corner that isn't itself printable, and that is the right split: nobody
- * searches for "printable list of maths worksheets". What it is for is the two
- * jobs a hub does — giving a parent who arrived on `/printables/area-worksheets`
- * somewhere to go next, and giving the twenty-one topic pages a crawlable
- * parent that says what they have in common.
- *
- * It lists what exists and nothing else. A shelf of links to sheets that
- * haven't been built is the thin-content pattern `Base.astro`'s `noindex` block
- * already argues against, and every link here is a page that prints today.
+ * A listing rather than a sheet, like the other hubs: nobody searches for
+ * "printable list of maths worksheets". It does the two jobs a hub does —
+ * somewhere to go next for a parent who arrived on one topic page, and a
+ * crawlable parent for all of them. It lists what exists and nothing else.
  *
  * **"Math" in the URL and the title, "maths" in the copy.** Deliberate, and the
  * only place on the site the two meet. The route and the `<title>` are read by
  * a search engine and by somebody typing a query, and that phrase is "math
- * worksheets" for most of this audience; the prose is written in the same voice
- * as every other page here. Changing the route later would be the one-way door
- * §8 warns about, and changing the voice would be a worse trade than the
- * inconsistency.
+ * worksheets" for most of this audience; the prose is in the same voice as
+ * every other page here. Changing the route later would be the one-way door §8
+ * warns about.
  */
 const title =
   "Free printable math worksheets, with answer keys | School Skills";
@@ -74,9 +67,7 @@ const strands = mathsShelf();
   {
     /*
       What exists, first — before the page explains itself. Somebody who came
-      looking for long division should be one link from long division, and the
-      argument for how these sheets are made reads better after you have seen
-      one than before.
+      looking for long division should be one link from long division.
     */
   }
   <section class="band band--tight wrap">

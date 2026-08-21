@@ -1,9 +1,9 @@
 /**
  * Shape: area, perimeter, volume, angles, names and the coordinate plane.
  *
- * The family where the *question* is a drawing. Everything the arithmetic
- * families established holds unchanged, and the two things that are new are both
- * about the picture rather than the sum.
+ * The family where the *question* is a drawing. The shared machinery is
+ * unchanged (§7, §11); the two things that are new are both about the picture
+ * rather than the sum.
  *
  * **A wrong drawing is a wrong answer.** A rectangle labelled 8 by 3 and drawn 8
  * by 4 is a sheet that teaches a child not to trust the picture, which is worse
@@ -86,14 +86,6 @@ const MAX_COLUMNS = 4;
 
 /** As `arithmetic.ts` — see the note there on why a budget rather than a proof. */
 const MISS_BUDGET = 500;
-
-/* ── The plane ─────────────────────────────────────────────────────────────
-   One grid at the top of the page and the questions under it, rather than a
-   little pair of axes beside every problem: a child reads the scale once and
-   then uses it a dozen times.
-
-   The geometry of it lives in `plane.ts`, because a plane is the question on a
-   pre-algebra sheet as well as on this one — see the note there.             */
 
 /* ── Drawing a problem ─────────────────────────────────────────────────────
    Each style draws its own shape and they have little in common, so each
@@ -395,11 +387,7 @@ function rowHeight(config: GeometryConfig): Mil {
 
 /**
  * How many problems the paper holds, how wide a column of them is, and — on a
- * coordinate sheet — the plane they are asked about.
- *
- * Arithmetic, not measurement, so `npm run test:unit` can answer "did it fit?"
- * without a browser — and so the same answer serves the catalog page built at
- * build time and the builder's preview (§4).
+ * coordinate sheet — the plane they are asked about (§4).
  */
 export function geometryLayout(config: GeometryConfig): {
   box: Box;
@@ -439,8 +427,7 @@ export function geometryLayout(config: GeometryConfig): {
 /**
  * Every problem on the sheet, and the points marked on the plane above them.
  *
- * Exported because it is the whole of what a test has to check, and checking it
- * through the `Sheet` means unwrapping a block union to reach it. The marks come
+ * Exported because it is the whole of what a test has to check. The marks come
  * back with the problems rather than being worked out again from them, so a dot
  * on the grid and the coordinates it is answered with cannot disagree.
  */
@@ -462,10 +449,9 @@ export function geometryProblems(
   let misses = 0;
   while (items.length < wanted && misses < MISS_BUDGET) {
     const drawn = drawOne(config, plane, items.length, rand);
-    // Not what was asked for, or already on the page. Either way the budget
-    // ticks down, and a pool that has run out ends the draw rather than
-    // repeating itself: there are five shapes with names on this sheet, and
-    // five is the honest answer to a request for twenty.
+    // A pool that has run out ends the draw rather than repeating itself:
+    // there are five shapes with names on this sheet, and five is the honest
+    // answer to a request for twenty.
     if (drawn === null || seen.has(drawn.key)) {
       misses += 1;
       continue;
@@ -529,12 +515,8 @@ const titleOf = (config: GeometryConfig): string =>
   TITLE[config.style] ?? TITLE.area;
 
 /**
- * The header this sheet will actually print.
- *
- * A generated family names its own sheet, so `config.title` is an override and
- * is usually absent — which makes it the wrong thing to reserve space against.
- * Written once and read by both the layout and the build, so the two cannot
- * disagree about what is at the top of the page.
+ * The header this sheet will actually print, which is what the layout reserves
+ * space against — see the note in `arithmetic.ts`.
  */
 function headerOf(config: GeometryConfig): SheetOptions {
   return {
@@ -554,7 +536,7 @@ function headerOf(config: GeometryConfig): SheetOptions {
  * runs, which is the difference between a sheet a child does in their head and
  * one they need paper for.
  */
-export function describeGeometry(config: GeometryConfig): string {
+function describeGeometry(config: GeometryConfig): string {
   const title = titleOf(config);
   if (config.style === "coordinates") {
     return `${title} — ${Math.floor(config.quadrants ?? 1) === 4 ? "four quadrants" : "the first quadrant"}`;
@@ -568,10 +550,7 @@ export function describeGeometry(config: GeometryConfig): string {
   ].join(" — ");
 }
 
-export function buildGeometrySheet(
-  config: GeometryConfig,
-  seed: number,
-): Sheet {
+function buildGeometrySheet(config: GeometryConfig, seed: number): Sheet {
   const { items, marks } = geometryProblems(config, seed);
   const { columns, plane } = geometryLayout(config);
   const head = headerOf(config);
@@ -583,8 +562,6 @@ export function buildGeometrySheet(
       title: head.title ?? "",
       instructions: head.instructions,
       fields: head.fields,
-      // Out of what is actually on the page, not out of what was asked for: a
-      // sheet that says "/ 20" over eighteen problems is wrong twice.
       score: { outOf: items.length },
     },
     blocks: [
@@ -602,13 +579,8 @@ export function buildGeometrySheet(
 }
 
 export const GEOMETRY_SHEET: SheetSpec<GeometryConfig> = {
-  id: "geometry",
-  label: "Shape and space",
   world: SHEET_WORLD,
   build: buildGeometrySheet,
-  // The whole of the answer-key mechanism: every answer on the page was
-  // computed from the same numbers the figure was drawn from, so a key prints
-  // what is already there rather than measuring the drawing a second time.
   key: (sheet) => ({
     ...sheet,
     answers: true,

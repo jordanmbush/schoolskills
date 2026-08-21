@@ -1,33 +1,23 @@
 /**
  * The reference sheets the Print Shop has set, and the words that go round them.
  *
- * Underscored so Astro leaves it out of the routing table: it is data two pages
- * share — `charts/[slug].astro`, which prerenders one reference per entry, and
- * `charts/index.astro`, which is the hub — rather than a route of its own.
- * `_catalog.ts` does that job for paper, `_maths.ts` for the worksheets,
- * `_phonics.ts` for the sounds, and so on down the shelf.
+ * **The shelf ends where it does on purpose.** §8 asks the catalog to be
+ * bounded, and this is a shelf where being greedy would be easy: "number line
+ * to 30", "number line to 50", "hundred chart to 120" and forty more are all
+ * real queries, and every one of them is a sheet on this shelf with one number
+ * changed. Everything else is a stepper in the builder.
  *
- * **Eight pages, and eight is the point rather than a start.** §8 asks the
- * catalog to be bounded, and this is a shelf where being greedy would be easy:
- * "number line to 30", "number line to 50", "hundred chart to 120" and forty
- * more are all real queries, and every one of them is a sheet on this shelf
- * with one number changed. What is here is the eight a parent actually asks
- * for; everything else is a stepper in the builder, which is where choosing
- * belongs.
+ * **Two of them are already next door.** A multiplication grid is
+ * `/printables/multiplication-chart` and graph, dot and isometric paper are the
+ * grid end of the paper shelf. Neither is rebuilt here (§11): a second family
+ * that drew a times-table square would be a second answer to what goes in
+ * square forty-two, and the hub links to both rather than pretending they are
+ * missing.
  *
- * **Two of them are already next door.** A multiplication grid, blank and
- * filled, is `/printables/multiplication-chart` — the multiplication family
- * with `style: "grid"` on it — and graph, dot and isometric paper are the grid
- * end of the paper shelf. Neither is rebuilt here. A second family that drew a
- * times-table square would be a second answer to what goes in square forty-two,
- * and the hub links to both rather than pretending they are missing.
- *
- * **One stock, as with maths, spelling and grammar.** Nothing on these sheets
- * is a *stated* measurement — there is no ⅝ rule to be scaled into a ⅗ rule by
- * a printer loaded with A4, and a hundred chart four per cent smaller is still
- * a hundred chart with a hundred squares in it. The squares on graph paper are
- * the case where that is not true, and graph paper is on the shelf that prints
- * both stocks for exactly that reason.
+ * **One stock, as with maths, spelling and grammar** (§8): a hundred chart four
+ * per cent smaller is still a hundred chart with a hundred squares in it. The
+ * squares on graph paper are the case where that is not true, and graph paper
+ * is on the shelf that prints both stocks for exactly that reason.
  */
 import { DEFAULT_FONT_PT } from "@/engine/sheets/paper";
 import { chartKeyed } from "@/engine/sheets/templates/charts";
@@ -56,10 +46,9 @@ export type ChartSheet = {
   /**
    * Two things that are true of this sheet and not of the one beside it.
    *
-   * The sheet is prerendered directly under this prose (§8), which makes a
-   * number quoted in it a claim about the paper rather than a description of
-   * it — a reader can look down the page and count. `_charts.test.ts` holds
-   * every number written in words to what the sheet under it actually draws.
+   * The sheet is prerendered directly under this prose (§8), so a number quoted
+   * here is a claim about the paper that a reader can count for themselves.
+   * `_charts.test.ts` holds each one to what the sheet under it draws.
    */
   notes: string[];
   /** For the `LearningResource` block. */
@@ -73,22 +62,19 @@ export type ChartSheet = {
 /**
  * The seed every sheet on this shelf is built from, and it never moves.
  *
- * It decides nothing at all here, which is the honest thing to say about it:
- * not one of these four sheets draws from it, because a hundred chart is the
- * same hundred numbers in the same order every time anybody prints one. It is
- * still printed in the footer, because a sheet is reproducible from its seed
- * and a reader has no way of knowing which sheets ignore theirs (§7).
+ * It decides nothing at all here — a hundred chart is the same hundred numbers
+ * in the same order every time anybody prints one — and is still printed in the
+ * footer, because a reader has no way of knowing which sheets ignore theirs
+ * (§7).
  */
 export const CHART_SEED = 1;
 
 /**
  * Printed blank, always — on the sheets that carry one at all.
  *
- * A worksheet asks for a name because a teacher has thirty of them to hand
- * back. Nothing here holds one (§1): these are two ruled lines on paper and
- * there is nowhere in a config to put a value for either. What varies is
- * whether they are drawn: a chart a child works on has them, and a wall chart
- * and a strip of paper about to be cut into six do not.
+ * A name line is two ruled lines and there is nowhere in a config to put a
+ * value for either (§1). What varies is whether they are drawn: a chart a child
+ * works on has them, and a wall chart does not.
  */
 const WORKED: HeaderField[] = ["name", "date"];
 const PINNED: HeaderField[] = [];

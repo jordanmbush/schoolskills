@@ -23,15 +23,12 @@ import type { StormLetter, StormState, WaveSpec } from "@/engine/typing/storm";
 import type { Profile, Session } from "@/engine/types";
 
 /**
- * A storm, as a `Session` (docs/typing.md §8.7, decision 23).
+ * A storm, as a `Session` (§8.7, decision 23).
  *
  * What is on trial here is the MAPPING, because the run itself is already
  * decided: `storm.test.ts` proves what was shot, what got through and on what
  * streak, and this file asks only whether the record book is told the truth
- * about it. Four of its claims are acceptance criteria in their own right —
- * a letter is a `CardResult`, a run that ends early saves honestly, `configKey`
- * keys on the lesson rather than on how far a child got, and nothing
- * downstream needs a line of new code.
+ * about it.
  */
 
 const LESSON = "L39";
@@ -57,8 +54,7 @@ const at = (ch: string, spawnMs: number, fallMs: number): StormLetter => {
     fallMs,
     // No queue: a hand-placed letter falls the instant it appears, so every
     // absolute moment below is the one the test wrote down. The beat a real
-    // wave gives a letter (`QUEUE_MS`) is `buildWave`'s, and it belongs to the
-    // tests of the schedule rather than to every test of what a landing costs.
+    // wave gives a letter (`QUEUE_MS`) belongs to the tests of the schedule.
     dropMs: spawnMs,
     landMs: spawnMs + fallMs,
   };
@@ -190,12 +186,8 @@ describe("a falling letter is a CardResult", () => {
 
 describe("a run that ends early", () => {
   /**
-   * §8.7's own example: dying at letter 18 of 40 saves a session with 18
-   * cards, `correct`, `incorrect` and `durationMs` all honest, and the
-   * `survive` criterion simply not met.
-   *
-   * Four shot at the front, then thirteen landings empty the zone and the
-   * fourteenth is the one nothing was left to stop.
+   * §8.7's own example, built: four shot at the front, then thirteen landings
+   * empty the zone and the fourteenth is the one nothing was left to stop.
    */
   const died = (() => {
     let state = drumbeat(40, { shield: 13 });
@@ -271,11 +263,10 @@ describe("what a storm files itself as", () => {
       storm: true,
       wordCount: 12,
     });
-    // The rung has a wave of its own now (§5.6, #156) and it is not twelve
-    // letters long — which is the point of reading the length off the wave in
-    // hand. A saved run outlives the ladder it was played on (§5.4): re-tune
-    // lesson 39 and this run is still a run of the twelve it actually faced,
-    // and `survived` still asks the right question of it.
+    // The rung has a wave of its own and it is not twelve letters long — which
+    // is the point of reading the length off the wave in hand. A saved run
+    // outlives the ladder it was played on (§5.4): re-tune lesson 39 and this
+    // is still a run of the twelve it faced.
     const rung = lessonById(LESSON);
     expect(rung?.kind.type).toBe("storm");
     expect(rung?.wordCount).toBeGreaterThan(0);
@@ -292,20 +283,12 @@ describe("what a storm files itself as", () => {
 
 describe("a storm holds no record", () => {
   /**
-   * **Decision 50, as the record book actually reaches it.**
+   * Decision 50, as the record book actually reaches it (§8.7).
    *
-   * `previousBest: null` on the playing screen buys one thing: this run's own
-   * `personalRecord` flag and the 150 XP behind it. Every OTHER best on the
-   * site — the record book's "your best" column, the house best beside it, the
-   * `previousBest` a lesson's results screen is handed, and every rival a
-   * setup screen offers — is `bestRun`, which groups runs by `configKey` and
-   * picks with `compareRuns`, i.e. on time. A storm ends when the shield does,
-   * so on that rule the child who died first wins.
-   *
-   * These are the reviewer's two runs, played by the reducer rather than
-   * hand-built: one twelve-letter wave cleared, and the same wave with nothing
-   * pressed at all. Both file under `typing|L39|12`, which is the point of the
-   * key (§5.4) and therefore also the trap.
+   * Two runs played by the reducer rather than hand-built: one twelve-letter
+   * wave cleared, and the same wave with nothing pressed at all. Both file
+   * under `typing|L39|12`, which is the point of the key (§5.4) and therefore
+   * also the trap — on `compareRuns`'s rule the child who died first wins.
    */
   const WAVE = Array.from({ length: 12 }, (_, i) => at("f", i * 100, 3000));
 
@@ -324,14 +307,14 @@ describe("a storm holds no record", () => {
   };
 
   /**
-   * A lesson run at the identical key — the trap, no longer a dry run.
+   * A lesson run at the identical key.
    *
-   * Lesson 39 carries a `WaveSpec` now (#156), so `lessonKey(lesson)` and
-   * `configKey(stormConfig(...))` really are one string — `storm` is inert in
-   * `configKey` and must stay so, or every storm already saved is orphaned.
-   * `TypingSetup`'s brief and its rival list read this run and the two storms
-   * as one group. It is SLOWER than either storm and still has to be the best
-   * of the three, which it can only be if the other two are refused.
+   * `lessonKey(lesson)` and `configKey(stormConfig(...))` are one string —
+   * `storm` is inert in `configKey` and must stay so, or every storm already
+   * saved is orphaned. So `TypingSetup`'s brief and its rival list read this
+   * run and the two storms as one group. It is SLOWER than either storm and
+   * still has to be the best of the three, which it can only be if the other
+   * two are refused.
    *
    * Its twelve letters are the hand-built wave above rather than the rung's
    * own count, which is why the key here is `typing|L39|12`; the twenty rungs
@@ -396,16 +379,7 @@ describe("a storm holds no record", () => {
 
 describe("what `incorrect` counts", () => {
   /**
-   * **Letters that got through, and not keys that missed** (decision 48).
-   *
-   * A wrong key resolves no letter, so it is not a card — the same bargain
-   * decision 13 struck for the lessons, where a keystroke backspaced away
-   * costs nothing because what ended up on the line is right. Two things hang
-   * on it, and both would break if a miss were given a card of its own:
-   * `survived` is `cards.length >= wordCount`, so a run that died at letter
-   * three and sprayed forty wrong keys would read as having faced the whole
-   * wave; and the `unbroken` badge reads "nothing marked wrong" as "nothing
-   * got through", which is the sentence its own description makes.
+   * Letters that got through, and not keys that missed (§8.7, decision 48).
    */
   it("is not moved by a wrong key", () => {
     let state = drumbeat(3);
@@ -469,19 +443,16 @@ describe("what `incorrect` counts", () => {
 
 describe("the `unbroken` badge, over a wave the reducer really played", () => {
   /**
-   * "Clear a Hailstorm wave with the shield untouched" is read in
-   * `progress.ts` as `incorrect === 0`, and the mapping above is what decides
-   * which of two badges that sentence describes. Counting wrong keys into
-   * `incorrect` would have re-tuned it from **untouched shield** to
-   * **flawless run** — a behaviour change invisible in a diff that never
-   * touches `progress.ts`. These two pin the meaning that shipped.
+   * `progress.ts` reads "shield untouched" as `incorrect === 0`, so the
+   * mapping above is what decides which of two badges that sentence describes
+   * — untouched shield, or flawless run. A change of mind there would be
+   * invisible in a diff that never touches `progress.ts`, so these two pin the
+   * meaning that shipped.
    *
    * The rung's own `wordCount` is lent for the length of the test, exactly as
-   * `progress.test.ts` does. Lesson 39's wave is a real length now (§5.6), and
-   * borrowing it is what keeps these two about the badge's meaning rather than
-   * about the table: they are ten-letter runs, and the rung is asked to say
-   * ten so that `survived` is the thing being tested and not the difficulty
-   * pass that last edited the row.
+   * `progress.test.ts` does. These are ten-letter runs, and the rung is asked
+   * to say ten so that `survived` is the thing being tested rather than the
+   * difficulty pass that last edited the row.
    */
   const withWave = (count: number, body: () => void) => {
     const of = lessonById(LESSON);
@@ -551,10 +522,8 @@ describe("nothing downstream needs a line of new code", () => {
     expect(summary.draft.beatGhost).toBeNull();
     // `previousBest` is null, so this run's own results can never call
     // themselves a personal record or pay the 150 XP for one (decision 50).
-    // That is ALL it decides — it is a fact about this summary and about
-    // nothing else in storage. What keeps a run that died early from taking
-    // a record off one that cleared the wave is `config.storm`, which the
-    // block below is about.
+    // That is ALL it decides. What keeps a run that died early from taking a
+    // record off one that cleared the wave is `config.storm`, above.
     expect(summary.personalRecord).toBe(false);
   });
 
@@ -609,18 +578,9 @@ describe("nothing downstream needs a line of new code", () => {
 
 describe("every storm keys exactly as its own rung does", () => {
   /**
-   * **The trap above, over the twenty as they ship** (§5.4, §8.7, decision
-   * 50).
-   *
-   * A storm's `configKey` is built from the wave in hand and a lesson's from
-   * the rung, and #156 made those the same number — `wordCount` IS the wave's
-   * `count`. That is deliberate and load-bearing: retries of a level have to
-   * compare with each other, so they must share a bucket. It is also exactly
-   * what makes `config.storm` necessary, because sharing a bucket with a
-   * lesson is sharing it with `bestRun`.
-   *
-   * So both halves are asserted here, on the real waves rather than on a
-   * fixture: the keys match, and the storm still holds nothing at that key.
+   * The trap above, over the twenty as they ship (§5.4, §8.7, decision 50).
+   * Both halves on the real waves rather than on a fixture: the keys match,
+   * and the storm still holds nothing at that key.
    */
   it("shares its bucket with the lesson, and holds no best in it", () => {
     for (const lesson of STORM_LESSONS) {

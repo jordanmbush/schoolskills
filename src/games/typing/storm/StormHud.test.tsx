@@ -10,15 +10,12 @@ import { StormHud } from "./StormHud";
 import type { StormState, WaveSpec } from "@/engine/typing/storm";
 
 /**
- * The HUD, as a child reads it: what the run is worth, what the last clean hit
- * was paid at, and one flash of red when a wrong key takes points off
- * (docs/typing.md §8.6).
+ * The HUD, as a child reads it (§8.6).
  *
  * Everything here is a rendering of numbers the reducer already holds, and
- * that is the property this file is really defending: not one of these
- * assertions computes what a hit was worth. `storm.test.ts` decides that a
- * fifth hit is worth fifteen points; this decides only that fifteen is what
- * ends up on the screen.
+ * that is the property this file is defending: not one of these assertions
+ * computes what a hit was worth. `storm.test.ts` decides that a fifth hit is
+ * worth fifteen points; this decides only that fifteen reaches the screen.
  */
 
 const only = (ch: string, over: Partial<WaveSpec> = {}): WaveSpec => ({
@@ -62,21 +59,16 @@ describe("StormHud", () => {
   });
 
   it("shows the multiplier the last hit was paid at", () => {
-    // `comboMultiplier(state.combo)`: what the hit that just landed was paid
-    // at — the third hit paid 13 and the HUD reads ×1.3 — which is also the
-    // streak the next hit builds on, so a fourth would pay ×1.4. A run with
-    // nothing shot yet rests at ×1.0. The same `comboMultiplier` scales the
-    // score and `cardXp`: one streak, one multiplier, so the figure a child
-    // watches climb is the figure their XP is worth.
+    // What the hit that JUST LANDED was paid at rather than a forecast: the
+    // third hit paid 13 and the HUD reads ×1.3, and a fourth would pay ×1.4.
     expect(readOut(played(0))).toContain("×1.0");
     expect(readOut(played(3))).toContain("×1.3");
     expect(readOut(played(3))).toContain(
       `×${comboMultiplier(played(3).combo).toFixed(1)}`,
     );
 
-    // And it goes back to nothing the moment a wrong key breaks the streak,
-    // which is what "immediately and visibly" means for the half of the cost
-    // that is not points.
+    // And back to nothing the moment a wrong key breaks the streak, which is
+    // the half of a miss's cost that is not points.
     expect(readOut(played(3, 1))).toContain("×1.0");
   });
 
@@ -123,10 +115,8 @@ describe("StormHud", () => {
   });
 
   /*
-   * The way out (docs/typing.md §8.8, #155). A storm fills the viewport with
-   * no site chrome over it, so until the run ends this is the only exit there
-   * is — and on a tablet, where the game cannot be played at all, it is the
-   * only thing on the screen that does anything.
+   * The way out (§8.11). A storm fills the viewport with no site chrome over
+   * it, so until the run ends this is the only exit there is.
    */
 
   it("draws a way out while the gun is live", () => {
@@ -153,7 +143,7 @@ describe("StormHud", () => {
   });
 
   it("keeps the numbers where they were when it goes", () => {
-    // Both are placed by column rather than by order (`game.css`), so the
+    // Both are placed by column rather than by order (`storm.css`), so the
     // multiplier does not slide into the middle of the sky on the frame the
     // quit disappears.
     const live = hud(played(2), () => {});
@@ -175,11 +165,10 @@ describe("StormHud", () => {
   });
 
   it("says nothing about XP, in a run or at the end of one", () => {
-    // The payout is the ending screen's line now (`StormOver`), where there is
-    // room to put it beside the finger that let the storm through. Here it
-    // would be a second number moving on different rules from the score beside
-    // it — XP is computed once at the end and floored at zero (§8.6), and the
-    // HUD is the run's own running total.
+    // The payout is the ending screen's line (`StormOver`). Here it would be a
+    // second number moving on different rules from the score beside it — XP is
+    // computed once at the end and floored at zero (§8.6), where the HUD is a
+    // running total.
     const running = played(2);
     expect(running.ending).toBeNull();
     expect(readOut(running)).not.toContain("XP");

@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { declaredWidth, printedBlockBox } from "../chrome";
 import { BLOCK_GAP } from "../layout";
 import { MARGINS } from "../paper";
-import { cardRowEms } from "../phonics/cards";
+import { cardRowEms } from "../phonics/metrics";
 import { SCRIPTURE_CREDIT } from "../passages";
 import type {
   Block,
@@ -14,10 +14,12 @@ import type {
   Sheet,
 } from "../types";
 import { buildSheet, describeSheet, sheetSpec } from "../index";
+import { describeSheetFamily } from "../contract";
 
 import {
   MONTH_NAMES,
   PLANNER_ROWS,
+  PLANNER_SHEET,
   daysInMonth,
   isLeapYear,
   monthGrid,
@@ -28,22 +30,14 @@ import {
 /**
  * The week, and the one thing on this shelf that has a right answer.
  *
- * Four of the five sheets here are boxes, and a box cannot be incorrect. A
- * dated calendar can: a month whose first lands under the wrong weekday is a
- * sheet somebody plans a term around, and it is wrong in a way nobody checks —
- * you do not proofread a calendar, you read off it.
- *
- * **So the weekdays are verified by an independent path.** `weekday` is
- * Sakamoto's algorithm, chosen because it is integer arithmetic with no ambient
- * state; the suite checks it against the platform's own `Date`, which knows
- * nothing about the table in that function. A generator asserting its own
- * arithmetic agrees with itself whatever it does — the same reason the word
- * search's key is found by searching its grid.
+ * A dated calendar is wrong in a way nobody checks — you do not proofread a
+ * calendar, you read off it — so the weekdays are verified against the
+ * platform's own `Date`, which knows nothing about the table in `weekday`.
  *
  * Everything else below is geometry, held against `printedBlockBox`: the box
  * the header and footer that were *printed* left behind, rather than the one
- * the family reserved for, which is the only version a family can be caught
- * out by.
+ * the family reserved for, which is the only version a family can be caught out
+ * by.
  */
 
 const config = (over: Partial<PlannerConfig> = {}): PlannerConfig => ({
@@ -379,6 +373,14 @@ describe("a verse of the week", () => {
 
 /* ── The promises every family makes ───────────────────────────────────── */
 
+describeSheetFamily("planner", {
+  label: "Calendars, planners and charts",
+  spec: PLANNER_SHEET,
+  config,
+  shapes: STYLES.map((style) => ({ style, passage: "psalm-23" })),
+  keyed: plannerKeyed,
+});
+
 describe("the planner family", () => {
   /**
    * Every combination the page panel actually offers: three stocks, four
@@ -468,15 +470,6 @@ describe("the planner family", () => {
         table.columns.reduce((total, column) => total + column.width, 0),
         style,
       ).toBe(printedBlockBox(sheet).width);
-    }
-  });
-
-  it("is deterministic in (config, seed)", () => {
-    for (const style of STYLES) {
-      const built = config({ style, passage: "psalm-23" });
-      expect(JSON.stringify(buildSheet(built, 9))).toBe(
-        JSON.stringify(buildSheet(built, 9)),
-      );
     }
   });
 

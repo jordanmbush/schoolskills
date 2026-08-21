@@ -172,14 +172,12 @@ const SENTENCES = [
  *     that trails off mid-list would arrive as a fragment with a comma on it.
  *
  * ── Why the words are written out here ──────────────────────────────────────
- * Because `decks/index.ts` is the front door for every island — the flash
- * cards, the spelling mount, the record book, the print shop — and a module is
- * assigned to a chunk whole. An import of the passage library from this file
- * puts all of it into all of them: the WEBu, the KJV beside it and thirty
- * other passages, shipped to every game to type thirty-three verses in one of
- * them. It was measured on the way past — 46KB of shared chunk became 222KB —
- * which is also why the credit comes from `passages/credit.ts` and not from
- * the file the verses are in.
+ * A module is assigned to a chunk whole, and this file is reachable from
+ * `decks/index.ts`, so an import of the passage library here puts the WEBu,
+ * the KJV beside it and thirty other passages into every island on the site to
+ * type thirty-three verses in one of them (docs/typing.md §5.3, which has the
+ * measurement). It is also why the credit comes from `passages/credit.ts` and
+ * not from the file the verses are in.
  *
  * So the text is repeated, and `typing.test.ts` pins every line of it to
  * `passage()` character for character. That is the arrangement `scripture.ts`
@@ -359,11 +357,11 @@ export function passageFor(config: TypingConfig, seed: number): string[] {
    * Both arrive in the same field, because both are a config that carries its
    * own words (docs/typing.md §5.3) — but they are not the same kind of thing.
    * The ladder generates a lesson's text in order and at length, sentences and
-   * their full stops included (§5.1), so dealing it out again would shuffle the
-   * stops into the middle of it. A parent's five tricky words are the opposite:
-   * there is no order to keep and the bag is short, so it is drawn from until
-   * the run is long enough. The lesson id is what tells the two apart, exactly
-   * as it does in `typingConfigKey` below.
+   * their full stops included (docs/typing.md §5.1), so dealing it out again
+   * would shuffle the stops into the middle of it. A parent's five tricky words
+   * are the opposite: there is no order to keep and the bag is short, so it is
+   * drawn from until the run is long enough. The lesson id is what tells the
+   * two apart, exactly as it does in `typingConfigKey` below.
    */
   if (config.lessonId && config.words?.length)
     return config.words.slice(0, config.wordCount);

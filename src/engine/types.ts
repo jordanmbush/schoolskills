@@ -1,10 +1,6 @@
 /**
- * What the typing game puts on screen under the passage (docs/typing.md §4.1).
- *
- * One field rather than `showKeyboard` + `showHint`, because three of the four
- * boolean combinations are meaningful and the fourth — a hint pointing at a
- * board that isn't drawn — is nonsense. A union cannot express the nonsense,
- * so no reader has to decide what to do when it arrives.
+ * What the typing game puts on screen under the passage — one field rather
+ * than `showKeyboard` + `showHint` (docs/typing.md §4.1).
  */
 export type KeyboardMode =
   /** Not on screen at all. */
@@ -22,14 +18,10 @@ export type Profile = {
   age: number;
   soundOn: boolean;
   /**
-   * How much of the keyboard this player wants (§4.2). Absent means "guide",
-   * and absent is the ordinary state: every profile made before this shipped
-   * lacks the field, and nothing writes it until a child chooses. One default,
-   * at one read site, rather than a value copied into `create` as well.
-   *
-   * Optional precisely so this costs no `DB_VERSION` bump and no migration —
-   * profiles are read straight through, unlike sessions, whose widening lives
-   * in `engine/migrate.ts`.
+   * How much of the keyboard this player wants (§4.2). Absent is the ordinary
+   * state, and reads as "guide" — one default at one read site, rather than a
+   * value `create` also writes. Optional because profiles are read straight
+   * through, unlike sessions, whose widening lives in `engine/migrate.ts`.
    */
   keyboard?: KeyboardMode;
   xp: number;
@@ -114,65 +106,43 @@ export type TypingConfig = {
   kind: "typing";
   levelId: string;
   /**
-   * Set when this run is a lesson from the ladder (docs/typing.md §5.4).
-   *
-   * The discriminator for a ladder run, and the one field `Session.mode` and
-   * the ghost key prefer when it is there — a lesson is the identity, not the
-   * passage. Every run of lesson 7 generates its own words, so a key built
-   * from them would file each run in a bucket of one and a child would never
-   * be shown their own best. Optional, because every run saved before the
-   * ladder existed is a level and must key exactly as it always has.
+   * Set when this run is a lesson from the ladder, and what `Session.mode` and
+   * the ghost key prefer over the passage when it is there (§5.4). Optional,
+   * because every run saved before the ladder existed is a level and must key
+   * exactly as it always has.
    */
   lessonId?: string;
   /**
    * How much of the board this run puts on screen, when the child chose it
-   * (docs/typing.md §4.2).
+   * (docs/typing.md §4.2). Absent means nobody chose: free play never sets it,
+   * and a lesson whose keyboard is locked has nothing to record.
    *
-   * Absent is the ordinary case and means "nobody chose": free play never sets
-   * it, and a lesson whose keyboard is locked has nothing to record. It is set
-   * by the lesson brief, which seeds its control from `lesson.keyboard` and
-   * lets an unlocked lesson be run with the board turned down — the choice
-   * belongs to the run it was made for, so it travels with the run's config
-   * rather than being written back over the player's own setting.
+   * On the config rather than in `PendingRace` because the run outlives the
+   * navigation: a lesson passed with the board off is a different thing from
+   * one passed reading the answers, and `eyes-up` (§6.7) is a badge for exactly
+   * that choice. A mode kept in memory would be gone by the time anything could
+   * award it.
    *
-   * Carried in the config rather than in `PendingRace` because the run outlives
-   * the navigation: a lesson passed with the board off is a different thing
-   * from one passed reading the answers, and `eyes-up` (§6.7) is a badge for
-   * exactly that choice. A mode kept in memory would be gone by the time
-   * anything could award it.
-   *
-   * Inert in `configKey` on purpose (`decks/typing.ts#typingConfigKey`) — a
-   * child's best at lesson 7 is their best at lesson 7, and splitting the
-   * record book by how much help was on screen would hide their own record
-   * from them the first time they turned the guide off.
+   * Inert in `configKey` (`decks/typing.ts#typingConfigKey`) — a child's best
+   * at lesson 7 is their best at lesson 7, and splitting the record book by how
+   * much help was on screen would hide their own record from them the first
+   * time they turned the guide off.
    */
   keyboard?: KeyboardMode;
   /**
-   * Set only by a Hailstorm run (docs/typing.md §8.7, decision 50).
+   * Set only by a Hailstorm run, and the field that says a run is not ranked
+   * (docs/typing.md §8.7, decision 50). `isRanked` (`decks/index.ts`) reads it
+   * and `bestRun` (`engine/records.ts`) refuses those runs, so every "best" on
+   * the site inherits one judgement.
    *
-   * A storm is not ranked, and this is the field that says so. Every "best" on
-   * the site is `compareRuns`, which decides on time — and a storm run ends
-   * when the shield does, so a child who died at letter three took less time
-   * than one who cleared the wave and would hold the record for it. `isRanked`
-   * (`decks/index.ts`) reads this and `bestRun` (`engine/records.ts`) refuses
-   * those runs, so the record book's two columns, the `previousBest` that pays
-   * the personal-best bonus and every ghost a setup screen offers all inherit
-   * one judgement.
+   * On the run rather than derived from `lessonById(lessonId)`, because what a
+   * run *was* is a fact about the run: re-tune lesson 39 out of a Hailstorm and
+   * a derived rule would start ranking every storm already saved.
    *
-   * ── On the run, not derived from the lesson ─────────────────────────────
-   * `lessonById(lessonId)?.kind.type === "storm"` would answer the same
-   * question today without a field. It is not used, because a saved run
-   * outlives the ladder it was played on (§5.4, and `UNKNOWN_DECK`): re-tune
-   * lesson 39 out of a Hailstorm — or retire the id — and a derived rule would
-   * quietly start ranking every storm already in the record book, awarding the
-   * record to the shortest life. What a run *was* is a fact about the run, and
-   * facts about a run travel with it.
-   *
-   * Optional and never `false`, exactly like `lessonId` and `keyboard` above,
-   * so it costs no `DB_VERSION` bump and no migration. Inert in `configKey`
-   * (`decks/typing.ts#typingConfigKey`): that key decides which runs may race
-   * each other as ghosts, and changing its format orphans every personal best
-   * already saved (CLAUDE.md, §10).
+   * Optional and never `false`, like `lessonId` and `keyboard` above, so it
+   * costs no `DB_VERSION` bump and no migration. Inert in `configKey`, which
+   * decides which runs may race each other as ghosts and so may not change
+   * shape for anything already saved (CLAUDE.md, §10).
    */
   storm?: true;
   /** An explicit set, for a drill of the words a player keeps fumbling. */
@@ -209,12 +179,12 @@ export type CustomDeck = {
 };
 
 /* ── Cards ───────────────────────────────────────────────────────────────
-   A card is text in and text out, deliberately. Answers were numbers until
-   spelling arrived, and every alternative to widening them was worse: a
-   `number | string` union puts a branch at every comparison, and a generic
-   `Card<T>` leaks type parameters into components that only ever render the
-   thing. What a deck family *does* know about its own answers — how to
-   compare "07" with "7", or "Cat" with "cat" — lives on its `DeckSpec`.     */
+   A card is text in and text out, deliberately. Both alternatives to a string
+   answer are worse: a `number | string` union puts a branch at every
+   comparison, and a generic `Card<T>` leaks type parameters into components
+   that only ever render the thing. What a deck family *does* know about its
+   own answers — how to compare "07" with "7", or "Cat" with "cat" — lives on
+   its `DeckSpec`.                                                           */
 
 export type Card = {
   /** Rendered prompt, e.g. "7 × 8". */

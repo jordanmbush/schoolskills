@@ -17,15 +17,10 @@ export function Hud({
   total: number;
   onQuit: () => void;
   /**
-   * Whether a wrong answer costs time, which is a thing about the run rather
-   * than about this header. True in a race, and default because a race is what
-   * this header was built for. False on a typing lesson: three seconds a miss
-   * is a race mechanic, and on a lesson it double-counts accuracy — which has a
-   * bar of its own there — and makes the wpm figure a lie, because the number
-   * stops being words per minute of anything (docs/typing.md §7).
-   *
-   * The miss count still comes in, because it is still true; what changes is
-   * whether it is charged for.
+   * Whether a wrong answer costs time — a thing about the run rather than about
+   * this header. True in a race, false on a typing lesson (docs/typing.md §7).
+   * The miss count still comes in either way; what changes is whether it is
+   * charged for.
    */
   penalty?: boolean;
 }) {

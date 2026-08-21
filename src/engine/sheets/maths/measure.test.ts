@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { answerKey, buildSheet, describeSheet, sheetSpec } from "../index";
+import { buildSheet, describeSheet } from "../index";
+import { describeSheetFamily } from "../contract";
 import { PROBLEM_GAP } from "../layout";
 import type {
   MarginSize,
@@ -123,9 +124,8 @@ const config = (over: Partial<MeasureConfig> = {}): MeasureConfig => ({
 const EVERY_QUANTITY: Quantity[] = ["length", "mass", "capacity"];
 
 /**
- * Every shape the family can print, which is every acceptance criterion of the
- * story: converting and comparing, in both systems, over each of the three
- * things a child measures.
+ * Every shape the family can print: converting and comparing, in both systems,
+ * over each of the three things a child measures.
  */
 const EVERY_SHAPE: Array<Partial<MeasureConfig>> = [
   {},
@@ -147,6 +147,14 @@ const EVERY_SHAPE: Array<Partial<MeasureConfig>> = [
 ];
 
 const SEEDS = [0, 1, 2, 7, 4242];
+
+describeSheetFamily("measure", {
+  label: "Measurement",
+  spec: MEASURE_SHEET,
+  config,
+  shapes: EVERY_SHAPE,
+  seeds: SEEDS,
+});
 
 /** The one block a measurement sheet has, narrowed for the reader. */
 function problemsOf(over: Partial<MeasureConfig>, seed: number): Problem[] {
@@ -190,11 +198,6 @@ const sentence = (problem: Problem): string =>
 /* ── The registry ──────────────────────────────────────────────────────── */
 
 describe("the measurement family", () => {
-  it("is in the registry under the kind its config carries", () => {
-    expect(sheetSpec("measure")).toBe(MEASURE_SHEET);
-    expect(sheetSpec("measure").label).toBe("Measurement");
-  });
-
   it("names the sheet in the words the system it is for uses", () => {
     // Metric weighs mass and imperial weighs weight. It is one word, and it is
     // the word a parent types into a search box.
@@ -295,22 +298,6 @@ describe("the answer key", () => {
       }
     }
   });
-
-  it("prints the answers only when the sheet is a key", () => {
-    const sheet = buildSheet(config(), 5);
-    const key = answerKey(config(), 5);
-    expect(sheet.answers).toBe(false);
-    expect(key.answers).toBe(true);
-    expect(key.footer.note).toBe("Answer key");
-  });
-
-  it("is the same sheet keyed, never a second generation", () => {
-    for (const shape of EVERY_SHAPE) {
-      expect(answerKey(config(shape), 11).blocks).toEqual(
-        buildSheet(config(shape), 11).blocks,
-      );
-    }
-  });
 });
 
 /** The two amounts either side of a sign. */
@@ -395,7 +382,7 @@ describe("what may be on the page", () => {
 
   it("prints nothing rather than something wrong when the ask is impossible", () => {
     // A sheet with no quantity on it has nothing to measure. An empty sheet is
-    // the honest answer, and the builder's job to prevent (PRINT13).
+    // the honest answer, and the builder's job to prevent.
     expect(problemsOf({ quantities: [] }, 1)).toEqual([]);
     expect(problemsOf({ quantities: ["weight" as Quantity] }, 1)).toEqual([]);
   });
@@ -414,17 +401,6 @@ const howBig = (amount: Amount): number =>
 /* ── Determinism, and the three features it buys (§7) ──────────────────── */
 
 describe("(config, seed)", () => {
-  it("builds the same sheet twice", () => {
-    for (const shape of EVERY_SHAPE) {
-      for (const seed of SEEDS) {
-        const once = buildSheet(config(shape), seed);
-        const twice = buildSheet(config(shape), seed);
-        expect(once).not.toBe(twice);
-        expect(once).toEqual(twice);
-      }
-    }
-  });
-
   it("draws the same numbers whichever system they are printed in", () => {
     // The system is a set of units and a title, and nothing else. Two sheets
     // that drew different questions would be two sheets, and "the same

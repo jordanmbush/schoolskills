@@ -12,111 +12,61 @@ import type { StormState, Wave } from "@/engine/typing/storm";
 
 /**
  * The clock a storm falls on: one `requestAnimationFrame` loop, `tick`, and
- * one number written straight onto each stone (docs/typing.md §8.9).
+ * one number written straight onto each stone (§8.9).
  *
- * ── The loop holds no rules ──────────────────────────────────────────────────
- * All it does per frame is measure the delta, hand it to `tick`, write each
- * drawn stone's `--drop`, play whatever the frame turned out to sound like,
- * and re-render when the picture — rather than the clock — has changed. Which letters exist, where they are, what a landing
- * costs, what a hit is worth, what a wrong key costs and when a run is over
- * were all settled in `engine/typing/storm.ts` before the first frame. That is
- * what makes the shield's rules answerable by a unit test in a millisecond
- * instead of by somebody watching and hoping, so a rule that migrates into
- * this file is a rule that has stopped being testable. The two engine
- * predicates called here — `progressAt` for where a stone is, `isDrawn` for
- * whether it is on the field — are asked, never restated.
+ * The loop holds no rules. Per frame it measures the delta, hands it to
+ * `tick`, writes each drawn stone's `--drop`, plays whatever the frame turned
+ * out to sound like, and re-renders only when the picture — rather than the
+ * clock — has changed. `progressAt` and `isDrawn` are asked, never restated,
+ * and a rule that migrates into this file is a rule that has stopped being
+ * answerable by a unit test in a millisecond.
  *
- * The sound is the same shape of thing. `playStormSounds` is handed the frame
- * before and the frame after and works out what changed between them
- * (`stormSounds.ts`); nothing here decides what a hit or a breach sounds like,
- * and nothing in `storm.ts` has grown an event list to tell it. It is called
- * from beside `tick` and `fire` rather than from a hook watching the rendered
- * state for the same reason the trigger is here: those two are the only things
- * that move a run, and a state that never reaches a render is still a state
- * something happened in.
+ * `playStormSounds` is called beside `tick` and `fire` rather than from a hook
+ * watching the rendered state: those two are the only things that move a run,
+ * and a state that never reaches a render is still a state something happened
+ * in (§8.12).
  *
- * ── The trigger is here because the clock is ─────────────────────────────────
- * A shot is fired at `live.current` — the run as this frame left it — and not
- * at the state React last rendered. The rendered one is the last frame whose
- * PICTURE changed, which can be a long way behind: a wave with nothing
- * spawning, landing or being shot re-renders nothing at all, and this
- * stand-in's letters are 300ms apart. Fire from it and a shot resolves against
- * a target read at a stale clock, on a state with every tick since thrown
- * away. So the keydown listener is armed and cancelled with the loop, in the
- * same effect, and hands `fire` the ref.
+ * **The trigger is here because the clock is.** A shot is fired at
+ * `live.current` — the run as this frame left it — and never at the state
+ * React last rendered, which is the last frame whose PICTURE changed and can
+ * be a long way behind: a wave with nothing spawning, landing or being shot
+ * re-renders nothing at all. Fire from that and a shot resolves against a
+ * target read at a stale clock, on a state with every tick since thrown away.
+ * So the keydown listener is armed and cancelled with the loop, in the same
+ * effect, and hands `fire` the ref.
  *
- * ── DOM, not canvas ──────────────────────────────────────────────────────────
- * Twelve absolutely-positioned `<span>`s moved with a transform, not a canvas,
- * and the reason is specific to this site rather than a preference about
- * rendering. The whole app changes biome by swapping one `[data-world]` block
- * of custom properties in `src/styles/worlds.css`: every colour on this screen
- * — the stone's `--ink-800` fill, its `--accent` rim and glow, the `--chalk`
- * glyph, the `--hairline` it lands on — is inherited from that block, which is
- * why the field sits in the glacier without a single `[data-world="ice"]` rule
- * written under it.
- *
- * A canvas is a hole in exactly that. Nothing inside a bitmap inherits, so
- * every one of those colours would have to be read back out with
- * `getComputedStyle` and re-plumbed by hand into fill and stroke calls — and
- * the moment somebody adds the eighth world, the one screen in the app that
- * is *most* about scenery would be the one screen that silently kept the old
- * one. The cost of the DOM here is a style recalculation on twelve small
- * elements per frame; the cost of the canvas is a biome that stops being one
- * declaration.
- *
- * It is also the pattern the race already uses. `useRaceClock`'s fuse writes
- * `--left` straight to an element and lets `transform: scaleX(var(--left))` in
- * the stylesheet do the moving, for the same two reasons this does: it has to
- * move at full frame rate, and it has to keep moving for a player who asked
- * for reduced motion, so it cannot be a CSS animation.
- *
- * ── `--drop`, not a `translateY` computed here ───────────────────────────────
- * The loop writes the fraction the engine computed and nothing else; the
- * stylesheet multiplies it by the height of the sky (§8.2). That keeps the one
- * property this file has no business holding — geometry — where the lanes and
- * the keycaps already are, off a single `--key` and the sky's own size. A loop
- * that wrote pixels would have to learn how tall the field is, and would be a
- * second opinion about it at every viewport width.
+ * The stones are DOM elements moved by a custom property rather than a
+ * canvas, and the loop writes only the fraction the engine computed — the
+ * geometry is the stylesheet's (§8.9, §8.2).
  */
 
 /**
- * The longest step the storm accepts from one frame, in ms.
+ * The longest step the storm accepts from one frame, in ms (§8.9,
+ * decision 38).
  *
- * `tick` is deliberately honest about any interval it is handed and resolves
- * every landing inside it, however long — so clamping is the clock's call and
- * not the rule's (decision 35). This is that call, and it is what stops a
- * backgrounded tab from fast-forwarding the wave: `requestAnimationFrame` is
- * suspended while a tab is hidden, so coming back is a single frame carrying
- * however many seconds the child was away, and an unclamped one would teleport
- * a dozen letters through the shield before the screen had repainted once.
+ * `tick` resolves every landing inside whatever interval it is handed, however
+ * long, so clamping is the clock's call and not the rule's. Without it a
+ * backgrounded tab — where rAF is suspended, so coming back is a single frame
+ * carrying however many seconds the child was away — would teleport a dozen
+ * letters through the shield before the screen had repainted once.
  *
- * 100ms is six frames at 60Hz and three at 30Hz, so a step longer than this is
- * not a slow frame — it is a gap: a hidden tab, a laptop resumed from sleep, a
- * long stall. Below ten frames a second the storm therefore runs slow rather
- * than skipping, which is the right way round for a game whose whole demand is
- * a reaction time. Above it the wall clock is authoritative, so the storm is
- * not quietly easier on a slower machine.
- *
- * Pausing on `visibilitychange` is the other half of the option `storm.ts`
- * leaves open, and it is not taken: rAF is already suspended for a hidden tab,
- * so the clamp is the thing that has to be right on the way back — and unlike
- * a visibility listener it also covers the stalls that are not tab switches.
+ * No `visibilitychange` listener goes with it: rAF is already suspended for a
+ * hidden tab, and the clamp covers the stalls that are not tab switches as
+ * well (§8.9).
  */
 export const MAX_STEP_MS = 100;
 
 /**
- * The key that leaves a storm (§8.8, decision 55).
+ * The key that leaves a storm (§8.11, decision 55).
  *
- * `Escape` is not on the board — `keyX` says so, which is what keeps it out of
- * the `preventDefault` below — so it is the one key on a keyboard this game
- * has no use for, and therefore the one it can spend on the way out.
+ * The `Quit` button in the HUD cannot be reached by tabbing, because `Tab` is
+ * one of the keys the live gun swallows — so the keyboard needs its own way
+ * out. One listener takes it, and takes it before the trigger: answered
+ * anywhere else on this screen it would be charged as a miss first — ten
+ * points and the streak for reaching for the door (§8.11).
  *
- * It has to be known HERE and not only by the screen that acts on it. Every
- * other keydown while the gun is live is a shot, and a shot that missed costs
- * ten points and the streak: an `Escape` handled by a second listener beside
- * this one would still be fired at as a miss on the way past, so a child
- * reaching for the way out would be charged for reaching for it. One listener,
- * one decision, and the quit is taken before the trigger.
+ * `Escape` is not on the layout (`keyX`), which is what excludes it from the
+ * `preventDefault` below as well.
  */
 export const QUIT_KEY = "Escape";
 
@@ -126,12 +76,8 @@ export const QUIT_KEY = "Escape";
  *
  * Non-finite and negative deltas are floored to zero rather than passed on.
  * The engine floors negatives too, but it cannot defend itself against a
- * `NaN`: `timeMs + NaN` is `NaN` for the rest of the run, no letter ever lands
- * again, and the run has no ending to leave by — an unrecoverable state, from
- * a clock that only has to be wrong once. Two subtractions of real
- * `performance.now()` readings do not produce one, which is exactly why this
- * belongs at the boundary where a reading first becomes a number the rules
- * trust.
+ * `NaN`: one poisons `timeMs` permanently, no letter ever lands again, and a
+ * run with no ending has no way out of it.
  */
 export function stepMs(now: number, last: number | null): number {
   if (last === null) return 0;
@@ -151,47 +97,27 @@ function onField(state: StormState): number {
 /**
  * Would React draw a different picture than the one it is already showing?
  *
- * The loop needs this because neither `tick` nor `fire` can answer it:
- * an empty tick and a missed shot both return a fresh object, so `===` on the
- * state says "changed" sixty times a second and means nothing. What the screen
- * is actually a function of is every field of a run except the clock and the
- * wave — so `resolved`, `shield`, `combo`, `score`, `misses` and `ending`,
- * compared here — plus the one thing the clock alone moves: a letter appearing,
- * which no field of `StormState` records because it is a time crossing.
+ * Neither `tick` nor `fire` can answer it: an empty tick and a missed shot
+ * both return a fresh object, so identity reads as "changed" on every frame
+ * and means nothing. What the screen is a function of is every field of a run
+ * except the clock and the wave, plus a letter appearing — a time crossing
+ * that `StormState` does not record (§8.9).
  *
- * The target used to be compared here as well, because two letters at
- * different speeds can cross mid-air with nothing else happening at all
- * (decision 32) and the board went on marking a child's keys against a letter
- * that was no longer the lowest. There is no board now (decision 64), and
- * nothing else on this screen is a function of which letter is the target —
- * the stones carry no target class and the HUD does not name it — so the
- * crossing changes no picture and is no longer a redraw.
+ * `score` and `misses` move on every miss and `missTintAt` only on the ones
+ * the throttle lets light, so the stamp is covered by the other two today. It
+ * is compared anyway: that cover is a coincidence of two constants in
+ * `storm.ts`, and a `MISS_POINTS` of zero would leave the HUD's `--flare`
+ * flash — which mounts from `missTintAt` — silently undrawn.
  *
- * `score` and `misses` move on **every** miss; `missTintAt` moves only on the
- * ones the throttle lets light, which is `MIN_TINT_GAP_MS` apart at the most
- * (decision 57). So the stamp is covered by the other two today — a frame it
- * moves on is a frame the score moved on as well — and all three are compared
- * anyway, because "the score happens to change whenever the flash does" is a
- * coincidence of two constants in `storm.ts` rather than a property of the
- * screen. A `MISS_POINTS` of zero would leave the HUD's `--flare` flash
- * undrawn, which is a bug nobody would think to look for here — and
- * `missTintAt` is the field the HUD actually mounts that flash from, so it is
- * the one whose absence would be silent.
- *
- * `wave` is the field left out, and deliberately: a run's wave is fixed for
- * its whole life, so it cannot change under a running loop, and a screen
- * handed a different one is a different run rather than a redraw. The effect
- * below is what notices that — it starts the new storm from zero and
- * `setState`s it — so comparing `wave` here would be a second, later answer to
- * a question already settled before the frame.
+ * `wave` is the field left out: the effect below is what notices a different
+ * one, and it starts that storm from zero.
  *
  * `resolved`, `shield` and `ending` are compared by identity on purpose: the
- * reducer rebuilds each of them only when it changes one, so identity is a
- * true answer for them where it is a false one for the state that holds them.
- * `useStormClock.test.ts` pins the whole shape of a `StormState` against that
- * list — an optional field included — so a story that adds one has to come
- * here and decide whether it is drawn, rather than find out from a screen that
- * stopped updating.
+ * reducer rebuilds each only when it changes one, so identity is a true answer
+ * for them where it is a false one for the state that holds them.
+ * `useStormClock.test.ts` pins the whole shape of a `StormState` against this
+ * list — optional fields included — so a story that adds one has to come here
+ * and decide whether it is drawn.
  */
 export function redrawn(drawn: StormState, next: StormState): boolean {
   return (
@@ -211,10 +137,8 @@ export function redrawn(drawn: StormState, next: StormState): boolean {
  *
  * The state handed back is the last frame whose *picture* differed, not the
  * live one — the live one advances every frame and is the loop's own business.
- * Anything that needs the clock to the millisecond is answered from inside the
- * effect against `live.current` — the trigger below is exactly that — rather
- * than from a render, which is the same reason `useRaceClock` keeps its marks
- * in refs.
+ * Anything that needs the clock to the millisecond is answered inside the
+ * effect against `live.current`, which is where the trigger is.
  */
 export function useStormClock(
   wave: Wave,
@@ -225,54 +149,40 @@ export function useStormClock(
     onQuit,
   }: {
     /**
-     * Freeze the run: no frames, no wave time, no gun (§8.8, decision 54).
+     * Freeze the run: no frames, no wave time, no gun (§8.11, decision 54).
      *
-     * This file's cleanup used to say that a quit which kept the field on
-     * screen would be a pause, and that a pause is an input rather than an
-     * omission. This is that input. A storm with the quit sheet up must not go
-     * on falling behind it — a child reading "this won't be saved" while their
-     * shield breaks is being charged for asking the question — and it must not
-     * go on shooting either, because `Space` and `Enter` are the keys the
-     * sheet's own buttons answer to.
-     *
-     * Both come free from tearing the effect down. rAF is what moves wave
-     * time, and `last` starts over at `null` when the loop re-arms, so however
-     * long the sheet is up is worth exactly zero to the storm. Nothing here
-     * holds a paused-at timestamp for a resume to get wrong.
+     * The effect is torn down rather than skipped, so a paused storm neither
+     * falls nor listens — `Space` and `Enter` are the keys the quit sheet's
+     * own buttons answer to. Resuming re-arms with `last` at `null`, a first
+     * frame worth zero, so nothing here holds a paused-at timestamp for a
+     * resume to get wrong.
      */
     paused?: boolean;
     /**
      * Has the child said they are ready? (§8.13, decision 71.)
      *
-     * A wave does not begin the moment the route mounts. It hangs at zero —
-     * no frames, no wave time, and, because `StormField` draws no stones
-     * before it starts, nothing on screen to read yet — until a key says go.
+     * The wave hangs at zero — no frames, no wave time — until a key says go.
      * The screen owns the flag; what is owned here is the key that flips it,
-     * for the same reason `QUIT_KEY` is (below): while the gun is live every
-     * stroke is a shot, so a second window listener sitting beside this one is
-     * a way for one press to be answered twice.
+     * because while the gun is live every stroke is a shot, so a second window
+     * listener beside this one is a way for one press to be answered twice.
      *
-     * It defaults to started, which is what a caller with no ready screen —
-     * a test, a story that renders a wave to look at it — should get.
+     * It defaults to started, which is what a caller with no ready screen — a
+     * test, a story that renders a wave to look at it — should get.
      *
-     * Distinct from `paused`, and the two are not interchangeable. Pausing is
-     * a run held mid-fall with a sheet over it; this is a run that has not
-     * had its first frame. Both stop the clock, and only this one is waiting
-     * for a key to end it.
+     * Distinct from `paused`: pausing is a run held mid-fall with a sheet over
+     * it, this is a run that has not had its first frame. Both stop the clock,
+     * and only this one is waiting for a key to end it.
      */
     started?: boolean;
     /**
      * Start the run: what the first key press does while `started` is false.
-     *
-     * Absent on a screen that begins by itself, in which case nothing here
-     * ever asks for it.
+     * Absent on a screen that begins by itself, which never asks for it.
      */
     onStart?: () => void;
     /**
      * What `QUIT_KEY` does, or nothing where a screen offers no way out.
-     *
-     * Taken here rather than by a listener of the screen's own, because the
-     * gun is here: see `QUIT_KEY`.
+     * Taken here rather than by a listener of the screen's own: see
+     * `QUIT_KEY`.
      */
     onQuit?: () => void;
   } = {},
@@ -288,9 +198,9 @@ export function useStormClock(
   const skyRef = useRef<HTMLDivElement | null>(null);
 
   /**
-   * Through a ref for the reason `StormRun`'s finish is: a fresh closure every
-   * render, and naming it as a dependency would re-arm the loop — and reset
-   * `last` — on every re-render of a screen that re-renders on the picture.
+   * Through a ref because a fresh closure every render, named as a dependency,
+   * would re-arm the loop — and reset `last` — on every re-render of a screen
+   * that re-renders on the picture.
    */
   const quitRef = useRef<(() => void) | undefined>(undefined);
   quitRef.current = onQuit;
@@ -307,10 +217,7 @@ export function useStormClock(
       setState(live.current);
     }
 
-    // Nothing is armed while the sheet is up: no frame is requested, so no
-    // wave time passes, and no listener is bound, so no key fires or is
-    // swallowed. Resuming re-runs this effect from the top with `last` null
-    // again, which is a first frame worth zero (`stepMs`).
+    // Nothing is armed while the sheet is up — see `paused`.
     if (paused) return;
 
     let frame = 0;
@@ -325,76 +232,39 @@ export function useStormClock(
 
     /**
      * The gun (§8.6). Every stroke is a shot at the lowest letter for as long
-     * as the run is live; the rules for what that is worth are `fire`'s, and
-     * none of them are here.
+     * as the run is live; what that is worth is `fire`'s to say, and a stroke
+     * is a code and a shift together because that is what a character is
+     * (§8.4, decision 70).
      *
-     * **A stroke is a code and a shift, and both are handed over**
-     * (decision 70). `event.shiftKey` is the difference between `A` and `a`,
-     * and it is read off the same event as the code rather than tracked across
-     * keydown and keyup: a shift released while the tab was in the background
-     * is a `keyup` this window never saw, and a gun that believed its own
-     * bookkeeping would go on demanding a shift nobody was holding. The
-     * browser's answer is the one on the event, every time.
+     * Four keydowns are not strokes even while the run is live. `QUIT_KEY` is
+     * taken before the trigger, so the way out is not a miss (§8.11). `HELD`
+     * is imported from `useKeyEcho` rather than listed again, so one list
+     * covers both the keys that never flare and the keys that never cost.
+     * `event.repeat` is one stroke and not thirty (§8.6, decision 44). And a
+     * browser chord is the one place the gun and the board part company —
+     * `useKeyEcho` judges the code alone, so cmd+`r` still flares — because a
+     * flare is 120ms and costs nothing, while a shot costs ten points and a
+     * streak.
      *
-     * Four keydowns are not strokes even while the run is live, and each is left
-     * out for a reason the board already agrees with:
+     * The default is taken for the keys the layout carries and only those —
+     * `keyX` answers that without a second list of codes. This screen has no
+     * input to swallow a space that would otherwise scroll the page or a `/`
+     * that opens Firefox's quick-find mid-run, and anything else (F5, F12, the
+     * browser's own) is left alone: a game screen that ate the reload key
+     * would be a screen with no way out.
      *
-     *   - **`QUIT_KEY`** — the way out (§8.11). It is taken before the trigger
-     *     rather than beside it, because a key that reached `fire` would be a
-     *     miss: ten points off and the streak gone for asking to leave.
-     *   - **`HELD`** — shift, ctrl, alt and the cmd keys. It is the very set
-     *     `useKeyEcho` never flares, imported rather than restated: a capital
-     *     is a shift and a letter (§3.3), and a game that charged a child for
-     *     reaching for the far shift would be charging them for doing it
-     *     right.
-     *   - **`event.repeat`** — the OS repeating a key that is being held down,
-     *     which is one stroke and not thirty a second (decision 44). Firing on
-     *     it would let a child spray by leaning on a key, drain a score they
-     *     never pressed for, and flash the HUD's miss at 30Hz, which is the
-     *     strobe §8.10 forbids.
-     *   - A **browser chord** — ctrl or cmd held. Reloading the page is not a
-     *     shot at a hailstone, and cmd+`r` is how a child restarts a storm
-     *     that is going badly. This is the one place the gun and the board
-     *     part company: `useKeyEcho` judges the code alone, so that `r` still
-     *     flares. A flare is 120ms and costs nothing; a shot costs ten points
-     *     and a streak, and the two are not worth the same benefit of the
-     *     doubt.
-     *
-     * The default is taken for the keys the board draws, and only those: this
-     * screen has no input to swallow a space that would otherwise scroll the
-     * page, or a `/` that opens Firefox's quick-find mid-run. `keyX` answers
-     * "is this key on the layout" without a second list of codes — the layout
-     * being the engine's table, since this screen draws no board (decision 64). Anything else
-     * — F5, F12, the browser's own — is left alone, because a game screen that
-     * ate the reload key would be a screen with no way out.
-     *
-     * **Before the run starts, one press does one thing: it starts it**
-     * (`started`). No wave time has passed, no letter is on screen, and `fire`
-     * is not called at all — so the key that says "I'm ready" cannot also be
-     * the first miss of the run. All four guards above hold there too, and two
-     * more keys are left out of "any key":
-     *
-     *   - **`Tab`**, because it is how the way out in the HUD is reached
-     *     without a mouse (`StormHud`). The gun swallows it once the run is
-     *     live, which is exactly why the button is worth being able to reach
-     *     before then — and a game that began the instant a child went looking
-     *     for the exit would be the trap that button exists to prevent.
-     *   - **Anything the layout does not carry** — F5, F12, a media key. Same
-     *     test as the paragraph above, put to a second use: they are not a
-     *     child putting their hands down, and treating them as one would mean
-     *     swallowing the reload key on a screen whose whole state is "nothing
-     *     has happened yet".
+     * Before the run starts one press does one thing: it starts it, and `fire`
+     * is not called, so the key that says "I'm ready" cannot also be the first
+     * miss (§8.13). All four guards hold there, and `Tab` is left out on top
+     * of them because it is how the HUD's way out is reached without a mouse.
      */
     const onKeyDown = (event: KeyboardEvent) => {
-      // The gun dies with the run, and the listener has to know it rather than
-      // leaning on `fire` refusing an ended state. What it would otherwise
-      // still do is swallow the default, and by then the track under the sky
-      // holds the ending's buttons (`StormField`) — three after a breach, two
-      // after a cleared wave, and never none: `Tab`, `Space` and `Enter` are
-      // all keys the LAYOUT carries, so all three of those keys pass the very
-      // test that calls `preventDefault` below. A gun still eating them
-      // after the storm has stopped would leave a child who is not holding a
-      // mouse unable to focus a button, let alone press one.
+      // The gun dies with the run rather than leaning on `fire` refusing an
+      // ended state, because what it would still do is swallow the default —
+      // and by then the track under the sky holds the ending's buttons.
+      // `Tab`, `Space` and `Enter` all pass the test that calls
+      // `preventDefault` below, so a live gun would leave a child who is not
+      // holding a mouse unable to focus one, let alone press it (§8.5).
       if (live.current.ending !== null) return;
       if (event.repeat || event.ctrlKey || event.metaKey) return;
       // Before the trigger, and after the chord guard: the way out is not a
@@ -405,12 +275,9 @@ export function useStormClock(
       }
       if (HELD.has(event.code)) return;
 
-      // Asked once and read by both branches below: is this a key the layout
-      // carries? It is what decides the `preventDefault` (see the block
-      // above), and it is also what "any key" means before the run starts —
-      // F5, F12 and the media keys are not a child saying they are ready, and
-      // a ready screen that swallowed the reload key would be worse than one
-      // that ignored it.
+      // Asked once and read by both branches below: it is what decides the
+      // `preventDefault`, and it is also what "any key" means before the run
+      // starts.
       const onBoard = keyX(event.code) !== null;
 
       // The run has not begun: this press begins it, and is spent doing so.
@@ -431,12 +298,10 @@ export function useStormClock(
     };
 
     const loop = (now: number) => {
-      // Cleared before anything else, so `frame` never holds a handle that has
-      // already been delivered. It is what the cleanup cancels, and on the
-      // frame that ends a run nothing is re-requested below — so this is the
-      // difference between "nothing is pending" and a stale number that only
-      // looks like it was cancelled. (`cancelAnimationFrame` of an unknown
-      // handle is a no-op, which is why the lie would never show.)
+      // Cleared before anything else, so `frame` never holds a handle that
+      // has already been delivered: on the frame that ends a run nothing is
+      // re-requested below, and this is the difference between "nothing is
+      // pending" and a stale number that only looks like it was cancelled.
       frame = 0;
       const next = tick(live.current, stepMs(now, last));
       last = now;
@@ -448,8 +313,7 @@ export function useStormClock(
         for (let i = 0; i < sky.children.length; i++) {
           const stone = sky.children[i] as HTMLElement;
           // Anything in the sky that is not a stone is skipped rather than
-          // assumed away, and there are two of them: the HUD at the top of the
-          // sky and the shield at the bottom. Neither carries `data-stone`, so
+          // assumed away — the HUD and the shield carry no `data-stone`, so
           // `Number(undefined)` is `NaN` and indexes no letter.
           const letter = next.wave.letters[Number(stone.dataset.stone)];
           if (letter)
@@ -461,17 +325,15 @@ export function useStormClock(
 
       publish(next);
 
-      // Death and the last letter both stop the clock here, in the frame that
-      // ended the run, rather than one render later: `tick` on an ended run is
-      // a no-op, so a frame scheduled past the ending would do nothing at all
-      // and still be a frame this screen owes the browser.
+      // The clock stops in the frame that ended the run rather than a render
+      // later: `tick` on an ended run is a no-op, so a frame scheduled past
+      // the ending is one this screen owes the browser for nothing.
       if (next.ending === null) frame = requestAnimationFrame(loop);
     };
 
-    // No frame until a child says go, so a wave that is waiting stays at zero
-    // for as long as it waits — the whole of `started`, since wave time is
-    // what rAF moves and `last` starts over at `null` when the loop is armed.
-    // The listener is bound either way: it is what does the saying.
+    // No frame until a child says go, so a waiting wave stays at zero for as
+    // long as it waits. The listener is bound either way — it is what does the
+    // saying.
     if (started) frame = requestAnimationFrame(loop);
     // Capture, and on the window, exactly as `useKeyEcho` binds: this screen
     // has no focused element for a stroke to land on, and capture runs ahead
@@ -479,19 +341,16 @@ export function useStormClock(
     window.addEventListener("keydown", onKeyDown, true);
 
     // Every way in or out of a run runs this, and there are four: the route
-    // being left, the run ending, the pause above, and the moment a waiting
-    // wave is started. Quitting is the first of them by way of the third — the
-    // sheet pauses the storm, and confirming it navigates — which is why
-    // `paused` is an input to this effect rather than something it could have
-    // been left to infer, and `started` is one for the same reason: a run
-    // begins by re-arming from the top, with a first frame worth zero.
+    // being left, the run ending, a pause, and a waiting wave being started.
+    // Quitting is the first by way of the third — the sheet pauses the storm,
+    // and confirming it navigates.
     //
-    // The listener goes with the frame, for a plainer reason than the loop's:
-    // one left on the window outlives the screen. It would hold this run's
-    // state alive, call `setState` on a component that has gone, and stack a
-    // second copy of itself the next time the route is entered. What it would
-    // not do is move a score — `fire` refuses an ended run — so the leak would
-    // be invisible until the third or fourth storm.
+    // The listener goes with the frame for a plainer reason than the loop's:
+    // one left on the window would hold this run's state alive, `setState` on
+    // a component that has gone, and stack a second copy of itself the next
+    // time the route is entered. What it would not do is move a score — `fire`
+    // refuses an ended run — so the leak stays invisible for two or three
+    // storms.
     return () => {
       cancelAnimationFrame(frame);
       window.removeEventListener("keydown", onKeyDown, true);

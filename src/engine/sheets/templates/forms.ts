@@ -1,41 +1,21 @@
 /**
  * The forms a week of lessons is written on.
  *
- * A reading log, a book report, a story map, a paragraph frame, a writing
- * prompt, a lab report, the scientific method, an observation journal and a
- * timeline — nine sheets and one idea: a set of headings with room to answer
- * under each. That is the whole of the "templates" tier's argument (§11) and it
- * is what makes them cheap and honest at the same time. **They are supposed to
- * be empty.** A reading log is a reading log whoever printed it, and there is
- * nothing on one that could be wrong.
+ * Nine sheets and one idea: a set of headings with room to answer under each,
+ * which is the "templates" tier of §11 — they are supposed to be empty, and a
+ * lab report sheet asks what the question was and what happened without
+ * supplying either.
  *
- * The science styles are where that has to be said out loud. A lab report sheet
- * is a *form*: it asks what the question was and what happened, and it supplies
- * neither. Generating the science would be the thing §11's third tier refuses —
- * "5th grade science worksheets" without an editor is plausible nonsense — and
- * the paperwork round a science lesson is a different object entirely. It is
- * also the more useful one: a child who has done an experiment has to write it
- * up, and the writing up is the part nobody has the paper for.
- *
- * ── What the geometry has to get right ─────────────────────────────────────
- *
- * One thing, and it is not obvious: **a form is a page, and the boxes have to
- * add up to it.** Every field asking for the lines it would like is how a form
- * ends up an inch and a half too long — which `.sheet` hides, because it is
- * `min-height`, so nothing overflows on screen and the last box prints on a
- * second sheet of paper. So a style declares *shares* of the writing height
- * rather than line counts, the shares are divided into what is left after the
- * labels, and how many lines a box holds is what fits in its share. Every line
- * on every one of these sheets is therefore at least `answerLine` tall — a
- * quarter of an inch, never less than the type needs — and the page always
- * closes.
+ * The geometry is the difficulty: **a form is a page, and the boxes have to add
+ * up to it.** A style declares *shares* of the writing height rather than line
+ * counts, and how many lines a box holds is what fits in its share, so every
+ * line is at least `answerLine` tall and the page always closes (§11).
  *
  * Two of the nine are not forms at all. A reading log and a timeline are
- * *tables*, because a list of days is a list of days; they share their
- * arithmetic with the planner shelf through `table.ts`. And the writing prompt
- * is a prompt and a page of lines, which is the paper family's own block with a
- * sentence over it — a third way of drawing ruled lines would have been one too
- * many.
+ * *tables* and share their arithmetic with the planner shelf through
+ * `table.ts`; the writing prompt is a sentence over the paper family's own
+ * block of ruled lines, because a third way of drawing a ruled line would have
+ * been one too many.
  */
 import { sheetBlockBox } from "../chrome";
 import { answerLine, columnWidth, type Box } from "../layout";
@@ -66,9 +46,8 @@ type FieldSpec = {
   label: string;
   /**
    * How much of the writing height this field's row asks for, relative to the
-   * other rows. Unitless on purpose: it is the proportion that is editorial
-   * ("what it is about" deserves more room than "author"), and the inches are
-   * the paper's business.
+   * other rows. Unitless on purpose: the proportion is editorial ("what it is
+   * about" deserves more room than "author") and the inches are the paper's.
    */
   weight: number;
   /** How many of the form's columns it takes. */
@@ -82,10 +61,10 @@ type FormShape = { columns: number; fields: FieldSpec[] };
 /**
  * How tall a field's heading stands, in ems of the body size.
  *
- * 0.85em over a 1.4 leading, which is what `.sheet__form-label` sets — trailing
- * sheet.css the way `chrome.ts` trails it for the header, and for the same
- * reason: the reservation is made here and the row is drawn there, and a copy
- * that drifted would be a form whose last box prints on a second sheet.
+ * 0.85em over a 1.4 leading, which is what `.sheet__form-label` sets. It trails
+ * sheet.css the way `chrome.ts` does for the header: the reservation is made
+ * here and the row is drawn there, and a copy that drifted would be a form
+ * whose last box prints on a second sheet.
  */
 const LABEL_EMS = 0.85 * 1.4;
 
@@ -93,12 +72,8 @@ const LABEL_EMS = 0.85 * 1.4;
 const FIELD_GAP: Mil = inches(0.14);
 
 /**
- * The forms, as headings.
- *
- * This table *is* the family. Everything else in the file is arithmetic, and
- * everything a parent notices about one of these sheets is a string below —
- * which is the right way round for a tier whose whole value is that somebody
- * chose good headings and left the rest blank.
+ * The forms, as headings. Everything else in the file is arithmetic: the value
+ * of this tier is that somebody chose good headings and left the rest blank.
  */
 const SHAPES: Record<string, FormShape> = {
   "book-report": {
@@ -168,10 +143,9 @@ const SHAPES: Record<string, FormShape> = {
       { label: "Date", weight: 1, span: 1 },
       { label: "Time", weight: 1, span: 1 },
       { label: "Weather", weight: 1, span: 1 },
-      // The drawing box, and the reason it is a field with no rules in it
-      // rather than a block of its own: it lines up with everything above and
-      // below it because it is in the same grid, and a naturalist's page is
-      // half drawing.
+      // A field with no rules in it rather than a block of its own, so that it
+      // lines up with everything above and below by being in the same grid. A
+      // naturalist's page is half drawing.
       { label: "What I saw", weight: 8, span: 3, draw: true },
       { label: "What I noticed about it", weight: 5, span: 3 },
     ],
@@ -194,9 +168,9 @@ const TITLE: Record<FormStyle, string> = {
 /**
  * The line under the title, where the sheet needs telling how to use.
  *
- * Not on all nine. A story map with "fill in the boxes" over it is a sheet
- * explaining a thing a child can see, and the instruction row it costs is two
- * lines of writing space on the boxes underneath.
+ * Not on all nine: a story map with "fill in the boxes" over it explains a
+ * thing a child can see, and the instruction row it costs is two lines of
+ * writing space on the boxes underneath.
  */
 const INSTRUCTION: Record<string, string> = {
   "reading-log": "One line a day. A grown-up signs when the reading is done.",
@@ -212,10 +186,9 @@ const INSTRUCTION: Record<string, string> = {
 
 /* ── The two tables ───────────────────────────────────────────────────────
    A reading log and a timeline are lists of days rather than sets of headings,
-   so they are the table block and share their arithmetic with the planner
-   shelf. The columns are declared as shares, because the proportions are the
-   editorial judgement and the inches belong to whichever stock is in the
-   tray.                                                                    */
+   so they are the table block. The columns are declared as shares, because the
+   proportions are the editorial judgement and the inches belong to whichever
+   stock is in the tray.                                                     */
 
 const LOG_COLUMNS = [
   { label: "Date", share: 1.1 },
@@ -238,10 +211,9 @@ export const MAX_FORM_ROWS = 40;
 /**
  * How far the writing lines may be stretched — see `FormConfig.space`.
  *
- * Three times a quarter of an inch is three quarters of an inch to a line,
- * which is what a five-year-old writes on, and it is the point at which a book
- * report is four questions rather than six. Past that the honest control is a
- * larger type size, which moves the headings with the lines.
+ * Three times a quarter of an inch is what a five-year-old writes on, and it is
+ * the point at which a book report is four questions rather than six. Past that
+ * the honest control is a larger type size, which moves the headings too.
  */
 export const FORM_SPACE = { min: 1, max: 3 } as const;
 
@@ -254,9 +226,9 @@ export const isListForm = (style: FormStyle): boolean =>
 /**
  * The fields packed into rows, greedily, the way a wrapping row packs.
  *
- * A field wider than the form gets a row to itself rather than being dropped:
- * a span is a request about layout, and a heading that vanished because
- * somebody set two columns on a three-column form would be a missing question.
+ * A field wider than the form gets a row to itself rather than being dropped: a
+ * span is a request about layout, and a heading that vanished because somebody
+ * set two columns on a three-column form would be a missing question.
  */
 function packRows(shape: FormShape): FieldSpec[][] {
   const columns = Math.max(1, shape.columns);
@@ -278,10 +250,9 @@ function packRows(shape: FormShape): FieldSpec[][] {
 /**
  * How tall a writing line on this sheet is.
  *
- * `answerLine` is the shop's own answer to "a line a child writes on", and the
- * `space` option is a multiplier on it rather than a length: a parent whose
- * child writes large wants every line taller, not one box longer, and the
- * number of lines is then whatever fits — which is how the page stays a page.
+ * `space` is a multiplier on `answerLine` rather than a length: a parent whose
+ * child writes large wants every line taller, not one box longer, and how many
+ * lines there are is then whatever fits.
  */
 const lineHeight = (config: FormConfig): Mil =>
   Math.round(
@@ -293,22 +264,15 @@ const lineHeight = (config: FormConfig): Mil =>
  * The fields, resolved to lengths against the page.
  *
  * The one calculation in the file, and the one that keeps the sheet on one
- * piece of paper. Three steps, and each of them exists because leaving it out
- * printed a form taller than the paper:
+ * piece of paper. Three steps, each of them there because leaving it out
+ * printed a form taller than the paper (§11):
  *
  *  1. **How many rows the page can hold at all.** A heading and one line to
  *     write on is the least a question can occupy, so that is what a row is
- *     measured against — and a form asking for more rows than that gets as many
- *     as fit, which is the same rule every generating family follows about its
- *     count. A paragraph frame at 36pt on inch margins is more form than a page
- *     of Letter holds, and reserving for all five rows produced a sheet 35
- *     thousandths of an inch too tall: invisible on screen, because `.sheet` is
- *     `min-height`, and a second sheet of paper out of the printer.
- *  2. **A line each, before anything is shared out.** The shares are editorial
- *     — "what it is about" deserves more room than "author" — and a low share of
- *     a nearly full page is less than one line, which is a heading with a box
- *     under it too short to write in. So every row takes a line first and the
- *     weights divide only what is left over.
+ *     measured against, and a form asking for more rows gets as many as fit.
+ *  2. **A line each, before anything is shared out.** A low share of a nearly
+ *     full page is less than one line, which is a heading with a box under it
+ *     too short to write in.
  *  3. **The rest by weight, floored.** Which is what keeps the total inside the
  *     box: every part of it is a floor of a division of the box.
  */
@@ -316,10 +280,10 @@ export function formFields(config: FormConfig, box: Box): FormField[] {
   const shape = own(SHAPES, config.style, SHAPES["book-report"]);
   const label = points(config.fontPt * LABEL_EMS);
   const line = lineHeight(config);
-  // What one column of the form measures, gaps taken out first. A field
-  // spanning two of them takes the gap between them as well, which is the
-  // difference between a form whose boxes line up and one whose wide boxes are
-  // a tenth of an inch short of the narrow ones above them.
+  // What one column measures, gaps taken out first. A field spanning two of
+  // them takes the gap between them as well, which is the difference between a
+  // form whose boxes line up and one whose wide boxes are a tenth of an inch
+  // short of the narrow ones above them.
   const column = columnWidth(box, columnsOf(config), FIELD_GAP);
 
   // `+ FIELD_GAP` on both sides because there is one fewer gap than there are
@@ -339,15 +303,13 @@ export function formFields(config: FormConfig, box: Box): FormField[] {
   const total = weights.reduce((sum, weight) => sum + weight, 0);
 
   return rows.flatMap((row, index) => {
-    // A row's fields share one height, which is what makes them line up — and
-    // lining up is most of what a form looks like.
+    // A row's fields share one height, which is what makes them line up.
     const space =
       line + (total > 0 ? Math.floor((spare * weights[index]) / total) : 0);
     return row.map((field) => ({
       label: field.label,
-      // A ruled box holds as many lines as fit, and never fewer than one — the
-      // row was given a line's height before anything was shared out, so the
-      // floor below cannot come to nought.
+      // Never fewer than one: the row was given a line's height before anything
+      // was shared out, so this floor cannot come to nought.
       lines: field.draw ? 0 : Math.max(1, Math.floor(space / line)),
       space,
       width: column * field.span + FIELD_GAP * (field.span - 1),
@@ -388,12 +350,11 @@ export const promptOf = (config: FormConfig, seed: number): string =>
 /**
  * The instruction line, which on one of the nine is the whole sheet.
  *
- * A writing prompt has no boxes: what it has is a sentence and a page of lines,
- * and the sentence belongs in the instruction row because that row is the one
- * `chromeHeight` already measures for wrapping (a prompt runs to a hundred and
- * forty characters, which is two rows at 12pt and five at the largest type a
- * config may ask for). Putting it anywhere else would mean reserving for it
- * twice.
+ * A writing prompt is a sentence and a page of lines, and the sentence belongs
+ * in the instruction row because that row is the one `chromeHeight` already
+ * measures for wrapping — a prompt runs to a hundred and forty characters,
+ * which is two rows at 12pt and five at the largest type a config may ask for.
+ * Anywhere else would mean reserving for it twice.
  */
 function instructionOf(config: FormConfig, seed: number): string | undefined {
   if (config.instructions) return config.instructions;
@@ -405,18 +366,13 @@ const titleOf = (config: FormConfig): string =>
   config.title ?? own(TITLE, config.style, TITLE["book-report"]);
 
 /**
- * What the chrome will hold, so the page can be reserved for it.
- *
- * The same move `charts.ts` makes and for the same reason: a family prints a
- * title whatever the config says, and `chromeHeight` reserves a title row only
- * if the *options* it is handed carry one. Passing the config straight in
- * under-reserves by a row, `.sheet` is `min-height` so nothing overflows on
- * screen, and the page quietly grows past eleven inches.
+ * What the chrome will hold, so the page can be reserved for it — the same move
+ * `charts.ts` makes, and for the reason §11 records.
  *
  * The seed reaches in here because one of the nine puts a drawn string in the
- * instruction row, and that row is measured rather than counted — a reservation
- * made against a different prompt than the one printed would be a reservation
- * made against the wrong number of rows.
+ * instruction row, and that row is measured rather than counted: a reservation
+ * made against a different prompt than the one printed is a reservation made
+ * against the wrong number of rows.
  */
 function headerOf(config: FormConfig, seed: number): SheetOptions {
   return {
@@ -435,9 +391,7 @@ function headerOf(config: FormConfig, seed: number): SheetOptions {
  * is laid out against the same box as its sheet, so a footer that wraps to two
  * rows on one and one on the other is a key whose last row is on a second page.
  * Nothing on this shelf *has* a key — see `formKeyed` — and the row is reserved
- * anyway, because `SheetSpec.key` stamps the note on any sheet it is handed and
- * a row over-reserved costs a rule line where a row under-reserved costs a
- * sheet of paper.
+ * anyway, because `SheetSpec.key` stamps the note on any sheet it is handed.
  */
 const formBox = (config: FormConfig, seed: number): Box =>
   sheetBlockBox(headerOf(config, seed), false, { note: "Answer key" });
@@ -447,10 +401,7 @@ const formBox = (config: FormConfig, seed: number): Box =>
  *
  * Stated as a function rather than left implicit, for the reason `chartKeyed`
  * is: a catalog page has to decide whether to print a second copy of the paper
- * under the word "Answer key", and the family is the only thing that knows. A
- * blank form has no answer by definition — that is what the tier *is* — so this
- * is `false` and will stay `false`, and a page and the family cannot disagree
- * about it.
+ * under the word "Answer key", and the family is the only thing that knows.
  */
 export const formKeyed = (): boolean => false;
 
@@ -472,19 +423,17 @@ function formBlocks(config: FormConfig, box: Box): Block[] {
           head: true,
           rows: shape.rows,
           row: shape.row,
-          // Every cell blank: this is the tier that is supposed to be empty.
           cells: Array<TableCell>(columns.length * shape.rows).fill({}),
           headRow: headRowHeight(config.fontPt),
-          // The line a timeline is drawn along, and the one thing that makes it
-          // a timeline rather than a two-column table.
+          // The line a timeline is drawn along, and the one thing that makes
+          // it a timeline rather than a two-column table.
           ...(timeline ? { spine: 1 } : {}),
         },
       ];
     }
     case "writing-prompt":
       // The prompt is in the instruction row above; this is the page to write
-      // on. The paper family's own block, so a line here is the same line as a
-      // line on a sheet of college ruled.
+      // on, out of the paper family's own block.
       return [
         {
           kind: "rules",
@@ -493,10 +442,9 @@ function formBlocks(config: FormConfig, box: Box): Block[] {
         },
       ];
     default: {
-      // No block at all where not one question would fit — a form with no
-      // fields on it is a rectangle nobody asked for, and the honest answer to
+      // No block at all where not one question would fit: the honest answer to
       // "38pt on a page with inch margins" is a header, a footer and blank
-      // paper. `cardGrid` refuses the same way for the same reason.
+      // paper. `cardGrid` refuses the same way.
       const fields = formFields(config, box);
       return fields.length === 0
         ? []
@@ -505,7 +453,7 @@ function formBlocks(config: FormConfig, box: Box): Block[] {
   }
 }
 
-export function buildFormSheet(config: FormConfig, seed: number): Sheet {
+function buildFormSheet(config: FormConfig, seed: number): Sheet {
   const box = formBox(config, seed);
 
   return {
@@ -523,35 +471,30 @@ export function buildFormSheet(config: FormConfig, seed: number): Sheet {
 }
 
 /**
- * One line naming the sheet, in the words a parent says out loud.
- *
- * Each says the number that makes it the sheet somebody asked for rather than
- * one like it: how many rows the log has, how many things there are to fill in,
- * and — on the one style that draws from the seed — which prompt it drew.
+ * One line naming the sheet, in the words a parent says out loud — with the
+ * number that makes it the sheet somebody asked for rather than one like it.
  */
-export function describeForm(config: FormConfig, seed = 0): string {
-  const box = formBox(config, seed);
+function describeForm(config: FormConfig): string {
+  const box = formBox(config, 0);
   const name = own(TITLE, config.style, TITLE["book-report"]);
   switch (config.style) {
     case "reading-log":
     case "timeline":
       return `${name}, ${formRows(config, box).rows} rows to fill in`;
     case "writing-prompt":
-      // The one line here that has to be careful about the seed. `describe` is
-      // handed a config and no seed — it names what a config *is*, and a
-      // config that has not been given a prompt is one whose prompt is a
-      // different sentence every time the seed moves. Quoting the seed-zero
-      // one would be naming a sheet nobody printed.
+      // `describe` is handed a config and no seed, and a config with no prompt
+      // written into it is one whose prompt is a different sentence every time
+      // the seed moves — so quoting the seed-zero one would name a sheet nobody
+      // printed. Where a parent wrote the prompt, the seed decides nothing.
       return config.prompt
-        ? `${name}: “${promptOf(config, seed)}”`
+        ? `${name}: “${promptOf(config, 0)}”`
         : `${name}, one of ${WRITING_PROMPTS.length} drawn from the seed, and a page of lines`;
     default: {
       const fields = formFields(config, box);
-      // The same refusal `describeCards` makes when a card comes out too small
-      // to cut, and for the same condition: `formBlocks` draws no block at all
-      // where not one question fits, and a line reading "0 things to fill in
-      // over 0 lines" would be naming a sheet that is a header, a footer and
-      // blank paper as though it were a form.
+      // The same refusal `describeCards` makes for a card too small to cut:
+      // `formBlocks` draws no block where not one question fits, and "0 things
+      // to fill in over 0 lines" would name blank paper as though it were a
+      // form.
       if (fields.length === 0)
         return `${name} — no room for a question at this size`;
       const lines = fields.reduce((total, field) => total + field.lines, 0);
@@ -561,17 +504,14 @@ export function describeForm(config: FormConfig, seed = 0): string {
 }
 
 export const FORM_SHEET: SheetSpec<FormConfig> = {
-  id: "form",
-  label: "Logs, reports and forms",
   world: SHEET_WORLD,
   build: buildFormSheet,
-  // Nothing to reveal, ever — see `formKeyed`. What a key of one of these is
-  // is the same blank form with "Answer key" in the footer, which is what a
-  // parent who pressed the button gets and is why the catalog pages don't
-  // offer it.
+  // Nothing to reveal, ever — see `formKeyed`. A key of one of these is the
+  // same blank form with "Answer key" in the footer, which is why the catalog
+  // pages don't offer one.
   key: (sheet) => ({
     ...sheet,
     footer: { ...sheet.footer, note: "Answer key" },
   }),
-  describe: (config) => describeForm(config),
+  describe: describeForm,
 };

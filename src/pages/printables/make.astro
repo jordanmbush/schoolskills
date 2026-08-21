@@ -13,18 +13,14 @@ import "@/styles/index.css";
  * surface of The Print Shop is the catalog — every page there *is* a sheet
  * (§8) — and this is the screen you go to when one of those is nearly right.
  *
- * Content rather than Base, unlike the games. A race must never have site
- * chrome over it; the builder is the opposite case, because `print.css` hides
- * the masthead, the footer and everything marked `.no-print` when a sheet goes
- * to paper. So the builder can keep the site around it and lose it at exactly
- * the moment it would cost somebody toner.
+ * `Content` rather than `Base`, unlike the games: `print.css` hides the
+ * masthead and the footer, so the builder keeps the site around it while
+ * choosing and loses it at the moment a sheet goes to paper. `index.css` comes
+ * with it because the option panels are built out of the kit.
  *
- * `index.css` — the island stylesheet — rather than only the content one,
- * because the option panels are built out of the kit and the kit's rows,
- * steppers and segmented pills are styled there. That is what finally settled
- * the `.sheet` name collision recorded in sheet.css: this page is the one that
- * loads the modal styles *and* the sheet renderer's, so the modal became
- * `.modal`.
+ * `client:only` rather than `client:load`: the saved-sheet panel reads
+ * IndexedDB on first render, so there is no server-rendered markup worth
+ * hydrating and SSR would throw on `indexedDB`.
  */
 ---
 
@@ -49,10 +45,5 @@ import "@/styles/index.css";
     </p>
   </header>
 
-  <!--
-    client:only rather than client:load: the saved-sheet panel reads IndexedDB
-    on first render, so there is no meaningful server-rendered markup to
-    hydrate, and attempting SSR would throw on `indexedDB`.
-  -->
   <PrintShopApp client:only="react" />
 </Content>

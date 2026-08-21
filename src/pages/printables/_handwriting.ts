@@ -2,26 +2,14 @@
  * The handwriting sheets the Print Shop has set, and the words that go round
  * them.
  *
- * Underscored so Astro leaves it out of the routing table: it is data two pages
- * share — `handwriting/[...slug].astro`, which prerenders one sheet per entry,
- * and `handwriting/index.astro`, which is the subject hub — rather than a route
- * of its own. `_catalog.ts` does the same job for paper and `_maths.ts` for
- * maths, and the three are deliberately separate: a ruling, a set of problems
- * and a letter to trace have almost nothing to say about each other.
+ * **The slugs are curated; the sheets are generated** (§8). The family can rule
+ * any of twelve papers, write four kinds of content on it in six letterforms
+ * and repeat each up to eight times — tens of thousands of plausible pages,
+ * none of them written for. So each slug is a phrase a parent types, with two
+ * paragraphs true of that sheet and of no other, and the rest is the builder's.
  *
- * **The slugs are curated; the sheets are generated.** §8 is explicit about why.
- * The family can rule any of twelve papers, write four kinds of content on it in
- * six letterforms and repeat each of them up to eight times — tens of thousands
- * of plausible pages, none of them written for. So: seven slugs, each one a
- * phrase a parent types, each with two paragraphs true of that sheet and of no
- * other, and everything else reached through the builder, which is where
- * *choosing* belongs.
- *
- * **Two stocks, as with paper and unlike maths.** A handwriting sheet is the one
- * kind of worksheet whose whole content is a measurement: a ⅝ rule sent to a
- * printer loaded with A4 is scaled to fit, and a scaled ⅝ rule is not a ⅝ rule.
- * `@page` is a document rule, so the two cannot share a page — hence a route
- * each, exactly as `_catalog.ts` argues.
+ * **Two stocks, two routes, as with paper.** A handwriting sheet is the one
+ * kind of worksheet whose whole content is a measurement (§8).
  */
 import { DEFAULT_FONT_PT } from "@/engine/sheets/paper";
 import type { HandwritingConfig, PaperSize } from "@/engine/sheets/types";
@@ -73,11 +61,10 @@ export type HandwritingSheet = {
 /**
  * The seed every handwriting sheet is built from, and it never moves.
  *
- * Nothing in this family is drawn at random — an alphabet is an alphabet — so
- * the seed decides nothing about the page and only prints in the footer. It is
- * still fixed and still carried into the builder link, because §7's promise is
- * about the whole shop: the number on the paper is what gets you the identical
- * sheet back, whichever family printed it.
+ * Nothing here is drawn at random — an alphabet is an alphabet — so the seed
+ * decides nothing and only prints in the footer. It is still fixed and still
+ * carried into the builder link, because §7's promise is about the whole shop:
+ * the number on the paper gets you the identical sheet back.
  */
 export const HANDWRITING_SEED = 1;
 
@@ -87,8 +74,7 @@ export const HANDWRITING_SEED = 1;
  *
  * Copywork wants text somebody wrote rather than text a generator assembled: a
  * child copying a real poem is reading it too. The line breaks are the poet's,
- * and the family keeps them — anything longer than the paper is broken where
- * the paper runs out and nowhere else.
+ * and the family keeps them.
  *
  * One verse rather than two because four lines written four times each is
  * sixteen rows, which is what a ⅜ page holds with room to spare. Two verses at
@@ -105,10 +91,9 @@ const STAR = [
 /**
  * The four short sentences a first sentence sheet is set on.
  *
- * Short enough that none of them wraps on either stock — a sentence broken over
- * two lines is still correct, but the point of this sheet is a whole sentence
- * on one line — and between them they carry a capital, a full stop, and the
- * word spacing that is the actual lesson.
+ * Short enough that none of them wraps on either stock, because the point of
+ * the sheet is a whole sentence on one line. Between them they carry a capital,
+ * a full stop, and the word spacing that is the actual lesson.
  */
 const SENTENCES = [
   "The cat sat on the warm mat.",

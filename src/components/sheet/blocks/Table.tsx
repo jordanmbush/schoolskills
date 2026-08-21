@@ -27,9 +27,8 @@ const TICK = 0.16;
  * heavy as the outside of the table, and the pair do not always land on the same
  * device pixel. A stroke drawn once between two columns is drawn once.
  *
- * The text inside is `<text>`, which is still real text — selectable, indexable
- * and announced — so a calendar's dates and a chore chart's jobs are content
- * rather than a picture of content (§2).
+ * The text inside is `<text>`, which is still real text, so a calendar's dates
+ * and a chore chart's jobs are content rather than a picture of content (§2).
  *
  * **Nothing here decides a width.** `templates/table.ts` fitted the columns to
  * the page and the family fitted the rows, so what is left to this file is
@@ -47,13 +46,12 @@ export function Table({ block, metrics }: BlockProps<"table">) {
 
   const face = faceOf(metrics.font);
 
-  // One size for every heading and it is the smallest any of them needs — but
-  // measured **column by column**, the way `Form.tsx` measures a field. A
-  // table's columns are deliberately unequal; that is what `TableColumn.width`
-  // is for. Handing `fitText` one width for every label measures the longest
-  // heading against the narrowest column and shrinks the whole row to a size no
-  // column actually needs — which set a behaviour chart's headings at under
-  // four points beside a twelve-point body.
+  // Measured **column by column**, the way `Form.tsx` measures a field. A
+  // table's columns are deliberately unequal — that is what `TableColumn.width`
+  // is for — so handing `fitText` one width for every label would measure the
+  // longest heading against the narrowest column and shrink the whole row to a
+  // size no column needs: under four points beside a twelve-point body, on a
+  // behaviour chart.
   const headSize = columns.reduce(
     (smallest, column) =>
       Math.min(
@@ -83,9 +81,9 @@ export function Table({ block, metrics }: BlockProps<"table">) {
   // starts, which on a table with a heading is the bottom of the heading row
   // and not the top of the table — so the first rule is `0` rather than `top`,
   // and the rest hang off `top` one row at a time. Counting from `top` alone
-  // drew a table with a left, a right and a bottom and no top: the heading row
-  // printed open at the very edge of the paper, which reads as a page that has
-  // been cropped. With no heading `top` is zero and this is the same list.
+  // draws a table with a left, a right and a bottom and no top: the heading row
+  // open at the very edge of the paper, which reads as a cropped page. With no
+  // heading `top` is zero and this is the same list.
   //
   // The boundary at `top` itself is deliberately absent: the heavier `--axis`
   // rule below is already there, and a hairline under it prints as one thicker
@@ -102,9 +100,9 @@ export function Table({ block, metrics }: BlockProps<"table">) {
       height={inch(height)}
       viewBox={`0 0 ${width} ${height}`}
     >
-      {/* Named rather than `role="img"`: the cells carry real text, and
-          `role="img"` would collapse every one of them into this sentence. The
-          same convention `Grid.tsx` follows and for the same reason. */}
+      {/* Named rather than `role="img"`, the same call `Grid.tsx` makes: the
+          cells carry real text, and `role="img"` would collapse every one of
+          them into this sentence. */}
       <title>{`${columns.length} by ${rows} table`}</title>
 
       {edges.map((x, index) => (

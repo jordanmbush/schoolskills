@@ -12,17 +12,8 @@ import { MIN_ENTRY, buildCrossword, type Clued } from "./crossword";
  * The same discipline as `search.test.ts` and the same reason for it: the clue
  * list is derived from the finished grid, so a test that trusted the generator
  * to say where its words went would be agreeing with the thing it is meant to
- * catch. Everything below reads the cells.
- *
- * Four claims, and each of them is a real way a crossword ships broken:
- *
- * - **Every entry spells its answer** where its number says it starts.
- * - **The numbering is the grid's** — recomputed here from the squares alone,
- *   by the rule every crossword in the world is numbered by, and compared.
- * - **The crossings agree.** Two entries that meet share a square, and both
- *   read their own answer out of it.
- * - **It is one puzzle.** Flood fill from any letter reaches every letter; two
- *   unconnected islands is two half-crosswords on one page.
+ * catch. Everything below reads the cells — the numbering is recomputed here
+ * from the squares alone and compared, and "it is one puzzle" is a flood fill.
  */
 
 const clued = (...words: string[]): Clued[] =>

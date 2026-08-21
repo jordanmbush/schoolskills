@@ -17,10 +17,8 @@ import type { BlockProps } from "./block";
  *
  * The boxes are drawn rather than typed, and that is the whole reason this is a
  * block: a tall box and a small box next to each other is a picture of a word,
- * and there is no arrangement of text that produces it. They are `<rect>`
- * strokes — foreground paint — so they survive a printer with "Background
- * graphics" unticked (§5), which is the setting most people never find and the
- * reason word boxes from elsewhere so often come out as one grey smudge.
+ * and there is no arrangement of text that produces it. `<rect>` strokes rather
+ * than tints, so they survive a printer with background graphics off (§5).
  *
  * The word is printed beside its boxes because it is the question. A child
  * copying it in has to decide, letter by letter, which of the three bands each

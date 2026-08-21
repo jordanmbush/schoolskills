@@ -6,13 +6,11 @@
  * this panel worth reading twice. How many cards fit *across* is a fact about
  * the shape of a card — four bookmarks to a page is four columns of one, four
  * flashcards is two by two — so a free number would be a control offering
- * layouts the family would then quietly move somebody off. The list comes out
- * of the family's own table (`layoutsFor`), so a style that gains a twelve-up
- * gains it here with nothing to remember.
+ * layouts the family would then quietly move somebody off. The list comes out of
+ * the family's own table (`layoutsFor`).
  *
  * The size of a card is not a control at all. It is what fits, rounded down to
- * an eighth of an inch, and it is printed in the line under the picker — which
- * is `describeSheet` and is the same sentence a saved sheet is named after.
+ * an eighth of an inch, and printed in the line under the picker.
  */
 import { Checkbox, Field, Input } from "@/components/ui/kit";
 import { canFold, layoutsFor } from "@/engine/sheets/templates/cards";
@@ -72,9 +70,8 @@ export function CardsPanel({ config, set }: PanelProps<CardsConfig>) {
         <WordList
           label={config.style === "name-tag" ? "Names" : "Words"}
           // Joined back out of the config rather than held beside it, for the
-          // reason the spelling panel gives: the config is the state, and a
-          // second copy of the list would be the one the sheet was not built
-          // from. Leaving it empty is what "blank flashcards" means.
+          // reason the spelling panel gives. Leaving it empty is what "blank
+          // flashcards" means.
           text={(config.words ?? []).join("\n")}
           // `splitWords` rather than `parseWords`, and the difference is the
           // dedupe: a deck asks one question of each word, and a page of cards

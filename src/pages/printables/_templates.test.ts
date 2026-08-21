@@ -431,9 +431,9 @@ describe("the sitemap", () => {
   /*
    * A URL missing from the sitemap is the failure nobody notices — nothing
    * breaks, the page is simply never submitted. `scripts/sitemap-guard.mjs`
-   * audits the world-level routes and not the catalog slugs, so twenty-two of
-   * them were covered by nothing. Skipped when there is no `dist/`, exactly as
-   * the other catalogs' are; CI builds before it runs the suite.
+   * audits the world-level routes and not the catalog slugs, so these pages are
+   * covered by nothing else. Skipped when there is no `dist/`, exactly as the
+   * other catalogs' are; CI builds before it runs the suite.
    */
   it("carries every template slug and the hub", () => {
     const file = `${ROOT}/dist/sitemap-0.xml`;

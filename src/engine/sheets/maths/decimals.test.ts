@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { answerKey, buildSheet, describeSheet, sheetSpec } from "../index";
+import { buildSheet, describeSheet } from "../index";
+import { describeSheetFamily } from "../contract";
 import { PROBLEM_GAP } from "../layout";
 import type {
   DecimalConfig,
@@ -66,10 +67,9 @@ const config = (over: Partial<DecimalConfig> = {}): DecimalConfig => ({
 const PERCENT_RANGE = { min: 10, max: 200 };
 
 /**
- * Every shape the family can print, which is every acceptance criterion of the
- * story: decimals added, taken away and multiplied, along a line and in
- * columns, at each of the three place counts, percentages of amounts, and the
- * conversions between all three forms.
+ * Every shape the family can print: decimals added, taken away and multiplied,
+ * along a line and in columns, at each of the three place counts, percentages
+ * of amounts, and the conversions between all three forms.
  */
 const EVERY_SHAPE: Array<Partial<DecimalConfig>> = [
   {},
@@ -96,6 +96,14 @@ const EVERY_SHAPE: Array<Partial<DecimalConfig>> = [
 ];
 
 const SEEDS = [0, 1, 2, 7, 4242];
+
+describeSheetFamily("decimals", {
+  label: "Decimals and percents",
+  spec: DECIMALS_SHEET,
+  config,
+  shapes: EVERY_SHAPE,
+  seeds: SEEDS,
+});
 
 /** The one block a decimals sheet has, narrowed for the reader. */
 function problemsOf(over: Partial<DecimalConfig>, seed: number): Problem[] {
@@ -228,11 +236,6 @@ function decimalsOn(problem: Problem): string[] {
 /* ── The registry ──────────────────────────────────────────────────────── */
 
 describe("the decimals family", () => {
-  it("is in the registry under the kind its config carries", () => {
-    expect(sheetSpec("decimals")).toBe(DECIMALS_SHEET);
-    expect(sheetSpec("decimals").label).toBe("Decimals and percents");
-  });
-
   it("names what it prints, in the terms a parent chose it by", () => {
     expect(describeSheet(config())).toBe("Adding decimals — hundredths");
     expect(describeSheet(config({ places: 1 }))).toBe(
@@ -389,22 +392,6 @@ describe("the answer key", () => {
     }
   });
 
-  it("prints the answers only when the sheet is a key", () => {
-    const sheet = buildSheet(config(), 5);
-    const key = answerKey(config(), 5);
-    expect(sheet.answers).toBe(false);
-    expect(key.answers).toBe(true);
-    expect(key.footer.note).toBe("Answer key");
-  });
-
-  it("is the same sheet keyed, never a second generation", () => {
-    for (const shape of EVERY_SHAPE) {
-      expect(answerKey(config(shape), 11).blocks).toEqual(
-        buildSheet(config(shape), 11).blocks,
-      );
-    }
-  });
-
   it("leaves exactly one number that would fit a conversion blank", () => {
     // Searched over the hundredths rather than over the whole numbers, because
     // that is the alphabet the answer is written in: two failures caught at
@@ -530,7 +517,7 @@ describe("what may be on the page", () => {
   it("prints nothing rather than something wrong when the ask is impossible", () => {
     // A range of nothing at all: every draw is a value of zero, which is not a
     // question about decimals. An empty sheet is the honest answer, and the
-    // builder's job to prevent (PRINT13).
+    // builder's job to prevent.
     expect(problemsOf({ range: { min: 0, max: 0 } }, 1)).toEqual([]);
   });
 });
@@ -538,21 +525,6 @@ describe("what may be on the page", () => {
 /* ── Determinism, and the three features it buys (§7) ──────────────────── */
 
 describe("(config, seed)", () => {
-  it("builds the same sheet twice", () => {
-    for (const shape of EVERY_SHAPE) {
-      for (const seed of SEEDS) {
-        const once = buildSheet(config(shape), seed);
-        const twice = buildSheet(config(shape), seed);
-        expect(once).not.toBe(twice);
-        expect(once).toEqual(twice);
-      }
-    }
-  });
-
-  it("carries the seed into the footer, so the same sheet can be had again", () => {
-    expect(buildSheet(config(), 12_345).footer.seed).toBe(12_345);
-  });
-
   it("draws the same problems for a seed as it did the day it shipped", () => {
     // The promise the footer makes: the seed is printed on the paper so a
     // parent can have the same sheet again next week, across a deploy. Nothing

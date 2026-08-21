@@ -81,21 +81,16 @@ const verse = passage("the-plans-of-the-diligent");
     </p>
     {
       /*
-       * The button goes down the page, not into a game.
+       * The button goes down the page, not into a game. The map is the
+       * thesis, and a child who came to practise spellings shouldn't have to
+       * back out of a multiplication race to find it — so the primary action
+       * is "choose", and the map is one scroll away.
        *
-       * It used to open /flash-cards, which quietly said the times tables were
-       * the site and the other three worlds were extras. They aren't — the map
-       * is the thesis, and a child who came to practise spellings shouldn't
-       * have to back out of a multiplication race to find it. So the primary
-       * action is "choose", and the map is one scroll away rather than one
-       * navigation away.
-       *
-       * Both buttons are in-page jumps now, so both carry `data-scroll`. The
-       * arrow is only on this one: it is the button that used to leave the
-       * page, and it is the one whose destination is off screen, so it is the
-       * one that has to say it goes downwards rather than away. See the script
-       * at the foot of this page for why the scroll is animated in JavaScript
-       * rather than by `scroll-behavior: smooth`.
+       * Both buttons are in-page jumps, so both carry `data-scroll`. The arrow
+       * is only on this one, whose destination is the one off screen: it has
+       * to say it goes downwards rather than away. See the script at the foot
+       * of this page for why the scroll is animated in JavaScript rather than
+       * by `scroll-behavior: smooth`.
        */
     }
     <div class="hero__actions">

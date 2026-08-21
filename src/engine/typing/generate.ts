@@ -18,56 +18,35 @@ import {
  *
  * `generate(lesson, seed)` is the whole of this module's surface, and it is
  * deterministic in the pair: the same lesson and the same seed produce the
- * same words in the same order, on any device, for ever. That is the rule
- * every other deck on this site already follows — a ghost is only a race if
- * both runs saw the same cards — and here it is also what makes a saved run
- * legible: `Session.mode` says `typing:L07` and the seed says which lesson 7.
+ * same words in the same order, on any device, for ever. A ghost is only a
+ * race if both runs saw the same cards, and determinism is also what makes a
+ * saved run legible: `Session.mode` says `typing:L07`, and the seed says which
+ * lesson 7 it was.
  *
- * ── Why a strategy per kind, rather than one shuffle ─────────────────────────
- * A single "pick words the child can type" would satisfy the reachability
- * invariant and teach almost nothing. What a lesson is *for* is written on it,
- * and the eight kinds want eight different things:
+ * **Every character produced satisfies `canType(ch, n)`** (§5.2): a lesson may
+ * only use keys the ladder has already taught. Each pool is filtered rather
+ * than trusted, which is what lets the ladder be re-ordered by editing one
+ * array — and it is the promise an editor adding a pool here would otherwise
+ * break in silence, in front of a five-year-old.
  *
- *   - **keys** meets a new key, so it is letter groups in a drill rhythm,
- *     weighted to the new keys and padded out with the ones already learnt.
- *   - **words** wants real words, commonest first, because a child who can
- *     type `the` fluently can type a third of English.
- *   - **bigrams** wants words chosen *because* they carry the focus pairs, so
- *     one hand shape comes round again and again inside ordinary spelling.
- *   - **sentences** and **passage** want English, split on spaces and never on
- *     meaning: that is where the space bar and the full stop get learnt.
- *   - **numbers** and **mixed** want figures that mean something — an age, a
- *     date, a score, a price — because random digits teach the row and nothing
- *     else.
- *   - **sprint** wants the short, common words, at pace.
+ * Two more `generate.test.ts` holds: each introduced character occurs at least
+ * `pass.keyStrikes` times at every seed, and new keys are 15–35% of the
+ * characters. The second has one exception, and it is a fact about the ladder
+ * rather than a concession by the generator: at lesson 1 the alphabet is `f`,
+ * `j` and the space bar, so there is no review to be had and `keyDrill` spends
+ * the whole lesson on the new keys. The test states that in derived terms — a
+ * lesson with review available is 15–35% new — so a re-ordered ladder that
+ * leaves lesson 40 with nothing to review is named by the test rather than
+ * quietly excused by it.
  *
- * ── The three invariants this module exists to satisfy ───────────────────────
- * §5.2, and `generate.test.ts` is where they are actually asserted:
+ * A strategy per kind rather than one shuffle, because "pick words the child
+ * can type" would satisfy reachability and teach almost nothing: what a lesson
+ * is *for* is written on it, and each strategy below says what it makes of it.
  *
- *   1. **Reachability.** Every character produced satisfies `canType(ch, n)`.
- *      Every pool is filtered through it rather than trusted, which is what
- *      lets the ladder be re-ordered by editing one array.
- *   2. **The new key shows up enough.** Each introduced character occurs at
- *      least `pass.keyStrikes` times, at every seed, or the new-key gate
- *      (§6.4) is unpassable through no fault of the child's.
- *   3. **A lesson is mostly review.** New keys are 15–35% of the characters.
- *
- * The third has one exception, and it is a fact about the ladder rather than a
- * concession by the generator: at lesson 1 the unlocked alphabet is `f`, `j`
- * and the space bar, so there is no review to be had and the drill is all new
- * keys. §5.5 asks for exactly that ("three lessons of `fff jjj fjf` is
- * standard and correct"). `keyDrill` therefore spends the whole lesson on the
- * new keys when nothing else is unlocked, and the test states the exception in
- * the same derived terms — a lesson with review available is 15–35% new — so a
- * re-ordered ladder that leaves lesson 40 with nothing to review is named by
- * the test rather than quietly excused by it.
- *
- * ── Why this file may import the corpus ──────────────────────────────────────
  * `local/no-corpus-in-decks` bans `lexicon.ts` and this module from every
  * engine file the deck layer can reach, and exempts these two. The way a run
  * gets its words is `TypingConfig.words`: the ladder screen, inside the typing
- * island, calls `generate` and hands the result to the deck. Nothing under
- * `decks/` ever imports this (§5.3, and the 222 KB it cost the last time).
+ * island, calls `generate` and hands the result to the deck (§5.3).
  */
 
 // ── The shape of a drill ─────────────────────────────────────────────────────
@@ -75,37 +54,32 @@ import {
 /**
  * Characters in a drill group: `ffjj`, `QWER`, `4545`.
  *
- * Four, as §5.1 prints, and the reason is arithmetic rather than taste.
- * `strikesFor` in `lessons.ts` sizes the new-key gate against `wordCount × 5`
- * characters — the words-per-minute convention, five keys to a word, the space
- * included. Groups of three would make a lesson a fifth shorter than the gate
- * assumes, and lesson 67 (six new symbols, ten strikes apiece) would need 60
- * of its 139 characters to be new: 43%, well over §5.2's ceiling, with the
- * generator doing nothing wrong. Four plus a space is five, so the two halves
- * of the ladder agree about how long a lesson is.
+ * Four rather than three, so that a group plus the space after it is the five
+ * characters `wordCount` is counted in — the same figure `strikesFor` sizes
+ * the new-key gate against. At three the two halves of the ladder would
+ * disagree about how long a lesson is, and lesson 67 would be over §5.2's
+ * ceiling with the generator doing nothing wrong (§5.1).
  */
 const GROUP = 4;
 
 /**
  * How much of a drill the new keys should be — the middle of §5.2's 15–35%.
  *
- * A target rather than a limit. Where the gate asks for more than this (a
- * lesson handing over six keys at twelve strikes each), the gate wins and the
- * lesson runs denser: a lesson nobody can pass is a worse failure than a
- * lesson that leans hard on its new keys, and the band test is what says so
- * out loud if the two ever stop being reconcilable.
+ * A target rather than a limit. Where the gate asks for more than this — a
+ * lesson handing over six keys at twelve strikes each — the gate wins and the
+ * lesson runs denser: a lesson nobody can pass is the worse failure, and the
+ * band test says so out loud if the two ever stop being reconcilable.
  */
 const TARGET_NEW_SHARE = 0.25;
 
 /**
  * Up to this many new keys get an opening group of their own: `ffff jjjj`.
  *
- * A run of one key is how a key is met, and it is the first thing every typing
- * course prints. It stops being useful when a lesson hands over eleven or
- * fifteen keys at once — block 4's two shift lessons — where fifteen groups of
- * `QQQQ` would be half the lesson and would spend the entire new-key budget
- * before the drill got to using them. Those lessons take four distinct new
- * keys per group instead, which is `QWER TASD` and reads as the drill it is.
+ * A run of one key is how a key is met. It stops being useful when a lesson
+ * hands over eleven or fifteen at once — block 4's two shift lessons — where
+ * fifteen groups of `QQQQ` would be half the lesson and would spend the whole
+ * new-key budget before the drill got to using them. Those lessons take four
+ * distinct new keys per group instead: `QWER TASD`.
  */
 const RUN_KEYS_MAX = 4;
 
@@ -124,12 +98,11 @@ const FREQ_BIAS = 2;
 /**
  * The window a `words` lesson draws inside, in words per word asked for.
  *
- * The coarse half of the same weighting. A lesson of thirty-five words reaching
- * into two thousand would meet its fifteen-hundredth-commonest word about as
- * often as anything else worth practising, and "practise the words you will
- * actually write" is the point of a frequency-ordered corpus. The tail is not
- * wasted: it is what the bigram lessons filter and what keeps the early
- * alphabets from emptying.
+ * The coarse half of the same weighting. A lesson of thirty-five words
+ * reaching into two thousand would meet its fifteen-hundredth-commonest word
+ * about as often as anything worth practising. The tail is not wasted: it is
+ * what the bigram lessons filter, and what keeps the early alphabets from
+ * emptying.
  */
 const WINDOW_PER_WORD = 6;
 
@@ -148,17 +121,14 @@ const MIN_BAG = 12;
  * The lessons whose subject is a particular pool, by number.
  *
  * `LessonKind` carries a payload for exactly one thing — `bigrams.focus` —
- * because a title is otherwise spec enough for the generator. The eleven below
- * are the exceptions §5.6 names in words: "The twenty-five" is the twenty-five,
- * "Hands that take turns" is the alternating list, "Names, and the word I" is
- * the names. The corpus was built with those lessons written on it
- * (`lexicon.ts` says so in every one of their doc blocks), so the table that
- * connects them lives here, beside the only module that reads it, rather than
- * as a second payload on a type the deck layer imports.
+ * because a title is otherwise spec enough. The eleven below are the lessons
+ * §5.6 names a pool in words: "The twenty-five", "Hands that take turns",
+ * "Names, and the word I". The table connecting them lives here, beside the
+ * only module that reads it, rather than as a second payload on a type the
+ * deck layer imports.
  *
- * Keyed by `n` for the same reason `BIGRAMS` in `lessons.ts` is: a row of §5.6
- * carries its number with it, and a lesson that is genuinely re-numbered has
- * changed which lesson it is.
+ * Keyed by `n` for the same reason `BIGRAMS` in `lessons.ts` is: a lesson that
+ * is genuinely re-numbered has changed which lesson it is.
  */
 type Source = (lesson: Lesson, rand: () => number) => readonly string[];
 
@@ -197,11 +167,9 @@ const POOLS = new Map<number, Source>([
 // ── Bags ─────────────────────────────────────────────────────────────────────
 
 /**
- * A bag that is emptied before it is refilled — the rule the other decks
- * follow, so a short lesson never asks for one word four times while another
- * never comes up at all.
- *
- * Refilling reshuffles, so a pool smaller than the lesson repeats in a
+ * A bag emptied before it is refilled — the rule the other decks follow, so a
+ * short lesson never asks for one word four times while another never comes up
+ * at all. Refilling reshuffles, so a pool smaller than the lesson repeats in a
  * different order each time round rather than looping.
  */
 function bag<T>(items: readonly T[], rand: () => number): () => T {
@@ -220,9 +188,9 @@ function bag<T>(items: readonly T[], rand: () => number): () => T {
  * The same rule, with the draw weighted towards the front of the pool.
  *
  * Frequency weighting and bag exhaustion pull against each other — the first
- * wants `the` often, the second wants it once — so the compromise is drawing
- * *without replacement* from a biased index: every word is gone until the bag
- * is empty, and which one goes first is decided by how common it is.
+ * wants `the` often, the second wants it once — so this draws *without
+ * replacement* from a biased index: every word is gone until the bag is empty,
+ * and which goes first is decided by how common it is.
  */
 function frequencyBag(
   pool: readonly string[],
@@ -240,10 +208,9 @@ function frequencyBag(
 /**
  * Lowercase the characters this lesson has not been given, and only those.
  *
- * The sentence pool holds English as it is printed — a capital at the front, a
- * name in the middle — because it has to still be English at lesson 40. Lesson
- * 30 asks for sentences a whole block before either shift is taught, and
- * folding the case for it is this module's job (`lexicon.ts` says as much):
+ * The sentence pool holds English as it is printed, because it has to still be
+ * English at lesson 40. Lesson 30 asks for sentences a whole block before
+ * either shift is taught, and folding the case for it is this module's job:
  * the unlocked alphabet is in hand here and is not in the corpus.
  *
  * Conditional on the character rather than on the lesson, so the fold is a
@@ -264,7 +231,7 @@ function fold(text: string, n: number): string {
  * The reachability test generates every lesson at many seeds, and each
  * generation would otherwise walk two thousand words character by character.
  * The ladder and the corpus are both fixed at module load, so the answer is
- * too; a `WeakMap` keyed by the pool means a caller can hand over a slice
+ * too; the `WeakMap` is keyed by the pool so a caller can hand over a slice
  * without leaking it for the life of the process.
  */
 const FILTERED = new WeakMap<
@@ -306,14 +273,10 @@ const readable = (pool: readonly string[], n: number) =>
 /**
  * `ffff jjjj fjfj fdfd dkdk` — a new key, met and then used.
  *
- * Three sorts of group, in the proportions §5.2's band asks for:
- *
- *   - **new**, four characters of the keys that arrived today. One run per key
- *     opens the lesson, and the rest are woven so a pair alternates.
- *   - **mixed**, two new and two already learnt, which is the actual exercise:
- *     the finger has to come back to the new key from somewhere.
- *   - **review**, four characters of two older keys, which is what the other
- *     two thirds of the lesson are made of.
+ * Three sorts of group, in the proportions §5.2's band asks for: **new** (four
+ * of today's keys), **mixed** (two new and two already learnt, which is the
+ * actual exercise — the finger has to come back to the new key from
+ * somewhere), and **review** (four characters of two older keys).
  *
  * The new characters come off a round-robin over the day's keys, so a lesson
  * introducing fifteen capitals spreads them evenly rather than spending its
@@ -402,10 +365,9 @@ function drawWords(
 /**
  * Real words, commonest first, that this lesson's alphabet can spell.
  *
- * The pool is the lesson's own if §5.6 gave it one, and the corpus otherwise,
+ * The pool is the lesson's own if §5.6 gave it one and the corpus otherwise,
  * narrowed to a window whose size follows the lesson's length. Both halves are
- * frequency weighting: which words are in the bag, and which of them is drawn
- * first.
+ * frequency weighting: which words are in the bag, and which is drawn first.
  */
 function wordRun(lesson: Lesson, rand: () => number): string[] | null {
   const source = POOLS.get(lesson.n);
@@ -419,11 +381,11 @@ function wordRun(lesson: Lesson, rand: () => number): string[] | null {
 /**
  * Words chosen *because* they contain the focus sequences.
  *
- * Round-robin over the sequences rather than one pooled bag, so `th`, `he`,
- * `er` and `re` each get a quarter of the lesson however many words the corpus
- * offers for them. Lesson 8 is the case that shapes this: at nine letters
- * unlocked, `ss` has exactly one word in the whole corpus, and a pooled draw
- * would spend the lesson on `ll` and never drill the pair a child is there for.
+ * Round-robin over the sequences rather than one pooled bag, so each gets an
+ * equal share of the lesson however many words the corpus offers for it.
+ * Lesson 8 is the case that shapes this: at nine letters unlocked, `ss` has
+ * exactly one word in the whole corpus, and a pooled draw would spend the
+ * lesson on `ll` and never drill the pair a child is there for.
  */
 function bigramRun(
   lesson: Lesson,
@@ -490,8 +452,8 @@ function punctuated(lesson: Lesson): readonly string[] {
  * Never split on meaning: a sentence goes in entire, so the capital at the
  * front and the stop at the end land where a child expects them. The only cut
  * is the last one, where the lesson reaches its length mid-sentence — the same
- * trade `decks/typing.ts` makes, and for the same reason: a passage that stops
- * mid-sentence is better than one that starts mid-sentence.
+ * trade `decks/typing.ts` makes, because a passage that stops mid-sentence is
+ * better than one that starts mid-sentence.
  */
 function proseRun(
   lesson: Lesson,
@@ -512,12 +474,11 @@ function proseRun(
  * The figures a lesson can be built out of, and what each one costs.
  *
  * Ages, dates, scores and prices (§5.6, lesson 57) rather than digits at
- * random: a date has a shape, and typing `14/6/2019` teaches the number row
- * *and* the reach to the slash in the order a child will actually need them.
- * `needs` is the punctuation the shape cannot be written without, checked
- * against the unlocked alphabet before the shape is offered — which is why a
- * score is absent until the hyphen arrives at lesson 63 rather than being
- * quietly rewritten as two separate numbers.
+ * random: a date has a shape, and `14/6/2019` teaches the number row *and* the
+ * reach to the slash. `needs` is the punctuation the shape cannot be written
+ * without, checked against the unlocked alphabet before the shape is offered —
+ * which is why a score is absent until the hyphen arrives at lesson 63 rather
+ * than being quietly rewritten as two separate numbers.
  */
 const FIGURES: { needs: string; make: (rand: () => number) => string }[] = [
   /** An age. */

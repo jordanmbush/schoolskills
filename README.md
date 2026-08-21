@@ -4,8 +4,16 @@ Learning games for kids that feel like games, at
 [schoolskills.app](https://schoolskills.app). Static site, no accounts, no
 sign-up — a player's progress lives in their own browser and never leaves it.
 
-First game: **Times Trial**, a gamified multiplication flash-card racer with
-ghost racing and a per-card clock.
+One game with a map and a world per subject:
+
+- **The Grid** (`/flash-cards`) — times tables and the other three operations as
+  timed cards, with a per-card clock and a ghost of your own best run.
+- **Word Jungle** (`/spelling/play`) — the Dolch sight words, read aloud and
+  typed from memory. This week's spellings paste in as a deck like any other.
+- **Frost Keys** (`/typing`) — touch typing, from eight keys under eight fingers
+  up to real punctuation.
+- **The Print Shop** (`/printables`) — worksheets to print, with answer keys.
+  The one stop on the map that is for the grown-up rather than the child.
 
 ## Running it
 
@@ -30,17 +38,31 @@ npm run test:unit
 
 ```
 src/engine/       decks, scoring, records — pure logic, framework-free
+src/engine/sheets/      worksheet families: paper, problems, answer keys
 src/services/     profiles, sessions, persistence
 src/services/storage/   the only code allowed to touch IndexedDB
 src/components/   feature components
 src/components/ui/      the primitive kit: domain-free, prop-driven
-src/games/        one directory per game
+src/components/sheet/   the sheet renderer — real inches, no JavaScript shipped
+src/games/        one directory per mounted app
 src/pages/        Astro routes — real prerendered HTML
 src/layouts/      the page shell (SEO metadata contract lives here)
 ```
 
 The layer boundaries are enforced by `eslint.config.mjs`, not by convention.
 Read `CLAUDE.md` before adding a module.
+
+## The long-form docs
+
+`CLAUDE.md` is the spec — the constraints, the layers and the shape of things.
+Where a subsystem needed more than that, it has a document of its own, and
+comments cite it by section rather than repeating it:
+
+| Doc                  | Covers                                                                                                                     |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `docs/typing.md`     | Frost Keys: the keyboard model, the on-screen board, the hundred-lesson ladder, passing and badges, and the Hailstorm game |
+| `docs/printables.md` | The Print Shop: paper in real inches, the rulings, tracing, answer keys and seeds, the catalog routes, and the builder     |
+| `docs/analytics.md`  | Counting visits without an analytics service: CloudFront logs, the rollup, Athena, and the 90-day ceiling                  |
 
 ## Where progress is stored
 
@@ -60,14 +82,15 @@ Two consequences worth knowing:
 
 ## Scripts
 
-| Script               | What it does                                                            |
-| -------------------- | ----------------------------------------------------------------------- |
-| `npm run dev`        | Astro dev server                                                        |
-| `npm run type-check` | `astro check` + `tsc`                                                   |
-| `npm run lint`       | The architecture boundaries                                             |
-| `npm run test:unit`  | Includes the lint-boundary suite                                        |
-| `npm run test:smoke` | Drives the built site in a real browser (needs `npm run preview` first) |
-| `npm run build`      | Static output to `dist/`                                                |
+| Script                   | What it does                                                            |
+| ------------------------ | ----------------------------------------------------------------------- |
+| `npm run dev`            | Astro dev server                                                        |
+| `npm run type-check`     | `astro check` + `tsc`                                                   |
+| `npm run lint`           | The architecture boundaries                                             |
+| `npm run test:unit`      | Includes the lint-boundary suite                                        |
+| `npm run test:smoke`     | Drives the built site in a real browser (needs `npm run preview` first) |
+| `npm run build`          | Static output to `dist/`                                                |
+| `npm run audit:comments` | Comment-to-code ratio per file, and broken `§` doc references           |
 
 `scripts/` holds the one-off operational tools: `setup-github-oidc.sh`,
 `setup-branch-protection.sh`, `post-deploy-smoke.sh`, `generate-icons.mjs`, and

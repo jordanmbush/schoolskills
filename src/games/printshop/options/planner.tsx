@@ -1,17 +1,14 @@
 /**
  * The week: which chart, and whose week it is.
  *
- * Every control here appears only where it means something, which on this
- * family is most of them — a calendar has a month and no row labels, a chore
- * chart has row labels and no month, and only one of the five has a verse on
- * it. A panel that showed all of them at once would be four fifths greyed out.
+ * Every control here appears only where it means something, which on this family
+ * is most of them — a calendar has a month and no row labels, a chore chart has
+ * row labels and no month, and only one of the five has a verse on it.
  *
  * The dates are the one switch worth a sentence. A calendar prints undated by
  * default because a blank month grid does not go out of date on a wall, and
- * "print the dates" is what turns it into September. Ticking it has to set both
- * the year and the month at once — `PlannerConfig.year` is explicit that it is
- * both or neither, because a year with no month is a config that arrived half
- * built rather than half a calendar.
+ * ticking the dates has to set both the year and the month at once —
+ * `PlannerConfig.year` is explicit that it is both or neither.
  */
 import { Checkbox, FieldSet, NumberStepper } from "@/components/ui/kit";
 import { MONTH_NAMES, PLANNER_ROWS } from "@/engine/sheets/templates/planner";
@@ -29,10 +26,9 @@ const STYLES = [
 ];
 
 /**
- * Sunday or Monday, and it is a real difference rather than a preference: an
- * American calendar starts on Sunday and most of the rest of the world starts
- * on Monday, and a family handed the wrong one counts the weekend on the wrong
- * end of the row.
+ * Sunday or Monday, and a real difference rather than a preference: an American
+ * calendar starts on Sunday and most of the rest of the world on Monday, and a
+ * family handed the wrong one counts the weekend on the wrong end of the row.
  */
 const STARTS = [
   opt("sunday", "Sunday", "US"),

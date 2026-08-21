@@ -41,37 +41,23 @@ import "@/styles/search.css";
 /**
  * The Print Shop's front door.
  *
- * A world's `href` normally points at the game, and the page ABOUT the world
- * is a second link. Here it is the other way round: this page is the world,
- * and the island at /printables/make is the second link. That inversion is the
- * whole reason `WorldInfo.island` exists — a catalog of prerendered worksheets
- * is the largest crawlable surface this site will ever have, and the sitemap
- * filter used to be keyed on the field that would have deleted it.
+ * A world's `href` normally points at the game, and the page ABOUT the world is
+ * a second link. Here it is the other way round: this page is the world, and
+ * the island at /printables/make is the second link. That inversion is the
+ * whole reason `WorldInfo.island` exists — this is the largest crawlable
+ * surface the site will ever have, and the sitemap filter is keyed on the other
+ * field so that it cannot delete it (§8).
  *
  * It lists what exists and nothing else. A shelf of links to sheets that
- * haven't been built is the thin-content pattern Base.astro's `noindex` block
- * already argues against, and a catalog page here is meant to BE the worksheet
- * — real prerendered HTML a parent can print without touching anything. Ten
- * families fill it: every ruling in §5 on both stocks, the curated maths topics
- * of §8, each of which prints its own answer key, the handwriting and cursive
- * sheets, which come on both stocks for the same reason the paper does, the
- * Scripture shelf, which is those same families with a passage on them, the
- * spelling shelf, which is the one whose content a parent can replace with their
- * own list, the grammar shelf, which is the one whose answers had to be written
- * down because they cannot be worked out, the phonics shelf, which is the one
- * whose content is decided by what a parent says has been taught, the charts
- * shelf, which is the one with no questions on it at all, and the paperwork —
- * forms, planners, cards and nets — which is the one that is supposed to be
- * empty and is the more useful for it.
+ * haven't been built is the thin-content pattern `Base.astro`'s `noindex` block
+ * already argues against.
  *
  * **The search is an island on top of the page, never instead of it.** Every
- * sheet the search can reach is listed below it in prerendered HTML, and the
- * two ways of browsing them — a shelf per subject, a page per school year — are
- * their own crawlable pages. So the whole catalog works with JavaScript turned
- * off, a crawler reads the page that was written to be read, and the search box
- * is the shortcut a parent gets for having a browser. `client:only` is what
- * guarantees it: there is no server-rendered search field to sit there looking
- * live and doing nothing.
+ * sheet it can reach is listed below it in prerendered HTML, and the two ways
+ * of browsing them — a shelf per subject, a page per school year — are their
+ * own crawlable pages. So the catalog works with JavaScript turned off, and
+ * `client:only` is what guarantees it: there is no server-rendered search field
+ * to sit there looking live and doing nothing.
  */
 const title = "Free printable worksheets — The Print Shop | School Skills";
 const description =
@@ -122,12 +108,7 @@ const paperwork = templateShelf();
 
   {
     /*
-      client:only for the reason the builder is, arrived at from the opposite
-      end: there is nothing here worth prerendering, and something worth NOT
-      prerendering. A search field in the static HTML would be a control that
-      looks live to a visitor with no JavaScript and takes a keystroke without
-      answering — and everything it could have shown them is already on this
-      page. The index it reads is fetched, so none of those bytes are in the
+      The index it reads is fetched on mount, so none of those bytes are in the
       HTML a parent downloads before they have asked for anything.
     */
   }
@@ -135,10 +116,8 @@ const paperwork = templateShelf();
 
   {
     /*
-      What exists, first — before the page explains itself. Somebody who
-      arrived looking for lined paper should be one link from lined paper,
-      and the argument for why a worksheet here is a web page reads better
-      after you have seen one than before.
+      What exists, first — before the page explains itself. Somebody who arrived
+      looking for lined paper should be one link from lined paper.
     */
   }
   <section class="band band--tight wrap">
@@ -352,7 +331,7 @@ const paperwork = templateShelf();
         Paper keeps its groups and its one-line summaries; every subject shelf
         above gets a row of links and a hub. Not an inconsistency — a ruling is
         chosen by reading what makes it different from the ruling beside it, and
-        a worksheet is chosen by recognising the name of the topic.
+        a worksheet by recognising the name of the topic.
       */
     }
     {

@@ -8,14 +8,13 @@ import { soundsFor } from "./stormSounds";
 import type { StormLetter, StormState, WaveSpec } from "@/engine/typing/storm";
 
 /**
- * What a storm sounds like (docs/typing.md §8.12).
+ * What a storm sounds like (§8.12).
  *
- * The whole point of `soundsFor` being a diff over two states is that this can
- * be asked without a mixer, a browser or a clock: every run below is built
- * from `fire` and `tick` — the same two functions the game is played through —
- * and the assertion is on the list of names that comes back. Nothing here
- * stubs `sfx`, because nothing here calls it; `playStormSounds` is a `switch`
- * over exactly these names and has no decision left in it.
+ * `soundsFor` being a diff over two states is what lets this be asked without
+ * a mixer, a browser or a clock: every run below is built from `fire` and
+ * `tick` and the assertion is on the list of names that comes back. Nothing
+ * here stubs `sfx`, because nothing here calls it — `playStormSounds` is a
+ * `switch` over exactly these names with no decision left in it.
  */
 
 /** One letter, placed by hand, off the same board the game is played on. */
@@ -33,8 +32,7 @@ const at = (ch: string, spawnMs: number, fallMs: number): StormLetter => {
     fallMs,
     // No queue: a hand-placed letter falls the instant it appears, so every
     // absolute moment below is the one the test wrote down. The beat a real
-    // wave gives a letter (`QUEUE_MS`) is `buildWave`'s, and it belongs to the
-    // tests of the schedule rather than to every test of what a landing costs.
+    // wave gives a letter (`QUEUE_MS`) belongs to the tests of the schedule.
     dropMs: spawnMs,
     landMs: spawnMs + fallMs,
   };

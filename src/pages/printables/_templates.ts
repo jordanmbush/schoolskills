@@ -1,50 +1,19 @@
 /**
- * The blank paperwork the Print Shop has set, and the words that go round it.
+ * The blank paperwork the Print Shop has set, and the words that go round it —
+ * §11's middle tier, the sheets that are supposed to be empty.
  *
- * Underscored so Astro leaves it out of the routing table: it is data two pages
- * share — `templates/[slug].astro`, which prerenders one sheet per entry, and
- * `templates/index.astro`, which is the hub — rather than a route of its own.
- * `_catalog.ts` does that job for paper, `_charts.ts` for the maths references,
- * `_maths.ts` for the worksheets, and so on down the shelf.
+ * **Four families, five groups, and the groups are not the families.** A parent
+ * looking for a chore chart does not know or care that it shares a block with a
+ * reading log, so the shelf is grouped by what somebody is doing and a group
+ * takes sheets from whichever family draws them.
  *
- * **The whole shelf is supposed to be empty, and that is the argument for it.**
- * §11 sorts the catalog into three tiers, and this is the middle one: nothing on
- * any of these twenty-two pages is generated out of a subject somebody would
- * have to be an editor to get right, so there is nothing on one that could be
- * wrong. A reading log is a reading log whoever printed it. The lab report here
- * is the clearest case — it is a *form*, asking what the question was and what
- * happened, and supplying neither, because the paperwork round a science lesson
- * is ours to print and the science is the third tier's "not ours to fake".
+ * **Three of the twenty-two carry a verse, and they are listed where they
+ * fall** — beside the sheet they are the same shape as, never gathered into a
+ * section of their own (§12).
  *
- * **Four families, five groups, and the groups are not the families.** Forms,
- * the week, the paper that gets cut up and the two things that are objects
- * rather than pages: `templates/forms.ts`, `planner.ts`, `cards.ts` and
- * `nets.ts`. A parent looking for a chore chart does not know or care that it
- * shares a block with a reading log, so the shelf is grouped by what somebody is
- * doing — reading and writing, science and history, the week, cards to cut out,
- * and the things that get made — and a group takes sheets from whichever family
- * draws them.
- *
- * **Three of the twenty-two carry a verse, and they are listed where they fall.**
- * §12 is explicit that Scripture is woven through rather than cordoned off: the
- * memory-verse cards sit beside the blank flashcards because they are the same
- * rectangle, and the verse-of-the-week chart sits beside the chore chart because
- * it is the same week. The passage is a setting on all three, chosen from the
- * same picker copywork uses, and the credit line travels with the words rather
- * than with the page.
- *
- * **What is already next door.** Lined, squared and handwriting paper is the
- * paper shelf, and the hundred charts, number lines, coordinate grids and
- * place-value mats are `/printables/charts`. Both are this same tier and neither
- * is rebuilt here.
- *
- * **One stock, for a different reason than the charts shelf has.** Nothing here
- * is a *stated* measurement the way a ⅝ rule is: a card's size is worked out
- * from the paper it is being cut out of rather than declared on it, so a sheet
- * of these on A4 is a correct sheet of slightly different cards rather than a
- * wrong one. What the prose quotes is what US Letter gives, because that is the
- * paper these pages print on; a different stock is a control in the builder, and
- * the geometry follows it.
+ * **One stock, for a different reason than the charts shelf has** (§8). A card
+ * is sized against the paper it comes out of, so A4 gives a correct sheet of
+ * slightly different cards. Every dimension in the prose below is Letter's.
  */
 import { DEFAULT_FONT_PT } from "@/engine/sheets/paper";
 import { cardsKeyed } from "@/engine/sheets/templates/cards";
@@ -83,11 +52,9 @@ export type TemplateSheet = {
   /**
    * Two things that are true of this sheet and not of the one beside it.
    *
-   * The sheet is prerendered directly under this prose (§8), which makes a
-   * number quoted in it a claim about the paper rather than a description of
-   * it — a reader can look down the page and count the rows, or hold a ruler
-   * against a card. `_templates.test.ts` holds every number written in words to
-   * what the sheet under it actually draws.
+   * The sheet is prerendered directly under this prose (§8), so a number quoted
+   * here is a claim about the paper that a reader can check with a ruler.
+   * `_templates.test.ts` holds each one to what the sheet under it draws.
    */
   notes: string[];
   /** For the `LearningResource` block. */
@@ -101,25 +68,22 @@ export type TemplateSheet = {
 /**
  * The seed every sheet on this shelf is built from, and it never moves.
  *
- * It decides one thing, on one page: the writing prompt is drawn from it, out of
- * the bank in `templates/prompts.ts`, and "another one like this" is `seed + 1`
- * there as everywhere else (§7). The other twenty-one ignore it entirely — a
- * chore chart is the same seven columns whoever prints it — and it is still
- * printed in the footer of all of them, because a sheet is reproducible from its
- * seed and a reader has no way of knowing which sheets ignore theirs.
+ * It decides one thing, on one page: which writing prompt is drawn out of
+ * `templates/prompts.ts` (§7). The rest ignore it — a chore chart is the same
+ * seven columns whoever prints it — and it is still printed in the footer of
+ * all of them, because a reader has no way of knowing which sheets ignore
+ * theirs.
  */
 export const TEMPLATE_SEED = 1;
 
 /**
  * Printed blank, always — on the sheets that carry one at all.
  *
- * A worksheet asks for a name because a teacher has thirty of them to hand back.
- * Nothing here holds one (§1): these are two ruled lines on paper and there is
- * nowhere in a config to put a value for either. What varies is whether they are
- * drawn, and on this shelf that is the difference between a sheet a child works
- * on — a book report, a lab write-up, a timeline — and a chart that goes on a
- * wall or a sheet that is about to be cut into six. A name line above a page of
- * cards would be a name line on none of them.
+ * A name line is two ruled lines and there is nowhere in a config to put a
+ * value for either (§1). What varies is whether they are drawn, and on this
+ * shelf that is the difference between a sheet a child works on and a chart
+ * that goes on a wall or a sheet that is about to be cut into six: a name line
+ * above a page of cards would be a name line on none of them.
  */
 const WORKED: HeaderField[] = SHEET_FIELDS;
 const PINNED: HeaderField[] = [];
@@ -562,10 +526,9 @@ export const TEMPLATE_SHEETS: TemplateSheet[] = [
     config: cardsheet(PINNED, {
       style: "certificate",
       up: 1,
-      // The one entry that overrides the stock, and the reason is on the paper:
-      // a certificate is a landscape document. `@page` follows the sheet's own
-      // paper (`PageSize` in Sheet.tsx), so declaring it here is what makes ⌘P
-      // produce a landscape page with nothing set in the print dialog.
+      // A certificate is a landscape document, and `@page` follows the sheet's
+      // own paper (`PageSize` in Sheet.tsx) — so declaring it here is what
+      // makes ⌘P produce a landscape page with nothing set in the print dialog.
       paper: { size: "letter", orientation: "landscape", margin: "normal" },
     }),
   },
@@ -640,14 +603,7 @@ export const TEMPLATE_GROUPS: Array<{
   },
 ];
 
-/**
- * Which family owns a config, for the one question a page has to ask it.
- *
- * Four entries because four families draw this shelf. A kind that is not one of
- * them is not on the shelf at all, and answers as the forms family does — which
- * is the same answer, and is why the fallback is a function rather than a
- * literal.
- */
+/** Which family owns a config, for the one question a page has to ask it. */
 const FAMILY_KEYED: Partial<Record<SheetConfig["kind"], () => boolean>> = {
   form: formKeyed,
   planner: plannerKeyed,
@@ -658,14 +614,10 @@ const FAMILY_KEYED: Partial<Record<SheetConfig["kind"], () => boolean>> = {
 /**
  * Whether this sheet's answer key says anything its sheet doesn't.
  *
- * Nothing on this shelf does, and it is asked rather than assumed for the reason
- * `_charts.ts` asks it with `chartKeyed`: a page has to decide whether to print a
- * second copy of the paper under the words "Answer key", and the family is the
- * only thing that knows. All four of `formKeyed`, `plannerKeyed`, `cardsKeyed`
- * and `netKeyed` return `false` — a blank form has no answer by definition,
- * which is what this tier *is* (§11) — so the page and the families cannot
- * disagree about it, and the day one of them grows a key this reads it rather
- * than contradicting it.
+ * Nothing on this shelf does — a blank form has no answer by definition, which
+ * is what this tier *is* (§11) — but it is asked of the family rather than
+ * assumed, so a page cannot end up printing a second copy of the paper under
+ * the words "Answer key", and the day a family grows a key this reads it.
  */
 export const keyed = (sheet: TemplateSheet): boolean =>
   (FAMILY_KEYED[sheet.config.kind] ?? formKeyed)();

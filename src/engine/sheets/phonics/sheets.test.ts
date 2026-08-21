@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { answerKey, buildSheet } from "@/engine/sheets";
+import { describeSheetFamily } from "@/engine/sheets/contract";
 import { DEFAULT_FONT_PT, DEFAULT_PAPER } from "@/engine/sheets/paper";
 import type {
   Block,
@@ -16,9 +17,11 @@ import { markWord, markedText } from "./cards";
 import { allSounds, readInventory, type Inventory } from "./inventory";
 import { SENTENCES, sentenceText, sentenceWords } from "./sentences";
 import {
+  PHONICS_SHEET,
   PHONICS_STYLES,
   familiesOf,
   phonicsColumns,
+  phonicsKeyed,
   phonicsLayout,
   phonicsSupply,
 } from "./sheets";
@@ -127,6 +130,14 @@ const config = (
   count: 16,
   columns: 2,
   ...extra,
+});
+
+describeSheetFamily("phonics", {
+  label: "Phonics",
+  spec: PHONICS_SHEET,
+  config: (over = {}) => config("blending", EVERYTHING, over),
+  shapes: PHONICS_STYLES.map((style) => ({ style })),
+  keyed: (one) => phonicsKeyed(one.style),
 });
 
 /* ── Reading the page back ─────────────────────────────────────────────── */

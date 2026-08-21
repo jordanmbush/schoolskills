@@ -1,12 +1,6 @@
 /**
- * Fractions.
- *
- * Everything the arithmetic and multiplication families established holds here
- * unchanged — the answers are computed when the problem is built and the key
- * only decides to print them, the page comes out of `(config, seed)` and
- * nothing else, and a problem is drawn and rejected rather than enumerated. So
- * this file is about the three things a fraction sheet has that a page of sums
- * does not.
+ * Fractions — the shared machinery unchanged (§7, §11), plus the three things a
+ * fraction sheet has that a page of sums does not.
  *
  * **An answer can be right and still be wrong.** `4/8` and `1/2` are the same
  * value, and only one of them is the answer a parent will mark as correct. So
@@ -67,18 +61,11 @@ import {
    Declared, not measured (§4).                                              */
 
 /**
- * How tall a problem written along a line stands: two lines of the body type,
- * and the air a wrap puts between them.
- *
- * Two rather than one, because a fraction sentence is long. `3 5/12 ÷ 2 7/8 =`
- * with a ruled blank after it does not fit across a third of a page, and
- * `.sheet__problem` wraps rather than overflowing — so the second line is
- * either inside the row the layout declared, or it is the bottom of the page
- * coming out of the printer on a second sheet. Reserving for the wrap is the
- * only version of this that a page can be laid out from without measuring text,
- * and a sheet whose problems all fit on one line is left a little airier than it
- * needed to be — which on a fraction sheet is where the common denominator gets
- * worked out.
+ * Two lines of the body type and the air a wrap puts between them: a fraction
+ * sentence is long, and `3 5/12 ÷ 2 7/8 =` with a ruled blank after it does not
+ * fit across a third of a page. A sheet whose problems all fit on one line is
+ * left airier than it needed to be — which on a fraction sheet is where the
+ * common denominator gets worked out.
  */
 const writtenRow = (fontPt: number): Mil => 2 * answerLine(fontPt) + WRAP_GAP;
 
@@ -361,13 +348,7 @@ function rowHeight(config: FractionConfig): Mil {
   return body + (config.workspace ? WORKSPACE : 0);
 }
 
-/**
- * How many problems the paper holds, and how wide a column of them is.
- *
- * Arithmetic, not measurement, so `npm run test:unit` can answer "did it fit?"
- * without a browser — and so the same answer serves the catalog page built at
- * build time and the builder's preview (§4).
- */
+/** How many problems the paper holds, and how wide a column of them is (§4). */
 export function fractionLayout(config: FractionConfig): {
   box: Box;
   columns: number;
@@ -393,8 +374,7 @@ export function fractionLayout(config: FractionConfig): {
 /**
  * Every problem on the sheet, in the order they are printed.
  *
- * Exported because it is the whole of what a test has to check, and checking it
- * through the `Sheet` means unwrapping a block union to reach it.
+ * Exported because it is the whole of what a test has to check.
  */
 export function fractionProblems(
   config: FractionConfig,
@@ -415,10 +395,9 @@ export function fractionProblems(
   let misses = 0;
   while (problems.length < wanted && misses < MISS_BUDGET) {
     const drawn = drawOne(config, pool, rand);
-    // Not what was asked for, or already on the page. Either way the budget
-    // ticks down, and a pool that has run out ends the draw rather than
-    // repeating itself: halves, thirds and quarters make eleven naming
-    // problems, and eleven is the honest answer to a request for twenty.
+    // A pool that has run out ends the draw rather than repeating itself:
+    // halves, thirds and quarters make eleven naming problems, and eleven is
+    // the honest answer to a request for twenty.
     if (drawn === null || seen.has(drawn.key)) {
       misses += 1;
       continue;
@@ -513,12 +492,8 @@ function instructionOf(config: FractionConfig): string {
 }
 
 /**
- * The header this sheet will actually print.
- *
- * A generated family names its own sheet, so `config.title` is an override and
- * is usually absent — which makes it the wrong thing to reserve space against.
- * Written once and read by both the layout and the build, so the two cannot
- * disagree about what is at the top of the page.
+ * The header this sheet will actually print, which is what the layout reserves
+ * space against — see the note in `arithmetic.ts`.
  */
 function headerOf(config: FractionConfig): SheetOptions {
   return {
@@ -543,7 +518,7 @@ const MODEL_NAME = {
  * matches the lesson: which pictures a naming sheet draws, and how far up the
  * denominators go.
  */
-export function describeFractions(config: FractionConfig): string {
+function describeFractions(config: FractionConfig): string {
   const pool = denominatorsOf(config);
   return [
     titleOf(config),
@@ -557,10 +532,7 @@ export function describeFractions(config: FractionConfig): string {
     .join(" — ");
 }
 
-export function buildFractionSheet(
-  config: FractionConfig,
-  seed: number,
-): Sheet {
+function buildFractionSheet(config: FractionConfig, seed: number): Sheet {
   const items = fractionProblems(config, seed);
   const { columns } = fractionLayout(config);
   const head = headerOf(config);
@@ -572,8 +544,6 @@ export function buildFractionSheet(
       title: head.title ?? "",
       instructions: head.instructions,
       fields: head.fields,
-      // Out of what is actually on the page, not out of what was asked for: a
-      // sheet that says "/ 20" over eighteen problems is wrong twice.
       score: { outOf: items.length },
     },
     blocks: [{ kind: "problems", columns, items }],
@@ -583,14 +553,8 @@ export function buildFractionSheet(
 }
 
 export const FRACTIONS_SHEET: SheetSpec<FractionConfig> = {
-  id: "fractions",
-  label: "Fractions",
   world: SHEET_WORLD,
   build: buildFractionSheet,
-  // The whole of the answer-key mechanism: every answer on the page was reduced
-  // when the problem was built, so a key prints what is already there rather
-  // than reducing a second time and risking a different answer to the same
-  // question.
   key: (sheet) => ({
     ...sheet,
     answers: true,

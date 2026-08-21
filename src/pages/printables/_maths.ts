@@ -1,29 +1,15 @@
 /**
  * The maths sheets the Print Shop has set, and the words that go round them.
  *
- * Underscored so Astro leaves it out of the routing table: it is data three
- * pages share — `[topic].astro`, which prerenders one worksheet per entry,
- * `math.astro`, which is the subject hub, and `index.astro`, which lists the
- * strands — rather than a route of its own. `_catalog.ts` is the same file for
- * paper, and the two are deliberately separate: a ruling and a set of problems
- * have almost nothing to say about each other.
+ * **The slugs are curated; the sheets are generated** (§8), and this is the
+ * family where that stops being theoretical: the engine can make millions of
+ * plausible pages out of the families, styles, forms, currencies and ranges it
+ * already has, and every one of them would be a page nobody wrote for. So each
+ * slug is a phrase a parent actually types, with two paragraphs true of that
+ * sheet and of no other, and everything else is reached by the builder.
  *
- * **The slugs are curated; the sheets are generated.** §8 is explicit about
- * why, and this is the family where it stops being theoretical. The engine can
- * make every combination of thirteen families, five or six styles each, two
- * forms, three currencies and any range of numbers — millions of pages, every
- * one of them plausible and none of them written for. That is a doorway-page
- * farm, and the `noindex` reasoning in `Base.astro` is already this codebase
- * arguing against it. So: twenty-one slugs, each one a phrase a parent actually
- * types, each with two paragraphs that are true of that sheet and of no other,
- * and everything else reached by the builder — which is where *choosing*
- * belongs.
- *
- * **One stock, unlike paper.** Every entry in `_catalog.ts` is printed on
- * Letter and on A4 because a ⅝ rule scaled to fit is no longer a ⅝ rule. Long
- * division has no such measurement: a printer that shrinks the page by four per
- * cent gives a slightly smaller sum and the same right answer. So a maths sheet
- * is one route, and a parent on A4 prints it exactly as it stands.
+ * **One stock, unlike paper** (§8). Nothing on a maths sheet is a measurement,
+ * so a slug here is one route and the A4 switch is the builder's.
  */
 import { encodeSharedSheet } from "@/engine/sheets/share";
 import { DEFAULT_FONT_PT } from "@/engine/sheets/paper";
@@ -74,12 +60,11 @@ export type MathsSheet = {
  * The seed every catalog sheet is built from, and it never moves.
  *
  * `buildSheet(config, seed)` is deterministic (§7), so a fixed seed is what
- * makes these pages stable: the same twenty-four sums are in the HTML on every
- * build, a crawler that comes back next month reads the page it indexed, and a
- * parent who printed this sheet in March can print the identical one in June.
- * The footer prints the number, so the sheet is reproducible from the paper as
- * well as from the URL. A different sheet with the same settings is `seed + 1`,
- * which is what the builder is for.
+ * makes these pages stable: the same sums are in the HTML on every build, a
+ * crawler that comes back next month reads the page it indexed, and a parent
+ * who printed this sheet in March can print the identical one in June. The
+ * footer prints the number, so the sheet is reproducible from the paper as well
+ * as from the URL.
  */
 export const MATHS_SEED = 1;
 
@@ -91,11 +76,9 @@ const PAPER: Paper = {
 };
 
 /**
- * Printed blank, always, and the reason there is no third field.
- *
- * A worksheet asks for a name because a teacher has thirty of them to hand
- * back. Nothing here holds one (§1): these are two ruled lines on paper and
- * there is nowhere in a config to put a value for either.
+ * Printed blank, always, and the reason there is no third field: these are two
+ * ruled lines on paper, and there is nowhere in a config to put a value for
+ * either (§1).
  */
 const FIELDS: HeaderField[] = ["name", "date"];
 
@@ -778,26 +761,16 @@ export function pathFor(sheet: MathsSheet): string {
 }
 
 /**
- * The builder, opened on this sheet.
- *
- * §14: the config lives in the fragment, so "change what is on it" is an
- * ordinary link on a static site rather than a lookup on a server that isn't
- * there. The seed goes with it, so what the bench opens on is the sheet that
- * was printed rather than another one like it.
+ * The builder, opened on this sheet. The config lives in the fragment (§14),
+ * and the seed goes with it, so what the bench opens on is the sheet that was
+ * printed rather than another one like it.
  */
 export function builderHref(sheet: MathsSheet): string {
   const payload = encodeSharedSheet({ config: sheet.config, seed: MATHS_SEED });
   return `/printables/make#s=${payload}`;
 }
 
-/**
- * The shelf, grouped — the shape every page lists it in.
- *
- * Written once because the hub, the subject page and each sheet's row of
- * neighbours would otherwise have to be kept in step by hand, and the failure
- * would be silent: a topic added here and shown on one page but not the others
- * still builds, still deploys, and still looks right.
- */
+/** The shelf, grouped — the shape every page lists it in. */
 export function mathsShelf(): Array<{
   id: MathsStrand;
   label: string;

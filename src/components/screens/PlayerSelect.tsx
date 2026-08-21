@@ -10,9 +10,26 @@ import { percent } from "@/engine/format";
 import { sfx } from "@/services/sound";
 import type { Profile } from "@/engine/types";
 
+/**
+ * Who's racing — the entry screen, and the only screen the racing islands
+ * share.
+ *
+ * `/flash-cards`, `/spelling/play` and `/typing` all mount it at their `/`,
+ * which is why it lives here rather than inside a game and why it names no
+ * subject: choosing a player comes before choosing what to practise, and all
+ * three mounts read one profile list because a game is a path and not a
+ * subdomain (CLAUDE.md).
+ *
+ * The line under the title counts the household — every player's races added
+ * up — while each card counts only its own player. A shared device is the
+ * assumption everywhere in this app, and this is the screen where it shows.
+ */
 export default function PlayerSelect() {
   const { profiles, sessions } = useHub();
   const navigate = useNavigate();
+  // Three states rather than two: `undefined` is no dialog, `null` is adding
+  // someone new, and a profile is editing that one. `PlayerEditor` sees only
+  // the last two.
   const [editing, setEditing] = useState<Profile | null | undefined>(undefined);
 
   const totals = lifetimeStats(sessions);

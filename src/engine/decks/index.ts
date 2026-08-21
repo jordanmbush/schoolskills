@@ -75,7 +75,13 @@ export function modeOf(config: RaceConfig): string {
 export function deckSpec(mode: string): DeckSpec {
   if (mode.startsWith(WORD_MODE_PREFIX)) return wordDeckSpec(mode);
   if (mode.startsWith(TYPING_MODE_PREFIX)) return typingDeckSpec(mode);
-  return OPERATIONS[mode as keyof typeof OPERATIONS] ?? UNKNOWN_DECK;
+  // `hasOwn` rather than `?? UNKNOWN_DECK`: a mode is any string a restored
+  // backup happens to carry, and `OPERATIONS.constructor` is a function — which
+  // is not nullish, so it would be handed back as a deck and crash the record
+  // book on the first `masteryKey` instead of reading as a retired one.
+  return Object.hasOwn(OPERATIONS, mode)
+    ? OPERATIONS[mode as keyof typeof OPERATIONS]
+    : UNKNOWN_DECK;
 }
 
 export function buildDeck(config: RaceConfig, seed: number): Card[] {

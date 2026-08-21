@@ -1,0 +1,546 @@
+/* ── Setting a run up ────────────────────────────────────────────────────
+   The screen before the clock starts, and the one screen both islands draw:
+   a flash-card race picks its tables here and a typing course picks its
+   lesson, out of the same panels, pills and lists. So what is in this file
+   is the furniture rather than either game — everything `RaceSetup` and
+   `TypingSetup` have in common, plus the pickers that fill it.            */
+
+.setup__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(280px, 1fr);
+  grid-template-areas:
+    "presets rivals"
+    "tune rivals";
+  gap: var(--gap-3);
+  align-items: start;
+}
+
+.setup__grid > :nth-child(1) {
+  grid-area: presets;
+}
+.setup__grid > :nth-child(2) {
+  grid-area: tune;
+}
+.setup__rivals {
+  grid-area: rivals;
+  position: sticky;
+  top: 1rem;
+}
+
+@media (width < 900px) {
+  .setup__grid {
+    grid-template-columns: 1fr;
+    grid-template-areas: "presets" "tune" "rivals";
+  }
+  .setup__rivals {
+    position: static;
+  }
+}
+
+.preset-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--gap-2);
+}
+
+.preset {
+  display: grid;
+  gap: 0.25rem;
+  justify-items: start;
+  text-align: left;
+  padding: var(--gap-3);
+  border-radius: var(--radius);
+  border: 1.5px solid var(--hairline);
+  background: rgb(255 255 255 / 3%);
+  transition:
+    transform 0.16s var(--ease-spring),
+    border-color 0.16s ease,
+    background-color 0.16s ease;
+}
+
+.preset:hover {
+  transform: translateY(-3px);
+}
+
+.preset.is-chosen {
+  border-color: var(--accent);
+  background: color-mix(in oklab, var(--accent) 14%, transparent);
+}
+
+.preset__emoji {
+  font-size: var(--step-2);
+  line-height: 1;
+}
+
+.preset__name {
+  font-size: var(--step-1);
+}
+
+.preset__tag {
+  font-size: var(--step--2);
+  color: var(--chalk-dim);
+  line-height: 1.35;
+}
+
+.control {
+  display: grid;
+  gap: var(--gap-2);
+  padding: var(--gap-3) 0;
+  border-top: 1px dashed var(--hairline);
+}
+
+.control:first-of-type {
+  border-top: none;
+  padding-top: 0;
+}
+
+.control__label {
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--chalk-dim);
+}
+
+.control__row {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.segmented {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  padding: 0.3rem;
+  border-radius: 999px;
+  background: rgb(0 0 0 / 30%);
+  border: 1px solid var(--hairline);
+  width: fit-content;
+  max-width: 100%;
+}
+
+.segmented__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45em 0.95em;
+  border-radius: 999px;
+  font-size: var(--step--1);
+  font-weight: 600;
+  color: var(--chalk-soft);
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.segmented__btn:hover {
+  background: rgb(255 255 255 / 7%);
+}
+
+.segmented__btn.is-on {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.segmented__btn--stack {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
+  padding: 0.4em 1em;
+}
+
+.segmented__hint {
+  font-size: var(--step--2);
+  opacity: 0.75;
+}
+
+/* The <SegmentedControl> form of the same row: each pill is a <label> around a
+   radio, so the cursor and the focus ring the browser gives a <button> have to
+   be said out loud. The input is clipped rather than `display: none` — it still
+   has to take focus and answer the arrow keys, which is the whole reason the
+   primitive uses radios (see SegmentedControl.tsx). */
+
+label.segmented__btn {
+  position: relative; /* the clipped radio below is positioned against this */
+  cursor: pointer;
+  user-select: none;
+}
+
+.segmented__radio {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+.segmented__btn:has(.segmented__radio:focus-visible) {
+  outline: 3px solid var(--go);
+  outline-offset: 3px;
+}
+
+.segmented__btn:has(.segmented__radio:disabled) {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.segmented--slim .segmented__btn {
+  padding: 0.3em 0.75em;
+  font-family: var(--font-mono);
+}
+
+@media (width < 560px) {
+  .segmented__word {
+    display: none;
+  }
+  .segmented__btn--stack .segmented__word {
+    display: inline;
+  }
+}
+
+/* Seven columns so both 12- and 13-cell grids land on two tidy rows. */
+.tablegrid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.4rem;
+  max-width: 24rem;
+}
+
+.tablegrid__cell {
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  border: 1.5px solid var(--hairline);
+  background: rgb(255 255 255 / 3%);
+  font-size: var(--step-0);
+  font-weight: 700;
+  transition:
+    transform 0.14s var(--ease-spring),
+    background-color 0.14s ease;
+}
+
+.tablegrid__cell:hover {
+  transform: scale(1.06);
+}
+
+.tablegrid__cell.is-on {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+
+/* Both halves of a card come from these two grids, so they sit side by side
+   and read as one control rather than two unrelated settings. */
+.numbers {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: var(--gap-4);
+}
+
+.numbers__side {
+  display: grid;
+  gap: var(--gap-2);
+  align-content: start;
+}
+
+.numbers__note {
+  margin-top: var(--gap-3);
+  font-size: var(--step--2);
+  color: var(--chalk-dim);
+  line-height: 1.4;
+}
+
+.numbers__preview {
+  margin-top: 0.35rem;
+  font-size: var(--step--2);
+  color: var(--accent);
+  letter-spacing: 0.04em;
+}
+
+/* ── Setting the card clock exactly ────────────────────────────────────── */
+
+.timelimit {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.timelimit__step {
+  width: 2.2rem;
+  height: 2.2rem;
+  border-radius: 999px;
+  border: 1px solid var(--hairline);
+  background: rgb(0 0 0 / 30%);
+  font-size: var(--step-0);
+  font-weight: 700;
+  color: var(--chalk-soft);
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.timelimit__step:hover {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.timelimit__field {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.3rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid var(--hairline);
+  background: rgb(0 0 0 / 30%);
+}
+
+.timelimit__field:focus-within {
+  border-color: var(--accent);
+}
+
+.timelimit__input {
+  /* Wide enough for "12.25" plus a caret, and fixed so it never jumps. */
+  width: 5.5ch;
+  border: none;
+  background: none;
+  font-size: var(--step-0);
+  font-weight: 700;
+  color: var(--accent);
+  text-align: right;
+  /* The custom steppers are the affordance; the native spinners duplicate it. */
+  appearance: textfield;
+}
+
+.timelimit__input::-webkit-outer-spin-button,
+.timelimit__input::-webkit-inner-spin-button {
+  appearance: none;
+  margin: 0;
+}
+
+.timelimit__input:focus {
+  outline: none;
+}
+
+.timelimit__input::placeholder {
+  color: var(--chalk-dim);
+  font-weight: 400;
+}
+
+.timelimit__unit {
+  font-size: var(--step--1);
+  color: var(--chalk-dim);
+}
+
+.timelimit__hint {
+  flex: 1 1 14rem;
+  font-size: var(--step--2);
+  color: var(--chalk-dim);
+}
+
+/* ── A drill's fixed set of facts, in place of the two grids ───────────── */
+
+.drill__lead {
+  font-size: var(--step--1);
+  color: var(--chalk-soft);
+}
+
+.factchips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.factchip {
+  padding: 0.32em 0.75em;
+  border-radius: 999px;
+  border: 1px solid color-mix(in oklab, var(--accent) 42%, transparent);
+  background: color-mix(in oklab, var(--accent) 12%, transparent);
+  color: var(--accent);
+  font-size: var(--step--1);
+  font-weight: 700;
+}
+
+.setup__rival-note {
+  font-size: var(--step--2);
+  margin-bottom: var(--gap-2);
+}
+
+.rivals {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.rival {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-2);
+  width: 100%;
+  text-align: left;
+  padding: 0.6rem 0.8rem;
+  border-radius: var(--radius);
+  border: 1.5px solid var(--hairline);
+  background: rgb(255 255 255 / 3%);
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.rival:hover {
+  background: rgb(255 255 255 / 7%);
+}
+
+.rival.is-chosen {
+  border-color: var(--tint, var(--accent));
+  background: color-mix(in oklab, var(--tint, var(--accent)) 16%, transparent);
+}
+
+.rival__icon {
+  display: grid;
+  place-items: center;
+  width: 2.4rem;
+  aspect-ratio: 1;
+  border-radius: 30%;
+  background: rgb(255 255 255 / 6%);
+  font-size: var(--step-0);
+}
+
+.rival__body {
+  display: grid;
+  gap: 0.1rem;
+}
+
+.rival__name {
+  font-size: var(--step-0);
+}
+
+.rival__meta {
+  font-size: var(--step--2);
+  color: var(--chalk-dim);
+}
+
+.setup__go {
+  width: 100%;
+  margin-top: var(--gap-3);
+}
+
+/* ── Word lists, in place of the two number grids ──────────────────────── */
+
+.wordlists {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.wordlists__item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.7rem 0.9rem;
+  border-radius: var(--radius);
+  border: 2px solid var(--hairline);
+  background: var(--ink-700);
+  text-align: left;
+  transition:
+    border-color 0.12s ease,
+    background 0.12s ease;
+}
+
+.wordlists__item:hover {
+  border-color: color-mix(in oklab, var(--accent) 45%, transparent);
+}
+
+.wordlists__item.is-on {
+  border-color: var(--accent);
+  background: color-mix(in oklab, var(--accent) 14%, var(--ink-700));
+}
+
+.wordlists__emoji {
+  font-size: var(--step-2);
+  line-height: 1;
+}
+
+.wordlists__body {
+  display: grid;
+  gap: 0.1rem;
+}
+
+.wordlists__name {
+  font-weight: 700;
+}
+
+.wordlists__meta {
+  font-size: var(--step--2);
+  color: var(--accent);
+  letter-spacing: 0.04em;
+}
+
+.wordlists__blurb {
+  font-size: var(--step--1);
+  color: var(--chalk-soft);
+}
+
+/* ── Parent-authored lists ─────────────────────────────────────────────── */
+
+.wordlists__row {
+  display: flex;
+  align-items: stretch;
+  gap: 0.4rem;
+}
+
+.wordlists__row .wordlists__item {
+  flex: 1;
+  min-width: 0;
+}
+
+.emojirow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.emojirow__pick {
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: var(--radius);
+  border: 2px solid var(--hairline);
+  background: var(--ink-700);
+  font-size: var(--step-1);
+  line-height: 1;
+}
+
+.emojirow__pick.is-on {
+  border-color: var(--accent);
+  background: color-mix(in oklab, var(--accent) 16%, var(--ink-700));
+}
+
+/* Monospaced and left-aligned: this is a list being checked against a school
+   letter, and a proportional font makes a column of words hard to scan. */
+.deckeditor__words {
+  min-height: 9rem;
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  line-height: 1.6;
+  resize: vertical;
+}
+
+.deckeditor__count {
+  font-size: var(--step--2);
+  color: var(--accent);
+  letter-spacing: 0.04em;
+}
+
+.deckeditor__count.is-bad {
+  color: var(--flare);
+}
+
+/* Why a disabled control is disabled — see `KeyboardSetting`. Quiet, because
+   it is an explanation and not a warning: nothing has gone wrong. */
+.control__why {
+  margin: 0;
+  font-size: var(--step--2);
+  line-height: 1.4;
+}

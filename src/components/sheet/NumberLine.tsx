@@ -3,12 +3,14 @@
  *
  * Drawn under a problem so a child can count along it, which is how addition
  * starts before it is a fact: 6 + 3 is six hops and then three more. Strokes
- * rather than a background for the same reason every ruled thing on a sheet is
- * (§5) — browsers drop background paint when printing, and a counting aid that
- * comes out of the printer blank is worse than none.
+ * rather than a background, because background paint is what a browser drops
+ * when printing (§5).
  *
- * Where the ticks go is the engine's answer, not this component's. All that
- * happens here is the scaling from the numbers on the line to the mil the
+ * Where the ticks go is the engine's answer, not this component's, and so are
+ * the inset at each end and the size of a label — two of the three numbers it
+ * chose the tick spacing with. A second copy of either would be a line whose
+ * labels overlap on paper while the engine's own test says they cannot. All
+ * that happens here is the scaling from the numbers on the line to the mil the
  * viewBox counts in.
  */
 import {
@@ -20,13 +22,6 @@ import {
 import type { NumberLine } from "@/engine/sheets/types";
 
 import { RULE, inch } from "./units";
-
-/**
- * The inset at each end and the size of a label come from the engine, not from
- * here: they are two of the three numbers it chose the tick spacing with, and
- * a second copy of either would be a line whose labels overlap on paper while
- * the engine's own test says they cannot.
- */
 
 /** The axis, and how far the ticks stand out either side of it. */
 const AXIS = 120;
@@ -60,9 +55,7 @@ export function NumberLineView({ line }: { line: NumberLine }) {
     Math.round(LINE_INSET + ((value - line.from) / span) * usable);
 
   // Which ticks keep their number is the engine's answer as well: every one of
-  // them under a sum, and as many as fit on a reference line. Both of these are
-  // the same for every tick on the line, so they are worked out once rather
-  // than a hundred and one times.
+  // them under a sum, and as many as fit on a reference line.
   const every = Math.max(1, line.label ?? 1);
   const minor = Math.round(TICK * MINOR);
 

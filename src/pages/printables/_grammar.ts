@@ -1,33 +1,19 @@
 /**
  * The grammar sheets the Print Shop has set, and the words that go round them.
  *
- * Underscored so Astro leaves it out of the routing table: it is data two pages
- * share — `grammar/[slug].astro`, which prerenders one sheet per topic, and
- * `grammar/index.astro`, which is the subject hub — rather than a route of its
- * own. `_catalog.ts` does that job for paper, `_maths.ts` for maths,
- * `_spelling.ts` for words, and `_handwriting.ts`, `_cursive.ts` and
- * `_bible.ts` for the writing shelves.
- *
  * **One page per topic, and that is the whole shelf.** §8 asks for the catalog
  * to be bounded, and grammar is the shelf where being greedy would cost the
  * most: "noun worksheets", "verb worksheets", "adjective worksheets" and the
  * rest are all real queries, and all of them would be this same sheet with a
- * filter on it. Five pages, five lessons, each one a thing somebody teaches in
- * a week — and everything else through the builder, which is where choosing
- * belongs.
+ * filter on it.
  *
  * **Why the sheets are short.** A grammar answer can be *defensibly* wrong,
- * which is not true of a column of sums: whether a word is an adverb, whether a
- * comma is needed, which half of a sentence is the subject. So the sentences
- * are authored and tagged in `engine/sheets/grammar/bank.ts` under house rules
- * written down there, the questions are views of those tags, and the shelf is
- * deliberately smaller than it could be. A sheet that marks a defensible answer
- * wrong teaches a child something false, and that is worse than no sheet.
+ * which is not true of a column of sums, so the sentences are authored and
+ * tagged in `engine/sheets/grammar/bank.ts` under house rules written down
+ * there, and the shelf is deliberately smaller than it could be (§11).
  *
- * **One stock, as with maths and spelling.** Nothing on a grammar sheet is a
- * measurement — there is no ⅝ rule to be scaled into a ⅗ rule by a printer
- * loaded with A4 — so the sheet is correct on either stock and the A4 switch
- * lives in the builder with the other options.
+ * **One stock, as with maths and spelling** (§8): nothing on a grammar sheet is
+ * a measurement.
  */
 import { DEFAULT_FONT_PT } from "@/engine/sheets/paper";
 import type {
@@ -59,12 +45,11 @@ export type GrammarSheet = {
   /**
    * Two things that are true of this sheet and not of the one beside it.
    *
-   * The sheet is prerendered directly under this prose (§8), which makes a
-   * quoted sentence a claim about the paper rather than an illustration — a
-   * reader can look down the page and check it. So anything quoted here at five
-   * words or more has to be a sentence this page really draws, and
-   * `_grammar.test.ts` holds it there; a hypothetical the sheet never prints
-   * (“Close the gate”) stays shorter than that.
+   * The sheet is prerendered directly under this prose (§8), so a quoted
+   * sentence is a claim about the paper rather than an illustration: anything
+   * quoted at five words or more has to be a sentence this page really draws,
+   * and `_grammar.test.ts` holds it there. A hypothetical the sheet never
+   * prints (“Close the gate”) stays shorter than that.
    */
   notes: string[];
   /** For the `LearningResource` block. */
@@ -76,12 +61,10 @@ export type GrammarSheet = {
 };
 
 /**
- * The seed every sheet on this shelf is built from, and it never moves.
- *
- * It decides which of the bank's sentences land on each page and in what order,
- * and nothing else — the answers travel with the sentences. Which is what §7
- * promises stays put: the sheet a parent printed in March is the sheet they
- * print in June, down to the order of the questions.
+ * The seed every sheet on this shelf is built from, and it never moves. It
+ * decides which of the bank's sentences land on each page and in what order,
+ * which is what §7 promises stays put: the sheet a parent printed in March is
+ * the sheet they print in June, down to the order of the questions.
  */
 export const GRAMMAR_SEED = 1;
 

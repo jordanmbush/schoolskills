@@ -2,13 +2,16 @@ import { describe, expect, it } from "vitest";
 
 import { WORD_LISTS, listWords } from "@/engine/decks/wordlists";
 
-import { answerKey, buildSheet, describeSheet, sheetSpec } from "../index";
+import { buildSheet, describeSheet } from "../index";
+import { describeSheetFamily } from "../contract";
 import type { Block, Paper, PuzzleConfig } from "../types";
 
-import { SEARCH_CELL, findWord, searchCell, searchSteps } from "./search";
+import { SEARCH_CELL, searchCell } from "./metrics";
+import { findWord, searchSteps } from "./search";
 import {
   MAX_GRID,
   MIN_GRID,
+  PUZZLE_SHEET,
   crosswordClue,
   crosswordLayout,
   letterHint,
@@ -52,6 +55,8 @@ const config = (over: Partial<PuzzleConfig> = {}): PuzzleConfig => ({
   ...over,
 });
 
+const STYLES: PuzzleConfig["style"][] = ["search", "crossword", "scramble"];
+
 function blockOf<K extends Block["kind"]>(
   kind: K,
   over: Partial<PuzzleConfig>,
@@ -63,12 +68,14 @@ function blockOf<K extends Block["kind"]>(
   return block as Extract<Block, { kind: K }>;
 }
 
-describe("the family", () => {
-  it("is in the registry, under the kind a saved sheet carries", () => {
-    expect(sheetSpec("puzzle").id).toBe("puzzle");
-    expect(sheetSpec("puzzle").label).toBe("Word puzzle");
-  });
+describeSheetFamily("puzzle", {
+  label: "Word puzzle",
+  spec: PUZZLE_SHEET,
+  config,
+  shapes: STYLES.map((style) => ({ style })),
+});
 
+describe("the family", () => {
   it("makes one block, whichever puzzle it is", () => {
     expect(blockOf("wordsearch", {}).kind).toBe("wordsearch");
     expect(blockOf("crossword", { style: "crossword" }).kind).toBe("crossword");
@@ -79,17 +86,6 @@ describe("the family", () => {
     // A sheet saved in March opens in June, the same promise `sheetSpec` makes.
     const stale = { style: "acrostic" as PuzzleConfig["style"] };
     expect(buildSheet(config(stale), 1).blocks[0].kind).toBe("wordsearch");
-  });
-
-  it("is a pure function of its config and seed", () => {
-    for (const style of ["search", "crossword", "scramble"] as const) {
-      for (const seed of [0, 1, 4242]) {
-        const once = buildSheet(config({ style }), seed);
-        const twice = buildSheet(config({ style }), seed);
-        expect(once).not.toBe(twice);
-        expect(once).toEqual(twice);
-      }
-    }
   });
 
   it("stays deterministic across papers and type sizes", () => {
@@ -416,19 +412,6 @@ describe("a crossword's clues", () => {
 });
 
 describe("the answer key", () => {
-  it("is the same sheet with the answers turned on", () => {
-    for (const style of ["search", "crossword", "scramble"] as const) {
-      const sheet = buildSheet(config({ style }), 3);
-      const key = answerKey(config({ style }), 3);
-      // The blocks are identical — the answers were decided when the sheet was
-      // built, so there is no second generation to disagree with the first.
-      expect(key.blocks).toEqual(sheet.blocks);
-      expect(sheet.answers).toBe(false);
-      expect(key.answers).toBe(true);
-      expect(key.footer.note).toBe("Answer key");
-    }
-  });
-
   it("carries a stroke for every word on the list and no others", () => {
     const block = blockOf("wordsearch", {});
     expect(block.solution?.map((found) => found.word)).toEqual(block.find);
@@ -443,7 +426,7 @@ describe("a list nothing can be done with", () => {
       { length: 20 },
       (_, at) => `zzzzzzz${String.fromCharCode(97 + at)}`,
     );
-    for (const style of ["search", "crossword", "scramble"] as const) {
+    for (const style of STYLES) {
       const sheet = buildSheet(
         config({
           style,
@@ -460,7 +443,7 @@ describe("a list nothing can be done with", () => {
   });
 
   it("still produces a sheet when there is no list at all", () => {
-    for (const style of ["search", "crossword", "scramble"] as const) {
+    for (const style of STYLES) {
       const sheet = buildSheet(config({ style, words: [], count: 0 }), 1);
       expect(sheet.blocks).toHaveLength(1);
       expect(sheet.header.score).toEqual({ outOf: 0 });

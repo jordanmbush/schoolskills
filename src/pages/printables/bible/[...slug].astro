@@ -19,12 +19,9 @@ import {
 import type { Stock } from "../_catalog";
 
 /**
- * One prerendered Scripture sheet per topic — and the page is the sheet.
- *
- * The shape §8 describes and the shape the other three shelves already build,
- * applied to the passages of §12: "bible verse copywork printable" is a query
- * with real homeschool volume, and a parent who lands here gets prose that
- * answers it, the sheet itself directly under it as HTML, and nothing to click.
+ * One prerendered Scripture sheet per topic — and the page is the sheet (§8),
+ * built on the passages of §12: prose that answers the query, the sheet itself
+ * under it as HTML, and nothing to click.
  *
  * **The credit line prints twice, and both are required.** Once at the foot of
  * the sheet, where the engine puts it, and once in the prose here — this is the
@@ -32,9 +29,8 @@ import type { Stock } from "../_catalog";
  * through `creditFor` rather than typed, so the two cannot drift apart and a
  * page that switched translations cannot keep the old line.
  *
- * **Two stocks, two routes — as with paper and handwriting.** Most of this
- * shelf is ruled and a ⅝ rule scaled to fit A4 is no longer a ⅝ rule, and
- * `@page` is a document rule, so the two cannot share a page.
+ * **Two stocks, two routes — as with paper and handwriting** (§8), which is why
+ * this route is a rest pattern.
  *
  * **The answer key prints only where there is one.** A memory sheet's key is
  * the passage whole and is the most useful page on this shelf; copywork already

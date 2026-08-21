@@ -1,37 +1,21 @@
 /**
- * The words a word-study sheet is made of.
- *
- * The one family in the shop whose content is neither generated nor handed over
- * by a parent, and it has to be authored for a reason that is worth stating
- * plainly: **English will not yield to a rule here.** A plural is `-s` until it
- * is `-es`, `-ies`, `-ves`, `children` or `sheep`; `happy + ness` is
- * `happiness`; `hop + ing` doubles the `p` and `hope + ing` drops the `e`. A
- * generator reaching for the rule would print `mouses` in an answer key, and an
- * answer key that is wrong is worse than no sheet at all (§11).
- *
- * So every answer below is one somebody wrote down on purpose. That is what
- * makes this family's key trustworthy, and it is the same bargain
- * `passages/*.ts` strikes for copywork: the engine owns the words, and the only
- * thing it computes is which of them land on the page.
+ * The words a word-study sheet is made of, authored rather than generated
+ * because English will not yield to a rule here (§11).
  *
  * ── House rules for adding one ──────────────────────────────────────────────
- *   - **One right answer.** Every entry has to be an item a parent can mark
- *     without judgement. "Write a word that rhymes with cat" is a fine thing to
- *     ask a child and cannot be printed with a key, so it isn't here; "which of
- *     these rhymes with cat" is.
+ *   - **One right answer**, markable without judgement. "Which of these rhymes
+ *     with cat" belongs here; "write a word that rhymes with cat" cannot be
+ *     printed with a key.
  *   - **No second right answer among the near misses.** A distractor is drawn
  *     from another entry of the same topic (`study.ts`), so two entries that
- *     could answer each other are a question with two answers on it. `light` is
- *     the one to watch: its opposite is `dark` and also `heavy`. `soft` is the
- *     other, and it is why `hard` is answered `easy` below rather than `soft`:
- *     `soft` is the opposite of `hard` and equally of `loud`, so a bank holding
- *     both pairs would eventually print `soft` as a near miss for `loud` and
- *     mark a child wrong for a right answer. Neither word appears in `ANTONYMS`
- *     at all, and no test can hold that line for you: a clash of meanings is
- *     invisible to something comparing strings.
- *   - **British spelling**, as everywhere in this repo — and nothing whose
- *     spelling differs between the two, because a sheet is printed on both sides
- *     of the Atlantic and a child marked wrong for `colour` is a bad sheet.
+ *     could answer each other are a question with two answers on it. `light`
+ *     and `soft` are the two to watch — `light` is the opposite of `dark` and
+ *     equally of `heavy`, `soft` of `hard` and equally of `loud` — so neither
+ *     appears in `ANTONYMS` at all. No test can hold that line for you: a clash
+ *     of meanings is invisible to something comparing strings.
+ *   - **British spelling**, and nothing whose spelling differs between the two:
+ *     a sheet is printed on both sides of the Atlantic, and a child marked
+ *     wrong for `colour` is a bad sheet.
  *   - **Words a child of the age can picture.** These are read without a
  *     teacher standing beside them.
  *   - `study.test.ts` enforces the mechanical half, under its "the word bank"
@@ -41,11 +25,10 @@
  */
 
 /* ── Rimes, and what goes in front of them ─────────────────────────────────
-   One list serving two topics, because they are two views of the same fact:
-   the words in a family rhyme, which is what makes a family worth teaching.
-   Every onset here has been checked to make a real word with its rime — a
-   word-family sheet whose answer key contains `jat` teaches a child that the
-   sheet is wrong.                                                           */
+   One list serving two topics, rhyming and word families, because the words in
+   a family rhyme. Every onset here has been checked to make a real word with
+   its rime — an answer key containing `jat` teaches a child that the sheet is
+   wrong.                                                                     */
 
 export type Family = {
   /** The ending the family is named after: `at`, `ing`. */
@@ -78,9 +61,7 @@ export const familyWords = (family: Family): string[] =>
 /* ── Syllables ─────────────────────────────────────────────────────────────
    Counted by hand, and only words whose count nobody argues about. `family`,
    `chocolate`, `every` and `camera` are said with two syllables as often as
-   three, so they are not here: a sheet is marked by a parent who says the word
-   their own way, and an entry that depends on an accent is an entry that gets
-   a child marked wrong.                                                     */
+   three, and the parent marking the sheet says the word their own way.      */
 
 export type Syllable = { word: string; syllables: number };
 
@@ -121,10 +102,9 @@ export const SYLLABLES: Syllable[] = [
 export const MAX_SYLLABLES = 4;
 
 /* ── Two words that make one ───────────────────────────────────────────────
-   Prefixes and suffixes, written as the sum a child is shown: the part, the
-   word, and what the two make. The suffixes are chosen so that the spelling
-   changes are on the page rather than avoided — `happy + ness` is the entry
-   worth having, and `sad + ness` is the one it is learnt against.           */
+   The suffixes are chosen so that the spelling changes are on the page rather
+   than avoided — `happy + ness` is the entry worth having, and `sad + ness` is
+   the one it is learnt against.                                             */
 
 export type Sum = { part: string; base: string; word: string };
 
@@ -182,9 +162,8 @@ export const SUFFIXES: Sum[] = [
 
 /* ── One of it, and more than one ──────────────────────────────────────────
    Every route English takes to a plural, in roughly the order a scheme teaches
-   them: the plain `-s`, the hissing endings that need `-es`, `-y` to `-ies`,
-   `-f` to `-ves`, the words that change shape, and the two that don't change at
-   all.                                                                      */
+   them — which is the order `study.ts` shuffles out of, so that a page is not
+   the easy half.                                                            */
 
 export type Pair = { one: string; many: string };
 
@@ -257,19 +236,17 @@ export const CONTRACTIONS: Contraction[] = [
 ];
 
 /* ── One sound, two spellings ──────────────────────────────────────────────
-   The sentence is not decoration here, it is the question: a child asked to
-   spell a sound they have been read cannot be wrong, because there is no
-   answer. Every sentence below settles which word is meant on its own, and the
-   rules `decks/wordlists.ts` states for a spoken clue hold for a printed one —
-   one gap, the word nowhere else in the sentence, and something a child of the
-   age can picture.                                                          */
+   The sentence is the question rather than decoration: both spellings are the
+   same sound, so a child asked to spell one they have only heard cannot be
+   wrong. Every sentence below settles which word is meant on its own, by the
+   rules `decks/wordlists.ts` states for a spoken clue — one gap, the word
+   nowhere else in the sentence, and something a child can picture.          */
 
 export type Homophone = {
   /** The pair, printed beside the sentence so the choice is on the page. */
   pair: [string, string];
   /** `_` marks the gap, the same convention `Blank.text` uses. */
   sentence: string;
-  /** Which of the pair belongs in it. */
   answer: string;
 };
 
@@ -337,12 +314,9 @@ export const HOMOPHONES: Homophone[] = [
 ];
 
 /* ── Words that mean the same, and words that mean the opposite ────────────
-   Pairs rather than sets, because a sheet needs one right answer (see the house
-   rules): `big` is asked with `large` beside three words that are not its
-   synonym, and a set of four synonyms would be a question with four answers.
-
-   `light` is deliberately absent from the opposites. Its opposite is `dark` and
-   equally `heavy`, and either would be marked wrong against the other.       */
+   Pairs rather than sets, because a sheet needs one right answer: `big` is
+   asked with `large` beside three words that are not its synonym, and a set of
+   four synonyms would be a question with four answers.                       */
 
 export type Meaning = { word: string; match: string };
 
@@ -379,9 +353,8 @@ export const ANTONYMS: Meaning[] = [
   { word: "old", match: "new" },
   { word: "open", match: "shut" },
   { word: "wet", match: "dry" },
-  // Not "soft", which is also the opposite of "loud" further down: a distractor
-  // is another entry's answer, so the two pairs together put "soft" on the
-  // "loud" line as a wrong option that is right. See the house rules above.
+  // Answered "easy" and not "soft", which is also the opposite of "loud"
+  // further down — see the house rules above.
   { word: "hard", match: "easy" },
   { word: "full", match: "empty" },
   { word: "long", match: "short" },

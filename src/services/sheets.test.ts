@@ -44,42 +44,44 @@ describe("sharing a sheet", () => {
     expect(Object.keys(toFile(sheet))).not.toContain("id");
   });
 
-  it("reads a good file into the same input the builder produces", () => {
-    expect(readSheetFile(toFile(sheet))).toEqual({
+  it("reads a good file into the same input the builder produces", async () => {
+    await expect(readSheetFile(toFile(sheet))).resolves.toEqual({
       name: "Monday handwriting",
       config,
       seed: 12,
     });
   });
 
-  it("keeps the seed, because it says which sheet this is", () => {
+  it("keeps the seed, because it says which sheet this is", async () => {
     // A config alone reproduces the same *kind* of sheet with different
     // problems. The seed is the difference between being sent a worksheet and
     // being sent a description of one.
-    expect(readSheetFile({ ...toFile(sheet), seed: 991 }).seed).toBe(991);
+    expect((await readSheetFile({ ...toFile(sheet), seed: 991 })).seed).toBe(
+      991,
+    );
   });
 
-  it("refuses a file that isn't ours", () => {
-    expect(() => readSheetFile({ kind: "schoolskills-deck" })).toThrow(
+  it("refuses a file that isn't ours", async () => {
+    await expect(readSheetFile({ kind: "schoolskills-deck" })).rejects.toThrow(
       InvalidSheet,
     );
-    expect(() => readSheetFile({ ...toFile(sheet), config: null })).toThrow(
-      InvalidSheet,
-    );
+    await expect(
+      readSheetFile({ ...toFile(sheet), config: null }),
+    ).rejects.toThrow(InvalidSheet);
     // A sheet with no seed can't be the sheet the sender printed.
-    expect(() => readSheetFile({ ...toFile(sheet), seed: undefined })).toThrow(
-      InvalidSheet,
-    );
-    expect(() => readSheetFile("a string")).toThrow(InvalidSheet);
-    expect(() => readSheetFile(null)).toThrow(InvalidSheet);
+    await expect(
+      readSheetFile({ ...toFile(sheet), seed: undefined }),
+    ).rejects.toThrow(InvalidSheet);
+    await expect(readSheetFile("a string")).rejects.toThrow(InvalidSheet);
+    await expect(readSheetFile(null)).rejects.toThrow(InvalidSheet);
   });
 
-  it("refuses a half-built config as InvalidSheet, not as a TypeError", () => {
+  it("refuses a half-built config as InvalidSheet, not as a TypeError", async () => {
     // The kind is one this build makes, so the spec check passes — and then the
     // family reads its own config to name the sheet, and `paper` has no rule to
     // read. Whatever comes out of this door has to be an `InvalidSheet`, or the
     // caller that catches one is left holding a crash instead of a message.
-    expect(() =>
+    await expect(
       readSheetFile({
         kind: "schoolskills-sheet",
         version: 1,
@@ -87,41 +89,41 @@ describe("sharing a sheet", () => {
         config: { kind: "paper" },
         seed: 1,
       }),
-    ).toThrow(InvalidSheet);
+    ).rejects.toThrow(InvalidSheet);
   });
 
-  it("refuses a sheet this build doesn't know how to make", () => {
+  it("refuses a sheet this build doesn't know how to make", async () => {
     // It would import perfectly and then print a page saying "sheet
     // unavailable". Somebody who was sent a worksheet is better told why.
-    expect(() =>
+    await expect(
       readSheetFile({
         ...toFile(sheet),
         config: { ...config, kind: "alchemy" },
       }),
-    ).toThrow(InvalidSheet);
+    ).rejects.toThrow(InvalidSheet);
   });
 });
 
 describe("what may be saved", () => {
-  it("names an unnamed sheet after what it prints", () => {
+  it("names an unnamed sheet after what it prints", async () => {
     // The engine already says in one line what a config makes, so a sheet with
     // no name typed on it gets that rather than "Untitled".
-    const read = readSheetFile({ ...toFile(sheet), name: "   " });
+    const read = await readSheetFile({ ...toFile(sheet), name: "   " });
     expect(read.name).toBe(describeSheet(config));
     expect(read.name.length).toBeGreaterThan(0);
   });
 
-  it("refuses a name past the cap", () => {
-    expect(() =>
+  it("refuses a name past the cap", async () => {
+    await expect(
       readSheetFile({ ...toFile(sheet), name: "x".repeat(MAX_NAME + 1) }),
-    ).toThrow(InvalidSheet);
+    ).rejects.toThrow(InvalidSheet);
   });
 
-  it("refuses a seed that isn't a whole number", () => {
+  it("refuses a seed that isn't a whole number", async () => {
     // Every one of these builds — `mulberry32` starts with `seed >>> 0` — and
     // every one builds a different sheet from the one being saved.
     for (const seed of [1.5, -1, Number.NaN, 2 ** 60]) {
-      expect(() => readSheetFile({ ...toFile(sheet), seed })).toThrow(
+      await expect(readSheetFile({ ...toFile(sheet), seed })).rejects.toThrow(
         InvalidSheet,
       );
     }

@@ -14,23 +14,17 @@ import {
 } from "../_phonics";
 
 /**
- * One prerendered phonics sheet per kind — and the page is the sheet.
+ * One prerendered phonics sheet per kind — and the page is the sheet (§8), with
+ * prose above it and nothing to click before pressing ⌘P.
  *
- * The shape §8 describes, on the shelf where what somebody searched for is the
- * *exercise*: "cvc words worksheets", "word family worksheets" and "decodable
- * sentences" are queries a parent types, and a page that answers one of them has
- * prose above the sheet, the sheet itself as HTML under it, and nothing to click
- * before pressing ⌘P.
+ * **Not every page here has a key**, unlike the grammar shelf. Some withhold
+ * nothing — a pack of cards to cut out, a wall chart, a page of sentences to
+ * read — and printing the same page twice under the word "key" would be noise
+ * on a parent's printer. `keyed` is the engine's own answer to that
+ * (`phonicsKeyed`), so the page and the family cannot disagree.
  *
- * **Not every page here has a key**, unlike the grammar shelf. Three of the
- * seven withhold nothing — a pack of cards to cut out, a wall chart and a page
- * of sentences to read — and printing the same page twice under the word "key"
- * would be noise on a parent's printer. `keyed` is the engine's own answer to
- * that (`phonicsKeyed`), so the page and the family cannot disagree.
- *
- * **One stock, as with maths, spelling and grammar.** Nothing on a phonics
- * sheet is a measurement, so there is no A4 twin to keep in step — which is also
- * why this is a single-segment `[slug]` rather than a rest pattern.
+ * **One stock, as with maths, spelling and grammar** (§8), which is why this is
+ * a single-segment `[slug]` rather than a rest pattern.
  *
  * **No client directive on `SheetView`, ever.** `@astrojs/react` renders a
  * component with no `client:*` to HTML at build time, so these pages ship zero

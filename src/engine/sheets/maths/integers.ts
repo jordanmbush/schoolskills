@@ -23,11 +23,6 @@
  * suite then reads the *printed* expression back with a precedence-aware parser
  * of its own, so a template whose text and value disagree fails there rather
  * than on paper.
- *
- * Everything the earlier families established holds unchanged: the answers are
- * computed when the problem is built and the key only decides to print them, a
- * problem is drawn and rejected rather than enumerated, and the whole page comes
- * out of `(config, seed)`.
  */
 import { between, mulberry32 } from "@/engine/random";
 
@@ -58,12 +53,8 @@ import { MINUS, factorText, signedText } from "./exact";
    Declared, not measured (§4).                                              */
 
 /**
- * Two lines of the body type and the air a wrap puts between them.
- *
- * `−12 ÷ (−4) =` with a ruled slot after it is wider than a third of a page,
- * and `.sheet__problem` wraps rather than overflowing — so the second line is
- * either inside the row the layout declared, or it is the bottom of the page
- * coming out of the printer on a second sheet.
+ * Two lines of the body type and the air a wrap puts between them: `−12 ÷ (−4)
+ * =` with a ruled slot after it is wider than a third of a page.
  */
 const writtenRow = (fontPt: number): Mil => 2 * answerLine(fontPt) + WRAP_GAP;
 
@@ -482,7 +473,7 @@ function drawExpression(
   // Both ends, because the cap moves the top: a range that started above it
   // would come out inverted, and `between(20, 12)` draws from thirteen to
   // nineteen — numbers that are neither what the parent asked for nor what this
-  // cap allows. `drawPower` guards the same thing; this draw was the outlier.
+  // cap allows. `drawPower` guards the same thing.
   const high = Math.min(max, EXPRESSION_MAX);
   const range = { min: Math.min(min, high), max: high };
   const drawn = template.draw(() => draw(config, rand, range), rand);
@@ -527,13 +518,7 @@ function bracketed(text: string): number {
 const clamp = (value: number, low: number, high: number): number =>
   Math.max(low, Math.min(high, Math.floor(value)));
 
-/**
- * How many problems the paper holds, and how wide a column of them is.
- *
- * Arithmetic, not measurement, so `npm run test:unit` can answer "did it fit?"
- * without a browser — and so the same answer serves the catalog page built at
- * build time and the builder's preview (§4).
- */
+/** How many problems the paper holds, and how wide a column of them is (§4). */
 export function integerLayout(config: IntegerConfig): {
   box: Box;
   columns: number;
@@ -559,8 +544,7 @@ export function integerLayout(config: IntegerConfig): {
 /**
  * Every problem on the sheet, in the order they are printed.
  *
- * Exported because it is the whole of what a test has to check, and checking it
- * through the `Sheet` means unwrapping a block union to reach it.
+ * Exported because it is the whole of what a test has to check.
  */
 export function integerProblems(
   config: IntegerConfig,
@@ -579,10 +563,9 @@ export function integerProblems(
   let misses = 0;
   while (problems.length < wanted && misses < MISS_BUDGET) {
     const drawn = drawOne(config, rand);
-    // Not what was asked for, or already on the page. Either way the budget
-    // ticks down, and a pool that has run out ends the draw rather than
-    // repeating itself: there are twenty-eight squares and cubes under a
-    // hundred, and twenty-eight is the honest answer to a request for forty.
+    // A pool that has run out ends the draw rather than repeating itself:
+    // there are twenty-eight squares and cubes under a hundred, and
+    // twenty-eight is the honest answer to a request for forty.
     if (drawn === null || seen.has(drawn.key)) {
       misses += 1;
       continue;
@@ -646,12 +629,8 @@ function instructionOf(config: IntegerConfig): string {
 }
 
 /**
- * The header this sheet will actually print.
- *
- * A generated family names its own sheet, so `config.title` is an override and
- * is usually absent — which makes it the wrong thing to reserve space against.
- * Written once and read by both the layout and the build, so the two cannot
- * disagree about what is at the top of the page.
+ * The header this sheet will actually print, which is what the layout reserves
+ * space against — see the note in `arithmetic.ts`.
  */
 function headerOf(config: IntegerConfig): SheetOptions {
   return {
@@ -669,7 +648,7 @@ function headerOf(config: IntegerConfig): SheetOptions {
  * What the title leaves off is the one thing that decides whether the sheet is
  * this term's work or last term's: whether there are minus signs on it at all.
  */
-export function describeIntegers(config: IntegerConfig): string {
+function describeIntegers(config: IntegerConfig): string {
   const { max } = bounds(config.range);
   return [
     titleOf(config),
@@ -681,7 +660,7 @@ export function describeIntegers(config: IntegerConfig): string {
     .join(" — ");
 }
 
-export function buildIntegerSheet(config: IntegerConfig, seed: number): Sheet {
+function buildIntegerSheet(config: IntegerConfig, seed: number): Sheet {
   const items = integerProblems(config, seed);
   const { columns } = integerLayout(config);
   const head = headerOf(config);
@@ -693,8 +672,6 @@ export function buildIntegerSheet(config: IntegerConfig, seed: number): Sheet {
       title: head.title ?? "",
       instructions: head.instructions,
       fields: head.fields,
-      // Out of what is actually on the page, not out of what was asked for: a
-      // sheet that says "/ 20" over eighteen problems is wrong twice.
       score: { outOf: items.length },
     },
     blocks: [{ kind: "problems", columns, items }],
@@ -704,13 +681,8 @@ export function buildIntegerSheet(config: IntegerConfig, seed: number): Sheet {
 }
 
 export const INTEGERS_SHEET: SheetSpec<IntegerConfig> = {
-  id: "integers",
-  label: "Integers and powers",
   world: SHEET_WORLD,
   build: buildIntegerSheet,
-  // The whole of the answer-key mechanism: every answer on the page was
-  // computed from the same signed numbers the problem was printed from, so a
-  // key prints what is already there rather than reading the sentence back.
   key: (sheet) => ({
     ...sheet,
     answers: true,

@@ -6,60 +6,33 @@ import { KEY_ROWS, strokeFor } from "@/engine/keyboard";
 const NONE: ReadonlySet<string> = new Set();
 
 /**
- * The keyboard, as a picture (docs/typing.md §4).
+ * The keyboard, as a picture (§4).
  *
- * The board itself is not defined here — `@/engine/keyboard` owns the layout,
- * the finger assignment and the geometry, because three of its four consumers
- * are not pictures (§3.1). This file is the fourth: markup and class names over
- * that table, and nothing that a lesson generator or Hailstorm would have to
- * import a component to read.
+ * The layout is not defined here — `@/engine/keyboard` owns it, because three
+ * of its four consumers are not pictures (§3.1). This file is the fourth:
+ * markup and class names over that table.
  *
- * ── Spans, and why every one of them ──────────────────────────────────────
- * Sixty-odd `<span>`s rather than sixty-odd `<button>`s, and the whole board is
- * `aria-hidden="true"`. Both halves of that are the story, not an oversight:
+ * Sixty-odd `<span>`s rather than `<button>`s, and the whole board is
+ * `aria-hidden="true"`: it is never tappable on any device (§4.5, decision 5),
+ * and announcing sixty keys is a denial of service rather than an
+ * accommodation (§4.4). The spans carry no handler and `pointer-events: none`
+ * covers the rest.
  *
- *   - **Never tappable, on any device** (§4.5). A board you can press is a
- *     hunt-and-peck trainer — it teaches finding a key by eye and pressing it
- *     with whichever finger is closest, which is exactly the habit this world
- *     exists to prevent. On a tablet the software keyboard is already the
- *     interface; this is a map of it, not a second one. The `<span>`s carry no
- *     handler and `pointer-events: none` covers the rest.
- *   - **Silent to a screen reader** (§4.4). Announcing sixty keys is a denial
- *     of service, not an accommodation, and every piece of state this shows is
- *     already in the passage: the live word is `aria-current`, the characters
- *     are text, the errors are in the DOM. So the picture stays a picture.
- *
- * ── One dial ──────────────────────────────────────────────────────────────
  * The board is fifteen key units wide and each key knows its own left edge in
- * those units, so the whole thing scales off a single `--key` custom property
- * in `game.css`. A phone in landscape and a laptop get the same layout at
- * different sizes rather than two layouts — there is no breakpoint here to keep
- * in step with the row stagger.
- *
- * That dial tops out at real key pitch — 19.05mm, which is 4.5rem (§4.7) —
- * because this is a map read while the hands are on the actual keyboard, and a
- * map at half scale makes the child do the scaling. On a wide screen the board
- * is therefore wider than the 720px column the race is written in, and is
+ * those units, so the whole thing scales off a single `--key` in
+ * `keyboard.css` — one layout at two sizes, with no breakpoint to keep in step
+ * with the row stagger. That dial tops out at real key pitch (§4.7), which is
+ * why on a wide screen the board is wider than the 720px race column and is
  * allowed to overflow it; the CSS says how.
  *
- * ── The echo arrives as props, not as a hook ──────────────────────────────
- * Which keys are lit is `useKeyEcho`'s answer, passed in (§4.3). Calling the
- * hook in here would look tidier and would cost the two things that matter:
- * the board would stop being a pure function of its props — untestable by
- * rendering it — and Hailstorm, which needs the same echo for its own gun
- * (§8.2), would end up with a second copy of the listener fighting this one.
+ * The echo arrives as props rather than from a hook called here (§4.3): the
+ * board stays a pure function of its props, testable by rendering it, and
+ * Hailstorm can want the same echo for its gun without a second copy of the
+ * listener fighting this one.
  *
- * ── The hint is a character, not a set of codes ───────────────────────────
- * `next` is the character the passage is waiting on, and the board asks
- * `strokeFor` which keys produce it (§3.3). It is not two code props, because
- * "which shift goes with `A`" is a fact about the layout and the layout lives
- * in the engine — a caller that computed it would be a second copy of the
- * table's opinion, free to disagree with the one Hailstorm and the curriculum
- * read.
- *
- * WHEN the hint is on is not decided here: that is `KeyboardMode` (#133), and
- * a mode of "keys" simply passes `next={null}`. #134 puts the board under the
- * passage.
+ * `next` is the character the passage is waiting on, not two code props —
+ * which shift goes with `A` is the layout's to answer (§3.3). WHEN the hint is
+ * on is `KeyboardMode`'s: mode "keys" passes `next={null}`.
  */
 export function Keyboard({
   down = NONE,
@@ -80,19 +53,12 @@ export function Keyboard({
 }) {
   /**
    * The keys the hint lights: the character's own key, and — for a capital or
-   * any other shifted character — the shift on the OPPOSITE hand.
+   * any other shifted character — the shift on the OPPOSITE hand, which
+   * `strokeFor` has already chosen and this does not second-guess (§3.3).
    *
-   * That opposite hand is the whole pedagogical point rather than a detail.
-   * Left-pinky-shift plus left-pinky-`a` is physically impossible; `A` is
-   * right-shift-plus-left-`a`, and which shift to reach for is the single
-   * most-skipped thing in typing courses aimed at children. Lighting both keys
-   * is what makes the hint teach the technique instead of merely locating the
-   * letter.
-   *
-   * `strokeFor` has already decided the hand (§3.3) and this does not
-   * second-guess it. It also answers `null` for a character this layout cannot
-   * produce — a curly quote that survived the passage filter — which lights
-   * nothing rather than throwing, exactly as `next: null` does.
+   * `strokeFor` answers `null` for a character this layout cannot produce — a
+   * curly quote that survived the passage filter — which lights nothing rather
+   * than throwing, exactly as `next: null` does.
    */
   const hint = next === null ? null : strokeFor(next);
 
@@ -119,12 +85,10 @@ export function Keyboard({
                 // `is-wrong` is written alongside `is-down` rather than
                 // instead of it: a wrong key is still a key that went down,
                 // and the CSS orders the two so the flare wins the colour.
-                // `is-next` stacks the same way and loses the cap to both —
-                // border, fill and legend go to the echo, whose rules are
-                // written after it — but only the cap: the hint's ring and
-                // its pulse are properties the echo never declares, so they
-                // ride out the strike. On the frame a hinted key is struck,
-                // the strike is the louder of the two, not the only one.
+                // `is-next` stacks the same way and loses the cap to both,
+                // but only the cap — the hint's ring and its pulse are
+                // properties the echo never declares, so a hinted key that is
+                // struck shows both.
                 className={[
                   "keyboard__key",
                   key.home && "is-home",
@@ -135,18 +99,17 @@ export function Keyboard({
                 ]
                   .filter(Boolean)
                   .join(" ")}
-                // The finger is an attribute rather than a class because it is
-                // one of a closed set the CSS enumerates once, and because
-                // `[data-finger]` is what the tint rules select on.
+                // The finger is an attribute rather than a class: it is one of
+                // a closed set the CSS enumerates once, and `[data-finger]` is
+                // what the tint rules select on.
                 data-finger={key.finger}
                 style={{ "--x": key.x, "--w": key.width ?? 1 } as CSSProperties}
               >
                 {/* The unshifted legend only. A real keycap prints `A` over a
-                    key that types `a` unshifted; a child comparing the board
-                    against the passage needs the character they are about to
-                    type. The shifted half is never printed — a capital is
-                    shown by lighting the shift beside the letter, which is
-                    the thing being taught. */}
+                    key that types `a`; a child comparing the board against
+                    the passage needs the character they are about to type,
+                    and a capital is shown by lighting the shift beside the
+                    letter. */}
                 {key.cap[0]}
               </span>
             );

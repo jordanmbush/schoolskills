@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { answerKey, buildSheet, describeSheet, sheetSpec } from "../index";
+import { buildSheet, describeSheet } from "../index";
+import { describeSheetFamily } from "../contract";
 import { PROBLEM_GAP } from "../layout";
 import type {
   MarginSize,
@@ -163,6 +164,14 @@ const EVERY_SHAPE: Array<Partial<WordProblemConfig>> = [
 
 const SEEDS = [0, 1, 2, 7, 4242];
 
+describeSheetFamily("word-problems", {
+  label: "Word problems",
+  spec: WORD_PROBLEMS_SHEET,
+  config,
+  shapes: EVERY_SHAPE,
+  seeds: SEEDS,
+});
+
 /** The one block a word-problem sheet has, narrowed for the reader. */
 function problemsOf(over: Partial<WordProblemConfig>, seed: number): Problem[] {
   const block = buildSheet(config(over), seed).blocks[0];
@@ -186,11 +195,6 @@ const everyStory = function* (
 /* ── The registry ──────────────────────────────────────────────────────── */
 
 describe("the word-problem family", () => {
-  it("is in the registry under the kind its config carries", () => {
-    expect(sheetSpec("word-problems")).toBe(WORD_PROBLEMS_SHEET);
-    expect(sheetSpec("word-problems").label).toBe("Word problems");
-  });
-
   it("names the sheet after its topic, and a mixed sheet after none", () => {
     expect(describeSheet(config({ topics: ["percent"] }))).toBe(
       "Word problems: percentages",
@@ -239,22 +243,6 @@ describe("the answer key", () => {
   it("prints a story's answer as a number and nothing else", () => {
     for (const story of everyStory()) {
       expect(story.answer, story.text).toMatch(/^−?\d+$/);
-    }
-  });
-
-  it("prints the answers only when the sheet is a key", () => {
-    const sheet = buildSheet(config(), 5);
-    const key = answerKey(config(), 5);
-    expect(sheet.answers).toBe(false);
-    expect(key.answers).toBe(true);
-    expect(key.footer.note).toBe("Answer key");
-  });
-
-  it("is the same sheet keyed, never a second generation", () => {
-    for (const shape of EVERY_SHAPE) {
-      expect(answerKey(config(shape), 11).blocks).toEqual(
-        buildSheet(config(shape), 11).blocks,
-      );
     }
   });
 });
@@ -359,7 +347,7 @@ describe("what may be on the page", () => {
 
   it("prints nothing rather than something wrong when the ask is impossible", () => {
     // A sheet with no topic on it has nothing to write about. An empty sheet is
-    // the honest answer, and the builder's job to prevent (PRINT13).
+    // the honest answer, and the builder's job to prevent.
     expect(problemsOf({ topics: [] }, 1)).toEqual([]);
     expect(problemsOf({ topics: ["algebra" as WordTopic] }, 1)).toEqual([]);
   });
@@ -380,17 +368,6 @@ const everyProblem = function* (
 /* ── Determinism, and the three features it buys (§7) ──────────────────── */
 
 describe("(config, seed)", () => {
-  it("builds the same sheet twice", () => {
-    for (const shape of EVERY_SHAPE) {
-      for (const seed of SEEDS) {
-        const once = buildSheet(config(shape), seed);
-        const twice = buildSheet(config(shape), seed);
-        expect(once).not.toBe(twice);
-        expect(once).toEqual(twice);
-      }
-    }
-  });
-
   it("draws the same problems for a seed as it did the day it shipped", () => {
     expect(
       wordStories(config({ count: 3 }), 7).map((story) => [

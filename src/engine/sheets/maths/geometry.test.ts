@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { answerKey, buildSheet, describeSheet, sheetSpec } from "../index";
+import { buildSheet, describeSheet } from "../index";
+import { describeSheetFamily } from "../contract";
 import { figureBox, figureRow } from "../figure";
 import { BLOCK_GAP, PROBLEM_GAP } from "../layout";
 import type {
@@ -59,9 +60,9 @@ const config = (over: Partial<GeometryConfig> = {}): GeometryConfig => ({
 });
 
 /**
- * Every shape the family can print, which is every acceptance criterion of the
- * story: area, perimeter and volume in both systems, angles, shape names, and
- * the coordinate plane in one quadrant and in four.
+ * Every shape the family can print: area, perimeter and volume in both
+ * systems, angles, shape names, and the coordinate plane in one quadrant and
+ * in four.
  */
 const EVERY_SHAPE: Array<Partial<GeometryConfig>> = [
   {},
@@ -81,6 +82,14 @@ const EVERY_SHAPE: Array<Partial<GeometryConfig>> = [
 ];
 
 const SEEDS = [0, 1, 2, 7, 4242];
+
+describeSheetFamily("geometry", {
+  label: "Shape and space",
+  spec: GEOMETRY_SHEET,
+  config,
+  shapes: EVERY_SHAPE,
+  seeds: SEEDS,
+});
 
 /** The problems of a sheet, whichever block they landed in. */
 function problemsOf(over: Partial<GeometryConfig>, seed: number): Problem[] {
@@ -214,11 +223,6 @@ const question = (problem: Problem): string => {
 /* ── The registry ──────────────────────────────────────────────────────── */
 
 describe("the geometry family", () => {
-  it("is in the registry under the kind its config carries", () => {
-    expect(sheetSpec("geometry")).toBe(GEOMETRY_SHEET);
-    expect(sheetSpec("geometry").label).toBe("Shape and space");
-  });
-
   it("names the sheet in the words a parent chose it by", () => {
     expect(describeSheet(config())).toBe(
       "Area of rectangles and triangles — sides to 12 — in cm and m",
@@ -434,22 +438,6 @@ describe("the answer key", () => {
       }
     }
   });
-
-  it("prints the answers only when the sheet is a key", () => {
-    const sheet = buildSheet(config(), 5);
-    const key = answerKey(config(), 5);
-    expect(sheet.answers).toBe(false);
-    expect(key.answers).toBe(true);
-    expect(key.footer.note).toBe("Answer key");
-  });
-
-  it("is the same sheet keyed, never a second generation", () => {
-    for (const shape of EVERY_SHAPE) {
-      expect(answerKey(config(shape), 11).blocks).toEqual(
-        buildSheet(config(shape), 11).blocks,
-      );
-    }
-  });
 });
 
 /** A printed total, split into its number and the unit it is counted in. */
@@ -643,17 +631,6 @@ describe("what may be on the page", () => {
 /* ── Determinism, and the three features it buys (§7) ──────────────────── */
 
 describe("(config, seed)", () => {
-  it("builds the same sheet twice", () => {
-    for (const shape of EVERY_SHAPE) {
-      for (const seed of SEEDS) {
-        const once = buildSheet(config(shape), seed);
-        const twice = buildSheet(config(shape), seed);
-        expect(once).not.toBe(twice);
-        expect(once).toEqual(twice);
-      }
-    }
-  });
-
   it("draws the same problems for a seed as it did the day it shipped", () => {
     // The promise the footer makes: the seed is printed on the paper so a
     // parent can have the same sheet again next week, across a deploy.

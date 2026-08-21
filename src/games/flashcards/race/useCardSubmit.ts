@@ -136,9 +136,6 @@ export function useCardSubmit({
         },
         ok ? RIGHT_PAUSE_MS : lateOut ? TIMEOUT_PAUSE_MS : WRONG_PAUSE_MS,
       );
-      // Everything above that changes comes from `live` or a ref; every name
-      // below is pinned with an empty dependency list of its own, precisely so
-      // this callback can stay stable.
     },
     [
       spec,

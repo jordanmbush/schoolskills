@@ -10,12 +10,9 @@ const HEIGHT = inches(0.24);
  * Where to cut, for cards and bookmarks.
  *
  * A dashed stroke rather than a dashed CSS border for the same reason the
- * rulings are strokes: this one has to survive the print pipeline, and a child
- * with scissors is following it exactly.
- *
- * `HEAVY` for the same reason — a cut line is read before it is used, and it
- * has to be the one line on the page nobody mistakes for a rule to write on.
- * That is the weight `units.ts` names cut lines under.
+ * rulings are strokes (§5): this one has to survive the print pipeline, and a
+ * child with scissors is following it exactly. `HEAVY`, because a cut line is
+ * read before it is used and must not be mistaken for a rule to write on.
  */
 export function Cutline({ metrics }: BlockProps<"cutline">) {
   const width = metrics.box.width;

@@ -1,15 +1,12 @@
 /**
- * The options every sheet has, whatever is printed on it.
+ * The options every sheet has, whatever is printed on it — §17's list, minus
+ * whatever a family owns.
  *
  * `SheetOptions` in the engine is the same list, which is the point: these are
  * the fields no family owns, so they sit above the family panel and stay put
  * while a parent tries three families underneath them. Paper is even carried
  * across a family change (see `setFamily`) — somebody who has chosen A4 has
  * chosen it about their printer, not about long division.
- *
- * Every §17 option that isn't a family's own is here: type size in points, the
- * face, Letter/A4/Legal, portrait/landscape, margins, the name line, answer
- * boxes and cut lines.
  */
 import {
   Checkbox,
@@ -50,19 +47,14 @@ const MARGINS = [
 ];
 
 /**
- * Named by shape, and never by a teaching model: D'Nealian® and Zaner-Bloser®
- * are trademarks with per-seat fonts behind them, and what a parent is picking
- * here is letterforms — a single-storey `a`, or a joined hand.
+ * Named by shape and never by a teaching model, because the models with names
+ * are trademarks with per-seat fonts behind them (§6).
  *
- * Three of the five are cursive, and describing them by what the pencil does is
- * the only honest way to offer them: the hands taught in different countries
- * disagree about whether an ascender loops and about which letters join at all,
- * so there is no one of them to ship and call correct. Five is the last count
- * `Choice` still draws as a row of pills — the threshold is *past* five, not at
- * it (`options/parts.tsx`) — so all five faces stay on screen at once, which is
- * what a list where two entries differ by a detail worth reading needs. Each
- * carries a `hint`, and a sixth face would take the row to a dropdown and the
- * hints with it.
+ * Five is the last count `Choice` still draws as a row of pills — the threshold
+ * is *past* five, not at it (`options/parts.tsx`) — so all five faces stay on
+ * screen at once with their hints, which is what a list where two entries differ
+ * by a detail worth reading needs. A sixth face would take the row to a dropdown
+ * and the hints with it.
  */
 const FONTS = [
   opt<SheetFont>("print", "Print", "single-storey a and g"),

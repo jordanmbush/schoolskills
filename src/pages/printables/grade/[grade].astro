@@ -14,39 +14,27 @@ import {
 
 /**
  * One hub per school year, Pre-K through 8th — the other half of §8's browse,
- * cutting across the shelves rather than along them.
- *
- * A parent who knows their child is in third grade does not know that what they
- * want is on the maths shelf, the cursive shelf and the paperwork shelf at once.
- * This page is the answer to the question they actually have, and it is written
- * for the two jobs a hub does: somewhere to go next, and a crawlable parent for
- * the sheets underneath it.
+ * cutting across the shelves rather than along them. A parent who knows their
+ * child is in third grade does not know that what they want is on three shelves
+ * at once.
  *
  * **Nothing on it is written twice.** The listing is `shelvesForGrade`, which
  * reads each catalog's own `ages` string, so a sheet re-aged in the file that
- * owns it moves between these pages by itself and a sheet added to a shelf
- * appears on the years it says it is for. The only hand-written parts are the
- * year's prose and its three landmarks — and a landmark is a *route*, whose
- * name is read back out of the catalog, so the one thing a person types here
- * cannot disagree with the sheet it points at.
+ * owns it moves between these pages by itself. The only hand-written parts are
+ * the year's prose and its three landmarks — and a landmark is a *route*, whose
+ * name is read back out of the catalog.
  *
- * **A listing rather than a sheet**, like every other hub in this corner:
- * nobody prints a list of worksheets. It ships no JavaScript, which is the
- * whole SEO argument (§2), and it needs none — there is nothing on it but
- * links.
+ * **A listing rather than a sheet**, like every other hub in this corner, and
+ * it ships no JavaScript (§2).
  *
- * On the grade labels themselves, see the header of `_grades.ts`: no sheet here
- * is assigned to a school year, these pages collect what the sheets' own stated
- * ages reach, and the page says so in as many words rather than leaving a
- * parent to assume a standard was consulted.
- *
- * That sentence says "assigned", not "labelled", and it names no year — which
- * is deliberate. A ruling in the paper catalog is called "Kindergarten writing
- * paper", after the size it is conventionally sold at, and it is listed here on
- * the two years its own "Ages 4–6" reaches. A sentence built out of
- * `grade.label` would therefore have shipped "No sheet is labelled Kindergarten"
- * directly above a link that says otherwise. What is true of every sheet is
- * that none of them is *filed* by year; the filing is `ages`, and only `ages`.
+ * The sentence about how these years are arrived at says "assigned", not
+ * "labelled", and names no year, which is deliberate: a ruling in the paper
+ * catalog is called "Kindergarten writing paper", after the size it is
+ * conventionally sold at, and it is listed here on the two years its own
+ * "Ages 4–6" reaches. Built out of `grade.label`, that sentence would have
+ * shipped "No sheet is labelled Kindergarten" directly above a link saying
+ * otherwise. What is true of every sheet is that none is *filed* by year; the
+ * filing is `ages`, and only `ages`.
  */
 
 type Props = { grade: Grade };
@@ -64,10 +52,8 @@ const shelves = shelvesForGrade(grade);
 const sheets = sheetsForGrade(grade);
 const [younger, older] = grade.ages;
 
-/* The names beside the three landmarks come from the catalogs, so this page
-   holds no second copy of a sheet's name to fall out of step with the first.
-   A route that stopped resolving would be dropped here and caught in
-   `_grades.test.ts`, which is the half of it that must not fail quietly.    */
+/* A route that stopped resolving is dropped here rather than printed empty, and
+   caught in `_grades.test.ts` — which is the half that must not fail quietly. */
 const landmarks = grade.landmarks.flatMap((pick) => {
   const sheet = sheetByHref(pick.href);
   return sheet ? [{ ...pick, name: sheet.name }] : [];

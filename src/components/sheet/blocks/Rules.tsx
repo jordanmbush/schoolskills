@@ -5,9 +5,8 @@ import type { BlockProps } from "./block";
 /**
  * Ruled paper: `lines` repeats of a ruling and nothing written on them.
  *
- * The whole of "printable wide ruled paper", which is a top-tier query in its
- * own right (§18) — and the block every other ruled thing on a sheet is built
- * out of.
+ * The whole of "printable wide ruled paper" (§18), and the block every other
+ * ruled thing on a sheet is built out of.
  */
 export function Rules({ block, metrics }: BlockProps<"rules">) {
   const width = metrics.box.width;

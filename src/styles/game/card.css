@@ -1,0 +1,327 @@
+/* ── The card ────────────────────────────────────────────────────────────
+   The flash-card loop and the two decks that fill it (`src/games/flashcards/`):
+   a times table shows a sum and a keypad, a spelling list shows a sentence
+   with a hole in it and a line to type on. One loop, one clock, two faces. */
+
+/* ── The card ──────────────────────────────────────────────────────────── */
+
+.card {
+  position: relative;
+  /* Hugs its content inside the flexible row instead of stretching to fill it. */
+  align-self: center;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: var(--gap-2);
+  padding: clamp(1rem, 4vw, 2rem);
+  border-radius: var(--radius-lg);
+  border: 2px solid var(--hairline);
+  background: linear-gradient(180deg, var(--ink-800), var(--ink-850));
+  box-shadow: var(--shadow-lift);
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.card--right {
+  border-color: var(--lime);
+  animation: pulse-ring 0.5s var(--ease-out);
+}
+
+.card--wrong {
+  border-color: var(--flare);
+  animation: shake 0.45s var(--ease-out);
+}
+
+.card--timeout {
+  border-color: var(--gold);
+  animation: pulse-late 0.6s var(--ease-out);
+}
+
+/* ── The card clock ──────────────────────────────────────────────────────
+   A fuse across the top of the card. Its width is written straight to the
+   DOM by the animation loop rather than run as a CSS animation: it has to
+   keep draining for players who've asked for reduced motion, because the
+   bar is information, not decoration.                                     */
+
+.fuse {
+  --left: 1;
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+.fuse__track {
+  height: 0.85rem;
+  border-radius: 999px;
+  border: 1px solid var(--hairline);
+  background: rgb(0 0 0 / 45%);
+  overflow: hidden;
+}
+
+.fuse__fill {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  transform: scaleX(var(--left));
+  transform-origin: left center;
+  transition: background-color 0.25s ease;
+}
+
+.fuse__num {
+  min-width: 2ch;
+  text-align: right;
+  font-size: var(--step-2);
+  font-weight: 700;
+  color: var(--chalk-dim);
+}
+
+.fuse.is-urgent .fuse__fill {
+  background: var(--flare);
+  box-shadow: 0 0 14px 1px color-mix(in oklab, var(--flare) 70%, transparent);
+}
+
+.fuse.is-urgent .fuse__num {
+  color: var(--flare);
+  animation: fuse-beat 1s var(--ease-out) infinite;
+}
+
+/* Spent, not merely low: the clock beat this card. */
+.fuse.is-spent .fuse__num {
+  color: var(--gold);
+}
+
+.card__prompt {
+  font-size: clamp(3rem, 13vw, 6.5rem);
+  line-height: 1;
+  text-transform: none;
+}
+
+.card__answer {
+  min-height: 1.4em;
+  display: grid;
+  place-items: center;
+}
+
+.card__entry {
+  font-size: clamp(2rem, 8vw, 3.5rem);
+  font-weight: 700;
+  line-height: 1;
+  color: var(--accent);
+  letter-spacing: 0.06em;
+}
+
+.card__entry.is-empty {
+  color: var(--ink-500);
+}
+
+.card__truth {
+  font-size: clamp(1.6rem, 6vw, 2.6rem);
+  font-weight: 700;
+  color: var(--lime);
+}
+
+/* The correct answer has to win the glance; the miss is context. */
+.card__truth s {
+  color: var(--flare);
+  margin-right: 0.45em;
+  font-size: 0.6em;
+  opacity: 0.75;
+}
+
+.card__late {
+  margin-right: 0.5em;
+  font-size: 0.5em;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+.combo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3em 0.9em;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--gold) 20%, transparent);
+  border: 1px solid color-mix(in oklab, var(--gold) 45%, transparent);
+  color: var(--gold);
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  font-weight: 700;
+}
+
+/* ── Input ─────────────────────────────────────────────────────────────── */
+
+.keypad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+  max-width: 22rem;
+  width: 100%;
+  margin-inline: auto;
+}
+
+.keypad__key {
+  padding: clamp(0.5rem, 2.2vh, 1rem) 0;
+  border-radius: var(--radius);
+  background: var(--ink-700);
+  border: 1px solid var(--hairline);
+  font-size: var(--step-2);
+  font-weight: 700;
+  transition:
+    transform 0.1s var(--ease-spring),
+    background-color 0.12s ease;
+}
+
+.keypad__key:hover:not(:disabled) {
+  background: var(--ink-600);
+}
+
+.keypad__key:active:not(:disabled) {
+  transform: scale(0.94);
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.keypad__key:disabled {
+  opacity: 0.35;
+}
+
+/* Enter is an action, not a verdict — so it takes the world's `--go` rather
+   than `--lime`, which in here always means "that was correct". */
+.keypad__key--enter {
+  background: var(--go);
+  color: var(--go-ink);
+}
+
+.keypad__key--util {
+  background: var(--ink-800);
+  color: var(--chalk-soft);
+}
+
+.choices {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.6rem;
+  max-width: 30rem;
+  width: 100%;
+  margin-inline: auto;
+}
+
+.choices__btn {
+  position: relative;
+  padding: clamp(0.8rem, 3vh, 1.6rem) 0.5rem;
+  border-radius: var(--radius);
+  background: var(--ink-700);
+  border: 2px solid var(--hairline);
+  font-size: var(--step-3);
+  font-weight: 700;
+  transition:
+    transform 0.12s var(--ease-spring),
+    border-color 0.12s ease;
+}
+
+.choices__btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  transform: translateY(-3px);
+}
+
+.choices__btn:disabled {
+  opacity: 0.4;
+}
+
+.choices__key {
+  position: absolute;
+  top: 0.4rem;
+  left: 0.6rem;
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  color: var(--chalk-dim);
+}
+
+/* ── A word card: heard, not read ──────────────────────────────────────── */
+
+.wordprompt {
+  display: grid;
+  justify-items: center;
+  gap: 0.5rem;
+}
+
+/* Same height whether the word is showing or hidden, so the card doesn't
+   jump when the flash ends mid-answer. */
+.wordprompt__hidden {
+  letter-spacing: 0.18em;
+  color: var(--chalk-soft);
+  opacity: 0.55;
+}
+
+/* The sentence the word was spoken in. Deliberately NOT display type: it is a
+   line of prose to be read, not a prompt to be shouted, and at the card
+   prompt's size a seven-word sentence is a wall. The blank is the loud part. */
+.wordprompt__clue {
+  max-width: 20ch;
+  font-size: clamp(1.6rem, 6vw, 2.7rem);
+  line-height: 1.4;
+  text-align: center;
+  text-wrap: balance;
+  color: var(--chalk-soft);
+}
+
+/* The gap where the word goes. Sized in `ch` rather than to the word's own
+   length — a blank that grew with the answer would leak how long it is. */
+.wordprompt__blank,
+.wordprompt__filled {
+  display: inline-block;
+  min-width: 4.5ch;
+  margin-inline: 0.15em;
+  padding-inline: 0.2em;
+  border-bottom: 3px solid var(--accent);
+  font-weight: 800;
+  text-align: center;
+  color: var(--accent);
+}
+
+/* The flash fallback, on a device with no voice: the blank fills in for a
+   moment and then empties again. */
+.wordprompt__filled {
+  animation: pop 0.3s var(--ease-spring) both;
+}
+
+.wordprompt__again {
+  --btn-gap: 0.4rem;
+}
+
+.wordpad {
+  display: flex;
+  gap: 0.6rem;
+  max-width: 30rem;
+  width: 100%;
+  margin-inline: auto;
+}
+
+.wordpad__input {
+  flex: 1;
+  min-width: 0;
+  padding: clamp(0.7rem, 2.4vh, 1.1rem) 0.9rem;
+  border-radius: var(--radius);
+  border: 2px solid var(--hairline);
+  background: var(--ink-700);
+  color: var(--chalk);
+  font-family: inherit;
+  font-size: var(--step-2);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-align: center;
+}
+
+.wordpad__input:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.wordpad__input:disabled {
+  opacity: 0.5;
+}

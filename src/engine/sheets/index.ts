@@ -1,78 +1,31 @@
 /**
- * The sheet layer's front door.
- *
- * Everything above the engine asks for a sheet here rather than from a family
- * module, so a catalog page, the builder and a unit test all go through the
- * same three functions and none of them learns whether it is holding long
- * division or a handwriting rule.
+ * The sheet layer's front door, with every family already in hand (§3).
  *
  * The `SheetConfig` union is narrowed in exactly one place: the registry lookup
  * in `sheetSpec`. A spec is keyed by the same string its config carries as
  * `kind`, so looking one up *is* the narrowing — there is no `if (isLined)`
- * chain to keep in step with the union, and adding a family is an entry in the
- * table below plus a `kind` in types.ts. See the note on `SheetSpec` for the
+ * chain to keep in step with the union, and adding a family is an entry in
+ * families.ts plus a `kind` in types.ts. See the note on `SheetSpec` for the
  * one thing that makes that typecheck.
+ *
+ * **This door assembles the whole press, so only Node ever opens it.** The
+ * top-level `await` below runs every loader in families.ts, which is what lets
+ * the catalog build and the tests call a plain synchronous `buildSheet` while
+ * the builder island fetches a family at a time. Import it from anything that
+ * ships to a browser and the split stops working: the island's route is
+ * `loadSheet(kind)`.
  */
+import { SHEET_FAMILIES } from "./families";
+import { UNKNOWN_SHEET, buildWith, keyWith, type SheetSpec } from "./spec";
 import type { Sheet, SheetConfig } from "./types";
 
-import { BLANK_SHEET } from "./blank";
-import { GRAMMAR_SHEET } from "./grammar/grammar";
-import { ARITHMETIC_SHEET } from "./maths/arithmetic";
-import { DECIMALS_SHEET } from "./maths/decimals";
-import { FRACTIONS_SHEET } from "./maths/fractions";
-import { GEOMETRY_SHEET } from "./maths/geometry";
-import { INTEGERS_SHEET } from "./maths/integers";
-import { MEASURE_SHEET } from "./maths/measure";
-import { MONEY_SHEET } from "./maths/money";
-import { MULTIPLICATION_SHEET } from "./maths/multiplication";
-import { PREALGEBRA_SHEET } from "./maths/prealgebra";
-import { RATIO_SHEET } from "./maths/ratio";
-import { STATISTICS_SHEET } from "./maths/statistics";
-import { TIME_SHEET } from "./maths/time";
-import { WORD_PROBLEMS_SHEET } from "./maths/wordproblems";
-import { PHONICS_SHEET } from "./phonics/sheets";
-import { UNKNOWN_SHEET, type SheetSpec } from "./spec";
-import { CARDS_SHEET } from "./templates/cards";
-import { CHART_SHEET } from "./templates/charts";
-import { FORM_SHEET } from "./templates/forms";
-import { NET_SHEET } from "./templates/nets";
-import { PAPER_SHEET } from "./templates/paper";
-import { PLANNER_SHEET } from "./templates/planner";
-import { HANDWRITING_SHEET } from "./writing/handwriting";
-import { MEMORY_SHEET } from "./writing/memory";
-import { PUZZLE_SHEET } from "./words/puzzles";
-import { WORDS_SHEET } from "./words/spelling";
-import { WORD_STUDY_SHEET } from "./words/study";
-
-const SHEETS: Record<string, SheetSpec> = {
-  [BLANK_SHEET.id]: BLANK_SHEET,
-  [PAPER_SHEET.id]: PAPER_SHEET,
-  [CHART_SHEET.id]: CHART_SHEET,
-  [FORM_SHEET.id]: FORM_SHEET,
-  [PLANNER_SHEET.id]: PLANNER_SHEET,
-  [CARDS_SHEET.id]: CARDS_SHEET,
-  [NET_SHEET.id]: NET_SHEET,
-  [ARITHMETIC_SHEET.id]: ARITHMETIC_SHEET,
-  [MULTIPLICATION_SHEET.id]: MULTIPLICATION_SHEET,
-  [FRACTIONS_SHEET.id]: FRACTIONS_SHEET,
-  [DECIMALS_SHEET.id]: DECIMALS_SHEET,
-  [MONEY_SHEET.id]: MONEY_SHEET,
-  [TIME_SHEET.id]: TIME_SHEET,
-  [MEASURE_SHEET.id]: MEASURE_SHEET,
-  [GEOMETRY_SHEET.id]: GEOMETRY_SHEET,
-  [INTEGERS_SHEET.id]: INTEGERS_SHEET,
-  [PREALGEBRA_SHEET.id]: PREALGEBRA_SHEET,
-  [RATIO_SHEET.id]: RATIO_SHEET,
-  [STATISTICS_SHEET.id]: STATISTICS_SHEET,
-  [WORD_PROBLEMS_SHEET.id]: WORD_PROBLEMS_SHEET,
-  [WORDS_SHEET.id]: WORDS_SHEET,
-  [WORD_STUDY_SHEET.id]: WORD_STUDY_SHEET,
-  [PUZZLE_SHEET.id]: PUZZLE_SHEET,
-  [GRAMMAR_SHEET.id]: GRAMMAR_SHEET,
-  [PHONICS_SHEET.id]: PHONICS_SHEET,
-  [HANDWRITING_SHEET.id]: HANDWRITING_SHEET,
-  [MEMORY_SHEET.id]: MEMORY_SHEET,
-};
+const SHEETS: Record<string, SheetSpec> = Object.fromEntries(
+  await Promise.all(
+    SHEET_FAMILIES.map(
+      async (family) => [family.id, await family.load()] as const,
+    ),
+  ),
+);
 
 /**
  * Resolves a sheet family. Never throws — see `UNKNOWN_SHEET` for why a kind
@@ -87,60 +40,17 @@ export function sheetSpec(kind: string): SheetSpec {
   return Object.hasOwn(SHEETS, kind) ? SHEETS[kind] : UNKNOWN_SHEET;
 }
 
-/** Everything this build can make, for the catalog and the builder's picker. */
-export function listSheets(): SheetSpec[] {
-  return Object.values(SHEETS);
-}
-
-/**
- * The presentation half of `SheetOptions`, copied onto what a family built.
- *
- * Here rather than in every `build` function for the reason `chrome.ts`
- * gives for living on its own: every family would otherwise write the same
- * three lines, and the next one added would be the one that forgot. It is
- * safe to do it after the fact because none of the three changes a length —
- * the face is set in points, a bordered slot is the same line box as a ruled
- * one, and the cut guides are drawn over the paper rather than in the flow —
- * so nothing here can make a sheet the layout arithmetic already fitted stop
- * fitting.
- *
- * A family that has already said something wins, which is what keeps this a
- * default rather than an override: `UNKNOWN_SHEET` sets nothing and gets the
- * parent's choices, and a family that one day sets its own is not quietly
- * undone from out here.
- */
-function present(config: SheetConfig, sheet: Sheet): Sheet {
-  return {
-    ...sheet,
-    font: sheet.font ?? config.font,
-    answerBox: sheet.answerBox ?? config.answerBox,
-    cutLines: sheet.cutLines ?? config.cutLines,
-  };
-}
-
-/**
- * Build a sheet. Deterministic in `(config, seed)`, which is the mechanism
- * behind three of the features in §7 rather than one: an answer key is the
- * same build, "another sheet like this one" is `seed + 1`, and a sheet is
- * reproducible from a shared URL because the seed is in it.
- */
+/** Build a sheet. Deterministic in `(config, seed)` — see `buildWith`. */
 export function buildSheet(config: SheetConfig, seed: number): Sheet {
-  return present(config, sheetSpec(config.kind).build(config, seed));
+  return buildWith(sheetSpec(config.kind), config, seed);
 }
 
-/**
- * The same sheet with the answers drawn in.
- *
- * A second build from the same seed, not a second generation of the answers:
- * they were computed when the sheet was built and `key` only decides to print
- * them, so a key cannot disagree with the sheet it belongs to.
- */
+/** The same sheet with the answers drawn in — see `keyWith`. */
 export function answerKey(config: SheetConfig, seed: number): Sheet {
-  const spec = sheetSpec(config.kind);
-  return present(config, spec.key(spec.build(config, seed)));
+  return keyWith(sheetSpec(config.kind), config, seed);
 }
 
-/** One line naming what a config prints, for the catalog and the record. */
+/** One line naming what a config prints, for the catalog and its tests. */
 export function describeSheet(config: SheetConfig): string {
   return sheetSpec(config.kind).describe(config);
 }

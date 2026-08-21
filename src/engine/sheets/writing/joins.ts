@@ -15,18 +15,12 @@
  * the top and entered there, so a child who joins into them the ordinary way
  * writes `oi` where they meant `oa`.
  *
- * **The font decides whether letters join, and this file never does.** Every
- * pair below is two ordinary characters; the joined forms are chosen by the
- * face's `calt` table from the letters either side, which is exactly the
- * context a join is correct in. That is also what makes `breaks` an honest
- * group rather than a claim: the looped and British models join out of every
- * letter, and the unlooped model lifts the pencil after `b f g j p q s y`. The
- * same sheet is right in all three because the model answers the question, not
- * the engine — which is the whole reason the model is a choice (`faces.ts`).
+ * Every pair below is two ordinary characters, and which of them a hand
+ * actually joins is the font's answer rather than this file's (§6) — which is
+ * what makes `breaks` an honest group rather than a claim.
  *
- * Kept out of `handwriting.ts` because it is a table with an argument attached
- * rather than page arithmetic, and because the catalog and the builder both
- * want to name a family without pulling in the family that builds sheets.
+ * Kept out of `handwriting.ts` so the catalog and the builder can name a family
+ * without pulling in the family that builds sheets.
  */
 import { own } from "../paper";
 import type { JoinFamily } from "../types";
@@ -38,10 +32,9 @@ export type JoinSet = {
   /** What the family teaches, in one line a parent can read. */
   blurb: string;
   /**
-   * Five pairs, which is a row of a ⅝ sheet's worth per family and a whole page
-   * for all six. Chosen to be pairs that turn up in ordinary words — a child
-   * practising `ea` and `ow` is practising `beat` and `down` — rather than the
-   * alphabetically tidy ones nobody writes.
+   * Five pairs, which is a row of a ⅝ sheet per family and a whole page for all
+   * six. Chosen to be pairs that turn up in ordinary words — a child practising
+   * `ea` and `ow` is practising `beat` and `down`.
    */
   pairs: string[];
 };
@@ -107,10 +100,9 @@ const BY_ID: Record<string, JoinSet> = Object.fromEntries(
 /**
  * A family by id, or the first one.
  *
- * Never throws, for the reason every lookup in this engine keyed by a saved
- * string doesn't: a config outlives the build that wrote it, and a sheet asking
- * for a family this build has never heard of should print the diagonal joins
- * rather than nothing at all.
+ * Never throws, for the reason every lookup keyed by a saved string doesn't: a
+ * config outlives the build that wrote it, and a sheet asking for a family this
+ * build has never heard of should print the diagonal joins rather than nothing.
  */
 export const joinFamily = (id: JoinFamily): JoinSet =>
   own(BY_ID, id, JOIN_FAMILIES[0]);
@@ -118,10 +110,9 @@ export const joinFamily = (id: JoinFamily): JoinSet =>
 /**
  * The pairs a joins sheet writes: one family's, or every family's in order.
  *
- * All of them is what a parent means by "cursive joins" — the whole
- * progression on one page, the way the letters sheet is the whole alphabet on
- * one page — and one family is the sheet for the week that join is being
- * taught.
+ * All of them is what a parent means by "cursive joins" — the whole progression
+ * on one page, the way the letters sheet is the whole alphabet — and one family
+ * is the sheet for the week that join is being taught.
  */
 export const joinPairs = (family?: JoinFamily): string[] =>
   family === undefined

@@ -5,13 +5,8 @@ import type { Lesson } from "./lessons";
 import { strokeFor } from "../keyboard";
 
 /**
- * The cheap tests that catch the embarrassing failures (docs/typing.md §12).
- *
- * The expensive ones — reachability, and "the new key shows up often enough" —
- * belong to the generator and cannot be written until it exists. What can be
- * written now is everything the table itself claims: that it is a hundred
- * lessons, numbered once each, with the checkpoints where the blocks say they
- * are and the keyboard off when it has to be.
+ * What the table itself claims (§12). Reachability and "the new key shows up
+ * often enough" belong to the generator, and live in `generate.test.ts`.
  */
 
 const byN = new Map(LESSONS.map((l) => [l.n, l]));
@@ -45,10 +40,9 @@ describe("the shape of the ladder", () => {
   });
 
   /**
-   * The id is what goes into `Session.mode` as `typing:L07`, so it outlives
-   * every re-tuning of the lesson it names. Pinning the format here is pinning
-   * a promise to runs already saved: change it and a record book two years old
-   * stops being able to say what it is looking at.
+   * The id is what goes into `Session.mode` as `typing:L07`, so pinning the
+   * format is pinning a promise to runs already saved: change it and a record
+   * book two years old stops being able to say what it is looking at.
    */
   it("writes the id as L + the number, two digits", () => {
     expect(lesson(1).id).toBe("L01");
@@ -58,10 +52,9 @@ describe("the shape of the ladder", () => {
   });
 
   /**
-   * The other half of that promise: the id has to resolve back. A screen asks
-   * "is this run a lesson?" with a config in hand and gets the lesson or
-   * nothing — never a throw, because a saved run outlives the ladder it was
-   * played on and every one of these three cases reaches a live screen.
+   * The id has to resolve back, and never throw: a saved run outlives the
+   * ladder it was played on, and every one of these three cases reaches a live
+   * screen.
    */
   it("resolves an id back to its lesson, and anything else to null", () => {
     expect(lessonById("L07")).toBe(lesson(7));
@@ -97,10 +90,9 @@ describe("checkpoints", () => {
   });
 
   /**
-   * A checkpoint that can be passed while reading the answer off the screen
-   * measures nothing (§4.2), and a checkpoint is the placement test — passing
-   * number 40 clears 1–39 with it (§6.6). So the board is off and the player's
-   * own toggle cannot turn it back on.
+   * A checkpoint is the placement test, so it cannot be passed with the answer
+   * on screen (§4.2, §6.6) — hence the board off *and* the player's toggle
+   * locked.
    */
   it("hides the keyboard, and does not let the player show it", () => {
     for (const l of LESSONS.filter((l) => l.checkpoint)) {
@@ -163,12 +155,9 @@ describe("the keys, and the order they arrive in", () => {
   });
 
   /**
-   * Mirrored pairs, one per hand, through the three letter blocks (§5.5).
-   *
-   * `f`/`j` are the index home keys and `d`/`k`, `s`/`l`, `a`/`;` walk outward
-   * together — the same finger on each hand, every time. It keeps the hands
-   * balanced and it teaches the symmetry, which is what makes the bottom row
-   * guessable by the time a child reaches it.
+   * Mirrored pairs, one per hand, through the three letter blocks (§5.5):
+   * `f`/`j`, then `d`/`k`, `s`/`l`, `a`/`;` walking outward — the same finger
+   * on each hand, every time.
    */
   it("hands the letters over one finger at a time, both hands at once", () => {
     const letterBlocks = LESSONS.filter(
@@ -187,11 +176,10 @@ describe("the keys, and the order they arrive in", () => {
   });
 
   /**
-   * The number row is the deliberate exception, and this is the rule it
-   * follows instead: each pair straddles the centre of the board, so the two
-   * digits always sum to nine. `4 5` are both the left index's and `9 0` are
-   * the right ring and pinky — the standard assignment, not a slip, which is
-   * why the mirrored-hand test above stops at block 3.
+   * The number row is the exception to the pair above, which is why that one
+   * stops at block 3: each pair straddles the centre of the board and so sums
+   * to nine. `4 5` are both the left index's, `9 0` the right ring and pinky —
+   * the standard assignment, not a slip.
    */
   it("walks the number row outward from the middle of the board", () => {
     const digits = LESSONS.filter((l) => l.block === 6 && l.introduces.length);
@@ -220,11 +208,9 @@ describe("the pass criteria", () => {
   });
 
   /**
-   * The gate that turns a hundred typing tests into a hundred lessons (§6.4):
-   * `z` is 3% of the text, so 95% and 12 wpm can both be met while getting it
-   * wrong every single time it appears. It only has to be askable — a lesson
-   * that wanted twelve strikes of each of fifteen new capitals would want a
-   * hundred and eighty of them in a hundred and fifty characters.
+   * §6.4's gate, and the ceiling on it: twelve strikes of each of fifteen new
+   * capitals would want a hundred and eighty of them in a hundred and fifty
+   * characters, which is what the last assertion sizes.
    */
   it("asks for enough of each new key to judge it, and no more than fits", () => {
     for (const l of LESSONS) {
@@ -247,16 +233,11 @@ describe("the pass criteria", () => {
 
 describe("the speed bar", () => {
   /**
-   * Read the wpm column down the page and it does NOT climb smoothly — it
-   * drops every time a key arrives and climbs back over the review lessons
-   * after it. Lesson 50 asks 25 and lesson 51 asks 16 (§6.3, decision 11).
-   *
-   * So the non-decreasing claim is about BLOCKS, and only the blocks that
-   * introduce nothing: 5, 8, 9 and 10 are forty lessons of pure practice, and
-   * speed is the only thing left for them to be about. Reading it per lesson
-   * would be false even inside those blocks — 44 is harder material than 43
-   * and 97 is the accuracy run — and a test that asserted it would be a test
-   * that has to be deleted the first time someone reads the doc.
+   * The wpm column does not climb smoothly — it drops every time a key arrives
+   * and climbs back over the review lessons after it (§6.3, decision 11). So
+   * the non-decreasing claim is about BLOCKS, and only the four that introduce
+   * nothing; per lesson it would be false even inside those, since 44 is
+   * harder material than 43 and 97 is the accuracy run.
    */
   const checkpointWpm = (block: number) => wpmOf(lesson(block * 10)) ?? 0;
 
@@ -288,10 +269,8 @@ describe("the speed bar", () => {
   });
 
   /**
-   * The dip, pinned so nobody smooths it out. A lesson that introduces keys
-   * targets about 80% of its block's running figure: you have just got slower
-   * and you should have, and a ladder that pretended otherwise would punish
-   * the exact moment it should encourage.
+   * The dip, pinned so nobody smooths it out: a lesson that introduces keys
+   * targets about 80% of its block's running figure.
    */
   it("drops below the block's own figure whenever keys arrive", () => {
     for (const l of LESSONS.filter((l) => l.introduces.length > 0)) {

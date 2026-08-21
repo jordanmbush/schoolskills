@@ -1,17 +1,14 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  answerKey,
-  buildSheet,
-  describeSheet,
-  listSheets,
-  sheetSpec,
-} from "./index";
+import { answerKey, buildSheet, describeSheet, sheetSpec } from "./index";
+import { BLANK_SHEET } from "./blank";
+import { describeSheetFamily } from "./contract";
+import { SHEET_FAMILIES, sheetFamily } from "./families";
 import { SHEET_CREDIT, SHEET_URL, SHEET_WORLD, UNKNOWN_SHEET } from "./spec";
 import { DEFAULT_PAPER } from "./paper";
 import type { BlankConfig, SheetConfig } from "./types";
 
-const config = (over: Partial<BlankConfig> = {}): SheetConfig => ({
+const config = (over: Partial<BlankConfig> = {}): BlankConfig => ({
   kind: "blank",
   paper: DEFAULT_PAPER,
   fontPt: 12,
@@ -19,9 +16,27 @@ const config = (over: Partial<BlankConfig> = {}): SheetConfig => ({
   ...over,
 });
 
+/** Everything a page with nothing on it can still be asked for. */
+const EVERY_SHAPE: Array<Partial<BlankConfig>> = [
+  {},
+  { paper: { size: "a4", orientation: "landscape", margin: "wide" } },
+  { title: "Story paper", instructions: "Write about your week." },
+  { fields: [] },
+];
+
+// Blank paper has no suite of its own — this file is it, because the family is
+// the front door's worked example everywhere else on the page.
+describeSheetFamily("blank", {
+  label: "Blank page",
+  spec: BLANK_SHEET,
+  config,
+  shapes: EVERY_SHAPE,
+  keyed: () => false,
+});
+
 describe("the registry", () => {
   it("routes a kind to its family", () => {
-    expect(sheetSpec("blank").label).toBe("Blank page");
+    expect(sheetFamily("blank")?.label).toBe("Blank page");
     expect(describeSheet(config())).toBe("A blank page");
   });
 
@@ -53,49 +68,29 @@ describe("the registry", () => {
     expect(UNKNOWN_SHEET.build(stale, 7).paper).toEqual(DEFAULT_PAPER);
   });
 
+  it("has a module behind every family it offers", () => {
+    // The picker names all twenty-seven before any of them has loaded, so a
+    // loader pointing at a path that no longer exports what it says would stay
+    // invisible until a parent picked that family. This door has awaited every
+    // one of them by the time the suite runs.
+    for (const { id } of SHEET_FAMILIES) {
+      expect(sheetSpec(id), id).not.toBe(UNKNOWN_SHEET);
+    }
+  });
+
   it("prints in the world every sheet prints in", () => {
-    for (const spec of [...listSheets(), UNKNOWN_SHEET]) {
+    const specs = SHEET_FAMILIES.map((family) => sheetSpec(family.id));
+    for (const spec of [...specs, UNKNOWN_SHEET]) {
       expect(spec.world).toBe(SHEET_WORLD);
     }
   });
 
   it("lists what this build can make", () => {
-    expect(listSheets().map((spec) => spec.id)).toContain("blank");
+    expect(SHEET_FAMILIES.map((family) => family.id)).toContain("blank");
   });
 });
 
 describe("buildSheet", () => {
-  it("is a pure function of its config and seed", () => {
-    // Three features rest on this, not one (§7): the answer key is the same
-    // build, "another sheet like this one" is seed + 1, and a shared URL
-    // reproduces a sheet because the seed travels in it.
-    for (const seed of [0, 1, 4242]) {
-      const once = buildSheet(config(), seed);
-      const twice = buildSheet(config(), seed);
-      expect(once).not.toBe(twice);
-      expect(once).toEqual(twice);
-    }
-  });
-
-  it("stays deterministic across papers, margins and options", () => {
-    const variants: SheetConfig[] = [
-      config(),
-      config({
-        paper: { size: "a4", orientation: "landscape", margin: "wide" },
-      }),
-      config({ title: "Story paper", instructions: "Write about your week." }),
-      config({ fields: [] }),
-    ];
-    for (const variant of variants) {
-      expect(buildSheet(variant, 9)).toEqual(buildSheet(variant, 9));
-    }
-  });
-
-  it("carries the seed into the footer, which is what makes it repeatable", () => {
-    expect(buildSheet(config(), 12_345).footer.seed).toBe(12_345);
-    expect(buildSheet(config(), 12_346).footer.seed).toBe(12_346);
-  });
-
   it("prints the name line blank, because it has nothing to fill it with", () => {
     const sheet = buildSheet(config(), 1);
     // A `HeaderField` is a marker, not a value: a config has nowhere to put a

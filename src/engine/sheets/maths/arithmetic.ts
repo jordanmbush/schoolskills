@@ -1,29 +1,10 @@
 /**
- * Addition and subtraction.
+ * Addition and subtraction, and the family every maths family after it copies.
  *
- * The first *generated* family, and the one that sets the bar for every maths
- * family after it. Lined paper is correct if it measures what it says it
- * measures; a page of sums is correct only if every answer on the key is right,
- * every problem is inside the range a parent asked for, and no two problems on
- * the page are the same problem. An answer key is the single most expected
- * feature of a worksheet site and the most common thing done badly (§7), so the
- * answers are computed once, when the problem is built, and the key only
- * decides to print them.
- *
- * Everything on the page comes out of `(config, seed)` and nothing else. That
- * one property is three features: the key is the same build, "another sheet
- * like this one" is `seed + 1`, and variants A/B/C for a class are `seed`,
- * `seed + 1` and `seed + 2` printed as consecutive pages.
- *
- * ── Why the problems are drawn rather than enumerated ──────────────────────
- * The obvious generator lists every pair in the range, shuffles it and takes
- * twenty. It is exact, and it allocates a million pairs for a sheet of
- * three-digit sums — at build time, on every catalog page, three times over for
- * the variants. So a problem is drawn, checked against what the config asked
- * for, and rejected if it fails or repeats. The draw gives up after a run of
- * rejections and prints what it has, which is the honest answer to "twenty
- * different sums from 1 to 3": there are six, and six is what a parent should
- * get rather than the same sum three times.
+ * Lined paper is correct if it measures what it says it measures. A page of sums
+ * is correct only if every answer on the key is right, every problem is inside
+ * the range a parent asked for, and no two problems on the page are the same
+ * problem — which is what most of this file is about (§7, §11).
  */
 import { arithmeticFactId, factPair } from "@/engine/decks/flashcards";
 import { between, mulberry32 } from "@/engine/random";
@@ -55,8 +36,7 @@ import { SHEET_CREDIT, SHEET_WORLD, gameUrl, type SheetSpec } from "../spec";
    Declared, not measured (§4), and trailing sheet.css the same way chrome.ts
    does: a problem written along a line is one line of the body type with a
    little air round it, and a column sum is the two numbers, the rule and the
-   answer under it. The gap between them belongs to the shared problem grid and
-   lives with the rest of its arithmetic, in layout.ts.                       */
+   answer under it.                                                           */
 
 const ROW_EMS = { horizontal: 1.7, vertical: 4.4 } as const;
 
@@ -66,7 +46,6 @@ const WORKSPACE = inches(0.55);
 /** A fact family is four number sentences, and each one gets a line. */
 const FAMILY_LINES = 4;
 
-/** The room a fact family's four sentences take, lines and all. */
 const familySpace = (fontPt: number): Mil => FAMILY_LINES * answerLine(fontPt);
 
 /** More than six columns of sums is a page nobody can read. */
@@ -125,7 +104,6 @@ const allowed = (want: Regrouping, regrouped: boolean): boolean =>
 
 /* ── Drawing a sum ─────────────────────────────────────────────────────── */
 
-/** One sum, as it will be printed: `left` op `right` makes `result`. */
 type Sum = {
   operation: "add" | "subtract";
   left: number;
@@ -144,14 +122,13 @@ function bounds(range: { min: number; max: number }): {
 
 /* ── The facts a child keeps missing ──────────────────────────────────────
    The other way into this family (§14). A named fact is not drawn and not
-   rejected: the record book already decided which ones matter and in what
-   order, so they are printed in that order, and `range` and `regrouping` say
-   nothing about a page they did not choose.
+   rejected: the record book already ranked them, so they print in the order
+   given, and `range` and `regrouping` say nothing about a page they did not
+   choose.
 
-   A pair is read exactly as `decks/flashcards.ts` writes it, which is what
-   makes "print what they missed" a hand-off rather than a translation: added,
-   the two addends; subtracted, the number taken away and what is left, so the
-   fact 3:5 is 8 − 3 and the answer is the 5 that was already in it.        */
+   A pair is read exactly as `decks/flashcards.ts` writes it: added, the two
+   addends; subtracted, the number taken away and what is left, so the fact 3:5
+   is 8 − 3 and the answer is the 5 that was already in it.                  */
 
 /** The named facts as pairs — whole, non-negative, and in the order given. */
 function namedFacts(config: ArithmeticConfig): Array<[number, number]> {
@@ -269,9 +246,7 @@ function keyOf(sum: Sum, style: ArithmeticStyle): string {
 
 /**
  * The race's own vocabulary for a fact, so a sheet printed from the record
- * book's trouble facts (§14) names the same things the race does. Addition is
- * its two addends; a subtraction is the number taken away and what is left,
- * which is how `decks/flashcards.ts` builds the pair it asks about.
+ * book's trouble facts (§14) names the same things the race does.
  */
 function factOf(sum: Sum): string {
   return sum.operation === "add"
@@ -360,10 +335,8 @@ const clamp = (value: number, low: number, high: number): number =>
  *
  * One predicate with four readers — the row height reserves for it, the build
  * attaches it, the instruction line tells a child to use it and the record line
- * names it — because the two halves disagreeing is the exact bug the
- * "declared, not measured" design exists to exclude: reserving for a line the
- * build never emits throws two problems a page away, and the other way round is
- * a row below the bottom margin.
+ * names it. Reserving for a line the build never emits throws two problems a
+ * page away; the other way round is a row below the bottom margin.
  *
  * A fact family never gets one however the config asks. Its prompt is three
  * numbers rather than a sum, so there is nothing on it to count along.
@@ -387,13 +360,7 @@ function rowHeight(config: ArithmeticConfig): Mil {
   return body + workspace + (hasNumberLine(config) ? NUMBER_LINE_HEIGHT : 0);
 }
 
-/**
- * How many problems the paper holds, and how wide a column of them is.
- *
- * Arithmetic, not measurement, so `npm run test:unit` can answer "did it fit?"
- * without a browser — and so the same answer serves the catalog page built at
- * build time and the builder's preview (§4).
- */
+/** How many problems the paper holds, and how wide a column of them is (§4). */
 export function arithmeticLayout(config: ArithmeticConfig): {
   box: Box;
   columns: number;
@@ -441,10 +408,9 @@ export function arithmeticProblems(
   const problems: Problem[] = [];
   const extras = sheetExtras(config, cell);
 
-  // Named facts are printed, not drawn: the list is already ranked worst-first
-  // and already de-duplicated, so there is nothing here to shuffle or reject.
-  // It runs out where it runs out, exactly as the drawn pool does — a child who
-  // is missing six facts gets six problems rather than the same six twice.
+  // The list is already ranked worst-first and already de-duplicated, so there
+  // is nothing here to shuffle or reject. It runs out where it runs out — a
+  // child missing six facts gets six problems rather than the same six twice.
   const named = namedFacts(config);
   if (named.length > 0) {
     for (const pair of named.slice(0, wanted)) {
@@ -465,9 +431,6 @@ export function arithmeticProblems(
     // `operation: "both"` takes — it is both operations by definition.
     const slot = rand() < 0.5 ? 0 : 1;
     const key = sum === null ? null : keyOf(sum, config.style);
-    // Not what was asked for, or already on the page. Either way the budget
-    // ticks down, and a pool that has run out ends the draw rather than
-    // repeating itself.
     if (sum === null || key === null || seen.has(key)) {
       misses += 1;
       continue;
@@ -500,7 +463,7 @@ function sheetExtras(
       ? Math.max(...named.map(([a, b]) => a + b))
       : bounds(config.range).max;
   // The far end is the largest result the config can reach: two numbers from
-  // the range added together, or — where nothing is added — the range itself.
+  // the range added together, or the range itself where nothing is added.
   const top =
     named.length > 0 || config.operation === "subtract" ? max : max * 2;
   const line = hasNumberLine(config)
@@ -553,8 +516,8 @@ function instructionOf(config: ArithmeticConfig): string {
  *
  * A generated family names its own sheet, so `config.title` is an override and
  * is usually absent — which makes it the wrong thing to reserve space against.
- * Written once and read by both the layout and the build, so the two cannot
- * disagree about what is at the top of the page.
+ * Read by both the layout and the build, so the two cannot disagree about what
+ * is at the top of the page.
  */
 function headerOf(config: ArithmeticConfig): SheetOptions {
   return {
@@ -573,7 +536,7 @@ function headerOf(config: ArithmeticConfig): SheetOptions {
  * sheet matches the lesson: whether it carries, and whether the sum is written
  * along a line or worked in columns.
  */
-export function describeArithmetic(config: ArithmeticConfig): string {
+function describeArithmetic(config: ArithmeticConfig): string {
   const REGROUPING: Record<Regrouping, string | null> = {
     either: null,
     never: "no regrouping",
@@ -599,10 +562,7 @@ export function describeArithmetic(config: ArithmeticConfig): string {
     .join(" — ");
 }
 
-export function buildArithmeticSheet(
-  config: ArithmeticConfig,
-  seed: number,
-): Sheet {
+function buildArithmeticSheet(config: ArithmeticConfig, seed: number): Sheet {
   const items = arithmeticProblems(config, seed);
   const { columns } = arithmeticLayout(config);
   const head = headerOf(config);
@@ -625,14 +585,8 @@ export function buildArithmeticSheet(
 }
 
 export const ARITHMETIC_SHEET: SheetSpec<ArithmeticConfig> = {
-  id: "arithmetic",
-  label: "Addition and subtraction",
   world: SHEET_WORLD,
   build: buildArithmeticSheet,
-  // The whole of the answer-key mechanism: the answers were computed when each
-  // problem was built, so a key prints what is already there rather than
-  // generating it a second time and risking a different answer to the same
-  // question.
   key: (sheet) => ({
     ...sheet,
     answers: true,

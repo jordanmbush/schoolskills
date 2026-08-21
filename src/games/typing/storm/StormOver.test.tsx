@@ -12,14 +12,12 @@ import { StormOver } from "./StormOver";
 import type { StormLetter, StormState, WaveSpec } from "@/engine/typing/storm";
 
 /**
- * The screen a child meets when the storm stops (docs/typing.md §8.5).
+ * The screen a child meets when the storm stops (§8.5).
  *
  * What is on trial here is the WORDS, because the numbers are already decided:
  * `storm.test.ts` proves which finger let it through, how many it let through
  * and which keys that finger owns, and this file only asks whether the
- * sentence a five-year-old reads is the one those numbers make. Two of its
- * claims are acceptance criteria in their own right — the finger is named, and
- * nothing here is a grade.
+ * sentence a five-year-old reads is the one those numbers make.
  */
 
 /** One letter, placed by hand, off the same board the game is played on. */
@@ -37,8 +35,7 @@ const at = (ch: string, spawnMs: number, fallMs: number): StormLetter => {
     fallMs,
     // No queue: a hand-placed letter falls the instant it appears, so every
     // absolute moment below is the one the test wrote down. The beat a real
-    // wave gives a letter (`QUEUE_MS`) is `buildWave`'s, and it belongs to the
-    // tests of the schedule rather than to every test of what a landing costs.
+    // wave gives a letter (`QUEUE_MS`) belongs to the tests of the schedule.
     dropMs: spawnMs,
     landMs: spawnMs + fallMs,
   };
@@ -108,8 +105,6 @@ describe("StormOver", () => {
   });
 
   it("names the finger that let it through, and how many", () => {
-    // The story, in one line: a child is told whose fault it was on their own
-    // hand, in words they can look down at.
     expect(BREACHED.ending).toEqual({
       kind: "breached",
       finger: "r-ring",
@@ -145,10 +140,9 @@ describe("StormOver", () => {
   });
 
   it("has no grade in it, on the worst run there is", () => {
-    // The acceptance criterion, as the three things that would break it: a
-    // word that marks the child rather than the weather, a percentage, and the
-    // telemetry red that means "you got that wrong" everywhere else on this
-    // site (§8.5). What is on screen instead is what the storm did.
+    // The three things that would break it: a word that marks the child rather
+    // than the weather, a percentage, and the telemetry red that means "you
+    // got that wrong" everywhere else on this site (§8.5).
     const html = draw(BREACHED);
     const text = readOut(BREACHED);
 
@@ -162,10 +156,9 @@ describe("StormOver", () => {
   });
 
   it("shows what a losing run still earned", () => {
-    // XP cannot go down (§8.6), so a run that ended early has something honest
-    // to say to a child who has just lost — and it is the one figure on this
-    // screen that can only ever have gone up. An `o` through the right ring
-    // zone, an `f` shot clean, and then the `l` into the hole the o made.
+    // XP cannot go down (§8.6), so it is the one figure on this screen a
+    // losing run can still show. An `o` through the right ring zone, an `f`
+    // shot clean, and then the `l` into the hole the o made.
     const paid = tick(
       fire(
         tick(

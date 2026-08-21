@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { answerKey, buildSheet, describeSheet, sheetSpec } from "../index";
+import { buildSheet, describeSheet } from "../index";
+import { describeSheetFamily } from "../contract";
 import { DIAL, MINUTES_A_TURN } from "../clockface";
 import { PROBLEM_GAP } from "../layout";
 import type {
@@ -54,9 +55,8 @@ const config = (over: Partial<TimeConfig> = {}): TimeConfig => ({
 });
 
 /**
- * Every shape the family can print, which is every acceptance criterion of the
- * story: a dial read, a dial drawn, and the time between two of them — at each
- * of the five steps a clock is taught in.
+ * Every shape the family can print: a dial read, a dial drawn, and the time
+ * between two of them — at each of the five steps a clock is taught in.
  */
 const EVERY_SHAPE: Array<Partial<TimeConfig>> = [
   {},
@@ -77,6 +77,14 @@ const EVERY_SHAPE: Array<Partial<TimeConfig>> = [
 ];
 
 const SEEDS = [0, 1, 2, 7, 4242];
+
+describeSheetFamily("time", {
+  label: "Telling the time",
+  spec: TIME_SHEET,
+  config,
+  shapes: EVERY_SHAPE,
+  seeds: SEEDS,
+});
 
 /** The one block a time sheet has, narrowed for the reader. */
 function problemsOf(over: Partial<TimeConfig>, seed: number): Problem[] {
@@ -148,11 +156,6 @@ function faceOf(problem: Problem): ClockFace {
 /* ── The registry ──────────────────────────────────────────────────────── */
 
 describe("the time family", () => {
-  it("is in the registry under the kind its config carries", () => {
-    expect(sheetSpec("time")).toBe(TIME_SHEET);
-    expect(sheetSpec("time").label).toBe("Telling the time");
-  });
-
   it("names the sheet by how precise it is, which is what makes it hard", () => {
     expect(describeSheet(config({ step: 60 }))).toBe(
       "Telling the time to the hour",
@@ -262,22 +265,6 @@ describe("the answer key", () => {
       expect(faceOf(problem).hands).toBe(false);
       // The time to draw has to be on the page, or there is nothing to draw.
       expect(problem.prompt).toBe(problem.answer);
-    }
-  });
-
-  it("prints the answers only when the sheet is a key", () => {
-    const sheet = buildSheet(config(), 5);
-    const key = answerKey(config(), 5);
-    expect(sheet.answers).toBe(false);
-    expect(key.answers).toBe(true);
-    expect(key.footer.note).toBe("Answer key");
-  });
-
-  it("is the same sheet keyed, never a second generation", () => {
-    for (const shape of EVERY_SHAPE) {
-      expect(answerKey(config(shape), 11).blocks).toEqual(
-        buildSheet(config(shape), 11).blocks,
-      );
     }
   });
 });
@@ -400,17 +387,6 @@ describe("what may be on the page", () => {
 /* ── Determinism, and the three features it buys (§7) ──────────────────── */
 
 describe("(config, seed)", () => {
-  it("builds the same sheet twice", () => {
-    for (const shape of EVERY_SHAPE) {
-      for (const seed of SEEDS) {
-        const once = buildSheet(config(shape), seed);
-        const twice = buildSheet(config(shape), seed);
-        expect(once).not.toBe(twice);
-        expect(once).toEqual(twice);
-      }
-    }
-  });
-
   it("draws the same times whether they are read or drawn", () => {
     // The two sheets are one question asked from either end, so a parent who
     // prints both for the same seed gets the same twelve times — and a child who
