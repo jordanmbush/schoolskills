@@ -2603,6 +2603,88 @@ label.segmented__btn {
   border-color: color-mix(in oklab, var(--accent) 45%, transparent);
 }
 
+/* ── Hailstorm: the beat before it falls ─────────────────────────────────
+   What stands in an empty sky while a wave waits to be started
+   (docs/typing.md §8.13, decision 71).
+
+   It is laid over the sky rather than given a track of its own, for the same
+   reason the HUD is: `.storm` has one track that gives and one that never
+   does, and a row taken here is a row taken out of the fall. Absolutely
+   positioned inside the sky, it costs the field nothing and vanishes without
+   moving a single thing — the shield below it and the numbers above it are
+   already exactly where the run will find them, so pressing a key starts a
+   storm rather than rearranging a screen.
+
+   Everything is in `--key` units like the rest of this field, so the panel
+   scales with the board it is about to be played on, and every colour is the
+   world's: `--chalk` for the line a child has to read, `--chalk-dim` for the
+   two that explain it. None of the telemetry five appear — nothing here is
+   right, wrong, a record or a ghost, and a "Get ready" in `--go` would be a
+   button that isn't one.                                                   */
+
+.storm__ready {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: calc(var(--key) * 0.3);
+  padding: calc(var(--key) * 0.5);
+
+  /* The shield is `min(0.34 × --key, 20cqh)` at the bottom of this same box
+     (below), so the panel is nudged up by about that much to sit centred in
+     the sky a child is actually looking at rather than in the box the shield
+     shares. */
+  padding-bottom: calc(var(--key) * 1.2);
+
+  text-align: center;
+  text-wrap: balance;
+}
+
+/* The one line that has to be read from across the room. Mono and bold like a
+   hailstone, because it stands exactly where the hailstones are about to. */
+.storm__ready-head {
+  font-family: var(--font-mono);
+  font-size: calc(var(--key) * 0.62);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  color: var(--chalk);
+}
+
+/* How to put the hands down. The prose face, not the mono one: it is a
+   sentence to read once, and the F and the J inside it are the only thing in
+   here that wants picking out. */
+.storm__ready-note {
+  max-width: calc(var(--key) * 11);
+  font-size: calc(var(--key) * 0.3);
+  line-height: 1.45;
+  color: var(--chalk-dim);
+}
+
+.storm__ready-note b {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: var(--chalk);
+}
+
+/* The instruction, drawn like the way out in the HUD — the same small mono
+   caps, because it is the same kind of thing: a key to press, said quietly
+   under the sentence that matters. It breathes rather than blinking; a pulse
+   on a screen whose next act is falling hail would be motion spent on the one
+   moment nothing is moving (§8.10). */
+.storm__ready-go {
+  margin-top: calc(var(--key) * 0.2);
+  font-family: var(--font-mono);
+  font-size: calc(var(--key) * 0.32);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--chalk-dim);
+  padding: 0.45em 1em;
+  border-radius: calc(var(--key) * 0.18);
+  border: 1px solid var(--hairline);
+}
+
 /* ── Hailstorm: the shield ───────────────────────────────────────────────
    The eight segments the letters land on, one per finger (docs/typing.md
    §8.5, decisions 21 and 41).

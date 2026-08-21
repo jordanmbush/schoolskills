@@ -11,6 +11,7 @@ import { QuitSheet, SaveFailed, useRaceFinish } from "@/games/race";
 
 import { StormField } from "./StormField";
 import { StormOver } from "./StormOver";
+import { StormReady } from "./StormReady";
 import { stormConfig, stormTally } from "./stormSession";
 import { useStormClock } from "./useStormClock";
 
@@ -166,6 +167,28 @@ function StormPlay({
   const [quitting, setQuitting] = useState(false);
 
   /**
+   * Has the child started this wave? (§8.13, decision 71.)
+   *
+   * A storm does not begin on mount. It hangs at time zero, with an empty sky
+   * and a panel in it, until a key says go — the reason being that this is the
+   * one game on the site entered with the hands in the wrong place: a tile is
+   * clicked with a mouse, and what the first letter then asks for is eight
+   * fingers on the home row (`StormReady`). The 3·2·1 every race opens with
+   * cannot serve for that, because three seconds is a guess at something only
+   * the child knows.
+   *
+   * False on every attempt, and a retry is a new component (`StormRun`), so
+   * the beat is offered again after a loss — which is exactly when a child is
+   * most likely to have taken a hand off the keys.
+   *
+   * It is `useStormClock`'s to end and this screen's to hold, for the reason
+   * `quitting` is: the key that starts a run has to be taken by the same
+   * listener that would otherwise fire it at a letter, and there is only ever
+   * one of those (`QUIT_KEY`).
+   */
+  const [started, setStarted] = useState(false);
+
+  /**
    * This attempt's wave, and the config the run will be filed under.
    *
    * Built once per mount and never rebuilt: a run's wave is fixed for its
@@ -179,6 +202,10 @@ function StormPlay({
   const config = useMemo(() => stormConfig(lesson.id, wave), [lesson.id, wave]);
   const { state, skyRef } = useStormClock(wave, {
     paused: quitting,
+    started,
+    // The first press is spent starting the wave rather than shot at it — see
+    // `started`, and the gun's own note about why it is taken there.
+    onStart: () => setStarted(true),
     // The keyboard's way to the same sheet the button opens. It is taken
     // inside the gun's own listener because every other key while the run is
     // live is a shot, and a way out that cost ten points would be a trap
@@ -257,6 +284,10 @@ function StormPlay({
         state={state}
         skyRef={skyRef}
         onQuit={() => setQuitting(true)}
+        // Present exactly while the wave is waiting, which is also what takes
+        // the stones out of the sky: nothing is shown of the storm before the
+        // storm starts (`StormField`).
+        ready={started ? undefined : <StormReady />}
         // Drawn where the board was, and only once the run is over — which is
         // `StormField`'s call to make, off the same `ending` the gun dies on.
         over={

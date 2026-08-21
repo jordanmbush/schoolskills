@@ -190,6 +190,21 @@ export const KEYS: KeyDef[] = KEY_ROWS.flat();
 const BY_CODE = new Map(KEYS.map((k) => [k.code, k]));
 
 /**
+ * The key a `KeyboardEvent.code` names, or `null` for one this board does not
+ * carry — a numpad key, a media key, `F7`, or anything from a layout that is
+ * not US ANSI (§3.4).
+ *
+ * The `null` is the useful half. "Is this code on the board?" is a question two
+ * consumers ask for reasons that have nothing to do with geometry — the clack
+ * plays only for keys the picture draws (§4.8) — and answering it with
+ * `keyX(code) !== null` would be reading a horizontal position to find out
+ * whether a key exists. Same lookup, one name for it.
+ */
+export function keyFor(code: string): KeyDef | null {
+  return BY_CODE.get(code) ?? null;
+}
+
+/**
  * Where a key sits across the board: the middle of it, in key units.
  *
  * The board is 15 units wide, so this is a number from 0 to 15 that scales off
@@ -217,7 +232,7 @@ const BY_CODE = new Map(KEYS.map((k) => [k.code, k]));
  * anything from a layout that is not US ANSI (§3.4).
  */
 export function keyX(code: string): number | null {
-  const key = BY_CODE.get(code);
+  const key = keyFor(code);
   return key ? key.x + (key.width ?? 1) / 2 : null;
 }
 

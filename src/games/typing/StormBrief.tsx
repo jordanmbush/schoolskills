@@ -2,6 +2,8 @@ import { useId } from "react";
 
 import { Button, Scrim } from "@/components/ui/kit";
 import { plural } from "@/engine/format";
+import { strokeFor } from "@/engine/keyboard";
+import { unlockedAt } from "@/engine/typing/keys";
 import { lessonNumbered } from "@/engine/typing/lessons";
 import type { LadderProgress } from "@/engine/typing/ladder";
 import type { StormLesson } from "@/engine/typing/storms";
@@ -58,6 +60,22 @@ export function StormBrief({
   const locked = tileState(lesson, progress) === "locked";
   const { count, shield, repairAt, focus } = lesson.kind.wave;
 
+  /* Can anything in this storm ask for a shift?
+     Asked of the pool rather than of `focus`, because the two answer different
+     questions. `focus` is what a level MOSTLY rains, and it stops being the
+     whole story the moment capitals are unlocked: from lesson 34 up they are
+     in every wave's pool (§5.6), so "Pairs" and "The long wave" rain them
+     without being about them. A rule that only appeared on the two levels
+     named for it would leave a child losing ten points on lesson 45 with
+     nothing on screen that had ever mentioned it (decision 70).
+
+     `unlockedAt(n)` is the same set `stormWave` draws this level's letters
+     from, so this cannot disagree with what actually falls. Below lesson 34
+     nothing in it is shifted and the sentence never appears. */
+  const shifts = [...unlockedAt(lesson.n)].some(
+    (ch) => strokeFor(ch)?.shift != null,
+  );
+
   /* The rung above this one, which is what "nothing waits on it" is about. No
      two storms are adjacent on the ladder (§5.5), so this is always an ordinary
      lesson; the fallback is written rather than asserted because the ladder is
@@ -81,6 +99,7 @@ export function StormBrief({
         <p className="brief__new">
           Letters fall down the column of the key that types them. Shoot the
           lowest one before it reaches your shield — any other key is a miss.
+          {shifts ? " A capital needs a shift, just like typing one does." : ""}
         </p>
 
         <section className="brief__asks" aria-label="This storm">

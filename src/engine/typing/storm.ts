@@ -116,15 +116,41 @@ export type StormLetter = {
   /** The character, as it is drawn: `f`, `A`, `7`, `?`. */
   ch: string;
   /**
-   * `KeyboardEvent.code` of the key that produces it — what a press is
-   * compared against.
+   * `KeyboardEvent.code` of the key that produces it — half of what a press is
+   * compared against, `shifted` being the other half.
    *
    * `code`, not the character (decision 2): a shifted legend and its base
-   * share a key, so `A` and `a` are both fired by `KeyA` and the shift a child
-   * is holding cannot make the shot miss. It is also the code the lane is a
-   * column of, so the thing you press and the place it falls are one fact.
+   * share a key, so `A` and `a` are both struck on `KeyA`, and a code is what
+   * a keyboard reports the same way whatever else is being held down. It is
+   * also the code the lane is a column of, so the thing you press and the
+   * place it falls are one fact.
    */
   code: string;
+  /**
+   * Is this character the SHIFTED legend of its key — `A` rather than `a`, `?`
+   * rather than `/` (decision 70)?
+   *
+   * A shot has to match this as well as the code, and that is the whole of
+   * what makes a capital a capital in this game. Without it `A` and `a` are
+   * one target: a wave of capitals is cleared with the bare letters, lesson 39
+   * is called "Shift under fire" and never asks for a shift, and a child is
+   * credited with typing something they did not type. The passage lessons have
+   * always been strict about it — they judge the character that arrived in a
+   * real `<input>`, so `a` for `A` is simply wrong there — so this is the exam
+   * catching up with the ladder it examines, rather than a new demand.
+   *
+   * **Either shift will do.** `strokeFor` names the one on the opposite hand
+   * because that is the technique worth teaching (§3.3), and the passage's
+   * next-key hint highlights it; but a capital typed with the near shift still
+   * produces the character, and the lessons take it. A storm that marked the
+   * same stroke wrong would be stricter than the course that taught it, on the
+   * one screen with no board to explain itself with (decision 64).
+   *
+   * Read off `strokeFor` once, when the wave is built, like every other fixed
+   * fact about a letter: the reducer never asks the keyboard a question
+   * mid-run.
+   */
+  shifted: boolean;
   /**
    * The finger that types it, which is the shield segment above where it
    * lands (§8.5).
@@ -201,7 +227,10 @@ export type Wave = {
 };
 
 /** A character the board can drop, with everything fixed about it resolved. */
-type Fallable = Pick<StormLetter, "ch" | "code" | "finger" | "lane">;
+type Fallable = Pick<
+  StormLetter,
+  "ch" | "code" | "shifted" | "finger" | "lane"
+>;
 
 /**
  * A character as a thing that could fall, or `null` if it cannot.
@@ -228,7 +257,15 @@ function fallable(ch: string): Fallable | null {
   // still cheaper than asserting the null away, and it cannot hide a bug — a
   // wave short of a character it should have had is what the pool test sees.
   if (lane === null) return null;
-  return { ch, code: stroke.code, finger: stroke.finger, lane };
+  return {
+    ch,
+    code: stroke.code,
+    // `Stroke.shift` names WHICH shift the technique wants; what falls out of
+    // it here is only whether one is wanted at all. See `StormLetter.shifted`.
+    shifted: stroke.shift !== null,
+    finger: stroke.finger,
+    lane,
+  };
 }
 
 /**
@@ -939,6 +976,26 @@ export function tick(state: StormState, dtMs: number): StormState {
 }
 
 /**
+ * Did this press produce this letter's character?
+ *
+ * Both halves, because between them they ARE the character. `code` says which
+ * key was struck, and it is the half that survives whatever is being held down
+ * — `A` and `a` are one key (decision 2), which is why a code and not a
+ * character is what a letter carries. `shifted` says which of that key's two
+ * legends the strike produced, and it is the half that tells them apart: a
+ * capital is a shift and a letter (§3.3), so a storm comparing the code alone
+ * would mark a child right for typing the other one (decision 70).
+ *
+ * A predicate rather than two clauses inside `fire`'s guard, because the guard
+ * has to keep narrowing `index` away from `null` for the lines below it — and
+ * because "was that the right key" is the one question this game is about, so
+ * it is worth having a name.
+ */
+function struck(letter: StormLetter, code: string, shift: boolean): boolean {
+  return letter.code === code && letter.shifted === shift;
+}
+
+/**
  * Fire at the lowest letter on screen. Anything else is a miss.
  *
  * ── Why only the lowest ──────────────────────────────────────────────────────
@@ -972,19 +1029,31 @@ export function tick(state: StormState, dtMs: number): StormState {
  * A shot at an empty field is a miss for the same reason. It is exactly the
  * spray this rule exists to make unprofitable, and a child who could keep
  * their streak through it has found the strategy again by another route. The
- * screen owes them an answer to it that the board can tell the truth with:
- * a stroke that costs points must not light `--lime` for "that was right", so
- * the keyboard flares every key while the gun is live and has no target
- * (`StormField`, decision 43).
+ * screen still owes them an answer, and since there is no board left to say it
+ * on (decision 64) the answer is the one a screen with nothing on it can give:
+ * `sfx.misfire`, the same flat sound every other wrong key makes
+ * (`stormSounds.ts`), plus the `--flare` wash over the score that just fell.
  */
-export function fire(state: StormState, code: string): StormState {
+export function fire(
+  state: StormState,
+  code: string,
+  /**
+   * Was a shift held down as the key went down — `event.shiftKey`, either
+   * hand?
+   *
+   * Defaulted, and the default is the ordinary stroke: no shift, which is what
+   * `a`, `f` and `7` are typed with. It is safe to leave off only because
+   * getting it wrong can make a shot stricter and never looser — a caller that
+   * forgets it can no longer shoot a capital at all, which is a thing a child
+   * would notice on the first wave of lesson 34, where the bug it replaced was
+   * a game that quietly never asked (decision 70).
+   */
+  shift = false,
+): StormState {
   if (state.ending !== null) return state;
 
-  // Compared by `code` and not by the character: a shifted legend and its base
-  // share a key, so `A` and `a` are both `KeyA` and the shift a child is
-  // holding cannot make the shot miss (decision 2).
   const index = targetIndex(state);
-  if (index === null || state.wave.letters[index].code !== code)
+  if (index === null || !struck(state.wave.letters[index], code, shift))
     // A miss: the streak, the score and a mark against the run. Nothing on the
     // field moves — the letter the child should have shot is still falling,
     // which is the other half of the cost.

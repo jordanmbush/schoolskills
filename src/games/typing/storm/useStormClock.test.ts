@@ -120,6 +120,7 @@ const letterOf = (ch: string, spawnMs: number, fallMs: number): StormLetter => {
   return {
     ch,
     code: stroke.code,
+    shifted: stroke.shift !== null,
     finger: stroke.finger as ShieldFinger,
     lane: keyX(stroke.code)!,
     spawnMs,

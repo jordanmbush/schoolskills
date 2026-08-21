@@ -1,4 +1,5 @@
 import { Keyboard } from "./Keyboard";
+import { useKeyClack } from "./keySounds";
 import { useKeyEcho } from "./useKeyEcho";
 import type { KeyboardMode } from "@/engine/types";
 
@@ -6,10 +7,11 @@ import type { KeyboardMode } from "@/engine/types";
  * The board as a typist actually meets it: the picture, plus what their hands
  * are doing to it (docs/typing.md §4).
  *
- * Three pieces built apart meet here and nowhere else — `Keyboard` draws
- * (#130), `useKeyEcho` listens (#131), `KeyboardMode` decides how much of it a
- * child wants (#133). It exists as its own component for two reasons, both
- * about what a keystroke is allowed to cost:
+ * Four pieces built apart meet here and nowhere else — `Keyboard` draws
+ * (#130), `useKeyEcho` listens (#131), `useKeyClack` answers out loud (§4.8),
+ * `KeyboardMode` decides how much of it a child wants (#133). It exists as its
+ * own component for two reasons, both about what a keystroke is allowed to
+ * cost:
  *
  *   - **The echo re-renders this and not the passage.** `useKeyEcho` publishes
  *     on every keydown and again when each key's 120ms release fires. Called
@@ -18,9 +20,10 @@ import type { KeyboardMode } from "@/engine/types";
  *     Called here, they re-render sixty spans and stop.
  *   - **"Off" is off, not hidden.** The caller mounts this only when the mode
  *     is not "off" — which is why `mode` excludes it rather than returning
- *     `null` for it. A board that returned `null` after calling the hook would
- *     still hold a window listener and a timer per key for a child who asked
- *     to be rid of it.
+ *     `null` for it. A board that returned `null` after calling the hooks
+ *     would still hold two window listeners and a timer per key for a child
+ *     who asked to be rid of it — and would go on clacking at a child who
+ *     turned the keyboard off, which is the one thing "off" has to mean.
  *
  * Nothing here can take focus. That is not a promise this file keeps by being
  * careful; the board is sixty inert `<span>`s under `pointer-events: none`
@@ -55,6 +58,16 @@ export function LiveKeyboard({
    * the hint would turn every wrong key green.
    */
   const { down, wrong } = useKeyEcho({ expect: next });
+
+  /**
+   * The board's other half of the same answer (§4.8).
+   *
+   * Deliberately not handed `next`: a wrong key clacks exactly like a right
+   * one, because the flash above is already saying which it was and a sound
+   * played on every keystroke is the wrong place to say it twice
+   * (`soundForKey`).
+   */
+  useKeyClack();
 
   return (
     <Keyboard down={down} wrong={wrong} next={mode === "guide" ? next : null} />
