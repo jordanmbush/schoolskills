@@ -18,9 +18,8 @@ import { clock, delta as formatDelta, plural } from "@/engine/format";
 import { randomSeed } from "@/engine/random";
 import { practiceHref, practiceSheet } from "@/engine/sheets/practice";
 import { sfx } from "@/services/sound";
-import { Rewards } from "@/games/race";
+import { Rewards, SplitsTable } from "@/games/race";
 import { Scoreline } from "./results/Scoreline";
-import { SplitsTable } from "./results/SplitsTable";
 
 export default function RaceResults() {
   const { profileId } = useParams();
