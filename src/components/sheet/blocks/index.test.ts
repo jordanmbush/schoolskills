@@ -24,9 +24,10 @@ import { describe, expect, it } from "vitest";
  * Type-only imports are erased before the bundler sees them, so they cost
  * nothing and are skipped here.
  *
- * A source graph, not the built one: it names the offending import, where a
- * budget over `dist/` (DEBT12) catches the byte count however it got there.
- * Both are wanted, and this is the half that can say what to do about it.
+ * A source graph, not the built one: it names the offending import, where
+ * `scripts/bundle-guard.mjs` catches the byte count in `dist/` however it got
+ * there. Both are wanted, and this is the half that can say what to do about
+ * it.
  */
 
 const HERE = dirname(fileURLToPath(import.meta.url));

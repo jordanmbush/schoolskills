@@ -140,8 +140,9 @@ chunk fell much further, 431,805 B to 66,315 B, but most of that is code that
 moved into siblings the entry still imports statically; a budget set on the
 entry alone would sit at 66 KB and never notice 300 KB of new siblings beside
 it. Two thirds of what remains is React (184,057 B, the same file on both
-sides): the sheet code itself is 512,021 B → 156,446 B. Whatever enforces a
-budget here has to walk the closure for the same reason (DEBT12).
+sides): the sheet code itself is 512,021 B → 156,446 B. `scripts/bundle-guard.mjs`
+enforces a budget on that figure after every build, for the same reason it is
+the figure quoted here.
 
 The closure is also the only thing that can say whether a family is _actually_
 lazy. A block renderer that reaches into a family module for one pure helper
@@ -1573,3 +1574,9 @@ The engine is pure, so most of this is cheap and worth having:
   sheet family or a corpus by a static import, so a helper borrowed from a
   family module fails the suite instead of quietly re-fattening the builder
   (§3).
+- **The island's weight.** `scripts/bundle-guard.mjs` weighs every island's
+  closure against a recorded baseline after each build — the React runtime
+  budgeted separately, because every island pays for it — and fails on a step
+  change in either direction. The closure and not the entry chunk, for the
+  reason in §3. It is the half that catches a leak the import graph above
+  can't see, because the module that grew was somewhere else.
