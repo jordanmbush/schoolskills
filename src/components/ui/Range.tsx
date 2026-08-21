@@ -19,16 +19,12 @@ import type { InputHTMLAttributes } from "react";
  * is nothing to add, the attribute is left off, and the platform's own
  * announcement of the raw number stands.
  *
- * Everything the platform gives a range is kept: arrow keys by `step`,
- * Page Up/Down by a larger stride, Home and End to the ends, and the focus
- * ring base.css draws for every real control. `label` is required, because a
- * slider with no name announces as a number belonging to nothing.
- */
-/**
- * The name and the spoken value are computed from `label` and `format`, so
- * they are taken out of the passthrough rather than left where a caller could
- * spread them back over the top of the two things this doc block calls
- * non-negotiable.
+ * A native `<input type="range">`, so the platform's own keyboard handling and
+ * the focus ring base.css draws are kept. `label` is required, because a
+ * slider with no name announces as a number belonging to nothing — and the
+ * name attributes (`aria-label`, `aria-labelledby`) and `aria-valuetext` are
+ * omitted from the passthrough, because all three are computed from `label`
+ * and `format` and a caller must not be able to spread them back over the top.
  */
 export interface RangeProps extends Omit<
   InputHTMLAttributes<HTMLInputElement>,

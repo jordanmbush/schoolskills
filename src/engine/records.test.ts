@@ -11,10 +11,10 @@ import {
 import type { CardResult, Profile, Session } from "./types";
 
 /**
- * What counts as "the same fact" is now the deck's answer, not this module's.
- * These pin the two rules that used to be a hard-coded table here, because
- * getting either one wrong is invisible: the record book still renders, it
- * just quietly merges or splits facts that shouldn't be.
+ * What counts as "the same fact" is the deck's answer, not this module's.
+ * These pin the two rules, because getting either one wrong is invisible: the
+ * record book still renders, it just quietly merges or splits facts that
+ * shouldn't be.
  */
 
 const card = (over: Partial<CardResult> = {}): CardResult => ({

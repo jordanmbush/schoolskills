@@ -1880,26 +1880,12 @@ label.segmented__btn {
    one number sets the scale of all of it, floored so it stays legible on a
    narrow phone.
 
-   **The cap is the real thing's measurement, not a taste.** Key pitch on
-   every full-size keyboard a child will ever meet is 19.05mm — three quarters
-   of an inch, which CSS defines as exactly 72px, which is 4.5rem. That is the
-   number, and it is written in rem rather than in `mm` (identical lengths,
-   since CSS pins an inch to 96px) so that a child who has turned their text
-   up gets a board that grew with everything else.
-
-   Why life-size rather than merely large, on the screen that draws a board:
-   it is not an illustration of a keyboard, it is a map a child glances at
-   while their hands are on the actual one. A map at half scale asks them to
-   do the scaling — to see that the gap between `f` and `j` on screen is the
-   gap their two index fingers are already holding — and that translation is
-   exactly the work looking down at their hands would have saved them. At
-   pitch, the picture and the plastic are the same shape, so the glance costs
-   nothing and the reach it teaches is the reach they make.
-
-   And on the screen that draws no board, the cap is doing the same job for
-   the same reason. Hailstorm has lanes rather than keycaps now (decision 64),
-   but a lane still claims to be where that key IS — so a field wider than a
-   keyboard would be teaching a reach nobody's hand makes.
+   **The 4.5rem cap is a measurement, not a taste** (§4.7): key pitch on every
+   full-size keyboard a child will meet is 19.05mm, which CSS makes exactly
+   72px. In rem rather than mm — identical lengths — so a child who turned
+   their text up gets a board that grew with them. Hailstorm draws lanes rather
+   than keycaps and keeps the same ceiling, because a lane claims to be where
+   that key is.
 
    ── What this value is, and what overrides it ──────────────────────────────
    THIS one is the storm's: the lanes, the hailstones and the eight shield
@@ -1911,13 +1897,13 @@ label.segmented__btn {
    big enough that there is no sky left to read it against.
 
    The passage screen overrides it below, because that screen draws five rows
-   of keycaps under a HUD, three bars and a line of words. It lived on
-   `.keyboard` until Hailstorm and could not stay there — a custom property
-   inherits downwards only, so a value declared on the board is a value the
-   sky above it cannot read (docs/typing.md §8.2, decision 37). At the root
-   both screens can reach it and each is one value, which is the property that
-   matters: within a screen a lane and the segment it lands on are never free
-   to disagree about how wide a key is.
+   of keycaps under a HUD, three bars and a line of words. The declaration is
+   at the ROOT and not on `.keyboard`, because a custom property inherits
+   downwards only: a value declared on the board is a value the sky above it
+   cannot read (docs/typing.md §8.2, decision 37). At the root both screens
+   reach it and each sees one value, which is the property that matters —
+   within a screen a lane and the segment it lands on are never free to
+   disagree about how wide a key is.
 
    `--key-gap` is here for the same reason and one more: it is the inset that
    turns a key's slot into the keycap drawn inside it, so it is also what the
@@ -1931,30 +1917,18 @@ label.segmented__btn {
 
 /* …and one extra term on the passage screen: what is left after the words.
 
-   `9dvh` is a FRACTION of the viewport, and what the board is competing with
-   here is not a fraction. The HUD, the pass bars or the ghost lane, the line
-   you type on, four grid gaps and the race's own padding come to about 365px
-   at every height — they are type and borders, and none of them grows with
-   the window — and two lines of passage left to read is another 60. A dvh
-   coefficient that clears 425px of that at an 850px viewport does not clear
-   it at 700, which is how the board could grow the PAGE: `.race` is
-   `min-height`, so a grid whose rows stop fitting simply gets taller, and a
-   race that scrolls under a child's thumb mid-word is the exact thing that
-   `min-height` is there to prevent. At half pitch the ceiling hid this —
-   a 2.4rem board fitted anywhere, so the dvh term was never the governor it
-   looked like.
-
-   So the height term is a subtraction, not a proportion: take the constant
-   off the viewport and divide by the board's own height in key units — five
-   rows and the four gaps between them, `5 + 4 × 0.09`. The board is handed
-   what is actually left rather than a guess at it.
+   The height term is a subtraction rather than a proportion — the constant
+   this screen's chrome costs, taken off the viewport and divided by the
+   board's own height in key units, `5 + 4 × 0.09` (§4.7 does the arithmetic).
+   A dvh fraction cannot do it: `.race` is `min-height`, so a board that stops
+   fitting grows the PAGE, and a race that scrolls under a child's thumb
+   mid-word is the exact thing `min-height` is there to prevent.
 
    This is a second declaration of `--key`, which the note above rules out —
-   and it is not the one it rules out. What the storm may never do is let a
-   falling letter's lane and the cap it names come from two numbers. The
-   passage screen has no lanes: the board is the only thing on it that reads
-   `--key` at all, and a screen only ever sees one of these two values. There
-   is nothing here left to disagree.                                       */
+   and it is not the one it rules out. What may never happen is a falling
+   letter's lane and the cap it names coming from two numbers. The passage
+   screen has no lanes: the board is the only thing on it that reads `--key`,
+   and a screen only ever sees one of these two values.                    */
 .race.typing {
   --key: clamp(
     1.05rem,
@@ -2249,14 +2223,14 @@ label.segmented__btn {
      this only has to stop the one case that beat cannot cover.
 
      That case is real. A wave says how LONG a letter falls for and never how
-     far, so the distance is whatever sky there is — and since #197 took the
-     keyboard off the screen, that is the whole viewport. A 900ms fall crosses
-     about 640px on a 1512×850 laptop and about 1100px on a 27-inch monitor, so
-     without a ceiling the same level is a different game depending on what a
-     child opens it on. Nine stone heights a second is a shade above what the
-     tallest ordinary screen asks for, so on anything a child is likely to be
-     sitting at the stone uses the full sky and this changes nothing; on a
-     display taller than that it starts lower and falls at the ceiling.
+     far, so the distance is whatever sky there is, which is the whole viewport
+     (decision 64). A 900ms fall crosses about 640px on a 1512×850 laptop and
+     about 1100px on a 27-inch monitor, so without a ceiling the same level is a
+     different game depending on what a child opens it on. Nine stone heights a
+     second is a shade above what the tallest ordinary screen asks for, so on
+     anything a child is likely to be sitting at the stone uses the full sky and
+     this changes nothing; on a display taller than that it starts lower and
+     falls at the ceiling.
 
      Stone heights and not pixels, because what smears a moving glyph is how
      far it travels against its own size — a cap written in pixels would mean
@@ -2285,11 +2259,9 @@ label.segmented__btn {
      there is an ending to show — nothing before that, so an `auto` track with
      no child in it is zero and the sky has the whole screen.
 
-     There was a board in that track until #197 and it was taking about 45% of
-     the height (decision 64). What it was taking it from is the fall, which is
-     the only thing on this screen that gives a child time to read a letter and
-     find its key — so the sky roughly doubled when it went, and the row it
-     left behind is the one the ending was already using. */
+     Nothing but the ending may go in that second track. Height taken there
+     comes out of the fall, which is the only thing on this screen that gives a
+     child time to read a letter and find its key (decision 64). */
   grid-template-rows: minmax(0, 1fr) auto;
   gap: clamp(0.35rem, 1.5vh, 1rem);
   padding: clamp(0.4rem, 1.5vh, 1rem) clamp(0.5rem, 2vw, 1rem);
@@ -2315,9 +2287,8 @@ label.segmented__btn {
    width of the field.
 
    The line the letters land on is the shield, at the bottom of this box and
-   inside it (below). It replaced a `border-bottom` here, and had to: a border
-   is one line where the thing a child has to read is eight, and the eight
-   have to be able to break one at a time. */
+   inside it (below) — eight elements rather than a `border-bottom`, because
+   the eight have to be able to break one at a time. */
 .storm__sky {
   position: relative;
   width: calc(15 * var(--key));
@@ -2334,7 +2305,7 @@ label.segmented__btn {
 
   /* Nothing in here is an interface. A drag should not select a hailstorm,
      and a tap should not land on a letter — the only thing that fires in this
-     game is a key (§8.8). */
+     game is a key (§8.11). */
   pointer-events: none;
   user-select: none;
 }
@@ -2427,12 +2398,12 @@ label.segmented__btn {
 
   border: 1px solid color-mix(in oklab, var(--accent) 42%, transparent);
   border-radius: calc(var(--key) * 0.3);
-  /* Opaque, where it used to be 88% of the ink. The only thing a stone ever
-     crosses is the HUD (see below), and the glyph inside it is the one thing
-     on this screen that has to be read at a glance while it is moving — a
-     score showing faintly through the `l` a child is trying to tell from an
-     `i` is a contrast cost for no gain. The HUD is still legible: what it is
-     drawn in is `--chalk-dim`, and what passes over it is one stone. */
+  /* Opaque rather than translucent. The only thing a stone ever crosses is the
+     HUD (see below), and the glyph inside it is the one thing on this screen
+     that has to be read at a glance while it is moving — a score showing
+     faintly through the `l` a child is trying to tell from an `i` is a contrast
+     cost for no gain. The HUD is still legible: what it is drawn in is
+     `--chalk-dim`, and what passes over it is one stone. */
   background: var(--ink-800);
   box-shadow: 0 0 calc(var(--key) * 0.45)
     color-mix(in oklab, var(--accent) 18%, transparent);
@@ -2563,18 +2534,11 @@ label.segmented__btn {
   color: var(--lime);
 }
 
-/* The way out, mid-run (docs/typing.md §8.8, decision 54).
+/* The way out, mid-run (docs/typing.md §8.11, decision 54).
 
-   A storm is a whole viewport with no site chrome over it, so this is the only
-   exit a child has until the run ends — and on a tablet, where the game cannot
-   be played at all, it is the only thing on the screen that does anything.
-   `Escape` is the same door for a child at a keyboard (`QUIT_KEY`), which this
-   one cannot be: `Tab` is a key the gun swallows while it is live.
-
-   `pointer-events` are handed back here and nowhere else in the sky. The sky
-   refuses them so a drag cannot select a hailstorm and a tap cannot land on a
-   letter, and this is the single exception — the one thing in there a finger
-   is meant to hit.
+   `pointer-events` are handed back here and nowhere else in the sky — the one
+   thing in there a finger is meant to hit, and on a tablet the only thing on
+   the screen that does anything at all (§8.8).
 
    Drawn like the race's quit and dimmer than the numbers beside it: it is the
    least urgent thing in the sky, and the letters have to stay the loudest. */
@@ -2860,19 +2824,15 @@ label.segmented__btn {
    motion to reach. That is the same reason `.fuse__fill` scales rather than
    animating: a clock a player asked less motion of still has to run.
 
-   **What comes off is decoration, and there is less of it here than the
-   design feared.** §8.10 asks for no screen shake, no parallax and no
-   particles under this setting, and the honest answer is that Hailstorm has
-   never had any of the three: nothing translates but the stones, the sky is
-   one flat box rather than layers at different speeds, and the only thing on
-   the screen resembling a particle is a hailstone, which is the game. The
-   guarantee is kept by not having built them, and it is measured rather than
-   promised — `e2e/smoke.mjs` runs the same twelve-landing wave twice and
-   counts `animationstart` over the whole of each: twelve under normal motion
-   (one per letter that lands), and zero under this setting. Both censuses
-   filter on `animationName` starting `storm-`, so what they can catch is a
-   new animation named into this family; one added under any other prefix is
-   invisible to them and needs its own check.
+   **What comes off is decoration, and there is almost none of it.** Nothing
+   translates but the stones, the sky is one flat box rather than layers at
+   different speeds, and the only thing resembling a particle is a hailstone,
+   which is the game — so §8.10's guarantee is kept by not having built any of
+   it. It is measured rather than promised: `e2e/smoke.mjs` runs the same
+   twelve-landing wave twice and counts `animationstart` over the whole of
+   each, twelve under normal motion and zero under this setting. Both censuses
+   filter on `animationName` starting `storm-`, so an animation added under any
+   other prefix is invisible to them and needs its own check.
 
    What is left is the three tints, and they are switched off rather than
    left to the blanket clamp. Under the clamp they still start and still fire
@@ -3008,7 +2968,7 @@ label.segmented__btn {
 /* The same eight hues the keycaps carry, on the same closed set of fingers —
    see the board's block above, and tokens.css for why none of them is one of
    the telemetry five. There is no thumb segment: nothing falls on the space
-   bar (§8.3).
+   bar (§8.5).
 
    The ending panel is on this list because it NAMES one of the eight, and the
    name has to be the colour of the block that broke and of the keys under it:

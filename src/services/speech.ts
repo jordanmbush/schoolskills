@@ -46,12 +46,11 @@ const CLEAR = /\((?:premium|enhanced|natural)\)|\bneural\b|^google /i;
 /**
  * The English locale this device is set to, or null if it isn't set to one.
  *
- * The rule this replaces hard-coded a preference for en-GB, and the reasoning
- * behind it was right: a mismatched accent is a genuine obstacle when the whole
- * exercise is mapping a sound onto letters. What was wrong was assuming the
- * house. The device's own language is the only evidence we have about which
- * accent a child hears all day, and on a device set to something other than
- * English we have none — so we express no preference and let clarity decide.
+ * A mismatched accent is a genuine obstacle when the whole exercise is mapping
+ * a sound onto letters, so the accent a child hears all day is worth
+ * preferring — and the device's own language is the only evidence of it we
+ * have. A device set to something other than English gives us none, so we
+ * express no preference there and let clarity decide.
  */
 function deviceEnglish(): string | null {
   const tag =
@@ -80,8 +79,7 @@ const rank = (v: SpeechSynthesisVoice, want: string | null): number =>
  * better on Chrome and cost a spelling word leaving the house — see the header
  * — so the filter is a hard gate rather than a preference. The one exception is
  * a device with no local English voice at all, which falls through to whatever
- * English exists: at that point the alternative is silence, and the same
- * fallback was already here.
+ * English exists: at that point the alternative is silence.
  *
  * Sort is stable, so voices we rate equally stay in the order the platform
  * offered them — which is the platform's own preference, and a better
@@ -155,8 +153,8 @@ const stopWatching = () => {
  *
  * `onFail` is how a caller learns the word did NOT get said. The return value
  * can't carry that: everything interesting happens after `speak()` has already
- * returned true. Call it at most once, and only for a genuine failure — see
- * the error triage below, which is subtler than it looks.
+ * returned true. Call it at most once, and only for a genuine failure — see the
+ * error triage below.
  */
 export function say(text: string, onFail?: () => void): boolean {
   const engine = synth();

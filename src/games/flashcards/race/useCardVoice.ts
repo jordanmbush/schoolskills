@@ -24,17 +24,12 @@ export function useCardVoice({
   // twice still gets read out. Gated on `racing` so nothing talks over the
   // countdown or carries on into the results screen.
   //
-  // If the engine turns out not to work after all, drop to showing the word.
-  // A card that can neither be heard nor read is unanswerable, and the clock
-  // is running. That verdict arrives two ways, and the second one matters
-  // more: `say` returns false when it couldn't even start, and calls back
-  // when a voice accepted the word and then failed to say it — a stalled
-  // engine, a revoked autoplay permission, a device that simply went quiet.
-  // Only the first was ever handled, so the commonest silent card wasn't.
-  //
-  // Demotion is one-way. Re-testing per card would let a child who has settled
-  // into listening be handed a flashing word halfway through a race, which is
-  // the change of exercise this hook exists to prevent.
+  // If the engine turns out not to work after all, drop to showing the word:
+  // a card that can neither be heard nor read is unanswerable, and the clock
+  // is running. The verdict arrives two ways — `say` returns false when it
+  // could not even start, and calls back when a voice accepted the word and
+  // then failed to say it (a stalled engine, a revoked autoplay permission, a
+  // device that went quiet). Demotion is one-way, for the reason above.
   useEffect(() => {
     if (!racing || !audible || !card.speak) return;
     const mute = () => setAudible(false);

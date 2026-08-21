@@ -55,11 +55,8 @@ export default function RaceResults() {
    * the navigate that follows it is batched with that update. So there is
    * exactly one render where the outcome has gone and the route is still
    * here — and without the `pending` arm below, this guard fires in that gap
-   * and replaces the navigation to the track with one back to setup.
-   *
-   * That is not theoretical: it is what "Race again" did on this screen from the day
-   * it shipped. The mirror image of it is guarded in `RaceTrack`, and this is the half
-   * that was missed.
+   * and replaces the navigation to the track with one back to setup. The
+   * mirror of this guard is in `RaceTrack`.
    */
   if (!outcome) {
     return (
@@ -136,9 +133,9 @@ export default function RaceResults() {
   const selfGhost = { session, profile: outcome.profileAfter, isSelf: true };
   const practiceFirst = missedFacts.length > 0;
   /**
-   * The same facts as a worksheet (docs/printables.md §14) — the one thing no
-   * other worksheet site can print, offered at the moment it is most obviously
-   * wanted. Null for a deck this build has no sheet family for.
+   * The same facts as a worksheet (docs/printables.md §14), offered at the
+   * moment it is most obviously wanted. Null for a deck this build has no
+   * sheet family for.
    */
   const printable = practiceFirst
     ? practiceSheet(session.mode, missedFacts)

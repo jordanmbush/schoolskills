@@ -1,41 +1,37 @@
 /**
  * Counting what happens, without learning who it happened to.
  *
- * The site's privacy page makes an unusually strong claim — no analytics
- * script, no cookies, no third-party requests, nothing that follows a child
- * anywhere — and that claim is a feature, not an accident. So measurement here
- * is built the only way that keeps every sentence of it true: as ordinary
+ * The privacy page promises parents no analytics script, no cookies, no
+ * third-party requests and nothing that follows a child anywhere. Measurement
+ * here is the only kind that keeps every sentence of that true: ordinary
  * requests to our own CDN, read back out of the access logs it already writes.
+ * `docs/analytics.md` covers reading them, and points back here for the rest.
  *
  * ── Why a GIF and not a real analytics call ─────────────────────────────────
- * There is no origin server. `dist/` is HTML on S3 with CloudFront in front,
- * which is what makes this site cost about a pound a month and have nothing
- * that can be down. Nothing here accepts a POST, so `navigator.sendBeacon` —
- * which only sends POST — has nowhere to go. What CloudFront *does* do,
- * unavoidably and for every request, is write a log line containing the path
- * and the query string.
- *
- * So an event is a GET for a 43-byte transparent GIF with the event in its
- * query string. No JavaScript from anyone else, no cookie, no identifier, no
- * response worth reading. The measurement is a side effect of a request the
- * CDN was going to log anyway.
+ * There is no origin server, and nothing here accepts a POST — so
+ * `navigator.sendBeacon`, which only sends POST, has nowhere to go. What
+ * CloudFront *does* do for every request is write a log line containing the
+ * path and the query string. So an event is a GET for a 43-byte transparent
+ * GIF with the event in its query string: no JavaScript from anyone else, no
+ * cookie, no identifier, no response worth reading, and the measurement is a
+ * side effect of a request the CDN was going to log anyway.
  *
  * ── What is deliberately NOT here ───────────────────────────────────────────
- * There is no visitor id, no session id and no first-seen timestamp, because
- * inventing one would be the exact thing the privacy page says we don't do:
- * under COPPA a persistent identifier IS personal information collected from a
- * child. "Unique visitors" therefore comes from the logs' own IP column, in
- * aggregate, at query time — approximate on purpose. A household behind one
- * router counts once; a phone that changes network counts twice. That is the
- * right trade for a site whose audience is children.
+ * No visitor id, no session id and no first-seen timestamp. Under COPPA a
+ * persistent identifier IS personal information collected from a child, so
+ * inventing one is the exact thing the privacy page says we don't do. "Unique
+ * visitors" therefore comes from the logs' own IP column, in aggregate, at
+ * query time — approximate on purpose. A household behind one router counts
+ * once; a phone that changes network counts twice. That is the right trade for
+ * a site whose audience is children.
  *
  * ── The event type is the safety mechanism ──────────────────────────────────
  * `Beacon` is a closed union rather than `track(name, props)`. Every field is
  * named here, so a future change cannot casually attach a profile name, an
  * age, a spelling word or a custom deck's id — the last of which is generated
- * per household and would be a tracking identifier in all but name. If a new
- * event needs a new property, it gets added to this file, where the reviewer
- * looking for exactly that mistake will see it.
+ * per household and would be a tracking identifier in all but name. A new
+ * event's new property gets added to this file, where the reviewer looking for
+ * exactly that mistake will see it.
  */
 
 import { OPERATION_ORDER } from "@/engine/decks/flashcards";
@@ -80,17 +76,14 @@ export type Beacon =
  * collapses to "custom", because a generated id that recurs in a log across
  * weeks is a tracking identifier however innocently it arrived.
  *
- * Built FROM the shipped registries rather than written out here. The first
- * version was a hand-maintained regex and it was wrong on the day it was
- * written: it listed the six graded Dolch lists and not the nouns list, so a
- * real shipped deck was being reported as somebody's private one. A list that
- * has to be kept in step with another list won't be.
+ * Built FROM the shipped registries rather than written out here: a list that
+ * has to be kept in step with another list won't be, and the failure is silent
+ * — a shipped deck reported as somebody's private one.
  *
- * `SHIPPED_LISTS` and not `WORD_LISTS`, for the same reason: `WORD_LISTS` is
+ * `SHIPPED_LISTS` and not `WORD_LISTS`, for the same reason. `WORD_LISTS` is
  * Dolch alone — the typing pools, the age lookup and the spelling shelf all
  * legitimately mean that — while the shelf a child can actually pick from is
- * the whole of it, Bible lists included. Reading the narrower one here would
- * log a public list as somebody's private one all over again.
+ * the whole of it, Bible lists included.
  */
 const SHIPPED: ReadonlySet<string> = new Set<string>([
   ...OPERATION_ORDER,

@@ -10,9 +10,8 @@ const AXIS = Array.from({ length: 12 }, (_, i) => i + 1);
  *
  * A real <table> with header cells on both axes: a grid of 144 divs would be
  * unreadable to a screen reader, and each cell already carries its own
- * spoken-only summary. The deck switcher sits in the heading rather than
- * above the map because it changes what the map *is*, not how it's filtered —
- * pick a word list and `WordMap` renders in this one's place.
+ * spoken-only summary. Pick a word list in the heading's switcher and
+ * `WordMap` renders in this one's place (`DeckSwitch`).
  */
 export function FactMap({
   spec,

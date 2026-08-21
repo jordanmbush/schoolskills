@@ -50,10 +50,10 @@ function Shell() {
   }
 
   if (status === "error") {
-    // There's no server to be down any more — reaching here means the browser
-    // refused storage (private windows in some browsers block IndexedDB) or
-    // the database failed to open. Say that, rather than the old "is the
-    // server running?", which would send someone hunting for a terminal.
+    // Reaching here means the browser refused storage (private windows in
+    // some browsers block IndexedDB) or the database failed to open. There is
+    // no server to be down, so say that rather than sending someone hunting
+    // for a terminal.
     return (
       <div className="boot">
         <p className="u-eyebrow">School Skills</p>
@@ -75,11 +75,9 @@ function Shell() {
 
   return (
     <RaceProvider>
-      {/* Above everything, on every screen including a live race. Its height is
-          reserved in CSS at first paint and subtracted from the viewport by
-          `--ad-h`, so it cannot move the card or the keypad whenever it fills —
-          see src/styles/ads.css. Placed at the top of the island because that
-          is the furthest point in the layout from the answer controls. */}
+      {/* Above everything, on every screen including a live race — the
+          furthest point in the layout from the answer controls. See
+          `AdSlot` for why filling it cannot move the card. */}
       <AdSlot name="game" className="ad--game" />
       <Routes>
         <Route path="/" element={<PlayerSelect />} />
@@ -97,9 +95,8 @@ function Shell() {
 
 /**
  * Mounted twice, at `/flash-cards` and at `/spelling/play`, with `subject`
- * deciding which decks exist inside. Same origin either way, so both mounts
- * read the same profiles out of the same IndexedDB — see SubjectContext for
- * why that matters more than the routing does.
+ * deciding which decks exist inside. See `SubjectContext` for why both mounts
+ * are one origin, which matters more than the routing does.
  */
 export default function FlashCardsApp({
   subject = "numbers",

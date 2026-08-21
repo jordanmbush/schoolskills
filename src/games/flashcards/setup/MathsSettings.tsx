@@ -12,9 +12,8 @@ const ascending = (list: number[]) => [...list].sort((a, b) => a - b);
 /**
  * Which sums end up on the cards: the operation, and the two number grids.
  *
- * Lifted out of RaceSetup when spelling arrived — that screen now picks a
- * subject first and mounts this or `WordSettings`, and neither has to know
- * the other exists.
+ * `RaceSetup` picks a subject first and mounts this or `WordSettings`, and
+ * neither has to know the other exists.
  */
 export function MathsSettings({
   config,

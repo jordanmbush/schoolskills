@@ -221,7 +221,7 @@ export type FingerZone = {
  * `keyX` is here — a second opinion about which keys the right ring finger
  * covers would put the hole over the wrong hand.
  *
- * The thumbs have no zone: nothing falls on the space bar (§8.3), and the home
+ * The thumbs have no zone: nothing falls on the space bar (§8.5), and the home
  * row carries no thumb key for the cast below to have to exclude.
  */
 export const FINGER_ZONES: Readonly<

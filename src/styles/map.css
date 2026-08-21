@@ -197,8 +197,7 @@
 /* The viewport step is 2.6vw rather than the 3.4vw three columns could afford:
    a fourth column takes a quarter off every card, and at the narrow end of the
    four-across range a display face sized for a third of the row breaks "Word
-   Jungle" across two lines. Both ends of the clamp are unchanged, so a phone
-   and a wide desktop see exactly what they saw before. */
+   Jungle" across two lines. */
 .world__name {
   font-family: var(--font-display);
   font-weight: 400;

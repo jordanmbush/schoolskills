@@ -3,12 +3,12 @@ import type { KeyboardMode, Profile } from "@/engine/types";
 import * as store from "./storage/db";
 
 /**
- * Profile CRUD, and the validation that used to live in the Express handlers.
+ * Profile CRUD, and the validation of it.
  *
- * Moving validation to the client doesn't make it weaker here: there is no
- * server left to protect, and the only person who can send bad input is the
- * person whose own data it is. What it still buys is a single place that turns
- * a typo into a readable message instead of a corrupt record.
+ * Validating on the client is not the weaker half of a pair here: there is no
+ * server to protect, and the only person who can send bad input is the person
+ * whose own data it is. What it buys is a single place that turns a typo into
+ * a readable message instead of a corrupt record.
  */
 
 export type NewProfile = Pick<Profile, "name" | "emoji" | "color" | "age">;

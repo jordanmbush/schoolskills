@@ -124,7 +124,7 @@ export default function Progress() {
   const isTypingMode = mode.startsWith(TYPING_MODE_PREFIX);
   // Both render as a list of words rather than a 12×12 grid.
   const isWords = mode.startsWith(WORD_MODE_PREFIX) || isTypingMode;
-  /** Null for a typing level, and for a list a parent has since deleted. */
+  /** Undefined for a typing level, and for a list a parent has since deleted. */
   const shippedList = isTypingMode
     ? undefined
     : WORD_LISTS_BY_ID.get(listIdOf(mode));

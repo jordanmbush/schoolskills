@@ -55,10 +55,7 @@
 }
 
 /* ── Five more, for paper ──────────────────────────────────────────────────
-   The Print Shop's faces. Same argument as above and then some: a worksheet is
-   the one thing here a parent is asked to look at for a minute before they
-   print it, so a face that arrives from Google's CDN would be a request with a
-   child's IP in it on the page that exists to make something for that child.
+   The Print Shop's faces, self-hosted for the same reason as the three above.
 
    They cost every other page nothing. A `@font-face` is a declaration, not a
    download — a browser fetches the file only when it has a glyph to draw in
@@ -72,18 +69,11 @@
                    sits nearer the midline of primary ruled paper than a text
                    face's does. The default, because a worksheet is set in
                    print unless somebody says otherwise.
-     Playwrite     Cursive, and three of them rather than one. TypeTogether's
-     US Trad       superfamily covers the handwriting models actually taught in
-     US Modern     forty-odd countries, built on the Primarium research, and
-     GB J          they are genuinely different models rather than three
-                   flavours of one: US Trad loops its ascenders and joins out
-                   of every letter, US Modern draws the same letters unlooped
-                   and lifts the pencil after `b f g j p q s y`, and GB J is
-                   the
-                   fully joined hand a British primary school teaches. Which
-                   letters join to which is in each file's `calt` table, so the
-                   model decides a join and this repo never does — see §6 and
-                   `engine/sheets/writing/joins.ts`. Their capitals and
+     Playwrite     Cursive, and three of them because the three handwriting
+     US Trad       models are genuinely different rather than flavours of one
+     US Modern     (§6). Which letters join to which is in each file's `calt`
+     GB J          table, so the model decides a join and this repo never does
+                   — `engine/sheets/writing/joins.ts`. Their capitals and
                    ascenders stand nearly a whole em tall, because the faces
                    are drawn to a ruling rather than to a paragraph, which is
                    why the tracing arithmetic in `faces.ts` comes out exact for
