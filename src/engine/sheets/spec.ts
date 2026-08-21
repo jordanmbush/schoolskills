@@ -63,6 +63,14 @@ export const LONGEST_SHEET_URL: string = WORLDS.map((world) =>
  *
  * Behaviour only: what a family is called and which `kind` reaches it are in
  * `SheetFamily`, because the picker names every family without loading one.
+ *
+ * **The functions a family fills these in with are its own — not exported.**
+ * The spec is the whole of what a family offers, and `index.ts` is how a caller
+ * reaches one. An exported `buildArithmeticSheet` would be a second door past
+ * the registry, and it would also hide drift: `noUnusedLocals` has nothing to
+ * say about an export, so a builder that fell out of its own spec would go on
+ * looking used forever. Export one only if a test needs it directly, and say so
+ * on the line above it.
  */
 export type SheetSpec<C extends SheetConfig = SheetConfig> = {
   world: World;

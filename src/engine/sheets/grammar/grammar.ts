@@ -518,7 +518,7 @@ function headerOf(config: GrammarConfig): SheetOptions {
 }
 
 /** One line naming what the sheet holds, in the terms it was chosen by. */
-export function describeGrammar(config: GrammarConfig): string {
+function describeGrammar(config: GrammarConfig): string {
   const topic = topicOf(config.topic);
   // What the sheet will print rather than what was asked for, and by the same
   // arithmetic the build uses — a line that promised twenty over a page of
@@ -534,7 +534,7 @@ export function describeGrammar(config: GrammarConfig): string {
 
 /* ── The sheet ─────────────────────────────────────────────────────────── */
 
-export function buildGrammarSheet(config: GrammarConfig, seed: number): Sheet {
+function buildGrammarSheet(config: GrammarConfig, seed: number): Sheet {
   const head = headerOf(config);
   const { blocks, outOf } = bodyOf(config, seed);
 

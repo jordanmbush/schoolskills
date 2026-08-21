@@ -243,7 +243,7 @@ function headerOf(config: MemoryConfig): SheetOptions {
 }
 
 /** One line naming what the sheet holds, for the catalog and the record. */
-export function describeMemory(config: MemoryConfig): string {
+function describeMemory(config: MemoryConfig): string {
   const source = copyworkSource(config);
   const words = memoryWords(source.text).length;
   const rounds = clamp(config.rounds, 1, MAX_ROUNDS);
@@ -256,7 +256,7 @@ export function describeMemory(config: MemoryConfig): string {
 
 /* ── The sheet ─────────────────────────────────────────────────────────── */
 
-export function buildMemorySheet(config: MemoryConfig, seed: number): Sheet {
+function buildMemorySheet(config: MemoryConfig, seed: number): Sheet {
   const head = headerOf(config);
   const { credit } = copyworkSource(config);
   const { rounds } = memoryLayout(config, seed);

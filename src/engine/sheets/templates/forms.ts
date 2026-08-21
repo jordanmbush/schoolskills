@@ -453,7 +453,7 @@ function formBlocks(config: FormConfig, box: Box): Block[] {
   }
 }
 
-export function buildFormSheet(config: FormConfig, seed: number): Sheet {
+function buildFormSheet(config: FormConfig, seed: number): Sheet {
   const box = formBox(config, seed);
 
   return {
@@ -474,8 +474,8 @@ export function buildFormSheet(config: FormConfig, seed: number): Sheet {
  * One line naming the sheet, in the words a parent says out loud — with the
  * number that makes it the sheet somebody asked for rather than one like it.
  */
-export function describeForm(config: FormConfig, seed = 0): string {
-  const box = formBox(config, seed);
+function describeForm(config: FormConfig): string {
+  const box = formBox(config, 0);
   const name = own(TITLE, config.style, TITLE["book-report"]);
   switch (config.style) {
     case "reading-log":
@@ -485,9 +485,9 @@ export function describeForm(config: FormConfig, seed = 0): string {
       // `describe` is handed a config and no seed, and a config with no prompt
       // written into it is one whose prompt is a different sentence every time
       // the seed moves — so quoting the seed-zero one would name a sheet nobody
-      // printed.
+      // printed. Where a parent wrote the prompt, the seed decides nothing.
       return config.prompt
-        ? `${name}: “${promptOf(config, seed)}”`
+        ? `${name}: “${promptOf(config, 0)}”`
         : `${name}, one of ${WRITING_PROMPTS.length} drawn from the seed, and a page of lines`;
     default: {
       const fields = formFields(config, box);
@@ -513,5 +513,5 @@ export const FORM_SHEET: SheetSpec<FormConfig> = {
     ...sheet,
     footer: { ...sheet.footer, note: "Answer key" },
   }),
-  describe: (config) => describeForm(config),
+  describe: describeForm,
 };

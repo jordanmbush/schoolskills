@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { chromeHeight, sheetBlockBox, type FootLine } from "../chrome";
+import { describeSheet } from "../index";
 import { describeSheetFamily } from "../contract";
 import { faceOf } from "../faces";
 import { contentBox } from "../layout";
@@ -11,7 +12,6 @@ import type { Blank, MemoryConfig, SheetOptions } from "../types";
 import {
   MAX_ROUNDS,
   MEMORY_SHEET,
-  describeMemory,
   instructionOf,
   memoryLayout,
   memoryWords,
@@ -192,7 +192,7 @@ describe("the sheet it prints", () => {
     const sheet = MEMORY_SHEET.build(config(), 1);
     expect(sheet.header.title).toBe("Memory work — John 3:16");
     expect(sheet.header.score).toBeUndefined();
-    expect(describeMemory(config())).toBe(
+    expect(describeSheet(config())).toBe(
       "Memory work — John 3:16 — 4 times over",
     );
   });

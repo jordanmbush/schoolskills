@@ -522,7 +522,7 @@ function headerOf(config: WordStudyConfig): SheetOptions {
 }
 
 /** One line naming what the sheet holds, in the terms it was chosen by. */
-export function describeStudy(config: WordStudyConfig): string {
+function describeStudy(config: WordStudyConfig): string {
   const topic = topicOf(config.topic);
   // What the sheet will print rather than what was asked for, and by the same
   // arithmetic the build uses — a line that promised twenty over a page of
@@ -538,7 +538,7 @@ export function describeStudy(config: WordStudyConfig): string {
 
 /* ── The sheet ─────────────────────────────────────────────────────────── */
 
-export function buildStudySheet(config: WordStudyConfig, seed: number): Sheet {
+function buildStudySheet(config: WordStudyConfig, seed: number): Sheet {
   const head = headerOf(config);
   const { blocks, outOf } = bodyOf(config, seed);
 

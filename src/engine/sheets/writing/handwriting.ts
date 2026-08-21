@@ -518,7 +518,7 @@ function headerOf(config: HandwritingConfig): SheetOptions {
 }
 
 /** One line naming what the sheet holds, for the catalog and the record. */
-export function describeHandwriting(config: HandwritingConfig): string {
+function describeHandwriting(config: HandwritingConfig): string {
   const styles = traceStyles(config);
   return [
     titleOf(config),
@@ -530,10 +530,7 @@ export function describeHandwriting(config: HandwritingConfig): string {
 
 /* ── The sheet ─────────────────────────────────────────────────────────── */
 
-export function buildHandwritingSheet(
-  config: HandwritingConfig,
-  seed: number,
-): Sheet {
+function buildHandwritingSheet(config: HandwritingConfig, seed: number): Sheet {
   const head = headerOf(config);
   const credit = sourceOf(config)?.credit;
 

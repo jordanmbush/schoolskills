@@ -327,7 +327,7 @@ const cardBox = (config: CardsConfig): Box => {
 /** Nothing on this shelf withholds anything — see `formKeyed`. */
 export const cardsKeyed = (): boolean => false;
 
-export function buildCardsSheet(config: CardsConfig, seed: number): Sheet {
+function buildCardsSheet(config: CardsConfig, seed: number): Sheet {
   const box = cardBox(config);
   const grid = cardGrid(config, box);
   const faces = cardFaces(config, grid.columns * grid.rows);
@@ -386,7 +386,7 @@ export const inchLabel = (mil: Mil): string =>
  * one page of them from another. The catalog pages quote both, and
  * `_templates.test.ts` holds the prose to what the block draws.
  */
-export function describeCards(config: CardsConfig): string {
+function describeCards(config: CardsConfig): string {
   const grid = cardGrid(config, cardBox(config));
   const name = own(TITLE, config.style, TITLE.flashcard);
   if (grid.card.width <= 0) return `${name} — too small to cut on this paper`;

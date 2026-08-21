@@ -688,7 +688,7 @@ function headerOf(config: PuzzleConfig): SheetOptions {
 }
 
 /** One line naming what the sheet holds, in the terms it was chosen by. */
-export function describePuzzle(config: PuzzleConfig): string {
+function describePuzzle(config: PuzzleConfig): string {
   const { words } = puzzleWords(config);
   const size = clamp(config.size ?? MIN_GRID, MIN_GRID, MAX_GRID);
   return [
@@ -703,7 +703,7 @@ export function describePuzzle(config: PuzzleConfig): string {
 
 /* ── The sheet ─────────────────────────────────────────────────────────── */
 
-export function buildPuzzleSheet(config: PuzzleConfig, seed: number): Sheet {
+function buildPuzzleSheet(config: PuzzleConfig, seed: number): Sheet {
   const head = headerOf(config);
   const { blocks, outOf } = bodyOf(config, seed);
 

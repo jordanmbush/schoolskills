@@ -270,7 +270,7 @@ const netBox = (config: NetConfig): Box =>
 /** Nothing on this shelf withholds anything — see `formKeyed`. */
 export const netKeyed = (): boolean => false;
 
-export function buildNetSheet(config: NetConfig, seed: number): Sheet {
+function buildNetSheet(config: NetConfig, seed: number): Sheet {
   const box = netBox(config);
   const net =
     config.style === "spinner" ? spinnerNet(config, box) : cubeNet(config, box);
@@ -294,7 +294,7 @@ export function buildNetSheet(config: NetConfig, seed: number): Sheet {
 }
 
 /** One line naming the sheet, and the number that makes it that sheet. */
-export function describeNet(config: NetConfig): string {
+function describeNet(config: NetConfig): string {
   const box = netBox(config);
   if (config.style === "spinner") {
     const net = spinnerNet(config, box);

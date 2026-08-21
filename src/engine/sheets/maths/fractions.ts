@@ -518,7 +518,7 @@ const MODEL_NAME = {
  * matches the lesson: which pictures a naming sheet draws, and how far up the
  * denominators go.
  */
-export function describeFractions(config: FractionConfig): string {
+function describeFractions(config: FractionConfig): string {
   const pool = denominatorsOf(config);
   return [
     titleOf(config),
@@ -532,10 +532,7 @@ export function describeFractions(config: FractionConfig): string {
     .join(" — ");
 }
 
-export function buildFractionSheet(
-  config: FractionConfig,
-  seed: number,
-): Sheet {
+function buildFractionSheet(config: FractionConfig, seed: number): Sheet {
   const items = fractionProblems(config, seed);
   const { columns } = fractionLayout(config);
   const head = headerOf(config);

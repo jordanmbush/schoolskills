@@ -397,7 +397,7 @@ function headerOf(config: WordsConfig): SheetOptions {
 }
 
 /** One line naming what the sheet holds, in the terms it was chosen by. */
-export function describeWords(config: WordsConfig): string {
+function describeWords(config: WordsConfig): string {
   const words = wordsOf(config);
   return [
     TITLE[config.style] ?? TITLE.copy,
@@ -412,7 +412,7 @@ export function describeWords(config: WordsConfig): string {
 
 /* ── The sheet ─────────────────────────────────────────────────────────── */
 
-export function buildWordsSheet(config: WordsConfig, seed: number): Sheet {
+function buildWordsSheet(config: WordsConfig, seed: number): Sheet {
   const head = headerOf(config);
   const { blocks, outOf } = bodyOf(config, seed);
 

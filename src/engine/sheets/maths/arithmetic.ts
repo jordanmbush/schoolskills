@@ -536,7 +536,7 @@ function headerOf(config: ArithmeticConfig): SheetOptions {
  * sheet matches the lesson: whether it carries, and whether the sum is written
  * along a line or worked in columns.
  */
-export function describeArithmetic(config: ArithmeticConfig): string {
+function describeArithmetic(config: ArithmeticConfig): string {
   const REGROUPING: Record<Regrouping, string | null> = {
     either: null,
     never: "no regrouping",
@@ -562,10 +562,7 @@ export function describeArithmetic(config: ArithmeticConfig): string {
     .join(" — ");
 }
 
-export function buildArithmeticSheet(
-  config: ArithmeticConfig,
-  seed: number,
-): Sheet {
+function buildArithmeticSheet(config: ArithmeticConfig, seed: number): Sheet {
   const items = arithmeticProblems(config, seed);
   const { columns } = arithmeticLayout(config);
   const head = headerOf(config);
