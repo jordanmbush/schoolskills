@@ -360,7 +360,7 @@ describe("every Bible list, on every sheet style", () => {
         // A page of nothing is the failure mode a long list would hide: a
         // capacity that came out at zero still builds, and still prints.
         expect(sheet.header.score?.outOf).toBeGreaterThan(0);
-        // `(config, seed)` and nothing else (§7).
+        // `(config, seed)` and nothing else (docs/printables.md §7).
         expect(buildSheet(config, 7)).toEqual(sheet);
       });
     }

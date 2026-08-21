@@ -117,14 +117,20 @@ sits:
 | `src/engine/typing/`, `src/games/typing/`                                                      | `docs/typing.md`     |
 
 A file outside those that still belongs to one subject resolves the same way:
-`src/styles/game.css` and `src/engine/keyboard.ts` are typing's,
-`src/styles/sheet.css` and `src/styles/print.css` are the Print Shop's.
-Anywhere genuinely shared, name the document — `docs/typing.md §8.6` — because
-a bare number in a file with two subjects has no rule to resolve it by.
-`docs/analytics.md` numbers nothing, so it is always cited by name.
-`audit:comments` reports the named references that point at a section which
-doesn't exist; the bare ones are yours to keep right until the guard that
-resolves them lands.
+`src/styles/game.css` and `src/engine/keyboard.ts` are typing's, and
+`src/styles/sheet.css`, `src/styles/print.css`, `src/styles/printshop.css` and
+`src/styles/fonts.css` are the Print Shop's. Shared code that names one
+document and no other — `src/engine/progress.ts`, whose citations are all
+typing's — resolves to that one. Anywhere genuinely shared, name the document —
+`docs/typing.md §8.6` — because a bare number in a file with two subjects has
+no rule to resolve it by. `docs/analytics.md` numbers nothing, so it is always
+cited by name.
+
+`scripts/section-guard.mjs` holds that convention as data and enforces it: the
+build reads every heading in `docs/` and every `§` in `src/`, resolves each one
+and fails on a reference to a section that doesn't exist. So renumbering a
+section is safe — the build names every citation that pointed at the old
+number. Adding a subtree here means adding it there in the same change.
 
 ## Worlds — one game, several biomes
 

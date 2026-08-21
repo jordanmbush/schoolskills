@@ -198,13 +198,18 @@ export function sectionsIn(markdown) {
  * `passages/documents.ts` is a copyright statute, and counting it as a pointer
  * into `docs/printables.md` would report a break that isn't one.
  *
+ * A citation may wrap, so `*` and `/` are allowed between the doc and the `§`
+ * — `(docs/typing.md\n * §5.4)` names its doc as plainly as the unwrapped form
+ * does. Read as bare, it would be handed to `section-guard.mjs` to be resolved
+ * by where the file sits, when it already said where it points.
+ *
  * @param {string} source
  * @returns {{ doc: string | null, section: string }[]}
  */
 export function sectionRefs(source) {
   const refs = [];
   for (const m of source.matchAll(
-    /(?:(\d+\s+U\.S\.C\.\s*)|docs\/([a-z]+)\.md\s*)?§\s*([0-9]+(?:\.[0-9]+)*)/g,
+    /(?:(\d+\s+U\.S\.C\.\s*)|docs\/([a-z]+)\.md[\s*/]*)?§\s*([0-9]+(?:\.[0-9]+)*)/g,
   )) {
     if (m[1]) continue;
     refs.push({ doc: m[2] ?? null, section: m[3] });
@@ -213,17 +218,33 @@ export function sectionRefs(source) {
 }
 
 /**
- * Files under `root` matching `extensions`, skipping the corpus directories.
+ * Every file under `root` matching `extensions`.
+ *
+ * @param {string} root
+ * @param {string[]} extensions
+ * @returns {string[]}
+ */
+export function allFiles(root, extensions) {
+  return readdirSync(root, { recursive: true, encoding: "utf8" })
+    .map((entry) => path.join(root, entry))
+    .filter((file) => extensions.includes(path.extname(file)));
+}
+
+/**
+ * The same, minus the corpus directories — the file set this audit measures.
+ *
+ * `section-guard.mjs` reads `allFiles` instead, deliberately: a citation in
+ * `passages/scripture.ts` is as breakable as any other, and only the ratios
+ * are meaningless there.
  *
  * @param {string} root
  * @param {string[]} extensions
  * @returns {string[]}
  */
 export function sourceFiles(root, extensions) {
-  return readdirSync(root, { recursive: true, encoding: "utf8" })
-    .map((entry) => path.join(root, entry))
-    .filter((file) => extensions.includes(path.extname(file)))
-    .filter((file) => !file.split(path.sep).some((part) => CORPUS.has(part)));
+  return allFiles(root, extensions).filter(
+    (file) => !file.split(path.sep).some((part) => CORPUS.has(part)),
+  );
 }
 
 /**

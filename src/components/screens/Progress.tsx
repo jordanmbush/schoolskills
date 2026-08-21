@@ -133,7 +133,8 @@ export default function Progress() {
   const owner = WORLDS.find((w) => w.id === spec.world);
   /**
    * The same facts as a worksheet, or null where this build has no sheet for
-   * them — a typing passage is not a page of problems (§14).
+   * them — a typing passage is not a page of problems (docs/printables.md
+   * §14).
    */
   const printable = practiceSheet(
     mode,

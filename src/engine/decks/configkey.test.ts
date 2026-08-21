@@ -157,9 +157,9 @@ const FROZEN: Frozen[] = [
   ],
   // The ladder's two run shapes. Both key on the LESSON and on the length the
   // rung declares — never on the words a passage came out with, and never on
-  // how much of a wave was survived (§5.4, §8.7). The lesson below carries
-  // both of the fields that have to stay inert: the passage it generated, and
-  // the board the child chose to type it under.
+  // how much of a wave was survived (docs/typing.md §5.4, §8.7). The lesson
+  // below carries both of the fields that have to stay inert: the passage it
+  // generated, and the board the child chose to type it under.
   [
     "typing, a lesson from the ladder",
     {
