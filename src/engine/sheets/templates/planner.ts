@@ -618,7 +618,7 @@ function plannerBlocks(config: PlannerConfig, box: Box): Block[] {
   ];
 }
 
-export function buildPlannerSheet(config: PlannerConfig, seed: number): Sheet {
+function buildPlannerSheet(config: PlannerConfig, seed: number): Sheet {
   const box = plannerBox(config);
   const verse = config.style === "verse-week" ? verseOf(config) : undefined;
 
@@ -650,7 +650,7 @@ export function buildPlannerSheet(config: PlannerConfig, seed: number): Sheet {
  * so the line describes the paper rather than the request, and says so where
  * the paper could not hold the style at all.
  */
-export function describePlanner(config: PlannerConfig): string {
+function describePlanner(config: PlannerConfig): string {
   const held = plannerFit(config, plannerBox(config));
   const name = own(TITLE, config.style, TITLE.calendar);
   const days = weekDays(config).length;

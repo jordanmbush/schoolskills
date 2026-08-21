@@ -587,7 +587,7 @@ function headerOf(config: MultiplicationConfig): SheetOptions {
  * sheet matches the lesson: how the problem is written down, and — for a long
  * form — how big the numbers are.
  */
-export function describeMultiplication(config: MultiplicationConfig): string {
+function describeMultiplication(config: MultiplicationConfig): string {
   const digits = longDigits(config);
   // "8 tricky facts" is the race's own phrase for the same list — see
   // `describeFlashConfig` — so a drill that was printed and one that was raced
@@ -637,7 +637,7 @@ function bodyOf(
   };
 }
 
-export function buildMultiplicationSheet(
+function buildMultiplicationSheet(
   config: MultiplicationConfig,
   seed: number,
 ): Sheet {

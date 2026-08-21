@@ -659,7 +659,7 @@ function headerOf(config: PhonicsConfig): SheetOptions {
 }
 
 /** One line naming what the sheet holds, in the terms it was chosen by. */
-export function describePhonics(config: PhonicsConfig): string {
+function describePhonics(config: PhonicsConfig): string {
   const style = styleOf(config);
   const [one, many] = THINGS[style];
   const asked = wantedOf(config);
@@ -673,7 +673,7 @@ export function describePhonics(config: PhonicsConfig): string {
 
 /* ── The sheet ─────────────────────────────────────────────────────────── */
 
-export function buildPhonicsSheet(config: PhonicsConfig, seed: number): Sheet {
+function buildPhonicsSheet(config: PhonicsConfig, seed: number): Sheet {
   const head = headerOf(config);
   const { blocks, outOf } = bodyOf(config, seed);
 

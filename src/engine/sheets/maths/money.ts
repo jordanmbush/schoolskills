@@ -354,7 +354,7 @@ function headerOf(config: MoneyConfig): SheetOptions {
  * they are stacked — which is the difference between a sheet a child adds in
  * their head and one they work in columns.
  */
-export function describeMoney(config: MoneyConfig): string {
+function describeMoney(config: MoneyConfig): string {
   const money = currencyOf(config);
   const { max } = bounds(config.range);
   return [
@@ -366,7 +366,7 @@ export function describeMoney(config: MoneyConfig): string {
     .join(" — ");
 }
 
-export function buildMoneySheet(config: MoneyConfig, seed: number): Sheet {
+function buildMoneySheet(config: MoneyConfig, seed: number): Sheet {
   const items = moneyProblems(config, seed);
   const { columns } = moneyLayout(config);
   const head = headerOf(config);

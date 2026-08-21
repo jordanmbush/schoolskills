@@ -26,7 +26,7 @@ import { SHEET_CREDIT, SHEET_URL, SHEET_WORLD, type SheetSpec } from "./spec";
 const HEADER_HEIGHT = inches(1);
 const FOOTER_HEIGHT = inches(0.25);
 
-export function buildBlankSheet(config: BlankConfig, seed: number): Sheet {
+function buildBlankSheet(config: BlankConfig, seed: number): Sheet {
   return {
     paper: config.paper,
     fontPt: config.fontPt,

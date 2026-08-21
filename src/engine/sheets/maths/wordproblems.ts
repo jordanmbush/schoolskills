@@ -695,16 +695,13 @@ function headerOf(config: WordProblemConfig): SheetOptions {
  * Which topics are on the page is the whole of whether a sheet matches the
  * lesson, and it is exactly what the title of a mixed sheet leaves off.
  */
-export function describeWordProblems(config: WordProblemConfig): string {
+function describeWordProblems(config: WordProblemConfig): string {
   const pool = topicsOf(config);
   if (pool.length <= 1) return titleOf(config);
   return `${titleOf(config)} — ${pool.map((topic) => TOPIC_NAME[topic]).join(", ")}`;
 }
 
-export function buildWordProblemSheet(
-  config: WordProblemConfig,
-  seed: number,
-): Sheet {
+function buildWordProblemSheet(config: WordProblemConfig, seed: number): Sheet {
   const items = wordProblems(config, seed);
   const { columns } = wordLayout(config);
   const head = headerOf(config);

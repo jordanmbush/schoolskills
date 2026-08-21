@@ -7,6 +7,7 @@ import {
   glyphEm,
   isCursive,
 } from "../faces";
+import { describeSheet } from "../index";
 import { describeSheetFamily } from "../contract";
 import { ruleCapacity, ruledLines } from "../layout";
 import { RULINGS, inches, rulePitch, toInches, writingSpace } from "../paper";
@@ -29,7 +30,6 @@ import {
   DEFAULT_HAND_RULE,
   HANDWRITING_SHEET,
   MAX_REPEATS,
-  describeHandwriting,
   fontOf,
   handwritingLayout,
   instructionOf,
@@ -601,12 +601,12 @@ describe("joined writing", () => {
   });
 
   it("names itself by the hand it is written in", () => {
-    expect(describeHandwriting(config({ style: "joins", repeats: 3 }))).toBe(
+    expect(describeSheet(config({ style: "joins", repeats: 3 }))).toBe(
       'Joining letters — the common joins — handwriting ⅝" — written 3 times',
     );
-    expect(
-      describeHandwriting(config({ style: "joins", joins: "round" })),
-    ).toContain("joins into a round letter");
+    expect(describeSheet(config({ style: "joins", joins: "round" }))).toContain(
+      "joins into a round letter",
+    );
   });
 });
 
@@ -726,7 +726,7 @@ describe("copywork out of the passage library", () => {
     );
     expect(sheet.header.title).toBe("Copywork — Proverbs 3:5-6");
     expect(
-      describeHandwriting(config({ style: "passage", passage: VERSE })),
+      describeSheet(config({ style: "passage", passage: VERSE })),
     ).toContain("Proverbs 3:5-6");
   });
 
@@ -775,10 +775,10 @@ describe("the sheet", () => {
   });
 
   it("names itself in the terms it was chosen by", () => {
-    expect(describeHandwriting(config())).toBe(
+    expect(describeSheet(config())).toBe(
       'Letter practice — capitals and small letters — handwriting ⅝" — written 3 times',
     );
-    expect(describeHandwriting(config({ style: "numbers", repeats: 4 }))).toBe(
+    expect(describeSheet(config({ style: "numbers", repeats: 4 }))).toBe(
       'Number formation — 0 to 9 — handwriting ⅝" — written 4 times',
     );
   });

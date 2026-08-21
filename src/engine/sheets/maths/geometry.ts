@@ -536,7 +536,7 @@ function headerOf(config: GeometryConfig): SheetOptions {
  * runs, which is the difference between a sheet a child does in their head and
  * one they need paper for.
  */
-export function describeGeometry(config: GeometryConfig): string {
+function describeGeometry(config: GeometryConfig): string {
   const title = titleOf(config);
   if (config.style === "coordinates") {
     return `${title} — ${Math.floor(config.quadrants ?? 1) === 4 ? "four quadrants" : "the first quadrant"}`;
@@ -550,10 +550,7 @@ export function describeGeometry(config: GeometryConfig): string {
   ].join(" — ");
 }
 
-export function buildGeometrySheet(
-  config: GeometryConfig,
-  seed: number,
-): Sheet {
+function buildGeometrySheet(config: GeometryConfig, seed: number): Sheet {
   const { items, marks } = geometryProblems(config, seed);
   const { columns, plane } = geometryLayout(config);
   const head = headerOf(config);

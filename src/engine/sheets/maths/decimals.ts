@@ -480,7 +480,7 @@ function headerOf(config: DecimalConfig): SheetOptions {
  * matches the lesson: how far past the point the numbers go, and whether the
  * sum is written along a line or worked in columns.
  */
-export function describeDecimals(config: DecimalConfig): string {
+function describeDecimals(config: DecimalConfig): string {
   return [
     titleOf(config),
     config.style === "percent" ? null : PLACE_NAME[placesOf(config)],
@@ -490,7 +490,7 @@ export function describeDecimals(config: DecimalConfig): string {
     .join(" — ");
 }
 
-export function buildDecimalSheet(config: DecimalConfig, seed: number): Sheet {
+function buildDecimalSheet(config: DecimalConfig, seed: number): Sheet {
   const items = decimalProblems(config, seed);
   const { columns } = decimalLayout(config);
   const head = headerOf(config);

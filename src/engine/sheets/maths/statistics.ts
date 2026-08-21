@@ -409,7 +409,7 @@ function headerOf(config: StatisticsConfig): SheetOptions {
  * off — and, on an even-sized set, it is a different question rather than a
  * harder one: the median lands between two numbers rather than on one.
  */
-export function describeStatistics(config: StatisticsConfig): string {
+function describeStatistics(config: StatisticsConfig): string {
   return [
     titleOf(config),
     // What the sets on the page actually hold, which a narrow range can make
@@ -419,10 +419,7 @@ export function describeStatistics(config: StatisticsConfig): string {
   ].join(" — ");
 }
 
-export function buildStatisticsSheet(
-  config: StatisticsConfig,
-  seed: number,
-): Sheet {
+function buildStatisticsSheet(config: StatisticsConfig, seed: number): Sheet {
   const items = statisticsProblems(config, seed);
   const { columns } = statisticsLayout(config);
   const head = headerOf(config);

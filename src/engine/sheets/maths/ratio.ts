@@ -299,11 +299,11 @@ function headerOf(config: RatioConfig): SheetOptions {
  * What the title leaves off is the size of the numbers, which on this family is
  * the difference between a sheet done in the head and one done on paper.
  */
-export function describeRatio(config: RatioConfig): string {
+function describeRatio(config: RatioConfig): string {
   return `${titleOf(config)} — numbers to ${bounds(config.range).max}`;
 }
 
-export function buildRatioSheet(config: RatioConfig, seed: number): Sheet {
+function buildRatioSheet(config: RatioConfig, seed: number): Sheet {
   const items = ratioProblems(config, seed);
   const { columns } = ratioLayout(config);
   const head = headerOf(config);

@@ -648,7 +648,7 @@ function headerOf(config: IntegerConfig): SheetOptions {
  * What the title leaves off is the one thing that decides whether the sheet is
  * this term's work or last term's: whether there are minus signs on it at all.
  */
-export function describeIntegers(config: IntegerConfig): string {
+function describeIntegers(config: IntegerConfig): string {
   const { max } = bounds(config.range);
   return [
     titleOf(config),
@@ -660,7 +660,7 @@ export function describeIntegers(config: IntegerConfig): string {
     .join(" — ");
 }
 
-export function buildIntegerSheet(config: IntegerConfig, seed: number): Sheet {
+function buildIntegerSheet(config: IntegerConfig, seed: number): Sheet {
   const items = integerProblems(config, seed);
   const { columns } = integerLayout(config);
   const head = headerOf(config);

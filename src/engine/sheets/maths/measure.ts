@@ -324,7 +324,7 @@ function headerOf(config: MeasureConfig): SheetOptions {
  * the whole of whether a sheet matches the lesson: "metric units of length" is
  * millimetres one week and kilometres the next.
  */
-export function describeMeasure(config: MeasureConfig): string {
+function describeMeasure(config: MeasureConfig): string {
   const system = systemOf(config);
   const pool = quantitiesOf(config);
   if (pool.length === 0) return titleOf(config);
@@ -337,7 +337,7 @@ export function describeMeasure(config: MeasureConfig): string {
   return `${titleOf(config)} — ${said}`;
 }
 
-export function buildMeasureSheet(config: MeasureConfig, seed: number): Sheet {
+function buildMeasureSheet(config: MeasureConfig, seed: number): Sheet {
   const items = measureProblems(config, seed);
   const { columns } = measureLayout(config);
   const head = headerOf(config);

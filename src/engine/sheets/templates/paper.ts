@@ -18,7 +18,7 @@ import { ruleCapacity } from "../layout";
 import { rulingOf } from "../paper";
 import { SHEET_CREDIT, SHEET_URL, SHEET_WORLD, type SheetSpec } from "../spec";
 
-export function buildPaperSheet(config: PaperConfig, seed: number): Sheet {
+function buildPaperSheet(config: PaperConfig, seed: number): Sheet {
   // Whatever the header and footer leave. Shared with every other family
   // (chrome.ts) rather than counted again here, because the reservation trails
   // sheet.css and a second copy of it would drift silently.
@@ -52,7 +52,7 @@ export function buildPaperSheet(config: PaperConfig, seed: number): Sheet {
  * chooses between are the two a shop's label leaves off: whether the midline is
  * there to write between, and whether a `g` has anywhere to go.
  */
-export function describePaper(config: PaperConfig): string {
+function describePaper(config: PaperConfig): string {
   const ruling = rulingOf(config.rule);
   const paper = `${ruling.label} paper`;
   if (!ruling.handwriting) return paper;

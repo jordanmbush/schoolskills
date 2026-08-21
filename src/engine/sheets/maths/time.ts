@@ -336,13 +336,13 @@ function headerOf(config: TimeConfig): SheetOptions {
  * is the difference between a sheet a child counts on their fingers and one they
  * work out.
  */
-export function describeTime(config: TimeConfig): string {
+function describeTime(config: TimeConfig): string {
   if (config.style !== "elapsed") return titleOf(config);
   const { max } = spanOf(config, stepOf(config));
   return `${titleOf(config)} — up to ${durationText(max)}`;
 }
 
-export function buildTimeSheet(config: TimeConfig, seed: number): Sheet {
+function buildTimeSheet(config: TimeConfig, seed: number): Sheet {
   const items = timeProblems(config, seed);
   const { columns } = timeLayout(config);
   const head = headerOf(config);

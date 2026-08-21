@@ -716,7 +716,7 @@ function headerOf(config: PreAlgebraConfig): SheetOptions {
  * minus signs on it, which is the difference between this term's sheet and last
  * term's — and, on a graph, how much of the plane a child has to read.
  */
-export function describePreAlgebra(config: PreAlgebraConfig): string {
+function describePreAlgebra(config: PreAlgebraConfig): string {
   const title = titleOf(config);
   // A graph sheet takes neither of the other two: how far the plane runs is
   // what decides how hard it is, and `negatives` has nothing to say — a line
@@ -735,10 +735,7 @@ export function describePreAlgebra(config: PreAlgebraConfig): string {
   ].join(" — ");
 }
 
-export function buildPreAlgebraSheet(
-  config: PreAlgebraConfig,
-  seed: number,
-): Sheet {
+function buildPreAlgebraSheet(config: PreAlgebraConfig, seed: number): Sheet {
   const { items, marks } = preAlgebraProblems(config, seed);
   const { columns, plane } = preAlgebraLayout(config);
   const head = headerOf(config);

@@ -392,7 +392,7 @@ function headerOf(config: ChartConfig): SheetOptions {
 const chartBox = (config: ChartConfig): Box =>
   sheetBlockBox(headerOf(config), false, { note: "Answer key" });
 
-export function buildChartSheet(config: ChartConfig, seed: number): Sheet {
+function buildChartSheet(config: ChartConfig, seed: number): Sheet {
   const box = chartBox(config);
 
   return {
@@ -444,7 +444,7 @@ function chartBlocks(config: ChartConfig, box: Box): Block[] {
  * One line naming the sheet, in the words a teacher says out loud — with the
  * number that makes it the sheet somebody asked for rather than one like it.
  */
-export function describeChart(config: ChartConfig): string {
+function describeChart(config: ChartConfig): string {
   const box = chartBox(config);
   switch (config.style) {
     case "number-line": {
