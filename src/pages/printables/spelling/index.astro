@@ -1,5 +1,6 @@
 ---
 import Content from "@/layouts/Content.astro";
+import { trailTo } from "../_shelves";
 import AdSlot from "@/components/site/AdSlot.astro";
 import { SPELLING_SHEETS, pathFor, spellingShelf } from "../_spelling";
 import HubLinks from "../_HubLinks.astro";
@@ -28,6 +29,7 @@ const groups = spellingShelf();
   title={title}
   description={description}
   world="paper"
+  breadcrumb={trailTo("spelling")}
   jsonLd={{
     "@context": "https://schema.org",
     "@type": "CollectionPage",

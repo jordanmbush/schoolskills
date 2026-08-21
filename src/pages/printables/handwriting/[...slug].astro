@@ -1,5 +1,6 @@
 ---
 import Content from "@/layouts/Content.astro";
+import { trailTo } from "../_shelves";
 import AdSlot from "@/components/site/AdSlot.astro";
 import { SheetView } from "@/components/sheet/Sheet";
 import { buildSheet } from "@/engine/sheets";
@@ -59,7 +60,7 @@ const other = STOCKS.find((candidate) => candidate.id !== stock.id)!;
 
 const heading = a4 ? `${sheet.heading}, for A4` : sheet.heading;
 const title = `${sheet.keyword}${a4 ? ", A4" : ""} | School Skills`;
-const description = `${sheet.summary} Printed straight from this page on ${stock.label} — free, no account, and no download.`;
+const description = `${sheet.summary} Print it straight from this page on ${stock.label}, or save it as a PDF — free, and no account.`;
 const url = `https://schoolskills.app${hrefFor(sheet, stock)}`;
 
 const groups = handwritingShelf();
@@ -70,6 +71,7 @@ const group = groups.find((entry) => entry.id === sheet.group)!;
   title={title}
   description={description}
   world="paper"
+  breadcrumb={trailTo("handwriting", { name: sheet.name, href: url })}
   jsonLd={{
     "@context": "https://schema.org",
     "@type": "LearningResource",

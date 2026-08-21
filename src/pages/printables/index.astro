@@ -1,5 +1,6 @@
 ---
 import Content from "@/layouts/Content.astro";
+import { trailTo } from "./_shelves";
 import { BIBLE_SHEETS, bibleShelf, hrefFor as bibleHref } from "./_bible";
 import { STOCKS, pathFor, shelf } from "./_catalog";
 import { CHART_SHEETS, chartShelf, pathFor as chartPath } from "./_charts";
@@ -61,7 +62,7 @@ import "@/styles/search.css";
  */
 const title = "Free printable worksheets — The Print Shop | School Skills";
 const description =
-  "Practice sheets you can print at home, free and without an account. Every sheet is an ordinary web page, so printing it needs no download, no reader and no sign-up — and nothing about your child goes into the file.";
+  "Practice sheets you can print at home, free and without an account. Every sheet is an ordinary web page: read it on screen, print it, or save it as a PDF to keep — and nothing about your child goes into the file.";
 
 /** Listed on the default stock; each sheet page carries the link to its twin. */
 const letter = STOCKS[0];
@@ -81,6 +82,7 @@ const paperwork = templateShelf();
   title={title}
   description={description}
   world="paper"
+  breadcrumb={trailTo(null)}
   jsonLd={{
     "@context": "https://schema.org",
     "@type": "CollectionPage",
@@ -360,7 +362,7 @@ const paperwork = templateShelf();
     <h2 class="h2">A worksheet here is a web page</h2>
     <div class="prose">
       <p>
-        Not a PDF, not a picture of a worksheet, and nothing to download. A
+        Not a PDF you have to fetch first, and not a picture of a worksheet. A
         sheet is real text and real lines laid out in real inches, so printing
         one is <em>File &rarr; Print</em> on the page you are already looking at.
         If you want to keep a copy, choose <em>Save as PDF</em> in the print dialog

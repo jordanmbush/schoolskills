@@ -1,5 +1,6 @@
 ---
 import Content from "@/layouts/Content.astro";
+import { trailTo } from "../_shelves";
 import AdSlot from "@/components/site/AdSlot.astro";
 import { TEMPLATE_SHEETS, pathFor, templateShelf } from "../_templates";
 import HubLinks from "../_HubLinks.astro";
@@ -26,7 +27,7 @@ import HubLinks from "../_HubLinks.astro";
 const title =
   "Free printable forms, planners, charts and templates | School Skills";
 const description =
-  "Printable blank templates: reading logs and book report forms, lab report and scientific method sheets, blank calendars, weekly planners, chore and behaviour charts, blank flashcards, name tags, bookmarks, award certificates, and dice and spinner nets. Real inches and cut lines on every boundary — free, no account, no download.";
+  "Printable blank templates: reading logs and book report forms, lab report and scientific method sheets, blank calendars, weekly planners, chore and behaviour charts, blank flashcards, name tags, bookmarks, award certificates, and dice and spinner nets. Real inches and cut lines on every boundary — free, no account, print or save as PDF.";
 
 const groups = templateShelf();
 ---
@@ -35,6 +36,7 @@ const groups = templateShelf();
   title={title}
   description={description}
   world="paper"
+  breadcrumb={trailTo("templates")}
   jsonLd={{
     "@context": "https://schema.org",
     "@type": "CollectionPage",

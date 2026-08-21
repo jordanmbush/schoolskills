@@ -243,6 +243,33 @@ export const SHELVES: Shelf[] = [
 ];
 
 /** The shelves with a hub of their own — the subject nav, in order. */
+/**
+ * The trail to a page under The Print Shop, as `Base.astro`'s `breadcrumb`
+ * wants it: root first, the page itself last.
+ *
+ * Read out of `SHELVES`, so a shelf renamed or moved there is renamed in every
+ * breadcrumb beneath it rather than in twenty route files. `hub` is what
+ * decides whether the shelf is a step at all — paper's "hub" is the front door
+ * itself, and a trail that listed it twice would be describing a level that
+ * isn't there.
+ *
+ * Sub-groups are left out on purpose. A breadcrumb step is somewhere you can
+ * go, and a group ("Parts of speech") is a heading on a hub rather than a
+ * route.
+ */
+export const trailTo = (
+  id: ShelfId | null,
+  ...tail: Array<{ name: string; href: string }>
+): Array<{ name: string; href: string }> => {
+  const shelf = id ? SHELVES.find((entry) => entry.id === id) : undefined;
+  return [
+    { name: "Home", href: "/" },
+    { name: "The Print Shop", href: "/printables" },
+    ...(shelf?.hub ? [{ name: shelf.label, href: shelf.href }] : []),
+    ...tail,
+  ];
+};
+
 export const HUBS: Shelf[] = SHELVES.filter((shelf) => shelf.hub);
 
 export const ALL_SHEETS: ShelfSheet[] = SHELVES.flatMap(

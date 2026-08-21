@@ -191,14 +191,27 @@ export const PHONICS_SHEETS: PhonicsSheet[] = [
     // would be in at three if the digraph were ever ticked here.
     config: phonics("blending", LETTERS, 20, 2, { maxSounds: 3 }),
   },
+  /*
+   * Named for onset and rime rather than for word families, though a word
+   * family is what it prints.
+   *
+   * The spelling shelf has a word-family sheet too, and it is the one a parent
+   * searching that phrase should land on: fourteen fixed families, chosen for
+   * being the commonest. This one draws its endings from the spellings a child
+   * has actually been taught, so it is the same idea arriving through the
+   * phonics progression — a genuinely different sheet, and one that was
+   * competing with its neighbour for a query only one of them can win. The
+   * slug stays as it is: the URL is live and there is nowhere on a static site
+   * to redirect it from.
+   */
   {
     slug: "word-family-worksheets",
-    name: "Word families",
-    short: "Word families",
-    heading: "Word family worksheets",
-    keyword: "Free printable word family worksheets",
+    name: "Onset and rime",
+    short: "Onset and rime",
+    heading: "Onset and rime worksheets",
+    keyword: "Free printable onset and rime worksheets",
     summary:
-      "Twenty spelling sums — a beginning added to an ending, with the word they make written on the line, and the key on the page behind.",
+      "Twenty spelling sums — a beginning added to an ending, with the word they make written on the line, and the key on the page behind. The endings come from the spellings you have ticked.",
     lead: "A beginning, a plus sign and an ending, with a line for the word. Changing one sound at the front of a word a child can already read is the cheapest reading practice there is, and it is where a first reader gets their first hundred words.",
     notes: [
       "The endings on this page are not chosen from a list — they are the endings the words a child can read happen to share, which is why a family only appears when there are at least two words behind it. A sheet with one word in a family is not teaching a pattern, it is teaching a word, and there is a better sheet for that.",

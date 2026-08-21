@@ -10,6 +10,11 @@ import Content from "@/layouts/Content.astro";
  * It renders in Empty world, which is one horizon line and no ground. The joke
  * is that it's also the literal truth, and a dead end is a better place to be
  * charming than a privacy policy is.
+ *
+ * `noindex` because this file is reachable at /404 as well as being served for
+ * every wrong address. CloudFront answers a mistyped URL with a real 404 status
+ * (sst.config.ts), which is the signal that matters — but nothing stops a
+ * crawler asking for /404 itself and getting a 200 with a page on it.
  */
 ---
 
@@ -17,6 +22,7 @@ import Content from "@/layouts/Content.astro";
   title="Page not found — School Skills"
   description="That page doesn't exist. Head back to the map."
   world="empty"
+  noindex
 >
   <div class="void">
     <p class="hero__eyebrow">

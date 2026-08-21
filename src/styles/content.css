@@ -601,6 +601,77 @@
   color: var(--chalk);
 }
 
+/* ── The paper half ─────────────────────────────────────────
+   The home page's Print Shop band. Its section carries `data-world="paper"`,
+   so everything below reads The Print Shop's own tokens and the change of
+   subject arrives as a change of ground — the same trick the map plays to
+   render four worlds at once.                                              */
+
+.paper__in {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(21rem, 100%), 1fr));
+  gap: var(--gap-5);
+  align-items: center;
+}
+
+.paper__shelves {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gap-1);
+  margin-top: var(--gap-3);
+}
+
+.paper__shelves a {
+  display: inline-block;
+  padding: 0.35em 0.8em;
+  border: 1px solid var(--hairline);
+  border-radius: 999px;
+  font-size: var(--step--1);
+  font-weight: 700;
+  color: var(--chalk-soft);
+  white-space: nowrap;
+  transition:
+    color 0.14s ease,
+    border-color 0.14s ease,
+    background-color 0.14s ease;
+}
+
+.paper__shelves a:hover {
+  color: var(--chalk);
+  border-color: color-mix(in oklab, var(--accent) 55%, transparent);
+  background: rgb(255 255 255 / 5%);
+}
+
+/* A whole sheet, shown small.
+
+   `transform` rather than a smaller width, because every length inside a sheet
+   is a real inch (sheet.css) — narrowing the box would reflow the paper into a
+   layout it never prints as, which is exactly the lie this band exists to
+   avoid. Scaling leaves the geometry alone and shrinks the picture of it.
+
+   A transform costs no layout, so the frame has to be given the scaled size
+   itself or the text beside it would sit on top of a sheet the box knows
+   nothing about. */
+.paper__peek {
+  --peek: 0.46;
+  width: calc(8.5in * var(--peek));
+  height: calc(11in * var(--peek));
+  margin-inline: auto;
+}
+
+.paper__peek .sheet {
+  transform: scale(var(--peek));
+  transform-origin: top left;
+}
+
+/* 8.5 inches at 0.46 is 375px, which is wider than the phone it has to sit on
+   once the wrap has taken its padding. */
+@media (width <= 34rem) {
+  .paper__peek {
+    --peek: 0.34;
+  }
+}
+
 /* ── The pause menu: privacy, terms, 404 ────────────────────────────────
    Line world and Empty world have no scenery, so the page carries itself on
    measure and rhythm alone. Nothing to add here beyond a narrower column and

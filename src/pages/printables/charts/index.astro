@@ -1,5 +1,6 @@
 ---
 import Content from "@/layouts/Content.astro";
+import { trailTo } from "../_shelves";
 import AdSlot from "@/components/site/AdSlot.astro";
 import { CHART_SHEETS, chartShelf, pathFor } from "../_charts";
 import HubLinks from "../_HubLinks.astro";
@@ -22,7 +23,7 @@ import HubLinks from "../_HubLinks.astro";
 const title =
   "Free printable maths charts, number lines and grids | School Skills";
 const description =
-  "Printable reference sheets: hundred charts blank and filled, number lines with the interval you choose, first-quadrant and four-quadrant coordinate grids, and place-value charts down to thousandths. Real inches, drawn as ink so they print — free, no account, no download.";
+  "Printable reference sheets: hundred charts blank and filled, number lines with the interval you choose, first-quadrant and four-quadrant coordinate grids, and place-value charts down to thousandths. Real inches, drawn as ink so they print — free, no account, print or save as PDF.";
 
 const groups = chartShelf();
 ---
@@ -31,6 +32,7 @@ const groups = chartShelf();
   title={title}
   description={description}
   world="paper"
+  breadcrumb={trailTo("charts")}
   jsonLd={{
     "@context": "https://schema.org",
     "@type": "CollectionPage",

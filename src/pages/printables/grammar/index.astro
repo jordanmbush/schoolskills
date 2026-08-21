@@ -1,5 +1,6 @@
 ---
 import Content from "@/layouts/Content.astro";
+import { trailTo } from "../_shelves";
 import AdSlot from "@/components/site/AdSlot.astro";
 import { GRAMMAR_SHEETS, grammarShelf, pathFor } from "../_grammar";
 import HubLinks from "../_HubLinks.astro";
@@ -20,7 +21,7 @@ import HubLinks from "../_HubLinks.astro";
 const title =
   "Free printable grammar worksheets — parts of speech, sentences and punctuation | School Skills";
 const description =
-  "Printable grammar practice: parts of speech, subject and predicate, statements and questions and commands, end punctuation and capital letters. Every sheet prints its answer key on the page behind — free, no account, no download.";
+  "Printable grammar practice: parts of speech, subject and predicate, statements and questions and commands, end punctuation and capital letters. Every sheet prints its answer key on the page behind — free, no account, print or save as PDF.";
 
 const groups = grammarShelf();
 ---
@@ -29,6 +30,7 @@ const groups = grammarShelf();
   title={title}
   description={description}
   world="paper"
+  breadcrumb={trailTo("grammar")}
   jsonLd={{
     "@context": "https://schema.org",
     "@type": "CollectionPage",

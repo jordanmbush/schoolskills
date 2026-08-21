@@ -1,5 +1,6 @@
 ---
 import Content from "@/layouts/Content.astro";
+import { trailTo } from "../_shelves";
 import AdSlot from "@/components/site/AdSlot.astro";
 import { PHONICS_SHEETS, pathFor, phonicsShelf } from "../_phonics";
 import HubLinks from "../_HubLinks.astro";
@@ -20,7 +21,7 @@ import HubLinks from "../_HubLinks.astro";
 const title =
   "Free printable phonics worksheets — built from the sounds you have taught | School Skills";
 const description =
-  "Printable phonics practice: sound cards, a sounds-we-know wall chart, CVC blending lines, word families, sound-to-word matching, dictation and decodable sentences. Every sheet is built from the spellings you tick, so nothing on it is a sound your child has not met — free, no account, no download.";
+  "Printable phonics practice: sound cards, a sounds-we-know wall chart, CVC blending lines, word families, sound-to-word matching, dictation and decodable sentences. Every sheet is built from the spellings you tick, so nothing on it is a sound your child has not met — free, no account, print or save as PDF.";
 
 const groups = phonicsShelf();
 ---
@@ -29,6 +30,7 @@ const groups = phonicsShelf();
   title={title}
   description={description}
   world="paper"
+  breadcrumb={trailTo("phonics")}
   jsonLd={{
     "@context": "https://schema.org",
     "@type": "CollectionPage",
