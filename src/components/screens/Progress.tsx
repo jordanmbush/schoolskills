@@ -41,9 +41,15 @@ import { duration, percent } from "@/engine/format";
  * The record book — one screen for everything this player has ever raced.
  *
  * It is mounted on the card island, but it is not that island's screen. The
- * typing results link into it by URL (`/flash-cards#/p/:id/progress`), and the
- * stats, the badges and the records below cover every world a player has been
- * in. Only the fact map and the trouble spots are per-deck, chosen by `mode`.
+ * typing results link into it by URL (`/flash-cards#/p/:id/progress`), and it
+ * mixes two scopes deliberately. Races, cards, correct, time practising, the
+ * badges, the record book and the run list all count every world the player
+ * has been in. The fact map, the trouble spots, the table trophies and the
+ * "Facts mastered" stat follow the deck switcher, because each of them reads
+ * `grid` or `trouble`, and `factStats`/`troubleFacts` drop every session run
+ * on another `mode`. So switching decks moves one stat in a strip of
+ * lifetime totals — intended, and the reason that strip is not simply
+ * `lifetimeStats`.
  *
  * So it has to be able to show a deck this mount cannot play, and `ownsMode`
  * is what decides that: it is the difference between "Drill these" being a

@@ -23,7 +23,9 @@ import { sfx } from "@/services/sound";
  *
  * Subject-agnostic on purpose. The eyebrow, the title and the blurb all come
  * from `useSubject()`, so this one screen is The Grid at `/flash-cards` and
- * Word Jungle at `/spelling/play`, and nothing in it names a deck family.
+ * Word Jungle at `/spelling/play`, and nothing in it branches on a deck
+ * family. (`timeLimitForAge` is imported from the flash-card module, but it
+ * only turns an age into a clock and is shared by every deck.)
  *
  * The typing island has no equivalent: with one game there is nothing to
  * choose between, so `/typing#/p/:id` is its setup screen instead.
