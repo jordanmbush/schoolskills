@@ -6,7 +6,8 @@ import { answerKey, buildSheet, describeSheet, sheetSpec } from "../index";
 import { sheetFamily } from "../families";
 import type { Block, Paper, PuzzleConfig } from "../types";
 
-import { SEARCH_CELL, findWord, searchCell, searchSteps } from "./search";
+import { SEARCH_CELL, searchCell } from "./metrics";
+import { findWord, searchSteps } from "./search";
 import {
   MAX_GRID,
   MIN_GRID,

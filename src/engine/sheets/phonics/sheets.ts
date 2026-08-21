@@ -39,15 +39,8 @@ import { points } from "../paper";
 import { SHEET_CREDIT, SHEET_WORLD, gameUrl, type SheetSpec } from "../spec";
 
 import { WORDS, WORD_BY_SPELLING, type Word } from "./bank";
-import {
-  CARD_BIG_EMS,
-  STRIP_BIG_EMS,
-  cardRowEms,
-  markGrapheme,
-  markSentence,
-  markWord,
-  sentenceLength,
-} from "./cards";
+import { markGrapheme, markSentence, markWord, sentenceLength } from "./cards";
+import { CARD_BIG_EMS, STRIP_BIG_EMS, cardRowEms } from "./metrics";
 import {
   pickWords,
   readInventory,

@@ -129,10 +129,27 @@ renamed. Return an `UNKNOWN_SHEET` that renders a blank page and says so.
 Behaviour is all a spec carries. Which `kind` reaches a family and what it is
 called are in `families.ts`, beside a `() => import(...)` for the module itself,
 because a family reached by a static import is a family in every bundle that can
-see the registry — and several carry a corpus. Eagerly, the builder shipped
-421.7 KB against 48–78 KB for every other island, the passage library alone
-being 174 KB of text: a parent choosing a times-table sheet downloaded the King
-James Bible to do it.
+see the registry — and several carry a corpus. Eagerly, opening the builder
+fetched **696,078 B** of JavaScript, the passage library alone being 174 KB of
+text: a parent choosing a times-table sheet downloaded the King James Bible to
+do it. It now fetches **340,503 B**, and the rest arrives a family at a time.
+
+**Both numbers are the whole static import closure, walked from
+`dist/printables/make/index.html` — not the island's entry chunk.** The entry
+chunk fell much further, 431,805 B to 66,315 B, but most of that is code that
+moved into siblings the entry still imports statically; a budget set on the
+entry alone would sit at 66 KB and never notice 300 KB of new siblings beside
+it. Two thirds of what remains is React (184,057 B, the same file on both
+sides): the sheet code itself is 512,021 B → 156,446 B. Whatever enforces a
+budget here has to walk the closure for the same reason (DEBT12).
+
+The closure is also the only thing that can say whether a family is _actually_
+lazy. A block renderer that reaches into a family module for one pure helper
+puts that whole family in the closure, and its `() => import(...)` then resolves
+from memory — lazy in the registry, eager in the browser. That is what
+`phonics/metrics.ts` and `words/metrics.ts` exist to prevent, and
+`components/sheet/blocks/index.test.ts` is the guard that fails when a renderer
+reaches past them.
 
 So the table is read two ways:
 
@@ -1552,3 +1569,7 @@ The engine is pure, so most of this is cheap and worth having:
   catalog page's sheet.
 - **Sitemap.** `/printables` and every catalog slug are in it; `/printables/make`
   is not.
+- **The island's import graph.** Nothing under `src/components/sheet/` reaches a
+  sheet family or a corpus by a static import, so a helper borrowed from a
+  family module fails the suite instead of quietly re-fattening the builder
+  (§3).
