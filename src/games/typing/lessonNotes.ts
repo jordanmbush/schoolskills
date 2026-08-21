@@ -4,15 +4,11 @@ import type { LadderProgress } from "@/engine/typing/ladder";
 import type { KeyBar, Verdict } from "@/engine/typing/verdict";
 
 /**
- * A verdict, in a sentence a seven-year-old reads once (docs/typing.md §6.1).
+ * A verdict, in a sentence a seven-year-old reads once (§6.1).
  *
- * The whole reason there are three bars rather than one score is that **a
- * single number tells you that you failed and not what to do**. Bars alone are
- * only most of the way there: a child who has just missed something has to
- * read three of them, compare each against its mark and work out which one
- * cost them the lesson. This file does that reading for them and says it in
- * words — "you were fast enough; the `z` key needs more practice" — which is
- * the difference between a score and an instruction.
+ * Three bars leave a child to compare each against its mark and work out which
+ * one cost them the lesson. This file does that reading for them and says it in
+ * words — "you were fast enough; the `z` key needs more practice".
  *
  * Strings rather than JSX on purpose. What is hard here is the *choice* — which
  * bar to name, which to praise, and what a storm says instead — and keeping it
@@ -23,11 +19,9 @@ import type { KeyBar, Verdict } from "@/engine/typing/verdict";
 /**
  * The new keys, as one bar.
  *
- * A lesson introduces two characters as a rule, six at lesson 67 and fifteen at
- * lesson 31 — and fifteen bars is a wall rather than a signal. So the bar shown
- * is the key that is holding you up, because the gate is every key at once
- * (§6.4): the run is only through when the weakest one is, and naming it is the
- * instruction the child needs.
+ * A lesson introduces two characters as a rule, but fifteen at lesson 31 — and
+ * fifteen bars is a wall rather than a signal. So the bar shown is the key
+ * holding you up, because the gate is every key at once (§6.4).
  *
  * "Weakest" is a not-yet-passed key before a lower fraction, which is not the
  * same ordering. A key struck right three times reads 100% and is still not
@@ -50,34 +44,26 @@ const sentence = (text: string) =>
 /**
  * Why this run did not pass, and what was already there.
  *
- * Two clauses, and the order of the first is §6.1's order — accuracy, then the
- * new keys, then speed — because that is the order the criteria matter in and
- * therefore the order to fix them in. A child failing accuracy *and* speed is
- * told about accuracy: speeding up would only make it worse.
+ * Two clauses. The first names the gap in §6.1's order, which is the order to
+ * fix them in: a child failing accuracy *and* speed is told about accuracy,
+ * because speeding up would only make it worse.
  *
  * The praise is the last bar that was met, read the other way down the same
  * list, which is why it can never name the bar the fix just named. It is not
- * decoration. "You were fast enough" is the half of the instruction that says
- * *don't change that* — without it, a child who slows down to fix `z` and
- * drops under the speed bar has been taught the wrong lesson by a screen that
- * only ever said no.
+ * decoration: without it, a child who slows down to fix `z` and drops under the
+ * speed bar has been taught the wrong lesson by a screen that only ever said
+ * no.
  *
  * Only ever called on a run that did not pass.
  */
 export function missNote(lesson: Lesson, verdict: Verdict): string {
-  // ── The storm arm (§6.1, §8.7) ────────────────────────────────────────────
-  // A Hailstorm level is marked on surviving the wave and on accuracy, and
-  // `Verdict` carries no bar for the first of them — surviving is a fact about
-  // the run's length, so §6.1's type leaves `wpm` full and `keys` empty and
-  // lets `passed` carry it. That is right for the model and wrong on a screen:
-  // full bars over the word "failed" read as a bug at seven. So the storm's
-  // reason is stated in words here, and `PassBars` draws no bar a storm was
-  // never asked for.
-  //
-  // Which reason is decidable from the verdict alone: `passed` is accuracy AND
-  // survival, so a failed run with its accuracy bar met can only have died in
-  // the wave. Nothing about how a wave works is invented here — that is #159's
-  // to build, and this is what the screen says until it does.
+  // `Verdict` carries no bar for surviving the wave — §6.1's type leaves `wpm`
+  // full and `keys` empty and lets `passed` carry it. Right for the model and
+  // wrong on a screen: full bars over the word "failed" read as a bug at seven.
+  // So the storm's reason is stated in words here, and `PassBars` draws no bar
+  // a storm was never asked for. Which of the two reasons is decidable from the
+  // verdict alone: `passed` is accuracy AND survival, so a failed run with its
+  // accuracy bar met can only have died in the wave.
   if (lesson.pass.kind === "storm") {
     return verdict.accuracy.ok
       ? sentence("the wave got through — you have to face the whole storm")
@@ -109,16 +95,13 @@ export function missNote(lesson: Lesson, verdict: Verdict): string {
  *
  * Unlock is `max(cleared) + 1`, so the run that just cleared the frontier is
  * the one whose number `best` now IS — which is the whole test for "did this
- * open anything". A child at lesson 41 replaying lesson 3 opens nothing, and
- * is told where they are up to instead of being told a lie; passing checkpoint
- * 40 from a standing start opens 41, because clearing a checkpoint clears
- * everything below it by that same `max`.
+ * open anything". A child at lesson 41 replaying lesson 3 opens nothing, and is
+ * told where they are up to instead.
  *
- * `next` is the ladder's own pointer, already carried over any Hailstorm level
- * standing in the way (§8.8) — so the lesson this hands back is never a storm,
- * and the button built on it never sends a child to a wave they did not ask
- * for. At the top of the hundred it is `null`, and there is no next lesson to
- * offer.
+ * `next` is already carried over any Hailstorm level standing in the way
+ * (§8.8), so the lesson this hands back is never a storm and the button built
+ * on it never sends a child to a wave they did not ask for. At the top of the
+ * hundred it is `null`.
  */
 export function nextNote(
   lesson: Lesson,
@@ -141,15 +124,14 @@ export function nextNote(
 /**
  * What opens a lesson that is not open yet (§6.6).
  *
- * The rung below it — skipping any Hailstorm level in between, because the
- * pointer is carried over a storm rather than made to jump it (§8.8), so
- * clearing lesson 44 is what opens lesson 46 and saying "pass lesson 45" would
- * send a child at a wave they cannot play on a tablet.
+ * The rung below it, skipping any Hailstorm level in between (§8.8): clearing
+ * lesson 44 is what opens lesson 46, and "pass lesson 45" would send a child at
+ * a wave they cannot play on a tablet.
  *
- * One sentence, because it is read on a tile as well as in the brief and
- * ninety tiles all offering the same advice about checkpoints is not advice,
- * it is wallpaper. The nudge towards the express lane belongs on the screen
- * where a child is actually stopped, which is the brief.
+ * One sentence, because it is read on a tile as well as in the brief and ninety
+ * tiles offering the same advice about checkpoints is wallpaper — the nudge
+ * towards the express lane belongs where a child is stopped, which is the
+ * brief.
  *
  * A locked lesson always has a rung below it — lesson 1 is `next` on a profile
  * with no runs at all and can never be locked — but the fallback is written

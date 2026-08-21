@@ -72,7 +72,8 @@ export function Passage({
                 );
               })}
               {/* Anything typed past the end of the word is wrong but has to
-                  be visible, or a doubled letter looks like nothing happened. */}
+                  be visible, or a doubled letter looks like nothing
+                  happened. */}
               {entry.length > card.answer.length && (
                 <span className="passage__ch is-miss">
                   {entry.slice(card.answer.length)}

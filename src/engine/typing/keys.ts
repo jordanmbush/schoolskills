@@ -6,25 +6,19 @@ import { LESSONS } from "./lessons";
  * What a child may be asked to type at lesson n (docs/typing.md §5.1, §5.2).
  *
  * The **unlocked alphabet** at lesson n is the union of `introduces` over
- * lessons 1…n, plus space. It is *computed here, never written down*, which is
- * the whole point: a per-block alphabet spelled out in a table is a second
- * source of truth that a re-ordered ladder walks away from silently, and the
- * failure it produces is a lesson asking a five-year-old for a key nobody has
- * shown them. Move a lesson and its alphabet moves with it, because there is
- * nowhere else for the alphabet to be.
+ * lessons 1…n, plus space, and it is *computed here, never written down*: a
+ * per-block alphabet spelled out in a table is a second source of truth that a
+ * re-ordered ladder walks away from silently, and what that produces is a
+ * lesson asking a five-year-old for a key nobody has shown them. Move a lesson
+ * and its alphabet moves with it, because there is nowhere else for it to be.
+ * It is what the reachability invariant is checked against (§5.2), and why the
+ * layout is in the engine rather than the view (§3.1).
  *
- * This is the module the reachability test (§5.2) is built out of — "every
- * character of every word a lesson can generate is producible from the keys
- * unlocked at that lesson" — and it is why the layout had to be in the engine
- * rather than the view (§3.1): the curriculum, not the picture, is what asks
- * the keyboard questions.
- *
- * ── The two halves of a shifted character ────────────────────────────────────
- * `A` is not `a`. `strokeFor("A")` names KeyA *and* ShiftRight, so a character
- * is only unlocked once both keys are — which is why the capitals are not
- * available at lesson 30 even though every letter is. A naive union would hand
- * them over the moment the letters arrived and block 4 would have nothing left
- * to teach.
+ * A shifted character needs both of its keys: `strokeFor("A")` names KeyA
+ * *and* ShiftRight (§3.3), so `A` is locked until both have been taught. That
+ * is why the capitals are still out of reach at lesson 30, where every letter
+ * has arrived and neither shift has — a naive union would hand them over and
+ * leave block 4 with nothing to teach.
  */
 
 /** The one character no lesson introduces, because words are made of them. */
@@ -52,18 +46,16 @@ const LETTER = /^[a-z]$/;
  *
  * A shift is not a character, so it can never appear in `introduces` — and yet
  * it plainly has to be unlocked by something, or `A` is either free from
- * lesson 1 or unreachable forever. What unlocks it is block 4's capitals
- * (§5.5): "A shift is not a character, so what these two lessons introduce is
- * the set of capitals each one *reaches*", and each teaches only the shift it
- * is actually held with — lesson 31's fifteen left-hand capitals are all
- * right-shift, so ShiftLeft is still locked when lesson 31 ends.
+ * lesson 1 or unreachable forever. Block 4 unlocks it by introducing the
+ * capitals each shift reaches (§5.5), so each of its two lessons teaches only
+ * the shift it is actually held with: ShiftLeft is still locked when lesson
+ * 31's fifteen right-shift capitals end.
  *
  * Every *other* shifted character on the board — `!`, `?`, `:`, `"` — arrives
- * in block 7, thirty lessons later, and arrives assuming the child already
- * knows to hold shift. So a capital is what teaches a shift and punctuation is
- * not, which is what gives the rule below its teeth: a punctuation lesson
- * dragged up in front of block 4 loses its keys instead of quietly teaching a
- * technique nobody has been shown.
+ * in block 7 assuming the child already knows to hold shift. So a capital
+ * teaches a shift and punctuation does not, which is what gives the rule below
+ * its teeth: a punctuation lesson dragged up in front of block 4 loses its
+ * keys instead of quietly teaching a technique nobody has been shown.
  */
 function shiftTaughtBy(ch: string): ShiftCode | null {
   const stroke = strokeFor(ch);
@@ -83,12 +75,12 @@ function shiftTaughtBy(ch: string): ShiftCode | null {
  *     pools, Hailstorm's waves) and it should not carry a character no
  *     keyboard can type.
  *   - **No shift has been taught yet.** The capitals at lesson 30.
- *   - **Its base key has not arrived.** `_` before `-`, `?` before `/`. Today's
- *     ladder never does this — the test at lesson 100 asserts the whole union
- *     survives — and the reason to drop rather than to trust is that dropping
- *     is the safe direction: a lesson that loses its own new keys fails §5.2's
- *     reachability test loudly, where handing a child an untaught key fails
- *     silently, in front of them.
+ *   - **Its base key has not arrived.** `_` before `-`, `?` before `/`.
+ *
+ * Today's ladder never hits the last two — the test at lesson 100 asserts the
+ * whole union survives — and dropping is the safe direction anyway: a lesson
+ * that loses its own new keys fails §5.2's reachability test loudly, where
+ * handing a child an untaught key fails silently, in front of them.
  */
 function strikeable(
   unlocked: ReadonlySet<string>,
@@ -115,8 +107,7 @@ function strikeable(
  * Built once, walking the lessons in order of `n` rather than array order —
  * `n` is the number in `Session.mode` and the array is a table someone will
  * one day re-order in place, so "lessons 1…n" means what it says. Index 0 is
- * the alphabet before the ladder starts, which is the space bar and nothing
- * else.
+ * the alphabet before the ladder starts: the space bar and nothing else.
  *
  * A hundred sets of a hundred characters is a few thousand strings held for
  * the life of the process, and the alternative is rebuilding the union on
@@ -148,19 +139,17 @@ const ALPHABETS: readonly ReadonlySet<string>[] = (() => {
 /**
  * The characters a child has met by the end of lesson `n`, plus space.
  *
- * Total, and never throws: a lesson number off the end of the ladder is the
- * whole alphabet and one before the start is the space bar, for the same
- * reason `deckSpec(mode)` never throws — a saved session outlives the ladder
- * it was run on, and a record book from two re-tunings ago still has to open.
- * `Infinity` is off the end like any other overshoot, and `-Infinity` is
- * before the start; only `NaN` is turned away, because it is not a lesson
- * number that missed but a `Number("L7x")` that failed, and the safe answer to
- * a question nobody asked is nothing at all rather than an alphabet somebody
- * was never given.
+ * Total, and never throws: a number off the end of the ladder is the whole
+ * alphabet and one before the start is the space bar, for the same reason
+ * `deckSpec(mode)` never throws — a saved session outlives the ladder it was
+ * run on. `NaN` is the one input sent to the start rather than the end,
+ * because it is not a lesson number that overshot but a `Number("L7x")` that
+ * failed, and the safe answer to a question nobody asked is the space bar
+ * rather than an alphabet somebody was never given.
  *
- * The set is shared, not copied. It is `ReadonlySet` because every caller
- * reads it; one that mutates it would be editing the curriculum for everybody
- * else in the tab.
+ * The set is shared, not copied. `ReadonlySet` because every caller reads it;
+ * one that mutated it would be editing the curriculum for everybody else in
+ * the tab.
  */
 export function unlockedAt(n: number): ReadonlySet<string> {
   const last = ALPHABETS.length - 1;

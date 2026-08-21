@@ -26,22 +26,15 @@ import type { StormState, WaveSpec } from "@/engine/typing/storm";
 import type { ComponentProps } from "react";
 
 /**
- * The one claim this screen exists to keep: a letter falls down the column of
- * its own key (docs/typing.md §8.2, decision 19).
+ * A letter falls down the column of its own key (§8.2, decision 19).
  *
- * It is worth testing at this altitude because it can be broken by a change to
- * either half and looks fine from both. The engine can hand over a lane it
- * measured from the wrong edge of a key; the stylesheet can multiply it by the
- * wrong unit, or forget that the keycap is drawn inset inside its slot. Every
- * one of those type-checks, renders, and teaches a child that `y` lives
- * somewhere it does not — which is worse than not drawing the hint at all,
- * because they will believe it.
- *
- * So the geometry is checked in KEY UNITS, end to end: the lane the component
- * writes, against the cap the board draws, through the arithmetic game.css
- * actually performs — both sides read out of the stylesheet rather than
- * restated here, for the reason `capCentre` gives. No pixels are involved on
- * either side, which is the property being defended.
+ * Worth testing at this altitude because either half can break it and look
+ * fine from both: a lane measured off the wrong edge of a key, or a stylesheet
+ * that forgets the keycap is drawn inset inside its slot, both type-check and
+ * both render. So the geometry is checked in KEY UNITS end to end — the lane
+ * the component writes against the cap the board draws, through the arithmetic
+ * game.css actually performs. No pixels are involved on either side, which is
+ * the property being defended.
  */
 
 const css = readFileSync(
@@ -53,20 +46,15 @@ const css = readFileSync(
 const STORM_BLOCK = "/* ── Hailstorm: the field";
 
 /**
- * The field's rules with the prose taken out.
- *
- * The comments in this block quote the very things being asserted against —
- * "`height`, not `min-height`", "390px of height" — so a test reading them
- * would be marking the explanation rather than the stylesheet.
+ * The field's rules with the prose taken out. The comments in this block quote
+ * the very things asserted against — "`height`, not `min-height`" — so a test
+ * that read them would be marking the explanation rather than the stylesheet.
  */
 const storm = css
   .slice(css.indexOf(STORM_BLOCK))
   .replace(/\/\*[\s\S]*?\*\//g, "");
 
-/**
- * The whole stylesheet with its prose taken out, so a declaration is read from
- * the rule that ships and never from a comment describing it.
- */
+/** The whole stylesheet with its prose taken out, for the same reason. */
 const sheet = css.replace(/\/\*[\s\S]*?\*\//g, "");
 
 /**
@@ -151,11 +139,10 @@ const unitsOf = (expr: string, vars: Record<string, number>): number => {
 };
 
 /**
- * The keycap inset, as the fraction of a key unit game.css sets it to.
- *
- * Read out of the stylesheet rather than written down here, because the whole
- * point of the arithmetic below is that one number governs both the cap and
- * the lane. A test carrying its own copy could agree with neither.
+ * The keycap inset, as the fraction of a key unit game.css sets it to. Read
+ * out of the stylesheet because the point of the arithmetic below is that one
+ * number governs both the cap and the lane; a test carrying its own copy could
+ * agree with neither.
  */
 const GAP = unitsOf(declaration(":root", "--key-gap"), { "--key": 1 });
 
@@ -171,10 +158,9 @@ const only = (ch: string, count = 1, fallMs = 1000): WaveSpec => ({
 
 /*
  * Every absolute moment in this file is measured from the instant the first
- * letter starts to DROP, not from the start of the wave — hence the offset.
- * A real letter hangs at the top for `QUEUE_MS` before it moves (§8.3), and
- * that beat is the same for every letter of every level, so folding it in here
- * once leaves each schedule below saying exactly what it always said.
+ * letter starts to DROP, not from the start of the wave — hence the offset. A
+ * letter hangs at the top for `QUEUE_MS` first (§8.3), and folding that in
+ * once here leaves each schedule below saying what it says.
  */
 const frameOf = (spec: WaveSpec, atMs: number): StormState =>
   tick(startStorm(buildWave(spec, 7)), QUEUE_MS + atMs);
@@ -206,11 +192,10 @@ const stones = (state: StormState) =>
   }));
 
 /**
- * Where a falling letter's middle lands, in key units.
- *
- * The field's own `left` declaration, run rather than restated. `translate:
- * -50% 0` — pinned below, because this depends on it — centres the stone on
- * that point, so what comes back is the middle and not the left edge.
+ * Where a falling letter's middle lands, in key units: the field's own `left`
+ * declaration, run rather than restated. `translate: -50% 0` — pinned below,
+ * because this depends on it — centres the stone on that point, so what comes
+ * back is the middle and not the left edge.
  */
 const stoneCentre = (lane: number) =>
   unitsOf(declaration(".storm__letter", "left"), {
@@ -222,15 +207,14 @@ const stoneCentre = (lane: number) =>
 /**
  * Where a drawn keycap's middle sits, in the same units — from the board's own
  * `left` and `width`, which is where the inset the lane compensates for is
- * actually written down.
+ * written down.
  *
  * Both sides coming out of the sheet is the whole point. Two hand-written
  * models would each carry the half-gap term they were meant to be checking,
  * and it would cancel across the assertion: subtract half a gap from the lane,
- * fold half a gap into the cap, and the two agree for ANY gap — including
- * none, and including a board that insets its caps by twice what the field
- * compensates for. Reading the declarations means a change to either half
- * moves one side of the comparison and not the other.
+ * fold half a gap into the cap, and the two agree for ANY gap — including a
+ * board that insets its caps by twice what the field compensates for. Reading
+ * the declarations moves one side of the comparison and not the other.
  */
 const capSpan = (key: KeyDef): [number, number] => {
   const vars = {
@@ -272,10 +256,6 @@ const cap = (code: string) => KEYS.find((k) => k.code === code)!;
 
 describe("StormField", () => {
   it("puts a letter over the cap that types it, to the pixel", () => {
-    // The claim, at last: `f` falls onto `f`. Not "near" it and not "over its
-    // slot" — the middle of the falling letter and the middle of the drawn
-    // keycap are the same point on the screen, because the lane steps back by
-    // exactly the half-gap the cap is inset by.
     const [f] = stones(frameOf(only("f"), 500));
 
     expect(f.ch).toBe("f");
@@ -289,12 +269,9 @@ describe("StormField", () => {
     expect(centre).toBeGreaterThan(capCentre(cap("KeyG")));
     expect(centre).toBeLessThan(capCentre(cap("KeyH")));
 
-    // And where between them: a quarter of a unit left of `h` and three
-    // quarters right of `g`, because the top row is staggered a quarter unit
-    // out from the home row rather than half. That is the plastic — `y` really
-    // does sit up and slightly left of `h` — and it is the whole spatial hint:
-    // a child who reaches towards `h` for a falling `y` has learnt something
-    // true about where their finger has to go.
+    // A quarter of a unit left of `h` and three quarters right of `g`, because
+    // the top row is staggered a quarter unit out from the home row rather
+    // than half — which is where `y` sits on the plastic.
     expect(capCentre(cap("KeyH")) - centre).toBeCloseTo(0.25, 10);
     expect(centre - capCentre(cap("KeyG"))).toBeCloseTo(0.75, 10);
   });
@@ -314,9 +291,9 @@ describe("StormField", () => {
     expect(rule).toContain(
       "left: calc(var(--lane) * var(--key) - var(--key-gap) / 2)",
     );
-    // And that `left` is the letter's CENTRE rather than its left edge, which
-    // is what `stoneCentre` above reads it as. Lose the translate and every
-    // letter moves half a stone right of the key it names.
+    // `left` is the letter's CENTRE rather than its left edge, which is what
+    // `stoneCentre` above reads it as. Lose the translate and every letter
+    // moves half a stone right of the key it names.
     expect(rule).toContain("translate: -50% 0");
     // No length in this block is absolute except a hairline border: a field
     // measured in pixels would come apart from the board the moment `--key`
@@ -325,18 +302,16 @@ describe("StormField", () => {
   });
 
   it("falls on a transform, down the sky rather than down itself", () => {
-    // The fall is a transform and not `top`: twelve stones moving sixty times
-    // a second is twelve layouts a frame written the other way (§8.9). And it
-    // is `translateY`, which is what leaves `translate: -50% 0` free to hold
-    // the lane centring without the two writing over each other.
+    // A transform and not `top`, so twelve moving stones are not twelve
+    // layouts a frame (§8.9). `translateY` specifically, which leaves
+    // `translate: -50% 0` free to hold the lane centring.
     expect(declaration(".storm__letter", "transform")).toBe(
       "translateY(calc(var(--drop) * var(--fall)))",
     );
-    // `top` is where the fall begins and nothing else; the fall itself is not
-    // written there. It is the sky's whole travel minus this letter's, so a
-    // stone that is capped comes into view lower — and `top + --fall` is
-    // `--sky-fall` for every letter, which is the promise that a capped stone
-    // still lands exactly on the shield rather than short of it.
+    // `top` is where the fall begins and nothing else: the sky's travel minus
+    // this letter's (§8.2). So `top + --fall` is `--sky-fall` for every
+    // letter, which is the promise that a capped stone still lands exactly on
+    // the shield rather than short of it.
     expect(declaration(".storm__letter", "top")).toBe(
       "calc(var(--sky-fall) - var(--fall))",
     );
@@ -354,26 +329,22 @@ describe("StormField", () => {
 
   it("caps how fast a stone falls, in stone heights rather than pixels", () => {
     // The travel is the SHORTER of the sky and what the speed cap allows
-    // (decision 65). Without the `min` the fall is whatever the viewport
-    // happens to be, so the same level is faster on a bigger monitor — which
-    // is how a 900ms fall came to cross about 720px a second once #197 took
-    // the board off the screen, and how `i` and `l` stopped being different
-    // letters at speed.
+    // (§8.2, decision 65). Without the `min` the fall is whatever the viewport
+    // happens to be, so the same level is faster on a bigger monitor.
     expect(declaration(".storm__letter", "--fall").replace(/\s+/g, " ")).toBe(
       "min( var(--sky-fall), " +
         "calc(var(--fall-ms, 1000) / 1000 * var(--hail-speed) * var(--stone)) )",
     );
 
-    // In stone heights a second, and therefore a number with no unit: what
-    // blurs a moving glyph is how far it travels against its own size, so a
-    // cap written in pixels would mean something different at every `--key`.
-    // High enough that an ordinary screen uses the whole sky — the reading
-    // time is the beat a letter hangs for first (`QUEUE_MS`), not a slower
-    // fall — and low enough that a very tall one cannot run away with it.
+    // Stone heights a second, and therefore unitless (§8.2). Pinned rather
+    // than left open because the number is the whole of the backstop: high
+    // enough that an ordinary screen uses the whole sky, low enough that a
+    // very tall one cannot run away with it.
     expect(declaration(".storm", "--hail-speed")).toBe("9");
 
-    // And the letter's own fall time is a render's to write, not the loop's:
-    // it is fixed when the wave is built, where `--drop` moves every frame.
+    // The letter's own fall time is fixed when the wave is built, where
+    // `--drop` moves every frame — so it is a render's to write, not the
+    // loop's.
     for (const fallMs of [900, 2600]) {
       const [stone] = stones(frameOf(only("f", 1, fallMs), 100));
       expect(stone.fallMs).toBe(fallMs);
@@ -381,27 +352,18 @@ describe("StormField", () => {
   });
 
   it("draws one key unit, shared with the board it is aiming at", () => {
-    // The AC's "one source of truth" is the `KEY_ROWS` table for the lanes and
-    // this custom property for the scale. Two declarations of it reachable
-    // from THIS screen — one on the board, one on the field — is exactly how a
-    // lane and a cap start disagreeing about how wide a key is. So the storm's
-    // own block declares it nowhere at all: every rule under `.storm` reads
-    // the root's value, and a falling letter has no second opinion available
-    // to land by.
+    // Two declarations reachable from THIS screen is how a lane and a cap
+    // start disagreeing about how wide a key is (§8.2, decision 37). So the
+    // storm's own block declares it nowhere: every rule under `.storm` reads
+    // the root's value, and a falling letter has no second opinion to land by.
     expect(storm).not.toMatch(/--key:\s/);
     expect(/:root\s*{\s*--key:/.test(sheet)).toBe(true);
 
-    // There is one other declaration in the stylesheet, and it is deliberately
-    // not on a screen with lanes. `.race.typing` re-scales the dial to subtract
-    // the chrome a passage screen carries above the board — the HUD, the bars,
-    // the line you type on — because that chrome is a constant and a share of
-    // the viewport cannot express it (§4.7, decision 63). It may, because the
-    // board is the only thing on that screen that reads `--key` at all.
-    //
-    // Pinned at two rather than left open, so that a third has to be argued
-    // for here first. The count is taken off `sheet` and not `css`: the prose
-    // in this stylesheet quotes the property by name, and a test that counted
-    // comments would be marking the explanation.
+    // The one other declaration is `.race.typing`, which is allowed because
+    // the passage screen has no lanes (§4.7, decision 63). Pinned at two
+    // rather than left open, so a third has to be argued for here first. The
+    // count is off `sheet` and not `css`, because the prose in this stylesheet
+    // quotes the property by name.
     expect(sheet.match(/--key:\s/g)).toHaveLength(2);
     expect(/\.race\.typing\s*{\s*--key:/.test(sheet)).toBe(true);
   });
@@ -417,16 +379,12 @@ describe("StormField", () => {
   });
 
   it("lets the field scroll once the run is over, and only then", () => {
-    // The rule above is the hazard while letters are falling; after the run it
-    // is a different one, because what stands in the board's track by then is
-    // the ending, and it is taller than the five rows of keycaps it replaced.
-    // Measured in Chromium at 740×390 on a breached run, `.storm` wants 299px
-    // of a 270px box — the sky has already given everything it has (§8.2) —
-    // and the last button, which is the way off this screen for a child who is
-    // not holding a mouse, is below the fold until this one declaration brings
-    // it back. So it is asserted here rather than left to the comment beside
-    // it: deleted, nothing else in the suite notices, and the screen keeps its
-    // exit somewhere no thumb can reach.
+    // After the run the hazard reverses: the ending stands in the board's
+    // track and is taller than the five rows of keycaps it replaced. Measured
+    // in Chromium at 740×390 on a breached run, `.storm` wants 299px of a
+    // 270px box — the sky has already given everything it has — and the last
+    // button is below the fold until this declaration brings it back. Deleted,
+    // nothing else in the suite notices.
     expect(declaration(".storm:has(.storm__over)", "overflow-y")).toBe("auto");
 
     // Lifted for the ending and for nothing else. Two overflow declarations in
@@ -503,14 +461,10 @@ describe("StormField", () => {
   });
 
   it("borrows exactly the two telemetry colours it has something to say with", () => {
-    // The field itself borrows none of the five — a hailstone in `--lime`
-    // would be saying something was right about it. The shield and the HUD
-    // borrow two, and only where they already mean what they mean everywhere
-    // else on this site: `--flare` is a wrong, and damage, a hole and a wrong
-    // key are the three wrongs this game has; `--lime` is a right, and both a
-    // repair and a live combo are bought with a run of them (§8.5, §8.6). The
-    // other three would each be a lie about what happened — nothing on this
-    // screen is a ghost, a record or a badge.
+    // The field itself borrows none of the five. The shield and the HUD borrow
+    // two, and only where they already mean what they mean everywhere else on
+    // this site (§8.5, §8.6). The other three would each be a lie about what
+    // happened — nothing on this screen is a ghost, a record or a badge.
     const rules = [...storm.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map(
       ([, selector, body]) => ({ selector: selector.trim(), body }),
     );
@@ -534,11 +488,9 @@ describe("StormField", () => {
   });
 
   it("puts each shield segment over the keys of its own finger", () => {
-    // The other half of §8.2's claim, for the other end of the fall: a letter
-    // is over the cap that types it, and the segment it lands on is over the
-    // whole column of keys that finger is responsible for. Both are read out
-    // of the stylesheet in key units, so a change to the board's inset moves
-    // the caps and the segments together or fails here.
+    // The other end of the fall (§8.2). Both are read out of the stylesheet in
+    // key units, so a change to the board's inset moves the caps and the
+    // segments together or fails here.
     for (const finger of SHIELD_FINGERS) {
       const [left, right] = zoneSpan(FINGER_ZONES[finger]);
       const home = KEYS.filter((k) => k.row === 2 && k.finger === finger);
@@ -565,15 +517,11 @@ describe("StormField", () => {
     for (let i = 1; i < spans.length; i++)
       expect(spans[i][0], SHIELD_FINGERS[i]).toBeCloseTo(spans[i - 1][1], 10);
 
-    // And the rail as a whole is centred on the DRAWN board rather than on the
-    // grid of slots behind it — which is what the half-gap step-back buys, and
-    // the reason a segment is allowed to overhang the DRAWN BOARD by the same
-    // half gap at each end. The board, not the sky: the step-back moves the
-    // whole rail left, so measured against the sky it hangs half a gap past
-    // the left edge and stops half a gap short of the right. The caps are the
-    // frame that matters — they are what the assertion below compares against,
-    // and what a child aims at. Take the correction out and this fails by a
-    // whole gap on one side.
+    // The rail is centred on the DRAWN board, not on the sky: the half-gap
+    // step-back moves the whole rail left, so against the sky it hangs half a
+    // gap past the left edge and stops half a gap short of the right. The caps
+    // are what a child aims at, so they are what this compares against. Take
+    // the correction out and it fails by a whole gap on one side.
     const board: [number, number] = [
       capSpan(cap("CapsLock"))[0],
       capSpan(cap("Enter"))[1],
@@ -587,12 +535,10 @@ describe("StormField", () => {
   it("drops every letter within a quarter unit of its own segment", () => {
     // What a vertical seam can and cannot do. The rows are staggered, so a
     // finger's keys are a slanted column and no straight segment covers all of
-    // it: `6` is typed by the right index and its lane is a quarter unit left
-    // of where the right index's segment starts, because `6` really does sit
-    // that far left of `h` and `j` (§8.5, decision 41). The home row — the row
-    // the segments are drawn on, and the row the hands rest on — is always
-    // strictly inside. A quarter unit is the whole of the error, and this is
-    // where a change that made it worse would have to be argued for.
+    // it — `6` is a quarter unit left of where the right index's segment
+    // starts (§8.5, decision 41). The home row, which the segments are drawn
+    // on, is always strictly inside. A quarter unit is the whole of the error,
+    // and this is where a change that made it worse has to be argued for.
     const strays = [];
     for (const key of KEYS) {
       const finger = key.finger;
@@ -642,11 +588,9 @@ describe("StormField", () => {
   it("draws no letter at all while the wave is waiting to be started", () => {
     /*
      * The beat before it falls (§8.13, decision 71). A wave's first letter
-     * spawns at time zero (`buildWave`), so a field that only held the clock
-     * would be showing it — an untimed look at the first target, where every
-     * other letter of the run gets exactly `QUEUE_MS` to be read in. One prop
-     * both puts the panel in the sky and takes the stones out of it, so the
-     * two cannot come apart.
+     * spawns at time zero, so a field that only held the clock would be
+     * showing it. One prop both puts the panel in the sky and takes the
+     * stones out of it, so the two cannot come apart.
      */
     const state = frameOf(only("j", 4, MIN_FALL_MS), 0);
     expect(
@@ -663,8 +607,8 @@ describe("StormField", () => {
   it("draws the rest of the field while it waits, so nothing moves on start", () => {
     // The HUD at nothing and the shield whole, both exactly where the run will
     // find them: pressing a key has to start a storm, not rearrange a screen.
-    // The way out is in there too, which is the whole of what a device that
-    // cannot press a key is left with (§8.8).
+    // The way out is in there too, which is all a device that cannot press a
+    // key is left with (§8.8).
     const waiting = draw(frameOf(only("j"), 0), {
       ready: <StormReady />,
       onQuit: () => {},
@@ -680,11 +624,9 @@ describe("StormField", () => {
   });
 
   it("draws no keyboard at all, live or ended", () => {
-    // A storm is the exam for the lessons that taught the layout (§8.1), so
-    // the picture of the answer is the one thing this screen must not show:
-    // the quickest way to shoot a falling `y` would become reading the board
-    // for where `y` is, which is hunt-and-peck with a countdown on it
-    // (decision 64).
+    // A storm is the exam for the lessons that taught the layout, so the
+    // picture of the answer is the one thing it must not show (§8.2, decision
+    // 64).
     const live = draw(frameOf(only("f"), 500));
     expect(live).not.toContain("keyboard__key");
     expect(live).not.toContain('class="keyboard"');
@@ -701,11 +643,11 @@ describe("StormField", () => {
   });
 
   it("hands the way out to the HUD, and says which key does it too", () => {
-    // Forwarding, which is all this file does with it — where the control
-    // goes and when it goes away are `StormHud`'s (§8.8, #155). What is worth
-    // pinning here is that a screen which offers a destination gets one, and
-    // that the key doing the same job is named for a child who cannot see the
-    // button: while the gun is live, `Tab` is one of the keys it swallows.
+    // Forwarding, which is all this file does with it — where the control goes
+    // and when it goes away are `StormHud`'s (§8.11). What is pinned here is
+    // that a screen which offers a destination gets one, and that the key
+    // doing the same job is named: while the gun is live, `Tab` is one of the
+    // keys it swallows, so the button cannot be tabbed to.
     const live = frameOf(only("f"), 500);
     const html = renderToStaticMarkup(
       <StormField state={live} skyRef={{ current: null }} onQuit={() => {}} />,
@@ -729,9 +671,7 @@ describe("StormField", () => {
     expect(html).toContain("Hailstorm");
 
     // Everything that moves is hidden: the two HUD numbers, every stone and
-    // the eight shield segments. None of it is an announcement anybody could
-    // act on, and a live region reading out a hailstorm is a denial of service
-    // rather than an accommodation (§4.4).
+    // the eight shield segments (§4.4).
     for (const cls of [
       "storm__score",
       "storm__combo",
@@ -741,9 +681,9 @@ describe("StormField", () => {
       expect(tag(cls), cls).toContain('aria-hidden="true"');
 
     // The sky itself is NOT, and that is the point of putting the attribute on
-    // its parts (#155): the way out is drawn in the HUD, and a screen whose
-    // only exit sat inside a hidden subtree would be a trap for the child
-    // least able to get out of it.
+    // its parts: the way out is drawn in the HUD, and a screen whose only exit
+    // sat inside a hidden subtree would be a trap for the child least able to
+    // get out of it.
     expect(tag("storm__sky")).not.toContain("aria-hidden");
   });
 });

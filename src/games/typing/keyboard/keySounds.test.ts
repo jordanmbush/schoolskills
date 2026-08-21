@@ -3,13 +3,12 @@ import { describe, expect, it } from "vitest";
 import { soundForKey } from "./keySounds";
 
 /**
- * What the board is allowed to say out loud (docs/typing.md §4.8).
+ * What the board is allowed to say out loud (§4.8).
  *
  * The rule is one function over one event, so the whole of it is testable
- * without a mixer or a DOM — the same split `stormSounds.ts` uses, and for the
- * same reason: the questions worth asking here ("does a held key machine-gun",
- * "does a wrong key sound wrong") are questions about the rule, and
- * `playKeySound` is a `switch` with nothing in it to get wrong.
+ * without a mixer or a DOM — the same split `stormSounds.ts` uses. Nothing
+ * here stubs the mixer, because `playKeySound` is a `switch` with no decision
+ * left in it.
  *
  * Three of the four silences below are decisions a well-meaning change would
  * undo, so they are written as the cases that would have made a noise.

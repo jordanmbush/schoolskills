@@ -19,13 +19,12 @@ import type { ShieldFinger, StormState, WaveSpec } from "@/engine/typing/storm";
 
 /**
  * The shield, as a child reads it: eight segments, how much is left of each,
- * and one event apiece when something happens to one (docs/typing.md §8.5).
+ * and one event apiece when something happens to one (§8.5).
  *
  * The geometry is NOT here. That a segment sits over its own finger's keys is
- * a claim about this component's numbers *and* game.css's arithmetic, and
- * `StormField.test.tsx` is where the stylesheet is read and run in key units —
- * so the alignment lives beside the lane it shares its half-gap correction
- * with, rather than in a second, weaker copy here.
+ * a claim about this component's numbers *and* game.css's arithmetic, so it
+ * lives in `StormField.test.tsx` beside the lane it shares its half-gap
+ * correction with, rather than in a second, weaker copy here.
  */
 
 const only = (ch: string, over: Partial<WaveSpec> = {}): WaveSpec => ({
@@ -43,10 +42,9 @@ const only = (ch: string, over: Partial<WaveSpec> = {}): WaveSpec => ({
 
 /*
  * Every absolute moment in this file is measured from the instant the first
- * letter starts to DROP, not from the start of the wave — hence the offset.
- * A real letter hangs at the top for `QUEUE_MS` before it moves (§8.3), and
- * that beat is the same for every letter of every level, so folding it in here
- * once leaves each schedule below saying exactly what it always said.
+ * letter starts to DROP, not from the start of the wave — hence the offset. A
+ * letter hangs at the top for `QUEUE_MS` first (§8.3), and folding that in
+ * once here leaves each schedule below saying what it says.
  */
 const frameOf = (spec: WaveSpec, atMs: number): StormState =>
   tick(startStorm(buildWave(spec, 7)), QUEUE_MS + atMs);

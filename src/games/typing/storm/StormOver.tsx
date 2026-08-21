@@ -15,58 +15,23 @@ import type { StormState } from "@/engine/typing/storm";
 /**
  * What a storm came to, and what to do about it (docs/typing.md §8.5, §8.7).
  *
- * ── Which finger let it through ──────────────────────────────────────────────
- * This is the screen the whole epic is for. A child who has just lost is told
- * *whose fault it was on their own hand* — "your right ring finger let three
- * through" — and handed a drill of exactly the keys behind that finger. No
- * accuracy percentage can say that, and it is a thing a five-year-old can act
- * on within a second of reading it: they can look down at the finger.
+ * **It decides nothing.** Everything this screen concludes is
+ * `stormReport(state)`, computed in the engine beside the rules that produced
+ * it — which finger, how many it let through, which keys that finger owns, how
+ * much armour is left, the longest streak. This file chooses words and puts
+ * them in boxes, which is what makes "your right ring finger let three
+ * through" a claim a unit test can hold still without a browser.
  *
- * ── It decides nothing ───────────────────────────────────────────────────────
- * Everything this screen concludes is `stormReport(state)`, computed in the
- * engine beside the rules that produced it — which finger, how many it let
- * through, which keys that finger owns, how much armour is left, the longest
- * streak. This file chooses words and puts them in boxes. That is the same
- * division the loop keeps (§8.9), and it is what makes "your right ring finger
- * let three through" a claim a unit test can hold still without a browser.
+ * Two of the four figures come from elsewhere (§8.5). XP cannot be in the
+ * report — `stormXp` reaches the deck layer that `storm.ts` is kept clear of
+ * (§5.3) — so it is read here, where `buildDrill` has already brought that
+ * door into the graph. The score need not be in it: it is the run's own live
+ * number, straight off `state`.
  *
- * Two of the four figures on the panel come from somewhere else, for two
- * different reasons. XP cannot be in the report: `stormXp` lives in
- * `progress.ts`, which reaches `decks/index.ts`, and `storm.ts` is one
- * type-only hop from the deck layer (`lessons.ts` names a `WaveSpec`). It is read here instead, where the deck
- * layer is already in the graph — this screen builds a drill through
- * `buildDrill`, which is that same front door. The score need not be in it:
- * it is the run's own live number, taken straight off `state`, and it was on
- * the HUD the whole time. A report field restating it would be a second copy
- * of a figure nothing here derives — and the report exists for the figures
- * that ARE derived, which is why neither of these two is in it.
- *
- * ── No grade, in any of it ───────────────────────────────────────────────────
- * A run that ended early is "the storm got through", never a mark out of ten.
- * Everything on the two endings a child could read as a grade is identical:
- * the same panel, the same order, the same four figures in the same places,
- * drawn in the same colours. What differs is what there is to say and to do —
- * the heading, the lede under it, and, after a breach only, the "Its keys"
- * line and the drill button that offers them (the one hue a breach adds is
- * that finger's own, which is identity and not judgement). So there is no
- * arrangement, no colour and no ranking here that a child could read as a
- * score for themselves rather than a report of what the weather did. The
- * score is shown because it is the run's own number and it was on screen the
- * whole time anyway; the XP beside it can only ever have gone up (§8.6),
- * which is the honest thing a losing run has to say.
- *
- * ── Under the sky, not over it ───────────────────────────────────────────────
- * The panel stands in `.storm`'s second grid track, which is empty for the
- * whole of a live run — this is the only thing the screen ever puts below the
- * sky (`StormField`). That leaves the sky above it whole: the hail frozen
- * where it was, and the shield with the hole still in it under the finger this
- * screen is naming. A panel drawn over the sky would have covered the one
- * picture that explains the sentence.
- *
- * It used to share that track with the keyboard, which stood there while the
- * gun was live and handed it over on the ending. There is no board now
- * (decision 64), so the track is the panel's alone and an ending taller than
- * five rows of keycaps costs the sky nothing.
+ * **No grade, in any of it** (§8.5). The two endings are the same panel with
+ * the same four figures in the same places and the same colours; what differs
+ * is the heading, the lede, and — after a breach only — the "Its keys" line
+ * and the drill button that offers them.
  */
 export function StormOver({
   state,
@@ -88,9 +53,9 @@ export function StormOver({
   const { start } = useRace();
   const report = stormReport(state);
 
-  // No ending, nothing to say. `StormField` only puts this where the board was
-  // once the run is over, so this is that rule at the type level rather than a
-  // second opinion about it — and it is what narrows `report` for the body.
+  // No ending, nothing to say. `StormField` only puts this under the sky once
+  // the run is over, so this is that rule at the type level — and it is what
+  // narrows `report` for the body.
   if (report === null) return null;
 
   const { breach, bestCombo, shieldLeft, shieldFull, through } = report;
@@ -101,13 +66,10 @@ export function StormOver({
    * other drill on the site goes through.
    *
    * `buildDrill` is the trouble-facts machinery pointed at a different
-   * question (§8.5): the record book asks it for the facts a child keeps
-   * missing, and this asks it for the keys behind one finger — but a fact id
-   * in a typing deck is a character either way, so the same call builds the
-   * same shape of deck and `TypingTrack` runs it with no idea where the list
-   * came from. Both options are dropped for a typing deck (`buildDrill`), and
-   * passed anyway rather than branched on: a drill has no input mode to
-   * choose and no per-word clock.
+   * question (§8.5): a fact id in a typing deck is a character either way, so
+   * the same call builds the same shape of deck and `TypingTrack` runs it with
+   * no idea where the list came from. Both options are dropped for a typing
+   * deck (`buildDrill`), and passed anyway rather than branched on.
    */
   function practise(keys: string[]) {
     sfx.select();

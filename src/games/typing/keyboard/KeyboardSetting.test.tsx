@@ -8,18 +8,15 @@ import { KeyboardSetting } from "./KeyboardSetting";
 /**
  * The setting, and the profile that predates it.
  *
- * `Profile.keyboard` is optional and gets no migration on purpose
- * (docs/typing.md §10): profiles are read straight out of IndexedDB, unlike
- * sessions, and the only copy of a child's record book is the one on their
- * device. The price of that decision is that "the field isn't there" — and
- * "the field says something else", since a restored backup is stored whole and
- * unchecked — are states the UI meets forever, not states that get tidied up
- * one release later. So both are pinned here, in the file that resolves them.
+ * `Profile.keyboard` is optional and gets no migration on purpose (§10, §4.2).
+ * The price is that "the field isn't there" — and "the field says something
+ * else", since a restored backup is stored whole and unchecked — are states
+ * the UI meets forever rather than states that get tidied up one release
+ * later. So both are pinned here, in the file that resolves them.
  *
  * The other assertion is that this is a control. The board it governs is sixty
  * inert spans and must stay that way (§4.5); the thing that shows and hides it
- * is the opposite, and "reachable by keyboard, announced with a name" is the
- * difference between the two.
+ * is the opposite.
  */
 
 /** A player from before this shipped: every field but `keyboard`. */
@@ -81,10 +78,9 @@ describe("KeyboardSetting", () => {
   });
 
   /**
-   * The lessons that insist (docs/typing.md §4.2, #145). Shown rather than
-   * hidden, disabled rather than silently overridden, and with the reason on
-   * the panel — a control that ignores the setting a child chose and a control
-   * greyed out with no explanation are the same bug at different volumes.
+   * The lessons that insist (§4.2). A control that ignores the setting a child
+   * chose and one greyed out with no explanation are the same bug at different
+   * volumes, so the panel shows all three pills, disabled, with the reason.
    */
   it("shows a locked keyboard, disabled, with the reason", () => {
     const html = renderToStaticMarkup(

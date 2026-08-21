@@ -1,43 +1,27 @@
 /**
  * The words Frost Keys builds its lessons out of (docs/typing.md §5.3).
  *
- * Filtering "words a child can type with only `f j d k s l`" needs something
- * to filter. The Dolch lists in `decks/wordlists.ts` are a few hundred words —
- * enough to be a spelling syllabus, nowhere near enough to survive that filter
- * — so this is a few thousand instead, commonest first, so that a lesson
+ * A few thousand common English words, commonest first, so that a lesson
  * asking for "the twenty-five" or "the hundred" (§5.6, lessons 41 and 48) is a
- * `slice` rather than a second list to keep in step with this one.
+ * `slice` rather than a second list to keep in step with this one. §5.3 says
+ * why it is this rather than the Dolch lists in `decks/wordlists.ts`.
  *
  * Nothing here decides anything. The generator picks, the ladder filters, and
  * `keys.ts` says what a child has met; this file is the bag they all reach
  * into. That is why it exports data and no functions — a helper here would be
  * a place for the curriculum to leak into the corpus.
  *
- * ── This file must never be reachable from `decks/index.ts` ──────────────────
- * `decks/index.ts` is the front door for every island on the site — flash
- * cards, spelling, the record book, the print shop — and a module in its graph
- * is shipped to all of them, whole. The last time that was got wrong, an import
- * of the passage library from `decks/typing.ts` took the shared chunk from
- * 46 KB to 222 KB, which is why thirty-three verses are written out by hand in
- * that file today. This is the same trap one file over, and it is a bigger one:
- * the corpus is the largest thing in the epic.
- *
- * A comment would not have stopped it the first time, so the ban is a lint
- * rule — `local/no-corpus-in-decks` in `eslint.config.mjs`, naming this
- * paragraph as its reason. It covers `src/engine/**` rather than
- * `src/engine/decks/**`, because reachability is transitive and `lessons.ts`
- * next door is importable from the deck layer: banning only the decks
- * directory would leave `import { WORDS } from "./lexicon"` one file over as a
- * legal way to ship this to every island. Only this file, `generate.ts` and
- * their tests are exempt.
- *
- * The way past it is already in the type. `TypingConfig.words` carries a run's
- * own text, so the ladder screen — inside the typing island, where the corpus
- * belongs — generates a passage and hands it over in the config, and the deck
- * layer builds cards out of `config.words` exactly as it does for a
- * parent-authored drill. `lessons.ts` stays importable from `decks/` because
- * it holds titles and pass criteria and not one word a child ever types; this
- * file is the half that must stay on the other side of the wall.
+ * **This file must never be reachable from `decks/index.ts`**, which would
+ * ship the corpus to every island on the site (§5.3, decision 7). A comment
+ * would not have stopped it the first time, so the ban is a lint rule:
+ * `local/no-corpus-in-decks` in `eslint.config.mjs`. It covers `src/engine/**`
+ * rather than `src/engine/decks/**`, because reachability is transitive and
+ * `lessons.ts` next door is importable from the deck layer — banning only the
+ * decks directory would leave `import { WORDS } from "./lexicon"` one file
+ * over as a legal way to ship this to all of them. Only this file,
+ * `generate.ts` and their tests are exempt. The way past the wall is
+ * `TypingConfig.words`: the ladder screen generates a passage inside the
+ * typing island and hands it to the deck layer in the config.
  *
  * ── Where the words came from ───────────────────────────────────────────────
  * Written for this repository. No corpus file was copied in, so there is no
@@ -54,13 +38,12 @@
  * `decks/wordlists.ts` for the early bands and on what a primary reader
  * actually meets for the rest.
  *
- * The sentences and passages are original prose written for this file. That is
- * deliberate rather than lazy: real prose arrives with curly quotation marks,
- * en dashes and accents, none of which a US ANSI board can produce, and typing
- * marks exactly — a passage carrying one is unpassable rather than hard. The
- * ladder's Scripture is not duplicated here either; `decks/typing.ts` holds
- * thirty-three verses for the free-play levels and the reason it holds them is
- * the paragraph above.
+ * The sentences and passages are original prose written for this file, which
+ * is deliberate rather than lazy: real prose arrives with curly quotation
+ * marks, en dashes and accents, none of which a US ANSI board can produce, and
+ * typing marks exactly — a passage carrying one is unpassable rather than
+ * hard. Scripture is not duplicated here either; `decks/typing.ts` holds
+ * thirty-three verses for the free-play levels, for the reason above.
  *
  * ── House rules for adding a word ───────────────────────────────────────────
  *   - **Typeable on the board.** Every character must have a `strokeFor`

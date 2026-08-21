@@ -36,36 +36,29 @@ import type {
 } from "@/engine/types";
 
 /**
- * The typing race.
+ * The typing race, and — with the race taken out of it — the lesson run.
  *
- * Structurally the flash-card loop with the pauses taken out. A word is a
- * card, space commits it, and the run is scored and saved by exactly the same
- * machinery — which is what makes a rival's pace visible word by word instead
- * of as a WPM at the end.
+ * Structurally the flash-card loop with the pauses taken out. A word is a card,
+ * space commits it, and the run is scored and saved by exactly the same
+ * machinery, which is what makes a rival's pace visible word by word instead of
+ * as a WPM at the end.
  *
- * The two real differences, and both are deliberate:
+ * The two real differences from a card race, and both are deliberate:
  *
- * - **No feedback pause.** A card race holds the screen for a second and a
- *   half on a wrong answer so it can be read. Doing that here would break the
- *   one thing typing practice is for, which is not stopping. A wrong word goes
- *   red in the passage behind you and the next word is already live.
- * - **Space is the whole interface.** No Enter, no submit button. Backspace
- *   works inside the current word and nowhere else, because a typing test that
- *   lets you walk back through a finished passage isn't measuring anything.
+ * - **No feedback pause.** A card race holds the screen for a second and a half
+ *   on a wrong answer so it can be read. Doing that here would break the one
+ *   thing typing practice is for, which is not stopping. A wrong word goes red
+ *   in the passage behind you and the next word is already live.
+ * - **Space is the whole interface.** No submit button; Enter only exists for
+ *   the last word of a passage, which has no space after it. Backspace works
+ *   inside the current word and nowhere else, because a typing test that lets
+ *   you walk back through a finished passage isn't measuring anything.
  *
- * ── And the same loop with the race taken out ────────────────────────────────
- * A run from the ladder is a lesson, and a lesson is not a race
- * (docs/typing.md §7). It is this component with four things removed and one
- * added, all of them off `config.lessonId` and none of them a second loop:
- * no ghost, no lane, no wrong-answer penalty, no starting gun in the copy —
- * and the three pass bars filling live where the rival's gap would be.
- *
- * One component rather than two because of what is NOT different: space still
- * commits a word and a word is still a `Card`. Keeping that is what makes the
- * record book, the splits, the trouble list, XP and the drill builder work on
- * lessons for free, and it is the single highest-leverage thing here not to
- * change. Free play — the five levels, their ghosts and their personal bests —
- * runs through these same lines and is untouched by any of it.
+ * A run from the ladder is a lesson, and a lesson is not a race (§7): this same
+ * component with the ghost, the lane, the penalty and the starting gun taken
+ * out and the three pass bars put in, all of it off `config.lessonId` and none
+ * of it a second loop. One component rather than two because of what is NOT
+ * different: space still commits a word and a word is still a `Card`.
  */
 export default function TypingTrack() {
   const { profileId } = useParams();
@@ -186,13 +179,10 @@ function Track({
   /**
    * The clock a rival is measured against — and on a lesson, just the clock.
    *
-   * **No `WRONG_ANSWER_PENALTY_MS` on a lesson** (§7). Three seconds a miss is
-   * a race mechanic: it is there to make a wrong answer cost something when the
-   * only thing a race counts is time. A lesson already counts accuracy, on a
-   * bar of its own, so charging for it again double-counts it — and it would
-   * make the wpm figure a lie, because a "minute" with penalties folded into it
-   * is not a minute and the number stops being words per minute of anything.
-   * Free play keeps every second of it; free play is a race.
+   * **No `WRONG_ANSWER_PENALTY_MS` on a lesson** (§7): a lesson already counts
+   * accuracy on a bar of its own, and a penalty would double-count it and make
+   * the wpm figure a lie. Free play keeps every second of it; free play is a
+   * race.
    */
   const raceElapsed =
     elapsed() + (lesson ? 0 : misses.current * WRONG_ANSWER_PENALTY_MS);
@@ -294,17 +284,10 @@ function Track({
    * How much of the board is on screen — §4.2's one line, resolved in the one
    * place that resolves it (`keyboardFor`).
    *
-   * Three inputs and the same three the brief showed before the run started: a
-   * locked lesson wins outright, then what the child chose in the brief
-   * (`config.keyboard`, travelling with the run exactly as its words do), then
-   * the lesson's own suggestion, the player's setting and `guide`. Free play
-   * has no lesson and makes no choice, so it lands on the profile's setting and
-   * is untouched by any of it.
-   *
-   * Reading the choice off the config rather than off a prop is what makes it
-   * survive the navigation: `pending` is what the countdown, the save and the
-   * results screen all read, and a mode that lived anywhere else would be gone
-   * by the time this component mounted.
+   * Reading the child's choice off the config rather than off a prop is what
+   * makes it survive the navigation: `pending` is what the countdown, the save
+   * and the results screen all read, and a mode that lived anywhere else would
+   * be gone by the time this component mounted.
    */
   const board = keyboardFor(lesson, profile.keyboard, config.keyboard);
 
@@ -330,10 +313,9 @@ function Track({
           <span key={countdown} className="countdown__num u-display">
             {countdown === 0 ? "GO" : countdown}
           </span>
-          {/* The 3·2·1 stays on a lesson, because it is the moment the hands go
-              on the home row and that is worth keeping for its own sake — but
-              it is not a starting gun there, so it doesn't talk like one
-              (§7). */}
+          {/* The 3·2·1 stays on a lesson, because it is the moment the hands
+              go on the home row — but it is not a starting gun there, so it
+              doesn't talk like one (§7). */}
           {lesson && <p className="countdown__note">Fingers on home row</p>}
         </div>
       )}

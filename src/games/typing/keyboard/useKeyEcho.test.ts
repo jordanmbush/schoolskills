@@ -3,24 +3,21 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { HOLD_MS, createKeyEcho } from "./useKeyEcho";
 
 /**
- * What the echo owes a child who is not allowed to look at their hands.
+ * What the echo owes a child who is not allowed to look at their hands (§4.3).
  *
- * Two of these protect decisions that a well-meaning change would undo, and
- * they are the reason this state machine is a plain object rather than only a
- * hook (docs/typing.md §4.3):
+ * Two decisions are pinned, and both are visible in how the cases are written:
  *
- *   - **A key releases on a timer, never on `keyup`.** "Wouldn't `keyup` be
- *     simpler?" is the obvious question, and the answer is only visible in the
- *     cases where the `keyup` never comes — lost focus, key repeat, unmount
- *     mid-chord. So the suite presses keys and never releases them, which is
- *     the failure mode, not an omission.
- *   - **Wrongness comes from the code, decided on the press.** The tests type
- *     `$` and shift+`4` at the same expectation to pin that a buffer
+ *   - **A key releases on a timer, never on `keyup`.** The suite presses keys
+ *     and never releases them, which is the failure mode `keyup` cannot cover
+ *     — lost focus, key repeat, unmount mid-chord — not an omission.
+ *   - **Wrongness comes from the code, decided on the press.** `$` and
+ *     shift+`4` are typed at the same expectation, because a buffer
  *     comparison could not tell them apart.
  *
- * These drive the machine directly: the unit suite has no DOM, so a rendered
- * hook could not be pressed at all. What that leaves untested is the listener
- * and the `useState` around it.
+ * The machine is driven directly, and is a plain object rather than only a
+ * hook so that it can be: the unit suite has no DOM, so a rendered hook could
+ * not be pressed at all. What that leaves untested is the listener and the
+ * `useState` around it.
  */
 
 /** A board with its latest published echo kept to hand. */
@@ -112,11 +109,10 @@ describe("createKeyEcho", () => {
   });
 
   it("does not blame the space that commits a word", () => {
-    // The keystroke a child makes most often and the one this got backwards:
-    // a finished word expects SPACE, so the space bar is the RIGHT key here.
-    // It flared for a while because the echo read the expectation after the
-    // commit had already advanced it — see the capture-phase note in
-    // `useKeyEcho`. The machine's half of that contract is this assertion.
+    // The keystroke a child makes most often: a finished word expects SPACE,
+    // so the space bar is the RIGHT key here. The other half of the contract
+    // is the capture-phase note in `useKeyEcho` — the expectation has to be
+    // read before the commit advances it.
     const keys = board();
     keys.press("Space", " ");
     expect(keys.down()).toEqual(["Space"]);

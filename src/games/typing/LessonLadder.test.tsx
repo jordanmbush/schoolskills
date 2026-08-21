@@ -8,7 +8,7 @@ import { LessonLadder } from "./LessonLadder";
 import { tileState } from "./LessonTile";
 
 /**
- * The map, and which of its hundred doors are open (docs/typing.md §6.6, §9).
+ * The map, and which of its hundred doors are open (§6.6, §9).
  *
  * What progress *is* is pinned next door in `ladder.test.ts`; what this file
  * is for is the half of the unlock rule that lives on the screen. `next` is a
@@ -71,9 +71,8 @@ describe("tileState", () => {
   });
 
   /**
-   * Decision 16, and the one this whole file exists for. All ten, at `next`
-   * of 1 — a nine-year-old who already types opens checkpoint 40, passes it,
-   * and starts at 41 rather than spending a week on `fff jjj`.
+   * Decision 16, and the one this whole file exists for: all ten, at `next`
+   * of 1 (§6.6).
    */
   it("opens every checkpoint on a brand-new profile", () => {
     expect(CHECKPOINTS).toHaveLength(10);
@@ -89,9 +88,8 @@ describe("tileState", () => {
   });
 
   /**
-   * §8.8: the pointer is carried over a storm rather than made to jump it, so
+   * The pointer is carried over a storm rather than made to jump it (§8.8), so
    * the storm it stepped past stays at or below `next` and stays open.
-   * Skippable is not the same as skipped.
    */
   it("leaves a skipped storm open behind the pointer", () => {
     // Lessons 1–3 cleared; 4 is a storm, so the pointer is carried to 5.
@@ -131,8 +129,8 @@ describe("LessonLadder", () => {
       "Lesson 10, Checkpoint · Home row. Checkpoint — always open, whatever you have passed. Open.",
     );
     // A storm says its own sentence first and then the same state every other
-    // tile says out loud (#156) — here a rung this child has not reached, so
-    // it carries what would open it as well.
+    // tile says out loud — here a rung this child has not reached, so it
+    // carries what would open it as well.
     expect(drawn[8].label).toBe(
       "Lesson 9, Hailstorm · Home row. Hailstorm — worth playing, never required. Locked. Pass lesson 8 to open this one.",
     );
@@ -170,13 +168,8 @@ describe("LessonLadder", () => {
   });
 
   /**
-   * A storm is a rung of the ladder with a shape of its own, and — on a device
-   * with keys — a door that opens (#156). Both halves matter: the diamond is
-   * what says "not the course" without a word, and being enterable is what it
-   * is there for.
-   *
    * The twenty are drawn at the top of the ladder, where every rung is behind
-   * the child, so a shut tile here could only be a storm that had stopped
+   * the child — so a shut tile here could only be a storm that had stopped
    * being playable.
    */
   it("draws the storms as diamonds a child can enter", () => {
@@ -190,10 +183,6 @@ describe("LessonLadder", () => {
   });
 
   /**
-   * And a storm a child has not climbed to yet is locked like any other rung —
-   * with the way out of it on the tile, because "Locked" alone is a state and
-   * not a way out of one (#145).
-   *
    * The rung it names is never the storm's own neighbour: `lockNote` walks
    * down past any storm in the way, so lesson 9's tile asks for lesson 8 and
    * never for a wave a tablet cannot play (§8.8).
@@ -207,14 +196,9 @@ describe("LessonLadder", () => {
   });
 
   /**
-   * The tablet (docs/typing.md §8.8, #155). Hailstorm needs raw `keydown` with
-   * a `code` and there is no software keyboard on screen during it, so a
-   * device with no keys is told which of these tiles is not for it and why —
-   * rather than being given a tile that does nothing when it is pressed.
-   *
-   * Every other rung is unaffected, and that is half the claim: a passage is
-   * typed on the software keyboard like anything else, so a child on an iPad
-   * still has the whole course.
+   * The tablet (§8.8). Every other rung being unaffected is half the claim: a
+   * passage is typed on the software keyboard like anything else, so a child
+   * on an iPad still has the whole course.
    */
   it("says why a storm tile is shut on a device with no keyboard", () => {
     const drawn = tiles(at(99, 100), false);
@@ -235,10 +219,9 @@ describe("LessonLadder", () => {
   });
 
   /**
-   * And the way out of a wrong guess, said once where there is room for it.
-   * Detection is a guess (`useKeyboardPresence`), so the legend has to carry
-   * the instruction that overturns it — a child in a keyboard folio reads
-   * "press any key", presses one, and the ladder redraws with no reload.
+   * Detection is a guess (`useKeyboardPresence`), so the legend carries the
+   * instruction that overturns it: a child in a keyboard folio presses a key
+   * and the ladder redraws with no reload.
    */
   it("offers the keystroke that overturns the guess, in the legend only", () => {
     const shut = renderToStaticMarkup(

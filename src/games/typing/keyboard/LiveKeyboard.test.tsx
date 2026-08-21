@@ -6,19 +6,16 @@ import { KEYS } from "@/engine/keyboard";
 import { LiveKeyboard } from "./LiveKeyboard";
 
 /**
- * The one decision this component makes: who gets the hint.
+ * The one decision this component makes: who gets the hint (§4.1).
  *
  * Everything else about the board is pinned next door — `Keyboard.test.tsx`
  * owns the picture and the palette, `useKeyEcho.test.ts` owns the flash and
  * the release timer. What is only true here is that "keys" and "guide" differ
- * in the hint and in NOTHING else, which is the distinction a child is choosing
- * between on the setup screen (docs/typing.md §4.1).
+ * in the hint and in NOTHING else.
  *
- * Rendered rather than reasoned about, and rendered on the server, so the
- * assertions survive a change to how the hint is expressed in markup. The echo
- * is absent from every case below for the same reason it is absent from a real
- * first frame: `useKeyEcho` wires itself up in an effect, and no key has been
- * struck yet.
+ * The echo is absent from every case below for the same reason it is absent
+ * from a real first frame: `useKeyEcho` wires itself up in an effect, and no
+ * key has been struck yet.
  */
 
 /** Which keys the hint lit, by code — the board draws `KEYS` in order. */

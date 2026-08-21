@@ -28,20 +28,12 @@ import {
 import type { Shield, StormLetter, StormState, Wave, WaveSpec } from "./storm";
 
 /**
- * The wave's properties, proved rather than sampled (docs/typing.md §8.3).
+ * The wave's properties, proved rather than sampled (§8.3).
  *
- * Every interesting claim this module makes is universally quantified — "the
- * same seed is the same storm", "every character is one the child can type",
- * "an early level never puts two letters on screen" — so each is asserted over
- * a spread of seeds crossed with a spread of specs, not over one hand-picked
- * wave. A generator is a distribution and one seed is an anecdote.
- *
- * Two of them are also load-bearing beyond this file. The first is the story:
- * a child who just lost retries and meets the storm that beat them, which is
- * only true while `(spec, seed)` decides everything. The second is the one that
- * gives the early levels their shape — `gap` above `fall` means pure reaction —
- * and it is arithmetic, so the boundary case is tested at the boundary and one
- * millisecond the other side of it.
+ * Every interesting claim this module makes is universally quantified, so each
+ * is asserted over a spread of seeds crossed with a spread of specs rather
+ * than over one hand-picked wave. A generator is a distribution and one seed
+ * is an anecdote.
  */
 
 /**
@@ -131,16 +123,13 @@ const SPECS: [name: string, spec: WaveSpec][] = [
 ];
 
 /**
- * The specs whose `gap` clears their `fall` — the levels that are pure
- * reaction — and the ones whose ranges overlap.
- *
- * Both read `fallRange(spec)` and never `spec.fall`, which is what
- * `fallRange`'s own docstring asks for: `MIN_FALL_MS` can only ever RAISE a
- * fall, so a spec that declared "one letter at a time" with falls under the
- * floor gets letters that overlap — and a classifier reading the declaration
- * would put it in the group whose assertion is that they never do. Today's
- * fixtures are all above the floor, so the two readings agree; the pair at the
- * bottom of this file is what keeps that a fact rather than an assumption.
+ * The specs whose `gap` clears their `fall` — the pure reaction levels — and
+ * the ones whose ranges overlap. Both read `fallRange(spec)` and never
+ * `spec.fall`: the floor can only raise a fall, so a spec declaring "one
+ * letter at a time" with falls under it gets overlap, and a classifier reading
+ * the declaration would put it in the group whose assertion is that they never
+ * do. Today's fixtures all clear the floor; the pair at the bottom of this
+ * file is what keeps the distinction a fact rather than an assumption.
  */
 const REACTION = SPECS.filter(([, s]) => s.gap[0] >= fallRange(s)[1]);
 const STACKING = SPECS.filter(([, s]) => s.gap[1] < fallRange(s)[0]);
@@ -151,16 +140,13 @@ const STACKING = SPECS.filter(([, s]) => s.gap[1] < fallRange(s)[0]);
  * The count only ever goes up when a letter starts to drop, so asking
  * `isFalling` at every drop instant finds the maximum without a sweep. Reading
  * the half-open interval out of the engine rather than restating it here is
- * what makes the boundary pair at the bottom of this file — `gap` exactly
- * `fall`, and one millisecond the other side — a test of the rule the reducer
- * actually fires and damages by, instead of a test of a second copy of it that
- * happens to live in the test file.
+ * what makes the boundary pair below — `gap` exactly `fall`, and one
+ * millisecond the other side — a test of the rule the reducer fires by rather
+ * than of a second copy living in this file.
  *
- * Falling and not merely on the field, because that is what `gap >= fall`
- * buys: every letter waits the same beat at the top before it moves
- * (`QUEUE_MS`), so a reaction level has one letter coming down with the next
- * one queued above it. `maxOnField` below is the other count, and the pair of
- * them is what says the queue is a queue.
+ * Falling and not merely on the field: a letter hanging at the top
+ * (`QUEUE_MS`) is a queue rather than a second thing to track, which is what
+ * `maxOnField` beside it says.
  */
 const maxFalling = (wave: Wave): number =>
   Math.max(
@@ -194,8 +180,8 @@ describe("a wave is deterministic in (spec, seed)", () => {
   });
 
   it("meets the storm that beat you when you retry it", () => {
-    // The story, spelled out: a retry has nothing but the wave in hand, and
-    // rebuilding from what the wave carries has to produce the wave back.
+    // A retry has nothing but the wave in hand, so rebuilding from what the
+    // wave carries has to produce the wave back.
     for (const [name, s] of SPECS)
       for (const seed of SEEDS) {
         const wave = buildWave(s, seed);
@@ -217,10 +203,9 @@ describe("a wave is deterministic in (spec, seed)", () => {
   });
 
   it("reads no randomness of its own", () => {
-    // `Math.random()` anywhere in here would make a wave unrepeatable while
-    // every other assertion in this file still passed — the two calls would
-    // simply differ from each other, and only a child pressing "again" would
-    // ever find out. So the global is taken away for the length of one build.
+    // `Math.random()` in here would make a wave unrepeatable while every other
+    // assertion in this file still passed — the two calls would simply differ,
+    // and only a child pressing "again" would find out.
     const real = Math.random;
     Math.random = () => {
       throw new Error("buildWave must draw only from mulberry32(seed)");
@@ -265,9 +250,8 @@ describe("every letter in a wave is one the child can shoot", () => {
 
   it("never drops anything onto a thumb", () => {
     // The shield has eight segments, one per finger, and none for the thumbs
-    // (§8.5) — so a falling space would have nothing above it to damage. The
-    // unlocked alphabet always contains one, which is why this is a filter and
-    // not a note in the docs.
+    // (§8.5). The unlocked alphabet always carries a space, which is why this
+    // is a filter and not a note in the docs.
     const alphabet = SPECS.find(([name]) => name === "everything falls")![1];
     expect(
       alphabet.keys,
@@ -300,9 +284,8 @@ describe("every letter in a wave is one the child can shoot", () => {
   });
 
   it("is an empty storm rather than a throw when nothing can fall", () => {
-    // The engine's habit: a mode that no longer makes sense still opens
-    // (`deckSpec` never throws). A wave with nothing in it is a screen that
-    // ends; a throw is a game loop that dies holding a child's run.
+    // A wave with nothing in it is a screen that ends rather than a game loop
+    // that dies holding a child's run — `deckSpec`'s habit, one layer down.
     const wave = buildWave(spec({ keys: [" ", "“"], count: 20 }), 3);
     expect(wave.letters).toEqual([]);
     expect(wave.durationMs).toBe(0);
@@ -360,16 +343,11 @@ describe("gap and fall are sampled per letter", () => {
   });
 
   it("can draw either end of a range", () => {
-    // A range of three, so every value in it must turn up across the sweep.
-    // This is the assertion an exclusive bound fails: a generator that never
-    // reached `max` would make every level fractionally easier than written,
-    // and nothing else here would notice.
-    //
-    // The fall range sits just above `MIN_FALL_MS` rather than at any three
-    // numbers, because the floor would flatten a range under it (below) — and
-    // a range flattened to a constant is exactly what this assertion is here
-    // to catch. Sitting one millisecond above the floor also says the floor
-    // does not disturb a range that clears it.
+    // A range of three, so every value must turn up across the sweep — the
+    // assertion an exclusive bound fails, and nothing else here would notice a
+    // generator that never reached `max`. The fall range sits just above
+    // `MIN_FALL_MS` because the floor would flatten a range under it into the
+    // constant this assertion exists to catch.
     const s = spec({
       keys: HOME,
       count: 40,
@@ -393,12 +371,7 @@ describe("gap and fall are sampled per letter", () => {
 });
 
 describe("no letter is ever a blur", () => {
-  /*
-   * The cap at the top of the ladder (§8.10, decision 52). "Whiteout" is meant
-   * to be hard because there are many letters, not because one of them cannot
-   * be read — and the only place that can be guaranteed is the generator,
-   * because the twenty specs are a table and a table is edited a row at a time.
-   */
+  /* The cap at the top of the ladder (§8.10, decision 52). */
 
   it("floors every fall a too-fast spec asks for", () => {
     const blur = spec({ count: 40, gap: [200, 300], fall: [40, 200] });
@@ -437,9 +410,8 @@ describe("no letter is ever a blur", () => {
   });
 
   it("raises a range rather than flattening it", () => {
-    // Clamping each sample would pile every letter of a too-fast spec onto the
-    // floor exactly; clamping the range keeps the draw a draw. Only the half
-    // of the range under the floor moves.
+    // Clamping each sample would pile a too-fast spec's letters onto the floor
+    // exactly; clamping the range keeps the draw a draw (§8.10).
     const half = spec({ count: 40, fall: [MIN_FALL_MS - 400, 2000] });
     expect(fallRange(half)).toEqual([MIN_FALL_MS, 2000]);
 
@@ -507,17 +479,10 @@ describe("the schedule the wave hands the reducer", () => {
 
 describe("when gap clears fall, one letter falls at a time", () => {
   /*
-   * The invariant the early levels are made of (§8.3), and it is arithmetic
-   * rather than luck. Letter i is on the field over `[spawn_i, spawn_i +
-   * fall_i)` and letter i+1 spawns at `spawn_i + gap_{i+1}`, so the two share
-   * the screen exactly when `gap_{i+1} < fall_i`. If every gap the spec can
-   * draw is at least every fall it can draw, that is never true — and because
-   * spawn times only increase, no later letter can overlap letter i either.
-   *
-   * The boundary goes to safety: `gap` exactly equal to `fall` still leaves one
-   * letter on screen, because a letter occupies `[spawnMs, landMs)` — it is
-   * gone the instant it lands, and landing is the tick that turns it into
-   * shield damage. So the guarantee is `gap[0] >= fall[1]`, not `>`.
+   * The guarantee is `gap[0] >= fall[1]`, and `>=` rather than `>` because a
+   * letter occupies `[spawnMs, landMs)` — at exactly equal, one lands on the
+   * millisecond the next starts to drop (§8.3). The pair below tests the
+   * boundary and one millisecond the other side of it.
    */
 
   it("puts nothing beside a letter on the reaction levels", () => {
@@ -536,20 +501,16 @@ describe("when gap clears fall, one letter falls at a time", () => {
   });
 
   it("holds when a gap is exactly a fall", () => {
-    // The boundary itself. The outgoing letter lands on the same millisecond
-    // the next one spawns, which is a handover and not an overlap.
     const s = spec({ count: 30, gap: [900, 900], fall: [900, 900] });
     for (const seed of SEEDS)
       expect(maxFalling(buildWave(s, seed)), `@ ${seed}`).toBe(1);
   });
 
   it("is not a reaction level just because the row says so", () => {
-    // The floor raises a fall and can therefore turn a spacing promise into an
-    // overlap (§8.10, `fallRange`): this spec's own numbers read as one letter
-    // at a time — 700ms between spawns against a 500ms fall — and the wave it
-    // builds puts two on screen, because every letter falls for 800ms. Which
-    // is the right way for it to go; the alternative is a level keeping its
-    // promise by dropping letters nobody could read.
+    // The floor raises a fall and can turn a spacing promise into an overlap
+    // (§8.10): this spec's own numbers read as one letter at a time — 700ms
+    // between spawns against a 500ms fall — and the wave it builds puts two on
+    // screen, because every letter falls for 800ms.
     //
     // It is here because the classification above is otherwise only ever asked
     // of specs written above the floor, where the two readings agree and a
@@ -622,8 +583,7 @@ const at = (ch: string, spawnMs: number, fallMs: number): StormLetter => {
     // No queue: a hand-placed letter falls the instant it appears, so every
     // absolute moment below is the one the test wrote down. The beat a real
     // wave gives a letter (`QUEUE_MS`) is `buildWave`'s, and it is tested
-    // where it is added rather than folded into the arithmetic of every
-    // reducer test that only cares about what a landing costs.
+    // where it is added.
     dropMs: spawnMs,
     fallMs,
     landMs: spawnMs + fallMs,
@@ -646,7 +606,7 @@ const to = (state: StormState, ms: number) => tick(state, ms - state.timeMs);
 const evenShield = (points: number): Shield =>
   Object.fromEntries(SHIELD_FINGERS.map((f) => [f, points])) as Shield;
 
-/** Which letters got through, by index — the shape STM07's death screen counts. */
+/** Which letters got through, by index — the shape the death screen counts. */
 const landed = (state: StormState) =>
   state.resolved.flatMap((outcome, index) =>
     outcome?.outcome === "landed" ? [index] : [],
@@ -654,19 +614,14 @@ const landed = (state: StormState) =>
 
 describe("a letter hangs before it falls", () => {
   /*
-   * The queue (§8.3, decision 67). A letter appears, stands perfectly still
-   * for `QUEUE_MS` while a child reads it, and only then starts to drop.
-   *
-   * Everything here is about what that beat must NOT disturb, because the
-   * whole reason it can be a single constant is that it disturbs nothing: it
-   * is added to every letter of every level, so it shifts the schedule and
-   * warps no part of it.
+   * The queue (§8.3, decision 67). Everything here is about what that beat
+   * must NOT disturb: it is added to every letter of every level, so it shifts
+   * the schedule and warps no part of it.
    */
 
   it("is drawn and shootable from the moment it appears", () => {
-    // The point of the beat is that a child can read the letter — and a game
-    // that showed them one and then charged ten points for pressing it would
-    // be punishing them for doing exactly that (`QUEUE_MS`).
+    // A queued letter is shootable: showing a child a letter and then charging
+    // ten points for pressing it would punish them for reading it (§8.3).
     const wave = buildWave(spec({ count: 1, keys: ["f"] }), 3);
     const [letter] = wave.letters;
     const half = letter.spawnMs + QUEUE_MS / 2;
@@ -705,8 +660,7 @@ describe("a letter hangs before it falls", () => {
   it("gives two letters hanging side by side to the earlier spawn", () => {
     // Floored, they tie at the top of the sky, and a tie goes to the index
     // like every other dead heat (decision 33). Unfloored they would be ranked
-    // by how long each had left divided by how long its own fall is, which is
-    // a number nothing on screen shows a child.
+    // by a number nothing on screen shows a child.
     const slow = {
       ...at("f", 0, 4000),
       dropMs: QUEUE_MS,
@@ -735,9 +689,7 @@ describe("a letter hangs before it falls", () => {
         const where = `${name} @ ${seed}`;
 
         // Spawns are untouched — the queue is time added to a letter's life,
-        // not a head start on the wave. The first letter is still the instant
-        // the wave begins, and every gap after it is still a draw from the
-        // level's own range.
+        // not a head start on the wave.
         expect(wave.letters[0].spawnMs, where).toBe(0);
         for (const gap of gapsOf(wave)) {
           expect(gap, where).toBeGreaterThanOrEqual(s.gap[0]);
@@ -760,8 +712,7 @@ describe("a letter hangs before it falls", () => {
   it("costs a level nothing it did not already have on the field", () => {
     // A reaction level shows one letter falling with the next queued above it
     // — two on the field, never three. A third would mean the beat had grown
-    // past the gaps these levels are spaced at, which is the shape of the
-    // failure a bigger `QUEUE_MS` would have.
+    // past the gaps these levels are spaced at.
     for (const [name, s] of REACTION)
       for (const seed of SEEDS) {
         const wave = buildWave(s, seed);
@@ -775,10 +726,8 @@ describe("where a letter is at time t", () => {
   const letter = at("f", 1000, 500);
 
   it("is on the field over [spawn, land), and not one millisecond either side", () => {
-    // Decision 30, as a boundary rather than as prose. The instant it lands is
-    // the tick that turns it into shield damage, so it cannot still be
-    // shootable there — a letter that was both would be a free hit that also
-    // took a hit point off.
+    // Decision 30 as a boundary: a letter that was both airborne and landed
+    // would be a free hit that also took a hit point off.
     expect(isAirborne(letter, 999)).toBe(false);
     expect(isAirborne(letter, 1000)).toBe(true);
     expect(isAirborne(letter, 1499)).toBe(true);
@@ -805,10 +754,10 @@ describe("where a letter is at time t", () => {
 
 describe("the lowest letter is the target", () => {
   it("is the greatest fall progress, not the earliest landing", () => {
-    // The disagreement STM01 wrote down, built to order: a slow letter spawned
-    // first is more than halfway down while a fast one spawned later has
-    // barely started — and yet the fast one lands first. `landMs` order would
-    // aim the gun at the letter that is visibly nearer the top of the screen.
+    // A slow letter spawned first is more than halfway down while a fast one
+    // spawned later has barely started — and yet the fast one lands first.
+    // `landMs` order would aim the gun at the letter that is visibly nearer
+    // the top of the screen.
     const slow = at("f", 0, 5000); // lands at 5000
     const fast = at("j", 3000, 1000); // lands at 4000
     const state = to(runOf([slow, fast], { shield: 3 }), 3100);
@@ -834,8 +783,7 @@ describe("the lowest letter is the target", () => {
 
   it("gives an exact tie to the earlier spawn", () => {
     // Two letters at the same height are the same shot to a child, so the tie
-    // goes to the letter's identity — the index — and a replay of the same
-    // wave resolves the dead heat the same way every time.
+    // goes to the letter's identity — the index (decision 33).
     const state = to(runOf([at("f", 0, 1000), at("j", 0, 1000)]), 400);
     expect(targetIndex(state)).toBe(0);
   });
@@ -871,9 +819,8 @@ describe("firing resolves the lowest letter, and nothing else", () => {
   });
 
   it("counts the second-lowest letter as a miss", () => {
-    // The rule the whole game is balanced on. `KeyJ` is a real letter on a
-    // real lane and it is the wrong shot, because it is not the one about to
-    // cost a shield point.
+    // `KeyJ` is a real letter on a real lane and it is still the wrong shot,
+    // because it is not the one about to cost a shield point.
     const before = two();
     const state = fire(before, "KeyJ");
 
@@ -901,12 +848,8 @@ describe("firing resolves the lowest letter, and nothing else", () => {
 
   describe("a capital is a shift and a letter", () => {
     /*
-     * Decision 70. `A` and `a` are one key and two letters, and for a while
-     * the storm could only tell you the key — so a wave of capitals fell to
-     * the bare alphabet, and lesson 39 was called "Shift under fire" without
-     * ever asking for a shift. What decides a shot now is the CHARACTER the
-     * stroke produced: `code` for which key, `shifted` for which of its two
-     * legends.
+     * Decision 70. What decides a shot is the CHARACTER the stroke produced:
+     * `code` for which key, `shifted` for which of its two legends.
      */
 
     /** A capital `A`, alone in the sky and about halfway down. */
@@ -920,8 +863,8 @@ describe("firing resolves the lowest letter, and nothing else", () => {
     });
 
     it("counts the bare letter as a miss", () => {
-      // The bug this replaced: `a` cleared an `A`, and the child was scored
-      // as having typed something they did not type.
+      // `a` clearing an `A` would score a child as having typed something
+      // they did not type.
       const state = fire(capital(), "KeyA", false);
       expect(state.resolved[0], "the letter is still falling").toBeNull();
       expect(state.misses).toBe(1);
@@ -977,10 +920,8 @@ describe("firing resolves the lowest letter, and nothing else", () => {
 
 /* ═══ Score, combo and XP (§8.6) ═════════════════════════════════════════════
  *
- * Two numbers with opposite rules, which is the whole of this section: the
- * score is the run's and may fall, the XP is the profile's and may not. They
- * are tested together because the only way to get them wrong is to let one
- * become the other.
+ * Tested together because the only way to get the two rules wrong is to let
+ * one number become the other.
  */
 
 /**
@@ -1060,9 +1001,7 @@ describe("a wrong key costs", () => {
 
   it("charges the same for a shot at an empty sky", () => {
     // Spraying between letters is the same strategy by another route (§8.4),
-    // so it costs the same. The screen says so with the `--flare` wash over the
-    // score, which is every miss's signal now that the storm draws no board to
-    // turn red (decision 64).
+    // so it costs the same.
     const empty = runOf([at("f", 1000, 500)]);
     expect(targetIndex(empty), "the premise: nothing is falling").toBeNull();
 
@@ -1071,9 +1010,8 @@ describe("a wrong key costs", () => {
   });
 
   it("lets the score go negative, because it is the run's own", () => {
-    // A five-year-old who hammers the board bottoms out below zero and can
-    // see it. Nothing about that reaches the profile: `stormXp` is floored,
-    // and it is floored at the other end of the run rather than here.
+    // Nothing about a negative score reaches the profile: `stormXp` is
+    // floored, and floored at the other end of the run rather than here.
     const sprayed = fire(fire(fire(volley(), "KeyZ"), "KeyQ"), "KeyP");
     expect(sprayed.score).toBe(-30);
     expect(sprayed.misses).toBe(3);
@@ -1097,20 +1035,13 @@ describe("a wrong key costs", () => {
   });
 });
 
-/* ── The miss flash, and the one cadence a wave cannot shape (decision 57) ──
+/* ── The miss flash (§8.10, decision 57) ────────────────────────────────────
  *
- * §8.10's "no strobe, ever, in any mode" is kept two different ways, because
- * the two things that light have two different clocks. A shield zone tints
- * when a letter LANDS, so its rate is a property of the schedule and each of
- * the twenty levels is held to two a second at its own seed (`storms.test.ts`).
- * The score's `--flare` wash fires when a child presses a WRONG KEY, and no
- * spec can shape a hand: auto-repeat is already not a shot (decision 44), but
- * eight or ten deliberate presses a second is a seven-year-old having a bad
- * time and not a bug to defend against.
- *
- * So the wash carries its own floor, here in the reducer where the clock is.
- * What a miss costs is unchanged and unconditional; what is rate-limited is
- * only the moment the HUD mounts a fresh element from (`StormHud`).
+ * A zone tints when a letter LANDS, so its rate belongs to the schedule and is
+ * held per level in `storms.test.ts`. The wash fires on a WRONG KEY, which no
+ * spec can shape — so it carries its own floor here in the reducer, where the
+ * clock is. What a miss costs is unchanged and unconditional; only the moment
+ * the HUD mounts a fresh element from is rate-limited.
  */
 describe("the miss flash cannot be strobed by a fast hand", () => {
   /** A run with a letter in the air, so a wrong key is a miss and not a stroke
@@ -1153,20 +1084,15 @@ describe("the miss flash cannot be strobed by a fast hand", () => {
   });
 
   it("stays at two flashes in any one second, whatever the hand does", () => {
-    // **Two, not three.** WCAG 2.3.1's line is *more than three* flashes in
-    // any one second, and a gap of `g` permits `ceil(1000 / g)` starts inside
-    // one — so 340ms would have sat exactly on the line with nothing to spare,
-    // and 500 buys the second flash back. That is the same headroom the twenty
-    // waves' zone tints ship with (§8.10), on the same screen, for the same
-    // five-year-old. Counted the way `storms.test.ts` counts a zone's: starts
-    // inside a sliding second, anchored at each start, which is where every
-    // window's maximum sits.
+    // Two, not three: WCAG 2.3.1's line is *more than three* in any one
+    // second, and a gap of `g` permits `ceil(1000 / g)` starts inside one — so
+    // 340ms would have sat exactly on the line (§8.10). Counted the way
+    // `storms.test.ts` counts a zone's: starts inside a sliding second,
+    // anchored at each start.
     //
     // Swept rather than hammered at one rate, because the worst case is not
-    // the fastest hand. A hand landing just inside the gap is the one that
-    // reached three, and no amount of pressing faster finds it — so the sweep
-    // walks the cadences either side of the constant as well as the ones a
-    // child can actually produce.
+    // the fastest hand — a hand landing just inside the gap is the one that
+    // reached three, and no amount of pressing faster finds it.
     const PRESSES = 60;
     // A letter that outlasts the whole sweep, so every press is a miss inside
     // a live run rather than a key at a run that has already ended.
@@ -1213,11 +1139,10 @@ describe("score can fall; XP cannot", () => {
    * about a run, and the run is what this file builds.
    */
   it("pays each hit exactly what `cardXp` pays a card", () => {
-    // Reused unchanged, which is what makes a Hailstorm level and a
-    // flash-card race pay out on the same scale. Restating the curve here
-    // would only pin a copy of it, so the assertion is against `cardXp`
-    // itself, on the arguments §8.7 says a hit hands it: how long the letter
-    // was in the air, and the streak it was shot on.
+    // Reused unchanged, which is what makes a Hailstorm level and a flash-card
+    // race pay out on the same scale. Restating the curve here would only pin
+    // a copy of it, so the assertion is against `cardXp` itself, on the
+    // arguments a hit hands it (§8.7).
     const state = fire(fire(volley(), "KeyF"), "KeyF");
     const shots = [
       { ms: 200 - 0, combo: 1 },
@@ -1232,10 +1157,8 @@ describe("score can fall; XP cannot", () => {
   });
 
   it("pays nothing for a letter that landed, and never less than nothing", () => {
-    // The floor is what §8.6 turns on: XP is cumulative across years and four
-    // games, so a run a child played badly may pay nothing and must never take
-    // anything away. Here the score is deep in the red and the XP is zero,
-    // which is the pair the whole rule exists to keep apart.
+    // The score is deep in the red here and the XP is zero, which is the pair
+    // the rule exists to keep apart (§8.6).
     const beaten = to(
       fire(fire(runOf([at("f", 0, 200)], { shield: 3 }), "KeyZ"), "KeyQ"),
       500,
@@ -1278,9 +1201,9 @@ describe("what lands takes the shield apart", () => {
   });
 
   it("lets the next letter through once a zone is exhausted", () => {
-    // The acceptance criterion, in three moments: a zone at zero is a hole and
-    // the run continues; the letter that lands in the hole is what ends it;
-    // and the finger it names is the finger that typed it.
+    // Three moments: a zone at zero is a hole and the run continues; the
+    // letter that lands in the hole is what ends it; and the finger it names
+    // is the finger that typed it.
     const letters = [at("f", 0, 100), at("f", 200, 100)];
     const state = runOf(letters, { shield: 1 });
 
@@ -1573,10 +1496,9 @@ describe("the rules are pure, and they do not mutate what they are given", () =>
   it("reads no clock, no DOM and no randomness", () => {
     // The engine's lint boundary bans *imports* of React and the services
     // layer, but nothing in it catches a bare `document` or a
-    // `requestAnimationFrame` — so the boundary cannot prove this and a test
-    // has to. Each global is made hostile for the length of one run: a reducer
-    // that so much as reads one throws here, in a millisecond, rather than
-    // three stories from now inside a game loop at 60fps.
+    // `requestAnimationFrame` — so a test has to. Each global is made hostile
+    // for the length of one run, so a reducer that so much as reads one throws
+    // here rather than inside a game loop at 60fps.
     const boom = () => {
       throw new Error("the storm reducer must be pure");
     };
@@ -1683,12 +1605,10 @@ describe("the rules are pure, and they do not mutate what they are given", () =>
   });
 });
 
-/* ═══ What a run came to (§8.5, STM07) ═══════════════════════════════════════
+/* ═══ What a run came to (§8.5) ══════════════════════════════════════════════
  *
- * The ending screen is a rendering of these four answers and nothing else, so
- * this is where "your right ring finger let three through" is decided to be
- * true. Every one of them is a question about a run that has stopped, which is
- * a state a test can write down and a browser can only be waited for.
+ * Every one of these is a question about a run that has stopped — a state a
+ * test can write down and a browser can only be waited for.
  */
 
 describe("the per-zone tally the ending is named from", () => {
@@ -1722,14 +1642,12 @@ describe("the per-zone tally the ending is named from", () => {
   it("counts `resolved`, and never the clock", () => {
     /*
      * The case `tick` leaves behind, and the reason this is a tally over
-     * outcomes rather than a filter on `hasLanded`.
-     *
-     * The run ends at 300ms on `l-index`, and the clock stops THERE rather
-     * than at the end of the tick. A letter from a higher index landing on
-     * that same millisecond is left unresolved — but `hasLanded(letter, 300)`
-     * reads true of it, because 300 is exactly its `landMs`. A screen that
-     * counted the clock would report a letter through a zone the storm never
-     * reached, on the one screen where the number is the whole point.
+     * outcomes rather than a filter on `hasLanded`. The run ends at 300ms on
+     * `l-index` and the clock stops THERE rather than at the end of the tick,
+     * so a letter from a higher index landing on that same millisecond is left
+     * unresolved — while `hasLanded(letter, 300)` reads true of it. A screen
+     * counting the clock would report a letter through a zone the storm never
+     * reached.
      */
     const letters = [at("f", 0, 100), at("f", 100, 200), at("j", 0, 300)];
     const dead = tick(runOf(letters, { shield: 1 }), 60_000);
@@ -1808,8 +1726,8 @@ describe("the report the ending screen reads", () => {
   });
 
   it("names the finger that let it through, and how many it let through", () => {
-    // The acceptance criterion, in one assertion: "your left index finger let
-    // three through" is these two fields and nothing else.
+    // "Your left index finger let three through" is these two fields and
+    // nothing else.
     const letters = [
       at("f", 0, 100),
       at("j", 100, 100),

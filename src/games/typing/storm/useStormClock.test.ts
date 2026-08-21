@@ -127,8 +127,7 @@ const letterOf = (ch: string, spawnMs: number, fallMs: number): StormLetter => {
     fallMs,
     // No queue: a hand-placed letter falls the instant it appears, so every
     // absolute moment below is the one the test wrote down. The beat a real
-    // wave gives a letter (`QUEUE_MS`) is `buildWave`'s, and it belongs to the
-    // tests of the schedule rather than to every test of what a landing costs.
+    // wave gives a letter (`QUEUE_MS`) belongs to the tests of the schedule.
     dropMs: spawnMs,
     landMs: spawnMs + fallMs,
   };
@@ -182,12 +181,10 @@ describe("redrawn", () => {
     expect(hit.combo).toBe(1);
     expect(redrawn(hit, fire(hit, "KeyQ"))).toBe(true);
 
-    // And to a miss on an unbroken nothing, which changes no combo at all:
-    // the score fell, and the HUD flashes a `--flare` over it (§8.6). Before
-    // scoring landed this was the case that changed nothing a screen could
-    // see — the one where `fire` hands back a fresh object saying "different"
-    // and means it about the clock. Now the only thing left in that shape is
-    // a miss on a run that has already ended, which `fire` refuses outright.
+    // And to a miss on an unbroken nothing, which changes no combo at all: the
+    // score fell, and the HUD flashes a `--flare` over it (§8.6). The only
+    // frame left that changes nothing a screen can see is a miss on a run that
+    // has already ended, which `fire` refuses outright.
     const cold = run(120);
     const missed = fire(cold, "KeyQ");
     expect(missed.combo, "there was no streak to break").toBe(cold.combo);
@@ -202,13 +199,10 @@ describe("redrawn", () => {
   it("says no when only the target changes mid-air", () => {
     // Two letters at different speeds cross (decision 32), and nothing else
     // moves: nothing is resolved, nothing spawns, and the count of stones on
-    // the field is the same on both sides of it.
-    //
-    // That crossing used to be a redraw, because the board was marked against
-    // the lowest letter and would go on marking against the wrong one. There
-    // is no board now (decision 64) and nothing else on the screen names the
-    // target — a stone carries no target class and the HUD does not print it —
-    // so the picture is identical and React is not asked to draw it again.
+    // the field is the same on both sides of it. Nothing on the screen names
+    // the target — a stone carries no target class, the HUD does not print it,
+    // and there is no board (decision 64) — so the picture is identical and
+    // React is not asked to draw it again.
     const before = tick(startStorm(crossing), 600);
     const after = tick(before, 200);
 

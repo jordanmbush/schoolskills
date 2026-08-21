@@ -11,17 +11,11 @@ import { Keyboard } from "./Keyboard";
 /**
  * What the board owes a child, a screen reader, and the next story.
  *
- * The two things worth pinning here are both things a well-meaning change
- * would undo. The first is that this board is INERT: no control, no tab stop,
- * nothing to press. "Make the keys tappable" is the single most natural
- * feature request this component will ever attract, and saying yes to it turns
- * a touch-typing tutor into a hunt-and-peck trainer (docs/typing.md §4.5).
- *
- * The second is the palette. The finger hues are checked against the telemetry
- * five by reading the stylesheet, because that rule lives in CSS and there is
- * no other place it can be asserted — a keyboard that tinted the left index
- * finger `--lime` would spend a hundred lessons teaching a child to unlearn
- * what green means (§4.6).
+ * Two things are pinned here, and both are things a well-meaning change would
+ * undo: that the board is INERT — no control, no tab stop, nothing to press
+ * (§4.5) — and that the finger hues borrow none of the telemetry five (§4.6).
+ * The palette rule is checked by reading the stylesheet, because it lives in
+ * CSS and there is nowhere else it can be asserted.
  *
  * That split is per BLOCK, not per file: the board is scenery and borrows none
  * of the five, and the press echo below it is signal and borrows exactly two.
@@ -141,25 +135,19 @@ describe("Keyboard", () => {
       ...sheet.matchAll(/--key:\s*clamp\([^;]*?,\s*([^,;]+)\s*\);/g),
     ].map(([, ceiling]) => ceiling.trim());
 
-    // 19.05mm of key pitch is three quarters of an inch, which CSS defines as
-    // exactly 72px, which is 4.5rem. The board is a map a child glances at
-    // while their hands are on the real thing, so the ceiling is that
-    // measurement and not a taste — at half of it they do the scaling, which
-    // is the work looking down would have saved them (§4.7, decision 61).
+    // 4.5rem is 19.05mm of key pitch, the measurement rather than a taste
+    // (§4.7, decision 61).
     //
     // Asserted of EVERY declaration rather than of the board's, because the
-    // storm has no board and is capped at pitch for the same reason anyway: a
-    // lane claims to be where that key is, so a field wider than a keyboard
-    // teaches a reach nobody's hand makes (decision 64).
+    // storm has no board and is capped at pitch for the same reason anyway —
+    // a lane claims to be where that key is (decision 64).
     expect(ceilings.length).toBeGreaterThan(0);
     for (const ceiling of ceilings) expect(ceiling).toBe("4.5rem");
 
     // The root value is the storm's — the lanes, the stones and the shield —
     // and the passage screen overrides it. Written out whole because the two
-    // floor terms are load-bearing too: `6vw` is what keeps fifteen units
-    // inside 90% of a narrow viewport whatever is under them, and the dvh term
-    // is what stops a hailstone growing until there is no sky to read it
-    // against.
+    // floor terms are load-bearing too, and each of the three is a separate
+    // decision (§4.7).
     const root = /:root\s*{[^}]*--key:\s*([^;]+)/.exec(sheet)![1];
     expect(root.replace(/\s+/g, " ")).toBe(
       "clamp(1.05rem, min(6vw, 15dvh), 4.5rem)",
@@ -169,17 +157,11 @@ describe("Keyboard", () => {
   it("centres the board on the arithmetic when it overflows the race column", () => {
     const sheet = css("game.css").replace(/\/\*[\s\S]*?\*\//g, "");
 
-    // A life-size board is fifteen units of 72px — 1080px — and `.race` is
-    // `min(720px, 100%)`, a measure chosen for reading a line of words. So on
-    // the passage screen the board overflows its column, evenly, on purpose
-    // (decision 62).
-    //
-    // Half the column minus half of fifteen units, and NOT `margin-inline:
-    // auto`: an auto margin is defined to resolve to zero against negative
-    // free space, so the board would hug the left edge and hang off the right.
-    // `justify-self: center` loses the same way — Chrome start-aligns an
-    // overflowing grid item. This expression is the one that means the same
-    // thing in both directions.
+    // A life-size board overflows the 720px race column on purpose, and is
+    // centred with half the column minus half of fifteen units rather than
+    // with an alignment property — neither `margin-inline: auto` nor
+    // `justify-self: center` centres against negative free space (§4.7,
+    // decision 62).
     //
     // Filtered rather than taken first, because `.typing .keyboard` is written
     // twice: the other one is the short-viewport rule that drops the board
@@ -194,11 +176,10 @@ describe("Keyboard", () => {
     );
 
     // And the height budget on the same screen is divided by the board's own
-    // height in key units — five rows, and the four gaps between them at
-    // whatever the board insets its caps by. Read out of `--key-gap` rather
-    // than pinned at 5.36, so a chunkier keycap moves the budget with it
-    // instead of leaving the board a fraction too tall on a short window and
-    // scrolling a race under a child's thumb (decision 63).
+    // height in key units — five rows, and the four gaps between them (§4.7,
+    // decision 63). Derived from `--key-gap` rather than pinned at 5.36, so a
+    // chunkier keycap moves the budget with it rather than leaving the board a
+    // fraction too tall on a short window.
     const gap = Number(
       /--key-gap:\s*calc\(var\(--key\) \* ([\d.]+)\)/.exec(sheet)![1],
     );
@@ -240,8 +221,7 @@ describe("Keyboard", () => {
     const game = css("game.css");
     const hint = game.slice(game.indexOf(HINT_BLOCK), game.indexOf(ECHO_BLOCK));
 
-    // `--go` is per-world and already means "press this" — the button that
-    // started the run is the same colour. A hint drawn in `--lime` would be
+    // `--go` already means "press this". A hint drawn in `--lime` would be
     // indistinguishable from the flash that says "you just pressed that".
     expect(hint).toMatch(/\.is-next\s*{/);
     expect(hint).toContain("var(--go)");
@@ -259,9 +239,8 @@ describe("Keyboard", () => {
   });
 
   it("lights a shifted character's letter AND the shift on the other hand", () => {
-    // The whole point of the hint. Left-pinky shift plus left-pinky `a` is
-    // physically impossible, so `A` is right-shift-plus-left-`a` — and which
-    // hand takes the shift is what typing courses for children skip.
+    // Left-pinky shift plus left-pinky `a` is physically impossible, so `A` is
+    // right-shift-plus-left-`a`.
     expect(hinted("A")).toEqual(["KeyA", "ShiftRight"]);
 
     // The mirror, so this can't pass by always naming the right shift: `?` is

@@ -3,15 +3,15 @@ import { describe, expect, it } from "vitest";
 import { keyboardPresent, provesKeyboard } from "./useKeyboardPresence";
 
 /**
- * The two rules that decide whether anybody is locked out of Hailstorm
- * (docs/typing.md §8.8, decision 53).
+ * The two rules that decide whether anybody is locked out of Hailstorm (§8.8,
+ * decision 53).
  *
- * Neither needs a browser, and that is the point of them being functions: what
- * `useKeyboardPresence` adds around these is a listener, a media query and a
- * `useState`, all of which a real device answers better than a fake one — the
- * browser half is measured in `e2e/smoke.mjs`. What is *decidable* here is the
- * asymmetry the story turns on: detection is a guess, and a guess that has
- * gone wrong must leave a child a way in rather than a locked door.
+ * Neither needs a browser, which is the point of them being functions: what
+ * `useKeyboardPresence` adds around them is a listener, a media query and a
+ * `useState`, all of which a real device answers better than a fake one — so
+ * the browser half is measured in `e2e/smoke.mjs`. What is decidable here is
+ * the asymmetry: detection is a guess, and a guess that has gone wrong must
+ * leave a child a way in rather than a locked door.
  */
 
 describe("what proves a keyboard", () => {

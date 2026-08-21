@@ -12,34 +12,17 @@ import { lockNote } from "./lessonNotes";
 import { STORM_NOTE, tileState } from "./LessonTile";
 
 /**
- * What a Hailstorm level is, before a child presses Play (docs/typing.md §8.1,
- * §8.8, §9).
+ * What a Hailstorm level is, before a child presses Play (§8.1, §8.8, §9).
  *
- * The other eighty rungs open `LessonBrief`, which is three bars, a best and a
- * keyboard control — and a storm has none of the three. It is marked on
- * surviving a wave, it holds no record at all (decision 50), and its keyboard
- * is not a hint under a passage but the gun itself (§8.2), so there is nothing
- * on that screen a storm could honestly fill in. Hence a second door rather
- * than a fourth arm inside the first: what the two briefs share is a shape, and
- * what they say is entirely different.
- *
- * Three things are on it and each earns its line:
- *
- *   - **How it is played.** A child arriving at lesson 4 has never seen a
- *     falling-letter game and the rule that decides everything — only the
- *     lowest letter can be shot (§8.4) — is not guessable from watching.
- *   - **What this storm is.** How many letters, how deep the shield, whether
- *     it repairs, and what it mostly rains. The twenty levels differ in
- *     exactly those four things (§5.6's storm table), so they are what makes
- *     "First ice" and "Whiteout" different screens rather than the same screen
- *     with different numbers behind it.
- *   - **That it is not required.** Said here in full, because the tile can only
- *     carry it as a phrase: nothing on the ladder waits on a storm, and the
- *     lesson above it opens off the lesson *below* it (§8.8, decision 24).
+ * A second door rather than a fourth arm inside `LessonBrief`: what the two
+ * share is a shape, and what they say is entirely different — a storm has no
+ * three bars, no best and no keyboard control to fill in. What it says instead,
+ * and why each of the three lines is there, is §8.8.
  *
  * There is deliberately no "your best". A storm is unranked everywhere on the
- * site (`isRanked`), so a brief that quoted one would be inventing a record
- * that `bestRun` refuses to hold — and a run that ended early would hold it.
+ * site (`isRanked`, §8.7), so a brief that quoted one would be inventing a
+ * record that `bestRun` refuses to hold — and a run that ended early would hold
+ * it.
  */
 export function StormBrief({
   lesson,
@@ -70,8 +53,7 @@ export function StormBrief({
      nothing on screen that had ever mentioned it (decision 70).
 
      `unlockedAt(n)` is the same set `stormWave` draws this level's letters
-     from, so this cannot disagree with what actually falls. Below lesson 34
-     nothing in it is shifted and the sentence never appears. */
+     from, so this cannot disagree with what actually falls. */
   const shifts = [...unlockedAt(lesson.n)].some(
     (ch) => strokeFor(ch)?.shift != null,
   );

@@ -3,29 +3,20 @@ import { useEffect, useRef, useState } from "react";
 import { strokeFor } from "@/engine/keyboard";
 
 /**
- * Press echo: which keys are lit, and which of them were the wrong one
- * (docs/typing.md §4.3).
+ * Press echo: which keys are lit, and which of them were the wrong one (§4.3).
  *
- * This is the half of the board that moves. `Keyboard.tsx` draws the plastic;
- * this decides, keystroke by keystroke, what a child's hands just did — so
- * they can see it without looking down, which is the entire point of the
- * world.
+ * `Keyboard.tsx` draws the plastic; this decides, keystroke by keystroke, what
+ * a child's hands just did.
  */
 
 /**
  * How long a key stays lit, in milliseconds.
  *
- * A key releases on THIS TIMER and not on `keyup`, which is the one decision
- * in this file worth defending. `keyup` is missed more often than you would
- * think: the window loses focus mid-chord and the release lands somewhere
- * else, the OS eats it during a key-repeat, a modifier comes up after the
- * element has unmounted. Every one of those leaves a key stuck lit, and a key
- * stuck lit is worse than no highlight at all — it is a lie about where the
- * hand is, told to a child who is trusting the picture precisely because they
- * are not allowed to look at the real keyboard.
- *
- * A timer cannot get stuck. It also happens to feel better: a flash reads as
- * "that fired", a hold reads as "something is wrong".
+ * A key releases on THIS TIMER and never on `keyup`, which is missed often
+ * enough — focus lost mid-chord, the OS eating it during a key-repeat, a
+ * modifier released after the element unmounts — that a key would be left stuck
+ * lit, which is a lie about where the hand is (§4.3). Nothing in this file
+ * waits on a release event.
  */
 export const HOLD_MS = 120;
 
@@ -42,20 +33,17 @@ const SILENT: KeyEcho = { down: new Set(), wrong: new Set() };
 /**
  * The keys that are HELD rather than typed, and so are never wrong.
  *
- * Exported because Hailstorm's gun has to agree with the board about what a
- * stroke even is: the same set decides which keys never flare here and which
- * keys are never a shot there (`useStormClock`). Two lists would be a shift
- * that flared red without costing anything, or cost something without saying
- * so.
+ * Exported because two other readers have to agree with the board about what a
+ * stroke even is: the same set decides which keys never flare here, which are
+ * never a shot in Hailstorm (`useStormClock`), and which make no sound
+ * (`keySounds.ts`, §4.8). Two lists would be a shift that flared red without
+ * costing anything, or cost something without saying so.
  *
- * Shift is the reason this set exists. Shift is not a mistake, it is the
- * technique: a capital is right-shift plus a left-hand letter (§3.3), and the
- * child who reaches for the far shift a beat before the letter — the thing
- * this course is trying hardest to teach — would otherwise be told in red that
- * they had erred by doing it right. They still light, because a lit shift is
- * exactly the "where is my hand" the board exists to answer. Ctrl, Alt and the
- * Cmd keys are here for the duller version of the same reason: a child
- * switching windows is not attempting the letter.
+ * Shift is the reason the set exists: it is not a mistake, it is the technique
+ * (§3.3), and the child who reaches for the far shift a beat before the letter
+ * would otherwise be told in red that they had erred by doing it right. Held
+ * keys still light, because a lit shift is exactly the "where is my hand" the
+ * board exists to answer.
  *
  * CapsLock is deliberately NOT here. It is not held to make a character, no
  * stroke on this layout uses it, and hitting it in place of `a` is precisely
@@ -76,26 +64,13 @@ export const HELD = new Set([
 /**
  * Was this the wrong key for the character we are waiting on?
  *
- * Decided from `event.code` against `strokeFor(expect)`, and never by
- * comparing what landed in the input against what was wanted. Two reasons,
- * both fatal to the buffer version: a buffer cannot tell shift+`4` from `$`
- * — same character, different keys, and only one of them is a mistake — and
- * it cannot answer at all until React has re-rendered, by which point the
- * flash is late enough to belong to the next keystroke. The keydown handler
- * already holds the code; the comparison here is immediate and exact.
+ * Decided from `event.code` against `strokeFor(expect)`, and never by comparing
+ * what landed in the input against what was wanted (§4.3).
  *
  * Nothing is wrong when there is nothing to be wrong about: the beat between
  * two words has no expected character, and a character this layout cannot
  * produce (a curly quote that escaped the passage filter) has no key to blame.
  * Neither is a mistake, so neither flares.
- *
- * There used to be an `emptyIsWrong` for the caller whose nothing meant the
- * opposite — "there is nothing that could be RIGHT" — and Hailstorm was the
- * only one, because a stroke at an empty sky costs score there (§8.4). The
- * storm no longer draws a board (decision 64), so the flag had no caller left
- * to mean anything for; a wrong key is answered by the score, which flashes
- * `--flare` for exactly that (§8.6). The passage is the only consumer now, and
- * a passage never wanted it.
  */
 function isWrong(code: string, expect: string | null): boolean {
   if (HELD.has(code)) return false;
@@ -117,8 +92,8 @@ export type KeyEchoBoard = {
  * Split out of the hook below because it is the part with behaviour, and the
  * unit suite runs in Node with no DOM (`vitest.config.ts`) — a rendered hook
  * could not be driven at all here, and "a press with no keyup still releases"
- * is the assertion this story most needs to hold in a year. What is left in
- * the hook is a `keydown` listener and a `useState`.
+ * is the assertion this most needs to keep holding. What is left in the hook is
+ * a `keydown` listener and a `useState`.
  *
  * `emit` is handed fresh sets rather than the live ones, so a consumer holding
  * last render's echo is holding what it was actually shown.
@@ -139,15 +114,13 @@ export function createKeyEcho(emit: (echo: KeyEcho) => void): KeyEchoBoard {
       // One release per code, re-armed rather than stacked: every keydown for
       // a code — the first, and each OS auto-repeat behind it — replaces that
       // code's pending release, so the light goes out HOLD_MS after the last
-      // keydown seen for it. Nothing waits on a `keyup`, so no key can be left
-      // stuck lit by one that never arrives.
+      // keydown seen for it.
       //
       // What that is not is a picture of which keys are still held down.
       // Auto-repeat does not begin for a few hundred ms, well past HOLD_MS, so
       // a key held down goes dark and relights once the repeats arrive, and a
       // held modifier — which does not repeat at all — simply goes dark. The
-      // board echoes strokes, and §4.3 asks for the timer with no exception
-      // for either.
+      // board echoes strokes (§4.3).
       clearTimeout(timers.get(code));
       timers.set(
         code,
@@ -175,10 +148,6 @@ export function createKeyEcho(emit: (echo: KeyEcho) => void): KeyEchoBoard {
  * stay honest wherever focus went — a click on the page background moves focus
  * off the field, and a board that stopped echoing there would read as a
  * keyboard that had stopped working.
- *
- * Both sets change at most ten times a second, so a `useState` per keystroke
- * costs nothing next to the race clock already re-rendering this screen
- * sixteen times a second.
  */
 export function useKeyEcho({ expect }: { expect: string | null }): KeyEcho {
   const [echo, setEcho] = useState<KeyEcho>(SILENT);
@@ -189,13 +158,12 @@ export function useKeyEcho({ expect }: { expect: string | null }): KeyEcho {
    * churned on every keystroke, and a stale closure would judge this key
    * against the last one.
    *
-   * A ref has the opposite hazard, and it is the one that actually bit: an
-   * expectation too FRESH for the key being judged. The keystroke that commits
-   * a word is the keystroke that moves this ref, so anything reading it after
-   * the commit has re-rendered is asking "was SPACE the right key for the NEXT
-   * word's first letter?" — and telling a child in red that they finished a
-   * word correctly. The capture flag below is what keeps the read in front of
-   * the write.
+   * A ref has the opposite hazard: an expectation too FRESH for the key being
+   * judged. The keystroke that commits a word is the keystroke that moves this
+   * ref, so anything reading it after the commit has re-rendered is asking "was
+   * SPACE the right key for the NEXT word's first letter?" — and telling a
+   * child in red that they finished a word correctly. The capture flag below is
+   * what keeps the read in front of the write.
    */
   const expected = useRef(expect);
   expected.current = expect;
@@ -213,9 +181,9 @@ export function useKeyEcho({ expect }: { expect: string | null }): KeyEcho {
     // so it runs first; on SPACE it commits the word, queueing `setEntry("")`
     // and `setIndex(i + 1)`. React flushes a discrete update in a microtask,
     // and a microtask checkpoint runs BETWEEN two listeners of one real event
-    // — so by the time a bubble-phase echo saw the SPACE, the track had already
-    // re-rendered and the expectation had already advanced to the next word.
-    // Every correctly finished word flared red on the space bar.
+    // — so a bubble-phase echo sees the SPACE after the track has re-rendered
+    // and the expectation has advanced, and flares every correctly finished
+    // word red on the space bar.
     //
     // Capture runs at the very start of propagation, ahead of every handler
     // that could move the expectation. It also survives a `stopPropagation()`

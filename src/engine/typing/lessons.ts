@@ -4,33 +4,16 @@ import type { WaveSpec } from "./storm";
 /**
  * The hundred lessons of Frost Keys, as data (docs/typing.md §5).
  *
- * A lesson declares what it is *for* — which keys it puts under the fingers,
- * how long it runs, how much of the keyboard is on screen and what passing it
- * means — and the words are generated from that rather than written out. A
- * hundred hand-written pools would be a hundred chances to use a letter the
- * child hasn't met yet; a hundred specs is one array, and re-ordering the
- * ladder is editing it (§5.1).
+ * A lesson declares what it is *for* and its text is generated from that
+ * (§5.1). The unlocked alphabet at lesson n is computed from `introduces`
+ * rather than written down here — that is `keys.ts`'s job — which is what lets
+ * a lesson carry its words with it when it moves.
  *
- * The **unlocked alphabet** at lesson n is the union of `introduces` over
- * lessons 1…n, plus space. It is computed rather than written down — that is
- * `engine/typing/keys.ts`'s job — which is what lets a lesson carry its words
- * with it when it moves.
- *
- * ── Why there is no text in this file ───────────────────────────────────────
- * `engine/decks/typing.ts` imports this module to label a saved run:
- * `deckSpec("typing:L07")` has to name lesson 7 in a record book two years
- * from now, long after the ladder has been re-tuned. And `decks/index.ts` is
- * the front door for every island on the site — flash cards, spelling, the
- * record book, the print shop — so a module in its graph is shipped to all of
- * them, whole.
- *
- * The last time that was got wrong, an import of the passage library from
- * `decks/typing.ts` took the shared chunk from 46 KB to 222 KB, which is why
- * thirty-three verses are written out by hand in that file today. This is the
- * same trap one file over. So: titles, key sets and pass criteria, and not one
- * word a child ever types. The corpus lives in `engine/typing/lexicon.ts` and
- * the generator in `generate.ts`, and neither may ever become reachable from
- * here (§5.3, decision 7).
+ * This is the one module in `engine/typing/` the deck layer may import, so
+ * that `deckSpec("typing:L07")` can name lesson 7 in a record book years from
+ * now. It therefore holds titles, key sets and pass criteria and not one word
+ * a child ever types: neither `lexicon.ts` nor `generate.ts` may ever become
+ * reachable from here (§5.3, decision 7).
  */
 
 /**
@@ -59,15 +42,12 @@ export type LessonKind =
   /** Short and fast — the speed bar moved up and the length cut down. */
   | { type: "sprint" }
   /**
-   * A Hailstorm level, and the storm it is (§8, §5.6's storm table).
+   * A Hailstorm level, and the storm it is (§8, §5.7).
    *
    * The wave is a `WaveSpec` **minus its keys** (`StormShape` below, decision
-   * 56), which is the whole of how "a storm can never ask for a key the ladder
-   * has not taught" is kept: there is nowhere in the table to write one down.
-   * `storms.ts` composes the real spec by drawing the pool from
-   * `unlockedAt(n)` — the same computed alphabet every lesson's words come
-   * from (§5.2) — so moving a storm up the ladder moves what falls in it, and
-   * a level cannot be given a key by hand.
+   * 56): there is nowhere in the table to write a character down, so
+   * `storms.ts` can only draw the pool from `unlockedAt(n)` and a storm can
+   * never rain a key the ladder has not taught.
    */
   | { type: "storm"; wave: StormShape };
 
@@ -75,13 +55,10 @@ export type LessonKind =
  * Which class of character a storm level is *about*, or absent for one that is
  * about everything.
  *
- * §8.3 leaves repeats in `spec.keys` meaning "this falls more often", and this
- * is the curriculum's half of that: "Hailstorm · Digits" has to rain digits
- * and not one digit in six. The classes are named rather than written out as
- * characters for the same reason `introduces` is per lesson — the pool is
- * always a filter over what the ladder has taught by then, so a focus can only
- * ever weight keys a child already has. `storms.ts` decides what each name
- * matches.
+ * A named class rather than the characters themselves, because the pool is
+ * always a filter over what the ladder has taught by then — so a focus can
+ * only ever weight keys a child already has. `storms.ts` decides what each
+ * name matches, and §5.7 what the weighting comes to.
  */
 export type StormFocus = "capitals" | "digits" | "marks";
 
@@ -98,26 +75,15 @@ export type StormFocus = "capitals" | "digits" | "marks";
  */
 export type StormShape = Omit<WaveSpec, "keys"> & {
   /**
-   * The seed this level's weather comes from (decision 58).
-   *
-   * A Hailstorm level is a *level*, so it is the same storm every time it is
-   * opened — the twenty waves that ship are the twenty a child meets, and the
-   * twenty the no-strobe rule is measured on (§8.10). "Try this wave again"
-   * already meant the same letters in the same lanes; this is the same promise
-   * across two visits instead of two attempts.
+   * The seed this level's weather comes from (decision 58): the same storm
+   * every time it is opened, not merely the same on a retry.
    */
   seed: number;
   /** The characters this level rains, over the ones it merely includes. */
   focus?: StormFocus;
 };
 
-/**
- * What passing looks like, in three bars rather than one score (§6.1).
- *
- * Three because a single number tells a seven-year-old that they failed and
- * not what to do. "Fast enough, not accurate enough" and "you have `x` but not
- * `z`" are instructions; a blended net-WPM is not.
- */
+/** What passing looks like, in three bars rather than one score (§6.1). */
 export type PassCriteria =
   | {
       kind: "lesson";
@@ -129,10 +95,8 @@ export type PassCriteria =
        * Each newly-introduced key, at least this fraction correct…
        *
        * Inert on a lesson that introduces nothing — the verdict's `keys` array
-       * is one bar per introduced character, so on a review or a checkpoint it
-       * is empty and these two are never read. They are still filled in, so
-       * that a lesson which grows an `introduces` later is gated the moment it
-       * does.
+       * is empty there and these two are never read. Filled in anyway, so a
+       * lesson that grows an `introduces` later is gated the moment it does.
        */
       keyAccuracy: number;
       /** …over at least this many strikes. The generator guarantees enough. */
@@ -183,13 +147,10 @@ const CHARS_PER_WORD = 5;
 const MAX_NEW_KEY_SHARE = 0.35;
 
 /**
- * The accuracy bar on a Hailstorm level.
- *
- * §5.6 prints — in that column because the column belongs to a passage and a
- * storm is not one: what it measures is single-key reaction, so its bar is the
- * new-key gate's figure rather than a passage's 95%. It is also the one bar on
- * the ladder that opens no door — a storm level can never gate a lesson (§8.8,
- * decision 24) — so this is a line on a results screen and nothing more.
+ * The accuracy bar on a Hailstorm level: the new-key gate's figure rather than
+ * a passage's 95%, because what a storm measures is single-key reaction
+ * (§5.6). It is also the one bar on the ladder that opens no door (§8.8,
+ * decision 24), so it is a line on a results screen and nothing more.
  */
 const STORM_ACCURACY = NEW_KEY_ACCURACY;
 
@@ -197,15 +158,13 @@ const STORM_ACCURACY = NEW_KEY_ACCURACY;
  * How many strikes of each new character the gate waits for.
  *
  * Twelve (§6.4) wherever twelve fits, which is every lesson that arrives two
- * keys at a time: 24 strikes in a 24-word lesson is a fifth of the characters,
- * comfortably inside §5.2's band. Four lessons hand over more than a pair at
- * once — 31, 32, 67 and 68 — and three of them cannot also ask twelve of each:
- * lesson 31 introduces fifteen capitals, and 15 × 12 is 180 strikes in 150
- * characters, so there the demand is divided between them instead of being made
- * unreachable. Lesson 68's four keys still fit twelve apiece inside its 175,
- * which is why the ceiling is a `min` against the room rather than a rule about
- * how many keys arrived. Two is the floor: below it the gate cannot tell a
- * typist from a lucky guess.
+ * keys at a time. Four hand over more at once — 31, 32, 67 and 68 — and three
+ * of those cannot also ask twelve of each: lesson 31's fifteen capitals would
+ * want 180 strikes in 150 characters, so there the demand is divided between
+ * them instead of being made unreachable. Lesson 68's four keys still fit
+ * twelve apiece inside its 175, which is why the ceiling is a `min` against
+ * the room rather than a rule about how many keys arrived. Two is the floor:
+ * below it the gate cannot tell a typist from a lucky guess.
  */
 function strikesFor(introduces: string[], wordCount: number): number {
   if (introduces.length === 0) return NEW_KEY_STRIKES;
@@ -217,19 +176,16 @@ function strikesFor(introduces: string[], wordCount: number): number {
 }
 
 /**
- * What each `bigrams` lesson drills.
+ * What each `bigrams` lesson drills. Four of the six are their own title in
+ * §5.6; the other two are named by description there, and "the hard pairs" is
+ * not a spec:
  *
- * Four of the six are named by their own title in §5.6 and are transcribed
- * from it. The other two are named by description, and are written down here
- * because a spec that says "the hard pairs" is not a spec:
- *
- *   - **8 · Pairs that repeat** is the doubled letters, and at lesson 8 the
- *     alphabet is still `a s d f g h j k l ;` — so `ll`, `ss` and `dd` are all
- *     of them there are (all, hall, glass, add).
- *   - **44 · The hard pairs** is the *same-finger* bigrams, which is what makes
+ *   - **8 · Pairs that repeat** — the doubled letters, and at lesson 8 the
+ *     alphabet is still `a s d f g h j k l ;`, so `ll`, `ss` and `dd` are all
+ *     of them there are.
+ *   - **44 · The hard pairs** — the *same-finger* bigrams, which is what makes
  *     a pair hard rather than which letters it uses: `ed` is both the left
- *     middle finger, `ju` both the right index. They are the sequences a fast
- *     typist still slows down on, which is exactly what a fluency block is for.
+ *     middle finger, `ju` both the right index.
  */
 const BIGRAMS: Record<number, string[]> = {
   8: ["ll", "ss", "dd"],
@@ -255,11 +211,10 @@ type Keyboard = KeyboardMode | `${KeyboardMode}!`;
  * One row of §5.6, in the doc's own column order: number, title, new keys,
  * kind, keyboard, words, wpm, accuracy.
  *
- * A tuple rather than an object because this is read as a table. A hundred
+ * A tuple rather than an object because this is read as a table: a hundred
  * rows of `{ n: 7, title: "…", wordCount: 25 }` is the same data with ten
  * times the punctuation, and a column that has drifted out of line is
- * invisible in it. Keeping the shape of the doc is what lets the two be
- * checked against each other by eye.
+ * invisible in it.
  *
  * `n` is data rather than the array index on purpose: it is half of the id
  * that goes into `Session.mode` and outlives any re-ordering, so "1–100 with
@@ -283,10 +238,10 @@ type LessonRow = readonly [
  * column is the wave's `count`, which `toLesson` reads out of `STORM_WAVES`.
  *
  * The wave is a table of its own rather than six more columns here, exactly as
- * §5.6 prints it: a storm's numbers are read against *each other* — a `gap`
+ * the doc splits it: a storm's numbers are read against *each other* — a `gap`
  * means nothing except beside the `fall` it does or does not clear — where a
  * lesson's columns are read down the page against the same column on the rows
- * above. Two tables, each shaped like the thing it is.
+ * above.
  */
 type StormRow = readonly [
   n: number,
@@ -299,33 +254,22 @@ type StormRow = readonly [
 type Row = LessonRow | StormRow;
 
 /**
- * The hundred, transcribed from docs/typing.md §5.6.
- *
- * Three things to know before editing it:
+ * The hundred, transcribed from docs/typing.md §5.6. Three things an editor
+ * needs before touching a column:
  *
  *   - **The wpm column drops every time keys arrive** and climbs back over the
- *     review lessons after it. Lesson 50 asks 25 and lesson 51 asks 16. That is
- *     §6.3 and decision 11 written into the data: you have just got slower and
- *     you should have, and a ladder that pretended otherwise would punish the
- *     exact moment it should encourage. Do not smooth it out.
+ *     review lessons after it (§6.3, decision 11). Do not smooth it out.
  *   - **Keys arrive in mirrored pairs, one per hand** through the three letter
- *     blocks — `f`/`j` are the index home keys and `d`/`k`, `s`/`l`, `a`/`;`
- *     walk outward together, which is what makes the bottom row guessable by
- *     the time you reach it (§5.5). The number row is the deliberate exception:
- *     it walks outward from the centre of the *board* instead, so `4 5` are
- *     both the left index's and `9 0` are the right ring and pinky. That is
- *     the standard finger assignment, not a slip.
+ *     blocks (§5.5). The number row is the deliberate exception: it walks
+ *     outward from the centre of the *board* instead, so `4 5` are both the
+ *     left index's and `9 0` are the right ring and pinky. That is the
+ *     standard finger assignment, not a slip.
  *   - **The tenth of every block is a checkpoint**, always `off` and always
- *     locked: a checkpoint that can be passed while reading the answer off the
- *     screen measures nothing (§4.2). Lesson 1 is locked the other way, to
- *     `guide`, because a child who has never seen a keyboard cannot be asked
- *     to guess.
+ *     locked (§4.2). Lesson 1 is locked the other way, to `guide`, because a
+ *     child who has never seen a keyboard cannot be asked to guess.
  */
 const ROWS: readonly Row[] = [
   // ── Block 1 · Home row ─────────────────────────────────────────────────────
-  // No English word can be spelled in `f j d k s l`, so words cannot start
-  // until lesson 7 — and that is why lesson 4 is a storm level. The first
-  // thing that is *fun* arrives before the first thing that is a word (§5.5).
   [1, "Two keys", "fj", "keys", "guide!", 20, 8, 95],
   [2, "Four keys", "dk", "keys", "guide!", 20, 8, 95],
   [3, "Six keys", "sl", "keys", "guide!", 24, 9, 95],
@@ -350,10 +294,6 @@ const ROWS: readonly Row[] = [
   [20, "Checkpoint · Two rows", "", "words", "off!", 35, 15, 97],
 
   // ── Block 3 · Reaching down ────────────────────────────────────────────────
-  // The comma and the full stop come in with the bottom row because that is
-  // where they physically are. It costs nothing, and it means real sentences
-  // are available at the end of this block rather than needing a lesson of
-  // their own (§5.5).
   [21, "Down to v and m", "vm", "keys", "guide!", 26, 11, 95],
   [22, "c, and the comma", "c,", "keys", "guide!", 26, 11, 95],
   [23, "Hailstorm · Down low", "", "storm", "guide"],
@@ -367,10 +307,9 @@ const ROWS: readonly Row[] = [
 
   // ── Block 4 · Capitals ─────────────────────────────────────────────────────
   // A shift is not a character, so what these two lessons introduce is the set
-  // of capitals each one *reaches*: the right shift is held by the right pinky
-  // and capitalises the left hand's letters, and the left shift the right
-  // hand's. Two lessons, twenty-six characters, and the opposite-hand rule
-  // taught as the only way either of them works.
+  // of capitals each one *reaches* — the right shift capitalises the left
+  // hand's letters and the left shift the right hand's. `keys.ts` reads the
+  // shifts back out of these two rows; there is nowhere else they are written.
   [31, "The right shift", "QWERTASDFGZXCVB", "keys", "guide!", 30, 13, 95],
   [32, "The left shift", "YUIOPHJKLNM", "keys", "guide!", 30, 13, 95],
   [33, "Names, and the word I", "", "words", "guide", 35, 15, 95],
@@ -383,10 +322,9 @@ const ROWS: readonly Row[] = [
   [40, "Checkpoint · Real sentences", "", "sentences", "off!", 45, 20, 97],
 
   // ── Block 5 · Fluency ──────────────────────────────────────────────────────
-  // Nothing new arrives here, so speed is the lesson and the bar climbs
-  // fastest (§6.3). It does not climb *monotonically*: 44 and 47 ask for less
-  // than the lesson before them because harder material is the point of them,
-  // not because the column slipped.
+  // The bar climbs fastest here (§6.3) but not *monotonically*: 44 and 47 ask
+  // for less than the lesson before them because harder material is the point
+  // of them, not because the column slipped.
   [41, "The twenty-five", "", "words", "keys", 40, 18, 95],
   [42, "th · he · in · er", "", "bigrams", "keys", 40, 19, 95],
   [43, "an · re · on · at · en", "", "bigrams", "keys", 40, 20, 95],
@@ -399,8 +337,6 @@ const ROWS: readonly Row[] = [
   [50, "Checkpoint · Fluent", "", "passage", "off!", 60, 25, 97],
 
   // ── Block 6 · Numbers ──────────────────────────────────────────────────────
-  // 50 asks 25 wpm and 51 asks 16. The number row is a fresh reach for every
-  // finger and the bar drops to meet it, all the way back to block 3's pace.
   [51, "Four and five", "45", "keys", "guide!", 30, 16, 95],
   [52, "Three and six", "36", "keys", "guide!", 30, 16, 95],
   [53, "Hailstorm · Digits", "", "storm", "guide"],
@@ -413,12 +349,10 @@ const ROWS: readonly Row[] = [
   [60, "Checkpoint · Numbers", "", "mixed", "off!", 50, 22, 97],
 
   // ── Block 7 · Punctuation ──────────────────────────────────────────────────
-  // Two rows re-introduce a character the ladder already unlocked: `;` arrived
-  // at lesson 5 as a home key and `/` at lesson 25 as a bottom-row reach, and
-  // both come back here in their punctuation role. The unlocked alphabet is a
-  // union, so saying it twice changes nothing about what a child may type; what
-  // it does is put the character back under the new-key gate, which is the
-  // point — knowing where `;` is and knowing what it is for are two lessons.
+  // Two rows re-introduce a character the ladder already unlocked — `;` from
+  // lesson 5, `/` from lesson 25 — in their punctuation role. The unlocked
+  // alphabet is a union, so saying it twice changes nothing about what a child
+  // may type; what it does is put the character back under the new-key gate.
   [61, "Asking and shouting", "?!", "keys", "guide!", 35, 18, 95],
   [62, "Speech marks", '"', "keys", "guide!", 35, 18, 95],
   [63, "Hyphen and underscore", "-_", "keys", "guide!", 35, 19, 95],
@@ -431,12 +365,11 @@ const ROWS: readonly Row[] = [
   [70, "Checkpoint · Punctuated", "", "passage", "off!", 55, 24, 97],
 
   // ── Block 8 · Endurance ────────────────────────────────────────────────────
-  // Length is the variable. The accuracy bar moves to 96% for the block — the
-  // first of several places §6.2's flat 95/97 line bends: holding a rate over
-  // a hundred words is a different thing from holding it over thirty. Block
-  // 9's checkpoint (90) bends the same way, so does block 10's prose (91–96),
-  // and lesson 97 bends the other way at 99%. An accuracy column "corrected"
-  // back to a flat 95/97 would be wrong from here to the end of the ladder.
+  // The accuracy bar moves to 96% here — the first of several places §6.2's
+  // flat 95/97 line bends. Block 9's checkpoint (90) bends the same way, so
+  // does block 10's prose (91–96), and lesson 97 bends the other way at 99%.
+  // An accuracy column "corrected" back to a flat 95/97 would be wrong from
+  // here to the end of the ladder.
   [71, "Sixty words", "", "passage", "off", 60, 22, 96],
   [72, "A whole paragraph", "", "passage", "off", 70, 23, 96],
   [73, "Hailstorm · The long wave", "", "storm", "off"],
@@ -449,9 +382,6 @@ const ROWS: readonly Row[] = [
   [80, "Checkpoint · A hundred words", "", "passage", "off!", 100, 28, 97],
 
   // ── Block 9 · Speed ────────────────────────────────────────────────────────
-  // Its checkpoint asks 96% rather than 97%: thirty-five words a minute is the
-  // whole subject of the block, and the point it trades away is the price of
-  // asking for it.
   [81, "Sprint · Common words", "", "sprint", "off", 30, 28, 95],
   [82, "Sprint · Alternating hands", "", "sprint", "off", 30, 30, 95],
   [83, "Hailstorm · Hard rain", "", "storm", "off"],
@@ -464,9 +394,6 @@ const ROWS: readonly Row[] = [
   [90, "Checkpoint · Thirty-five", "", "passage", "off!", 80, 35, 96],
 
   // ── Block 10 · Everything ──────────────────────────────────────────────────
-  // Lesson 97 is the one lesson that asks for 99%, at a deliberately modest
-  // pace, so that "slow down and get it right" is something the ladder has
-  // said out loud at least once (§6.2).
   [91, "Mixed prose", "", "passage", "off", 90, 30, 96],
   [92, "Prose with numbers", "", "mixed", "off", 90, 30, 96],
   [93, "Hailstorm · Everything falls", "", "storm", "off"],
@@ -480,14 +407,13 @@ const ROWS: readonly Row[] = [
 ];
 
 /**
- * One storm, as §5.6's storm table writes it: the six numbers that make a
- * level, its seed, and the class of character it is about.
+ * One storm, as §5.7's table writes it: the six numbers that make a level, its
+ * seed, and the class of character it is about.
  *
- * Positional for the same reason `LessonRow` is — this is read as a table, and
- * a column out of line is invisible in twenty objects of seven fields. The
- * ranges are flat pairs because that is how they are read: `gap` against
- * `fall` is the whole difficulty shape (§8.3), and the eye compares two
- * columns down the page rather than two brackets across a row.
+ * Positional for the same reason `LessonRow` is. The ranges are flat pairs
+ * because that is how they are read: `gap` against `fall` is the whole
+ * difficulty shape (§8.3), and the eye compares two columns down the page
+ * rather than two brackets across a row.
  */
 type StormWaveRow = readonly [
   n: number,
@@ -503,33 +429,14 @@ type StormWaveRow = readonly [
 ];
 
 /**
- * The twenty storms (docs/typing.md §5.6's storm table, §8.3).
+ * The twenty storms (§5.7, §8.3), which is where the shape of every column is
+ * argued: where `gap` clears `fall`, where the ladder eases, where the repairs
+ * stop, and why no row may ask for a fall under `MIN_FALL_MS`. It does not
+ * climb smoothly and must not be smoothed.
  *
- * Four things about the shape of it, and none of them is arbitrary:
- *
- *   - **`gap` clears `fall` at the top of the ladder and overlaps below it.**
- *     Lessons 4, 9 and 13 never put two letters on screen — pure reaction —
- *     and from 19 on they stack, which is reading ahead. Both halves are
- *     asserted off the *built* schedule in `storms.test.ts`, because
- *     `MIN_FALL_MS` can raise a fall and turn a spacing promise into an
- *     overlap (§8.10, decision 52).
- *   - **It does not climb smoothly, and must not be smoothed.** Lesson 53's
- *     storm eases where the number row has just arrived, exactly as the wpm
- *     column does (§6.3, decision 11); lesson 73 is long where 79 is dense.
- *     What climbs is each *quarter* of the twenty, which is what the test
- *     holds it to.
- *   - **The repairs stop at 79 and never come back.** "No repairs" is that
- *     level's name and the block's turn: below it the weakest zone mends every
- *     `repairAt` clean hits, above it what breaks stays broken.
- *   - **No row asks for a fall under `MIN_FALL_MS`.** The floor is a backstop
- *     and not a knob (decision 52); a row that went under it would come out of
- *     `fallRange` as a metronome at 800ms and quietly not be what it says.
- *
- * The seed is the level's own number, or the first above it whose wave keeps
- * the level's promises — no zone tinting more than twice a second (§8.10), six
- * of the eight fingers used, and no finger taking more than a third of the
- * letters. Six of the twenty needed the bump; `storms.test.ts` re-derives all
- * twenty rather than trusting the column (decision 58).
+ * The doc's table is the one being checked and this is what it is checked
+ * against: `storms.test.ts` reads §5.7 off disk and compares it cell by cell,
+ * and re-derives every seed rather than trusting the column (decision 58).
  */
 const STORM_WAVES: readonly StormWaveRow[] = [
   //  n  len       gap        fall  shield repair seed  focus
@@ -560,11 +467,11 @@ const STORM_WAVES: readonly StormWaveRow[] = [
  *
  * `satisfies StormShape` and not only the `Map`'s type argument, because the
  * two are not the same check: excess properties do not survive a `.map` into a
- * `new Map<number, StormShape>`, so a `keys` written here would have
- * type-checked clean and then been discarded in silence by `waveSpecFor`'s
- * spread. `satisfies` fires excess-property checking on the literal itself,
- * which is what makes "a storm cannot name its own keys" (decision 56) a thing
- * the compiler refuses rather than a thing the spread order rescues.
+ * `new Map<number, StormShape>`, so a `keys` written here would type-check
+ * clean and then be discarded in silence by `waveSpecFor`'s spread.
+ * `satisfies` fires excess-property checking on the literal itself, which is
+ * what makes "a storm cannot name its own keys" (decision 56) something the
+ * compiler refuses rather than something the spread order rescues.
  */
 const WAVE_BY_N = new Map<number, StormShape>(
   STORM_WAVES.map(([n, count, gapFrom, gapTo, fallFrom, fallTo, ...rest]) => {
@@ -587,8 +494,8 @@ const WAVE_BY_N = new Map<number, StormShape>(
 // ── Table → lessons ──────────────────────────────────────────────────────────
 
 /**
- * "L07", and "L100". Two digits because that is what §5.1 writes down and what
- * `Session.mode` has to keep saying forever; the hundredth simply runs over.
+ * "L07", and "L100". Two digits because that is what `Session.mode` has to
+ * keep saying forever (§5.1); the hundredth simply runs over.
  */
 const idFor = (n: number) => `L${String(n).padStart(2, "0")}`;
 
@@ -629,14 +536,12 @@ function toLesson(row: Row): Lesson {
     title,
     introduces,
     keyboard: MODE_OF[keyboard],
-    // A storm level is `keyboard: "guide"` without the lock as often as not,
-    // so this stays undefined rather than false: `keyboardLocked?: true` is
-    // the shape §4.2 asks for and an absent flag is the ordinary case.
+    // Undefined rather than false: `keyboardLocked?: true` is the shape §4.2
+    // asks for, and an unlocked row is the ordinary case.
     ...(locked ? { keyboardLocked: true } : {}),
-    // The tenth of every block, by §5.5's definition of a block. Derived
-    // rather than written on the row, for the same reason `block` is: a
-    // checkpoint is a *position* in the ladder, and a row that could disagree
-    // with its own position is a row that will.
+    // Derived rather than written on the row, for the same reason `block` is:
+    // a checkpoint is a *position* in the ladder, and a row that could
+    // disagree with its own position is a row that will.
     ...(n % 10 === 0 ? { checkpoint: true as const } : {}),
   };
 
@@ -655,10 +560,8 @@ function toLesson(row: Row): Lesson {
       // **A storm level's length is its wave's `count`** (§8.3), and this is
       // the one place the two are joined. Three things read it back and all
       // three would be wrong against any other number: `survived` in
-      // `verdict.ts` is `cards.length >= wordCount`, the `unbroken` badge is
-      // guarded on the wave having a length (decision 29), and `lessonKey` —
-      // the string a run is filed under — is `typing|L39|28`, which is what
-      // makes a storm and its lesson share one bucket (§5.4, §8.7).
+      // `verdict.ts`, the `unbroken` badge (decision 29), and the key a run is
+      // filed under — `typing|L39|28` (§5.4, §8.7).
       wordCount: wave.count,
       pass: { kind: "storm", survive: true, accuracy: STORM_ACCURACY },
     };
@@ -700,9 +603,7 @@ const BY_ID = new Map(LESSONS.map((lesson) => [lesson.id, lesson]));
  * for a free-play config, which simply has no `lessonId`, and an id from a
  * build that has since re-cut the ladder is a run that must still open rather
  * than a case to throw on. It is the same promise `deckSpec` makes one layer
- * up — a saved run outlives the ladder it was played on (CLAUDE.md) — and it
- * is what lets a screen ask "is this a lesson?" and get the lesson back in the
- * same breath.
+ * up — a saved run outlives the ladder it was played on (CLAUDE.md).
  */
 export const lessonById = (id?: string | null): Lesson | null =>
   (id ? BY_ID.get(id) : undefined) ?? null;
@@ -729,14 +630,9 @@ export const lessonNumbered = (n: number): Lesson | null =>
  * the engine, beside the rows it reads — because two layers need the same
  * answer to two different questions. The island asks it to draw the board and
  * to grey out the control (`keyboardFor`, `keyboardLock`); the engine asks it
- * to award `eyes-up` (§6.7), and the engine may not import from `src/games/`.
- *
- * That badge is why the distinction is a function at all rather than a line
- * inside the island's resolver. Every checkpoint forces the board `off`,
- * because a checkpoint passed while reading the answer off the screen measures
- * nothing — so a badge for "passed with the keyboard hidden" that asked only
- * what was on screen would land on exactly the ten runs where being eyes-up
- * was compulsory, which is the inverse of what it is for.
+ * to award `eyes-up` (§6.7, decision 28), and the engine may not import from
+ * `src/games/`. That badge is why the distinction is a function at all rather
+ * than a line inside the island's resolver.
  *
  * A lock over `keyboard: null` is not a lock, and hands back `null` here: a
  * lesson that names no mode is insisting on nothing.

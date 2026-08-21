@@ -7,7 +7,7 @@ import type { Verdict } from "@/engine/typing/verdict";
 import { lockNote, missNote, nextNote, weakestKey } from "./lessonNotes";
 
 /**
- * The sentence a results screen says (docs/typing.md §6.1).
+ * The sentence a results screen says (§6.1).
  *
  * What the numbers mean is `verdict.test.ts`'s, and which door a set of runs
  * opens is `ladder.test.ts`'s. What is only true here is the reading: given
@@ -61,9 +61,8 @@ describe("weakestKey", () => {
 
 describe("missNote", () => {
   /**
-   * The one the whole screen exists for. Three bars, one of them short, and
-   * the sentence says which — plus the half that says *don't change that*,
-   * without which a child fixes `j` by slowing under the speed bar.
+   * The praise is the load-bearing half: without it a child fixes `j` by
+   * slowing down, and drops under the speed bar instead.
    */
   it("names the key holding the run up, and says the speed was fine", () => {
     const note = missNote(
@@ -114,10 +113,9 @@ describe("missNote", () => {
   });
 
   /**
-   * The storm arm, and the reason it needed handling at all: §6.1's verdict
-   * gives a dead wave a full speed bar and no key bars, so the bars alone say
-   * "all met" over the word the child has just been told. Surviving is not a
-   * bar, so it is a sentence.
+   * §6.1's verdict gives a dead wave a full speed bar and no key bars, so the
+   * bars alone say "all met" over the word the child has just been told.
+   * Surviving is not a bar, so it is a sentence.
    */
   it("says the wave got through when a storm run met its accuracy", () => {
     expect(
@@ -182,9 +180,8 @@ describe("lockNote", () => {
   });
 
   /**
-   * §8.8: a Hailstorm level never gates, so the lesson that opens 10 is 8 —
-   * and pointing a child at the storm at 9 would be sending them at a wave
-   * they cannot play at all on a tablet.
+   * A Hailstorm level never gates (§8.8), so the lesson that opens 10 is 8 —
+   * and on a tablet the storm at 9 is a wave that cannot be played at all.
    */
   it("looks past a Hailstorm level to the lesson that really opens it", () => {
     expect(lessonNumbered(9)!.kind.type).toBe("storm");

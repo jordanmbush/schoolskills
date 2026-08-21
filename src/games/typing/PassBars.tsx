@@ -4,14 +4,7 @@ import type { Bar, Verdict } from "@/engine/typing/verdict";
 import { weakestKey } from "./lessonNotes";
 
 /**
- * The three bars a lesson is judged on (docs/typing.md §6.1).
- *
- * Three rather than one score, for a reason about a seven-year-old and not
- * about statistics: a single number tells you that you failed and not what to
- * do, where "fast enough, not accurate enough" is an instruction. Each bar is
- * visibly full or visibly short of its mark, and they are shown in the order
- * they matter — **accuracy, then the new keys, then speed** — which is also the
- * order they should be fixed in.
+ * The three bars a lesson is judged on, in the order they matter (§6.1).
  *
  * One component for both places the bars appear: filling live under a lesson in
  * `LessonBars`, and standing still under its verdict on the results screen. The
@@ -37,9 +30,8 @@ export function PassBars({
         target={percent(verdict.accuracy.need)}
       />
       {/* Absent on a review lesson and on every checkpoint — they introduce
-          nothing, so there is no third thing being asked and a bar for it
-          would be a bar that can never move (§6.1). Which of many keys gets
-          the room is `weakestKey`'s to say. */}
+          nothing, so a bar for it would be one that can never move (§6.1).
+          Which of many keys gets the room is `weakestKey`'s to say. */}
       {key && (
         <Meter
           label={`New key ${key.key}`}
@@ -48,14 +40,12 @@ export function PassBars({
           target={percent(key.need)}
         />
       )}
-      {/* ── No speed bar on a Hailstorm level (§5.6, §6.1) ──────────────────
-          A storm has no passage, so it has no words per minute, and §6.1's
-          verdict says so with `{ got: 0, need: 0, ok: true }` — a bar that can
-          never fail one. That is right for the model and unreadable on screen:
-          drawn, it is a full green bar sitting over the word the child has
-          just been told, which reads as a bug rather than as "not asked for".
-          §5.6 prints — in that column for the same reason. So the column is
-          simply not there, and `missNote` says in words what the wave did. */}
+      {/* No speed bar on a Hailstorm level: a storm has no passage and so no
+          words per minute, and §6.1's verdict says so with a bar that can never
+          fail. Drawn, that is a full green bar over the word the child has just
+          been told they missed, which reads as a bug rather than as "not asked
+          for". So the column is not there, and `missNote` says in words what
+          the wave did. */}
       {lesson.pass.kind !== "storm" && (
         <Meter
           label="Speed"

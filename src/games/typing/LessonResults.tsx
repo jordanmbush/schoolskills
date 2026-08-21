@@ -20,26 +20,16 @@ import type { Lesson } from "@/engine/typing/lessons";
 import type { Profile } from "@/engine/types";
 
 /**
- * Whether the lesson was passed, and what to do next (docs/typing.md §6.1, §9).
+ * Whether the lesson was passed, and what to do next (§6.1, §9).
  *
- * The free-play screen next door is a **scoreline** — a wpm, an accuracy, a
- * clock and a rival — because free play is a race and a race is decided on a
- * number. A lesson is not (§7). What is on trial here is three criteria, and
- * the job of this screen is to turn a failure into an instruction: not "68%",
- * but "you were fast enough; the `z` key needs more practice". A child who
- * misses a lesson and cannot tell which of the three cost them has been handed
- * a wall, and a wall is what makes a seven-year-old stop climbing.
+ * The free-play screen next door is a scoreline, because a race is decided on a
+ * number. A lesson is marked rather than ranked (§7), so the bars lead, in
+ * §6.1's order, and the sentence under the headline names the gap. `missNote`
+ * and `nextNote` decide what that sentence says; this file only puts it on the
+ * screen.
  *
- * So the bars lead, in §6.1's order, and the sentence under the headline names
- * the gap. `missNote` and `nextNote` decide what that sentence says; this file
- * only puts it on the screen.
- *
- * **Retries are unlimited and unpenalised.** There is no attempt counter here
- * and nothing anywhere that stores one — a lesson is passed if a session exists
- * that meets its criteria (§6.5), so a failed run costs a child exactly the
- * time it took and nothing else. Trying a checkpoint you are nowhere near
- * being free is the whole of the levelling advice (§6.6), and it is only true
- * because failing is.
+ * There is no attempt counter here and nothing anywhere that stores one:
+ * retries are unlimited and unpenalised (§6.5, §6.6).
  */
 export default function LessonResults({
   lesson,
@@ -73,22 +63,18 @@ export default function LessonResults({
 
   /**
    * A Hailstorm level is a different game on a different route (§8, §9), and
-   * this screen is only ever reached by one because a storm run is an ordinary
-   * `Session` and the results route is shared. Until #159 builds the wave there
-   * is nothing here that could start one, so the two run actions stand down
-   * rather than hand a child a lesson-shaped run of a level that has no
-   * passage. Everything else on the screen — the bars, the reason, the rewards
-   * — reads a storm correctly.
+   * this screen is reached by one only because a storm run is an ordinary
+   * `Session` and the results route is shared. `run` below builds a
+   * lesson-shaped passage run, which a storm has no passage for, so the two run
+   * actions stand down. Everything else on the screen — the bars, the reason,
+   * the rewards — reads a storm correctly.
    */
   const storm = lesson.pass.kind === "storm";
 
   /**
-   * Where the ladder lives (§9).
-   *
-   * `#/p/:id` is the hundred tiles, with free play under them. Every way off
-   * this screen points at the route rather than at the screen behind it, which
-   * is what made turning the setup screen into the ladder a swap rather than a
-   * hunt for the links that had guessed.
+   * Where the ladder lives (§9). Every way off this screen points at the route
+   * rather than at the screen behind it, so a screen swapped in behind it needs
+   * no link here changed.
    */
   const ladder = `/p/${profile.id}`;
 
@@ -105,7 +91,7 @@ export default function LessonResults({
     : undefined;
 
   /**
-   * What the child chose in the brief, if they chose anything (#145, §4.2).
+   * What the child chose in the brief, if they chose anything (§4.2).
    *
    * Carried onto "Try again" and onto nothing else. A retry is the same lesson
    * with fresh words, and a child who turned the guide off to sit lesson 40
@@ -147,9 +133,6 @@ export default function LessonResults({
         <h1 className="u-display results__title">
           {verdict.passed ? "You passed" : "Not yet"}
         </h1>
-        {/* The whole point of the screen, in one line: a lesson that was
-            missed says which of the three cost it, and one that was passed
-            says which lesson that just opened. */}
         <p className="results__lede">
           {verdict.passed ? opened.text : missNote(lesson, verdict)}
         </p>
@@ -171,11 +154,10 @@ export default function LessonResults({
         </div>
         <div className="stat">
           <span className="stat__value">{clock(session.durationMs)}</span>
-          {/* The clock, and only the clock. A lesson carries no
-              `WRONG_ANSWER_PENALTY_MS` (§7) — charging three seconds a miss
-              would double-count the accuracy bar right above it — so there is
-              no "+ penalties" to label here. Free play is a race and still
-              has both; see the label it draws next door. */}
+          {/* The clock, and only the clock: a lesson carries no
+              `WRONG_ANSWER_PENALTY_MS` (§7), so there is no "+ penalties" to
+              label here. Free play is a race and still has both; see the label
+              it draws next door. */}
           <span className="stat__label">Time</span>
         </div>
         <div className="stat stat--xp">
