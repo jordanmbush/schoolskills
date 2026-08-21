@@ -562,8 +562,6 @@ export function buildStudySheet(config: WordStudyConfig, seed: number): Sheet {
 }
 
 export const WORD_STUDY_SHEET: SheetSpec<WordStudyConfig> = {
-  id: "word-study",
-  label: "Word study",
   world: SHEET_WORLD,
   build: buildStudySheet,
   // Every answer was decided when the sheet was built — which questions were

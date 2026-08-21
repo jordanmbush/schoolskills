@@ -504,8 +504,6 @@ export function describeForm(config: FormConfig, seed = 0): string {
 }
 
 export const FORM_SHEET: SheetSpec<FormConfig> = {
-  id: "form",
-  label: "Logs, reports and forms",
   world: SHEET_WORLD,
   build: buildFormSheet,
   // Nothing to reveal, ever — see `formKeyed`. A key of one of these is the

@@ -286,8 +286,6 @@ export function buildMemorySheet(config: MemoryConfig, seed: number): Sheet {
 }
 
 export const MEMORY_SHEET: SheetSpec<MemoryConfig> = {
-  id: "memory",
-  label: "Memory verse",
   world: SHEET_WORLD,
   build: buildMemorySheet,
   // The passage whole, every gap filled from the words that were taken out when

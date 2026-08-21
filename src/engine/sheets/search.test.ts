@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { listSheets } from "./index";
+import { SHEET_FAMILIES } from "./families";
 import {
   EMPTY_QUERY,
   SHEET_TYPES,
@@ -77,8 +77,8 @@ describe("what kind of page a family makes", () => {
     // A `Record` over the config union, so this is really a compile-time check
     // — the runtime half is that the registry and the union agree, which is
     // what would rot if a family were registered under a different id.
-    for (const spec of listSheets()) {
-      expect(TYPE_OF[spec.id as keyof typeof TYPE_OF], spec.id).toBeDefined();
+    for (const { id } of SHEET_FAMILIES) {
+      expect(TYPE_OF[id as keyof typeof TYPE_OF], id).toBeDefined();
     }
   });
 

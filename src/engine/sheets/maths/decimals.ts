@@ -511,8 +511,6 @@ export function buildDecimalSheet(config: DecimalConfig, seed: number): Sheet {
 }
 
 export const DECIMALS_SHEET: SheetSpec<DecimalConfig> = {
-  id: "decimals",
-  label: "Decimals and percents",
   world: SHEET_WORLD,
   build: buildDecimalSheet,
   key: (sheet) => ({

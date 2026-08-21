@@ -53,8 +53,6 @@ export function buildBlankSheet(config: BlankConfig, seed: number): Sheet {
 }
 
 export const BLANK_SHEET: SheetSpec<BlankConfig> = {
-  id: "blank",
-  label: "Blank page",
   world: SHEET_WORLD,
   build: buildBlankSheet,
   // Nothing to fill in. Returned as-is rather than with `answers: true`,

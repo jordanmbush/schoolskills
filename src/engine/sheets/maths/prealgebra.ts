@@ -767,8 +767,6 @@ export function buildPreAlgebraSheet(
 }
 
 export const PREALGEBRA_SHEET: SheetSpec<PreAlgebraConfig> = {
-  id: "prealgebra",
-  label: "Pre-algebra",
   world: SHEET_WORLD,
   build: buildPreAlgebraSheet,
   key: (sheet) => ({

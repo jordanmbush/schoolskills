@@ -443,8 +443,6 @@ export function buildStatisticsSheet(
 }
 
 export const STATISTICS_SHEET: SheetSpec<StatisticsConfig> = {
-  id: "statistics",
-  label: "Mean, median and mode",
   world: SHEET_WORLD,
   build: buildStatisticsSheet,
   key: (sheet) => ({

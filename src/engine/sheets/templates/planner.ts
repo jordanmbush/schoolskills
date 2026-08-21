@@ -682,8 +682,6 @@ export function describePlanner(config: PlannerConfig): string {
 }
 
 export const PLANNER_SHEET: SheetSpec<PlannerConfig> = {
-  id: "planner",
-  label: "Calendars, planners and charts",
   world: SHEET_WORLD,
   build: buildPlannerSheet,
   key: (sheet) => ({

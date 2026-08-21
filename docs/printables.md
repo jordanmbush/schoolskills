@@ -62,8 +62,11 @@ written before there were any worksheets. It is still the right shape.
 
 ```
 src/engine/sheets/
-  spec.ts          SheetSpec — what every family of sheets must say about itself
-  index.ts         the front door: sheetSpec(kind), buildSheet(config, seed)
+  spec.ts          SheetSpec — how a family builds, keys and describes a sheet
+  families.ts      the family table: which kinds there are, what each is
+                   called, and the import() that fetches one
+  index.ts         the front door for Node: every family awaited, then
+                   sheetSpec(kind), buildSheet(config, seed)
   types.ts         SheetConfig union, Sheet, Block
   paper.ts         page sizes, margins, ruling geometry — all in real units
   layout.ts        how many problems fit on a page (pure arithmetic, no DOM)
@@ -106,9 +109,6 @@ problem, so it gets the same shape of answer:
 
 ```ts
 export type SheetSpec = {
-  /** Matches SheetConfig.kind, so a saved sheet finds its way back here. */
-  id: string;
-  label: string;
   /** Which world it prints in — always "paper", but stated, not assumed. */
   world: World;
   /** Build the sheet. Deterministic in (config, seed). */
@@ -123,6 +123,29 @@ export type SheetSpec = {
 `sheetSpec(kind)` never throws, for the same reason `deckSpec(mode)` never
 throws: a sheet saved six months ago must still open after its family is
 renamed. Return an `UNKNOWN_SHEET` that renders a blank page and says so.
+
+### One table, two doors
+
+Behaviour is all a spec carries. Which `kind` reaches a family and what it is
+called are in `families.ts`, beside a `() => import(...)` for the module itself,
+because a family reached by a static import is a family in every bundle that can
+see the registry — and several carry a corpus. Eagerly, the builder shipped
+421.7 KB against 48–78 KB for every other island, the passage library alone
+being 174 KB of text: a parent choosing a times-table sheet downloaded the King
+James Bible to do it.
+
+So the table is read two ways:
+
+- **`index.ts` awaits all of it**, once, at module load. The catalog build and
+  the tests keep an ordinary synchronous `buildSheet`, and nothing that ships
+  to a browser imports this module.
+- **The builder island loads one at a time**, through `loadSheet(kind)`, and
+  renders no paper until the family that draws it has landed. The picker still
+  names all twenty-seven, because naming them is what the table is for.
+
+The option panels split on the same seam (`games/printshop/options/index.tsx`),
+which is the half that matters for the passage picker: it reads the whole
+library to list it.
 
 ### `Sheet` is plain data
 

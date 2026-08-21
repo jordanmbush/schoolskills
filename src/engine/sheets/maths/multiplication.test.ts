@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { answerKey, buildSheet, describeSheet, sheetSpec } from "../index";
+import { sheetFamily } from "../families";
 import { PROBLEM_GAP, answerLine } from "../layout";
 import { points } from "../paper";
 import type {
@@ -250,7 +251,7 @@ function factOf(sentence: string, folds: boolean): string {
 describe("the multiplication family", () => {
   it("is in the registry under the kind its config carries", () => {
     expect(sheetSpec("multiplication")).toBe(MULTIPLICATION_SHEET);
-    expect(sheetSpec("multiplication").label).toBe(
+    expect(sheetFamily("multiplication")?.label).toBe(
       "Multiplication and division",
     );
   });

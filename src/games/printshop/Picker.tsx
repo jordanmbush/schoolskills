@@ -1,26 +1,32 @@
 /**
  * Which kind of sheet is on the bench.
  *
- * Built from `listSheets()` rather than from a list here, so a family added to
- * the engine's registry appears in the picker without anybody remembering to
- * come and say so.
+ * Built from `SHEET_FAMILIES` rather than from a list here, so a family added
+ * to the engine's table appears in the picker without anybody remembering to
+ * come and say so — and appears without its module, which is the whole reason
+ * that table names a family rather than the family naming itself (§3).
  *
- * The line underneath is `describeSheet(config)`, which is also what a saved
- * sheet is named after when a parent doesn't name it — one sentence, written
- * once.
+ * The line underneath is the family's own `describe`, which is also what a
+ * saved sheet is named after when a parent doesn't name it — one sentence,
+ * written once. It is blank for as long as the chosen family is still on its
+ * way, which is the only thing on this control that waits for anything.
  */
-import { describeSheet, listSheets } from "@/engine/sheets";
+import { SHEET_FAMILIES } from "@/engine/sheets/families";
+import type { SheetSpec } from "@/engine/sheets/spec";
 import type { SheetConfig } from "@/engine/sheets/types";
 
 import { Choice, opt } from "./options/parts";
 
-const FAMILIES = listSheets().map((spec) => opt(spec.id, spec.label));
+const FAMILIES = SHEET_FAMILIES.map((family) => opt(family.id, family.label));
 
 export function Picker({
   config,
+  spec,
   onFamily,
 }: {
   config: SheetConfig;
+  /** The chosen family, once its module is here. */
+  spec: SheetSpec | undefined;
   onFamily: (kind: string) => void;
 }) {
   return (
@@ -31,7 +37,7 @@ export function Picker({
         onChange={onFamily}
         options={FAMILIES}
       />
-      <p className="picker__line">{describeSheet(config)}</p>
+      <p className="picker__line">{spec ? spec.describe(config) : ""}</p>
     </div>
   );
 }

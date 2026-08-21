@@ -569,8 +569,6 @@ export function buildHandwritingSheet(
 }
 
 export const HANDWRITING_SHEET: SheetSpec<HandwritingConfig> = {
-  id: "handwriting",
-  label: "Handwriting practice",
   world: SHEET_WORLD,
   build: buildHandwritingSheet,
   // Returned as-is rather than with `answers: true`, for the same reason blank

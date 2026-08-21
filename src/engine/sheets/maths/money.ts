@@ -387,8 +387,6 @@ export function buildMoneySheet(config: MoneyConfig, seed: number): Sheet {
 }
 
 export const MONEY_SHEET: SheetSpec<MoneyConfig> = {
-  id: "money",
-  label: "Money",
   world: SHEET_WORLD,
   build: buildMoneySheet,
   key: (sheet) => ({

@@ -725,8 +725,6 @@ export function buildWordProblemSheet(
 }
 
 export const WORD_PROBLEMS_SHEET: SheetSpec<WordProblemConfig> = {
-  id: "word-problems",
-  label: "Word problems",
   world: SHEET_WORLD,
   build: buildWordProblemSheet,
   key: (sheet) => ({

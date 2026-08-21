@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { sheetBlockBox } from "../chrome";
 import { answerKey, buildSheet, describeSheet, sheetSpec } from "../index";
+import { sheetFamily } from "../families";
 import { contentBox, ruledLines } from "../layout";
 import { RULINGS, inches, rulePitch } from "../paper";
 import type {
@@ -59,7 +60,7 @@ const MARGINS: MarginSize[] = ["none", "narrow", "normal", "wide"];
 describe("the paper family", () => {
   it("is in the registry under the kind its config carries", () => {
     expect(sheetSpec("paper")).toBe(PAPER_SHEET);
-    expect(sheetSpec("paper").label).toBe("Lined and graph paper");
+    expect(sheetFamily("paper")?.label).toBe("Lined and graph paper");
   });
 
   it("rules a sheet in every ruling of §5", () => {

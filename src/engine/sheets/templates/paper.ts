@@ -66,8 +66,6 @@ export function describePaper(config: PaperConfig): string {
 }
 
 export const PAPER_SHEET: SheetSpec<PaperConfig> = {
-  id: "paper",
-  label: "Lined and graph paper",
   world: SHEET_WORLD,
   build: buildPaperSheet,
   // Blank paper is the answer. Returned as-is rather than with `answers: true`,

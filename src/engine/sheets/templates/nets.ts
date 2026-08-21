@@ -314,8 +314,6 @@ export function describeNet(config: NetConfig): string {
 }
 
 export const NET_SHEET: SheetSpec<NetConfig> = {
-  id: "net",
-  label: "Dice and spinners",
   world: SHEET_WORLD,
   build: buildNetSheet,
   key: (sheet) => ({

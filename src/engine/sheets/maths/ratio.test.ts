@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { answerKey, buildSheet, describeSheet, sheetSpec } from "../index";
+import { sheetFamily } from "../families";
 import { PROBLEM_GAP } from "../layout";
 import type {
   MarginSize,
@@ -120,7 +121,7 @@ const shapesOf = (style: string): Array<Partial<RatioConfig>> =>
 describe("the ratio family", () => {
   it("is in the registry under the kind its config carries", () => {
     expect(sheetSpec("ratio")).toBe(RATIO_SHEET);
-    expect(sheetSpec("ratio").label).toBe("Ratio and rate");
+    expect(sheetFamily("ratio")?.label).toBe("Ratio and rate");
   });
 
   it("names the sheet in the words a parent chose it by", () => {

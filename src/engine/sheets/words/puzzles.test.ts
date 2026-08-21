@@ -3,12 +3,14 @@ import { describe, expect, it } from "vitest";
 import { WORD_LISTS, listWords } from "@/engine/decks/wordlists";
 
 import { answerKey, buildSheet, describeSheet, sheetSpec } from "../index";
+import { sheetFamily } from "../families";
 import type { Block, Paper, PuzzleConfig } from "../types";
 
 import { SEARCH_CELL, findWord, searchCell, searchSteps } from "./search";
 import {
   MAX_GRID,
   MIN_GRID,
+  PUZZLE_SHEET,
   crosswordClue,
   crosswordLayout,
   letterHint,
@@ -65,8 +67,8 @@ function blockOf<K extends Block["kind"]>(
 
 describe("the family", () => {
   it("is in the registry, under the kind a saved sheet carries", () => {
-    expect(sheetSpec("puzzle").id).toBe("puzzle");
-    expect(sheetSpec("puzzle").label).toBe("Word puzzle");
+    expect(sheetSpec("puzzle")).toBe(PUZZLE_SHEET);
+    expect(sheetFamily("puzzle")?.label).toBe("Word puzzle");
   });
 
   it("makes one block, whichever puzzle it is", () => {

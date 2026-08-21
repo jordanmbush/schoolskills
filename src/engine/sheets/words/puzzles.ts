@@ -750,8 +750,6 @@ export function buildPuzzleSheet(config: PuzzleConfig, seed: number): Sheet {
 }
 
 export const PUZZLE_SHEET: SheetSpec<PuzzleConfig> = {
-  id: "puzzle",
-  label: "Word puzzle",
   world: SHEET_WORLD,
   build: buildPuzzleSheet,
   // Every answer here was decided when the sheet was built — which is to say,

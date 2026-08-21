@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { answerKey, buildSheet, describeSheet, sheetSpec } from "../index";
+import { sheetFamily } from "../families";
 import { BLOCK_GAP, PROBLEM_GAP } from "../layout";
 import type {
   GridMark,
@@ -242,7 +243,7 @@ const shapesOf = (style: string): Array<Partial<PreAlgebraConfig>> =>
 describe("the pre-algebra family", () => {
   it("is in the registry under the kind its config carries", () => {
     expect(sheetSpec("prealgebra")).toBe(PREALGEBRA_SHEET);
-    expect(sheetSpec("prealgebra").label).toBe("Pre-algebra");
+    expect(sheetFamily("prealgebra")?.label).toBe("Pre-algebra");
   });
 
   it("names the sheet in the words a parent chose it by", () => {

@@ -363,8 +363,6 @@ export function buildTimeSheet(config: TimeConfig, seed: number): Sheet {
 }
 
 export const TIME_SHEET: SheetSpec<TimeConfig> = {
-  id: "time",
-  label: "Telling the time",
   world: SHEET_WORLD,
   build: buildTimeSheet,
   // On a drawing sheet the key is the same faces with their hands put on, which

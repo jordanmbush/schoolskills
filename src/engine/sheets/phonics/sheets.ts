@@ -705,8 +705,6 @@ export function buildPhonicsSheet(config: PhonicsConfig, seed: number): Sheet {
 }
 
 export const PHONICS_SHEET: SheetSpec<PhonicsConfig> = {
-  id: "phonics",
-  label: "Phonics",
   world: SHEET_WORLD,
   build: buildPhonicsSheet,
   // Every answer was decided when the sheet was built — which words were drawn,

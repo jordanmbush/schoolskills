@@ -476,8 +476,6 @@ export function describeChart(config: ChartConfig): string {
 }
 
 export const CHART_SHEET: SheetSpec<ChartConfig> = {
-  id: "chart",
-  label: "Charts, number lines and grids",
   world: SHEET_WORLD,
   build: buildChartSheet,
   // The filled chart, on the one sheet that has an answer at all. On the other

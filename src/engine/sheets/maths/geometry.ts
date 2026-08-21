@@ -582,8 +582,6 @@ export function buildGeometrySheet(
 }
 
 export const GEOMETRY_SHEET: SheetSpec<GeometryConfig> = {
-  id: "geometry",
-  label: "Shape and space",
   world: SHEET_WORLD,
   build: buildGeometrySheet,
   key: (sheet) => ({

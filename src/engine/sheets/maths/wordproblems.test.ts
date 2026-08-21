@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { answerKey, buildSheet, describeSheet, sheetSpec } from "../index";
+import { sheetFamily } from "../families";
 import { PROBLEM_GAP } from "../layout";
 import type {
   MarginSize,
@@ -188,7 +189,7 @@ const everyStory = function* (
 describe("the word-problem family", () => {
   it("is in the registry under the kind its config carries", () => {
     expect(sheetSpec("word-problems")).toBe(WORD_PROBLEMS_SHEET);
-    expect(sheetSpec("word-problems").label).toBe("Word problems");
+    expect(sheetFamily("word-problems")?.label).toBe("Word problems");
   });
 
   it("names the sheet after its topic, and a mixed sheet after none", () => {
