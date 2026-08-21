@@ -349,4 +349,114 @@ export const sfx = {
       }),
     );
   },
+
+  /* ── Typewriter ──────────────────────────────────────────────────────────
+   *
+   * The board's own voice: what a key sounds like going down, played whenever
+   * the keyboard is on screen (docs/typing.md §4.8).
+   *
+   * These are the most frequent sounds on the site by an order of magnitude —
+   * a race plays a handful a minute, a storm one per stroke, and this one plays
+   * eight a second under a child who has got good. Two consequences run through
+   * every number below.
+   *
+   * **They are the quietest things in the kit**, quieter even than the storm's
+   * gun. Anything that could be noticed once is a headache after a passage.
+   *
+   * **They carry no pitch.** Every other sound here means something — the
+   * streak chime climbs, the miss falls, the bell rings. A clack means only
+   * "that key went down", which is a fact and not a verdict, and it has to keep
+   * saying that eight times a second underneath `correct` and `wrong` without
+   * arguing with either. So a strike is three noise bursts and no oscillator:
+   * a typewriter is percussion, and percussion is the one thing that can sit
+   * under a melody without being part of it. It is also why the clack does not
+   * change when a key is wrong — the board already flares `--flare` for that
+   * and the run plays `wrong` at the word, so a keyboard that scolded a child
+   * on the way down would be a third opinion, arriving before either of the
+   * other two knew the answer (`keySounds.ts`).
+   *
+   * `noise` is the right generator for a second reason: its envelope starts at
+   * full gain and decays, where `tone` ramps up over 12ms. Twelve milliseconds
+   * of attack on a forty-millisecond sound is a blip; percussion has no attack
+   * at all, and that difference is the whole distance between a click and a
+   * boop.
+   */
+
+  /**
+   * One key, struck — the sound under every letter, digit and mark.
+   *
+   * Three layers, which are the three things a typewriter actually does when
+   * you press a key: the typebar slaps the platen (high and gone in a frame),
+   * the machine's body answers it (low, a little longer, the wood in the
+   * sound), and the escapement ticks the carriage on one space a beat later.
+   * The tick is what makes the set read as a typewriter rather than as a
+   * mouse click; it is also the quietest of the three, because it is the part
+   * a listener recognises without noticing.
+   */
+  keyStrike: () => {
+    noise({ dur: 0.016, gain: 0.1, sweepFrom: 5200, sweepTo: 2400 });
+    noise({ dur: 0.05, gain: 0.075, sweepFrom: 700, sweepTo: 190 });
+    noise({
+      dur: 0.012,
+      delay: 0.024,
+      gain: 0.05,
+      sweepFrom: 7000,
+      sweepTo: 5200,
+    });
+  },
+
+  /**
+   * The space bar, which is a bigger lever and sounds like one.
+   *
+   * The same three layers, moved down and lengthened. This is not decoration:
+   * space is the key that commits a word (`TypingTrack`), so it is the one
+   * stroke in a passage that is also a beat, and a child hearing the run tick
+   * over word by word is hearing something true about where they are. Making
+   * it deeper rather than louder is what keeps that from becoming a metronome
+   * they type to.
+   */
+  keySpace: () => {
+    noise({ dur: 0.022, gain: 0.11, sweepFrom: 2600, sweepTo: 1100 });
+    noise({ dur: 0.08, gain: 0.09, sweepFrom: 420, sweepTo: 120 });
+    noise({
+      dur: 0.012,
+      delay: 0.03,
+      gain: 0.05,
+      sweepFrom: 7000,
+      sweepTo: 5200,
+    });
+  },
+
+  /**
+   * Return: the bell, and the carriage going back.
+   *
+   * The one sound in this block that is allowed a pitch, because a bell is a
+   * bell — two sine partials a fifth and a bit apart, which is what stops it
+   * reading as a beep. On the real machine the bell rings a few characters
+   * BEFORE the margin, as a warning, and the carriage is thrown afterwards by
+   * hand; putting both on one key merges a warning and an action that a child
+   * has never had to tell apart. What they get is the sound everybody means by
+   * "typewriter", on the key that ends the passage.
+   *
+   * Under the bell, the return itself: a rising sweep as the carriage flies
+   * left, and a low knock as it hits the stop. Rising, because nothing else in
+   * the kit does — `misfire` goes up and then down and is the only near
+   * neighbour, and it lives on a screen that has no keyboard on it.
+   *
+   * It is quiet for its length, and deliberately quieter than `finish`: Enter
+   * commits the last word of a passage, so this and the fanfare land together
+   * and the bell must not be the thing that wins.
+   */
+  keyReturn: () => {
+    tone({ freq: 2093, dur: 0.4, wave: "sine", gain: 0.13 });
+    tone({ freq: 3136, dur: 0.26, wave: "sine", gain: 0.06 });
+    noise({
+      dur: 0.18,
+      delay: 0.05,
+      gain: 0.08,
+      sweepFrom: 900,
+      sweepTo: 2800,
+    });
+    noise({ dur: 0.07, delay: 0.22, gain: 0.09, sweepFrom: 800, sweepTo: 160 });
+  },
 };
