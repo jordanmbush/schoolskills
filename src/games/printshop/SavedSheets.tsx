@@ -1,19 +1,12 @@
 /**
  * My Sheets: the worksheets this household kept.
  *
- * Everything here goes through `services/sheets.ts` and nothing here knows
- * IndexedDB exists — the view calls a service, which is the boundary
- * `eslint.config.mjs` enforces and the reason the schema, the validation and
- * the quota handling live in one place.
- *
  * There is no profile picker, and that is a decision rather than an omission: a
- * worksheet belongs to the household, not to a child (§15). The sheet made for
- * the eldest is the sheet the next one gets, and scoping it to a profile would
- * mean building it again for every kid at the table.
+ * worksheet belongs to the household, not to a child (§15), so the sheet made
+ * for the eldest is the sheet the next one gets.
  *
  * A saved sheet is a config and a seed, never any paper. `buildSheet` is
- * deterministic (§7), so a sheet kept in March prints the same problems in June
- * — and the record has nowhere to put a child's name, which is not luck either.
+ * deterministic (§7), so a sheet kept in March prints the same problems in June.
  */
 import { useCallback, useEffect, useState } from "react";
 

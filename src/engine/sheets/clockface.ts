@@ -1,13 +1,10 @@
 /**
  * A clock face, and the one place a time is written down.
  *
- * The dial is the first drawing in the shop that a child reads an *answer* off
- * rather than an aid: a face with hands on it is the question, and a face
- * without them is where the answer goes. So it is a picture attached to a
- * problem, the way a fraction bar is, and the size lives here rather than in the
- * renderer for the same reason `fractionart.ts` gives — the family reserves the
- * height of a row before anything is drawn (§4), and a dial that came out taller
- * than the reservation is the bottom row of the page on a second sheet.
+ * The dial is the first drawing in the shop a child reads an *answer* off rather
+ * than an aid: a face with hands on it is the question, and a face without them
+ * is where the answer goes. The size is here rather than in the renderer because
+ * a family reserves the height of a row before anything is drawn (§4).
  *
  * **A time is one number here: minutes past twelve.** Hours and minutes are
  * derived when a face is made, never carried alongside, because two numbers that
@@ -15,7 +12,7 @@
  * subtraction that has to be exact. Twelve hours is 720 minutes, so every time
  * on a dial is a whole number below that, and nothing in this file divides.
  *
- * The size is in inches and does not scale with the body type. A dial is a
+ * The size is in inches and does not scale with the body type: a dial is a
  * physical object a child draws hands on, and §17's larger type is about reading
  * the words rather than growing the pictures.
  */

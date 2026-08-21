@@ -41,20 +41,11 @@ import { JOIN_FAMILIES, joinPairs } from "./joins";
  * The family where the paper is the exercise.
  *
  * Three properties carry this sheet, and none of them can be seen by looking at
- * a screen:
- *
- * **The ruling is the size it says it is.** A ⅝ rule is ⅝ of an inch under a
- * ruler or the child is being taught the wrong size of letter. Every row is one
- * repeat of the ruling, so that promise is the row pitch and nothing else.
- *
- * **The model sits on the rules.** The tallest letter stands on the baseline
- * and reaches the top line, in whichever of the five faces the sheet is set
- * in — which is arithmetic over proportions measured out of the font files
- * (`faces.ts`), not a guess that happens to look right in one of them.
- *
- * **What is asked for is what is printed.** A page that quietly dropped `8` and
- * `9` off a sheet of number formation is a sheet that teaches eight numerals,
- * and nothing on screen would say so.
+ * a screen: the ruling is the size it says it is, which is the row pitch and
+ * nothing else; the tallest letter stands on the baseline and reaches the top
+ * line in whichever of the five faces the sheet is set in; and what is asked
+ * for is what is printed — a page that quietly dropped `8` and `9` off a sheet
+ * of number formation is a sheet that teaches eight numerals.
  */
 
 const BASE: HandwritingConfig = {

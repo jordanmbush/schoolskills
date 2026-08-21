@@ -1,35 +1,20 @@
 /**
  * The phonics sheets the Print Shop has set, and the words that go round them.
  *
- * Underscored so Astro leaves it out of the routing table: it is data two pages
- * share — `phonics/[slug].astro`, which prerenders one sheet per kind, and
- * `phonics/index.astro`, which is the subject hub — rather than a route of its
- * own. `_catalog.ts` does that job for paper, `_maths.ts` for maths,
- * `_spelling.ts` for words, `_grammar.ts` for sentences, and
- * `_handwriting.ts`, `_cursive.ts` and `_bible.ts` for the writing shelves.
- *
  * **One page per kind of sheet, and that is the whole shelf.** §8 asks for the
  * catalog to be bounded, and phonics is where being greedy would be easiest:
- * "short a worksheets", "sh worksheets", "ai worksheets" and forty more are all
- * real queries, and every one of them is a sheet on this shelf with one
- * spelling ticked. Seven pages, seven things a parent sets, and everything else
- * through the builder — which is where choosing belongs.
+ * "short a worksheets", "sh worksheets" and forty more are all real queries,
+ * and every one of them is a sheet on this shelf with one spelling ticked.
  *
  * ── The sounds on these pages are not a course ─────────────────────────────
  *
  * Every sheet has to be built from *some* inventory, and the two below are the
- * smallest honest ones: one sound for each letter of the alphabet, and the same
- * again with the consonant digraphs added. Neither is a stage, a level or a
- * lesson — `engine/sheets/phonics/inventory.ts` is explicit that shipping one
- * of those would be reproducing somebody's copyrighted sequence by reference,
- * and nothing here does. They are a statement about *this sheet*: these are the
- * spellings it uses, and no others. A parent's own list is ticked in the
- * builder and kept under their own name.
+ * smallest honest ones. Neither is a stage, a level or a lesson: shipping one
+ * of those would reproduce somebody's copyrighted sequence by reference (§13).
+ * They say what *this sheet* uses and nothing more.
  *
- * **One stock, as with maths, spelling and grammar.** Nothing on a phonics
- * sheet is a measurement — there is no ⅝ rule to be scaled into a ⅗ rule by a
- * printer loaded with A4 — so the sheet is correct on either stock and the A4
- * switch lives in the builder with the other options.
+ * **One stock, as with maths, spelling and grammar** (§8): nothing on a phonics
+ * sheet is a measurement.
  */
 import { FIRST_LETTERS } from "@/games/printshop/defaults";
 import { DEFAULT_FONT_PT } from "@/engine/sheets/paper";
@@ -60,11 +45,10 @@ export type PhonicsSheet = {
   /**
    * Two things that are true of this sheet and not of the one beside it.
    *
-   * The sheet is prerendered directly under this prose (§8), which makes a
-   * quoted sentence a claim about the paper rather than an illustration — a
-   * reader can look down the page and check it. `_phonics.test.ts` holds
-   * anything quoted at five words or more to that, exactly as the grammar shelf
-   * is held; a hypothetical the sheet never prints stays shorter than that.
+   * The sheet is prerendered directly under this prose (§8), so a quoted
+   * sentence is a claim about the paper rather than an illustration.
+   * `_phonics.test.ts` holds anything quoted at five words or more to that; a
+   * hypothetical the sheet never prints stays shorter than that.
    */
   notes: string[];
   /** For the `LearningResource` block. */
@@ -76,22 +60,19 @@ export type PhonicsSheet = {
 };
 
 /**
- * The seed every sheet on this shelf is built from, and it never moves.
- *
- * It decides which words and which sentences land on each page and in what
- * order, and nothing else — a word's spellings travel with the word. Which is
- * what §7 promises stays put: the sheet a parent printed in March is the sheet
- * they print in June, down to the order of the lines.
+ * The seed every sheet on this shelf is built from, and it never moves. It
+ * decides which words and sentences land on each page and in what order, which
+ * is what §7 promises stays put: the sheet a parent printed in March is the
+ * sheet they print in June, down to the order of the lines.
  */
 export const PHONICS_SEED = 1;
 
 /**
- * `the`, taught whole.
- *
- * On both inventories below, and it is not a shortcut: nearly every decodable
- * sentence in English needs it, it cannot be sounded out by a child who has not
- * met `th` and the unstressed `e`, and every programme there is teaches it by
- * sight in the first weeks. `Inventory.tricky` is the door for exactly that.
+ * `the`, taught whole — on both inventories below, and not a shortcut. Nearly
+ * every decodable sentence in English needs it, it cannot be sounded out by a
+ * child who has not met `th` and the unstressed `e`, and every programme
+ * teaches it by sight in the first weeks. `Inventory.tricky` is the door for
+ * that.
  */
 const SIGHT = ["the"];
 

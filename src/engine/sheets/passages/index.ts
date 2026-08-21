@@ -2,11 +2,9 @@
  * The passage library's front door.
  *
  * Everything above the engine asks for a passage here rather than from a data
- * module, for the reason `sheets/index.ts` gives about sheet families: a
- * copywork sheet, a catalog page and a unit test all go through the same few
- * functions and none of them learns whether it is holding Psalm 23 or the
- * Gettysburg Address. That is not tidiness — it is what §12's "woven through"
- * means in code. Scripture is listed first and is otherwise ordinary.
+ * module, so that nothing above learns whether it is holding Psalm 23 or the
+ * Gettysburg Address — which is what §12's "woven through" means in code.
+ * Scripture is listed first and is otherwise ordinary.
  *
  * Two things this door owns that the data modules can't:
  *
@@ -16,8 +14,7 @@
  *   - **Never throwing.** `passage()` answers `undefined` for an id it has
  *     never heard of, the way `sheetSpec` answers `UNKNOWN_SHEET`. Saved sheets
  *     outlive the library they were made on, and a bookmarked copywork URL
- *     naming a passage that has since been retired must still render a page
- *     that says so rather than fail a build that would otherwise have shipped.
+ *     naming a retired passage must not fail a build that would have shipped.
  */
 import { DOCUMENTS, DOCUMENT_COLLECTIONS } from "./documents";
 import { KJV_CREDIT, KJV_VERSES } from "./kjv";
@@ -56,11 +53,9 @@ const summarise = ({ lines, ...rest }: Passage): PassageSummary => ({
 });
 
 /* ── Translations ─────────────────────────────────────────────────────────
-   Two, and the reasoning for both is in docs/printables.md §12: the WEBu
-   because it is public domain, modern, and says "LORD" where classic WEB says
-   "Yahweh"; the KJV because a good many families want it and it is equally
-   free. Never ESV, NIV, NASB or CSB — those are licensed, and bundling one
-   would be a genuine problem rather than an oversight.                      */
+   Two, and the reasoning for both is in §12. Never ESV, NIV, NASB or CSB —
+   those are licensed, and bundling one would be a genuine problem rather than
+   an oversight.                                                             */
 
 export type Translation = {
   id: TranslationId;
@@ -104,9 +99,9 @@ const TRANSLATIONS: Record<TranslationId, Translation> = {
       edition: "eBible.org eng-kjv2006, verse-per-line release of 16 May 2026",
       licence: "Public domain — see kjv.ts for the two marks removed",
     },
-    // `hasOwn` rather than a plain index, for the reason `sheetSpec` gives:
-    // an id can arrive from a saved sheet, and `KJV_VERSES["toString"]` would
-    // otherwise answer with a function that is truthy and is not a verse.
+    // `hasOwn` rather than a plain index: an id can arrive from a saved sheet,
+    // and `KJV_VERSES["toString"]` would otherwise answer with a function that
+    // is truthy and is not a verse.
     verses: (entry) =>
       Object.hasOwn(KJV_VERSES, entry.id) ? KJV_VERSES[entry.id] : undefined,
   },
@@ -118,16 +113,15 @@ export const TRANSLATION_LIST: Translation[] = Object.values(TRANSLATIONS);
  * The translation a given entry will actually be read in.
  *
  * Falls back whole — text, attribution and credit together — rather than
- * borrowing verses from one translation under another's name. The suite
- * asserts the KJV covers every entry, so this cannot fire today; if it ever
- * does, a reader gets a correctly credited WEBu verse instead of a KJV verse
- * with the wrong licence printed underneath it.
+ * borrowing verses from one translation under another's name. The suite asserts
+ * the KJV covers every entry, so this cannot fire today; if it ever does, a
+ * reader gets a correctly credited WEBu verse instead of a KJV verse with the
+ * wrong licence printed underneath it.
  *
  * `hasOwn` because the argument is typed but not trusted: a translation id
  * arrives from a saved sheet or a shared URL, and `TRANSLATIONS["toString"]`
  * would otherwise answer with a function off the prototype — truthy, not a
- * translation, and a `TypeError` on the next line of a door that promised not
- * to throw. The same trap `sheetSpec` guards.
+ * translation, and a `TypeError` in a door that promised not to throw.
  */
 function translationFor(
   entry: ScriptureEntry,
@@ -187,11 +181,10 @@ export const listPassageSummaries = (
 
 /*
    Indexed by id, once. `passage()` is called several times per sheet built —
-   the layout, the header, the body and the one-line description each ask —
-   and a linear scan of three hundred entries for each of them is a scan the
-   catalog build repeats a few thousand times. A `Map` also takes an untrusted
-   id safely, which is the same trap `hasOwn` guards above: `OTHERS["toString"]`
-   is a function off the prototype, and `.get("toString")` is nothing.        */
+   the layout, the header, the body and the one-line description each ask — and
+   a linear scan of three hundred entries for each is a scan the catalog build
+   repeats a few thousand times. A `Map` also takes an untrusted id safely:
+   `.get("toString")` is nothing, where an index would find a function.      */
 
 const SCRIPTURE_BY_ID = new Map(SCRIPTURE.map((entry) => [entry.id, entry]));
 const OTHERS_BY_ID = new Map(OTHERS.map((entry) => [entry.id, entry]));

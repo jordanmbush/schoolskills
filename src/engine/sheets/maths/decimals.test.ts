@@ -66,10 +66,9 @@ const config = (over: Partial<DecimalConfig> = {}): DecimalConfig => ({
 const PERCENT_RANGE = { min: 10, max: 200 };
 
 /**
- * Every shape the family can print, which is every acceptance criterion of the
- * story: decimals added, taken away and multiplied, along a line and in
- * columns, at each of the three place counts, percentages of amounts, and the
- * conversions between all three forms.
+ * Every shape the family can print: decimals added, taken away and multiplied,
+ * along a line and in columns, at each of the three place counts, percentages
+ * of amounts, and the conversions between all three forms.
  */
 const EVERY_SHAPE: Array<Partial<DecimalConfig>> = [
   {},
@@ -530,7 +529,7 @@ describe("what may be on the page", () => {
   it("prints nothing rather than something wrong when the ask is impossible", () => {
     // A range of nothing at all: every draw is a value of zero, which is not a
     // question about decimals. An empty sheet is the honest answer, and the
-    // builder's job to prevent (PRINT13).
+    // builder's job to prevent.
     expect(problemsOf({ range: { min: 0, max: 0 } }, 1)).toEqual([]);
   });
 });

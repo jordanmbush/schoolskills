@@ -1,12 +1,10 @@
 /**
  * The blank references, and the four questions they are chosen by.
  *
- * The one panel in the directory where the four styles share almost nothing:
- * a hundred chart is a range, a number line is a range and an interval, a
+ * The one panel in the directory where the four styles share almost nothing: a
+ * hundred chart is a range, a number line is a range and an interval, a
  * coordinate grid is how far the axes run, and a place-value chart is which
- * powers of ten it holds. So the controls under the style are the style's own,
- * rather than a wall of settings three quarters of which do nothing to the
- * sheet in the preview.
+ * powers of ten it holds. So the controls under the style are the style's own.
  *
  * Every number here is a request the engine clamps: `charts.ts` completes a
  * chart to whole rows, moves a line's end out to the next tick, and caps the
@@ -32,11 +30,10 @@ const QUADRANTS = [
 ];
 
 /**
- * The places, offered as the words rather than as the exponents they are.
- *
- * A config holds the power of ten because that is what a place *is* and it is
- * what keeps the columns consecutive (see `ChartConfig.places`). Nobody chooses
- * a column called "10²", so the control names them and converts.
+ * The places, offered as the words rather than as the exponents they are. A
+ * config holds the power of ten because that is what keeps the columns
+ * consecutive (see `ChartConfig.places`), and nobody chooses a column called
+ * "10²".
  */
 const POWERS = [6, 5, 4, 3, 2, 1, 0, -1, -2, -3];
 const PLACES = POWERS.map((power) => opt(String(power), placeName(power)));
@@ -163,9 +160,8 @@ const rangeFor = (style: ChartStyle) =>
   style === "hundred" ? { min: 1, max: 100 } : { min: 0, max: 20 };
 
 /**
- * The two ends of a place-value chart, each dragging the other where it must.
- *
- * The same move `Span` makes with a low and a high: picking a largest place
+ * The two ends of a place-value chart, each dragging the other where it must —
+ * the same move `Span` makes with a low and a high. Picking a largest place
  * below the smallest one would be a chart with no columns, so the other end
  * follows rather than the control refusing.
  */

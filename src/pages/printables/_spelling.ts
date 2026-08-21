@@ -2,32 +2,20 @@
  * The spelling and word-study sheets the Print Shop has set, and the words that
  * go round them.
  *
- * Underscored so Astro leaves it out of the routing table: it is data two pages
- * share — `spelling/[slug].astro`, which prerenders one sheet per entry, and
- * `spelling/index.astro`, which is the subject hub — rather than a route of its
- * own. `_catalog.ts` does that job for paper, `_maths.ts` for maths and
- * `_handwriting.ts`, `_cursive.ts` and `_bible.ts` for the writing shelves.
- *
- * **The slugs are curated; the sheets are generated.** §8 is explicit about why.
- * Seven styles over any list a parent can type, times ten word-study topics in
- * three shapes of question, is a set with no bottom to it — so eighteen slugs,
- * each one a phrase somebody types into a search box, each with prose that is
- * true of that sheet and of no other, and everything else reached through the
- * builder, which is where *choosing* belongs.
+ * **The slugs are curated; the sheets are generated** (§8). Seven styles over
+ * any list a parent can type, times ten word-study topics in three shapes of
+ * question, is a set with no bottom to it — so each slug is a phrase somebody
+ * types into a search box, with prose true of that sheet and of no other, and
+ * everything else is reached through the builder.
  *
  * **Where the words come from.** Every spelling sheet here is set on one of the
- * six shipped Dolch lists, which is the point rather than a convenience: the
- * words a child races in the jungle are the words they write on paper, and the
- * age band on the list is what decides which page a parent lands on. A list of
- * their own is the same sheet with the box refilled — the builder's second
- * bootstrap, one press from every page on this shelf.
+ * shipped Dolch lists, which is the point rather than a convenience: the words
+ * a child races in the jungle are the words they write on paper, and the age
+ * band on the list is what decides which page a parent lands on.
  *
- * **One stock, as with maths and unlike paper.** Nothing on a spelling sheet is
- * a measurement: there is no ⅝ rule to be scaled into a ⅗ rule by a printer
- * loaded with A4, so the sheet is correct on either stock and the A4 switch lives
- * in the builder with the other options. The one page here that *is* ruled — the
- * tracing sheet — says so and links to the handwriting shelf, which comes on
- * both.
+ * **One stock, as with maths and unlike paper** (§8). The one page here that
+ * *is* ruled — the tracing sheet — says so and links to the handwriting shelf,
+ * which comes on both.
  */
 import { WORD_LISTS, listWords, type WordList } from "@/engine/decks/wordlists";
 import { DEFAULT_FONT_PT } from "@/engine/sheets/paper";
@@ -71,13 +59,11 @@ export type SpellingSheet = {
 };
 
 /**
- * The seed every sheet on this shelf is built from, and it never moves.
- *
- * On half of these it decides nothing — a list written out three times is the
- * list — and on the other half it decides which letters come out, which near
- * misses a word is printed against, and which twelve of the bank's questions
- * land. Which is exactly what §7 promises stays put: the sheet a parent printed
- * in March is the sheet they print in June, down to the gaps.
+ * The seed every sheet on this shelf is built from, and it never moves. Where
+ * it decides anything — which letters come out, which near misses a word is
+ * printed against, which of the bank's questions land — it is what §7 promises
+ * stays put: the sheet printed in March is the sheet printed in June, down to
+ * the gaps.
  */
 export const SPELLING_SEED = 1;
 
@@ -86,8 +72,8 @@ export const SPELLING_SEED = 1;
  *
  * Throws rather than falling back, and this is the one place in the shop where
  * that is right: it runs at build time over data in this repository, so a slug
- * naming a list that has been renamed is a broken page — and the honest moment
- * to find that out is the build rather than the morning a parent prints it.
+ * naming a list that has been renamed is a broken page, and the honest moment
+ * to find that out is the build.
  */
 function listOf(id: string): WordList {
   const found = WORD_LISTS.find((list) => list.id === id);
@@ -102,10 +88,10 @@ const dolch = (id: string, count: number): string[] =>
 /**
  * A spelling sheet on Letter, with the name and date line printed blank.
  *
- * The count follows the list rather than being set beside it: a catalog page
- * prints every word it names, and `_spelling.test.ts` is what holds it to that —
- * a list one word longer than the page holds is a sheet that silently teaches
- * nineteen of twenty words.
+ * The count follows the list rather than being set beside it, so that a page
+ * prints every word it names — a list one word longer than the page holds is a
+ * sheet that silently teaches nineteen of twenty. `_spelling.test.ts` holds it
+ * there.
  */
 const spelling = (
   style: WordSheetStyle,
@@ -519,9 +505,8 @@ export const SPELLING_GROUPS: Array<{
  *
  * A copying sheet prints the word at the head of every line, so its key is the
  * same page twice; a sentence sheet has no right answer to print at all. Every
- * other style here has an answer the sheet is withholding — a missing letter, an
- * ordered list, which box a letter goes in, which of four words it was — and on
- * those the key is the most useful thing on the shelf.
+ * other style withholds an answer, and on those the key is the most useful
+ * thing on the shelf.
  */
 export function keyed(sheet: SpellingSheet): boolean {
   const { config } = sheet;

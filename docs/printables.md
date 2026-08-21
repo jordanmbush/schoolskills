@@ -70,6 +70,7 @@ src/engine/sheets/
   maths/*.ts       arithmetic, fractions, geometry, pre-algebra …
   writing/*.ts     tracing, copywork, cursive joins
   words/*.ts       spelling sheets, word search, ABC order, scrambles
+  grammar/*.ts     the tagged sentence bank, and five views of its tags
   phonics/*.ts     sound inventories, constrained word generation, the seven
                    sheets built out of them, and the orthography marking pass
   passages/*.ts    the public-domain text library, Scripture included
@@ -219,6 +220,9 @@ Handwriting rules take a variant: solid midline, **dashed** midline (the usual),
 or no midline. And a "descender space" toggle, which is the difference between
 a sheet a child can write a `g` on and one they can't.
 
+The margin line on wide and college is not decoration either: it is what makes
+a page read as notebook paper rather than as lined paper.
+
 ### Draw them as SVG lines, not background gradients
 
 The obvious implementation is `repeating-linear-gradient`, which is what
@@ -336,6 +340,65 @@ by a test that no cell is narrower than what the row writes, and the font files
 themselves are checked for the `calt` feature and the connector glyphs a join is
 actually drawn with.
 
+Dropping the loops is also what makes the unlooped American model the one
+cursive whose descender fits the room a ⅝ rule gives it: its ascenders run
+0.06 em under the looped hand's and its tail is shallower in proportion.
+
+### The measurements behind the five faces
+
+`src/engine/sheets/faces.ts` is where each face's proportions are written down,
+and the file itself says where each number came from and what a test holds it
+to. What is here is the working behind them: what each number is a judgement
+about, and the obvious alternative two of those judgements turned down.
+
+**Capitals.** `capHeight` is taken from the flat-topped capitals (`E H I L T`).
+The round ones (`C G O Q S`) sit a little above that in the two text faces —
+Andika by 0.012 em, OpenDyslexic by 0.013 — which is the optical overshoot they
+would show against a cap line in any book. The three cursive models do not: in
+the unlooped and British hands every round capital is drawn flush, which is what
+a face drawn to a ruling rather than to a paragraph looks like. In the looped
+hand `C G O Q` are flush too, and it is `S`, `V` and `W` that stand well above —
+`S` by 0.071 em, `V` and `W` by 0.034 — which is letterform rather than
+correction. On the ¾ rule the capitals sheet uses, those print 0.036in and
+0.017in above the top rule — nine times the four thousandths of an inch
+`faces.ts` calls a tolerance elsewhere, and still the right way round. **Sizing
+the em off `S`** instead would drop the other twenty-three capitals that same
+0.036in _below_ the line the page says every capital starts on.
+
+**Tails.** Against the tail space a handwriting ruling gives them, four of the
+five have room to spare: Andika takes 0.239 of the 0.396 it is allowed and
+OpenDyslexic 0.261 of 0.425, and the two unlooped cursive models clear it as
+well at 0.457 of 0.478 and 0.394 of 0.447. Only the looped hand hangs over, and
+by 0.009 of the em.
+
+**Widths.** `capAdvance` is a second mean, taken over the alphabet as pairs
+rather than over `a`–`z`, and two things about how it is taken are decisions
+rather than convenience. It is _a pair, not a capital_, because on these sheets
+a capital never stands alone in a cell — it heads a pair, a word or a sentence,
+and what has to fit is the pair. And it is _ink, not advance_, because a cell is
+a box the letters sit inside and the side bearings either side cost nothing: the
+neighbour's bearing is there to meet them. Andika's comes out a sixth over its
+small-letter mean, which the air a handwriting row already reserves absorbs; the
+looped hand's is a third over, and it does not.
+
+**Stems.** The outline weights are tuned against each face's own stem,
+scanlined at half the x-height across `lnioe`: Andika 0.090 em, the three
+cursive models 0.088, 0.086 and 0.086, OpenDyslexic 0.099 em — which makes the
+shipped weights 24%, 18% and 26% of their stem. Those three ratios differ far
+more than the stems they are taken against do, for reasons `faces.ts` states
+beside them.
+
+**Numerals in a square.** A grid sets its text at half the square's height, and
+on a hundred chart or a multiplication square that fits only in Andika: three
+characters is the widest thing either puts in a square, and only Andika's
+numerals clear the shared size at that width — 400 mil against a shared 375 on
+the hundred chart's ¾in square, 307 against 288 on the 13×13. The other four
+faces are wider per numeral (a digit measures at the wider of `advance` and
+`capAdvance`), so they are set smaller, which is the answer rather than a miss:
+three OpenDyslexic numerals at half the square measure 0.89in across a 0.75in
+square. Every catalog page is set in the print face, so all of them print at
+the shared size.
+
 ---
 
 ## 7 · Answer keys, seeds and variants
@@ -354,6 +417,17 @@ reason on the race decks. From that:
   twenty problems, are `seed`, `seed+1`, `seed+2` printed as consecutive pages.
 - **A sheet is reproducible from its URL**, because the seed is in it. Which is
   what makes sharing work without a server.
+
+**The key is never a second build.** Every answer is worked out at the moment
+its problem is built and travels on the problem, so `spec.key(sheet)` switches
+`answers` on, says so in the footer, and does nothing else — and on the families
+that have nothing to reveal, a key is the sheet itself, unchanged. It prints
+what is already there rather than computing the same answer a second time and
+risking a different one — which is what makes "reduced when it was drawn", "converted in
+whole units" and "built around the number that solves it" true of the key as
+well as of the page. Where an answer is a drawing rather than a number the same
+rule holds through the renderer: a time sheet's key is the same faces with their
+hands put on, drawn from `sheet.answers`.
 
 The seed is shown, in small type, in the footer. A parent who wants the _same_
 sheet again next week can have it.
@@ -426,6 +500,59 @@ crawler and a visitor with no JavaScript get the whole catalog and no dead
 search box. `scripts/search-index-guard.mjs` fails the build if a row points at
 a page `dist/` doesn't have, or if a page `dist/` has is reachable from
 neither the index nor a hub.
+
+Two things about that island are worth recording, because both are decisions
+rather than defaults. A **third-party search box was never an option**: it
+would send the page a child is looking at to somebody else's server, which is
+the one thing this site does not do, so the index is built here and the
+matching runs in the browser that downloaded it. And the island is
+`client:only` rather than server-rendered, which is what makes the sentence
+above true — everything the search can show, `/printables` already shows, so a
+visitor with no JavaScript gets a complete catalog with no sign that anything
+is missing, where a search box rendered into the HTML would be a control that
+looks live, takes a keystroke and does nothing.
+
+The type facet and the shelves cross, but three of the shelves line up with one
+type exactly, because they were always defined by the kind of page rather than
+by a subject: charts are references, paper is paper, and templates are forms
+right through.
+
+### One stock or two, which decides how many routes a sheet gets
+
+**Is the paper itself a stated measurement?** That is the whole question, and
+it is answered once per shelf rather than once per sheet.
+
+Where it is, the shelf prints on both stocks and each stock is a route of its
+own. A ⅝ handwriting rule sent to a printer loaded with A4 is scaled to fit,
+and a scaled ⅝ rule is not a ⅝ rule; `@page` is a document rule, so Letter and
+A4 cannot share a page. That covers paper, handwriting, cursive and Scripture,
+which print at `<slug>` and `<slug>/a4`.
+
+Where it is not, the shelf is one route and the A4 switch is a control in the
+builder. Nothing on a maths, spelling, grammar, phonics or chart sheet is a
+measurement — a printer that shrinks the page by four per cent gives a slightly
+smaller sum and the same right answer, and a hundred chart four per cent
+smaller still has a hundred squares in it. The templates shelf reaches the same
+answer by another road: a card's size is worked out from the paper it is cut
+out of rather than declared on it, so a page of them on A4 is a correct page of
+slightly different cards, and what the prose quotes is what US Letter gives.
+
+Two consequences, both load-bearing:
+
+- **It decides the shape of the route file.** A two-stock page is two path
+  segments, so it needs a rest parameter — `[...slug].astro` — where a
+  one-stock shelf needs only `[slug].astro`. Both shapes sit side by side at
+  the top of `/printables`, paper's and maths', and what keeps that legal is
+  that no slug is ever emitted by both. A shelf's own suite is where that is
+  checked, because Astro will not complain: it simply picks one.
+- **A shelf answers for all of its pages.** The memory sheets on the Scripture
+  shelf have no ruling to distort and could have lived on one stock, as the
+  maths sheets do. They come on both anyway: a shelf where some pages have an
+  A4 twin and some don't is a shelf a parent has to check.
+
+Graph paper is the case that proves the split rather than breaking it — its
+squares _are_ a measurement, and it sits on the paper shelf, which prints both.
+The charts shelf links to it instead of rebuilding it.
 
 ### The sitemap landmine
 
@@ -521,6 +648,33 @@ worksheet farm. Three tiers:
 
 These are pure functions with verifiable answers. This is where the effort goes.
 
+Two rules hold across every one of them, and both exist because the failure
+they guard is a wrong answer key that prints looking right.
+
+**No maths sheet's numbers are floats.** Fractions, decimals and money share
+one hazard the times tables never had: `7 × 8` is 56 in any arithmetic anybody
+has ever implemented, but `0.1 + 0.2` is 0.30000000000000004 in the one every
+JavaScript program is written in, and `4/8` is a correct answer written the
+wrong way. Both failures print. So `engine/sheets/maths/exact.ts` holds the two
+shapes those families count in and nothing else counts in either: a **fraction**
+is a pair of whole numbers whose reduction is a division by their greatest
+common divisor, exact by construction; a **fixed-point** number is a whole
+number of thousandths, hundredths or tenths, and the point is written in at the
+last moment by the one function that knows where it goes — £3.45 is 345 pence
+everywhere else, and the only division anywhere near it is by ten. That module
+knows nothing about sheets, which is what stops a second answer to "how do I
+write 5/4 as a mixed number" growing inside a family.
+
+**Problems are drawn and rejected, never enumerated.** The obvious generator
+lists every pair in the range, shuffles it and takes twenty. It is exact, and
+it allocates a million pairs for a sheet of three-digit sums — at build time,
+on every catalog page, three times over for the variants. So a problem is
+drawn, checked against what the config asked for, and rejected if it fails or
+repeats, with one shared budget of rejections in a row after which the draw
+accepts it has run out and prints what it has. That is the honest answer to
+"twenty different sums from 1 to 3": there are six, and six is what a parent
+should get rather than the same sum three times.
+
 **Maths.** Counting and numeral tracing 0–20 · ten frames · number bonds ·
 addition and subtraction (horizontal, vertical, with and without regrouping,
 missing addend, fact families) · multiplication and division (tables, grids,
@@ -569,7 +723,36 @@ the same three the race's _spot it_ round deals — so a printed sheet and a pla
 round ask one question of one list. And a sight word to _trace_ is the
 handwriting family with a word list on it, so the shelf's tracing page is a
 `HandwritingConfig` rather than an eighth spelling style: two families that draw
-letterforms would be one too many. Word search and crossword stay PRINT21.
+letterforms would be one too many.
+
+**What shipped (PRINT21).** The two puzzles, and one rule holds both of them
+up. Every other sheet in the shop is marked by doing what it asks — the sums,
+the spellings, the conversions — and a word search is marked by hunting twelve
+words through a grid, which nobody does. A word that quietly failed to place
+therefore looks exactly like one that placed well, and the sheet goes out asking
+a child to find something that is not there. So neither generator is allowed to
+be its own witness: **what the finished paper says is what the sheet claims**,
+and anything the paper does not contain is printed under the puzzle by name
+instead of disappearing. `words/search.ts` and `words/crossword.ts` are each
+written in two halves that barely speak — a placer that keeps no record, and a
+reader that goes back over the squares — and every list, key and omission line
+comes out of the second half. Neither retries; the bounds are stated where they
+are set.
+
+The crossword's own hazard is which word goes down first, and it is severe:
+COULD shares not one letter with AFTER, AGAIN or EVERY, so the same sight-word
+list places three of twelve anchored on COULD and nine anchored on AFTER. That
+is the shape of English rather than a flaw in the placer, so the answer is a
+handful of whole layouts kept side by side and the fullest one printed — a
+second opinion rather than a cleverer algorithm.
+
+Clues were reused rather than written, as PRINT20 reused the distractors. Every
+shipped sight-word list already gives each word a short sentence with the word
+taken out of it — written for the race, where it is what makes a homophone
+answerable at all — and a crossword clue is exactly that shape, so a crossword
+set on "First words" is clued in sentences somebody wrote for a five-year-old. A
+word this build has never met falls back to the one clue that can be written for
+any word at all: its own letters, out of order.
 
 **What shipped (PRINT22).** Grammar: one family, five topics, one bank. The
 bank is the story. Spelling is authored because **English will not yield to a
@@ -719,6 +902,20 @@ Scripture bookmarks are the card family with a passage on it, resolved through
 the same `copyworkSource` door as copywork, and the verse-of-the-week chart is
 the planner family with one. They sit in the same template list as the chore
 chart.
+
+One thing every family on this shelf does that none of them needs to: it lays
+its page out against a footer carrying the note a key prints, whether or not it
+has anything to reveal. A key keeps its sheet's blocks and is laid out against
+the same box, so a footer that wraps to two rows on the key and one on the
+sheet is a key whose last row prints on a second page — and on this shelf
+`SheetSpec.key` stamps "Answer key" onto any sheet it is handed, including the
+blank forms, because a parent may press the button on a coordinate grid and
+what they should get is the same paper with a word in the footer. Reserving
+unconditionally costs one footer row on the sheets that withhold nothing, and
+only at the type sizes where that row wraps at all; at every size a catalog
+page prints, it costs nothing. That is the cheap side to be wrong on: a row
+over-reserved is a rule line, and a row under-reserved is a second sheet of
+paper.
 
 ### Not ours to fake
 
@@ -1053,6 +1250,35 @@ them are one of these sheets with one spelling ticked. Each page states the
 spellings its own sheet uses, and says plainly that yours will be different.
 There is no level, stage or lesson number anywhere on the shelf.
 
+**Which accent the table describes, and why it is written down.** A phoneme
+table always describes _somebody's_ speech, and one that quietly described only
+one variety would tell half the children using this site that a sound is
+different from another sound they say identically. So `phonics/sounds.ts`
+states its scope: **the contrasts shared by General American and standard
+southern British.** A shared table is possible because the two agree about far
+more than they disagree about — all twenty-four consonants, and the vowel of
+nearly every word in the bank. Where they genuinely differ the divergence is
+named on the phoneme rather than resolved by picking a side: `cot`/`caught` and
+`father`/`bother` are two sounds in one variety and one in the other; rhoticity
+changes the vowel of `car` and `her` and changes nothing about the letters,
+which is what the table is for; and a minority of speakers keep `wh` as a sound
+of its own.
+
+Where there is no honest answer the word is left out of the bank rather than
+guarded against later — the `bath` set (`grass`, `ask`, `after`, `class`),
+`with`, the `new`/`tune`/`duke` set where England says a `y` that America
+drops, and `was` and `water`, whose vowel after a `w` differs in both places.
+`few`, `cube`, `want` and `wash`, which agree, are in. Words whose vowel differs
+while its _identity_ does not are fine and are in, because both varieties agree
+about which words share a vowel.
+
+None of the seven sheets filters on accent, and that is a decision rather than
+an oversight: every style that prints a word asks about its **spelling** —
+which spellings it is made of, which spelling is in it, how it is written down
+when it is read out — and a spelling is the same on both sides of the Atlantic.
+A sheet asking whether `cot` and `caught` sound alike would mark half the
+children who saw it wrong, so there isn't one.
+
 ---
 
 ## 14 · The builder, and the three bootstraps
@@ -1082,6 +1308,26 @@ is `options/*.tsx` alone (there is no `Editor` wrapping it), and what was going
 to be `Editor.tsx` turned out to be `PageOptions.tsx` — the options that belong
 to no family. The reading half of `#s=` lives in `engine/sheets/share.ts` beside
 the encoder rather than in the builder, because the two are one format.
+
+**The bench opens on a finished sheet, never on an empty form.** `defaults.ts`
+holds one config per family and each is a worksheet somebody would print
+unchanged, so switching family produces paper before a single option has been
+touched — the bargain a catalog page strikes, reached from inside the builder.
+Where a family has several styles the default is the one a parent recognises
+across the room and would name if asked: the reading log among the nine forms,
+blank flashcards among the five cards, the word search among the three puzzles,
+blending among the seven phonics sheets, parts of speech among the five grammar
+topics, rhyming among the ten word-study topics. Everything else on each shelf
+is one control away, and each of those controls lists its options in the order a
+week or a school year uses them rather than alphabetically. The two families
+whose content is a list — spelling and puzzles — open on the same shipped
+sight-word slice, so moving between the shelves keeps the words a parent is
+already looking at on screen.
+
+Those judgements live in the view rather than in the engine, deliberately. A
+family's `SheetSpec` states what it _can_ build; "twenty-four sums with both
+numbers under twenty" is an editorial judgement about children, of a piece with
+the catalog copy, and `deckSpec` draws the same line for the races.
 
 The bootstraps arrived the same way. Which sheet family answers for which deck
 is `engine/sheets/practice.ts` — a mode and a list of fact ids in, a config

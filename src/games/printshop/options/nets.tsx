@@ -1,11 +1,6 @@
 /**
- * Dice and spinners: how many sides, and what is on them.
- *
- * Two controls and one of them is conditional, which is the whole panel — a die
- * has six faces and always will, so there is nothing to ask about the count.
- * What both share is the list of words, and it is the same idea on each: a die
- * with pips is a die, and a die with six words on it is the version most
- * homeschool rooms actually cut out.
+ * Dice and spinners: how many sides, and what is on them. The sector count is
+ * conditional because a die has six faces and always will.
  *
  * There is no control for how big either is drawn. That is what fits on the
  * paper, and the line under the picker says what it came to — a cube two inches

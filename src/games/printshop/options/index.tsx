@@ -5,15 +5,6 @@
  * the same reason: looking a panel up *is* the narrowing, so there is no
  * `switch` over `SheetConfig` here to keep in step with the union. Adding a
  * family is a module beside this one and a line in the table.
- *
- * The one cast in the directory is `panel()` below, and it is worth reading
- * before it is copied. `SheetSpec` gets into its registry for free because
- * `build(config, seed)` only *takes* a config, and TypeScript checks method
- * parameters bivariantly. A panel takes a config **and** a way to patch it, and
- * those two pull in opposite directions — the config is safe to widen, the
- * patch is safe to narrow — so no variance rule can let both through at once.
- * The lookup is what makes it true anyway: a panel is only ever reached through
- * the key its own `kind` is filed under.
  */
 import type { ReactNode } from "react";
 
@@ -50,33 +41,29 @@ import type { PanelProps } from "./parts";
 type FamilyPanel = (props: PanelProps) => ReactNode;
 
 /**
- * Files a family's panel under the union, which the lookup then honours.
+ * Files a family's panel under the union, which the lookup then honours — the
+ * one cast in the directory, and worth reading before it is copied.
  *
  * The assertion says "this panel will only ever be given its own family's
  * config", and the table below is what makes that true: an entry is reached by
- * the `kind` it is keyed on and by nothing else. Written once, here, so that
- * every panel above can stay strictly typed to its own config — a `MoneyPanel`
- * that reached for `regrouping` still fails to compile, which is the property
- * worth protecting.
+ * the `kind` it is keyed on and by nothing else. `SheetSpec` needs no such cast
+ * because `build(config, seed)` only *takes* a config, which TypeScript checks
+ * bivariantly; a panel takes a config **and** a way to patch it, and those two
+ * pull in opposite directions, so no variance rule can let both through at once.
+ * Hence `unknown`: the two types genuinely do not overlap either way.
  *
- * Through `unknown` because the two types genuinely do not overlap in either
- * direction, which is TypeScript being right rather than being awkward: it
- * cannot see the table, and the table is the whole argument. Keeping the
- * assertion in one three-line function is what stops that argument having to be
- * made fifteen times.
+ * Written once, here, so every panel can stay strictly typed to its own config —
+ * a `MoneyPanel` that reached for `regrouping` still fails to compile.
  */
 const panel = <C extends SheetConfig>(
   Panel: (props: PanelProps<C>) => ReactNode,
 ): FamilyPanel => Panel as unknown as FamilyPanel;
 
 /**
- * A family with nothing of its own to choose.
- *
- * Blank paper is the spine's own sheet — a header, a footer and nothing else —
- * so every option it has is one of the shared ones above the panel. It is also
- * what a `kind` this build has never heard of falls back to, which keeps the
- * bench open on the shared options rather than blank while somebody works out
- * why the family went missing.
+ * A family with nothing of its own to choose — blank paper, whose every option
+ * is one of the shared ones above the panel. It is also what a `kind` this build
+ * has never heard of falls back to, so the bench stays open on the shared
+ * options rather than going blank.
  */
 const NO_OPTIONS: FamilyPanel = () => null;
 
@@ -115,8 +102,8 @@ const PANELS: Record<string, FamilyPanel> = {
  *
  * The own-property lookup is the same guard `sheetSpec` documents: `kind`
  * arrives from a URL somebody may have typed, and plain `PANELS[kind]` answers
- * `"toString"` with a function off `Object.prototype`, which is truthy, is not a
- * panel, and would be rendered as a component one line later.
+ * `"toString"` with a function off `Object.prototype` — truthy, not a panel, and
+ * rendered as a component one line later.
  */
 export function FamilyOptions({ config, set }: PanelProps) {
   const Panel = Object.hasOwn(PANELS, config.kind)

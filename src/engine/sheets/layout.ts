@@ -1,17 +1,17 @@
 /**
- * How much fits on a page — from geometry alone.
- *
- * There is no DOM here and no measurement, because there can't be: the catalog
- * pages are built at build time and the engine is unit-tested in plain Node
- * (§4). So a cell has a *declared* size rather than a measured one, capacity is
- * usable height ÷ row height, and the renderer honours the layout instead of
- * discovering it. That is a real constraint on the design of every sheet
- * family, and the right one — it is also what makes "did it fit?" a question a
- * test can answer without a browser.
+ * How much fits on a page — from geometry alone, and never from measurement
+ * (§4).
  *
  * Everything is in `Mil`, thousandths of an inch. Positions are computed from a
- * repeat index rather than accumulated, so the last rule on a page is exactly
- * as far from the first as the arithmetic says.
+ * repeat index rather than accumulated, so the last rule on a page is exactly as
+ * far from the first as the arithmetic says.
+ *
+ * The gaps and row heights below trail what the view actually draws — usually a
+ * `gap` in `sheet.css` — and they live here rather than in the family that first
+ * needed each, because more than one family now divides a page by them. A second
+ * copy would be a second thing to keep in step with the view, and the failure is
+ * silent: a sheet that looks right on screen and prints its bottom row on a
+ * second sheet of paper.
  */
 import type { Mil, Paper, Rule } from "./types";
 
@@ -32,15 +32,11 @@ export type Box = { x: Mil; y: Mil; width: Mil; height: Mil };
  *
  * A quarter of an inch is what a child writes on, and never less than the body
  * type needs: at 18pt the type is a quarter inch on its own, and a key printed
- * onto lines shorter than its own letters is a row taller than was reserved for
- * — which is the last row of the page on a second sheet of paper.
+ * onto lines shorter than its own letters is a row taller than was reserved for.
  *
- * Here rather than in the family that first needed it, because it is now the
- * height of two different things a child writes on: a fact family's four number
- * sentences, and the partial products of a long multiplication. A second copy
- * of the number would be a second thing to keep in step with `.sheet__answer-
- * line`, and the failure is silent — a sheet that looks right on screen and
- * prints its bottom row on a second page.
+ * More than one thing a child writes on is this tall — a fact family's four
+ * number sentences and the partial products of a long multiplication among
+ * them.
  */
 export const answerLine = (fontPt: number): Mil =>
   Math.max(inches(0.25), points(fontPt * 1.35));
@@ -50,9 +46,7 @@ export const answerLine = (fontPt: number): Mil =>
  *
  * `.sheet__problems` in sheet.css is the grid every maths family prints
  * through, and this is its `gap` written in the unit the capacity arithmetic
- * works in. Here rather than in a family for the same reason as the line above:
- * two families now divide a page by it, and a copy that drifted from the
- * stylesheet would be a row of problems below the bottom margin.
+ * works in.
  */
 export const PROBLEM_GAP = { x: inches(0.3), y: inches(0.2) };
 
@@ -63,9 +57,7 @@ export const PROBLEM_GAP = { x: inches(0.3), y: inches(0.2) };
  * a workspace take a line of their own under the sum, and so does the ruled
  * blank beside a fraction diagram. So a problem is sometimes two lines tall, and
  * a family that reserves for the second one has to know what the browser will
- * put between them. Trailing sheet.css exactly as `chromeHeight` does, and for
- * the same reason: the failure is silent on screen and is a row of problems
- * below the bottom margin on paper.
+ * put between them.
  */
 export const WRAP_GAP: Mil = inches(0.06);
 
@@ -74,10 +66,7 @@ export const WRAP_GAP: Mil = inches(0.06);
  *
  * `.sheet__blanks` and `.sheet__questions` are both flex columns with this as
  * their `gap`, which is why it is one constant: a sentence with a gap in it and
- * a multiple-choice question are the same shape of thing down the page, and two
- * families now divide a page by it. The fourth of these to trail sheet.css, for
- * the same reason as the three above — the failure is silent on screen and is
- * the last question below the bottom margin on paper.
+ * a multiple-choice question are the same shape of thing down the page.
  */
 export const LIST_GAP: Mil = inches(0.16);
 
@@ -85,22 +74,19 @@ export const LIST_GAP: Mil = inches(0.16);
  * How tall one row of a matching block stands, in ems of the body size.
  *
  * `Matching.tsx` draws the block from this and a family reserves the page for
- * it, so it is declared once here rather than in both: the renderer's own copy
- * was the number, and a family that guessed a different one would print a
- * column of pairs off the bottom of the page. Two lines of type — room to draw
- * a line between two dots, and room to read the words either side of it.
+ * it, so a family that guessed a different number would print a column of pairs
+ * off the bottom of the page. Two lines of type — room to draw a line between
+ * two dots, and room to read the words either side of it.
  */
 export const MATCH_ROW_EMS = 2.4;
 
 /**
  * The air between one block and the next.
  *
- * `.sheet__blocks` is a flex column and this is its `gap`, in the unit the
- * capacity arithmetic works in — the third of these constants to trail
- * sheet.css, and the first that a family with more than one block has to pay
- * for. A coordinate sheet is a plane and then the questions about it, and a gap
- * the layout did not know about is the last row of questions below the bottom
- * margin.
+ * `.sheet__blocks` is a flex column and this is its `gap` — the one of these a
+ * family with more than one block has to pay for. A coordinate sheet is a plane
+ * and then the questions about it, and a gap the layout did not know about is
+ * the last row of questions below the bottom margin.
  */
 export const BLOCK_GAP: Mil = inches(0.14);
 
@@ -119,9 +105,9 @@ export function contentBox(paper: Paper): Box {
 /**
  * What's left for blocks once the header and footer have taken their share.
  *
- * Both heights are declared by the family rather than measured, which is the
- * same bargain as a problem cell: state what you will use, and the arithmetic
- * stays honest.
+ * Both heights are declared by the family rather than measured, the same
+ * bargain as a problem cell: state what you will use, and the arithmetic stays
+ * honest.
  */
 export function blockBox(
   paper: Paper,

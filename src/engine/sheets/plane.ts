@@ -1,13 +1,12 @@
 /**
  * The coordinate plane, and where a point sits on it.
  *
- * Here rather than inside the family that first drew one, for the reason
- * `fractionart.ts` and `clockface.ts` are: a plane is now the question on two
- * different sheets — reading coordinates, and reading a slope off a graph — and
- * a second copy of "how many squares wide is it, and where do the axes cross"
- * would be a second answer to the question the layout arithmetic already asked.
- * The height a family reserves and the drawing the renderer makes come from one
- * place, which is the whole of the bargain in §4.
+ * Here rather than inside the family that first drew one: a plane is the
+ * question on two different sheets — reading coordinates, and reading a slope
+ * off a graph — and a second copy of "how many squares wide is it, and where do
+ * the axes cross" would be a second answer to the question the layout arithmetic
+ * already asked. The height a family reserves and the drawing the renderer makes
+ * come from one place, which is the whole of the bargain in §4.
  *
  * Nothing here knows what a problem is. It is squares, an origin, and the
  * arithmetic that turns a pair of coordinates into a position on the ruling.

@@ -260,14 +260,13 @@ describe("the sheet on a catalog page", () => {
   });
 
   it("never runs one cell's letters into the cell beside it", () => {
-    // The failure a joined hand has and a printed one mostly doesn't. A row is
-    // divided into equal cells (`TracedRow`), and the packing reserves each
-    // one the longest thing on the row plus a character of air — at the face's
-    // declared width *for what is written*, which on `Aa`…`Zz` is not the mean
-    // over `a`–`z` (`glyphAdvance`). Packed off the wrong mean, `Mm` printed a
-    // tenth of an inch into the trace beside it and the two merged into one
-    // continuous joined string: on a sheet whose whole subject is where a join
-    // belongs, exactly the wrong lesson.
+    // The failure a joined hand has and a printed one mostly doesn't (§6). A
+    // row is divided into equal cells, each reserving the longest thing on it
+    // plus a character of air — at the face's declared width *for what is
+    // written*, which on `Aa`…`Zz` is not the mean over `a`–`z`. Packed off the
+    // wrong mean, two groups merge into one continuous joined string: on a
+    // sheet whose whole subject is where a join belongs, exactly the wrong
+    // lesson.
     for (const sheet of CURSIVE_SHEETS) {
       for (const stock of STOCKS) {
         const config = configFor(sheet, stock.id);
@@ -379,9 +378,9 @@ describe("the link into the builder", () => {
   });
 
   it("offers all three models, each on a sheet that is already set", () => {
-    // The story's own note: the regional models are the hands actually taught,
-    // so the choice belongs to the parent. Every one of them has to arrive on
-    // the bench as a sheet rather than as a setting to find.
+    // The regional models are the hands actually taught, so the choice belongs
+    // to the parent — and every one of them has to arrive on the bench as a
+    // sheet rather than as a setting to find.
     expect(CURSIVE_MODELS.map((model) => model.font)).toEqual(CURSIVE_FACES);
     const [sheet] = CURSIVE_SHEETS;
     for (const model of CURSIVE_MODELS) {

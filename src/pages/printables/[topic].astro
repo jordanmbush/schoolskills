@@ -13,24 +13,17 @@ import {
 } from "./_maths";
 
 /**
- * One prerendered maths worksheet per topic — and the page is the worksheet.
- *
- * The shape §8 describes and the shape `[...slug].astro` already built for
- * paper, applied to the family that is actually searched for: "free printable
- * multiplication worksheets" is one of the largest queries in education, and a
- * parent who lands here gets prose that answers it, the sheet itself directly
- * under it as HTML, and nothing to click. ⌘P produces usable paper because the
- * sheet IS the page, not a download link on it.
+ * One prerendered maths worksheet per topic — and the page is the worksheet
+ * (§8). Prose that answers the query, the sheet itself under it as HTML, and
+ * nothing to click: ⌘P produces usable paper because the sheet IS the page.
  *
  * **Two sheets, not one.** The worksheet and its answer key print as
  * consecutive pages, which is what `break-after: page` in sheet.css was written
- * for — the CSS names "a sheet and its answer key" in as many words. A key is
- * the single most expected feature of a worksheet site and the most commonly
- * done badly, and it costs nothing here: `answerKey` prints the answers the
- * build already computed rather than working them out a second time, so the key
- * cannot disagree with the sheet it belongs to. The two `<article>`s stay
- * adjacent siblings on purpose — `print.css` breaks on `.sheet + .sheet` as
- * well, and an element between them would take that second guarantee away.
+ * for. `answerKey` prints the answers the build already computed rather than
+ * working them out a second time, so the key cannot disagree with the sheet.
+ * The two `<article>`s stay adjacent siblings on purpose — `print.css` breaks
+ * on `.sheet + .sheet` as well, and an element between them would take that
+ * second guarantee away.
  *
  * **No client directive on `SheetView`, ever.** `@astrojs/react` renders a
  * component with no `client:*` to HTML at build time, so these pages ship zero
@@ -45,10 +38,9 @@ import {
  * printing the worksheet on it.
  *
  * A separate route file from paper's `[...slug].astro` rather than a branch
- * inside it. The two share a URL prefix and nothing else — a ruling comes on
- * two stocks and has no answers, a worksheet has answers and one stock — and
- * the slugs are disjoint, which `_maths.test.ts` asserts so that the two
- * patterns can never both claim a path.
+ * inside it: the two share a URL prefix and nothing else, and the slugs are
+ * disjoint, which `_maths.test.ts` asserts so that the two patterns can never
+ * both claim a path.
  */
 
 type Props = { sheet: MathsSheet };
@@ -113,9 +105,8 @@ const strand = strands.find((group) => group.id === sheet.strand)!;
     /*
       The sheets, outside `.wrap` deliberately. A wrap adds an inline padding
       that print.css cannot take back off, and a sheet printed a centimetre in
-      from where it says it is has the wrong geometry everywhere at once. The
-      key is a sibling of the sheet, with nothing between them — see the note
-      above on why that adjacency is load-bearing.
+      from where it says it is has the wrong geometry everywhere at once. The key
+      stays an adjacent sibling — see the note above on why.
     */
   }
   <div class="sheet-frame">

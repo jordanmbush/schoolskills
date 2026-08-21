@@ -176,7 +176,7 @@ describe("the word-study family", () => {
   });
 
   it("falls back to a style the topic has rather than throwing", () => {
-    // A saved sheet outlives the table it was made from (§7): rhyming has never
+    // A saved sheet outlives the table it was made from (§3): rhyming has never
     // been writable, and a config that says so still has to print something.
     const rhyming = config({ topic: "rhyming", style: "write" });
     expect(blockOf(rhyming).kind).toBe("choice");

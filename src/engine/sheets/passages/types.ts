@@ -1,13 +1,10 @@
 /**
  * What a copywork sheet is handed, whatever the text came out of.
  *
- * The passage library is the first thing in `src/engine/sheets/` that is not
- * generated. Every maths family computes its problems; a passage is quoted, and
- * quoting somebody else's words in a repository that anyone can clone raises
- * exactly one question worth building a type around: *may we, and how do we
- * know?* So a passage carries its provenance the way a `Sheet` carries its
- * seed — not as a comment that can drift, but as a field, right beside the
- * words it licenses (docs/printables.md §12).
+ * A passage is quoted rather than generated, which raises the one question
+ * worth building a type around: *may we, and how do we know?* So a passage
+ * carries its provenance as a field beside the words it licenses, rather than
+ * as a comment that can drift (docs/printables.md §12).
  *
  * Three rules the shape enforces:
  *
@@ -29,14 +26,13 @@
 export type PassageKind = "scripture" | "prose" | "poetry" | "document";
 
 /**
- * Which translation a Scripture passage is read in — the two of §12, and the
- * reasoning for both is beside the table in index.ts.
+ * Which translation a Scripture passage is read in — the two of §12.
  *
- * The id lives here rather than there for one practical reason: a sheet config
- * carries a translation, so `engine/sheets/types.ts` has to be able to name the
- * type — and a type-only import of this module costs nothing, where an import
- * of the library's front door would put a hundred kilobytes of verses in front
- * of every module that so much as mentions a `Sheet`.
+ * The id lives here rather than in index.ts because a sheet config carries a
+ * translation, so `engine/sheets/types.ts` has to be able to name the type: a
+ * type-only import of this module costs nothing, where an import of the
+ * library's front door would put a hundred kilobytes of verses in front of
+ * every module that so much as mentions a `Sheet`.
  */
 export type TranslationId = "webu" | "kjv";
 
@@ -66,11 +62,11 @@ export type PassageSource = {
 /**
  * A group in the picker.
  *
- * Flat, and one collection per passage. A passage that belongs to two groups
- * belongs to neither in a picker a parent scans in five seconds, and the reason
- * the Scripture collections are cut by *book* rather than by theme is that a
- * theme ("comfort", "obedience") is an editorial claim about a verse and a book
- * is a fact about it.
+ * Flat, and one collection per passage: a passage that belongs to two groups
+ * belongs to neither in a picker a parent scans in five seconds. The Scripture
+ * collections are cut by *book* rather than by theme because a theme
+ * ("comfort", "obedience") is an editorial claim about a verse and a book is a
+ * fact about it.
  */
 export type PassageCollection = {
   id: string;
@@ -84,8 +80,7 @@ export type PassageCollection = {
  *
  * Scripture arrives here through the same door as a poem: by the time a sheet
  * holds one of these it cannot tell which library it came out of except by
- * reading `kind`, which is the point of §12's "woven through" — choosing
- * Psalm 23 and choosing the Gettysburg Address are the same interaction.
+ * reading `kind` (§12).
  */
 export type Passage = {
   id: string;

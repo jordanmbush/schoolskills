@@ -10,28 +10,13 @@ const CELL_TO_EM = 0.5;
 /**
  * How much of a column a word at the head of one may take.
  *
- * Half a square is the right size for the numerals a grid was built for, and
- * far too big for a word: "Hundred thousands" set at half the height of its own
- * column runs four columns wide, and an `<svg>` clips to its viewBox, so what
- * prints is a place-value chart with most of its headings sliced off. So a cell
- * that cannot hold its text at the shared size is set at the size that fits —
- * measured the only way there is at build time, off the face's own declared
- * mean advance (`faces.ts`), which is the same bargain `chrome.ts` strikes for
- * every other run of text on a sheet. Through `glyphAdvance` rather than off
- * `advance` directly, because every word here starts with a capital and the
- * plain mean is taken over `a`–`z`: that is the distinction that put `Mm` a
- * tenth of an inch into the next cell on a handwriting row.
- *
- * On the grids that were here first it fires everywhere except the print face.
- * Three characters is the widest thing a hundred chart or a multiplication
- * square puts in a square, and only Andika's numerals clear the shared size at
- * that width: 400 against a shared 375 on the hundred chart's ¾in square, 307
- * against 288 on the 13×13. The other four faces are all wider per numeral — a
- * digit is measured at `capAdvance` here, not `advance` — so they are set
- * smaller, which is the right answer and not a miss: three OpenDyslexic
- * numerals set at half the square measure 0.89in across a 0.75in square.
- * Every catalog page is set in the print face, which is why all of them print
- * at the shared size.
+ * Half a square is the right size for the numerals a grid was built for and far
+ * too big for a word — a heading too wide for its column overlaps its
+ * neighbours and is sliced off at the edge of the drawing. A cell that cannot
+ * hold its text at the shared size is set at the size that fits, measured off
+ * the face's own declared mean advance (`faces.ts`). Through `glyphAdvance`
+ * rather than off `advance` directly, because every word here starts with a
+ * capital and the plain mean is taken over `a`–`z`.
  */
 const CELL_FILL = 0.86;
 
@@ -71,9 +56,8 @@ export function Grid({ block, metrics }: BlockProps<"grid">) {
   const width = columns * cell;
   const height = rows * rowHeight;
   // One size for every square, and it is the smallest any of them needs. Per
-  // cell would be arithmetically tidier and would print a header row with a
-  // different type size in each column, which reads as a mistake whether or not
-  // it is one.
+  // cell would print a header row with a different type size in each column,
+  // which reads as a mistake whether or not it is one.
   const size = fitText(
     [...(cells ?? []), ...(answers ?? [])],
     cell,
@@ -129,13 +113,10 @@ export function Grid({ block, metrics }: BlockProps<"grid">) {
       ))}
 
       {/* Two heavier strokes through the ruling, where the grid says they
-          cross — counted in squares, so they land on the ruling rather than
-          near it. A coordinate plane's axes are the first use; a multiplication
-          square's header rules are the second, and they are the same two lines
-          drawn from the same number. Gated on the origin rather than on the
-          kind, because a grid that named where they cross and then didn't get
-          them would be a grid whose data said one thing and whose ink said
-          another. */}
+          cross — a coordinate plane's axes and a multiplication square's header
+          rules are the same two lines drawn from the same number. Gated on the
+          origin rather than on the kind, so a grid that named where they cross
+          cannot then fail to get them. */}
       {origin && (
         <g className="sheet__axes">
           <line
@@ -204,9 +185,7 @@ export function Grid({ block, metrics }: BlockProps<"grid">) {
             r={Math.max(1, Math.round(cell * 0.11))}
           />
           {/* Up and to the right of its dot, and turned inward where that would
-              be off the paper: the plane puts points on its outermost gridlines,
-              and a letter set outside the viewBox is clipped away entirely —
-              which leaves "E = ___" printed under a plane with no E on it. */}
+              be off the paper — see `away` above. */}
           <text
             className="sheet__cell"
             x={within(mark.column * cell + away, away, width - away)}
@@ -222,9 +201,8 @@ export function Grid({ block, metrics }: BlockProps<"grid">) {
 
       {/* Two lists over the same squares: what is printed whatever the sheet
           is, and what is printed only on a key. A multiplication square's
-          headers are the first and its hundred and forty-four products are the
-          second, so the blank grid and the wall chart are one build with
-          `answers` flipped — the same mechanism as every ruled slot. */}
+          headers are the first and its products the second, so the blank grid
+          and the wall chart are one build with `answers` flipped. */}
       {written(cells).map(([index, text]) => (
         <Cell
           key={`c${index}`}
@@ -242,10 +220,6 @@ export function Grid({ block, metrics }: BlockProps<"grid">) {
     </svg>
   );
 }
-
-/* The size the squares' text is set at — the shared one, or what the widest of
-   them will fit at — is `fitText` in ../text.ts, which is where that arithmetic
-   moved once a table's headings and a card's big line wanted it too.        */
 
 /** The squares of a list that have something in them, with their positions. */
 function written(cells: string[] | undefined): Array<[number, string]> {

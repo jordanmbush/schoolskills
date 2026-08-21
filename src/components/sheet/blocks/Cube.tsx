@@ -58,10 +58,9 @@ type Extent = { width: Mil; height: Mil };
  * where the scissors go, a finer dashed line on every fold, and the spots.
  *
  * The outline is drawn as the outside edge of each face and tab rather than as
- * one traced path, which is the honest simplification: a stroke on a shared
- * edge is a fold and is drawn as one, and every other edge is a cut. Tracing
- * the silhouette would look identical and would be a second description of the
- * same shape.
+ * one traced path: a stroke on a shared edge is a fold and is drawn as one, and
+ * every other edge is a cut. Tracing the silhouette would look identical and
+ * would be a second description of the same shape.
  *
  * **The silhouette touches all four sides of its own box** — the tab above the
  * top row, the tabs beyond the left and right columns, and the bottom of the

@@ -57,9 +57,8 @@ const config = (over: Partial<MoneyConfig> = {}): MoneyConfig => ({
 const EVERY_CURRENCY: Currency[] = ["usd", "gbp", "eur"];
 
 /**
- * Every shape the family can print, which is every acceptance criterion of the
- * story: amounts added, taken away and bought several of, along a line and in
- * columns, in each of the three currencies.
+ * Every shape the family can print: amounts added, taken away and bought
+ * several of, along a line and in columns, in each of the three currencies.
  */
 const EVERY_SHAPE: Array<Partial<MoneyConfig>> = [
   {},
@@ -355,7 +354,7 @@ describe("what may be on the page", () => {
   it("prints nothing rather than something wrong when the ask is impossible", () => {
     // A range with no money in it: every draw is nothing at all, which is not a
     // question about money. An empty sheet is the honest answer, and the
-    // builder's job to prevent (PRINT13).
+    // builder's job to prevent.
     expect(problemsOf({ range: { min: 0, max: 0 } }, 1)).toEqual([]);
   });
 });

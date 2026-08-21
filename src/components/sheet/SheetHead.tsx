@@ -1,6 +1,5 @@
 import type { HeaderField, SheetHeader } from "@/engine/sheets/types";
 
-/** What each blank is called on paper. */
 const FIELD: Record<HeaderField, string> = {
   name: "Name",
   date: "Date",
@@ -10,11 +9,10 @@ const FIELD: Record<HeaderField, string> = {
 /**
  * The top of the sheet: what it is, what to do, and the lines a child fills in.
  *
- * **The name line is printed blank, always.** It is the one field every
- * worksheet on earth asks for and the one thing this site refuses to hold: a
- * `HeaderField` is a marker rather than a value, so there is nowhere in a
- * config for a child's name to be typed and nothing in a shared URL for it to
- * leak through (§1). A pencil fills it in.
+ * **The name line is printed blank, always** (§1). A `HeaderField` is a marker
+ * rather than a value, so there is nowhere in a config for a child's name to be
+ * typed and nothing in a shared URL for it to leak through. A pencil fills it
+ * in.
  *
  * The title is an `<h2>`. A catalog page is a page *about* a worksheet with the
  * worksheet on it, so its `<h1>` is the page's — and the same component has to

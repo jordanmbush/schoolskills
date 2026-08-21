@@ -2,44 +2,34 @@
  * The words phonics may put on a page, each one cut into the spellings it is
  * actually made of.
  *
- * Hand-segmented, for the reason `words/bank.ts` gives for hand-authoring its
- * answers and then some: **there is no algorithm that cuts an English word into
- * graphemes.** `ea` is one spelling in `bread` and two in `react`; the `e` of
- * `cake` belongs to the `a` four letters earlier; `think` has no /n/ in it. A
- * generator reaching for a rule would decide that `duck` needs `c` and `k`
- * separately and hand it to a child who has been taught neither — which is the
- * exact failure the sound inventory exists to prevent, arriving through the
- * back door.
- *
- * So every word below was cut by hand, and `phonics.test.ts` puts the pieces
- * back together and checks they spell the word again. That test is what makes
- * the constraint trustworthy: a mis-cut word is a word that gets offered to the
- * wrong child, and it is invisible in a diff.
+ * Hand-segmented, because **there is no algorithm that cuts an English word
+ * into graphemes**: `ea` is one spelling in `bread` and two in `react`, the `e`
+ * of `cake` belongs to the `a` four letters earlier, and a generator reaching
+ * for a rule would decide `duck` needs `c` and `k` separately and hand it to a
+ * child who has been taught neither. `phonics.test.ts` puts the pieces back
+ * together and checks they spell the word again, which is what makes the
+ * constraint trustworthy — a mis-cut word is invisible in a diff.
  *
  * ── Words that are not here, on purpose ────────────────────────────────────
  *
- * A sheet is printed on both sides of the Atlantic, and a word whose sounds
- * depend on the reader's accent cannot be put on a sound-matching line without
- * marking somebody's child wrong. Those words are excluded here rather than
- * guarded against later:
+ * A word whose sounds depend on the reader's accent has no cut that is true on
+ * both sides of the Atlantic, so it is excluded here rather than guarded
+ * against later (§13):
  *
- *   - **The `bath` set.** `bath`, `grass`, `class`, `ask`, `after`, `last`,
- *     `can't`, `half`, `path` — `/a/` in America, `/ah/` in southern England.
- *     There is no cut that is true in both places.
- *   - **`with`.** Ends in the sound of `thin` for most Americans and the sound
- *     of `this` in England, and those are two different tick boxes.
+ *   - **The `bath` set** — `bath`, `grass`, `class`, `ask`, `after`, `last`,
+ *     `can't`, `half`, `path`: `/a/` in America, `/ah/` in southern England.
+ *   - **`with`**, which ends in the sound of `thin` for most Americans and of
+ *     `this` in England — two different tick boxes.
  *   - **`new`, `tune`, `duke`, `stew`.** After `t`, `d` and `n` the `y` of
  *     `few` is said in England and dropped in most of America. `few`, `cube`
  *     and `cute` keep it everywhere, so those are the ones here.
  *   - **`was` and `water`.** The `a` after a `w` is a different vowel in the
- *     two places — `was` has the vowel of `cup` for many Americans and of `dog`
- *     in England, and `water` has the vowel of `saw` in England. `want`,
- *     `wash` and `watch`, which agree, are here.
+ *     two places. `want`, `wash` and `watch`, which agree, are here.
  *
  * Words whose *vowel* differs while its identity doesn't — everything using
  * `/o/`, `/aw/` or an r-coloured vowel — are fine and are here, because both
  * varieties agree about which words share a vowel. `variesByAccent` names them
- * for the one sheet style that has to care: hearing two sounds apart.
+ * for the one sheet style that would have to care: hearing two sounds apart.
  */
 import { CORRESPONDENCE_BY_ID, PHONEME_BY_ID, spellingId } from "./sounds";
 
@@ -57,10 +47,9 @@ export type Word = {
  * One word, written the way it is read: the spellings, spaced apart.
  *
  * A bare grapheme means its commonest sound, so `c a t` is exactly what it
- * looks like and only the surprises are spelled out — `b r ea:e d` is `bread`,
- * and the `ea:e` is the whole reason the word is worth having. See
- * `spellingId` for what a part that names nothing does, which is fail a test
- * rather than print.
+ * looks like and only the surprises are spelled out — `b r ea:e d` is `bread`.
+ * A part that names nothing fails a test rather than printing; see
+ * `spellingId`.
  */
 const w = (word: string, spelling: string): Word => ({
   word,
@@ -68,10 +57,9 @@ const w = (word: string, spelling: string): Word => ({
 });
 
 /* ── The short vowels, three sounds at a time ─────────────────────────────
-   Where every programme starts and where most of a first year is spent. The
-   order inside each vowel is roughly the order the letters are taught in, so
-   a parent who has ticked six letters gets the words at the top of the list
-   rather than a scattering from the bottom.                                */
+   The order inside each vowel is roughly the order the letters are taught in,
+   so a parent who has ticked six letters gets the words at the top of the list
+   rather than a scattering from the bottom.                                 */
 
 const SHORT_A: Word[] = [
   w("at", "a t"),
@@ -853,9 +841,9 @@ const TRICKY: Word[] = [
  *
  * One flat list rather than a map of groups, because the groups above are a
  * writing aid and not a curriculum: what a word is available for is decided by
- * the sounds in it and nothing else, and a sheet that drew from "the digraph
- * group" would hand a child `chick` because of the `ch` and the `ck` they
- * hadn't been taught.
+ * the sounds in it and nothing else, and a sheet drawing from "the digraph
+ * group" would hand a child `chick` for its `ch` and the `ck` they hadn't been
+ * taught.
  */
 export const WORDS: Word[] = [
   ...SHORT_A,
@@ -903,8 +891,8 @@ export function isTricky(entry: Word): boolean {
  * Not a defect and not a reason to drop a word — `dog` and `car` are here and
  * are fine. It matters for exactly one kind of exercise: asking a child to
  * *tell two sounds apart*, where a merged pair makes the question unanswerable
- * for half the children who see it. A sheet that asks that can filter on this;
- * everything else can ignore it.
+ * for half the children who see it. Nothing in the shipped styles does that, so
+ * none of them asks `pickWords` for the `sameEverywhere` filter (§13).
  */
 export function variesByAccent(entry: Word): boolean {
   return wordSounds(entry).some((sound) => PHONEME_BY_ID.get(sound)?.varies);

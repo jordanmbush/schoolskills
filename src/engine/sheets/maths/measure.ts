@@ -1,8 +1,8 @@
 /**
  * Measurement, and converting between units.
  *
- * Everything the earlier families established holds unchanged. What is different
- * here is that a unit conversion has an exact right answer and *looks* like one
+ * The shared machinery is unchanged (§7, §11). What is different here is that a
+ * unit conversion has an exact right answer and *looks* like one
  * that doesn't: three kilometres is three thousand metres, not 2999.9999999996,
  * and a generator that multiplied by a float would print that. So every unit in
  * `units.ts` is a whole number of the smallest unit of its quantity, every
@@ -15,9 +15,7 @@
  * unit is what is drawn, and whichever direction the question reads, both sides
  * are exact by construction. That is what `range` counts.
  *
- * **Nothing crosses between the systems.** See the note in `units.ts`: a mile is
- * 1609.344 metres, and a child converting one into the other is doing an
- * approximate lesson that this sheet is not set at.
+ * **Nothing crosses between the systems** — `units.ts` has the reason.
  */
 import { between, mulberry32 } from "@/engine/random";
 
@@ -49,13 +47,8 @@ import { QUANTITIES, amountText, scaleOf, type Unit } from "./units";
    Declared, not measured (§4).                                              */
 
 /**
- * How tall a problem written along a line stands: two lines of the body type,
- * and the air a wrap puts between them.
- *
- * Two rather than one, because `24 fl oz = _ cup` with a ruled blank after it is
- * a wide sentence, and `.sheet__problem` wraps rather than overflowing — so the
- * second line is either inside the row the layout declared, or it is the bottom
- * of the page coming out of the printer on a second sheet.
+ * Two lines of the body type and the air a wrap puts between them: `24 fl oz =
+ * _ cup` with a ruled blank after it is a wide sentence.
  */
 const writtenRow = (fontPt: number): Mil => 2 * answerLine(fontPt) + WRAP_GAP;
 
@@ -216,13 +209,7 @@ const sign = (order: number): string =>
 const clamp = (value: number, low: number, high: number): number =>
   Math.max(low, Math.min(high, Math.floor(value)));
 
-/**
- * How many problems the paper holds, and how wide a column of them is.
- *
- * Arithmetic, not measurement, so `npm run test:unit` can answer "did it fit?"
- * without a browser — and so the same answer serves the catalog page built at
- * build time and the builder's preview (§4).
- */
+/** How many problems the paper holds, and how wide a column of them is (§4). */
 export function measureLayout(config: MeasureConfig): {
   box: Box;
   columns: number;
@@ -247,8 +234,7 @@ export function measureLayout(config: MeasureConfig): {
 /**
  * Every problem on the sheet, in the order they are printed.
  *
- * Exported because it is the whole of what a test has to check, and checking it
- * through the `Sheet` means unwrapping a block union to reach it.
+ * Exported because it is the whole of what a test has to check.
  */
 export function measureProblems(
   config: MeasureConfig,
@@ -273,10 +259,9 @@ export function measureProblems(
       config.style === "compare"
         ? drawCompare(config, quantity, rand)
         : drawConvert(config, quantity, rand);
-    // Not what was asked for, or already on the page. Either way the budget
-    // ticks down, and a pool that has run out ends the draw rather than
-    // repeating itself: grams and kilograms over one to three is six questions,
-    // and six is the honest answer to a request for twenty.
+    // A pool that has run out ends the draw rather than repeating itself:
+    // grams and kilograms over one to three is six questions, and six is the
+    // honest answer to a request for twenty.
     if (drawn === null || seen.has(drawn.key)) {
       misses += 1;
       continue;
@@ -318,12 +303,8 @@ const INSTRUCTION: Record<MeasureStyle, string> = {
 };
 
 /**
- * The header this sheet will actually print.
- *
- * A generated family names its own sheet, so `config.title` is an override and
- * is usually absent — which makes it the wrong thing to reserve space against.
- * Written once and read by both the layout and the build, so the two cannot
- * disagree about what is at the top of the page.
+ * The header this sheet will actually print, which is what the layout reserves
+ * space against — see the note in `arithmetic.ts`.
  */
 function headerOf(config: MeasureConfig): SheetOptions {
   return {
@@ -368,8 +349,6 @@ export function buildMeasureSheet(config: MeasureConfig, seed: number): Sheet {
       title: head.title ?? "",
       instructions: head.instructions,
       fields: head.fields,
-      // Out of what is actually on the page, not out of what was asked for: a
-      // sheet that says "/ 20" over eighteen problems is wrong twice.
       score: { outOf: items.length },
     },
     blocks: [{ kind: "problems", columns, items }],
@@ -383,9 +362,6 @@ export const MEASURE_SHEET: SheetSpec<MeasureConfig> = {
   label: "Measurement",
   world: SHEET_WORLD,
   build: buildMeasureSheet,
-  // The whole of the answer-key mechanism: every answer on the page was
-  // computed in whole units when the problem was built, so a key prints what is
-  // already there rather than converting a second time.
   key: (sheet) => ({
     ...sheet,
     answers: true,

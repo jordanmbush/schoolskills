@@ -2,11 +2,8 @@
  * Money.
  *
  * A two-place decimal with a symbol in front of it, which is why this family is
- * small: the values are the `Fixed` of `exact.ts` at two places, so £3.45 is 345
- * pence from the moment it is drawn to the moment the point is written into it,
- * and there is no arithmetic here that isn't whole-number arithmetic. A money
- * sheet whose key says $6.500000000000001 is the failure this design exists to
- * make impossible.
+ * small: the values are the `Fixed` of `exact.ts` at two places, and there is no
+ * arithmetic here that isn't whole-number arithmetic.
  *
  * **The currency is a switch, not a constant.** The same reason A4 is (§4): a
  * British child counting dollars has been set a question about a foreign
@@ -20,9 +17,9 @@
  * printed in Germany would want `5,00 €`, and that is a locale question rather
  * than a currency one — it belongs with the day a sheet is printed in German.
  *
- * **Word problems are not here.** "Ella buys two apples at 45c" is PRINT09's
- * templated set; this is the arithmetic underneath it, which a child has to be
- * able to do before the words are a help rather than a second obstacle.
+ * **Word problems are not here.** "Ella buys two apples at 45c" is
+ * `wordproblems.ts`; this is the arithmetic underneath it, which a child has to
+ * be able to do before the words are a help rather than a second obstacle.
  */
 import { between, mulberry32 } from "@/engine/random";
 
@@ -95,13 +92,8 @@ export const currencyOf = (config: MoneyConfig): CurrencySpec =>
 const STACK_EMS = 4.4;
 
 /**
- * How tall a problem written along a line stands: two lines of the body type,
- * and the air a wrap puts between them.
- *
- * Two rather than one, because `$13.47 + $8.06 =` with a ruled blank after it
- * is a wide sentence, and `.sheet__problem` wraps rather than overflowing — so
- * the second line is either inside the row the layout declared, or it is the
- * bottom of the page coming out of the printer on a second sheet.
+ * Two lines of the body type and the air a wrap puts between them: `$13.47 +
+ * $8.06 =` with a ruled blank after it is a wide sentence.
  */
 const writtenRow = (fontPt: number): Mil => 2 * answerLine(fontPt) + WRAP_GAP;
 
@@ -252,13 +244,7 @@ function rowHeight(config: MoneyConfig): Mil {
   return body + (config.workspace ? WORKSPACE : 0);
 }
 
-/**
- * How many problems the paper holds, and how wide a column of them is.
- *
- * Arithmetic, not measurement, so `npm run test:unit` can answer "did it fit?"
- * without a browser — and so the same answer serves the catalog page built at
- * build time and the builder's preview (§4).
- */
+/** How many problems the paper holds, and how wide a column of them is (§4). */
 export function moneyLayout(config: MoneyConfig): {
   box: Box;
   columns: number;
@@ -283,8 +269,7 @@ export function moneyLayout(config: MoneyConfig): {
 /**
  * Every problem on the sheet, in the order they are printed.
  *
- * Exported because it is the whole of what a test has to check, and checking it
- * through the `Sheet` means unwrapping a block union to reach it.
+ * Exported because it is the whole of what a test has to check.
  */
 export function moneyProblems(config: MoneyConfig, seed: number): Problem[] {
   const { perPage } = moneyLayout(config);
@@ -300,10 +285,9 @@ export function moneyProblems(config: MoneyConfig, seed: number): Problem[] {
   let misses = 0;
   while (problems.length < wanted && misses < MISS_BUDGET) {
     const drawn = drawProblem(config, rand);
-    // Not what was asked for, or already on the page. Either way the budget
-    // ticks down, and a pool that has run out ends the draw rather than
-    // repeating itself: amounts up to ten cents are nine problems, and nine is
-    // the honest answer to a request for twenty.
+    // A pool that has run out ends the draw rather than repeating itself:
+    // amounts up to ten cents are nine problems, and nine is the honest
+    // answer to a request for twenty.
     if (drawn === null || seen.has(drawn.key)) {
       misses += 1;
       continue;
@@ -350,12 +334,8 @@ function instructionOf(config: MoneyConfig): string {
 }
 
 /**
- * The header this sheet will actually print.
- *
- * A generated family names its own sheet, so `config.title` is an override and
- * is usually absent — which makes it the wrong thing to reserve space against.
- * Written once and read by both the layout and the build, so the two cannot
- * disagree about what is at the top of the page.
+ * The header this sheet will actually print, which is what the layout reserves
+ * space against — see the note in `arithmetic.ts`.
  */
 function headerOf(config: MoneyConfig): SheetOptions {
   return {
@@ -398,8 +378,6 @@ export function buildMoneySheet(config: MoneyConfig, seed: number): Sheet {
       title: head.title ?? "",
       instructions: head.instructions,
       fields: head.fields,
-      // Out of what is actually on the page, not out of what was asked for: a
-      // sheet that says "/ 20" over eighteen problems is wrong twice.
       score: { outOf: items.length },
     },
     blocks: [{ kind: "problems", columns, items }],
@@ -413,9 +391,6 @@ export const MONEY_SHEET: SheetSpec<MoneyConfig> = {
   label: "Money",
   world: SHEET_WORLD,
   build: buildMoneySheet,
-  // The whole of the answer-key mechanism: every answer on the page was
-  // computed in whole pence when the problem was built, so a key prints what is
-  // already there rather than working it out a second time.
   key: (sheet) => ({
     ...sheet,
     answers: true,

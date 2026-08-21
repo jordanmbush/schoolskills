@@ -1,10 +1,7 @@
 /**
- * Lined, ruled, graph, dot and isometric paper.
- *
- * The one family whose options are nothing but the ruling — so the panel is the
- * shared `RulingControls` and not a line more. Why the sizes are named by their
- * pitch, and why the midline, the descender space and the square appear only
- * where they mean something, is written once beside that control in `ruling.tsx`.
+ * Lined, ruled, graph, dot and isometric paper — the one family whose options
+ * are nothing but the ruling, so the panel is the shared `RulingControls` and
+ * not a line more. Why it asks what it asks is beside it in `ruling.tsx`.
  */
 import type { PaperConfig } from "@/engine/sheets/types";
 

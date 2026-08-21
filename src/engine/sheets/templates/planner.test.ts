@@ -28,22 +28,14 @@ import {
 /**
  * The week, and the one thing on this shelf that has a right answer.
  *
- * Four of the five sheets here are boxes, and a box cannot be incorrect. A
- * dated calendar can: a month whose first lands under the wrong weekday is a
- * sheet somebody plans a term around, and it is wrong in a way nobody checks —
- * you do not proofread a calendar, you read off it.
- *
- * **So the weekdays are verified by an independent path.** `weekday` is
- * Sakamoto's algorithm, chosen because it is integer arithmetic with no ambient
- * state; the suite checks it against the platform's own `Date`, which knows
- * nothing about the table in that function. A generator asserting its own
- * arithmetic agrees with itself whatever it does — the same reason the word
- * search's key is found by searching its grid.
+ * A dated calendar is wrong in a way nobody checks — you do not proofread a
+ * calendar, you read off it — so the weekdays are verified against the
+ * platform's own `Date`, which knows nothing about the table in `weekday`.
  *
  * Everything else below is geometry, held against `printedBlockBox`: the box
  * the header and footer that were *printed* left behind, rather than the one
- * the family reserved for, which is the only version a family can be caught
- * out by.
+ * the family reserved for, which is the only version a family can be caught out
+ * by.
  */
 
 const config = (over: Partial<PlannerConfig> = {}): PlannerConfig => ({

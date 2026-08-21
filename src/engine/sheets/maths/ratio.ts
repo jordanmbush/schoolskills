@@ -197,13 +197,7 @@ function drawRate(config: RatioConfig, rand: () => number): Drawn | null {
 const clamp = (value: number, low: number, high: number): number =>
   Math.max(low, Math.min(high, Math.floor(value)));
 
-/**
- * How many problems the paper holds, and how wide a column of them is.
- *
- * Arithmetic, not measurement, so `npm run test:unit` can answer "did it fit?"
- * without a browser — and so the same answer serves the catalog page built at
- * build time and the builder's preview (§4).
- */
+/** How many problems the paper holds, and how wide a column of them is (§4). */
 export function ratioLayout(config: RatioConfig): {
   box: Box;
   columns: number;
@@ -229,8 +223,7 @@ export function ratioLayout(config: RatioConfig): {
 /**
  * Every problem on the sheet, in the order they are printed.
  *
- * Exported because it is the whole of what a test has to check, and checking it
- * through the `Sheet` means unwrapping a block union to reach it.
+ * Exported because it is the whole of what a test has to check.
  */
 export function ratioProblems(config: RatioConfig, seed: number): Problem[] {
   const { perPage } = ratioLayout(config);
@@ -246,9 +239,6 @@ export function ratioProblems(config: RatioConfig, seed: number): Problem[] {
   let misses = 0;
   while (problems.length < wanted && misses < MISS_BUDGET) {
     const drawn = drawOne(config, rand);
-    // Not what was asked for, or already on the page. Either way the budget
-    // ticks down, and a pool that has run out ends the draw rather than
-    // repeating itself.
     if (drawn === null || seen.has(drawn.key)) {
       misses += 1;
       continue;
@@ -289,12 +279,8 @@ const titleOf = (config: RatioConfig): string =>
   TITLE[config.style] ?? TITLE.simplify;
 
 /**
- * The header this sheet will actually print.
- *
- * A generated family names its own sheet, so `config.title` is an override and
- * is usually absent — which makes it the wrong thing to reserve space against.
- * Written once and read by both the layout and the build, so the two cannot
- * disagree about what is at the top of the page.
+ * The header this sheet will actually print, which is what the layout reserves
+ * space against — see the note in `arithmetic.ts`.
  */
 function headerOf(config: RatioConfig): SheetOptions {
   return {
@@ -329,8 +315,6 @@ export function buildRatioSheet(config: RatioConfig, seed: number): Sheet {
       title: head.title ?? "",
       instructions: head.instructions,
       fields: head.fields,
-      // Out of what is actually on the page, not out of what was asked for: a
-      // sheet that says "/ 20" over eighteen problems is wrong twice.
       score: { outOf: items.length },
     },
     blocks: [{ kind: "problems", columns, items }],
@@ -344,9 +328,6 @@ export const RATIO_SHEET: SheetSpec<RatioConfig> = {
   label: "Ratio and rate",
   world: SHEET_WORLD,
   build: buildRatioSheet,
-  // The whole of the answer-key mechanism: every pair on the page was built by
-  // scaling a pair that was already in its simplest form, so a key prints what
-  // is already there rather than reducing anything a second time.
   key: (sheet) => ({
     ...sheet,
     answers: true,

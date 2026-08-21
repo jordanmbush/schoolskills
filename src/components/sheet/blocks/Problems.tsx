@@ -12,10 +12,8 @@ import type { BlockProps } from "./block";
 /**
  * Numbered problems in columns.
  *
- * Real text in a real list, not a drawing — which is the half of §2 that the
- * SVG blocks can't do: the problems on a multiplication sheet are content a
- * search engine reads, a screen reader announces and a parent can select and
- * copy. It is also the block that decides whether a print preview is right the
+ * Real text in a real list, not a drawing — the half of §2 the SVG blocks can't
+ * do. It is also the block that decides whether a print preview is right the
  * first time, so `.sheet__problem` carries `break-inside: avoid` (§10).
  *
  * The answer prints when the sheet says so and is blank when it doesn't. Both
@@ -53,10 +51,9 @@ export function Problems({ block, metrics }: BlockProps<"problems">) {
           {asked(problem) && problem.clock && (
             <ClockFaceView face={problem.clock} answers={metrics.answers} />
           )}
-          {/* Three drawings and one rule: a problem is set the way the data
-              says it is set. A stack when there is a stack, a bracket when
-              there is a bracket, and a sentence otherwise — no flag beside the
-              data for either of them to disagree with. */}
+          {/* A problem is set the way the data says it is set: a stack when
+              there is a stack, a bracket when there is a bracket, a sentence
+              otherwise — no flag beside the data to disagree with. */}
           {problem.bracket ? (
             <Bracket problem={problem} answers={metrics.answers} />
           ) : problem.operands ? (

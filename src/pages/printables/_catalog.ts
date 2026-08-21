@@ -1,17 +1,9 @@
 /**
  * The paper the Print Shop has set, and the words that go round it.
  *
- * Underscored so Astro leaves it out of the routing table: it is data two
- * pages share — `[...slug].astro`, which prerenders one sheet per entry, and
- * `index.astro`, which lists them — rather than a route of its own.
- *
- * **The slugs are curated; the sheets are generated.** §8 is explicit about
- * why: twelve times-table pages work because there are twelve of them and each
- * has something true on it, and five thousand permutations of a config is a
- * doorway-page farm. So the engine can rule paper any way §5 describes, and
- * this file names the fifteen a parent actually searches for, each with a note
- * that is true of that ruling and no other. The rest arrive with the builder,
- * which is where choosing belongs.
+ * **The slugs are curated; the sheets are generated** (§8). The engine can rule
+ * paper any way §5 describes; this file names the ones a parent searches for,
+ * and the rest arrive with the builder.
  *
  * The line that sorts a page from a permutation is whether it is *different
  * paper*. A quarter-inch square and a centimetre square are two different
@@ -19,10 +11,8 @@
  * fifth of an inch are the same square to within three thousandths of an inch,
  * so one of them is a page and the other is a sentence on it.
  *
- * Every entry is printed on both stocks. A sheet is only correct on the paper
- * it was measured for — a Letter sheet sent to an A4 printer is scaled to fit,
- * and a scaled ⅝ rule is not a ⅝ rule — and `@page` is a document rule, so the
- * two cannot share a page. Hence a route each.
+ * Every entry is printed on both stocks, and each stock is a route of its own,
+ * because a ruling *is* a measurement (§8).
  */
 import { DEFAULT_FONT_PT, GRID_PITCHES } from "@/engine/sheets/paper";
 import { encodeSharedSheet } from "@/engine/sheets/share";
@@ -282,8 +272,7 @@ export const PAPER_SHEETS: PaperSheet[] = [
      which is the paper an American classroom is stocked with and no use at all
      for work in centimetres: a rectangle 7cm by 4cm drawn on quarter-inch
      squares has to be measured with a ruler rather than counted, which is most
-     of what squared paper is for. `GRID_PITCHES` already held these three; what
-     was missing was a page a parent could find them on.                      */
+     of what squared paper is for.                                            */
   {
     slug: "graph-paper-1-cm",
     name: "Graph paper — 1 cm",
@@ -377,18 +366,15 @@ export const GROUPS: Array<{ id: PaperGroup; label: string; blurb: string }> = [
 ];
 
 /* ── The plumbing every shelf needs ────────────────────────────────────────
-   Three catalogs live under `/printables` — this one, `_handwriting.ts` and
-   `_cursive.ts` — and each is rightly its own file, because what a shelf *is*
-   is its slugs, its configs and its prose, and none of that is shared. What is
-   shared is the four questions every one of them answers identically: what
-   paper, which route, which URL, and which link opens the bench on it. Those
-   were copied twice before they were lifted here, and a copied route helper is
-   the kind that gets fixed in one file and left wrong in the other two.
+   What a shelf *is* is its slugs, its configs and its prose, so each catalog is
+   its own file. What every one of them answers identically is four questions —
+   what paper, which route, which URL, and which link opens the bench — and a
+   copied route helper is the kind that gets fixed in one file and left wrong in
+   the others.
 
-   Generic over `{ slug, config }` rather than over a sheet type, because that
-   is all any of them touches: the entry shape stays each catalog's own, and
-   each keeps a one-line named wrapper so its pages read in its own vocabulary
-   rather than in this file's.                                              */
+   Generic over `{ slug, config }` rather than over a sheet type, because that is
+   all any of them touches: the entry shape stays each catalog's own, and each
+   keeps a named wrapper so its pages read in its own vocabulary.           */
 
 /** Portrait, half-inch margins — the stock is the only thing that varies. */
 export const paperOf = (size: PaperSize): Paper => ({
@@ -398,11 +384,9 @@ export const paperOf = (size: PaperSize): Paper => ({
 });
 
 /**
- * Printed blank, always, and the reason there is no third field.
- *
- * A worksheet asks for a name because a teacher has thirty of them to hand
- * back. Nothing here holds one (§1): these are two ruled lines on paper and
- * there is nowhere in a config to put a value for either.
+ * Printed blank, always, and the reason there is no third field: these are two
+ * ruled lines on paper, and there is nowhere in a config to put a value for
+ * either (§1).
  */
 export const SHEET_FIELDS: HeaderField[] = ["name", "date"];
 
@@ -417,23 +401,17 @@ export const stockHref = (base: string, slug: string, stock: Stock): string =>
 /**
  * The builder, opened on a config.
  *
- * §14: the config lives in the fragment, so "change what is on it" is an
- * ordinary link on a static site rather than a lookup on a server that isn't
- * there. Whichever stock the config carries goes with it, so a parent who came
- * from the A4 page gets the A4 sheet on the bench rather than a Letter one to
- * set again.
+ * The config lives in the fragment (§14), so "change what is on it" is an
+ * ordinary link on a static site. Whichever stock the config carries goes with
+ * it, so a parent who came from the A4 page gets the A4 sheet on the bench.
  */
 export const benchHref = (config: SheetConfig, seed: number): string =>
   `/printables/make#s=${encodeSharedSheet({ config, seed })}`;
 
 /**
- * The shelf, grouped — the shape every hub and every row of neighbours lists
- * it in.
- *
- * Written once because the two would otherwise have to be kept in step by
- * hand, and the failure would be silent: a sheet added to the data and shown
- * on one page but not the other still builds, still deploys, and still looks
- * right.
+ * The shelf, grouped — the shape every hub and every row of neighbours lists it
+ * in. Written once because the failure to keep two copies in step is silent: a
+ * sheet shown on one page but not the other still builds and still looks right.
  */
 export function shelve<Id extends string, Sheet extends { group: Id }, Meta>(
   groups: Array<Meta & { id: Id }>,
@@ -464,9 +442,7 @@ export function shelf(): Array<{
  * The config the page builds its sheet from.
  *
  * No title on the paper: a page of lined paper with the word "Lined paper"
- * printed at the top of it is a worse sheet of lined paper. What it does carry
- * is the name and date line — printed blank, always, because that is the one
- * field this site refuses to hold (§1).
+ * printed at the top of it is a worse sheet of lined paper.
  */
 export function paperConfig(sheet: PaperSheet, size: PaperSize): PaperConfig {
   return {

@@ -5,17 +5,12 @@ import { CHART_SHEETS, chartShelf, pathFor } from "../_charts";
 import HubLinks from "../_HubLinks.astro";
 
 /**
- * The charts-and-grids hub — a peer of the other eight shelves, which are
- * listed in `_shelves.ts` and printed at the foot of this page from it. They
- * were named here one by one until the paperwork shelf landed and this sentence
- * was quietly wrong about how many there are; a registry cannot go stale that
- * way, so it is the registry that says who the peers are.
+ * The charts-and-grids hub. Its peers are named from `_shelves.ts` rather than
+ * written out, so the row at the foot of the page cannot go stale.
  *
- * A listing rather than a sheet, like the other hubs, and that is the right
- * split: nobody searches for "printable list of maths charts". What it is for
- * is the two jobs a hub does — giving a parent who arrived on
- * `/printables/charts/hundred-chart` somewhere to go next, and giving the eight
- * pages a crawlable parent that says what they have in common.
+ * A listing rather than a sheet, like the other hubs: nobody searches for
+ * "printable list of maths charts". It gives a parent who arrived on one chart
+ * somewhere to go next, and gives the pages under it a crawlable parent.
  *
  * What they have in common is worth a section of its own here, because it is
  * the argument for the whole shelf: a reference sheet is the one kind of
@@ -72,8 +67,7 @@ const groups = chartShelf();
   {
     /*
       What exists, first — before the page explains itself. Somebody who came
-      looking for a hundred chart should be one link from a hundred chart, and
-      the argument about geometry reads better after you have seen one.
+      looking for a hundred chart should be one link from a hundred chart.
     */
   }
   <section class="band band--tight wrap">

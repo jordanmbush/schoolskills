@@ -1,48 +1,21 @@
 /**
  * The cursive sheets the Print Shop has set, and the words that go round them.
  *
- * Underscored so Astro leaves it out of the routing table: it is data two pages
- * share — `cursive/[...slug].astro`, which prerenders one sheet per entry, and
- * `cursive/index.astro`, which is the subject hub.
- *
- * **A catalog of its own rather than a fourth group under handwriting**, for
- * the reason the maths, paper and handwriting catalogs are three files and not
- * one: what a page is *for* is the query somebody typed, and nobody who wants
- * cursive types "handwriting". They are also two different progressions with
- * one shared spine — a child arrives at cursive already able to print, and
- * starts again at the letter — so a shelf that interleaved them would be a
- * shelf where the sheet after the alphabet is sometimes the next step and
- * sometimes the same step in a different hand. The two hubs link to each other
- * instead, which is what a parent moving between them actually needs.
+ * **A catalog of its own rather than a fourth group under handwriting.** What a
+ * page is *for* is the query somebody typed, and nobody who wants cursive types
+ * "handwriting". They are also two progressions rather than one — a child
+ * arrives at cursive already able to print, and starts again at the letter — so
+ * an interleaved shelf would be one where the sheet after the alphabet is
+ * sometimes the next step and sometimes the same step in another hand. The two
+ * hubs link to each other instead.
  *
  * **The engine has no cursive family, and doesn't need one.** A cursive sheet
- * is a handwriting sheet with a joining face on it (`SheetOptions.font`), which
- * is the whole of the difference for letters, words and passages — the same
- * rows, the same progression, the same ruling arithmetic. The one thing joined
- * writing adds is a set print has no use for, and that is the `joins` style:
- * five families of join, taught in the order every scheme teaches them
- * (`engine/sheets/writing/joins.ts`), plus the pairs where a model lifts the
- * pencil.
+ * is a handwriting sheet with a joining face on it, which is the whole of the
+ * difference for letters, words and passages. The one thing joined writing adds
+ * is the `joins` style (§6).
  *
- * **Two stocks, as with paper and handwriting.** A ⅝ rule sent to a printer
- * loaded with A4 is scaled to fit, and a scaled ⅝ rule is not a ⅝ rule.
- *
- * **The data is this file's; the plumbing is not.** Which paper, which route,
- * which URL and which link opens the bench are the same four answers on all
- * three shelves, so they live once in `_catalog.ts` and this file keeps a named
- * wrapper apiece. What stays here is what is genuinely only true of cursive —
- * the slugs, the configs, the prose, and the one link the print shelf has no
- * use for, `builderHref`'s `font`. The route *page* is still its own file
- * rather than a shared template: four of its sections are prose about joined
- * writing specifically, and those sections are the reason the page exists as a
- * crawlable answer at all (§8).
- *
- * **One model on the shelf, three in the builder.** Every sheet here is set in
- * the looped traditional hand, because a shelf whose pages each used a
- * different model would be a shelf that looks inconsistent to the one reader
- * who can tell. Which model a child is being taught is a real question with
- * three real answers, and it is asked where a question belongs — on the bench,
- * where the hub sends anyone whose school teaches a different one.
+ * **Two stocks, two routes, as with paper and handwriting**: the ruling on
+ * these sheets is a measurement (§8).
  */
 import { DEFAULT_FONT_PT } from "@/engine/sheets/paper";
 import type {
@@ -95,34 +68,33 @@ export type CursiveSheet = {
 /**
  * The seed every cursive sheet is built from, and it never moves.
  *
- * Nothing in this family is drawn at random — an alphabet is an alphabet, and
- * the joins are the joins — so the seed decides nothing about the page and only
- * prints in the footer. It is still fixed and still carried into the builder
- * link, because §7's promise is about the whole shop: the number on the paper
- * is what gets you the identical sheet back, whichever family printed it.
+ * Nothing here is drawn at random — an alphabet is an alphabet — so the seed
+ * decides nothing and only prints in the footer. It is still fixed and still
+ * carried into the builder link, because §7's promise is about the whole shop:
+ * the number on the paper gets you the identical sheet back.
  */
 export const CURSIVE_SEED = 1;
 
 /**
  * The model every sheet on this shelf is set in: the looped traditional hand.
  *
- * Written down once, here, rather than typed into seven configs — the point of
- * a shelf in one model is that it is one model, and seven chances to say so is
- * seven chances to say something else. The other two are a choice in the
- * builder, which is where choosing belongs (§8).
+ * One model on the shelf, three in the builder. A shelf whose pages each used a
+ * different model looks inconsistent to the one reader who can tell, and which
+ * model a school teaches is a question, which belongs on the bench (§8).
+ * Written down once here, because seven chances to say so is seven chances to
+ * differ.
  */
 const MODEL: SheetFont = "cursive";
 
 /**
  * The seven days, which is what a first cursive word list should be.
  *
- * Not the sight words the print shelf uses, and the difference is the point: a
- * child meeting cursive can already read: what they cannot yet do is write a
- * whole word without lifting the pencil. The days are the words they will write
- * most often for the rest of their schooling — at the top of a page, next to
- * the date — and between them they carry a capital, a `d` after an `n`, the
- * `ur` of Thursday and the `ed` of Wednesday, which are three of the joins the
- * sheet before this one teaches.
+ * Not the sight words the print shelf uses: a child meeting cursive can already
+ * read, and what they cannot yet do is write a whole word without lifting the
+ * pencil. The days are the words they will write most often for the rest of
+ * their schooling, and between them they carry a capital, a `d` after an `n`,
+ * the `ur` of Thursday and the `ed` of Wednesday — three of the joins the sheet
+ * before this one teaches.
  */
 const DAYS = [
   "Monday",
@@ -137,11 +109,10 @@ const DAYS = [
 /**
  * Four sentences chosen for the joins in them rather than for what they say.
  *
- * Short enough that none of them wraps on either stock — a sentence broken over
- * two lines is still correct, but the point of the sheet is a whole line
- * written without stopping — and between them they carry every family on the
- * joins sheet: `wh` and `ow` and `ol`, `ch` and `th`, `ea` and `oa`, and a
- * break letter in the middle of a word where it is hardest to remember.
+ * Short enough that none of them wraps on either stock, because the point of
+ * the sheet is a whole line written without stopping. Between them they carry
+ * every family on the joins sheet, and a break letter in the middle of a word
+ * where it is hardest to remember.
  */
 const SENTENCES = [
   "We watched the owl fly over the lake.",
@@ -155,10 +126,10 @@ const SENTENCES = [
  * twice over by age, and the nonsense poem most English-speaking children meet
  * before they are eight.
  *
- * A different poem from the one on the print copywork sheet on purpose. The two
- * pages are otherwise the same exercise a year apart, and a child who did that
- * sheet in Year 2 should not be handed the same four lines back in Year 4 with
- * the letters joined up.
+ * A different poem from the print copywork sheet on purpose: the two pages are
+ * otherwise the same exercise a year apart, and a child who did that one in
+ * Year 2 should not be handed the same four lines back with the letters joined
+ * up.
  */
 const OWL = [
   "The Owl and the Pussy-cat went to sea",
@@ -412,11 +383,9 @@ export const CURSIVE_GROUPS: Array<{
  * The three models, and the sheet each one is best shown on.
  *
  * On the hub rather than in the shelf, because a model is not another
- * worksheet: it is the same worksheet in the hand a particular school teaches,
- * and a parent who needs a different one needs it on every sheet rather than on
- * one. `href` opens the alphabet sheet on the bench already set to that model,
- * which is the shortest route from "that isn't how we write our b" to a sheet
- * that is.
+ * worksheet: a parent who needs a different one needs it on every sheet rather
+ * than on one. `href` opens the alphabet sheet on the bench already set to that
+ * model.
  */
 export const CURSIVE_MODELS: Array<{
   font: SheetFont;

@@ -1,15 +1,11 @@
 /**
- * The forms: which one, and how much room to answer in.
- *
- * The shortest panel in the directory that is not empty, and it is short for the
- * reason the shelf exists: a blank form has no content to configure. What is
- * left is the choice of headings, how generous the lines are, and — on the two
- * styles that are lists — how many rows.
+ * The forms: which one, and how much room to answer in. Short for the reason the
+ * shelf exists — a blank form has no content to configure.
  *
  * The prompt box is the one control here that changes what is *on* the page, and
  * it is deliberately allowed to be empty: leaving it blank is how a parent asks
- * for one out of the bank, which is drawn by the seed, so "give me another"
- * is the Another Sheet button rather than a second control (§7).
+ * for one out of the bank, which is drawn by the seed, so "give me another" is
+ * the Another Sheet button rather than a second control (§7).
  */
 import { Field, FieldSet, NumberStepper, TextArea } from "@/components/ui/kit";
 import {

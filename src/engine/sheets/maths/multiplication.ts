@@ -1,11 +1,8 @@
 /**
  * Multiplication and division.
  *
- * The tables The Grid already drills, on paper. Everything the arithmetic
- * family established holds here unchanged — the answers are computed when the
- * problem is built and the key only decides to print them, the page comes out
- * of `(config, seed)` and nothing else, and a problem is drawn and rejected
- * rather than enumerated — so this file is about the three things that are
+ * The tables The Grid already drills, on paper. The shared machinery is
+ * unchanged (§7, §11), so this file is about the three things that are
  * genuinely different.
  *
  * **A table is a pool, not a range.** "The seven times table" is thirteen
@@ -260,10 +257,8 @@ function problemOf(
 ): Problem {
   const sign = SIGN[fact.operation];
   const [left, right, result] = sentenceOf(fact);
-  // The race's own vocabulary for a fact, so a sheet printed from the record
-  // book's trouble facts (§14) names the same things the race does — the table
-  // that was picked, then what it was paired with, whichever way the sheet
-  // happens to ask it.
+  // The race's own vocabulary for a fact (§14), whichever way the sheet happens
+  // to ask it.
   const factId = arithmeticFactId(fact.table, fact.factor);
 
   if (config.style === "missing") {
@@ -333,13 +328,7 @@ function rowHeight(config: MultiplicationConfig): Mil {
   return points(config.fontPt * ems) + (config.workspace ? WORKSPACE : 0);
 }
 
-/**
- * How many problems the paper holds, and how wide a column of them is.
- *
- * Arithmetic, not measurement, so `npm run test:unit` can answer "did it fit?"
- * without a browser — and so the same answer serves the catalog page built at
- * build time and the builder's preview (§4).
- */
+/** How many problems the paper holds, and how wide a column of them is (§4). */
 export function multiplicationLayout(config: MultiplicationConfig): {
   box: Box;
   columns: number;
@@ -365,8 +354,7 @@ export function multiplicationLayout(config: MultiplicationConfig): {
 /**
  * Every problem on the sheet, in the order they are printed.
  *
- * Exported because it is the whole of what a test has to check, and checking it
- * through the `Sheet` means unwrapping a block union to reach it. A grid has
+ * Exported because it is the whole of what a test has to check. A grid has
  * none — it is one block with the answers inside it — so this is empty there.
  */
 export function multiplicationProblems(
@@ -386,10 +374,9 @@ export function multiplicationProblems(
   const problems: Problem[] = [];
   const extras = config.workspace ? { workspace: WORKSPACE } : {};
 
-  // Named facts are printed, not drawn. The list arrives ranked worst-first and
-  // already folded onto one entry per fact, so there is nothing left to shuffle
-  // or reject — and it runs out where it runs out, exactly as the drawn pool
-  // does: six missed facts are six problems, not the same six twice.
+  // The list arrives ranked worst-first and already folded onto one entry per
+  // fact, so there is nothing left to shuffle or reject — and it runs out where
+  // it runs out: six missed facts are six problems, not the same six twice.
   const named = namedFacts(config);
   if (named.length > 0) {
     for (const [table, factor] of named.slice(0, wanted)) {
@@ -580,12 +567,8 @@ function instructionOf(config: MultiplicationConfig): string {
 }
 
 /**
- * The header this sheet will actually print.
- *
- * A generated family names its own sheet, so `config.title` is an override and
- * is usually absent — which makes it the wrong thing to reserve space against.
- * Written once and read by both the layout and the build, so the two cannot
- * disagree about what is at the top of the page.
+ * The header this sheet will actually print, which is what the layout reserves
+ * space against — see the note in `arithmetic.ts`.
  */
 function headerOf(config: MultiplicationConfig): SheetOptions {
   return {
@@ -668,8 +651,6 @@ export function buildMultiplicationSheet(
       title: head.title ?? "",
       instructions: head.instructions,
       fields: head.fields,
-      // Out of what is actually on the page, not out of what was asked for: a
-      // sheet that says "/ 20" over eighteen problems is wrong twice.
       score: { outOf },
     },
     blocks,
@@ -683,10 +664,6 @@ export const MULTIPLICATION_SHEET: SheetSpec<MultiplicationConfig> = {
   label: "Multiplication and division",
   world: SHEET_WORLD,
   build: buildMultiplicationSheet,
-  // The whole of the answer-key mechanism: every answer on the page was
-  // computed when the problem was built, so a key prints what is already there
-  // rather than generating it a second time and risking a different answer to
-  // the same question.
   key: (sheet) => ({
     ...sheet,
     answers: true,

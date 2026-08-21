@@ -3,12 +3,11 @@
  *
  * Built from `listSheets()` rather than from a list here, so a family added to
  * the engine's registry appears in the picker without anybody remembering to
- * come and say so — the same registry the catalog, the builder and a saved
- * sheet all read.
+ * come and say so.
  *
- * The line underneath is `describeSheet(config)`: the engine's own one-line
- * account of what is currently set, which is also what a saved sheet is named
- * after when a parent doesn't name it. One sentence, written once.
+ * The line underneath is `describeSheet(config)`, which is also what a saved
+ * sheet is named after when a parent doesn't name it — one sentence, written
+ * once.
  */
 import { describeSheet, listSheets } from "@/engine/sheets";
 import type { SheetConfig } from "@/engine/sheets/types";

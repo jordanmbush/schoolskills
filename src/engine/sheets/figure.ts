@@ -2,11 +2,10 @@
  * Shapes, as points.
  *
  * A geometry sheet is the first family whose *question* is a drawing with
- * numbers on it, so the drawing has to be made where the numbers are — in the
- * engine, as data — and the renderer's whole job is to put ink on the points it
- * is handed. That is the same bargain `fractionart.ts` and `numberline.ts`
- * strike, for the same two reasons: a shape a browser worked out is a shape no
- * unit test can check, and a row is reserved (§4) before anything is drawn.
+ * numbers on it, so the drawing is made where the numbers are — in the engine,
+ * as data — and the renderer's whole job is to put ink on the points it is
+ * handed. A shape a browser worked out is a shape no unit test can check, and a
+ * row is reserved (§4) before anything is drawn.
  *
  * ── Proportion, not life size ──────────────────────────────────────────────
  * A ⅝ rule prints at ⅝ of an inch or it is wrong, and a clock dial prints at an

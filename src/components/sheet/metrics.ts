@@ -1,11 +1,11 @@
 /**
  * What a block renderer is allowed to know about the page it is on.
  *
- * A block is handed this and its own data, and nothing else. It is deliberately
- * three facts rather than the whole `Sheet`: a renderer that could read the
- * header would start deciding things the family already decided, and the
- * declared-size bargain in `layout.ts` only holds while the view honours a
- * layout instead of discovering one.
+ * A block is handed this and its own data, and nothing else. Four facts rather
+ * than the whole `Sheet`: a renderer that could read the header would start
+ * deciding things the family already decided, and the declared-size bargain in
+ * `layout.ts` only holds while the view honours a layout instead of
+ * discovering one.
  */
 import type { Box } from "@/engine/sheets/layout";
 import type { SheetFont } from "@/engine/sheets/types";
@@ -24,11 +24,10 @@ export type SheetMetrics = {
    * The face the sheet is set in — the id, never a font stack, which stays in
    * `sheet.css` where it belongs.
    *
-   * A fourth fact rather than a third because a traced letterform is sized off
-   * the face's own proportions and not off `fontPt`: the tallest ascender is a
-   * whole em of Playwrite and 0.79 of an em of Andika, so one writing space is
-   * two different type sizes, and a renderer that couldn't see the face would
-   * draw one of them through the top line (`faces.ts`).
+   * Here at all because a traced letterform is sized off the face's own
+   * proportions rather than off `fontPt` (§6, `faces.ts`): one writing space is
+   * a different type size in each face, and a renderer that couldn't see the
+   * face would draw some of them through the top line.
    *
    * Absent is the print face, exactly as it is on the `Sheet` this came from —
    * carried through rather than resolved here, so there is one place that

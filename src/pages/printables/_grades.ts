@@ -2,23 +2,11 @@
  * The school years the Print Shop is browsable by, and how a sheet gets onto
  * one of them.
  *
- * Underscored so Astro leaves it out of the routing table: it is data two pages
- * share — `grade/[grade].astro`, which prerenders one hub per year, and
- * `grade/index.astro`, which lists them.
- *
- * **No sheet on this site is labelled “Grade 3”, and none is going to be.**
- * Every catalog entry states the ages it was drawn for, on its own page, in the
- * shape “Ages 8–11” — a judgement made once, beside the sheet, by whoever chose
- * the numbers that go on it. A grade page collects the sheets whose stated ages
- * reach the years a child is in that grade, and says so out loud. That is the
- * whole mechanism, and it is deliberately the weakest claim that is still
- * useful: a grade-level label invented by a worksheet site is a guess dressed
- * up as a standard, and the parent reading it can already see their own child.
- *
- * The consequence is that the same sheet appears on two or three of these
- * pages, which is correct rather than sloppy. A sheet for nine to twelve
- * belongs to the fourth-grader and the seventh-grader both, and pretending
- * otherwise would mean withholding it from one of them.
+ * **No sheet on this site is labelled “Grade 3”, and none is going to be.** A
+ * grade is read off the ages a catalog entry already states, never written onto
+ * a sheet (§8), so nothing here is a judgement — it parses that string and tests
+ * for overlap. The same sheet lands on two or three of these pages, which is
+ * correct rather than sloppy.
  */
 import { SHELVES, type Shelf, type ShelfSheet } from "./_shelves";
 
@@ -28,11 +16,9 @@ export type Grade = {
   /** How the year is named in a heading, and where a page addresses it. */
   label: string;
   /**
-   * The same year inside a sentence, where the capital would be wrong.
-   *
-   * Written out rather than lower-cased from `label`: "pre-k" is not how
-   * anybody writes Pre-K, and it is the one of the ten that would break the
-   * rule the other nine follow.
+   * The same year inside a sentence, where the capital would be wrong. Written
+   * out rather than lower-cased from `label`, because "pre-k" is not how
+   * anybody writes Pre-K.
    */
   phrase: string;
   /** How it is labelled in a row of the ten. A few characters. */
@@ -42,11 +28,10 @@ export type Grade = {
   /** The query this page exists to answer, in the words a parent types. */
   keyword: string;
   /**
-   * The ages most children are during this year, inclusive at both ends.
-   *
-   * Two of them, not one: a first-grader is six in the autumn and seven by the
-   * spring, and a shelf that only reached one of those would drop half the
-   * sheets a parent needs in the second half of the year.
+   * The ages most children are during this year, inclusive at both ends. Two of
+   * them, not one: a first-grader is six in the autumn and seven by the spring,
+   * and a shelf reaching only one of those would drop half the sheets a parent
+   * needs in the second half of the year.
    */
   ages: [number, number];
   /** The lead paragraph: what changes at this age. */
@@ -57,21 +42,17 @@ export type Grade = {
    * Three sheets worth starting with, by route, and why this year.
    *
    * A route rather than a name, so the name is read back out of the catalog
-   * that owns it and cannot drift from it. `_grades.test.ts` holds every one of
-   * these to two things: that it is a sheet that exists, and that it is a sheet
-   * this year's ages actually reach — the second being the way a hand-written
+   * that owns it. `_grades.test.ts` holds each one to being a sheet that exists
+   * *and* a sheet this year's ages reach — the second being how a
    * recommendation goes quietly wrong when a catalog entry is re-aged.
    */
   landmarks: Array<{ href: string; why: string }>;
 };
 
 /**
- * Pre-K through 8th, at the ages an American school puts them.
- *
- * Ten pages, and the bound is the same one §8 puts on every other shelf here:
- * these are the years a parent types into a search box, and the twelve-way
- * cross with subject and difficulty that would follow from generating more is
- * the doorway-page farm that section exists to forbid.
+ * Pre-K through 8th, at the ages an American school puts them. Ten pages, and
+ * the bound is §8's: these are the years a parent types into a search box, and
+ * crossing them with subject and difficulty is the doorway farm it forbids.
  */
 export const GRADES: Grade[] = [
   {
@@ -381,11 +362,9 @@ export function ageBand(ages: string): [number, number] {
 /**
  * Whether a sheet's stated ages reach any part of this year.
  *
- * Exported because the search index answers the same question about the same
- * sheets, and a second overlap test written in the file that builds the index
- * is how a filter comes to disagree with the page it filters — the search would
- * offer a sheet for third grade that the third-grade hub doesn't list, and
- * neither would be wrong about anything except each other.
+ * Exported because the search index asks the same question of the same sheets,
+ * and a second overlap test written there is how a filter comes to disagree
+ * with the page it filters — neither wrong about anything except each other.
  */
 export const reaches = (grade: Grade, sheet: ShelfSheet): boolean => {
   const [from, to] = ageBand(sheet.ages);
@@ -393,11 +372,9 @@ export const reaches = (grade: Grade, sheet: ShelfSheet): boolean => {
 };
 
 /**
- * Every shelf, cut down to what this year's ages reach.
- *
- * A shelf with nothing left is dropped rather than printed empty. That is the
- * honest rendering of the eighth-grade page — five of the ten shelves end
- * before thirteen — and an empty heading would read as a missing link.
+ * Every shelf, cut down to what this year's ages reach. A shelf with nothing
+ * left is dropped rather than printed empty, which is the honest rendering of
+ * the eighth-grade page — an empty heading would read as a missing link.
  */
 export function shelvesForGrade(grade: Grade): Shelf[] {
   return SHELVES.map((shelf) => ({

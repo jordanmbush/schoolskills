@@ -1,27 +1,14 @@
 /**
- * Decimals and percents.
+ * Decimals and percents — the same machinery as every family before it (§7,
+ * §11), over numbers that are famously easy to get subtly wrong.
  *
- * The same machinery as every family before it — answers computed when the
- * problem is built, the page a function of `(config, seed)`, problems drawn and
- * rejected rather than enumerated — over numbers that are famously easy to get
- * subtly wrong.
- *
- * **Nothing here is ever a float.** `0.1 + 0.2` is 0.30000000000000004 in the
- * language this is written in, and that answer would print. So a value is a
- * whole number of tenths, hundredths or thousandths from the moment it is drawn
- * to the moment `fixedText` writes the point into it, and the arithmetic is
- * whole-number arithmetic. `maths/exact.ts` holds the type and the reason.
- *
- * **Multiplying is by a whole number.** `0.25 × 0.4` has fewer places than
- * either number that made it and `2.5 × 2.5` has more, so a sheet set at two
- * places would quietly print answers at four. Three lots of 1.25 is the
- * question a child is actually set at this stage, and it keeps the promise the
- * config makes.
+ * **Nothing here is ever a float**, and a decimal is only ever multiplied by a
+ * whole number. `maths/exact.ts` holds both shapes and the reasons.
  *
  * **A percent answer is a whole number, by construction.** 15% of 80 is 12, and
- * 15% of 81 is 12.15 — a different lesson, and one that belongs on a money
- * sheet where two places are the point. So the draw rejects any pair that
- * doesn't come out whole rather than rounding one that doesn't.
+ * 15% of 81 is 12.15 — a different lesson, and one that belongs on a money sheet
+ * where two places are the point. So the amount is walked in steps that keep the
+ * answer whole rather than rounded back to one that isn't.
  */
 import { between, mulberry32 } from "@/engine/random";
 
@@ -64,15 +51,8 @@ import {
 const STACK_EMS = 4.4;
 
 /**
- * How tall a problem written along a line stands: two lines of the body type,
- * and the air a wrap puts between them.
- *
- * Two rather than one, because `13.47 + 8.06 =` with a ruled blank after it is
- * a wide sentence, and `.sheet__problem` wraps rather than overflowing — so the
- * second line is either inside the row the layout declared, or it is the bottom
- * of the page coming out of the printer on a second sheet. Reserving for the
- * wrap is the only version of this a page can be laid out from without
- * measuring text.
+ * Two lines of the body type and the air a wrap puts between them: `13.47 +
+ * 8.06 =` with a ruled blank after it is a wide sentence.
  */
 const writtenRow = (fontPt: number): Mil => 2 * answerLine(fontPt) + WRAP_GAP;
 
@@ -366,13 +346,7 @@ function rowHeight(config: DecimalConfig): Mil {
   return body + (config.workspace ? WORKSPACE : 0);
 }
 
-/**
- * How many problems the paper holds, and how wide a column of them is.
- *
- * Arithmetic, not measurement, so `npm run test:unit` can answer "did it fit?"
- * without a browser — and so the same answer serves the catalog page built at
- * build time and the builder's preview (§4).
- */
+/** How many problems the paper holds, and how wide a column of them is (§4). */
 export function decimalLayout(config: DecimalConfig): {
   box: Box;
   columns: number;
@@ -397,8 +371,7 @@ export function decimalLayout(config: DecimalConfig): {
 /**
  * Every problem on the sheet, in the order they are printed.
  *
- * Exported because it is the whole of what a test has to check, and checking it
- * through the `Sheet` means unwrapping a block union to reach it.
+ * Exported because it is the whole of what a test has to check.
  */
 export function decimalProblems(
   config: DecimalConfig,
@@ -422,9 +395,6 @@ export function decimalProblems(
         : config.style === "convert"
           ? drawConvert(config, rand)
           : drawStandard(config, rand);
-    // Not what was asked for, or already on the page. Either way the budget
-    // ticks down, and a pool that has run out ends the draw rather than
-    // repeating itself.
     if (drawn === null || seen.has(drawn.key)) {
       misses += 1;
       continue;
@@ -490,12 +460,8 @@ function instructionOf(config: DecimalConfig): string {
 }
 
 /**
- * The header this sheet will actually print.
- *
- * A generated family names its own sheet, so `config.title` is an override and
- * is usually absent — which makes it the wrong thing to reserve space against.
- * Written once and read by both the layout and the build, so the two cannot
- * disagree about what is at the top of the page.
+ * The header this sheet will actually print, which is what the layout reserves
+ * space against — see the note in `arithmetic.ts`.
  */
 function headerOf(config: DecimalConfig): SheetOptions {
   return {
@@ -536,8 +502,6 @@ export function buildDecimalSheet(config: DecimalConfig, seed: number): Sheet {
       title: head.title ?? "",
       instructions: head.instructions,
       fields: head.fields,
-      // Out of what is actually on the page, not out of what was asked for: a
-      // sheet that says "/ 20" over eighteen problems is wrong twice.
       score: { outOf: items.length },
     },
     blocks: [{ kind: "problems", columns, items }],
@@ -551,9 +515,6 @@ export const DECIMALS_SHEET: SheetSpec<DecimalConfig> = {
   label: "Decimals and percents",
   world: SHEET_WORLD,
   build: buildDecimalSheet,
-  // The whole of the answer-key mechanism: every answer on the page was
-  // computed in whole units when the problem was built, so a key prints what is
-  // already there rather than working it out a second time.
   key: (sheet) => ({
     ...sheet,
     answers: true,

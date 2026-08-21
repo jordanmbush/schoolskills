@@ -14,22 +14,18 @@ import {
 } from "../_charts";
 
 /**
- * One prerendered reference sheet per entry — and the page is the sheet.
+ * One prerendered reference sheet per entry — and the page is the sheet (§8).
+ * On this shelf what somebody searched for is a piece of paper rather than an
+ * exercise, so the whole of the answer is the sheet: prose above it, the paper
+ * under that, and nothing to click before pressing ⌘P.
  *
- * The shape §8 describes, on the shelf where what somebody searched for is a
- * piece of paper rather than an exercise: "printable hundred chart", "number
- * line to 100" and "place value chart" are queries where the whole of the
- * answer is the sheet, so there is prose above it, the paper itself under that,
- * and nothing to click before pressing ⌘P.
+ * **Only one page here has a key.** The rest withhold nothing — a chart, a line
+ * and a grid are supposed to be blank — and printing the same page twice under
+ * the word "key" would be noise on a parent's printer. `keyed` is the engine's
+ * own answer to that (`chartKeyed`), so the page and the family cannot disagree
+ * about which is which.
  *
- * **Only one page here has a key.** Seven of the eight withhold nothing — a
- * chart, a line and a grid are supposed to be blank — and printing the same
- * page twice under the word "key" would be noise on a parent's printer. `keyed`
- * is the engine's own answer to that (`chartKeyed`), so the page and the family
- * cannot disagree about which is which.
- *
- * **One stock.** Nothing here is a stated measurement, so there is no A4 twin
- * to keep in step — which is also why this is a single-segment `[slug]` rather
+ * **One stock** (§8), which is why this is a single-segment `[slug]` rather
  * than a rest pattern. Graph paper is the case where that is not true, and it
  * is on the shelf that prints both.
  *

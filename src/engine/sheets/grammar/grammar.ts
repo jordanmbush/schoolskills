@@ -1,26 +1,13 @@
 /**
- * Grammar: five views of one tagged sentence.
+ * Grammar: five views of one tagged sentence. Nothing here analyses a sentence
+ * — it draws entries out of `bank.ts` and reads what somebody wrote down about
+ * them (§11).
  *
- * The third family whose content is authored rather than generated, and the
- * one with the sharpest reason for it. `words/bank.ts` is written out because
- * English spelling will not yield to a rule; this bank is written out because
- * **grammar is a judgement**, and a worksheet that marks a defensible answer
- * wrong teaches a child something false. Nothing in this module analyses a
- * sentence: it draws entries out of `bank.ts` and reads what somebody wrote
- * down about them.
- *
- * One family rather than five, in the same way `words/study.ts` is one family
- * rather than ten: the five topics differ only in which tag they read and how
- * the answer is written. Two shapes of question fall out — a ruled place to
- * write in, or a fixed set of names to circle one of — and a topic offers the
- * second only where the answer really is one of a closed list. There are five
- * parts of speech and four kinds of sentence; there is no closed list of
- * capital letters, end marks or ways to cut a sentence in half.
- *
- * Everything the other families promise holds: the page comes out of
- * `(config, seed)` and nothing else, the answers are decided when the sheet is
- * built and the key only prints them, and no row goes on the page that the
- * capacity arithmetic did not reserve.
+ * Two shapes of question fall out, a ruled place to write in or a fixed set of
+ * names to circle one of, and **a topic offers the second only where the answer
+ * really is one of a closed list.** There are five parts of speech and four
+ * kinds of sentence; there is no closed list of capital letters, end marks or
+ * ways to cut a sentence in half.
  */
 import { mulberry32, shuffled } from "@/engine/random";
 
@@ -53,8 +40,8 @@ import { SHEET_CREDIT, SHEET_URL, SHEET_WORLD, type SheetSpec } from "../spec";
 import { KINDS, PARTS, SENTENCES, lowered, stem } from "./bank";
 
 /* ── What a row takes on the page ─────────────────────────────────────────
-   Declared, not measured (§4), and the same three numbers `words/study.ts`
-   reserves by, because it prints through the same two blocks.               */
+   Declared, not measured (§4). The same numbers `words/study.ts` reserves by,
+   because it prints through the same two blocks.                            */
 
 /** A sentence and its ruled slot, on one line of body type. */
 const ROW_EMS = 1.7;
@@ -82,8 +69,8 @@ const MARK_GAP: Mil = inches(0.05);
  * Lower than every maths family's cap and lower than word study's three,
  * because what is in the cell is a whole sentence rather than a sum: at three
  * columns on Letter a cell holds about twenty characters, so every row wraps to
- * four lines and the page holds five questions. The cap is not a taste
- * judgement — it is where the arithmetic stops giving anything back.
+ * four lines and the page holds five questions. This is where the arithmetic
+ * stops giving anything back, rather than a taste judgement.
  */
 const MAX_COLUMNS = 2;
 
@@ -98,13 +85,12 @@ const clamp = (value: number, low: number, high: number): number =>
  * `ask` is what is printed, and unlike `words/study.ts` there is no second
  * "cue" field beside it: a grammar question is the sentence, and the sentence
  * reads the same above a row of options as it does in front of a ruled slot.
- * The verb that changes between the two shapes lives in the instruction line
- * where it belongs.
+ * The verb that changes between the two shapes lives in the instruction line.
  *
  * `lines` is where the answer is more than one thing to write — the two halves
  * of a sentence, a ruled line each. `answer` carries the same halves on one
- * line for anything that wants the answer as a string, built from the same
- * array so the two cannot disagree (`Problem.answers`).
+ * line, built from the same array so the two cannot disagree
+ * (`Problem.answers`).
  */
 type Question = { ask: string; answer: string; lines?: string[] };
 
@@ -117,7 +103,7 @@ type Topic = {
    * The styles this topic can honestly be asked in, its default first.
    *
    * A style a topic does not offer is not an error — a saved sheet outlives the
-   * table below (§7) — so `styleOf` resolves it to the first of these rather
+   * table below (§3) — so `styleOf` resolves it to the first of these rather
    * than refusing to print.
    */
   styles: GrammarStyle[];
@@ -129,18 +115,17 @@ type Topic = {
    *
    * Always a scale, never a draw of near misses, which is the one way a grammar
    * `choose` sheet is *safer* than a word-study one: the five parts of speech
-   * are the options on every line whatever the sentence, so there is no
-   * distractor that could quietly also be right. A topic with no such list is a
-   * topic with no `choose` style.
+   * are the options on every line whatever the sentence, so no distractor can
+   * quietly also be right. A topic with no such list has no `choose` style.
    */
   options?: string[];
   /**
    * How many ruled lines the answer is written on, when it is not a slot.
    *
-   * Zero everywhere but the subject-and-predicate sheet, and that sheet's two
-   * lines are the whole reason the question is markable: the split has to be
-   * exhaustive, so a child who writes only the head noun has left the rest of
-   * the subject with nowhere to go. See the house rules in `bank.ts`.
+   * Zero everywhere but the subject-and-predicate sheet, whose two lines are
+   * what make the question markable: the split is exhaustive, so a child who
+   * writes only the head noun has left the rest of the subject with nowhere to
+   * go. See the house rules in `bank.ts`.
    */
   lines: number;
 };
@@ -151,10 +136,8 @@ type Topic = {
  * The word being asked about, printed after the sentence it sits in.
  *
  * In quotation marks rather than bold, because a `Problem.prompt` is plain text
- * and always will be — a renderer that took markup would be a renderer that
- * could be handed a sentence with a tag in it. The quotes ride on the prompt
- * for the same reason a homophone's pair does in `words/study.ts`: the choice
- * belongs to the sentence, and every sentence marks a different word.
+ * and always will be — a renderer that took markup could be handed a sentence
+ * with a tag in it.
  */
 const asked = (text: string, word: string): string => `${text} — “${word}”`;
 
@@ -184,15 +167,13 @@ const kinds = (): Question[] =>
 /**
  * The sentence with its end mark taken off, and the mark as the answer.
  *
- * The mark is read off the *sentence* rather than looked up from its kind, and
- * that is deliberate: what a child writes has to match what the sentence
- * actually ends on, so the answer is the character the bank wrote. That the
- * character always agrees with the kind is then a claim about the bank which
+ * The mark is read off the *sentence* rather than looked up from its kind: what
+ * a child writes has to match what the sentence actually ends on. That the
+ * character always agrees with the kind is then a claim about the bank, which
  * `grammar.test.ts` checks from the other side — the tag, not the string.
  *
- * Exclamations are left out entirely. "What a mess" takes a bang and a full
- * stop is not a mistake anybody can point to, and a topic that cannot say which
- * of two marks is right has no business printing a key.
+ * Exclamations are left out entirely, because a topic that cannot say which of
+ * two marks is right has no business printing a key.
  */
 const endMarks = (): Question[] =>
   SENTENCES.filter((entry) => entry.kind !== "exclamation").map((entry) => ({
@@ -300,10 +281,9 @@ export const styleOf = (config: GrammarConfig): GrammarStyle => {
  *
  * Taken over the whole bank rather than over the sentences that were drawn,
  * because the reservation is made before the draw: a row height that depended
- * on the seed would be a layout that disagreed with `grammarQuestions`' own
- * arithmetic from one sheet to the next. It over-reserves on a page whose
- * longest sentence stayed in the bank, which is the cheap side to be wrong on
- * (`chrome.ts`).
+ * on the seed would be a layout that disagreed with its own arithmetic from one
+ * sheet to the next. It over-reserves on a page whose longest sentence stayed
+ * in the bank, which is the cheap side to be wrong on (`chrome.ts`).
  */
 function promptRows(
   topic: Topic,
@@ -328,7 +308,7 @@ function promptRows(
  *
  * `words/study.ts` reserves one flat row for four short words and gets away
  * with it; four sentence-type names run to thirty-five characters, which is
- * wider than either stock at the largest type a config may ask for. So it is
+ * wider than either paper at the largest type a config may ask for. So it is
  * counted the way `.sheet__options` actually packs — greedily, item by item,
  * each item its own label plus its `A.` mark — rather than assumed.
  */
@@ -357,21 +337,15 @@ const columnsFor = (topic: Topic): number =>
 /**
  * The widest a topic may be laid out, for a panel that has to offer it.
  *
- * Exported for the same reason `grammarStyles` is: the options panel needs the
- * rule, and a panel that restated it would be a second place for it to be true.
- * A sixth topic with ruled answer lines would otherwise get a columns stepper
- * that the engine silently ignores — the panel and the paper disagreeing, which
- * is the one thing the builder's live preview cannot show a parent.
+ * Exported so the options panel reads the rule rather than restating it: a
+ * sixth topic with ruled answer lines would otherwise get a columns stepper the
+ * engine silently ignores, and the panel disagreeing with the paper is the one
+ * thing the builder's live preview cannot show a parent.
  */
 export const grammarColumns = (topic: string): number =>
   columnsFor(topicOf(topic));
 
-/**
- * How many sentences the paper holds, and how wide a column of them is.
- *
- * Arithmetic rather than measurement, so a unit test, a catalog page built at
- * build time and the builder's live preview all get the same answer (§4).
- */
+/** How many sentences the paper holds, and how wide a column of them is (§4). */
 export function grammarLayout(config: GrammarConfig): {
   box: Box;
   columns: number;
@@ -380,9 +354,8 @@ export function grammarLayout(config: GrammarConfig): {
   perPage: number;
 } {
   // Against the header the sheet will print rather than the one the config
-  // holds, and with the score box, because a grammar sheet is marked out of its
-  // sentences. Reserving for the wrong header is a last row below the bottom
-  // margin — invisible on screen, and a second sheet out of the printer.
+  // holds, as `words/study.ts` does: reserving for the wrong header is a last
+  // row below the bottom margin, invisible on screen and a second sheet.
   const box = sheetBlockBox(headerOf(config), true);
   const topic = topicOf(config.topic);
   const write = styleOf(config) === "write";
@@ -416,20 +389,17 @@ export function grammarLayout(config: GrammarConfig): {
  * Shuffled rather than taken in order, because the bank is written in kind
  * order — every statement first — and a sentence-types sheet of the first
  * twelve would be a sheet with one answer on it. Never more than the bank holds
- * and never more than the page holds, so the count is a request exactly as it
- * is everywhere else in the shop.
+ * and never more than the page holds, so the count is a request.
  *
  * **The scale is covered rather than hoped for.** A shuffle-and-slice is fair
  * over many pages and says nothing about any one of them: a sentence-types
  * sheet drawn at random comes up with no command about one page in six, on the
- * page whose own instruction prints "statement, question, command or
- * exclamation" down every line and whose whole exercise is telling the first
- * two of those apart. Every item on such a page is still correct, which is what
- * makes it the worse bug — it is a page that has quietly stopped being the
- * lesson it claims to be. So where the topic answers to a closed list and there
- * is room for one of each, one of each is drawn first, off the same stream; the
- * rest of the page is filled from what is left and the whole is shuffled again,
- * so the guaranteed items are not the first `options.length` rows every time.
+ * page whose whole exercise is telling a command from a statement. Every item
+ * on such a page is still correct, which is what makes it the worse bug. So
+ * where the topic answers to a closed list and there is room for one of each,
+ * one of each is drawn first, off the same stream; the rest of the page is
+ * filled from what is left and the whole is shuffled again, so the guaranteed
+ * items are not the first `options.length` rows every time.
  */
 export function grammarQuestions(
   config: GrammarConfig,
@@ -475,11 +445,10 @@ const written = (question: Question, config: GrammarConfig): Problem =>
  * A sentence with the closed list of names beside it.
  *
  * The options are the topic's whole vocabulary in the topic's own order, on
- * every line of the sheet: no shuffle, and no near misses drawn from the other
- * questions. A page whose five options moved about from line to line would be a
- * page a child has to re-read five times, and a distractor drawn from another
- * sentence's answer would be the one thing this family cannot risk — an option
- * that is also right.
+ * every line: no shuffle, because a page whose five options moved about from
+ * line to line is a page a child has to re-read five times — and no near misses
+ * drawn from the other questions, because a distractor out of another
+ * sentence's answer is the one thing this family cannot risk.
  */
 const circled = (question: Question, topic: Topic): Choice => {
   const options = topic.options ?? [];
@@ -581,9 +550,8 @@ export function buildGrammarSheet(config: GrammarConfig, seed: number): Sheet {
       score: { outOf },
     },
     blocks,
-    // The site itself, not a game. There is no grammar race, and §16 is
-    // explicit that a footer sending a parent to the times tables from a sheet
-    // that has nothing to do with them is an advert rather than a route back.
+    // The site itself, not a game: §16's footer URL is the game that *matches*
+    // the sheet, and there is no grammar race for this one to point at.
     footer: { credit: SHEET_CREDIT, url: SHEET_URL, seed },
     answers: false,
   };
@@ -595,8 +563,8 @@ export const GRAMMAR_SHEET: SheetSpec<GrammarConfig> = {
   world: SHEET_WORLD,
   build: buildGrammarSheet,
   // Every answer was decided when the sheet was built — which sentences were
-  // drawn, and which tag each of them was asked about — so a key cannot
-  // disagree with the sheet it belongs to.
+  // drawn, and which tag each was asked about — so a key cannot disagree with
+  // its sheet.
   key: (sheet) => ({
     ...sheet,
     answers: true,

@@ -79,10 +79,7 @@ const config = (over: Partial<RatioConfig> = {}): RatioConfig => ({
   ...over,
 });
 
-/**
- * Every shape the family can print, which is every acceptance criterion of the
- * story: ratio, proportion and unit rate.
- */
+/** Every shape the family can print: ratio, proportion and unit rate. */
 const EVERY_SHAPE: Array<Partial<RatioConfig>> = [
   {},
   { range: { min: 2, max: 20 } },

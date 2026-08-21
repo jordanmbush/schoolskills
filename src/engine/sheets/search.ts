@@ -1,15 +1,9 @@
 /**
- * The catalog, as something a parent can search.
+ * The catalog, as something a parent can search: a build-time index, shipped as
+ * one static file and matched in the browser that downloaded it (§8).
  *
- * A hundred and nineteen sheets is past the point where a shelf is a way of
- * finding anything, and there is no server here to ask (§1). So the index is
- * built with the site — plain data, shipped as one static file — and the
- * searching happens in the browser that downloaded it. Nothing is sent
- * anywhere, which is the same promise every other corner of this site makes and
- * the reason a third-party search box was never an option.
- *
- * This module is the half that has no opinion about the catalog: the shape a
- * row is written in, the fold from a sheet family onto the six kinds of page a
+ * This module is the half that has no opinion about the catalog: the shape a row
+ * is written in, the fold from a sheet family onto the six kinds of page a
  * parent sorts by, the matcher, and the fragment the state travels in.
  * `src/pages/printables/_search.ts` is the other half — it reads the shelves and
  * the school years and writes the rows. Splitting them that way is what lets the
@@ -31,14 +25,10 @@ import type { RuleStyle, SheetConfig } from "./types";
  *
  * Not the same axis as a shelf. A shelf answers "what subject is this"; this
  * answers "what will my child be doing with it" — and the two cross, which is
- * the whole reason both are facets. Three of the shelves happen to line up with
- * one of these exactly, because they were always defined by the kind of page
- * rather than by a subject: charts are references, paper is paper, and the
- * templates shelf is forms right through. The two large ones do not.
- * *Practice* — a model traced, copied, then written alone — is the handwriting
- * shelf, the cursive shelf, the Bible shelf and one sheet off the spelling
- * shelf, and a parent looking for it is not looking for a subject. *Worksheet*
- * spans maths, spelling, grammar and phonics the same way.
+ * the whole reason both are facets. *Practice* — a model traced, copied, then
+ * written alone — spans the handwriting, cursive and Bible shelves and one sheet
+ * off the spelling shelf, and *worksheet* spans maths, spelling, grammar and
+ * phonics the same way.
  *
  * Six rather than five because the builder can already make a word search, a
  * crossword and a scramble; no page in the curated catalog is one yet, so the
@@ -72,12 +62,11 @@ export const SHEET_TYPES: Array<{ id: SheetType; label: string }> = [
  * saying what kind of page it makes fails `npm run type-check` rather than
  * quietly filing the new sheets under whatever the fallback happened to be.
  *
- * The fold is by family, which means a family that prints more than one shape
- * of page is filed by what it mostly is — the phonics family prints cards to
- * cut out as well as exercises to work, and it is a worksheet family. The
- * alternative is a type written onto each of the hundred and nineteen entries
- * by hand, which is a second description of the sheet to keep true, and this
- * epic has already shipped copy describing sheets that weren't there.
+ * The fold is by family, which means a family that prints more than one shape of
+ * page is filed by what it mostly is — the phonics family prints cards to cut
+ * out as well as exercises to work, and it is a worksheet family. The
+ * alternative, a type written by hand onto each of the hundred and nineteen
+ * entries, would be a second description of every sheet to keep true.
  */
 export const TYPE_OF: Record<SheetConfig["kind"], SheetType> = {
   blank: "paper",
@@ -115,10 +104,9 @@ export const typeOf = (config: SheetConfig): SheetType => TYPE_OF[config.kind];
 /**
  * The ruling a config prints on, where it has one.
  *
- * Two families carry a `Rule` and the rest carry none — paper, which is a
- * ruling and nothing else, and handwriting, which is rows of one. So the ruling
- * facet is honestly absent on four fifths of the catalog rather than defaulted
- * to something, and a sheet with no ruling is not filtered out by a chip it was
+ * Two families carry a `Rule` and the rest carry none, so the ruling facet is
+ * honestly absent on four fifths of the catalog rather than defaulted to
+ * something, and a sheet with no ruling is not filtered out by a chip it was
  * never a candidate for. Read off the config rather than restated beside it,
  * which is what keeps "⅝ inch" on the search results and "⅝ inch" on the paper
  * the same fact.
@@ -281,10 +269,10 @@ const yearWords = (slug: string): string => {
  *
  * Wider than the name on purpose, and every part of it is already written down
  * somewhere else in this build. A parent typing "maths" is typing the shelf's
- * label and not any word on the sheet; a parent typing "third grade" is typing
- * a school year, which is a fact about the row's bits rather than about its
- * prose. Both are things this page can answer, and a search that returned
- * nothing for either would be read as a catalog that doesn't have it.
+ * label and not any word on the sheet; a parent typing "third grade" is typing a
+ * school year, which is a fact about the row's bits rather than about its prose.
+ * A search that returned nothing for either would be read as a catalog that
+ * doesn't have it.
  */
 const haystack = (index: SheetIndex, row: IndexRow): string => {
   const years = index.facets.grade
@@ -337,15 +325,10 @@ export function findSheets(index: SheetIndex, query: Query): SheetHit[] {
  * The five keys a search travels under, in the URL fragment.
  *
  * **A fragment rather than a query string, and that is the SEO decision this
- * story turns on.** `?grade=3rd-grade&type=worksheet` is a distinct URL to a
- * crawler, and five facets over a hundred and nineteen sheets is several
- * thousand of them, every one a near-duplicate of a page that is already
- * indexed. That is the doorway-page farm §8 exists to forbid, arrived at from
- * the other direction. A fragment is never sent to a server, never crawled and
- * never indexed, so the search is shareable and bookmarkable — "here is the
- * third-grade maths, filtered" is an ordinary link — while the pages Google
- * sees stay exactly the nineteen that were curated: the nine subject hubs and
- * the ten school years, each of which is prerendered, canonical and written.
+ * story turns on** (§8): a facet in a query string is a distinct URL to a
+ * crawler, and a fragment is never sent to a server, never crawled and never
+ * indexed. So a filtered search is still an ordinary shareable link while the
+ * indexable set stays exactly the nineteen curated pages.
  */
 const KEYS: Record<keyof Query, string> = {
   text: "find",

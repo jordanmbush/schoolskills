@@ -1,11 +1,6 @@
 /**
- * What every family of sheets has to be able to say about itself.
- *
- * The same shape of answer `DeckSpec` gives the race loop, for the same reason:
- * the parts of a worksheet that generalise — paper, rulings, capacity, the
- * header, the footer, the print stylesheet — can't decide what a problem is,
- * what its answer is, or how to say in one line what the sheet contains. Those
- * three judgements belong to the family, and this is where it states them.
+ * What every family of sheets has to be able to say about itself: `DeckSpec` for
+ * paper, and for the same reason (§3).
  */
 import { WORLDS, type World } from "@/engine/worlds";
 
@@ -16,15 +11,12 @@ import { DEFAULT_FONT_PT, DEFAULT_PAPER } from "./paper";
  * Which world a sheet prints in — stated, not assumed, exactly as
  * `DeckSpec.world` is.
  *
- * It was `line` while the Print Shop had no colours of its own; now that
- * `paper` exists it is `paper`, and that was the one-line change the note here
- * promised. Nothing else in the engine moved, because the engine never
- * interprets the value — a world id is an opaque string to the model, and
- * everything the change means is a block of CSS in worlds.css (§9).
+ * The engine never interprets the value: a world id is an opaque string to the
+ * model, and everything it means is a block of CSS in worlds.css (§9).
  */
 export const SHEET_WORLD: World = "paper";
 
-/** Printed small at the foot of every sheet: free traffic, and true (§16). */
+/** Printed small at the foot of every sheet (§16). */
 export const SHEET_URL = "schoolskills.app";
 export const SHEET_CREDIT = "Free printables and learning games";
 
@@ -32,15 +24,11 @@ export const SHEET_CREDIT = "Free printables and learning games";
  * The same URL, pointing at the game this sheet's practice is also a race in
  * (§16).
  *
- * Free traffic and genuinely useful: the child who has just done twenty
- * problems on paper is the likeliest one to run the race, and the sheet is the
- * only place that connection can be made — it is what they are holding.
- *
- * Only families that *have* a matching game print one. There is no race for
- * long division or for the area of a trapezium, and a footer that sent a
- * parent to the times tables from a geometry sheet would be an advert rather
- * than a route back. The world registry is where a game's route is written
- * down, so nothing here is a second copy of it.
+ * Only families that *have* a matching game print one. There is no race for long
+ * division or for the area of a trapezium, and a footer that sent a parent to
+ * the times tables from a geometry sheet would be an advert rather than a route
+ * back. The world registry is where a game's route is written down, so nothing
+ * here is a second copy of it.
  */
 export function gameUrl(world: World): string {
   const found = WORLDS.find((entry) => entry.id === world);
@@ -81,10 +69,8 @@ export type SheetSpec<C extends SheetConfig = SheetConfig> = {
   /** Build the sheet. Deterministic in (config, seed) — see §7. */
   build(config: C, seed: number): Sheet;
   /**
-   * The same sheet with the answers filled in. Not optional on any family: an
-   * answer key is the single most expected feature of a worksheet site and the
-   * most common thing done badly, and a family that can't produce one has no
-   * business generating problems.
+   * The same sheet with the answers filled in. Not optional on any family (§3):
+   * a family that can't produce a key has no business generating problems.
    */
   key(sheet: Sheet): Sheet;
   /** One line for the catalog, and for the record of what was printed. */
@@ -98,7 +84,7 @@ export type SheetSpec<C extends SheetConfig = SheetConfig> = {
  * outlive their decks: a config from a URL somebody bookmarked in March must
  * still open in June after its family was renamed. So this returns a page that
  * prints, and says plainly why there is nothing on it, rather than throwing
- * inside a build that would otherwise have shipped a catalog.
+ * inside a build that would otherwise have shipped a catalog (§3).
  */
 export const UNKNOWN_SHEET: SheetSpec = {
   id: "unknown",

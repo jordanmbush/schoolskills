@@ -22,13 +22,9 @@ const MAX_LINES = 12;
  * one line somebody is about to follow with a pair of scissors. Drawn over the
  * top there is one line per boundary, and it is the boundary.
  *
- * **The outside edge is a cut line too.** A sheet whose outer trim is unmarked
- * is a sheet cut freehand, and freehand is where the white sliver down one side
- * of every other card comes from.
- *
- * The block is centred by `.sheet__cut`, which is the other half of the same
- * promise: whatever the cards did not use is split evenly to the left and the
- * right of them, so a stack of cut sheets is square with itself.
+ * The outside edge is a cut line too, and the block is centred by `.sheet__cut`
+ * so whatever the cards did not use is split evenly left and right — the two
+ * halves of the cut geometry in §11, and both invisible on screen.
  */
 export function CutCards({ block }: BlockProps<"cutcards">) {
   const { card, columns, rows, faces, frame, fold } = block;
@@ -126,11 +122,9 @@ function Panel({
 /**
  * Where to cut, and where to fold.
  *
- * `HEAVY` and the long dash for cutting, for the reason `Cutline` gives: a cut
- * line is read before it is used and must not be mistaken for a rule to write
- * on. A fold is a lighter weight and a finer dash, because it is the same
- * instruction one step down — and because a sheet on which the two looked alike
- * is a card cut in half.
+ * `HEAVY` and the long dash for cutting, as `Cutline` uses them. A fold is a
+ * lighter weight and a finer dash, because a sheet on which the two looked
+ * alike is a card cut in half.
  */
 function Guides({
   card,

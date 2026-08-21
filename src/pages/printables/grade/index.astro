@@ -12,13 +12,11 @@ import { GRADES, gradeHref, sheetsForGrade } from "../_grades";
  * `/printables/grade/3rd-grade` will ask for `/printables/grade`, and a
  * directory that 404s on a static host is a dead end rather than a redirect.
  * And the ten pages each carry two sentences about how their ages were arrived
- * at; this is where the argument is made once, at length, so those two
- * sentences are a summary of something rather than the whole of it.
+ * at; this is where that argument is made once, at length.
  *
  * The counts on it are computed, never typed. A hub whose prose says "twelve
  * sheets" is one catalog edit away from lying to a reader who can see the list
- * underneath, and this whole section is meant to survive shelves being added
- * to it.
+ * underneath.
  */
 const years = GRADES.map((grade) => ({
   grade,

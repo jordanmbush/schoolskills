@@ -1,16 +1,11 @@
 /**
  * A list, and which puzzle to make out of it.
  *
- * The second panel whose first control is the *content* of the sheet rather
- * than a setting on it, and it is the same box the spelling panel and the
- * bootstrap use — one `WordList`, one rule about what counts as a word.
- *
  * Four of the controls are the word search's alone, and they disappear on the
- * other two styles rather than greying out. There is no grid on a scramble
- * sheet for a direction to run in, and an option that does nothing teaches a
- * parent that the panel doesn't do what it says. The grid stepper is a request
- * either way — `searchLayout` shrinks a grid that will not fit the paper with
- * its word list under it — which is why the hint says so.
+ * other two styles rather than greying out: there is no grid on a scramble sheet
+ * for a direction to run in. The grid stepper is a request either way —
+ * `searchLayout` shrinks a grid that will not fit the paper with its word list
+ * under it — which is why the hint says so.
  */
 import { Checkbox, FieldSet, NumberStepper } from "@/components/ui/kit";
 import type {
@@ -43,9 +38,8 @@ export function PuzzlesPanel({ config, set }: PanelProps<PuzzleConfig>) {
     <>
       <WordList
         label="Words"
-        // Joined back out of the config rather than held as text beside it: the
-        // config is the state (`useBuilder`), and a second copy of the list
-        // would be the one the sheet was not built from.
+        // Joined back out of the config rather than held as text beside it,
+        // for the reason the spelling panel gives.
         text={config.words.join("\n")}
         onChange={(text) => {
           const words = parseWords(text);

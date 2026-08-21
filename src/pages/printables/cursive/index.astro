@@ -13,21 +13,15 @@ import {
 import HubLinks from "../_HubLinks.astro";
 
 /**
- * The cursive subject hub — the third of the §8 names to exist, beside paper,
- * maths and handwriting.
+ * The cursive subject hub — one of the shelves §8 names.
  *
- * A listing rather than a sheet, which makes it one of the pages in this corner
- * that isn't itself printable, and that is the right split: nobody searches for
- * "printable list of cursive worksheets". What it is for is the three jobs a
- * hub does here — giving a parent who landed on one sheet somewhere to go next,
- * giving the topic pages a crawlable parent that says what they have in common,
- * and answering the question the shelf itself cannot: which cursive.
- *
- * That last one is why this hub carries a section the handwriting one does not.
- * Every sheet on the shelf is set in the looped traditional hand because a
- * shelf has to be set in something; the models section is where the other two
- * are offered, each as a link that opens a real sheet on the bench already set
- * to it.
+ * A listing rather than a sheet, like the other hubs: nobody searches for
+ * "printable list of cursive worksheets". It does one job here the others
+ * don't, which is to answer the question the shelf itself cannot — *which*
+ * cursive. Every sheet on the shelf is set in the looped traditional hand
+ * because a shelf has to be set in something, and the models section is where
+ * the other two are offered, each as a link that opens a real sheet on the
+ * bench already set to it.
  */
 const title =
   "Free printable cursive worksheets — letters, joins and copywork | School Skills";
@@ -82,9 +76,7 @@ const joins = CURSIVE_SHEETS.find((sheet) => sheet.config.style === "joins")!;
   {
     /*
       What exists, first — before the page explains itself. Somebody who came
-      looking for cursive joins should be one link from cursive joins, and the
-      argument about which hand these are set in reads better after you have
-      seen one than before.
+      looking for cursive joins should be one link from cursive joins.
     */
   }
   <section class="band band--tight wrap">

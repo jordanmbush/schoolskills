@@ -1,21 +1,15 @@
 /**
- * Practise what they missed — the first of §14's three bootstraps, and the one
- * the whole section exists for.
- *
- * No other worksheet site can print this page, because no other worksheet site
- * knows what the child got wrong. Everything it needs is already computed: the
- * record book ranks the trouble facts, `services/practice.ts` reads them
- * through the layer that owns the schema, and `practiceSheet` turns a deck and
- * a list of fact ids into paper. This screen only asks whose.
+ * Practise what they missed — the first of §14's three bootstraps. Everything it
+ * needs is already computed, so this screen only asks whose.
  *
  * **Nothing about a child goes any further than this component.** The picker
- * knows their name because it has to say it; what it hands the bench is a sheet
- * config, which carries facts and paper and nothing else — and that is what
- * ends up in the address bar (§14).
+ * knows their name because it has to say it; what it hands the bench is a config
+ * carrying facts and paper and nothing else, and that is what ends up in the
+ * address bar.
  *
- * A player with no history is the normal case on a family machine, not an
- * error state, so there is always something to print: the ordinary sheet for
- * the deck they would have started on.
+ * A player with no history is the normal case on a family machine, not an error
+ * state, so there is always something to print: the ordinary sheet for the deck
+ * they would have started on.
  */
 import { useEffect, useState } from "react";
 
@@ -25,9 +19,8 @@ import type { SheetConfig } from "@/engine/sheets/types";
 import { loadPractice, type PracticePlayer } from "@/services/practice";
 
 /**
- * What a child with nothing in the record book gets: the twelve tables, which
- * is where the site itself starts (`WORLDS[0]`) and the sheet a parent who
- * pressed this button was most likely after anyway.
+ * What a child with nothing in the record book gets: the twelve tables, where
+ * the site itself starts (`WORLDS[0]`).
  */
 const FIRST_DECK = "multiply";
 
@@ -57,9 +50,8 @@ export function Missed({
     };
   }, []);
 
-  // Whoever is chosen, or the first player on the device. Derived rather than
-  // stored, so the pickers are right on the first paint instead of a tick after
-  // the load — there is no state here that the data does not already decide.
+  // Derived rather than stored, so the pickers are right on the first paint
+  // instead of a tick after the load.
   const player = players.find((p) => p.id === who) ?? players[0];
   // Only the decks this build can actually print. A typing level has trouble
   // facts and no sheet family — a passage is not a set of problems — so it is

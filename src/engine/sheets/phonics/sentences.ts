@@ -1,39 +1,20 @@
 /**
  * Sentences a child can read, made only of words this bank already holds.
  *
- * A decodable sentence is the one thing in the phonics family that could not be
- * derived from `bank.ts` and an inventory: a list of readable words is not a
- * sentence, and there is no rule that turns one into the other. English word
- * order is learnable by a generator only in the sense that a generator can
- * produce grammatical nonsense — "the mat sat on the cat" is decodable, is
- * correct English, and is not a sentence anybody would put in front of a
- * five-year-old who is still deciding whether reading is worth it.
- *
- * So they are written down, the way `grammar/bank.ts` writes its sentences down
- * and for the same reason: the judgement is a person's.
- *
- * ── A sentence is a list of words, not a string ────────────────────────────
- *
- * Each one is authored as the words it is made of, and the capital letter and
- * the mark on the end are put on when it is printed. That is not a storage
- * trick — it is what makes the constraint checkable. Every word here is looked
- * up in the bank, so a sentence is available to a child exactly when *each of
- * its words* is, by the same `canRead` that decides a single word. A sentence
- * authored as `"The cat sat on the mat."` would have to be cut apart again by
- * something that knew about capitals and full stops, and that something would
- * be a second answer to "which words is this made of".
- *
- * `sheets.test.ts` holds every word here to the bank, so a typo is a failing
- * test rather than a sentence that silently never prints.
+ * Authored rather than derived, for the reason §13 gives. Each is written down
+ * as the list of words it uses, so it becomes printable at the moment all of
+ * them do, by the same `canRead` that decides one word — and `sheets.test.ts`
+ * holds every word here to the bank, so a typo is a failing test rather than a
+ * sentence that silently never prints.
  *
  * ── What is not here ───────────────────────────────────────────────────────
  *
  * `and`, `is`, `a`, `was` and `his` are not in the bank, so no sentence below
- * uses them, and that shows: these are short and a little clipped. That is the
+ * uses them, and it shows: these are short and a little clipped. That is the
  * honest cost of the promise, and the alternative — quietly adding words to the
  * bank so the prose reads better — is how a sheet ends up with a word on it
- * that nobody cut by hand. `was` in particular stays out for the reason
- * `bank.ts` gives: the two varieties disagree about its vowel.
+ * that nobody cut by hand. `was` in particular stays out because the two
+ * varieties disagree about its vowel (`bank.ts`).
  *
  * `the` is in nearly all of them, and it costs a child two spellings — `th` as
  * in `this` and the unstressed `e` of `garden`. Every programme teaches it long
@@ -64,9 +45,8 @@ const s = (words: string, end: Sentence["end"] = "."): Sentence => ({
 });
 
 /* ── Short vowels, and nothing else ───────────────────────────────────────
-   What a first reader is: three-letter words, one function word, and a full
-   stop. Every sentence here is readable by a child who has the five short
-   vowels, the single-letter consonants and `the`.                          */
+   Every sentence here is readable by a child who has the five short vowels,
+   the single-letter consonants and `the`.                                   */
 
 const FIRST: Sentence[] = [
   s("the cat sat on the mat"),
@@ -153,13 +133,11 @@ const R_COLOURED: Sentence[] = [
 ];
 
 /**
- * Every sentence this build may print, roughly in the order a child could
- * first read one.
+ * Every sentence this build may print, roughly in the order a child could first
+ * read one.
  *
  * One flat list, exactly as `WORDS` is and for the same reason: what a sentence
- * is available for is decided by the words in it and by nothing else. A sheet
- * drawing from "the digraph group" would hand a child a sentence because of the
- * group it was filed under rather than because they can read it.
+ * is available for is decided by the words in it and by nothing else.
  */
 export const SENTENCES: Sentence[] = [
   ...FIRST,
@@ -176,8 +154,7 @@ export const SENTENCES: Sentence[] = [
  * All or nothing on purpose. A word the bank has never heard of cannot be
  * checked against an inventory, so a sentence containing one is not "mostly
  * decodable" — it is a sentence this build cannot make a promise about, and the
- * only safe thing to do with it is not print it. The test above is what stops
- * that ever being the answer in a shipped build.
+ * only safe thing is not to print it.
  */
 export function sentenceWords(sentence: Sentence): Word[] | undefined {
   const out: Word[] = [];
@@ -215,12 +192,9 @@ export function canReadSentence(
 }
 
 /**
- * Sentences for a sheet: readable, in an order the seed decides.
- *
- * The same bargain `pickWords` makes, and deliberately the same shape — the
- * count is a request, fewer come back when fewer can be read, and the page is
- * deterministic in `(inventory, count, seed)` so that `seed + 1` is "another
- * one like this" here as it is everywhere else in the shop (§7).
+ * Sentences for a sheet: readable, in an order the seed decides — deliberately
+ * the same shape as `pickWords`, so the count is a request, fewer come back
+ * when fewer can be read, and `seed + 1` is "another one like this" (§7).
  */
 export function pickSentences(
   inventory: Inventory,

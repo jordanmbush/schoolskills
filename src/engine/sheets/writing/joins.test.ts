@@ -7,20 +7,16 @@ import { JOIN_FAMILIES, joinFamily, joinPairs } from "./joins";
 /**
  * The join families, held to the two things that make them teachable.
  *
- * **A join needs two letters.** Every entry is a pair, because the stroke this
- * table exists to practise only exists between one letter and the next — a
- * single letter with an exit stroke is not a join, and a family that contained
- * one would be a family teaching the wrong thing.
+ * **A join needs two letters.** Every entry is a pair, because a single letter
+ * with an exit stroke is not a join.
  *
  * **The families are disjoint and in order.** A pair that appeared twice would
  * be a pair a child writes twice on the same page under two different names,
- * and a shuffled order would be a page that teaches the horizontal join before
- * the diagonal one.
+ * and a shuffled order would teach the horizontal join before the diagonal one.
  *
- * What is deliberately *not* asserted here is whether any given pair joins.
- * That is the font's answer and not the engine's (`faces.ts`): the looped and
- * fully joined models join out of every letter, the unlooped one lifts the
- * pencil after `b f g j p q s y`, and the same table is correct in all three.
+ * What is deliberately *not* asserted is whether any given pair joins: that is
+ * the font's answer and not the engine's (§6), and the same table is correct in
+ * all three models.
  */
 
 describe("the families of join", () => {

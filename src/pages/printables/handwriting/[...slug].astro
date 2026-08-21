@@ -16,19 +16,14 @@ import {
 import type { Stock } from "../_catalog";
 
 /**
- * One prerendered handwriting sheet per topic — and the page is the sheet.
+ * One prerendered handwriting sheet per topic — and the page is the sheet (§8),
+ * on the family where the paper *is* the content: prose that answers the query,
+ * the sheet itself under it as HTML, and nothing to click.
  *
- * The shape §8 describes, applied to the family where the paper *is* the
- * content: "free printable letter tracing worksheets" is one of the largest
- * queries in this whole section, and a parent who lands here gets prose that
- * answers it, the sheet itself directly under it as HTML, and nothing to click.
- *
- * **Two stocks, two routes — as with paper and unlike maths.** A ⅝ rule scaled
- * to fit whatever is in the tray is no longer a ⅝ rule, and `@page` is a
- * document rule, so Letter and A4 cannot share a page. That is also why this
- * route is a rest pattern under `handwriting/` rather than another `[topic]`
- * beside the maths one: a two-segment path needs a rest param, and two dynamic
- * patterns at the same level would be two routes claiming one URL.
+ * **Two stocks, two routes — as with paper and unlike maths** (§8). That is
+ * also why this route is a rest pattern rather than another `[topic]`: a
+ * two-segment path needs a rest param, and two dynamic patterns at the same
+ * level would be two routes claiming one URL.
  *
  * **No answer key, and no apology for it.** There is nothing on a handwriting
  * sheet with a right answer — the model is already printed, which is the whole

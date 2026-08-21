@@ -14,13 +14,9 @@ import {
 } from "./_catalog";
 
 /**
- * One prerendered sheet of paper per ruling — and the page is the sheet.
- *
- * This is the shape every catalog page in §8 takes, and the first one built.
- * A parent arriving from a search for "printable wide ruled paper" gets real
- * prose answering the query, the paper itself directly under it as HTML, and
- * nothing to click: ⌘P produces usable paper because the sheet IS the page,
- * not a download link on it.
+ * One prerendered sheet of paper per ruling — and the page is the sheet (§8).
+ * Prose answering the query, the paper itself under it as HTML, and nothing to
+ * click: ⌘P produces usable paper because the sheet IS the page.
  *
  * **No client directive on `SheetView`, ever.** `@astrojs/react` renders a
  * component with no `client:*` to HTML at build time, so these pages ship zero
@@ -28,17 +24,14 @@ import {
  * HTML rather than a canvas or a PDF. Sheet.test.tsx holds every page in this
  * directory to it, against the source and against `dist/`.
  *
- * **Everything that is not the sheet carries `.no-print`.** print.css records
- * this as the open question the routes story had to settle: `@page` cannot be
+ * **Everything that is not the sheet carries `.no-print`.** `@page` cannot be
  * scoped to a class, so on a page that is both prose and paper the zeroed page
  * margin applies to the prose as well and it would print off the edge. Hiding
  * the prose is the right way round rather than merely the easy one — printing
- * this page means printing the sheet on it, and a parent who wanted the
- * article would not be reaching for the printer.
+ * this page means printing the sheet on it.
  *
- * Two stocks, two routes. A sheet is only correct on the paper it was measured
- * for, and `@page` is a document rule, so Letter and A4 cannot share a page —
- * see `_catalog.ts` for the whole of that reasoning.
+ * Two stocks, two routes: a sheet is only correct on the paper it was measured
+ * for, and `@page` is a document rule (§8).
  */
 
 type Props = { sheet: PaperSheet; stock: Stock };

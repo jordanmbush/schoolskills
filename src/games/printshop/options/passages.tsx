@@ -1,12 +1,7 @@
 /**
- * Which words are on the sheet — one picker, every source, Scripture first.
- *
- * §12 in a control. The collections come out of the library in the library's
- * own order, which puts Psalm 23 and the Gettysburg Address in the same
- * dropdown with the same two clicks between them; there is no Scripture mode to
- * switch into and no separate section to find, because a mode is the thing this
- * story exists to not build. What Scripture adds is one more question — which
- * translation — and it is asked where it applies and nowhere else.
+ * Which words are on the sheet — one picker, every source, Scripture first
+ * (§12). There is no Scripture mode to switch into; what Scripture adds is one
+ * more question, which translation, asked where it applies and nowhere else.
  *
  * "Your own words" is the last entry rather than a fourth control. Pasting a
  * verse is choosing a source, the same as picking one off the shelf, and a
@@ -37,11 +32,10 @@ export type PassageFields = {
 };
 
 /**
- * "Your own words", as a collection id that is not one.
- *
- * The empty string rather than a sentinel word, because absent is already what
- * the config means by "no passage chosen" — inventing an `"own"` to store would
- * be a second way of saying the same thing in every saved sheet.
+ * "Your own words", as a collection id that is not one. The empty string rather
+ * than a sentinel word, because absent is already what the config means by "no
+ * passage chosen" — inventing an `"own"` to store would be a second way of
+ * saying the same thing in every saved sheet.
  */
 const OWN = "";
 
@@ -57,12 +51,9 @@ const TRANSLATIONS = TRANSLATION_LIST.map((translation) =>
 );
 
 /**
- * Every passage, resolved once at module load.
- *
- * The library is static data and the picker lists all of it, so the alternative
- * to doing this here is doing it on every keystroke in the builder — a
- * debounced rebuild already runs on each of those, and this is the one list on
- * the screen that cannot have changed since the last one.
+ * Every passage, resolved once at module load. The library is static data, so
+ * the alternative is resolving it on every keystroke in the builder — and this
+ * is the one list on the screen that cannot have changed since the last one.
  */
 const CHOICES = listPassages();
 
@@ -72,8 +63,7 @@ const inCollection = (collection: string) =>
 /**
  * Which source is showing, read back off the passage rather than stored beside
  * it — the same bargain `RulingControls` makes with the grid pitch. A second
- * field naming the collection would be a second thing that can disagree with
- * the passage it claims to hold.
+ * field naming the collection could disagree with the passage it claims to hold.
  */
 const sourceOf = (chosen?: string): string =>
   (chosen ? passageById(chosen)?.collection : undefined) ?? OWN;

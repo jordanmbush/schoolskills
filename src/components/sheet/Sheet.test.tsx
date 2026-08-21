@@ -247,8 +247,6 @@ const EVERY_BLOCK: Block[] = [
     ],
   },
   {
-    // The three bands a word is written in, in one word: a tall letter, a small
-    // one, and one with a tail.
     kind: "wordshapes",
     columns: 2,
     words: [
@@ -299,10 +297,8 @@ const EVERY_BLOCK: Block[] = [
     kind: "numberline",
     line: { from: 0, to: 100, step: 5, width: 7500, label: 2 },
   },
-  // The paperwork tier (§11): a blank form, a ruled table, a page of cards to
-  // cut out, and something to fold up. Nothing on any of them has an answer,
-  // which is what makes them honest — and every one of them is geometry the
-  // engine declared and this layer only draws.
+  // The paperwork tier (§11). Nothing on any of them has an answer, and every
+  // one is geometry the engine declared and this layer only draws.
   {
     kind: "form",
     columns: 2,
@@ -474,9 +470,8 @@ describe("rendering a sheet", () => {
   });
 
   it("admits what a puzzle could not hold, and counts what it could not name", () => {
-    // The one line on a sheet whose job is to admit a failure. Both halves of
-    // it, because a page that named three of twenty-three and said nothing
-    // about the rest would be the silent drop again in a smaller font.
+    // Both halves of it: a page that named three of twenty-three and said
+    // nothing about the rest would be the silent drop in a smaller font.
     const search = EVERY_BLOCK.filter((block) => block.kind === "wordsearch");
     const html = renderToStaticMarkup(
       <SheetView sheet={sheet({ blocks: search })} />,
@@ -499,11 +494,10 @@ describe("rendering a sheet", () => {
   });
 
   it("prints the credit its words came with, beside the note and not instead of it", () => {
-    // §12, in the one place it has to be: the credit line is a condition of the
-    // World English Bible's name rather than a courtesy, and `.sheet__source`
-    // has no CSS rule of its own — so a renamed or dropped span would pass every
-    // other gate in this file and every gate in the engine's, which only assert
-    // the `Sheet` object's field. This is the assertion that it reaches paper.
+    // §12, and the only gate on it: `.sheet__source` has no CSS rule of its
+    // own, so a renamed or dropped span would pass everything else here and in
+    // the engine's suite, which assert the `Sheet` object's field and not the
+    // paper.
     const credited = (over: Partial<Sheet["footer"]> = {}) =>
       render(
         sheet({
@@ -595,11 +589,10 @@ describe("rendering a sheet", () => {
 
 /* ── The answer key, as a parent receives it ───────────────────────────────
    The engine's suite proves the answers are right and stops at the edge of the
-   markup — "the renderer's rule, stated here as the engine's half of it". This
-   is the other half, and it is the half a parent actually holds: a key whose
-   answers are correct and printed into a blank built for one of them is still
-   a bad sheet. The sheets below are built through the real family rather than
-   hand-written, so a shape the engine starts producing is a shape these see. */
+   markup. This is the half a parent actually holds: a key whose answers are
+   correct and printed into a blank built for one of them is still a bad sheet.
+   The sheets below are built through the real family rather than hand-written,
+   so a shape the engine starts producing is a shape these see.              */
 
 const arithmetic = (
   over: Partial<ArithmeticConfig> = {},
@@ -762,12 +755,9 @@ describe("a rendered arithmetic sheet", () => {
 });
 
 /* ── The long forms, and the square ────────────────────────────────────────
-   The two sheets where the answer is not the only thing written down. The
-   engine's suite proves the partials and the quotients are right; this is
-   where they have to land in the right place on the paper, which is the whole
-   of what a long form teaches and the one thing no unit test of the engine can
-   see. Built through the real family, so a shape it starts producing is a
-   shape these see.                                                          */
+   The two sheets where the answer is not the only thing written down. Where a
+   partial or a quotient lands on the paper is the whole of what a long form
+   teaches, and the one thing no unit test of the engine can see.            */
 
 const multiplication = (
   over: Partial<MultiplicationConfig> = {},
@@ -848,7 +838,6 @@ describe("a rendered multiplication sheet", () => {
     expect(item).toMatch(
       /class="sheet__quotient sheet__quotient--answered">\d+ r \d+</,
     );
-    // And the blank sheet is the same drawing with nothing written on it.
     expect(problems(timesTable(LONG_DIVISION))[0]).toContain(
       '<span class="sheet__quotient"></span>',
     );
@@ -957,11 +946,9 @@ describe("a rendered multiplication sheet", () => {
 });
 
 /* ── The sheets whose questions are pictures, and whose answers have points ──
-   Fractions, decimals and money. The engine's suites prove the answers are
-   right and stop at the edge of the markup; these are the two halves of that
-   which only exist once it is drawn — a diagram that has to survive a printer
-   with background graphics turned off, and a column of amounts whose points
-   have to land under one another.                                           */
+   Fractions, decimals and money. Two things that only exist once it is drawn:
+   a diagram that has to survive a printer with background graphics turned off,
+   and a column of amounts whose points have to land under one another.      */
 
 const fractions = (over: Partial<FractionConfig> = {}): FractionConfig => ({
   kind: "fractions",
@@ -1013,10 +1000,9 @@ describe("a rendered fraction sheet", () => {
   });
 
   it("shades with a fill, so it survives a printer with backgrounds off", () => {
-    // §5, and the reason this block is drawn rather than styled: a browser
-    // drops background paint unless the reader has found the "Background
-    // graphics" checkbox, and a naming sheet whose shading was a background
-    // comes out as a row of empty boxes. `fill` is content — it always prints.
+    // §5, and the reason this block is drawn rather than styled: a naming
+    // sheet whose shading was a background comes out as a row of empty boxes.
+    // `fill` is content — it always prints.
     expect(named()).not.toContain("background");
     const css = read(join(ROOT, "src/styles/sheet.css"));
     const shade = css.slice(css.indexOf(".sheet__shade {"));
@@ -1026,10 +1012,7 @@ describe("a rendered fraction sheet", () => {
   });
 
   it("draws the diagram in mil inside a box measured in inches", () => {
-    // The same correspondence every ruled thing on a sheet rests on: the <svg>
-    // is sized in inches while its viewBox counts mil, so one user unit is a
-    // thousandth of an inch. Get it wrong and the picture is a thousand times
-    // the size it says — which a screen never shows.
+    // The inches-outside, mil-inside correspondence, as above.
     expect(named({ model: "bar" })).toContain(
       'width="1.3in" height="0.36in" viewBox="0 0 1300 360"',
     );
@@ -1124,7 +1107,6 @@ describe("a rendered fraction sheet", () => {
     )) {
       expect(inside).toBe("");
     }
-    // And the key writes the fraction into it — the same drawing, answered.
     for (const problem of itemsOf(fractions())) {
       expect(namedKey()).toContain(`>${problem.answer}<`);
     }
@@ -1161,7 +1143,6 @@ describe("a rendered money sheet", () => {
         /class="sheet__total sheet__total--answered">£\d+\.\d\d</,
       );
     }
-    // And the blank sheet is the same stack with nothing under the rule.
     expect(render(buildSheet(money(), SEED) as Sheet)).toContain(
       '<span class="sheet__total"></span>',
     );
@@ -1490,18 +1471,14 @@ describe("a rendered word-shape sheet", () => {
   });
 
   it("draws the boxes in mil inside a box measured in inches", () => {
-    // The same correspondence every drawn thing on a sheet rests on: the <svg>
-    // is sized in inches while its viewBox counts mil, so one user unit is a
-    // thousandth of an inch. Get it wrong and the boxes are a thousand times the
-    // size they say — which a screen never shows.
+    // The inches-outside, mil-inside correspondence, as above.
     expect(render(buildSheet(spelling({ words: ["big"], count: 1 }), SEED))) //
       .toContain('width="0.685in" height="0.434in" viewBox="0 0 685 434"');
   });
 
   it("rules the boxes rather than tinting them, so they always print", () => {
-    // §5: a browser drops background paint unless the reader has found the
-    // "Background graphics" checkbox, and a word-shape sheet whose boxes were a
-    // tint comes out of the printer as an empty page.
+    // §5: a word-shape sheet whose boxes were a tint comes out of the printer
+    // as an empty page.
     const html = render(buildSheet(spelling(), SEED));
     expect(html).not.toContain("background");
     const css = read(join(ROOT, "src/styles/sheet.css"));
@@ -1775,12 +1752,9 @@ describe("ruled blocks", () => {
 });
 
 /* ── The five trace styles (§6) ────────────────────────────────────────────
-   All five out of one ordinary font, which is the whole reason a handwriting
-   sheet here needs no per-seat tracing licence: `<text>` can be stroked, and a
-   dash pattern runs along the glyph outline. Every one of them is fill or
-   stroke — foreground paint — so they survive a printer with "Background
-   graphics" unticked, which is the default and the thing that silently ruins
-   this kind of page.                                                        */
+   All five out of one ordinary font: `<text>` can be stroked, and a dash
+   pattern runs along the glyph outline. Every one of them is fill or stroke —
+   foreground paint — so they survive a printer with background graphics off. */
 
 describe("trace styles", () => {
   const tracedIn = (style: TraceStyle, font?: SheetFont) =>
@@ -1857,8 +1831,8 @@ describe("trace styles", () => {
     // the understanding that a viewport takes them off again, and a word wider
     // than the declared mean advance would otherwise run past the margin.
     //
-    // The AC names this combination — every ruling of PRINT04 with every trace
-    // style of PRINT15 — so it is the one drawn here.
+    // Drawn on the isometric ruling with a descending letter, which is the one
+    // combination that needs both halves at once.
     const row = render(
       sheet({
         blocks: [
@@ -1919,9 +1893,7 @@ describe("a rendered form", () => {
     );
 
   it("draws a box the size the family declared, in mil inside inches", () => {
-    // The same bargain every drawn block strikes (§4): the box model is in
-    // inches so it survives the print pipeline, and the viewBox is in mil so a
-    // hairline is a hairline rather than a thousandth of one.
+    // The inches-outside, mil-inside correspondence, as above (§4).
     const markup = html([
       { label: "Title", lines: 4, space: 1000, width: 3680, span: 1 },
     ]);
@@ -1995,11 +1967,11 @@ describe("a rendered table", () => {
     renderToStaticMarkup(<SheetView sheet={sheet({ blocks: [block] })} />);
 
   it("closes its outer border on all four sides, heading or no heading", () => {
-    // The top edge is the one that went missing. With a heading the body starts
-    // partway down the block, and a rule list counted from *there* draws a
-    // left, a right and a bottom and no top — which printed the heading row of
-    // all seven table sheets in the catalog open at the edge of the paper. The
-    // `head: false` path was right, which is exactly why nobody saw it.
+    // The top edge is the one at risk. With a heading the body starts partway
+    // down the block, and a rule list counted from *there* draws a left, a
+    // right and a bottom and no top — a heading row open at the edge of the
+    // paper. Both paths are checked, because the `head: false` one is right
+    // either way and would hide it.
     for (const head of [true, false]) {
       const markup = drawn(uneven({ head }));
       const width = 5800;
@@ -2392,9 +2364,9 @@ describe("the zero-JavaScript property", () => {
   });
 
   it("has no renderer that would need hydrating", () => {
-    // The issue's own note: if a renderer needs a hook, it belongs in the
-    // builder, not here. A hook is also exactly what forces `client:*` onto a
-    // catalog page, which is what would cost the section its SEO argument.
+    // If a renderer needs a hook, it belongs in the builder, not here: a hook
+    // is exactly what forces `client:*` onto a catalog page, which is what
+    // would cost the section its SEO argument.
     for (const file of filesUnder(HERE, [".tsx", ".ts"])) {
       if (file.endsWith(".test.tsx")) continue;
       expect(read(file)).not.toMatch(
@@ -2424,13 +2396,11 @@ describe("the zero-JavaScript property", () => {
    * and carries no island has shipped no renderer, whatever is in the chunks
    * beside it.
    *
-   * This used to scan every JavaScript chunk for the renderer's class names.
-   * That stopped being the property once the builder landed — `/printables/make`
-   * hydrates a `SheetView` on purpose, so the classes are legitimately in a
-   * chunk now — and scanning them would have to grow an exception, which is the
-   * point at which a test stops meaning anything. What matters was never "the
-   * renderer is nowhere in the bundle": it is "no page that IS a sheet needs
-   * JavaScript to be one", which is what this asserts and what §2 claims.
+   * Scanning the chunks for the renderer's class names is not the property and
+   * would have to grow an exception: `/printables/make` hydrates a `SheetView`
+   * on purpose, so the classes are legitimately in a chunk. What §2 claims is
+   * "no page that IS a sheet needs JavaScript to be one", which is what this
+   * asserts.
    */
   it("ships no sheet renderer to a page that is a sheet", () => {
     const dist = join(ROOT, "dist");

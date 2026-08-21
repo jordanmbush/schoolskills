@@ -1,17 +1,12 @@
 /**
- * The sheet layer's front door.
- *
- * Everything above the engine asks for a sheet here rather than from a family
- * module, so a catalog page, the builder and a unit test all go through the
- * same three functions and none of them learns whether it is holding long
- * division or a handwriting rule.
+ * The sheet layer's front door (§3).
  *
  * The `SheetConfig` union is narrowed in exactly one place: the registry lookup
  * in `sheetSpec`. A spec is keyed by the same string its config carries as
  * `kind`, so looking one up *is* the narrowing — there is no `if (isLined)`
  * chain to keep in step with the union, and adding a family is an entry in the
- * table below plus a `kind` in types.ts. See the note on `SheetSpec` for the
- * one thing that makes that typecheck.
+ * table below plus a `kind` in types.ts. See the note on `SheetSpec` for the one
+ * thing that makes that typecheck.
  */
 import type { Sheet, SheetConfig } from "./types";
 
@@ -95,13 +90,12 @@ export function listSheets(): SheetSpec[] {
 /**
  * The presentation half of `SheetOptions`, copied onto what a family built.
  *
- * Here rather than in every `build` function for the reason `chrome.ts`
- * gives for living on its own: every family would otherwise write the same
- * three lines, and the next one added would be the one that forgot. It is
- * safe to do it after the fact because none of the three changes a length —
- * the face is set in points, a bordered slot is the same line box as a ruled
- * one, and the cut guides are drawn over the paper rather than in the flow —
- * so nothing here can make a sheet the layout arithmetic already fitted stop
+ * Here rather than in every `build` function: every family would otherwise write
+ * the same three lines, and the next one added would be the one that forgot. It
+ * is safe to do after the fact because none of the three changes a length — the
+ * face is set in points, a bordered slot is the same line box as a ruled one,
+ * and the cut guides are drawn over the paper rather than in the flow — so
+ * nothing here can make a sheet the layout arithmetic already fitted stop
  * fitting.
  *
  * A family that has already said something wins, which is what keeps this a

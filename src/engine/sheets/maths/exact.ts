@@ -1,42 +1,19 @@
 /**
- * Numbers a worksheet can be marked against.
+ * Numbers a worksheet can be marked against — the two exact shapes fractions,
+ * decimals and money count in, and the argument for them (§11).
  *
- * The three families below this file — fractions, decimals and money — share
- * one hazard the tables never had. `7 × 8` is 56 in any arithmetic anybody has
- * ever implemented; `0.1 + 0.2` is 0.30000000000000004 in the one every
- * JavaScript program is written in, and `4/8` is a correct answer written the
- * wrong way. Both failures print. A key that says 0.30000000000000004, or that
- * marks `2/3` wrong because it computed `4/6`, is worse than no key at all.
- *
- * So neither value is ever a float:
- *
- * - a **fraction** is a pair of whole numbers, and reducing it is a division
- *   that is exact by construction — the greatest common divisor of the two;
- * - a **fixed-point** number is a whole number of thousandths, hundredths or
- *   tenths with the point written in when it is printed. £3.45 is 345 pence all
- *   the way through, and the only division anywhere near it is by ten.
- *
- * Nothing here knows what a sheet is. It is arithmetic over plain data, the
- * bottom of the bottom layer, and it is the only place these two shapes are
- * defined — a second copy of "how do I write 5/4 as a mixed number" is a second
- * answer to the same question.
+ * Nothing here knows what a sheet is, so a family cannot grow a second answer
+ * to a question this file has already settled.
  */
 
 /* ── Fractions ─────────────────────────────────────────────────────────────
-   A numerator and a denominator, both whole, the denominator positive. Nothing
-   in the Print Shop draws a negative fraction — a subtraction sheet orders its
-   operands so it doesn't have to — so the sign is not a case this has to
-   carry.                                                                     */
+   A numerator and a denominator, both whole, the denominator positive. No
+   fraction *question* in the shop is negative — a subtraction sheet orders its
+   operands so it doesn't have to — so a minus sign is the slope sheet's to
+   write, in `prealgebra.ts`, and not this file's to carry.                   */
 
 export type Fraction = { n: number; d: number };
 
-/**
- * The greatest common divisor, by Euclid.
- *
- * Every fraction question in the shop reduces to this one function: lowest
- * terms is dividing by it, equivalent fractions are multiplying past it, and
- * "is this already simplified?" is asking whether it is one.
- */
 export function gcd(a: number, b: number): number {
   let left = Math.abs(Math.trunc(a));
   let right = Math.abs(Math.trunc(b));
@@ -76,22 +53,19 @@ export const minus = (a: Fraction, b: Fraction): Fraction =>
 export const times = (a: Fraction, b: Fraction): Fraction =>
   reduced({ n: a.n * b.n, d: a.d * b.d });
 
-/** Dividing by a fraction is multiplying by it upside down. */
 export const over = (a: Fraction, b: Fraction): Fraction =>
   reduced({ n: a.n * b.d, d: a.d * b.n });
 
 /**
- * Which of two fractions is the larger: negative, zero or positive, the way a
- * comparator answers.
+ * Negative, zero or positive, the way a comparator answers.
  *
- * Cross-multiplied rather than divided out, because dividing is where the
- * floats would get back in. Both denominators are positive, so the sense of the
+ * Cross-multiplied rather than divided out, because dividing is where the floats
+ * would get back in. Both denominators are positive, so the sense of the
  * comparison survives the multiplication.
  */
 export const compare = (a: Fraction, b: Fraction): number =>
   a.n * b.d - b.n * a.d;
 
-/** A whole number of parts: `3` is `3/1`, which is how a mixed number is built. */
 export const whole = (value: number): Fraction => ({ n: value, d: 1 });
 
 /**
@@ -111,10 +85,7 @@ export function fractionText(value: Fraction): string {
 
 /**
  * The same value as a whole number and what is left over: "1 1/4" rather than
- * "5/4".
- *
- * Which of the two forms is right depends on what the sheet asked for, so the
- * choice lives with the family and this is only the writing of it.
+ * "5/4". Which form a sheet wants is the family's call, not this one's.
  */
 export function mixedText(value: Fraction): string {
   if (value.d === 1 || value.n < value.d) return fractionText(value);
@@ -127,11 +98,7 @@ export function mixedText(value: Fraction): string {
 export const writeFraction = (value: Fraction, mixed: boolean): string =>
   mixed ? mixedText(value) : fractionText(value);
 
-/* ── Signed whole numbers ──────────────────────────────────────────────────
-   The third shape a worksheet's numbers take, and the one that looks like it
-   needs no help at all. It does: a minus sign is the whole of the difference
-   between a right answer and a wrong one on an integers sheet, and where it is
-   written down is a typographic question with a right answer of its own.     */
+/* ── Signed whole numbers ────────────────────────────────────────────────── */
 
 /**
  * The proper minus sign, U+2212 — not a hyphen.
@@ -161,10 +128,9 @@ export const factorText = (value: number): string =>
   value < 0 ? `(${signedText(value)})` : String(value);
 
 /* ── Fixed point ───────────────────────────────────────────────────────────
-   A whole number of hundredths, and a count of how many digits go after the
-   point. $3.45 is `{ units: 345, places: 2 }` from the moment it is drawn to
-   the moment it is printed, and the point is written in by `fixedText` — the
-   one function in the shop that knows where it goes.                        */
+   $3.45 is `{ units: 345, places: 2 }` from the moment it is drawn to the moment
+   it is printed. `fixedText` is the one function in the shop that knows where
+   the point goes.                                                           */
 
 export type Fixed = { units: number; places: number };
 
