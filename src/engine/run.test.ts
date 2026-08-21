@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { CardResult, FlashConfig, Ghost, Profile, Session } from "./types";
 
+import { levelFromXp } from "./progress";
 import { summariseRun, type RunTally } from "./run";
 
 /**
@@ -214,6 +215,20 @@ describe("summarising a run", () => {
   });
 });
 
+/**
+ * The XP a player is holding the moment they reach level 10, asked of the
+ * curve rather than transcribed: `levelFromXp` owns the formula, and a test
+ * that copied the number would go on passing after the curve moved.
+ *
+ * `toNext` is the gap to the next level's floor, so adding it lands exactly on
+ * that floor — nine steps from zero to the level-10 line.
+ */
+const LEVEL_10_XP = (() => {
+  let xp = 0;
+  while (levelFromXp(xp).level < 10) xp += levelFromXp(xp).toNext;
+  return xp;
+})();
+
 describe("the badges a run earns", () => {
   it("tells the player what is new to them, and the service what they hold", () => {
     const { earnedBadges, newBadges } = summarise();
@@ -255,6 +270,27 @@ describe("the badges a run earns", () => {
       summarise({ ghost: rival, tally: tally({ maxDeficitMs: 500 }) })
         .earnedBadges,
     ).not.toContain("comeback");
+  });
+
+  it("judges the level badge on the XP the player leaves with", () => {
+    // `xpAfter` is the only thing "Double Digits" is decided on, and the
+    // profile handed in still holds the XP from *before* this race. A summary
+    // that passed `profile.xp` straight through would hold the badge back
+    // until the next race — a level-up the child watched happen, paid late.
+    const cardXp = 120;
+    const onTheLine = { ...ada, xp: LEVEL_10_XP - cardXp };
+
+    expect(
+      summarise({ profile: onTheLine, tally: tally({ cardXp }) }).earnedBadges,
+    ).toContain("level-10");
+    // And one XP short of the line is still short of it, so the case above is
+    // pinning the crossing rather than a threshold that is always met.
+    expect(
+      summarise({
+        profile: { ...onTheLine, xp: onTheLine.xp - 1 },
+        tally: tally({ cardXp }),
+      }).earnedBadges,
+    ).not.toContain("level-10");
   });
 
   it("counts the cards a player had answered before this race", () => {

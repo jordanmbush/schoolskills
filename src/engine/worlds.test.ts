@@ -99,15 +99,29 @@ const LINKS = WORLDS.flatMap((world) => [
 
 describe("the worlds", () => {
   it("are the ones the type says exist", () => {
-    // Without this the two comparisons below could both hold over an empty
-    // list: a regex that stopped matching would report every world fine.
+    // Both guards live here rather than inside the sweeps they protect, because
+    // a guard that runs once per case doesn't run at all when there are no
+    // cases. Over an empty list every comparison below holds: a regex that
+    // stopped matching, or a registry that emptied, would report every world
+    // fine and check nothing.
     expect(
       DECLARED.length,
       "no worlds were parsed out of the World union — the check below would pass over an empty list",
     ).toBeGreaterThan(1);
+    expect(
+      LINKS.length,
+      "no world links were found, so the sweep below checked nothing",
+    ).toBeGreaterThan(1);
 
     expect(Object.keys(THEME_COLOUR).sort()).toEqual([...DECLARED].sort());
-    expect(WORLDS.every((world) => DECLARED.includes(world.id))).toBe(true);
+    // Named rather than counted: `every(...)` reports "expected false to be
+    // true" and leaves you to work out which world it meant.
+    expect(
+      WORLDS.filter((world) => !DECLARED.includes(world.id)).map(
+        (world) => world.id,
+      ),
+      "these worlds carry an id the World union doesn't declare",
+    ).toEqual([]);
   });
 
   it.each(DECLARED)(
