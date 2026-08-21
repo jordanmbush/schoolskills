@@ -195,8 +195,23 @@
   text-align: left;
 }
 
+/* A word breaks only where it has to.
+
+   `anywhere` is a last resort and not the usual case: a browser reaches for it
+   only when a word has no ordinary break to fall back on, so a word that would
+   fit a line of its own still travels down to the next line whole. What it
+   covers is the word wider than the column — a long one at a large text size,
+   or a parent-authored drill — which has no next line to travel to.
+
+   `white-space: nowrap` is what it replaces, and the trap. It keeps a
+   hyphenated word in one piece, which is presumably why it was reached for,
+   but it also forbids that last resort: the word overflows instead, and the
+   `overflow: hidden` above takes the end off it. So the trade is a hyphenated
+   word that may now split at its hyphen, against a word a child can only half
+   see — and half a word is a dead end, because they cannot type what they
+   cannot read. */
 .passage__word {
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 
 .passage__word.is-done {

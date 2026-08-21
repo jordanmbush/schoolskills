@@ -1820,6 +1820,111 @@ try {
   );
   await tabletCtx.close();
 
+  /**
+   * The word a child is on, measured against the box it is drawn in.
+   *
+   * The passage is a window of twenty words that has to wrap, and whether it
+   * wraps is decided by where the space between two words lives: a browser
+   * breaks a line at a space and will not break inside an element that calls
+   * its own content one unbreakable run. Get that wrong and the twenty words
+   * lay out as a single line three times the width of the column, `overflow:
+   * hidden` takes the end off it, and the live word — six committed words in,
+   * so already near the right edge — is cut in half. A child who cannot see
+   * the word cannot type it, and the only way out is quitting the run.
+   *
+   * Only a browser can be asked. `Passage.test.tsx` pins the markup that makes
+   * the break possible; this is the check that the letters are actually on
+   * screen, and it is the reason both exist.
+   */
+  log("\n14. The word you are on is never cut off by the edge of the track");
+
+  /** Type a free-play passage, watching the live word from every side. */
+  const walkPassage = async (width, height, words) => {
+    const ctx = await browser.newContext({ viewport: { width, height } });
+    const p = await ctx.newPage();
+    p.on("pageerror", (e) => errors.push(`pageerror: ${e.message}`));
+    await p.goto(`${BASE}/typing`, { waitUntil: "networkidle" });
+    await p
+      .getByRole("button", { name: /add a player/i })
+      .first()
+      .click();
+    await p.waitForSelector(".modal__panel", { timeout: 8000 });
+    await p.locator(".modal__panel input").first().fill("Track");
+    await p.getByRole("button", { name: /^add player$/i }).click();
+    await p.waitForSelector(".modal__panel", {
+      state: "detached",
+      timeout: 8000,
+    });
+    await p.getByText("Track", { exact: false }).first().click();
+    // The longest free-play run there is. What decides how close to the right
+    // edge the live word starts is the width of the six words behind it, and
+    // the window is only full once six have been committed — so a walk that
+    // ended early would be measuring the easy end of the passage.
+    await p.getByRole("button", { name: /^80$/ }).click();
+    await p.getByRole("button", { name: /start race/i }).click();
+    // The 3·2·1 is on screen before the run is live and a key pressed at it is
+    // thrown away, so wait for it to arrive and then to leave.
+    await p.waitForSelector(".countdown", { timeout: 9000 });
+    await p.waitForSelector(".countdown", { state: "detached", timeout: 9000 });
+
+    let out = -Infinity;
+    let word = "";
+    let sideways = 0;
+    for (let i = 0; i < words; i++) {
+      const seen = await p.evaluate(() => {
+        const box = document.querySelector(".typing .passage");
+        const live = document.querySelector(".passage__word.is-live");
+        if (!box || !live) return null;
+        const b = box.getBoundingClientRect();
+        // Every side, and every rectangle the word is drawn in: a word too
+        // long for the column breaks across two lines, and both halves have
+        // to be on screen for it to be readable.
+        const past = (r) =>
+          Math.max(
+            r.right - b.right,
+            b.left - r.left,
+            r.bottom - b.bottom,
+            b.top - r.top,
+          );
+        return {
+          word: live.textContent.trim(),
+          past: Math.round(Math.max(...[...live.getClientRects()].map(past))),
+          // The mechanism rather than the symptom, and the reading that does
+          // not depend on which words this seed dealt: a passage that wraps
+          // has nothing to scroll sideways to.
+          sideways: box.scrollWidth - box.clientWidth,
+        };
+      });
+      if (!seen) break;
+      if (seen.past > out) {
+        out = seen.past;
+        word = seen.word;
+      }
+      sideways = Math.max(sideways, seen.sideways);
+      await p.keyboard.type(seen.word, { delay: 5 });
+      await p.keyboard.press("Space");
+      await p.waitForTimeout(40);
+    }
+    await ctx.close();
+    return { out, word, sideways };
+  };
+
+  // A laptop and the narrowest phone the site is built for. The narrow one is
+  // not the harder case here — a short column wraps sooner — but it is where a
+  // word is most likely to be wider than the room it has.
+  const laptop = await walkPassage(1280, 1000, 26);
+  const phone = await walkPassage(320, 640, 26);
+  check(
+    "the live word stays inside the passage, and the passage never runs off sideways",
+    laptop.out <= 0 &&
+      phone.out <= 0 &&
+      laptop.sideways === 0 &&
+      phone.sideways === 0,
+    `1280px: ${laptop.out}px past the edge on "${laptop.word}", ` +
+      `${laptop.sideways}px of sideways overflow; ` +
+      `320px: ${phone.out}px on "${phone.word}", ${phone.sideways}px`,
+  );
+
   log(
     `\nconsole errors: ${errors.length ? errors.slice(0, 5).join(" | ") : "none"}`,
   );
