@@ -1,5 +1,6 @@
 ---
 import Content from "@/layouts/Content.astro";
+import { trailTo } from "./_shelves";
 import AdSlot from "@/components/site/AdSlot.astro";
 import { MATHS_SHEETS, mathsShelf, pathFor } from "./_maths";
 import HubLinks from "./_HubLinks.astro";
@@ -22,7 +23,7 @@ import HubLinks from "./_HubLinks.astro";
 const title =
   "Free printable math worksheets, with answer keys | School Skills";
 const description =
-  "Printable maths worksheets with the answer key on the second page: addition, times tables, long division, fractions, decimals, money, time, area, integers and word problems. Free, no account, and nothing to download.";
+  "Printable maths worksheets with the answer key on the second page: addition, times tables, long division, fractions, decimals, money, time, area, integers and word problems. Free, no account, print or save as PDF.";
 
 const strands = mathsShelf();
 ---
@@ -31,6 +32,7 @@ const strands = mathsShelf();
   title={title}
   description={description}
   world="paper"
+  breadcrumb={trailTo("math")}
   jsonLd={{
     "@context": "https://schema.org",
     "@type": "CollectionPage",
@@ -133,7 +135,7 @@ const strands = mathsShelf();
     <div class="wrap">
       <h2 class="h2">A worksheet here is a web page</h2>
       <p class="h2__sub">
-        Not a PDF, not a picture of a worksheet, and nothing to download.
+        Not a PDF you have to fetch first, and not a picture of a worksheet.
       </p>
       <div class="prose">
         <p>

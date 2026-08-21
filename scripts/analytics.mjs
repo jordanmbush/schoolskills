@@ -25,11 +25,18 @@
  *   npm run analytics                sync, count, summarise
  *   npm run analytics -- --no-sync   re-summarise what's already downloaded
  *   npm run analytics -- --days 7    narrow the table (default 30)
+ *   npm run analytics -- --by-day    every breakdown with a column per day
+ *   npm run analytics -- --width 200 lay the grid out for a file, not a tty
  *   npm run analytics -- --no-geoip  skip the country lookup
  *
  * `--no-geoip` is for working with no network at all. The country table is
  * cached in the temp directory next to the logs, so an ordinary second run
  * downloads nothing and the flag buys nothing — see scripts/geoip.mjs.
+ *
+ * `--width` exists because the by-day grid sizes itself to the terminal and
+ * drops the oldest days that don't fit. Piped into a file there is no terminal
+ * to measure, so without it a redirected run silently lays out for 100
+ * columns — see `dailyLines` in scripts/analytics-view.mjs.
  */
 
 import { execFileSync } from "node:child_process";
@@ -37,6 +44,7 @@ import { existsSync, mkdirSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
+import { dailyLines, mergedLines } from "./analytics-view.mjs";
 import { awsAuthHint, awsIdentityLabel, awsProfileArgs } from "./aws.mjs";
 
 // Temp, deliberately. See the header: nothing this produces is kept, and
@@ -49,9 +57,18 @@ const LOGS = join(tmpdir(), "schoolskills-cflogs");
 
 const argv = process.argv.slice(2);
 const flag = (name) => argv.includes(`--${name}`);
+// Loud about a value it can't use, because both options this parses exist to
+// bound what gets printed: a `--width` that quietly became NaN would disable
+// the fitting whose whole job is to stop the grid overflowing unannounced.
 const option = (name, fallback) => {
   const at = argv.indexOf(`--${name}`);
-  return at === -1 ? fallback : Number(argv[at + 1]);
+  if (at === -1) return fallback;
+  const value = Number(argv[at + 1]);
+  if (Number.isFinite(value) && value > 0) return value;
+  process.stderr.write(
+    `--${name} ${argv[at + 1] ?? ""}: not a positive number, using ${fallback}\n`,
+  );
+  return fallback;
 };
 
 const run = (cmd, args) =>
@@ -102,43 +119,7 @@ function sync() {
 const width = (rows, pick, header) =>
   Math.max(header.length, ...rows.map((row) => String(pick(row)).length));
 
-/**
- * `BR` → `Brazil`, via `Intl` rather than a table in this repo.
- *
- * A two-letter code is exactly as unreadable as the airport codes below it,
- * which is what prompted the country lookup in the first place — printing
- * `SG 6` and calling it an improvement would have missed the point. Node has
- * shipped the region names since v14, so the alternative was carrying 250
- * country names in a source file and letting them go stale.
- */
-const REGIONS = new Intl.DisplayNames(["en"], { type: "region" });
-const countryName = (code) => {
-  if (code === "(unknown)") return "address not in the table";
-  try {
-    return REGIONS.of(code) ?? code;
-  } catch {
-    // `of` throws on anything that isn't a well-formed region code. A code the
-    // table produced but Intl doesn't know is worth printing bare, not worth
-    // taking the summary down for.
-    return code;
-  }
-};
-
-/**
- * `US / Iowa / Council Bluffs` → `United States / Iowa / Council Bluffs`.
- *
- * The rollup stores places qualified by the level above them, because place
- * names are not unique — Ontario is a Canadian province and a Californian
- * city, and there are around thirty Springfields. Only the leading country
- * code is expanded; the rest is already what the source called it.
- */
-const placeLabel = (key) => {
-  const cut = key.indexOf(" / ");
-  if (cut === -1) return key;
-  return `${countryName(key.slice(0, cut))}${key.slice(cut)}`;
-};
-
-function summarise(days, limit) {
+function summarise(days, limit, { byDay, terminal }) {
   const dates = Object.keys(days).sort();
   if (dates.length === 0) {
     console.log(
@@ -197,90 +178,14 @@ function summarise(days, limit) {
     );
   }
 
-  // Pages and decks across the whole window, which is the question the per-day
-  // table can't answer: what is actually being used.
-  const merge = (key) => {
-    const total = {};
-    for (const date of shown)
-      for (const [k, n] of Object.entries(days[date][key] ?? {}))
-        total[k] = (total[k] ?? 0) + n;
-    return Object.entries(total).sort((a, b) => b[1] - a[1]);
-  };
-
-  const pages = merge("pages");
-  if (pages.length) {
-    console.log("\nTOP PAGES");
-    for (const [path, n] of pages.slice(0, 10))
-      console.log(`  ${String(n).padStart(6)}  ${path}`);
-  }
-
-  // Days counted before referrers were recorded simply have none of these, so
-  // both blocks stay quiet rather than printing an empty heading over a window
-  // that predates them.
-  const referrers = merge("referrers");
-  if (referrers.length) {
-    console.log("\nCAME FROM");
-    for (const [host, n] of referrers.slice(0, 10))
-      console.log(`  ${String(n).padStart(6)}  ${host}`);
-  }
-
-  // Days counted before the place lookup existed have no `countries` key at
-  // all, which is why these stay quiet rather than printing a heading over a
-  // window that predates them. An empty heading and a genuine zero should not
-  // look the same.
-  const countries = merge("countries");
-  if (countries.length) {
-    const codeWidth = Math.max(...countries.map(([code]) => code.length));
-    console.log("\nCOUNTRY (the visitor's own IP, resolved locally)");
-    for (const [code, n] of countries.slice(0, 10))
-      console.log(
-        `  ${String(n).padStart(6)}  ${code.padEnd(codeWidth)}  ${countryName(code)}`,
-      );
-  }
-
-  const regions = merge("regions");
-  if (regions.length) {
-    console.log("\nREGION");
-    for (const [name, n] of regions.slice(0, 10))
-      console.log(`  ${String(n).padStart(6)}  ${placeLabel(name)}`);
-  }
-
-  const cities = merge("cities");
-  if (cities.length) {
-    // The count of distinct cities, not just the top ten, because the shape of
-    // the tail is the thing worth knowing here: a long tail of ones is what a
-    // city breakdown looks like at this traffic, and it is the reason the
-    // caveat at the bottom of this output exists.
-    const singletons = cities.filter(([, n]) => n === 1).length;
-    console.log(`\nCITY (${cities.length} distinct)`);
-    for (const [name, n] of cities.slice(0, 10))
-      console.log(`  ${String(n).padStart(6)}  ${placeLabel(name)}`);
-    if (singletons)
-      console.log(
-        `         ${singletons} of them seen exactly once — see the note below`,
-      );
-  }
-
-  const edges = merge("edges");
-  if (edges.length) {
-    console.log("\nSERVED FROM (nearest CloudFront edge, not the visitor)");
-    for (const [code, n] of edges.slice(0, 10))
-      console.log(`  ${String(n).padStart(6)}  ${code}`);
-  }
-
-  const events = merge("events");
-  if (events.length) {
-    console.log("\nEVENTS");
-    for (const [name, n] of events)
-      console.log(`  ${String(n).padStart(6)}  ${name}`);
-  }
-
-  const decks = merge("decks");
-  if (decks.length) {
-    console.log("\nDECKS RACED");
-    for (const [name, n] of decks.slice(0, 10))
-      console.log(`  ${String(n).padStart(6)}  ${name}`);
-  }
+  // The breakdowns themselves. Which shape they take is the only thing
+  // --by-day changes; the counts behind both are the same per-day totals the
+  // rollup has always written.
+  console.log(
+    (byDay ? dailyLines(days, shown, terminal) : mergedLines(days, shown)).join(
+      "\n",
+    ),
+  );
 
   // Said every time rather than in a doc, because the number most likely to be
   // quoted out of context is the one at the top of a table.
@@ -314,6 +219,10 @@ try {
     summarise(
       JSON.parse(readFileSync(OUT, "utf8")).days ?? {},
       option("days", 30),
+      {
+        byDay: flag("by-day"),
+        terminal: option("width", process.stdout.columns ?? 100),
+      },
     );
   }
 } catch (error) {

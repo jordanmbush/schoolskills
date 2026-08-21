@@ -1,5 +1,6 @@
 ---
 import Content from "@/layouts/Content.astro";
+import { trailTo } from "../_shelves";
 import AdSlot from "@/components/site/AdSlot.astro";
 import { JOIN_FAMILIES } from "@/engine/sheets/writing/joins";
 import {
@@ -26,7 +27,7 @@ import HubLinks from "../_HubLinks.astro";
 const title =
   "Free printable cursive worksheets — letters, joins and copywork | School Skills";
 const description =
-  "Printable cursive practice: the alphabet in capitals and small letters, all six families of join, whole words, sentences and copywork. Three cursive models to choose from. Free, no account, and nothing to download.";
+  "Printable cursive practice: the alphabet in capitals and small letters, all six families of join, whole words, sentences and copywork. Three cursive models to choose from. Free, no account, print or save as PDF.";
 
 const groups = cursiveShelf();
 const letter = STOCKS[0];
@@ -40,6 +41,7 @@ const joins = CURSIVE_SHEETS.find((sheet) => sheet.config.style === "joins")!;
   title={title}
   description={description}
   world="paper"
+  breadcrumb={trailTo("cursive")}
   jsonLd={{
     "@context": "https://schema.org",
     "@type": "CollectionPage",

@@ -1,5 +1,6 @@
 ---
 import Content from "@/layouts/Content.astro";
+import { trailTo } from "../_shelves";
 import AdSlot from "@/components/site/AdSlot.astro";
 import HubLinks from "../_HubLinks.astro";
 import { GRADES, gradeHref, sheetsForGrade } from "../_grades";
@@ -25,13 +26,17 @@ const years = GRADES.map((grade) => ({
 
 const title = "Printable worksheets by grade, Pre-K to 8th | School Skills";
 const description =
-  "Ten pages, one per school year: what a child that age can print, drawn from every shelf in the Print Shop at once. Free, no account, and nothing to download — and the ages come off each sheet rather than off a standard.";
+  "Ten pages, one per school year: what a child that age can print, drawn from every shelf in the Print Shop at once. Free, no account, print or save as PDF — and the ages come off each sheet rather than off a standard.";
 ---
 
 <Content
   title={title}
   description={description}
   world="paper"
+  breadcrumb={trailTo(null, {
+    name: "By school year",
+    href: "/printables/grade",
+  })}
   jsonLd={{
     "@context": "https://schema.org",
     "@type": "CollectionPage",

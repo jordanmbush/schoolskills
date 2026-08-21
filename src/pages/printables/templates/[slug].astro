@@ -1,5 +1,6 @@
 ---
 import Content from "@/layouts/Content.astro";
+import { trailTo } from "../_shelves";
 import AdSlot from "@/components/site/AdSlot.astro";
 import { SheetView } from "@/components/sheet/Sheet";
 import { answerKey, buildSheet } from "@/engine/sheets";
@@ -55,7 +56,7 @@ const printed = buildSheet(sheet.config, TEMPLATE_SEED);
 const key = keyed(sheet) ? answerKey(sheet.config, TEMPLATE_SEED) : null;
 
 const title = `${sheet.keyword} | School Skills`;
-const description = `${sheet.summary} Printed straight from this page — free, no account, and no download.`;
+const description = `${sheet.summary} Print it straight from this page, or save it as a PDF — free, and no account.`;
 const url = `https://schoolskills.app${pathFor(sheet)}`;
 
 const groups = templateShelf();
@@ -66,6 +67,7 @@ const group = groups.find((entry) => entry.id === sheet.group)!;
   title={title}
   description={description}
   world="paper"
+  breadcrumb={trailTo("templates", { name: sheet.name, href: url })}
   jsonLd={{
     "@context": "https://schema.org",
     "@type": "LearningResource",

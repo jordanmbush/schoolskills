@@ -1,5 +1,6 @@
 ---
 import Content from "@/layouts/Content.astro";
+import { trailTo } from "../_shelves";
 import AdSlot from "@/components/site/AdSlot.astro";
 import {
   HANDWRITING_SHEETS,
@@ -23,7 +24,7 @@ import HubLinks from "../_HubLinks.astro";
 const title =
   "Free printable handwriting worksheets — trace, copy, write | School Skills";
 const description =
-  "Printable handwriting practice: letter tracing in upper and lower case, number formation 0–9, sight words, sentences and copywork. Every sheet traces first, then copies, then leaves an empty line. Free, no account, and nothing to download.";
+  "Printable handwriting practice: letter tracing in upper and lower case, number formation 0–9, sight words, sentences and copywork. Every sheet traces first, then copies, then leaves an empty line. Free, no account, print or save as PDF.";
 
 const groups = handwritingShelf();
 const letter = STOCKS[0];
@@ -33,6 +34,7 @@ const letter = STOCKS[0];
   title={title}
   description={description}
   world="paper"
+  breadcrumb={trailTo("handwriting")}
   jsonLd={{
     "@context": "https://schema.org",
     "@type": "CollectionPage",

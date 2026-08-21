@@ -1,5 +1,6 @@
 ---
 import Content from "@/layouts/Content.astro";
+import { trailTo } from "../_shelves";
 import AdSlot from "@/components/site/AdSlot.astro";
 import HubLinks from "../_HubLinks.astro";
 import {
@@ -64,7 +65,7 @@ const description = `${grade.heading} for ages ${younger} and ${older}: ${shelve
   .map((shelf) => shelf.label)
   .join(
     ", ",
-  )}. Every one prints straight from the page — free, no account, and nothing to download.`;
+  )}. Every one prints straight from the page — free, no account, print or save as PDF.`;
 const url = `https://schoolskills.app${gradeHref(grade)}`;
 ---
 
@@ -72,6 +73,11 @@ const url = `https://schoolskills.app${gradeHref(grade)}`;
   title={title}
   description={description}
   world="paper"
+  breadcrumb={trailTo(
+    null,
+    { name: "By school year", href: "/printables/grade" },
+    { name: grade.label, href: url },
+  )}
   jsonLd={{
     "@context": "https://schema.org",
     "@type": "CollectionPage",

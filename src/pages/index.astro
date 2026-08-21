@@ -2,7 +2,11 @@
 import Content from "@/layouts/Content.astro";
 import AdSlot from "@/components/site/AdSlot.astro";
 import WorldMap from "@/components/site/WorldMap.astro";
+import { SheetView } from "@/components/sheet/Sheet";
+import { buildSheet } from "@/engine/sheets";
 import { passage, passageText } from "@/engine/sheets/passages";
+import { MATHS_SEED, MATHS_SHEETS } from "./printables/_maths";
+import { ALL_SHEETS, SHELVES } from "./printables/_shelves";
 
 /**
  * The overworld.
@@ -16,14 +20,25 @@ import { passage, passageText } from "@/engine/sheets/passages";
  * So the page is the map first and the argument second: colour, worlds and one
  * obvious way in above the fold, then the honest prose underneath it. The
  * "what it isn't" block is deliberately the same size as the "what it is" one,
- * because the limits are half the pitch here. This is a supplement — three
- * narrow skills drilled properly — and a parent who discovers that in week
- * three instead of minute one has been sold something.
+ * because the limits are half the pitch here. This is a supplement — practice
+ * of things somebody else taught — and a parent who discovers that in week
+ * three instead of minute one has been sold something. Which limit says so has
+ * moved: the games really are three narrow skills, but the paper is wide
+ * enough that "not a whole subject" stopped being the true one, and what is
+ * still true of both halves is that nothing here teaches.
+ *
+ * **Every landmark on this page carries `.no-print`, so the overworld prints
+ * nothing.** `@page { margin: 0 }` in print.css is global and cannot be scoped,
+ * so any section without the class prints edge to edge — and once the paper
+ * band below put a real sheet on this page, the rule that keeps that from
+ * happening (§20, held by `Sheet.test.tsx`) started applying here. Printing a
+ * screen was never the use for this one, and the alternative reading — the
+ * overworld printing the worksheet it happens to be showing — hands a parent
+ * paper they did not choose.
  */
-const title =
-  "School Skills — free homeschool practice games for times tables, spelling and typing";
+const title = "Free printable worksheets and practice games | School Skills";
 const description =
-  "Three free practice games for homeschool and after-school: times tables, sight words and touch typing. No account, no tracking, no personalised ads. A supplement to your lessons, not a curriculum.";
+  "Worksheets to print for maths, handwriting, phonics and spelling, plus three practice games for times tables, sight words and touch typing. Free, with no account and nothing uploaded.";
 
 /**
  * The one verse on this page, and the band it sits in is why it is allowed to
@@ -49,6 +64,28 @@ const description =
  * release's own and the credit line travels with them.
  */
 const verse = passage("the-plans-of-the-diligent");
+
+/**
+ * The sheet the paper band shows, read out of the maths catalog rather than
+ * configured here.
+ *
+ * A config written on this page would be a second place a sheet is described,
+ * and it would drift from the page it links to. Taking the catalog's own entry
+ * and its own seed means the paper on the home page is the paper at
+ * `/printables/multiplication-worksheets`, problem for problem.
+ *
+ * Multiplication because it is the sheet a parent recognises without reading
+ * it: a grid of times-table facts is legible as a worksheet at a glance, which
+ * a phonics or handwriting sheet shrunk to a third of its size is not.
+ */
+const PEEK = "multiplication-worksheets";
+const peekEntry = MATHS_SHEETS.find((sheet) => sheet.slug === PEEK);
+if (!peekEntry) {
+  throw new Error(
+    `The home page shows ${PEEK}, which is no longer in the maths catalog. Point it at a sheet that exists.`,
+  );
+}
+const peek = buildSheet(peekEntry.config, MATHS_SEED);
 ---
 
 <Content
@@ -68,16 +105,17 @@ const verse = passage("the-plans-of-the-diligent");
     isAccessibleForFree: true,
   }}
 >
-  <header class="hero wrap">
+  <header class="hero wrap no-print">
     <p class="hero__eyebrow">
       <span class="hero__world">The map</span>
-      Free &middot; no account &middot; works offline
+      No account &middot; nothing uploaded &middot; works offline
     </p>
-    <h1 class="hero__title">Ten minutes of drill they&rsquo;ll ask for</h1>
+    <h1 class="hero__title">Free practice games and printable worksheets</h1>
     <p class="hero__lead">
-      Times tables, sight words and touch typing, as three small games. Made for
-      homeschool and after-school practice at home &mdash; free, with no account
-      and nothing about your child ever leaving the device it&rsquo;s on.
+      Three small games &mdash; times tables, sight words and touch typing
+      &mdash; and a print shop of worksheets for maths, handwriting, phonics and
+      more. No account, nothing to install, and nothing about your child ever
+      leaves the device it&rsquo;s on.
     </p>
     {
       /*
@@ -122,13 +160,91 @@ const verse = passage("the-plans-of-the-diligent");
       keyboard user's next Tab carries on from the hero button they just left,
       several screens above where the page now is. */
   }
-  <section class="band band--tight wrap" id="worlds" tabindex="-1">
+  <section class="band band--tight wrap no-print" id="worlds" tabindex="-1">
     <WorldMap />
   </section>
 
-  <div class="wrap"><AdSlot name="article" /></div>
-  <section class="band band--inset" id="limits" tabindex="-1">
-    <div class="wrap">
+  {
+    /*
+     * The paper half, which the rest of this page would otherwise leave as one
+     * clause under the map.
+     *
+     * The sheet below is the renderer, not a picture of it. `SheetView` with no
+     * `client:*` is HTML at build time, so the band costs this page no
+     * JavaScript and what a parent sees here is what the catalog prints.
+     *
+     * `data-world="paper"` rather than a set of one-off colours: world blocks
+     * are scoped to the attribute, so the band is painted out of The Print
+     * Shop's own tokens, down to a `--go` that is the colour of paper.
+     *
+     * The sheet is an illustration, not paper: a page that prints a sheet is a
+     * page that IS that sheet (docs/printables.md §8), and the overworld is not
+     * one. See the note on printing at the top of this file.
+     */
+  }
+  <section
+    class="band paper no-print"
+    data-world="paper"
+    aria-labelledby="paper-head"
+  >
+    <div class="wrap paper__in no-print">
+      <div class="paper__say">
+        <h2 class="h2" id="paper-head">The other half of this site is paper</h2>
+        <p class="h2__sub">
+          {ALL_SHEETS.length} worksheets, free and with no account. Every one is an
+          ordinary web page, so you can read it on screen, print it, or pick{
+            " "
+          }
+          <em>Save as PDF</em> and keep the file &mdash; on a phone as easily as a
+          laptop. Each comes with its answer key on the page behind it.
+        </p>
+
+        {
+          /* One chip per shelf, off the same registry the catalog builds
+            itself from, so a shelf added there turns up here. `role="list"`
+            restores what base.css strips, as the map does. */
+        }
+        <ul class="paper__shelves" role="list">
+          {
+            SHELVES.map((shelf) => (
+              <li>
+                <a href={shelf.href}>{shelf.label}</a>
+              </li>
+            ))
+          }
+        </ul>
+
+        <p class="aside">
+          <strong>And when a sheet is nearly right, change it.</strong> The bench
+          sets what is on it, the paper, the type size and how many problems fit,
+          and redraws the page as you go. The settings live in the address bar, so
+          a sheet you tuned can be bookmarked, or passed to someone else as an ordinary
+          link.
+        </p>
+
+        <div class="hero__actions">
+          <a class="cta" href="/printables">Browse the worksheets</a>
+          <a class="cta cta--quiet" href="/printables/make">Build your own</a>
+        </div>
+      </div>
+
+      {
+        /*
+         * Decorative here, and only here. The band's point is carried by the
+         * heading, the shelves and the two links; a screen reader made to walk
+         * thirty multiplication problems to reach them would be worse off for
+         * the illustration, and the sheet's own page reads it properly.
+         */
+      }
+      <div class="paper__peek" aria-hidden="true">
+        <SheetView sheet={peek} />
+      </div>
+    </div>
+  </section>
+
+  <div class="wrap no-print"><AdSlot name="article" /></div>
+  <section class="band band--inset no-print" id="limits" tabindex="-1">
+    <div class="wrap no-print">
       <h2 class="h2">What this is, and what it isn&rsquo;t</h2>
       <p class="h2__sub">
         Worth knowing before you build a morning around it. This is one piece of
@@ -201,10 +317,12 @@ const verse = passage("the-plans-of-the-diligent");
               >
             </li>
             <li>
-              <span class="truth__what">Not a whole subject</span>
+              <span class="truth__what">Not a teacher</span>
               <span class="truth__why"
-                >Three narrow skills, on purpose. Reading comprehension, writing
-                and maths reasoning aren&rsquo;t here and aren&rsquo;t planned.</span
+                >The games are three narrow skills on purpose. The paper goes
+                wider &mdash; grammar, phonics, word problems, book reports
+                &mdash; but none of it teaches: a sheet is practice, or a frame
+                for work you set, and nothing on it explains anything.</span
               >
             </li>
           </ul>
@@ -213,8 +331,8 @@ const verse = passage("the-plans-of-the-diligent");
     </div>
   </section>
 
-  <div class="wrap"><AdSlot name="article" /></div>
-  <section class="band wrap">
+  <div class="wrap no-print"><AdSlot name="article" /></div>
+  <section class="band wrap no-print">
     <h2 class="h2">Where it fits in a day</h2>
     <p class="h2__sub">
       Short and frequent beats long and rare, which is convenient &mdash; ten
@@ -265,8 +383,8 @@ const verse = passage("the-plans-of-the-diligent");
     }
   </section>
 
-  <section class="band band--inset">
-    <div class="wrap">
+  <section class="band band--inset no-print">
+    <div class="wrap no-print">
       <h2 class="h2">What they see, and what you don&rsquo;t</h2>
       <p class="h2__sub">
         There is no parent account because there is no account at all. This is
@@ -304,8 +422,8 @@ const verse = passage("the-plans-of-the-diligent");
     </div>
   </section>
 
-  <section class="band" id="for-parents" tabindex="-1">
-    <div class="wrap">
+  <section class="band no-print" id="for-parents" tabindex="-1">
+    <div class="wrap no-print">
       <h2 class="h2">For parents</h2>
       <div class="prose">
         <p>

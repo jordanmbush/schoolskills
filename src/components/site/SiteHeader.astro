@@ -8,8 +8,12 @@
  * colour code the map teaches — a dot per world, in that world's own colour,
  * so "the green one" means the same thing here as it does there.
  *
- * The flag's pennant takes `--accent`, which is whatever world the page is
- * standing in. Walking from the jungle to the glacier recolours it.
+ * The mark is `/favicon.svg` — the same file the tab icon points at, so what
+ * is on the page and what is in the tab cannot drift apart. Linked rather
+ * than inlined: it is 35 kB of traced curves, which is one request the
+ * browser has already made for the tab, and would otherwise be 35 kB of HTML
+ * on every page. That file is also the small-size art, with the book's page
+ * rules and lettering dropped, which is the right art at 32px.
  */
 import { WORLDS, type World } from "@/engine/worlds";
 
@@ -26,20 +30,13 @@ const { world } = Astro.props;
 <header class="mast">
   <div class="mast__in">
     <a class="mast__mark" href="/">
-      <svg
-        class="mast__flag"
-        width="22"
-        height="24"
-        viewBox="0 0 22 24"
-        aria-hidden="true"
-      >
-        <path
-          d="M4.2 2.5v19"
-          stroke="currentColor"
-          stroke-width="2.4"
-          stroke-linecap="round"></path>
-        <path class="mast__pennant" d="M5.4 3.6 19 8.2 5.4 12.8z"></path>
-      </svg>
+      <img
+        class="mast__logo"
+        src="/favicon.svg"
+        width="32"
+        height="32"
+        alt=""
+      />
       <span class="mast__name">School Skills</span>
     </a>
 

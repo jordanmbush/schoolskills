@@ -24,6 +24,17 @@ interface Props {
   image?: string;
   /** Structured data for this page, serialised into a JSON-LD script tag. */
   jsonLd?: Record<string, unknown>;
+  /**
+   * The trail to this page, root first, as `BreadcrumbList` structured data.
+   *
+   * Given rather than derived from the path, because the path does not know
+   * what its segments are called: `/printables/bible/psalm-23-copywork/a4` is
+   * three words and a stock, and only the route that built it knows those are
+   * "The Print Shop", "Bible" and a sheet with a name. A page that says nothing
+   * emits nothing, which is the right default — a breadcrumb on a page with no
+   * hierarchy above it is a claim about a structure that isn't there.
+   */
+  breadcrumb?: Array<{ name: string; href: string }>;
   /** Which world this page is in. Drives every colour on it. */
   world?: World;
   /**
@@ -51,12 +62,65 @@ const {
   description,
   image = "/og-default.png",
   jsonLd,
+  breadcrumb,
   world = "grid",
   noindex = false,
 } = Astro.props;
 
 const canonical = new URL(Astro.url.pathname, Astro.site).href;
 const ogImage = new URL(image, Astro.site).href;
+
+/**
+ * The publisher, stamped onto every page's structured data.
+ *
+ * Google reads a site's logo off an Organization node, and the claim it is
+ * making — this mark belongs to this domain — is about the site rather than
+ * about any one page. So it is attached here instead of being written into the
+ * thirty route files that carry `jsonLd`, which would drift apart the first
+ * time one of them was edited alone. `publisher` is valid on every `@type`
+ * this site emits: WebSite, CollectionPage, AboutPage and LearningResource are
+ * all CreativeWorks.
+ *
+ * The PNG rather than favicon.svg, because Google's logo guidance takes a
+ * raster. It is the same mark, from the same traced curves — see
+ * scripts/generate-icons.mjs.
+ *
+ * A page that states its own publisher keeps it, so a future page that is not
+ * ours to claim can say so.
+ */
+/**
+ * The trail as schema.org sees it: a list, one-indexed, each item an absolute
+ * URL. Its own script rather than a field on `jsonLd`, because a
+ * `BreadcrumbList` is an `ItemList` and not a `CreativeWork` — the publisher
+ * below would be invalid on it, and Google reads sibling blocks fine.
+ */
+const crumbs = breadcrumb?.length
+  ? {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: breadcrumb.map((step, i) => ({
+        "@type": "ListItem",
+        position: i + 1,
+        name: step.name,
+        item: new URL(step.href, Astro.site).href,
+      })),
+    }
+  : undefined;
+
+const structured = jsonLd && {
+  ...jsonLd,
+  publisher: jsonLd.publisher ?? {
+    "@type": "Organization",
+    name: "School Skills",
+    url: new URL("/", Astro.site).href,
+    logo: {
+      "@type": "ImageObject",
+      url: new URL("/icon-512.png", Astro.site).href,
+      width: 512,
+      height: 512,
+    },
+  },
+};
 ---
 
 <!doctype html>
@@ -120,11 +184,20 @@ const ogImage = new URL(image, Astro.site).href;
     </script>
 
     {
-      jsonLd && (
+      structured && (
         <script
           type="application/ld+json"
           is:inline
-          set:html={JSON.stringify(jsonLd)}
+          set:html={JSON.stringify(structured)}
+        />
+      )
+    }
+    {
+      crumbs && (
+        <script
+          type="application/ld+json"
+          is:inline
+          set:html={JSON.stringify(crumbs)}
         />
       )
     }
