@@ -17,6 +17,19 @@ import { BADGES_BY_ID } from "@/engine/progress";
 import { WORLDS } from "@/engine/worlds";
 import { sfx } from "@/services/sound";
 
+/**
+ * A player's home on the card island: what they have done, and the way into
+ * the next race.
+ *
+ * Subject-agnostic on purpose. The eyebrow, the title and the blurb all come
+ * from `useSubject()`, so this one screen is The Grid at `/flash-cards` and
+ * Word Jungle at `/spelling/play`, and nothing in it branches on a deck
+ * family. (`timeLimitForAge` is imported from the flash-card module, but it
+ * only turns an age into a clock and is shared by every deck.)
+ *
+ * The typing island has no equivalent: with one game there is nothing to
+ * choose between, so `/typing#/p/:id` is its setup screen instead.
+ */
 export default function PlayerHub() {
   const { profileId } = useParams();
   const { sessions } = useHub();
@@ -28,8 +41,14 @@ export default function PlayerHub() {
 
   const mine = sessionsFor(sessions, profile.id);
   const stats = lifetimeStats(mine);
+  // `loadHub` sorts sessions oldest-first and every write appends to the end,
+  // so the newest four are a reverse and a slice rather than a sort.
   const recent = [...mine].reverse().slice(0, 4);
   const flagship = bestRun(mine);
+  // A badge id outlives the table it was earned from: `Profile.badges` is the
+  // only copy there is, so an id this build no longer ships simply doesn't
+  // resolve (`engine/progress.ts`). Dropping the miss is what keeps an older
+  // profile rendering at all — and is why the `!`s below are safe.
   const badges = profile.badges
     .map((id) => BADGES_BY_ID.get(id))
     .filter(Boolean);
@@ -42,6 +61,9 @@ export default function PlayerHub() {
     mine.map((s) => s.mode),
     profile.age,
   );
+  // Six at most, and the button below is offered from three up. `buildDrill`
+  // runs two passes at each fact and never builds fewer than six cards, so a
+  // shorter list would only come round again.
   const trouble = troubleFacts(mine, drillMode, 6);
   // Everywhere else you could be. The world you're standing in isn't offered.
   const elsewhere = WORLDS.filter((w) => w.id !== subject.world);

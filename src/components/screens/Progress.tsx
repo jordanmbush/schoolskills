@@ -37,6 +37,25 @@ import { RecordBook, RunList } from "./progress/RecordBook";
 import { TroubleSpots } from "./progress/TroubleSpots";
 import { duration, percent } from "@/engine/format";
 
+/**
+ * The record book — one screen for everything this player has ever raced.
+ *
+ * It is mounted on the card island, but it is not that island's screen. The
+ * typing results link into it by URL (`/flash-cards#/p/:id/progress`), and it
+ * mixes two scopes deliberately. Races, cards, correct, time practising, the
+ * badges, the record book and the run list all count every world the player
+ * has been in. The fact map, the trouble spots, the table trophies and the
+ * "Facts mastered" stat follow the deck switcher, because each of them reads
+ * `grid` or `trouble`, and `factStats`/`troubleFacts` drop every session run
+ * on another `mode`. So switching decks moves one stat in a strip of
+ * lifetime totals — intended, and the reason that strip is not simply
+ * `lifetimeStats`.
+ *
+ * So it has to be able to show a deck this mount cannot play, and `ownsMode`
+ * is what decides that: it is the difference between "Drill these" being a
+ * button here and being a link into the world that does own the deck
+ * (`TroubleSpots`).
+ */
 export default function Progress() {
   const { profileId } = useParams();
   const { profiles, sessions } = useHub();
@@ -132,9 +151,9 @@ export default function Progress() {
   /** Which world this deck is played in — and so where a drill of it starts. */
   const owner = WORLDS.find((w) => w.id === spec.world);
   /**
-   * The same facts as a worksheet, or null where this build has no sheet for
-   * them — a typing passage is not a page of problems (docs/printables.md
-   * §14).
+   * The same facts as a worksheet: the record book's second door, beside the
+   * drill (docs/printables.md §14). Null where this build has no sheet family
+   * for them — `practiceSheet` is where that call is made, and why.
    */
   const printable = practiceSheet(
     mode,
