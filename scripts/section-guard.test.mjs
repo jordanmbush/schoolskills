@@ -27,7 +27,10 @@ describe("which document a bare § means", () => {
 
   it("resolves the stylesheets that belong to one subject", () => {
     // Not a subtree: src/styles/ holds both subjects' sheets side by side.
-    expect(docFor("src/styles/game.css")).toBe("typing");
+    expect(docFor("src/styles/game/keyboard.css")).toBe("typing");
+    // And not the whole of src/styles/game/ — the race and the card are drawn
+    // by both islands, so nothing about where they sit names a document.
+    expect(docFor("src/styles/game/race.css")).toBeNull();
     expect(docFor("src/styles/print.css")).toBe("printables");
   });
 

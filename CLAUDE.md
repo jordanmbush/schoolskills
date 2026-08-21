@@ -117,7 +117,8 @@ sits:
 | `src/engine/typing/`, `src/games/typing/`                                                      | `docs/typing.md`     |
 
 A file outside those that still belongs to one subject resolves the same way:
-`src/styles/game.css` and `src/engine/keyboard.ts` are typing's, and
+`src/engine/keyboard.ts` and typing's four stylesheets — `src/styles/game/`'s
+`ladder.css`, `lesson.css`, `keyboard.css` and `storm.css` — are typing's, and
 `src/styles/sheet.css`, `src/styles/print.css`, `src/styles/printshop.css` and
 `src/styles/fonts.css` are the Print Shop's. Shared code that names one
 document and no other — `src/engine/progress.ts`, whose citations are all

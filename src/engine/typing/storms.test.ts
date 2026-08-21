@@ -176,7 +176,7 @@ describe("the twenty levels", () => {
    * §5.7 is checked, not trusted: twenty rows of numbers in prose beside
    * twenty rows in code, with nothing between them but somebody's diligence.
    * The doc's table is read off disk and compared column by column, the same
-   * way `StormField.test.tsx` reads `game.css` rather than restating its
+   * way `StormField.test.tsx` reads the stylesheets rather than restating their
    * arithmetic. Neither side is the authority — if they part company, one of
    * them is wrong and this says which two cells to look at.
    */

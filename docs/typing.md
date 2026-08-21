@@ -1304,7 +1304,7 @@ for and this one has nothing under the sky (§4.7).
 
 They scale off it differently, though, and the difference had to be resolved
 rather than inherited. `keyX` returns the centre of a key's **slot**, while the
-drawn keycap is inset inside that slot: `game.css` gives it
+drawn keycap is inset inside that slot: `game/keyboard.css` gives it
 `width: calc(var(--w) * var(--key) - var(--key-gap))`, with `--key-gap` set to
 `calc(var(--key) * 0.09)`. So a cap's visual centre is `--key * (x + w/2 -
 0.045)` while its lane is `--key * (x + w/2)` — a letter placed at
@@ -1331,8 +1331,8 @@ Sub-pixel, and therefore worth being explicit about what it is not: this is not
 a fudge factor found by nudging until it looked right. It is the difference
 between two positions the stylesheet computes, and `StormField.test.tsx`
 computes both of them the way a browser would — reading the field's `left` and
-the keycap's `left` and `width` out of `game.css` and evaluating them with
-`--key` as the unit. `stoneCentre` and `capCentre` come out equal to ten
+the keycap's `left` and `width` out of `game/keyboard.css` and evaluating them
+with `--key` as the unit. `stoneCentre` and `capCentre` come out equal to ten
 decimal places, and stop being equal the moment either declaration moves
 without the other: inset the caps by `var(--key-gap) * 2` and the test fails by
 the half gap the lane no longer matches, rather than the lanes quietly drifting

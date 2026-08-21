@@ -22,7 +22,7 @@ import type { ShieldFinger, StormState, WaveSpec } from "@/engine/typing/storm";
  * and one event apiece when something happens to one (§8.5).
  *
  * The geometry is NOT here. That a segment sits over its own finger's keys is
- * a claim about this component's numbers *and* game.css's arithmetic, so it
+ * a claim about this component's numbers *and* storm.css's arithmetic, so it
  * lives in `StormField.test.tsx` beside the lane it shares its half-gap
  * correction with, rather than in a second, weaker copy here.
  */

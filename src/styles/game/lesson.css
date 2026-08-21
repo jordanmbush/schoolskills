@@ -1,0 +1,294 @@
+/* ── A typing lesson ─────────────────────────────────────────────────────
+   The passage, and the screens either side of it (docs/typing.md §7): the
+   three bars that stand where the ghost lane stands, the brief on the door,
+   the words, and the line you type them on. The board underneath is
+   keyboard.css, and the ladder a lesson is picked off is ladder.css.      */
+
+/* ── The three bars, where a lesson keeps its lane ─────────────────────────
+   A lesson is not a race (docs/typing.md §7): nothing is chasing you, so what
+   stands where the ghost lane stands is what you ARE chasing — accuracy, the
+   new keys, and speed — filling as the run goes. Same row of the race grid,
+   same job, different question answered. */
+
+.passbars {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.passbar {
+  display: grid;
+  /* Label, bar, reading. The bar takes what the two ends don't, so a long key
+     name can't squeeze it to nothing. */
+  grid-template-columns: minmax(5.5rem, auto) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.passbar__label {
+  font-size: var(--step--2);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--chalk-dim);
+}
+
+.passbar__track {
+  height: 0.55rem;
+  border-radius: 999px;
+  border: 1px solid var(--hairline);
+  background: rgb(0 0 0 / 25%);
+  overflow: hidden;
+}
+
+.passbar__fill {
+  display: block;
+  height: 100%;
+  /* "Not yet" is not "wrong". A bar short of its target is drawn in the
+     player's own tint and never in --flare, which on this site means a wrong
+     answer and would tell a child mid-run that they had failed something they
+     are three words from passing. */
+  background: var(--tint, var(--accent));
+  transition: width 0.3s var(--ease-out);
+}
+
+/* Met, in the same green "correct" is everywhere else — one of the five
+   colours that mean the same thing in every world (CLAUDE.md). */
+.passbar.is-ok .passbar__fill {
+  background: var(--lime);
+}
+
+.passbar__value {
+  font-size: var(--step--1);
+  font-weight: 700;
+}
+
+.passbar.is-ok .passbar__value {
+  color: var(--lime);
+}
+
+.passbar__need {
+  font-weight: 400;
+  color: var(--chalk-dim);
+}
+
+/* ── Typing: the lesson brief ──────────────────────────────────────────────
+   What is written on the door before a child goes through it (§9): the new
+   keys, the three bars, their best, and how much of the keyboard will be up.
+   Built out of the modal the quit sheet already uses, so there is one thing on
+   this site that means "read this, then choose". */
+
+.brief {
+  gap: var(--gap-2);
+}
+
+.brief .panel__title {
+  margin-top: -0.15rem;
+}
+
+/* The keys as keys, on one line with their label. They are what the child is
+   about to go looking for, and fifteen of them at lesson 31 is a row rather
+   than a sentence. */
+.brief__new {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0;
+}
+
+.brief__newlabel {
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--chalk-dim);
+  margin-right: 0.15rem;
+}
+
+.brief__key {
+  display: grid;
+  place-items: center;
+  min-width: 1.8rem;
+  padding: 0.25rem 0.4rem;
+  border: 1.5px solid var(--hairline);
+  border-bottom-width: 3px;
+  border-radius: 7px;
+  background: rgb(255 255 255 / 4%);
+  color: var(--chalk);
+  font-size: var(--step--1);
+  font-weight: 700;
+  line-height: 1;
+}
+
+.brief__askshead {
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--chalk-dim);
+  margin-bottom: 0.4rem;
+}
+
+.brief__asks ul {
+  display: grid;
+  gap: 0.3rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--step--1);
+  color: var(--chalk-soft);
+  line-height: 1.4;
+}
+
+.brief__asks b {
+  color: var(--chalk);
+}
+
+.brief__best {
+  margin: 0;
+  font-size: var(--step--1);
+  color: var(--chalk-soft);
+}
+
+/* The one line on this panel that is answering "why can't I press Start". It
+   sits where the button would be, so it is read instead of it and not after
+   a hunt for it. */
+.brief__locked {
+  margin: 0;
+  padding-left: 0.7rem;
+  border-left: 3px solid var(--hairline);
+  font-size: var(--step--1);
+  color: var(--chalk-dim);
+  line-height: 1.4;
+}
+
+/* ── Typing: the passage and the line you type on ──────────────────────── */
+
+.typing .passage {
+  max-width: 46rem;
+  margin-inline: auto;
+  width: 100%;
+
+  /* The passage is the row of the race grid that gives — `.race` makes it
+     `minmax(0, 1fr)` while every other row is `auto`, and the keyboard below
+     the input is one of those. But a grid item still refuses to be shorter
+     than its own content unless it is told it may, so without these two a
+     short screen with the board on would grow the page instead of the row:
+     the line you type on, and then the board, would slide under the fold.
+
+     Clipping is the right end to lose. `Passage` is already a window on the
+     deck — six words behind, fourteen ahead — so what goes is more read-ahead,
+     and the live word sits near the top of it either way. */
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Generous line height and a fixed-width font: the eye is tracking one word
+   in a block of them, and proportional spacing makes that harder than it
+   needs to be at speed. */
+.passage__text {
+  font-family: var(--font-mono);
+  font-size: clamp(1.05rem, 3.2vw, 1.5rem);
+  line-height: 2;
+  letter-spacing: 0.01em;
+  color: var(--chalk-soft);
+  text-align: left;
+}
+
+.passage__word {
+  white-space: nowrap;
+}
+
+.passage__word.is-done {
+  color: color-mix(in oklab, var(--lime) 75%, var(--chalk));
+}
+
+.passage__word.is-wrong {
+  color: var(--flare);
+  text-decoration: underline wavy;
+  text-underline-offset: 0.28em;
+}
+
+.passage__word.is-live {
+  color: var(--chalk);
+  background: color-mix(in oklab, var(--accent) 16%, transparent);
+  border-radius: 6px;
+  padding: 0.1em 0.25em;
+  box-shadow: inset 0 -2px 0 var(--accent);
+}
+
+.passage__ch.is-hit {
+  color: var(--lime);
+}
+
+.passage__ch.is-miss {
+  color: var(--flare);
+  background: color-mix(in oklab, var(--flare) 22%, transparent);
+  border-radius: 3px;
+}
+
+/* The line a passage's source asks to be printed under it — the setup that
+   names the level, the race that shows the words, and the results that list
+   them back. Quiet and small: it is a credit, not a caption, and it is set
+   the same on all three so it reads as one line rather than three notes. */
+.passage__credit {
+  font-size: var(--step--2);
+  color: var(--chalk-dim);
+  text-align: center;
+  margin-top: 0.7rem;
+  text-wrap: pretty;
+}
+
+.typefield {
+  display: grid;
+  gap: 0.4rem;
+  max-width: 30rem;
+  width: 100%;
+  margin-inline: auto;
+}
+
+.typefield__input {
+  padding: clamp(0.7rem, 2.4vh, 1.1rem) 0.9rem;
+  border-radius: var(--radius);
+  border: 2px solid var(--hairline);
+  background: var(--ink-700);
+  color: var(--chalk);
+  font-family: var(--font-mono);
+  font-size: var(--step-2);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-align: center;
+  width: 100%;
+}
+
+.typefield__input:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.typefield__input:disabled {
+  opacity: 0.5;
+}
+
+.typefield__hint {
+  font-size: var(--step--2);
+  color: var(--chalk-soft);
+  text-align: center;
+}
+
+.results__note {
+  font-size: var(--step--1);
+  color: var(--accent);
+  text-align: center;
+}
+
+/* The one sentence on a lesson's results screen that says what to do next
+   (docs/typing.md §6.1). Same voice as `.results__note` and deliberately not
+   the same alignment: it belongs to the headline above it rather than standing
+   on its own between two panels, and a line that names the key you missed is
+   read after the words "not yet" rather than beside them. */
+.results__lede {
+  font-size: var(--step-0);
+  color: var(--accent);
+  max-width: 60ch;
+}

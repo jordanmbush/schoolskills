@@ -19,11 +19,11 @@ const NONE: ReadonlySet<string> = new Set();
  * covers the rest.
  *
  * The board is fifteen key units wide and each key knows its own left edge in
- * those units, so the whole thing scales off a single `--key` in `game.css` —
- * one layout at two sizes, with no breakpoint to keep in step with the row
- * stagger. That dial tops out at real key pitch (§4.7), which is why on a wide
- * screen the board is wider than the 720px race column and is allowed to
- * overflow it; the CSS says how.
+ * those units, so the whole thing scales off a single `--key` in
+ * `keyboard.css` — one layout at two sizes, with no breakpoint to keep in step
+ * with the row stagger. That dial tops out at real key pitch (§4.7), which is
+ * why on a wide screen the board is wider than the 720px race column and is
+ * allowed to overflow it; the CSS says how.
  *
  * The echo arrives as props rather than from a hook called here (§4.3): the
  * board stays a pure function of its props, testable by rendering it, and

@@ -13,7 +13,7 @@ import type { CSSProperties } from "react";
  * lanes use — and the stylesheet multiplies them, so there is no arithmetic in
  * this file for the shield and the keyboard to disagree about. The half
  * `--key-gap` step back that a segment shares with a lane is written in
- * `game.css` as `var(--key-gap) / 2` on both, never as the number it currently
+ * `storm.css` as `var(--key-gap) / 2` on both, never as the number it currently
  * works out to (§8.2).
  *
  * **One tint per landing, and never a flash sequence** (§8.10). The mechanism

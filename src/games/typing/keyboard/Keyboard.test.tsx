@@ -32,7 +32,11 @@ const css = (name: string) =>
     "utf8",
   );
 
-/** Where the board's own rules start in the game stylesheet, and where they end. */
+/** The board's stylesheet, and the same again with its prose taken out. */
+const game = css("game/keyboard.css");
+const sheet = game.replace(/\/\*[\s\S]*?\*\//g, "");
+
+/** Where the board's own rules start in it, and where they end. */
 const KEYBOARD_BLOCK = "/* ── Typing: the keyboard on screen";
 const HINT_BLOCK = "/* ── Typing: the next-key hint";
 const ECHO_BLOCK = "/* ── Typing: press echo";
@@ -116,7 +120,6 @@ describe("Keyboard", () => {
   });
 
   it("draws the board out of world tokens, borrowing none of the five", () => {
-    const game = css("game.css");
     const block = game.slice(
       game.indexOf(KEYBOARD_BLOCK),
       game.indexOf(HINT_BLOCK),
@@ -130,7 +133,6 @@ describe("Keyboard", () => {
   });
 
   it("draws a key at the pitch of a real one", () => {
-    const sheet = css("game.css").replace(/\/\*[\s\S]*?\*\//g, "");
     const ceilings = [
       ...sheet.matchAll(/--key:\s*clamp\([^;]*?,\s*([^,;]+)\s*\);/g),
     ].map(([, ceiling]) => ceiling.trim());
@@ -155,8 +157,6 @@ describe("Keyboard", () => {
   });
 
   it("centres the board on the arithmetic when it overflows the race column", () => {
-    const sheet = css("game.css").replace(/\/\*[\s\S]*?\*\//g, "");
-
     // A life-size board overflows the 720px race column on purpose, and is
     // centred with half the column minus half of fifteen units rather than
     // with an alignment property — neither `margin-inline: auto` nor
@@ -164,8 +164,8 @@ describe("Keyboard", () => {
     // decision 62).
     //
     // Filtered rather than taken first, because `.typing .keyboard` is written
-    // twice: the other one is the short-viewport rule that drops the board
-    // altogether. Exactly one of them may say where the board sits.
+    // twice in this file: the other one is the short-viewport rule that drops
+    // the board altogether. Exactly one of them may say where the board sits.
     const centring = [...sheet.matchAll(/\.typing \.keyboard\s*{([^}]*)}/g)]
       .map(([, body]) => body)
       .filter((body) => /margin-inline/.test(body));
@@ -188,7 +188,6 @@ describe("Keyboard", () => {
   });
 
   it("flashes a struck key green and a wrong one red, and nothing else", () => {
-    const game = css("game.css");
     const echo = game.slice(game.indexOf(ECHO_BLOCK));
 
     // The two the echo is allowed, in the two places they mean something.
@@ -218,7 +217,6 @@ describe("Keyboard", () => {
   });
 
   it("points at the next key in `--go`, and not in a press colour", () => {
-    const game = css("game.css");
     const hint = game.slice(game.indexOf(HINT_BLOCK), game.indexOf(ECHO_BLOCK));
 
     // `--go` already means "press this". A hint drawn in `--lime` would be
