@@ -21,9 +21,10 @@ import type { InputHTMLAttributes } from "react";
  *
  * A native `<input type="range">`, so the platform's own keyboard handling and
  * the focus ring base.css draws are kept. `label` is required, because a
- * slider with no name announces as a number belonging to nothing — and it and
- * `aria-valuetext` are omitted from the passthrough so a caller cannot spread
- * them back over the top.
+ * slider with no name announces as a number belonging to nothing — and the
+ * name attributes (`aria-label`, `aria-labelledby`) and `aria-valuetext` are
+ * omitted from the passthrough, because all three are computed from `label`
+ * and `format` and a caller must not be able to spread them back over the top.
  */
 export interface RangeProps extends Omit<
   InputHTMLAttributes<HTMLInputElement>,

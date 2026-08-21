@@ -2226,10 +2226,11 @@ label.segmented__btn {
      far, so the distance is whatever sky there is, which is the whole viewport
      (decision 64). A 900ms fall crosses about 640px on a 1512×850 laptop and
      about 1100px on a 27-inch monitor, so without a ceiling the same level is a
-     different game depending on what a child opens it on. Nine stone heights a second is a shade above what the
-     tallest ordinary screen asks for, so on anything a child is likely to be
-     sitting at the stone uses the full sky and this changes nothing; on a
-     display taller than that it starts lower and falls at the ceiling.
+     different game depending on what a child opens it on. Nine stone heights a
+     second is a shade above what the tallest ordinary screen asks for, so on
+     anything a child is likely to be sitting at the stone uses the full sky and
+     this changes nothing; on a display taller than that it starts lower and
+     falls at the ceiling.
 
      Stone heights and not pixels, because what smears a moving glyph is how
      far it travels against its own size — a cap written in pixels would mean

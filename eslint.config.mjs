@@ -13,8 +13,8 @@ import prettier from "eslint-config-prettier/flat";
  *
  * A boundary that is only a convention drifts. Measured on a codebase carrying
  * both kinds side by side, the convention went from 30 violating files to 37
- * while the lint-enforced one held at zero. So every boundary that matters here
- * is a rule, with a message naming the alternative.
+ * while the lint-enforced one held. So every boundary that matters here is a
+ * rule, with a message naming the alternative.
  *
  * The layers, and what plays each MVC role in this codebase:
  *

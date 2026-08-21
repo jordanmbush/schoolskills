@@ -10,9 +10,9 @@ import { useId } from "react";
  *
  * **Radios, not buttons.** A row of `<Button pressed>` announces as unrelated
  * toggles and tabs through one stop per option. Real radios sharing a `name`
- * are announced
- * as "one of four", move with the arrow keys and skip to the chosen one with a
- * single Tab — none of which is worth hand-rolling when the platform ships it.
+ * are announced as "one of four", move with the arrow keys and skip to the
+ * chosen one with a single Tab — none of which is worth hand-rolling when the
+ * platform ships it.
  * The inputs are visually hidden (not `display: none`, which would remove them
  * from the tab order); the `<label>` around each one is the pill, and it wears
  * the focus ring on their behalf.

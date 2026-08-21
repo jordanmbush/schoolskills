@@ -46,7 +46,8 @@ export const AD_CLIENT = "ca-pub-2742485876369367";
  * Ad unit ids, created in the AdSense account.
  *
  * Empty until they exist in the account. `adSlotId` answers null for an empty
- * one, so nothing renders — see `AdSlot.tsx` for what happens to the space.
+ * one, so no `<ins>` is emitted — the reserved space stays reserved; see
+ * `AdSlot.tsx`.
  */
 export const AD_SLOTS = {
   /**

@@ -3,9 +3,9 @@
  *
  * A leaf module rather than two more exports on `progress.ts`, because
  * `engine/typing/storm.ts` needs the curve and may not import that file
- * (docs/typing.md §8.6). The alternative was a second `1 + min(streak, 10) / 10`
- * written in the storm, and a second copy of a curve is how a race and a
- * shooter end up paying out on scales that only look the same.
+ * (docs/typing.md §8.6). The alternative was writing the curve out a second
+ * time in the storm, and a second copy is how a race and a shooter end up
+ * paying out on scales that only look the same.
  */
 
 /**
