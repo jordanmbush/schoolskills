@@ -615,6 +615,7 @@ const at = (ch: string, spawnMs: number, fallMs: number): StormLetter => {
   return {
     ch,
     code: stroke.code,
+    shifted: stroke.shift !== null,
     finger: stroke.finger,
     lane: keyX(stroke.code) ?? 0,
     spawnMs,
@@ -898,12 +899,72 @@ describe("firing resolves the lowest letter, and nothing else", () => {
     expect(state.combo).toBe(0);
   });
 
-  it("shoots a capital with the key that types it", () => {
-    // `A` and `a` are one key and two letters (decision 2), so the shift a
-    // child is holding cannot make the shot miss.
-    const state = to(runOf([at("A", 0, 1000)]), 400);
-    expect(state.wave.letters[0].code).toBe("KeyA");
-    expect(fire(state, "KeyA").resolved[0]?.outcome).toBe("shot");
+  describe("a capital is a shift and a letter", () => {
+    /*
+     * Decision 70. `A` and `a` are one key and two letters, and for a while
+     * the storm could only tell you the key — so a wave of capitals fell to
+     * the bare alphabet, and lesson 39 was called "Shift under fire" without
+     * ever asking for a shift. What decides a shot now is the CHARACTER the
+     * stroke produced: `code` for which key, `shifted` for which of its two
+     * legends.
+     */
+
+    /** A capital `A`, alone in the sky and about halfway down. */
+    const capital = () => to(runOf([at("A", 0, 1000)]), 400);
+
+    it("takes the letter's key with a shift held", () => {
+      const state = capital();
+      expect(state.wave.letters[0].code, "the premise: one key").toBe("KeyA");
+      expect(state.wave.letters[0].shifted).toBe(true);
+      expect(fire(state, "KeyA", true).resolved[0]?.outcome).toBe("shot");
+    });
+
+    it("counts the bare letter as a miss", () => {
+      // The bug this replaced: `a` cleared an `A`, and the child was scored
+      // as having typed something they did not type.
+      const state = fire(capital(), "KeyA", false);
+      expect(state.resolved[0], "the letter is still falling").toBeNull();
+      expect(state.misses).toBe(1);
+      expect(state.combo).toBe(0);
+      expect(state.score).toBe(-MISS_POINTS);
+    });
+
+    it("counts a shift held over a lowercase letter as a miss", () => {
+      // The same rule from the other side: shift+`f` is `F`, and `F` is not
+      // what is falling.
+      const state = fire(to(runOf([at("f", 0, 1000)]), 400), "KeyF", true);
+      expect(state.resolved[0]).toBeNull();
+      expect(state.misses).toBe(1);
+    });
+
+    it("holds the same for a shifted mark as for a capital", () => {
+      // Lessons 65 and 69 rain punctuation, where `?` is shift-`/` and the
+      // two share a lane exactly as `A` and `a` do.
+      const marks = to(runOf([at("?", 0, 1000)]), 400);
+      expect(marks.wave.letters[0].code).toBe("Slash");
+      expect(marks.wave.letters[0].shifted).toBe(true);
+      expect(fire(marks, "Slash", false).misses).toBe(1);
+      expect(fire(marks, "Slash", true).resolved[0]?.outcome).toBe("shot");
+    });
+
+    it("leaves an unshifted character alone about the shift", () => {
+      // Every level below lesson 34 rains nothing else, so the default the
+      // reducer takes when a caller says nothing is the one that plays them.
+      const state = to(runOf([at("f", 0, 1000)]), 400);
+      expect(state.wave.letters[0].shifted).toBe(false);
+      expect(fire(state, "KeyF").resolved[0]?.outcome).toBe("shot");
+    });
+
+    it("marks every character a wave can drop by what its stroke needs", () => {
+      // The wave is where this is decided, once, off `strokeFor` — so no
+      // level can rain a letter whose shift the reducer would have to guess
+      // at.
+      for (const [, waveSpec] of SPECS)
+        for (const letter of buildWave(waveSpec, 42).letters)
+          expect(letter.shifted, letter.ch).toBe(
+            strokeFor(letter.ch)?.shift !== null,
+          );
+    });
   });
 
   it("does nothing once the run is over", () => {

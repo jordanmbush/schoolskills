@@ -108,6 +108,7 @@ export function StormField({
   state,
   skyRef,
   onQuit,
+  ready,
   over,
 }: {
   state: StormState;
@@ -121,6 +122,24 @@ export function StormField({
    * this file would be a second opinion about where that row is.
    */
   onQuit?: () => void;
+  /**
+   * What stands in the sky while the wave is still waiting to be started, or
+   * absent once it is running (§8.13, decision 71).
+   *
+   * **Its presence is what says the run has not begun**, and that is why it is
+   * one prop and not a node beside a boolean. A waiting storm draws no stones:
+   * the first letter of a wave spawns at time zero (`buildWave`), so a field
+   * that only froze the clock would be handing a child a free, untimed look at
+   * the first target — the reading beat every other letter gets (`QUEUE_MS`)
+   * made unlimited for exactly the one that sets the pace. Two props could
+   * disagree about that; one cannot.
+   *
+   * The rest of the field is drawn as it always is — the HUD at nothing, the
+   * shield whole — because that is the picture a child is about to have to
+   * read, and there is nothing to be gained by making them meet it for the
+   * first time on the frame the hail starts.
+   */
+  ready?: React.ReactNode;
   /**
    * What stands under the sky once the run is over (§8.5, STM07).
    *
@@ -150,7 +169,8 @@ export function StormField({
       {state.ending === null && (
         <p className="u-sr">
           Letters fall down the column of the key that types them. Press that
-          key to shoot the lowest one, or press Escape to leave.
+          key to shoot the lowest one — a capital needs a shift, exactly as it
+          would anywhere else — or press Escape to leave.
         </p>
       )}
 
@@ -172,8 +192,14 @@ export function StormField({
             viewport it has nothing left to give (decision 45, `StormHud`). */}
         <StormHud state={state} onQuit={onQuit} />
 
+        {/* Either the wave, or the beat before it — never both. See `ready`:
+            a storm that has not been started has nothing in the sky to read,
+            which is the whole of what "we don't show them the first letter
+            yet" means. */}
+        {ready}
+
         {state.wave.letters.map((letter, index) => {
-          if (!isDrawn(state, index)) return null;
+          if (ready || !isDrawn(state, index)) return null;
 
           return (
             <span

@@ -101,6 +101,24 @@ describe("StormBrief", () => {
     expect(words(storm("L49"))).not.toContain("mostly");
   });
 
+  it("names the shift on every storm that can rain a capital", () => {
+    /*
+     * Decision 70. A capital is shot with a shift held, and it was not always
+     * — so the level a child meets it on has to say so, or it is a rule that
+     * announces itself by taking ten points.
+     *
+     * Asked of the pool and not of `focus`: capitals are unlocked at lesson
+     * 34 and are in every wave's pool from there up (§5.6), so "Pairs" rains
+     * them without being about them and needs the sentence exactly as much.
+     */
+    for (const id of ["L34", "L39", "L45", "L99"])
+      expect(words(storm(id)), id).toContain("A capital needs a shift");
+
+    // And below 34 it never appears, because nothing shifted can fall.
+    for (const id of ["L04", "L13", "L29"])
+      expect(words(storm(id)), id).not.toContain("shift");
+  });
+
   /**
    * §8.8, said in full on the one screen with room for it. The tile carries
    * "worth playing, never required" and this says what that MEANS: the rung

@@ -99,9 +99,10 @@ export function stormConfig(lessonId: string, wave: Wave): TypingConfig {
  *     so `troubleFacts` ranks per key and the drill `buildDrill` returns is a
  *     passage of exactly the keys a child keeps losing letters on.
  *   - `given` — the character for a letter that was shot, and `null` for one
- *     that got through, because nothing was pressed at it. `fire` compares
- *     `code` alone (decision 2), so a capital shot without the shift held
- *     still records the character its key was struck for.
+ *     that got through, because nothing was pressed at it. There is no third
+ *     case to worry about: a shot only resolves a letter when it matched both
+ *     the key and the shift (decision 70), so what was typed IS the character,
+ *     and a capital can never be recorded as cleared by the bare letter.
  *   - `ms` — `atMs - spawnMs`: how long the letter was in the air. `atMs` is
  *     the letter's own moment (`LetterOutcome`) — the press for a letter that
  *     was shot and its own `landMs` for one that landed — never the tick that

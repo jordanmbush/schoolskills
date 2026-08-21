@@ -220,6 +220,8 @@ export function useStormClock(
   wave: Wave,
   {
     paused = false,
+    started = true,
+    onStart,
     onQuit,
   }: {
     /**
@@ -239,6 +241,33 @@ export function useStormClock(
      * holds a paused-at timestamp for a resume to get wrong.
      */
     paused?: boolean;
+    /**
+     * Has the child said they are ready? (§8.13, decision 71.)
+     *
+     * A wave does not begin the moment the route mounts. It hangs at zero —
+     * no frames, no wave time, and, because `StormField` draws no stones
+     * before it starts, nothing on screen to read yet — until a key says go.
+     * The screen owns the flag; what is owned here is the key that flips it,
+     * for the same reason `QUIT_KEY` is (below): while the gun is live every
+     * stroke is a shot, so a second window listener sitting beside this one is
+     * a way for one press to be answered twice.
+     *
+     * It defaults to started, which is what a caller with no ready screen —
+     * a test, a story that renders a wave to look at it — should get.
+     *
+     * Distinct from `paused`, and the two are not interchangeable. Pausing is
+     * a run held mid-fall with a sheet over it; this is a run that has not
+     * had its first frame. Both stop the clock, and only this one is waiting
+     * for a key to end it.
+     */
+    started?: boolean;
+    /**
+     * Start the run: what the first key press does while `started` is false.
+     *
+     * Absent on a screen that begins by itself, in which case nothing here
+     * ever asks for it.
+     */
+    onStart?: () => void;
     /**
      * What `QUIT_KEY` does, or nothing where a screen offers no way out.
      *
@@ -265,6 +294,8 @@ export function useStormClock(
    */
   const quitRef = useRef<(() => void) | undefined>(undefined);
   quitRef.current = onQuit;
+  const startRef = useRef<(() => void) | undefined>(undefined);
+  startRef.current = onStart;
 
   useEffect(() => {
     // A run's wave is fixed for its whole life (`StormState.wave`), so this
@@ -297,8 +328,16 @@ export function useStormClock(
      * as the run is live; the rules for what that is worth are `fire`'s, and
      * none of them are here.
      *
-     * Four keydowns are not strokes even while it is, and each is left out
-     * for a reason the board already agrees with:
+     * **A stroke is a code and a shift, and both are handed over**
+     * (decision 70). `event.shiftKey` is the difference between `A` and `a`,
+     * and it is read off the same event as the code rather than tracked across
+     * keydown and keyup: a shift released while the tab was in the background
+     * is a `keyup` this window never saw, and a gun that believed its own
+     * bookkeeping would go on demanding a shift nobody was holding. The
+     * browser's answer is the one on the event, every time.
+     *
+     * Four keydowns are not strokes even while the run is live, and each is left
+     * out for a reason the board already agrees with:
      *
      *   - **`QUIT_KEY`** — the way out (§8.11). It is taken before the trigger
      *     rather than beside it, because a key that reached `fire` would be a
@@ -328,6 +367,23 @@ export function useStormClock(
      * being the engine's table, since this screen draws no board (decision 64). Anything else
      * — F5, F12, the browser's own — is left alone, because a game screen that
      * ate the reload key would be a screen with no way out.
+     *
+     * **Before the run starts, one press does one thing: it starts it**
+     * (`started`). No wave time has passed, no letter is on screen, and `fire`
+     * is not called at all — so the key that says "I'm ready" cannot also be
+     * the first miss of the run. All four guards above hold there too, and two
+     * more keys are left out of "any key":
+     *
+     *   - **`Tab`**, because it is how the way out in the HUD is reached
+     *     without a mouse (`StormHud`). The gun swallows it once the run is
+     *     live, which is exactly why the button is worth being able to reach
+     *     before then — and a game that began the instant a child went looking
+     *     for the exit would be the trap that button exists to prevent.
+     *   - **Anything the layout does not carry** — F5, F12, a media key. Same
+     *     test as the paragraph above, put to a second use: they are not a
+     *     child putting their hands down, and treating them as one would mean
+     *     swallowing the reload key on a screen whose whole state is "nothing
+     *     has happened yet".
      */
     const onKeyDown = (event: KeyboardEvent) => {
       // The gun dies with the run, and the listener has to know it rather than
@@ -348,9 +404,27 @@ export function useStormClock(
         return;
       }
       if (HELD.has(event.code)) return;
-      if (!event.altKey && keyX(event.code) !== null) event.preventDefault();
 
-      const next = fire(live.current, event.code);
+      // Asked once and read by both branches below: is this a key the layout
+      // carries? It is what decides the `preventDefault` (see the block
+      // above), and it is also what "any key" means before the run starts —
+      // F5, F12 and the media keys are not a child saying they are ready, and
+      // a ready screen that swallowed the reload key would be worse than one
+      // that ignored it.
+      const onBoard = keyX(event.code) !== null;
+
+      // The run has not begun: this press begins it, and is spent doing so.
+      // `Tab` is the exception — see the block above.
+      if (!started) {
+        if (!onBoard || event.code === "Tab") return;
+        if (!event.altKey) event.preventDefault();
+        startRef.current?.();
+        return;
+      }
+
+      if (!event.altKey && onBoard) event.preventDefault();
+
+      const next = fire(live.current, event.code, event.shiftKey);
       playStormSounds(live.current, next);
       live.current = next;
       publish(next);
@@ -394,17 +468,23 @@ export function useStormClock(
       if (next.ending === null) frame = requestAnimationFrame(loop);
     };
 
-    frame = requestAnimationFrame(loop);
+    // No frame until a child says go, so a wave that is waiting stays at zero
+    // for as long as it waits — the whole of `started`, since wave time is
+    // what rAF moves and `last` starts over at `null` when the loop is armed.
+    // The listener is bound either way: it is what does the saying.
+    if (started) frame = requestAnimationFrame(loop);
     // Capture, and on the window, exactly as `useKeyEcho` binds: this screen
     // has no focused element for a stroke to land on, and capture runs ahead
     // of anything that might stop propagation on the way up.
     window.addEventListener("keydown", onKeyDown, true);
 
-    // Every way out of a run runs this, and there are three: the route being
-    // left, the run ending, and the pause above. Quitting is now the first of
-    // them by way of the third — the sheet pauses the storm, and confirming it
-    // navigates — which is why `paused` is an input to this effect rather than
-    // something it could have been left to infer.
+    // Every way in or out of a run runs this, and there are four: the route
+    // being left, the run ending, the pause above, and the moment a waiting
+    // wave is started. Quitting is the first of them by way of the third — the
+    // sheet pauses the storm, and confirming it navigates — which is why
+    // `paused` is an input to this effect rather than something it could have
+    // been left to infer, and `started` is one for the same reason: a run
+    // begins by re-arming from the top, with a first frame worth zero.
     //
     // The listener goes with the frame, for a plainer reason than the loop's:
     // one left on the window outlives the screen. It would hold this run's
@@ -416,7 +496,7 @@ export function useStormClock(
       cancelAnimationFrame(frame);
       window.removeEventListener("keydown", onKeyDown, true);
     };
-  }, [wave, paused]);
+  }, [wave, paused, started]);
 
   return { state, skyRef };
 }
