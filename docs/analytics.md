@@ -197,6 +197,7 @@ sees a child's request.
 ```bash
 npm run analytics                # sync, count, and print a summary
 npm run analytics -- --days 7    # narrow the table
+npm run analytics -- --by-day    # every breakdown, a column per day
 npm run analytics -- --no-sync   # re-summarise without re-downloading
 npm run analytics -- --no-geoip  # skip the country lookup (offline)
 ```
@@ -235,6 +236,52 @@ One day looks like this:
   "decks":     { "multiply": 1, "words:dolch-4": 1 }
 }
 ```
+
+## Breaking it down by day
+
+The counts have always been per day — the file above is keyed by date, and so
+is every section inside it. What the default summary does is fold the window
+into one total per row, which answers _what is being used_ and cannot answer
+_when_. `--by-day` keeps the days as columns instead, for all eight
+breakdowns:
+
+```
+CAME FROM                              08-14  08-15  08-16   TOTAL
+  (none)                                   —      2    100     102
+  google.com                               —      .     20      20
+  t.co                                     —      1      .       1
+```
+
+`TOTAL` is the same number the default view prints for that row, so the two
+views never disagree — they read the same table in `scripts/analytics-view.mjs`.
+
+**The two marks are not the same fact**, and that difference is most of why
+this view is worth having:
+
+| Cell | Means                                                                 |
+| ---- | --------------------------------------------------------------------- |
+| `.`  | the day was counted and this key was not in it — a real zero          |
+| `—`  | that day's counts have no such field at all, so nothing was looked at |
+
+`—` is the per-day form of the warning further up: a day counted before the
+place lookup shipped has no `countries` key, and a day counted before
+referrers were recorded has no `referrers`. Reading either as zero turns
+"nobody looked" into "nobody came from anywhere", which is the shape of
+mistake this whole pipeline is built to avoid.
+
+Two more things it does rather than doing them quietly. Rows past the tenth
+are counted off (`… and 4 more not shown`), and days that will not fit the
+terminal are dropped from the oldest end with a line saying how many — and the
+totals are then recomputed against the days left, so a row always adds up to
+what is in front of you. Piped to a file there is no terminal to measure, so
+say how wide:
+
+```bash
+npm run analytics -- --by-day --width 200
+```
+
+Redirecting that grid into a file puts city rows on disk, which the caveat
+above is about. Treat the file the way you would treat the terminal.
 
 The long way round, if you want the pieces separately:
 
