@@ -26,14 +26,16 @@ const FRESH = ladderProgress([]);
 /**
  * Progress as the engine would derive it, without a hundred sessions to build.
  *
- * `next` is passed in rather than computed, because carrying the pointer over
- * a Hailstorm level is `ladder.ts`'s rule and is pinned there — what is under
- * test here is what the ladder draws for a given pointer, storms included.
+ * `next` and `open` are passed in rather than computed, because where the
+ * pointer stands and how far the rule reaches past it are `ladder.ts`'s to
+ * decide and are pinned there — what is under test here is what the ladder
+ * draws for a given pair.
  */
-const at = (best: number, next: number): LadderProgress => ({
+const at = (best: number, next: number, open = next): LadderProgress => ({
   cleared: new Set(Array.from({ length: best }, (_, i) => i + 1)),
   best,
   next,
+  open,
 });
 
 const CHECKPOINTS = LESSONS.filter((lesson) => lesson.checkpoint);
@@ -88,14 +90,31 @@ describe("tileState", () => {
   });
 
   /**
-   * The pointer is carried over a storm rather than made to jump it (§8.8), so
-   * the storm it stepped past stays at or below `next` and stays open.
+   * The pointer stands on the storm and the rung past it opens anyway (§8.8,
+   * decision 72). A ladder that drew 5 as locked would have turned a wave a
+   * child may skip into one they must beat.
    */
-  it("leaves a skipped storm open behind the pointer", () => {
-    // Lessons 1–3 cleared; 4 is a storm, so the pointer is carried to 5.
-    const progress = at(3, 5);
-    expect(tileState(lessonNumbered(4)!, progress)).toBe("open");
-    expect(tileState(lessonNumbered(5)!, progress)).toBe("next");
+  it("points at a storm and opens the rung behind it", () => {
+    // Lessons 1–3 cleared; 4 is a storm, and 5 opens with it.
+    const progress = at(3, 4, 5);
+    expect(tileState(lessonNumbered(4)!, progress)).toBe("next");
+    expect(tileState(lessonNumbered(5)!, progress)).toBe("open");
+    expect(tileState(lessonNumbered(6)!, progress)).toBe("locked");
+  });
+
+  /**
+   * And a storm left behind stays enterable, which is the other half of it.
+   * Written out rather than built with `at`, because the child this is about
+   * is the one who passed lesson 5 without ever clearing the wave at 4.
+   */
+  it("leaves a storm the child walked past open", () => {
+    const walkedPast: LadderProgress = {
+      cleared: new Set([5]),
+      best: 5,
+      next: 6,
+      open: 6,
+    };
+    expect(tileState(lessonNumbered(4)!, walkedPast)).toBe("open");
   });
 
   it("counts a cleared checkpoint as cleared, not as an open one", () => {

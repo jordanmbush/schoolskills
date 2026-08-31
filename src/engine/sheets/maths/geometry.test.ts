@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 
 import { buildSheet, describeSheet } from "../index";
 import { describeSheetFamily } from "../contract";
-import { figureBox, figureRow } from "../figure";
+import type { Bounds, FigureInk, LabelInk } from "../figure";
+import { figureBox, figureInk, figureRow, labelWidth } from "../figure";
+import { points } from "../paper";
 import { BLOCK_GAP, PROBLEM_GAP } from "../layout";
 import type {
   Figure,
@@ -105,6 +107,43 @@ function gridOf(over: Partial<GeometryConfig>, seed: number): GridSpec {
     if (block.kind === "grid") return block.grid;
   }
   throw new Error("no grid on the sheet");
+}
+
+/**
+ * The paper a label covers, in the figure's own coordinates: where the words
+ * start, how wide they are, and half a line either side of the middle.
+ *
+ * The point the engine hands over is one *end* of the words rather than their
+ * middle — which is the whole of the fix for a label printed over the line it
+ * measured — so where the ink lands is a question about the anchor as much as
+ * about the point.
+ */
+function inkOf(label: LabelInk, ink: FigureInk, fontPt: number): Bounds {
+  const wide = labelWidth(label.text, fontPt);
+  const x = label.x - ink.offset.x;
+  const y = label.y - ink.offset.y;
+  const line = points(fontPt) / 2;
+  const left =
+    label.anchor === "start"
+      ? x
+      : label.anchor === "end"
+        ? x - wide
+        : x - wide / 2;
+  return { minX: left, maxX: left + wide, minY: y - line, maxY: y + line };
+}
+
+/** Whether the segment `from`–`to` passes through `box`, walked a mil at a time. */
+function crosses(box: Bounds, from: Point, to: Point): boolean {
+  const steps = Math.ceil(Math.hypot(to.x - from.x, to.y - from.y));
+  for (let step = 0; step <= steps; step += 1) {
+    const along = steps === 0 ? 0 : step / steps;
+    const x = from.x + (to.x - from.x) * along;
+    const y = from.y + (to.y - from.y) * along;
+    if (x >= box.minX && x <= box.maxX && y >= box.minY && y <= box.maxY) {
+      return true;
+    }
+  }
+  return false;
 }
 
 /** The figure a problem carries, or a failure — every shape sheet has one. */
@@ -714,6 +753,41 @@ describe("how much fits", () => {
           expect(drawn.height, `${style} at ${fontPt}pt`) //
             .toBeLessThanOrEqual(figureRow(fontPt));
           expect(drawn.height).toBeLessThan(row);
+        }
+      }
+    }
+  });
+
+  it("sets every measurement clear of the shape it measures", () => {
+    // A `12 m` printed through the side of the rectangle it measures is a line
+    // a child has to read the number out of. It is the *words* that have to
+    // clear the outline rather than the point they are set from, which is why
+    // the ink is worked out here from the anchor: a label anchored in the
+    // middle sits a comfortable gap outside its edge and still lands half on
+    // top of it.
+    for (const fontPt of [10, 12, 18]) {
+      for (const style of ["area", "perimeter"] as const) {
+        for (const problem of problemsOf({ fontPt, style, count: 9 }, 4)) {
+          const figure = figureOf(problem);
+          const ink = figureInk(figure, fontPt);
+          const where = `${style} at ${fontPt}pt`;
+
+          for (const label of ink.labels) {
+            const box = inkOf(label, ink, fontPt);
+            // Every edge, not only the one it names: a measurement set past
+            // the corner of a thin triangle is over the side next to it.
+            figure.points.forEach((from, edge) => {
+              const to = figure.points[(edge + 1) % figure.points.length]!;
+              expect(crosses(box, from, to), `${label.text} on ${where}`) //
+                .toBe(false);
+            });
+            // And inside the box the renderer will draw it in, or the far end
+            // of the measurement is cut off at the side instead.
+            expect(box.minX + ink.offset.x, `${label.text} off its box`) //
+              .toBeGreaterThanOrEqual(0);
+            expect(box.maxX + ink.offset.x, `${label.text} off its box`) //
+              .toBeLessThanOrEqual(ink.width);
+          }
         }
       }
     }

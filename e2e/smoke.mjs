@@ -136,16 +136,16 @@ try {
     JSON.stringify(stored),
   );
 
-  log("\n3. Entering the hub and starting a race");
+  log("\n3. Entering the game and starting a race");
   await page.getByText("Smoke", { exact: false }).first().click();
   await page.waitForTimeout(700);
   check("navigated into a profile", /#\/p\//.test(page.url()), page.url());
 
-  // Match the exact control. A loose /race|play/ regex matches the
-  // "← Players" back-link too, and clicking that returns to the picker —
-  // which looks exactly like a routing bug in the app.
-  await page.getByRole("button", { name: /set up a race/i }).click();
-  await page.waitForTimeout(1200);
+  // Picking a player lands on the setup screen itself, so there is nothing
+  // between the two clicks. Waiting on the panel rather than on a timeout,
+  // because `count()` below does not auto-wait and a slow first paint would
+  // read as a missing button.
+  await page.waitForSelector(".setup__grid", { timeout: 8000 });
 
   const startBtn = page.getByRole("button", { name: /start race/i });
   check("reached race setup", (await startBtn.count()) > 0, page.url());
@@ -309,6 +309,10 @@ try {
    */
   log("\n7. The printed sheet is the paper, not a sheet inside a layout");
   await page.emulateMedia({ media: "print" });
+  // `boundingBox` measures from the top of the viewport, not the top of the
+  // document, so whatever 6b scrolled to reach a bootstrap button would come
+  // back here as an offset the printer never has.
+  await page.evaluate(() => window.scrollTo(0, 0));
   await page.waitForTimeout(400);
   const benchBox = await page
     .locator(".print-only .sheet")
@@ -1862,6 +1866,18 @@ try {
       timeout: 8000,
     });
     await p.getByText("Track", { exact: false }).first().click();
+    // The screen opens on the lessons (docs/typing.md §9, decision 73), and
+    // free play is the other half of the switch. Pressing it is also the only
+    // check anywhere that the switch works: the level pills below do not exist
+    // until it has been.
+    await p.waitForSelector(".ladder__tile", { timeout: 8000 });
+    // The pill is the `<label>` around the radio, and the input itself is
+    // clipped to a pixel (SegmentedControl.tsx), so what gets pressed here is
+    // the label — which is what a child presses too.
+    await p
+      .locator(".setup__switch .segmented__btn")
+      .filter({ hasText: "Free play" })
+      .click();
     // The longest free-play run there is. The block only moves once the cursor
     // has run out of lines below it, so a walk that never filled the frame
     // would be watching a passage that had no reason to move yet — and the

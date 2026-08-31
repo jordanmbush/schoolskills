@@ -24,9 +24,6 @@ import StormRun from "./storm/StormRun";
  * Same origin, so a player's profile, XP, badges and record book follow them
  * here from `/flash-cards` with nothing to sign into — which is why games are
  * paths and not subdomains (CLAUDE.md).
- *
- * Routes are flatter than the flash-card island's: there's one game here, so
- * `/p/:id` is the setup screen rather than a hub in front of it (§9).
  */
 
 function Shell() {

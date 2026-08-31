@@ -10,9 +10,11 @@ import { clock } from "@/engine/format";
 import { randomSeed } from "@/engine/random";
 import { cumulativeSplits, sessionsFor } from "@/engine/records";
 import { ladderProgress } from "@/engine/typing/ladder";
+import { isStormLesson } from "@/engine/typing/storms";
 import { verdictFor } from "@/engine/typing/verdict";
 import { Rewards, SplitsTable } from "@/games/race";
 import { sfx } from "@/services/sound";
+import { useKeyboardPresence } from "./keyboard/useKeyboardPresence";
 import { PassBars } from "./PassBars";
 import { lessonConfig } from "./lessonRun";
 import { missNote, nextNote } from "./lessonNotes";
@@ -59,7 +61,17 @@ export default function LessonResults({
     () => sessionsFor(sessions, profile.id),
     [sessions, profile.id],
   );
-  const opened = nextNote(lesson, ladderProgress(mine));
+
+  /**
+   * Whether a storm is worth offering on this device (§8.8, decision 53).
+   *
+   * The same guess the ladder's tiles are drawn from, asked again here because
+   * this screen makes the same offer they do. It is not proven by the run that
+   * just finished: a passage typed on a tablet's software keyboard reports no
+   * `code`, which is exactly what stops it counting as proof.
+   */
+  const hasKeyboard = useKeyboardPresence();
+  const opened = nextNote(lesson, ladderProgress(mine), hasKeyboard);
 
   /**
    * A Hailstorm level is a different game on a different route (§8, §9), and
@@ -78,8 +90,17 @@ export default function LessonResults({
    */
   const ladder = `/p/${profile.id}`;
 
-  /** The lesson the "Next lesson" button opens, when there is one to offer. */
-  const nextLesson = verdict.passed && !storm ? opened.next : null;
+  /**
+   * The rung this pass opened, when there is one to offer.
+   *
+   * A Hailstorm level can be it, now that the ladder points at storms rather
+   * than stepping over them (§8.8, decision 72) — so the two forward buttons
+   * below are two, and not one with a label that changes. A storm is a
+   * different game on a different route, and `run` builds a passage it has
+   * none of.
+   */
+  const ahead = verdict.passed && !storm ? opened.next : null;
+  const wave = ahead && isStormLesson(ahead) ? ahead : null;
 
   // Through the deck registry's own guard rather than reading `kind` here:
   // narrowing the config union is `decks/index.ts`'s job and nowhere else's.
@@ -182,8 +203,30 @@ export default function LessonResults({
             Try again
           </Button>
         )}
-        {nextLesson && (
-          <Button variant="accent" onClick={() => run(nextLesson)}>
+        {/* Back to the ladder with the storm's door open, rather than into the
+            sky. How a storm is played — only the lowest letter can be shot —
+            is written on that door and nowhere else (§8.8), and a child sent
+            straight past it would be shooting at the wrong letter with no way
+            to find out why. It is also where "Not now" lives, which is what
+            keeps an offer an offer. */}
+        {wave && (
+          <Button
+            variant="accent"
+            /* The outcome is deliberately left alone. Clearing it in the same
+               handler makes `TypingResults`'s own `!outcome` guard the last
+               writer of the history entry, and it navigates with `replace` —
+               which drops the rung this is handing over. Leaving the screen
+               without clearing is what the top bar's way out already does. */
+            onClick={() => {
+              sfx.whoosh();
+              navigate(ladder, { state: { open: wave.id } });
+            }}
+          >
+            Play the Hailstorm
+          </Button>
+        )}
+        {ahead && !wave && (
+          <Button variant="accent" onClick={() => run(ahead)}>
             Next lesson
           </Button>
         )}

@@ -1,5 +1,6 @@
 ---
 import Content from "@/layouts/Content.astro";
+import SheetActions from "@/components/site/SheetActions.astro";
 import { trailTo } from "./_shelves";
 import AdSlot from "@/components/site/AdSlot.astro";
 import { SheetView } from "@/components/sheet/Sheet";
@@ -16,7 +17,8 @@ import {
 /**
  * One prerendered maths worksheet per topic — and the page is the worksheet
  * (§8). Prose that answers the query, the sheet itself under it as HTML, and
- * nothing to click: ⌘P produces usable paper because the sheet IS the page.
+ * nothing to choose first: one button prints it, because the sheet IS the
+ * page.
  *
  * **Two sheets, not one.** The worksheet and its answer key print as
  * consecutive pages, which is what `break-after: page` in sheet.css was written
@@ -92,14 +94,7 @@ const strand = strands.find((group) => group.id === sheet.strand)!;
     </p>
     <h1 class="hero__title">{sheet.heading}</h1>
     <p class="hero__lead">{sheet.lead}</p>
-    <p class="aside">
-      The sheet below <strong>is</strong> the printout, and the page behind it is
-      <strong> the answer key</strong>. Press{" "}
-      <strong>&#8984;P</strong> &mdash; <strong>Ctrl+P</strong> on Windows &mdash;
-      and everything but the paper disappears. Nothing here needs choosing first.
-      To keep a copy instead, pick <em>Save as PDF</em> in the print dialog and your
-      browser writes one.
-    </p>
+    <SheetActions builder={builderHref(sheet)} />
     <p class="hero__note">Free &middot; no account &middot; no download</p>
   </header>
 
@@ -138,8 +133,9 @@ const strand = strands.find((group) => group.id === sheet.strand)!;
         This page is one sheet out of a family that can print thousands, and the
         settings behind it &mdash; how many problems, how big the numbers get,
         how they are laid out, whether there is room to work &mdash; are all
-        switches. The link below carries this sheet&rsquo;s own settings, so the
-        bench opens on exactly the page above rather than on a blank one.
+        switches. The builder link at the top of the page carries this
+        sheet&rsquo;s own settings, so the bench opens on exactly the sheet here
+        rather than on a blank one.
       </p>
       <p class="aside">
         The configuration travels in the address bar rather than on a server, so
@@ -147,11 +143,6 @@ const strand = strands.find((group) => group.id === sheet.strand)!;
         what they open is this sheet, down to the seed, rather than another one
         like it.
       </p>
-    </div>
-    <div class="hero__actions">
-      <a class="cta cta--quiet" href={builderHref(sheet)}>
-        Open this sheet in the builder
-      </a>
     </div>
   </section>
 

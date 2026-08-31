@@ -27,7 +27,7 @@ import LessonResults from "./LessonResults";
 export default function TypingResults() {
   const { profileId } = useParams();
   const profile = usePlayer(profileId);
-  const { outcome, pending, start, clear } = useRace();
+  const { outcome, pending, start } = useRace();
   const navigate = useNavigate();
 
   if (!profile) return <Navigate to="/" replace />;
@@ -178,12 +178,22 @@ export default function TypingResults() {
         >
           Race this run
         </Button>
+        {/* Back to the setup screen with free play showing, because the
+            ladder has no levels on it and this button would otherwise land on
+            a hundred lessons (§9, decision 73).
+
+            The outcome is deliberately left alone. Clearing it in the same
+            handler makes the `!outcome` guard above the last writer of this
+            history entry, and it navigates with `replace` — which drops the
+            half being handed over. Leaving without clearing is what the top
+            bar's way out already does. */}
         <Button
           variant="ghost"
-          onClick={() => {
-            clear();
-            navigate(`/p/${profile.id}`);
-          }}
+          onClick={() =>
+            navigate(`/p/${profile.id}`, {
+              state: { view: "free" },
+            })
+          }
         >
           Change level
         </Button>

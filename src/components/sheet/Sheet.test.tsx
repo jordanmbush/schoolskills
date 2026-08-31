@@ -6,9 +6,10 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
 import { answerKey, buildSheet } from "@/engine/sheets";
-import { figureBounds, labelPad } from "@/engine/sheets/figure";
+import { printedBlockBox } from "@/engine/sheets/chrome";
+import { figureInk } from "@/engine/sheets/figure";
 import { ticks } from "@/engine/sheets/numberline";
-import { DEFAULT_PAPER } from "@/engine/sheets/paper";
+import { DEFAULT_PAPER, toInches } from "@/engine/sheets/paper";
 import { SCRIPTURE_CREDIT } from "@/engine/sheets/passages";
 import type {
   ArithmeticConfig,
@@ -543,6 +544,32 @@ describe("rendering a sheet", () => {
     // sheet on it prints scaled or across two pages (§10).
     expect(a4).toContain("--sheet-w:11.693in");
     expect(a4).toContain("@page{size:11.693in 8.268in;margin:0}");
+  });
+
+  it("hands the blocks the height the family divided the page by", () => {
+    // The spare paper on a short sheet is a child's working room, and the only
+    // way the blocks can grow into it is to be told how much room they were
+    // given: `.sheet` is a `min-height`, and print.css takes even that away, so
+    // a flex child has nothing to fill and every sheet that asked for fewer
+    // problems than fit prints them crowded into the top of the page.
+    //
+    // It has to be the printed header and footer rather than the config's,
+    // which is the whole reason `printedBlockBox` exists — a sheet that prints
+    // a title its config never mentioned would otherwise claim a row it does
+    // not have and hang the last row of problems below the bottom margin.
+    const value = sheet();
+    expect(render(value)).toContain(
+      `--sheet-blocks:${toInches(printedBlockBox(value).height)}in`,
+    );
+
+    // And it moves with the chrome: a Scripture credit is a footer row (§12),
+    // so the sheet that carries one has less room for blocks, not the same.
+    const credited = sheet({
+      footer: { ...sheet().footer, source: SCRIPTURE_CREDIT },
+    });
+    expect(printedBlockBox(credited).height).toBeLessThan(
+      printedBlockBox(value).height,
+    );
   });
 
   it("draws rules in mil inside a box measured in inches, so ⅝ prints as ⅝", () => {
@@ -1319,12 +1346,9 @@ describe("a rendered geometry sheet", () => {
     for (const [where, problem] of itemsOf(geometry()).entries()) {
       const figure = problem.figure;
       if (!figure) throw new Error(`problem ${where} has no figure`);
-      const box = figureBounds(figure);
-      const pad = labelPad(12);
+      const { offset } = figureInk(figure, 12);
       const drawn = figure.points
-        .map(
-          (point) => `${point.x - box.minX + pad},${point.y - box.minY + pad}`,
-        )
+        .map((point) => `${point.x + offset.x},${point.y + offset.y}`)
         .join(" ");
       expect(problems(html)[where]).toContain(`points="${drawn}"`);
     }

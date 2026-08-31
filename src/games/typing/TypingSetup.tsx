@@ -1,9 +1,19 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
+import {
+  Link,
+  Navigate,
+  useLocation,
+  useNavigate,
+  useParams,
+} from "react-router-dom";
 import { useHub, usePlayer } from "@/components/state/HubContext";
 import { useRace } from "@/components/state/RaceContext";
 import TopBar from "@/components/TopBar";
-import { Button } from "@/components/ui/kit";
+import {
+  Button,
+  SegmentedControl,
+  type SegmentedOption,
+} from "@/components/ui/kit";
 import { configKey, describeConfig } from "@/engine/decks";
 import {
   TYPING_LEVELS,
@@ -14,6 +24,7 @@ import {
 import { bestRun, ghostsFor, sessionsFor } from "@/engine/records";
 import { randomSeed } from "@/engine/random";
 import { ladderProgress } from "@/engine/typing/ladder";
+import { lessonById } from "@/engine/typing/lessons";
 import { isStormLesson } from "@/engine/typing/storms";
 import { RivalList } from "@/games/race";
 import { sfx } from "@/services/sound";
@@ -28,12 +39,27 @@ import type { KeyboardMode, TypingConfig } from "@/engine/types";
 
 const LENGTHS = [20, 30, 50, 80];
 
+/** Which half of the screen is up. */
+type TypingView = "lessons" | "free";
+
+/** Two words each; the panel behind each one does its own explaining. */
+const VIEWS: SegmentedOption<TypingView>[] = [
+  { value: "lessons", label: "Lessons" },
+  { value: "free", label: "Free play" },
+];
+
 /**
- * The ladder, and free play under it (§9).
+ * The ladder, or free play (§9).
  *
- * `LessonLadder` is the screen's subject and the panel below it is the game
- * that was here before the course existed. Free play stays whole and nothing on
- * the ladder gates it (§7).
+ * `LessonLadder` is the screen's subject and free play is the game that was
+ * here before the course existed. Free play stays whole and nothing on the
+ * ladder gates it (§7).
+ *
+ * **One at a time, picked at the top** (decision 73). Stacked, the two read as
+ * one screen with a level picker below the course rather than as an either-or,
+ * and the only children who found free play were the ones who scrolled past a
+ * hundred tiles. The switch says they are a choice; the ladder is what you get
+ * for not making one.
  *
  * The two halves share this screen and nothing else. A lesson is not a race
  * (§7): it carries its own words, no ghost and no rival, which is why the
@@ -46,6 +72,7 @@ export default function TypingSetup() {
   const profile = usePlayer(profileId);
   const { start } = useRace();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [config, setConfig] = useState<TypingConfig>(() => ({
     kind: "typing",
@@ -53,6 +80,29 @@ export default function TypingSetup() {
     wordCount: 30,
   }));
   const [rivalId, setRivalId] = useState<string | null>(null);
+
+  /**
+   * What the screen before this one asked for, if it asked for anything (§9).
+   *
+   * Read once, into the initial state of the two things below: a hand-over is
+   * not a mode, and one re-read every render would be a brief that will not
+   * shut and a switch that will not move. The same way `RaceSetup` is handed a
+   * drill.
+   */
+  const handed = (location.state ?? null) as {
+    open?: string;
+    view?: TypingView;
+  } | null;
+
+  /**
+   * Which half is showing. Lessons unless the screen behind said otherwise,
+   * because the course is what this screen is for and free play is the detour.
+   *
+   * Stored nowhere. It is a view rather than a setting, and the one place
+   * coming back to the wrong half would be wrong — "Change level" on a
+   * free-play result — hands the right one over instead.
+   */
+  const [view, setView] = useState<TypingView>(() => handed?.view ?? "lessons");
 
   /**
    * The lesson whose brief is up, or `null` for none (§9).
@@ -67,7 +117,12 @@ export default function TypingSetup() {
    * have both open at once, over a ladder where a tile is exactly one of the
    * two.
    */
-  const [briefing, setBriefing] = useState<Lesson | null>(null);
+  const [briefing, setBriefing] = useState<Lesson | null>(
+    // "Play the Hailstorm" on the results screen lands here rather than in the
+    // sky, because how a storm is played is written on its door and nowhere
+    // else (§8.8).
+    () => lessonById(handed?.open),
+  );
 
   /**
    * Whether this device looks like it can play Hailstorm at all (§8.8).
@@ -174,135 +229,159 @@ export default function TypingSetup() {
         </Link>
       </TopBar>
 
-      <LessonLadder
-        progress={progress}
-        hasKeyboard={hasKeyboard}
-        onOpen={setBriefing}
-      />
-
-      {/* A storm's door is its own (`StormBrief`, decision 60): no three bars,
-          no best and no keyboard control, because a storm has none of the
-          three. Play sends the child to the level's own route, which is where
-          the wave is built — this screen never holds one. */}
-      {isStormLesson(briefing) && (
-        <StormBrief
-          lesson={briefing}
-          progress={progress}
-          onStart={() => {
-            sfx.whoosh();
-            navigate(`/p/${profile.id}/storm/${briefing.id}`);
-          }}
-          onClose={() => setBriefing(null)}
-        />
-      )}
-
-      {/* Keyed by the lesson, so a second brief is a second mount: the
-          keyboard control is seeded from the lesson on mount, and a component
-          held across two openings would show lesson 12's suggestion under
-          lesson 40's title. */}
-      {briefing && !isStormLesson(briefing) && (
-        <LessonBrief
-          key={briefing.id}
-          lesson={briefing}
-          progress={progress}
-          best={bestRun(sessionsFor(sessions, profile.id, lessonKey(briefing)))}
-          profileKeyboard={profile.keyboard}
-          onStart={(keyboard) => runLesson(briefing, keyboard)}
-          onClose={() => setBriefing(null)}
-        />
-      )}
-
-      <div className="setup__grid">
-        <section className="panel anim-rise">
-          <div className="panel__head">
-            <h2 className="panel__title">Free play</h2>
-            <span className="chip">{describeConfig(config)}</span>
-          </div>
-
-          {/* Said once, under the ladder, because a screen that led with a
-              hundred lessons and then showed a level picker without a word
-              would read as the course being over. */}
-          <p className="muted">
-            No lesson, no bars to meet — a passage, a clock, and anyone
-            you&apos;ve raced before.
-          </p>
-
-          <div className="control">
-            <span className="control__label">Level</span>
-            <ul className="wordlists">
-              {TYPING_LEVELS.map((level) => (
-                <li key={level.id} className="wordlists__row">
-                  <Button
-                    variant="bare"
-                    className={`wordlists__item${config.levelId === level.id ? " is-on" : ""}`}
-                    pressed={config.levelId === level.id}
-                    onClick={() => {
-                      sfx.tap();
-                      setConfig((c) => ({ ...c, levelId: level.id }));
-                    }}
-                  >
-                    <span className="wordlists__emoji" aria-hidden="true">
-                      {level.emoji}
-                    </span>
-                    <span className="wordlists__body">
-                      <span className="wordlists__name">{level.name}</span>
-                      <span className="wordlists__meta">
-                        {level.group} · {level.keys}
-                      </span>
-                      <span className="wordlists__blurb">{level.blurb}</span>
-                    </span>
-                  </Button>
-                </li>
-              ))}
-            </ul>
-            {/* Under the list rather than in the row that carries it: the
-                credit belongs to the words a player is about to be shown, so
-                it appears when that level is the one chosen. */}
-            {credit && <p className="passage__credit">{credit}</p>}
-          </div>
-
-          <div className="control">
-            <span className="control__label">How many words</span>
-            <div className="segmented">
-              {LENGTHS.map((count) => (
-                <Button
-                  key={count}
-                  variant="bare"
-                  className={`segmented__btn u-mono${config.wordCount === count ? " is-on" : ""}`}
-                  onClick={() => {
-                    sfx.tap();
-                    setConfig((c) => ({ ...c, wordCount: count }));
-                  }}
-                  pressed={config.wordCount === count}
-                >
-                  {count}
-                </Button>
-              ))}
-            </div>
-          </div>
-
-          <KeyboardSetting
-            mode={profile.keyboard}
-            onChange={(next) => void chooseKeyboard(next)}
-          />
-
-          <p className="numbers__note">
-            {bestWpm === null
-              ? "Type each word and press space. A word you get wrong costs you three seconds, so accuracy beats hammering."
-              : `Your best at these settings: ${bestWpm} words a minute. A wrong word costs three seconds.`}
-          </p>
-        </section>
-
-        <RivalList
-          rivals={rivals}
-          chosenId={rivalId}
-          onChoose={(id) => {
+      {/* Above both halves and centred, where nothing else on the screen is,
+          because it governs the screen rather than either panel on it. */}
+      <div className="setup__switch">
+        <SegmentedControl
+          label="Lessons or free play"
+          value={view}
+          onChange={(next) => {
             sfx.tap();
-            setRivalId(id);
+            setView(next);
           }}
-          onStart={launch}
+          options={VIEWS}
         />
       </div>
+
+      {view === "lessons" && (
+        <>
+          <LessonLadder
+            progress={progress}
+            hasKeyboard={hasKeyboard}
+            onOpen={setBriefing}
+          />
+
+          {/* A storm's door is its own (`StormBrief`, decision 60): no three
+              bars, no best and no keyboard control, because a storm has none
+              of the three. Play sends the child to the level's own route,
+              which is where the wave is built — this screen never holds
+              one. */}
+          {isStormLesson(briefing) && (
+            <StormBrief
+              lesson={briefing}
+              progress={progress}
+              onStart={() => {
+                sfx.whoosh();
+                navigate(`/p/${profile.id}/storm/${briefing.id}`);
+              }}
+              onClose={() => setBriefing(null)}
+            />
+          )}
+
+          {/* Keyed by the lesson, so a second brief is a second mount: the
+              keyboard control is seeded from the lesson on mount, and a
+              component held across two openings would show lesson 12's
+              suggestion under lesson 40's title. */}
+          {briefing && !isStormLesson(briefing) && (
+            <LessonBrief
+              key={briefing.id}
+              lesson={briefing}
+              progress={progress}
+              best={bestRun(
+                sessionsFor(sessions, profile.id, lessonKey(briefing)),
+              )}
+              profileKeyboard={profile.keyboard}
+              onStart={(keyboard) => runLesson(briefing, keyboard)}
+              onClose={() => setBriefing(null)}
+            />
+          )}
+        </>
+      )}
+
+      {view === "free" && (
+        <div className="setup__grid">
+          <section className="panel anim-rise">
+            <div className="panel__head">
+              <h2 className="panel__title">Free play</h2>
+              <span className="chip">{describeConfig(config)}</span>
+            </div>
+
+            {/* The switch is two words, so this is where the choice gets
+                explained. A child arrives here having already picked free
+                play over the lessons, and still needs telling what that
+                bought them. */}
+            <p className="muted">
+              No lesson, no bars to meet — a passage, a clock, and anyone
+              you&apos;ve raced before.
+            </p>
+
+            <div className="control">
+              <span className="control__label">Level</span>
+              <ul className="wordlists">
+                {TYPING_LEVELS.map((level) => (
+                  <li key={level.id} className="wordlists__row">
+                    <Button
+                      variant="bare"
+                      className={`wordlists__item${config.levelId === level.id ? " is-on" : ""}`}
+                      pressed={config.levelId === level.id}
+                      onClick={() => {
+                        sfx.tap();
+                        setConfig((c) => ({ ...c, levelId: level.id }));
+                      }}
+                    >
+                      <span className="wordlists__emoji" aria-hidden="true">
+                        {level.emoji}
+                      </span>
+                      <span className="wordlists__body">
+                        <span className="wordlists__name">{level.name}</span>
+                        <span className="wordlists__meta">
+                          {level.group} · {level.keys}
+                        </span>
+                        <span className="wordlists__blurb">{level.blurb}</span>
+                      </span>
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+              {/* Under the list rather than in the row that carries it: the
+                credit belongs to the words a player is about to be shown, so
+                it appears when that level is the one chosen. */}
+              {credit && <p className="passage__credit">{credit}</p>}
+            </div>
+
+            <div className="control">
+              <span className="control__label">How many words</span>
+              <div className="segmented">
+                {LENGTHS.map((count) => (
+                  <Button
+                    key={count}
+                    variant="bare"
+                    className={`segmented__btn u-mono${config.wordCount === count ? " is-on" : ""}`}
+                    onClick={() => {
+                      sfx.tap();
+                      setConfig((c) => ({ ...c, wordCount: count }));
+                    }}
+                    pressed={config.wordCount === count}
+                  >
+                    {count}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            <KeyboardSetting
+              mode={profile.keyboard}
+              onChange={(next) => void chooseKeyboard(next)}
+            />
+
+            <p className="numbers__note">
+              {bestWpm === null
+                ? "Type each word and press space. A word you get wrong costs you three seconds, so accuracy beats hammering."
+                : `Your best at these settings: ${bestWpm} words a minute. A wrong word costs three seconds.`}
+            </p>
+          </section>
+
+          <RivalList
+            rivals={rivals}
+            chosenId={rivalId}
+            onChoose={(id) => {
+              sfx.tap();
+              setRivalId(id);
+            }}
+            onStart={launch}
+          />
+        </div>
+      )}
     </main>
   );
 }

@@ -66,7 +66,7 @@ export function compareRuns(a: Scored, b: Scored) {
  * **Null is an ordinary answer, not only the empty-list one.** A player whose
  * every run at a configuration is a Hailstorm has no best at it, and a caller
  * has to say what it shows instead: `Progress.tsx` drops the row rather than
- * inventing a record, and `PlayerHub` already renders "No runs yet".
+ * inventing a record.
  */
 export function bestRun(sessions: Session[]): Session | null {
   const ranked = sessions.filter((session) => isRanked(session.config));

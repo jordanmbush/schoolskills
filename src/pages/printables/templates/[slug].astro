@@ -1,5 +1,6 @@
 ---
 import Content from "@/layouts/Content.astro";
+import SheetActions from "@/components/site/SheetActions.astro";
 import { trailTo } from "../_shelves";
 import AdSlot from "@/components/site/AdSlot.astro";
 import { SheetView } from "@/components/sheet/Sheet";
@@ -18,7 +19,7 @@ import {
  * One prerendered blank form per entry — and the page is the sheet (§8). On
  * this shelf what somebody searched for is a piece of paper rather than an
  * exercise, so the whole of the answer is the sheet: prose above it, the paper
- * under that, and nothing to click before pressing ⌘P.
+ * under that, and nothing to choose before it prints.
  *
  * **Not one page here has a key, and that is the tier rather than a gap.** A
  * blank form has no answer by definition (§11: they're supposed to be empty), so
@@ -89,14 +90,7 @@ const group = groups.find((entry) => entry.id === sheet.group)!;
     </p>
     <h1 class="hero__title">{sheet.heading}</h1>
     <p class="hero__lead">{sheet.lead}</p>
-    <p class="aside">
-      The sheet below <strong>is</strong> the printout, and there is no second page
-      behind it &mdash; a blank form has nothing to withhold. Press <strong
-        >&#8984;P</strong
-      > &mdash; <strong>Ctrl+P</strong> on Windows &mdash; and everything but the
-      paper disappears. To keep a copy instead, pick <em>Save as PDF</em> in the print
-      dialog and your browser writes one.
-    </p>
+    <SheetActions builder={builderHref(sheet)} />
     <p class="hero__note">Free &middot; no account &middot; no download</p>
   </header>
 
@@ -156,9 +150,6 @@ const group = groups.find((entry) => entry.id === sheet.group)!;
       </p>
     </div>
     <div class="hero__actions">
-      <a class="cta cta--quiet" href={builderHref(sheet)}>
-        Open this sheet in the builder
-      </a>
       <a class="cta cta--quiet" href="/printables/templates">
         All the forms and templates
       </a>

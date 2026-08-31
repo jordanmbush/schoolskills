@@ -1,5 +1,6 @@
 ---
 import Content from "@/layouts/Content.astro";
+import SheetActions from "@/components/site/SheetActions.astro";
 import { trailTo } from "../_shelves";
 import AdSlot from "@/components/site/AdSlot.astro";
 import { SheetView } from "@/components/sheet/Sheet";
@@ -22,7 +23,7 @@ import type { Stock } from "../_catalog";
 /**
  * One prerendered Scripture sheet per topic — and the page is the sheet (§8),
  * built on the passages of §12: prose that answers the query, the sheet itself
- * under it as HTML, and nothing to click.
+ * under it as HTML, and nothing to choose first.
  *
  * **The credit line prints twice, and both are required.** Once at the foot of
  * the sheet, where the engine puts it, and once in the prose here — this is the
@@ -100,14 +101,7 @@ const group = groups.find((entry) => entry.id === sheet.group)!;
     </p>
     <h1 class="hero__title">{heading}</h1>
     <p class="hero__lead">{sheet.lead}</p>
-    <p class="aside">
-      The sheet below <strong>is</strong> the printout{
-        key ? ", and the page behind it is the answer key" : ""
-      }. Press <strong>&#8984;P</strong> &mdash; <strong>Ctrl+P</strong> on Windows
-      &mdash; and everything but the paper disappears. Nothing here needs choosing
-      first. To keep a copy instead, pick <em>Save as PDF</em> in the print dialog
-      and your browser writes one.
-    </p>
+    <SheetActions builder={builderHref(sheet, stock)} />
     <p class="hero__note">Free &middot; no account &middot; no download</p>
   </header>
 
@@ -156,16 +150,13 @@ const group = groups.find((entry) => entry.id === sheet.group)!;
       </p>
       <p class="aside">
         The settings travel in the address bar rather than on a server, so the
-        link below opens the bench on exactly the sheet above, and a sheet you
-        make can be sent to another family as it stands. There is nowhere in it
-        to put a child&rsquo;s name &mdash; see{" "}
+        builder link at the top of the page opens the bench on exactly this
+        sheet, and a sheet you make can be sent to another family as it stands.
+        There is nowhere in it to put a child&rsquo;s name &mdash; see{" "}
         <a href="/privacy">what we don&rsquo;t collect</a>.
       </p>
     </div>
     <div class="hero__actions">
-      <a class="cta cta--quiet" href={builderHref(sheet, stock)}>
-        Open this sheet in the builder
-      </a>
       <a class="cta cta--quiet" href="/printables/handwriting">
         Handwriting worksheets
       </a>

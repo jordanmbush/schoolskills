@@ -98,27 +98,46 @@ export function missNote(lesson: Lesson, verdict: Verdict): string {
  * open anything". A child at lesson 41 replaying lesson 3 opens nothing, and is
  * told where they are up to instead.
  *
- * `next` is already carried over any Hailstorm level standing in the way
- * (§8.8), so the lesson this hands back is never a storm and the button built
- * on it never sends a child to a wave they did not ask for. At the top of the
- * hundred it is `null`.
+ * **The rung this hands back can be a Hailstorm level** (§8.8, decision 72),
+ * and where it is, a second sentence goes with it. A storm offered and left at
+ * that reads as a wall to the child who cannot beat a wave, so the offer and
+ * the reassurance arrive together, in the same words the storm's own brief
+ * uses.
+ *
+ * `hasKeyboard` is the one case where the storm is not offered at all
+ * (`useKeyboardPresence`). On a device with no keys the pointer steps past it
+ * to `progress.open`, exactly as the whole ladder used to for everybody: the
+ * tile is already shut for that reason, and a results screen that sent a child
+ * at a door the ladder had just locked would be the worse half of a guess that
+ * is only ever a guess.
+ *
+ * At the top of the hundred there is nothing ahead and `next` is `null`.
  */
 export function nextNote(
   lesson: Lesson,
   progress: LadderProgress,
+  hasKeyboard: boolean,
 ): { next: Lesson | null; text: string } {
-  const next = progress.next > lesson.n ? lessonNumbered(progress.next) : null;
+  const at = hasKeyboard ? progress.next : progress.open;
+  const next = at > lesson.n ? lessonNumbered(at) : null;
 
   if (!next) {
     return { next, text: "That is the top of the ladder. Every lesson done." };
   }
-  return {
-    next,
-    text:
-      progress.best === lesson.n
-        ? `Lesson ${next.n} just opened: ${next.title}.`
-        : `Next up is lesson ${next.n}: ${next.title}.`,
-  };
+
+  const opened =
+    progress.best === lesson.n
+      ? `Lesson ${next.n} just opened: ${next.title}.`
+      : `Next up is lesson ${next.n}: ${next.title}.`;
+
+  // The title already says "Hailstorm", so what is left to say is the part a
+  // child cannot see: that the rung behind it came with it.
+  const free =
+    next.kind.type === "storm" && progress.open > next.n
+      ? ` It is worth playing, and lesson ${progress.open} opens whether you do or not.`
+      : "";
+
+  return { next, text: opened + free };
 }
 
 /**

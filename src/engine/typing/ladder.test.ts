@@ -244,18 +244,30 @@ describe("Hailstorm never gates the ladder", () => {
     ]);
     expect(failed.cleared.has(45)).toBe(false);
     expect(failed.best).toBe(44);
-    expect(failed.next).toBe(46);
+    expect(failed.open).toBe(46);
 
-    // And the same for a child who never opened the storm at all. Stepped
-    // over, not skipped: 45 is below `next`, so the storm stays open.
-    expect(ladderProgress([passing(lesson(44))]).next).toBe(46);
+    // And the same for a child who never opened the storm at all: 46 is open
+    // on `open` alone, with nothing at 45 to show for it.
+    expect(ladderProgress([passing(lesson(44))]).open).toBe(46);
+  });
+
+  /**
+   * Decision 72, and the other half of the rule above. `open` is what keeps a
+   * wave optional; the pointer is what stops it being invisible. Carrying both
+   * — which is what shipped first — meant a child passed 44, was sent to 46,
+   * and never learnt there was a game at 45 to turn down.
+   */
+  it("points at the storm rather than over it", () => {
+    const progress = ladderProgress([passing(lesson(44))]);
+    expect(progress.next).toBe(45);
+    expect(lesson(45).kind.type).toBe("storm");
   });
 
   /**
    * All twenty, not only the one §8.8 uses as its example: a table re-cut so
    * that two storms sat side by side would break this and nothing else.
    */
-  it("is stepped over at every one of the twenty rungs", () => {
+  it("is offered and stepped past at every one of the twenty rungs", () => {
     const storms = LESSONS.filter((l) => l.kind.type === "storm");
     expect(storms).toHaveLength(20);
 
@@ -264,7 +276,8 @@ describe("Hailstorm never gates the ladder", () => {
       expect(below.kind.type, `lesson ${below.n}`).not.toBe("storm");
       const progress = ladderProgress([passing(below)]);
       expect(progress.best, `after lesson ${below.n}`).toBe(below.n);
-      expect(progress.next, `past storm ${storm.n}`).toBe(storm.n + 1);
+      expect(progress.next, `at storm ${storm.n}`).toBe(storm.n);
+      expect(progress.open, `past storm ${storm.n}`).toBe(storm.n + 1);
     }
   });
 
@@ -278,6 +291,14 @@ describe("Hailstorm never gates the ladder", () => {
     expect(progress.cleared.has(45)).toBe(true);
     expect(progress.best).toBe(45);
     expect(progress.next).toBe(46);
+    expect(progress.open).toBe(46);
+  });
+
+  /** Nothing to step past on the ninety-nine rungs that are not a wave. */
+  it("leaves the pointer and the frontier together off a storm", () => {
+    const progress = ladderProgress([passing(lesson(7))]);
+    expect(progress.next).toBe(8);
+    expect(progress.open).toBe(8);
   });
 });
 

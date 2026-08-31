@@ -38,8 +38,7 @@ export function StormBrief({
   const titleId = useId();
   // The same `tileState` the tile is drawn from, for the same reason
   // `LessonBrief` asks it: a screen that can say "locked" must not also be able
-  // to start the thing it just called locked. A storm is never `next` — the
-  // pointer is carried over it — so this only ever reads back one of three.
+  // to start the thing it just called locked.
   const locked = tileState(lesson, progress) === "locked";
   const { count, shield, repairAt, focus } = lesson.kind.wave;
 

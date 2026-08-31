@@ -13,9 +13,9 @@
  * can disagree with the labels on it, and a rectangle drawn 8 by 4 and labelled
  * 8 by 3 teaches a child not to trust the picture.
  */
-import { figureBounds, labelPad, radiusOf } from "@/engine/sheets/figure";
+import { figureInk, radiusOf } from "@/engine/sheets/figure";
 import { points } from "@/engine/sheets/paper";
-import type { Figure, Mil, Point } from "@/engine/sheets/types";
+import type { Figure, Mil, Point, SheetFont } from "@/engine/sheets/types";
 
 import { HAIRLINE, RULE, inch } from "./units";
 
@@ -25,25 +25,22 @@ const ARC = 0.3;
 export function FigureView({
   figure,
   fontPt,
+  font,
 }: {
   figure: Figure;
   /** The body size, which is what the room for the labels is measured in. */
   fontPt: number;
+  /** The face, because how wide a label is decides how wide the box is. */
+  font?: SheetFont;
 }) {
   const corners = figure.points;
   if (corners.length === 0) return null;
 
-  // The box is measured from the drawing rather than from the points: a circle
-  // reaches a radius past its centre in every direction, so sizing it by its
-  // two points alone clips the bottom half off.
-  const box = figureBounds(figure);
-  const pad = labelPad(fontPt);
+  const { width, height, offset, labels } = figureInk(figure, fontPt, font);
   const size = points(fontPt);
-  const width = box.maxX - box.minX + pad * 2;
-  const height = box.maxY - box.minY + pad * 2;
   const shift = (point: Point): Point => ({
-    x: point.x - box.minX + pad,
-    y: point.y - box.minY + pad,
+    x: point.x + offset.x,
+    y: point.y + offset.y,
   });
 
   return (
@@ -73,39 +70,23 @@ export function FigureView({
         />
       )}
 
-      {/* A side label sits just outside the midpoint of the edge that starts
-          at the point of the same index — which is why `labels` is documented
-          as being in the order the points are given. Outside, because a `6 cm`
-          printed on top of the line it measures is a line a child then has to
-          read through. An empty label is an edge with nothing to say. */}
-      {figure.labels?.map((text, edge) => {
-        const from = corners[edge];
-        const to = corners[(edge + 1) % corners.length];
-        if (!from || !to || text === "") return null;
-        const middle = shift(
-          away(
-            {
-              x: Math.round((from.x + to.x) / 2),
-              y: Math.round((from.y + to.y) / 2),
-            },
-            centreOf(corners),
-            Math.round(size * 0.75),
-          ),
-        );
-        return (
-          <text
-            key={`${edge}-${text}`}
-            className="sheet__cell"
-            x={middle.x}
-            y={middle.y}
-            fontSize={size}
-            textAnchor="middle"
-            dominantBaseline="central"
-          >
-            {text}
-          </text>
-        );
-      })}
+      {/* Placed by `figureInk`, so which side of a shape a measurement lands on
+          is a thing the engine's own tests can check. `central` is the other
+          half of the placement: the y it was given is the middle of the line,
+          not its baseline. */}
+      {labels.map((label, index) => (
+        <text
+          key={`${index}-${label.text}`}
+          className="sheet__cell"
+          x={label.x}
+          y={label.y}
+          fontSize={size}
+          textAnchor={label.anchor}
+          dominantBaseline="central"
+        >
+          {label.text}
+        </text>
+      ))}
     </svg>
   );
 }
@@ -117,30 +98,6 @@ function named(figure: Figure): string {
 
 const hasLabel = (figure: Figure, edge: number): boolean =>
   (figure.labels?.[edge] ?? "") !== "";
-
-/** The average of a figure's corners — near enough its middle to push away from. */
-function centreOf(corners: Point[]): Point {
-  const total = corners.reduce(
-    (sum, point) => ({ x: sum.x + point.x, y: sum.y + point.y }),
-    { x: 0, y: 0 },
-  );
-  return {
-    x: Math.round(total.x / corners.length),
-    y: Math.round(total.y / corners.length),
-  };
-}
-
-/** `point`, moved `by` further from `centre`. */
-function away(point: Point, centre: Point, by: Mil): Point {
-  const dx = point.x - centre.x;
-  const dy = point.y - centre.y;
-  const span = Math.hypot(dx, dy);
-  if (span === 0) return point;
-  return {
-    x: Math.round(point.x + (dx / span) * by),
-    y: Math.round(point.y + (dy / span) * by),
-  };
-}
 
 /**
  * A circle is two points: where its centre is, and one point on it.

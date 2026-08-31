@@ -38,10 +38,11 @@ const L79 = storm("L79");
 const FRESH = ladderProgress([]);
 
 /** Progress with a pointer put where a test needs it. */
-const at = (best: number, next: number): LadderProgress => ({
+const at = (best: number, next: number, open = next): LadderProgress => ({
   cleared: new Set(Array.from({ length: best }, (_, i) => i + 1)),
   best,
   next,
+  open,
 });
 
 const render = (lesson: StormLesson, progress: LadderProgress = at(99, 100)) =>
@@ -124,9 +125,10 @@ describe("StormBrief", () => {
     expect(words(storm("L99"))).toContain("Lesson 100 opens");
   });
 
+  /** Lesson 3 cleared points at the storm at 4, with lesson 5 open beside it. */
   it("offers Play on a storm the child has reached", () => {
-    expect(render(L04, at(3, 5))).toContain(">Play<");
-    expect(render(L04, at(3, 5))).not.toContain("to open this one");
+    expect(render(L04, at(3, 4, 5))).toContain(">Play<");
+    expect(render(L04, at(3, 4, 5))).not.toContain("to open this one");
   });
 
   /**
