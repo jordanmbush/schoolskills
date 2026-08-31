@@ -21,8 +21,18 @@
 .setup__grid > :nth-child(2) {
   grid-area: tune;
 }
-.setup__rivals {
+/* Named rather than counted, and it has to outrank the count above, because
+   `:nth-child` costs a class's worth of specificity and `.setup__rivals` on
+   its own loses to it. The three setup screens do not hold the same number of
+   panels — a times-table race has two, spelling and typing have one — so
+   counted, the rival list lands in `tune` on two of the three: under the panel
+   instead of beside it, with the right-hand column empty and Start a screen
+   and a half down. Start is the button the whole screen is for. */
+.setup__grid > .setup__rivals {
   grid-area: rivals;
+  /* The panel beside it is a long one, so the rivals stay put while the levels
+     scroll past. Undone below the breakpoint, where the two are stacked and
+     sticking would pin it over the panel it belongs under. */
   position: sticky;
   top: 1rem;
 }
@@ -32,9 +42,48 @@
     grid-template-columns: 1fr;
     grid-template-areas: "presets" "tune" "rivals";
   }
-  .setup__rivals {
+  .setup__grid > .setup__rivals {
     position: static;
   }
+}
+
+/* ── Which half of the typing screen you are on ─────────────────────────
+   The ladder and free play are alternatives rather than two sections of one
+   page, and this row is the only thing that says so (docs/typing.md §9). So
+   it sits above both and centred, which is where nothing else on the screen
+   is — a switch aligned with the panels reads as a control belonging to the
+   first of them. */
+.setup__switch {
+  display: flex;
+  justify-content: center;
+  margin-bottom: var(--gap-3);
+}
+
+/* ── The line above the panels ──────────────────────────────────────────
+   One row: which world this is, and — when there is one — the offer that is
+   about this player rather than about the deck. Both are a line rather than a
+   panel on purpose; this screen's own Start button is what has to stay above
+   the fold. */
+.setup__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--gap-2);
+}
+
+.setup__drill {
+  padding: 0;
+  font-size: var(--step--1);
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 0.25em;
+  text-decoration-thickness: 1px;
+  text-decoration-color: color-mix(in oklab, var(--accent) 45%, transparent);
+}
+
+.setup__drill:hover {
+  text-decoration-color: var(--accent);
 }
 
 .preset-row {

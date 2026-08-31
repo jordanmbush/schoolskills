@@ -14,7 +14,7 @@
  * nothing here is gated. A five-year-old who wants to start with spelling and
  * never touch a times table is playing it correctly.
  */
-import { UNBUILT_WORLDS, WORLDS, type World } from "@/engine/worlds";
+import { WORLDS, type World } from "@/engine/worlds";
 
 /** One mark per world, drawn rather than illustrated so it inherits `--accent`. */
 const BADGES: Partial<Record<World, string>> = {
@@ -109,17 +109,4 @@ const BADGES: Partial<Record<World, string>> = {
       ))
     }
   </ul>
-
-  <div class="soon">
-    <p class="soon__head">Worlds in the workshop</p>
-    <ul class="soon__list" role="list">
-      {UNBUILT_WORLDS.map((name) => <li>{name}</li>)}
-    </ul>
-    <p class="soon__note">
-      Not built yet, and not promised by a date &mdash; this is a free site made
-      in evenings. There is nothing to sign up to and no list to join. A new
-      world just turns up on the map one day, and it works the same as the
-      others.
-    </p>
-  </div>
 </section>

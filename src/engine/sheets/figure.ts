@@ -20,8 +20,9 @@
  * makes "is this acute or obtuse?" a question about the paper rather than about
  * the caption. Its arms are all one length for the same reason.
  */
-import type { Figure, Mil, Point } from "./types";
+import type { Figure, Mil, Point, SheetFont } from "./types";
 
+import { faceOf } from "./faces";
 import { inches, points } from "./paper";
 
 /**
@@ -33,18 +34,28 @@ import { inches, points } from "./paper";
  */
 const FIGURE: Mil = inches(1.1);
 
-/**
- * Room round a figure for its labels, in ems of the sheet's own body size.
- *
- * A label sits half its own width past the edge it names, so the margin has to
- * grow with the type or `6 cm` loses its `m` off the side of the box. In ems
- * rather than inches for that reason and no other — the drawing does not scale
- * with the type, and this is not part of the drawing.
- */
-const LABEL_PAD_EM = 2.2;
+/* ── Room for the labels ───────────────────────────────────────────────────
+   All three in ems of the body size, because the drawing does not scale with
+   the type and the words on it do.                                          */
 
-export const labelPad = (fontPt: number): Mil =>
-  Math.round(points(fontPt) * LABEL_PAD_EM);
+/** The air between an edge and the nearest end of the label naming it. */
+const GAP_EM = 0.4;
+/** Half a line of type, ink and all — how far a label reaches from its middle. */
+const LINE_EM = 0.5;
+/** Enough that the outline's own stroke is inside the box rather than on it. */
+const EDGE_EM = 0.1;
+
+/**
+ * The tallest a label can make a figure: the gap, then the line it stands in.
+ *
+ * Height only. How much room a label needs *beside* a shape is its own width,
+ * which is a different number for every one of them and is worked out per
+ * figure in `figureInk` — a single pad for both directions is what printed
+ * `12 m` through the side of the rectangle it measured, because there was room
+ * for the words and it was above the shape.
+ */
+const edgePad = (fontPt: number): Mil =>
+  Math.round(points(fontPt) * (GAP_EM + LINE_EM * 2 + EDGE_EM));
 
 /* ── How much room it takes ────────────────────────────────────────────── */
 
@@ -84,13 +95,10 @@ export function figureBounds(figure: Figure): Bounds {
 export function figureBox(
   figure: Figure,
   fontPt: number,
+  font?: SheetFont,
 ): { width: Mil; height: Mil } {
-  const box = figureBounds(figure);
-  const pad = labelPad(fontPt) * 2;
-  return {
-    width: box.maxX - box.minX + pad,
-    height: box.maxY - box.minY + pad,
-  };
+  const { width, height } = figureInk(figure, fontPt, font);
+  return { width, height };
 }
 
 /**
@@ -98,9 +106,143 @@ export function figureBox(
  * family reserves a row against.
  *
  * The box rather than the figure, because every constructor below fits inside
- * it and the reservation is one number for a grid of them.
+ * it and the reservation is one number for a grid of them. Height only, and it
+ * is the same number whatever a figure is labelled with — a label above a shape
+ * takes a line whether it reads `4 m` or `120 cm`, and a label beside one takes
+ * no height at all.
  */
-export const figureRow = (fontPt: number): Mil => FIGURE + labelPad(fontPt) * 2;
+export const figureRow = (fontPt: number): Mil => FIGURE + edgePad(fontPt) * 2;
+
+/* ── Where the labels go ───────────────────────────────────────────────────
+   In the engine with the shape rather than in the renderer, for the reason at
+   the head of this file: a placement a browser worked out is a placement no
+   unit test can check.                                                       */
+
+/**
+ * How wide a measurement will be set — declared, not measured, the same bargain
+ * every other length on a sheet is struck on (§4). There is no DOM at build
+ * time to ask how wide `12 cm` came out.
+ *
+ * Exported because it is the only thing standing between a label and the edge
+ * of its own box: the box is sized from this, so a test that wants to know a
+ * label was not cut in half has to ask the same question the sizing did.
+ */
+export const labelWidth = (
+  text: string,
+  fontPt: number,
+  font?: SheetFont,
+): Mil => Math.round(text.length * points(fontPt) * faceOf(font).advance);
+
+/** One measurement, ready to set: where it goes and which end of it that is. */
+export type LabelInk = {
+  text: string;
+  x: Mil;
+  y: Mil;
+  /** Which end of the words sits on `x`, so the gap stays a gap. */
+  anchor: "start" | "middle" | "end";
+};
+
+/** A figure and its labels, in a box that holds both. */
+export type FigureInk = {
+  width: Mil;
+  height: Mil;
+  /** How far the figure's own points move to sit inside that box. */
+  offset: Point;
+  labels: LabelInk[];
+};
+
+/**
+ * A figure's drawing and its labels, placed.
+ *
+ * Each label goes outside the edge it names — a `6 cm` printed on the line it
+ * measures is a line a child then has to read through — and **which way out is
+ * decided by the edge, not by the corner it sits nearest**. A tall thin
+ * triangle's upright is closer to the top of the figure than to the side of it,
+ * so pushing a label away from the middle of the shape put `9 m` back across
+ * the very line it was measuring. An edge that runs down the page is labelled
+ * beside it; one that runs across is labelled above or below.
+ *
+ * The box is then whatever holds the drawing and the words together, which is
+ * why it is worked out here rather than reserved as a constant: `4 m` beside a
+ * rectangle needs half the room `120 cm` does, and a figure padded for the
+ * longest label anybody might ask for is a figure too wide to sit beside its
+ * own question number.
+ */
+export function figureInk(
+  figure: Figure,
+  fontPt: number,
+  font?: SheetFont,
+): FigureInk {
+  const size = points(fontPt);
+  const gap = Math.round(size * GAP_EM);
+  const line = Math.round(size * LINE_EM);
+  const edge = Math.round(size * EDGE_EM);
+
+  const bounds = figureBounds(figure);
+  const corners = figure.points;
+  const middle = centreOf(corners);
+  const labels: LabelInk[] = [];
+  const reach = { ...bounds };
+  const hold = (minX: Mil, minY: Mil, maxX: Mil, maxY: Mil) => {
+    reach.minX = Math.min(reach.minX, minX);
+    reach.minY = Math.min(reach.minY, minY);
+    reach.maxX = Math.max(reach.maxX, maxX);
+    reach.maxY = Math.max(reach.maxY, maxY);
+  };
+
+  figure.labels?.forEach((text, index) => {
+    const from = corners[index];
+    const to = corners[(index + 1) % corners.length];
+    if (!from || !to || text === "") return;
+    const at = {
+      x: Math.round((from.x + to.x) / 2),
+      y: Math.round((from.y + to.y) / 2),
+    };
+    const width = labelWidth(text, fontPt, font);
+
+    if (Math.abs(to.x - from.x) >= Math.abs(to.y - from.y)) {
+      const under = at.y >= middle.y;
+      const y = at.y + (under ? gap + line : -(gap + line));
+      labels.push({ text, x: at.x, y, anchor: "middle" });
+      hold(at.x - width / 2, y - line, at.x + width / 2, y + line);
+      return;
+    }
+    const right = at.x >= middle.x;
+    const x = at.x + (right ? gap : -gap);
+    labels.push({ text, x, y: at.y, anchor: right ? "start" : "end" });
+    hold(
+      right ? x : x - width,
+      at.y - line,
+      right ? x + width : x,
+      at.y + line,
+    );
+  });
+
+  const offset = { x: edge - reach.minX, y: edge - reach.minY };
+  return {
+    width: reach.maxX - reach.minX + edge * 2,
+    height: reach.maxY - reach.minY + edge * 2,
+    offset,
+    labels: labels.map((label) => ({
+      ...label,
+      x: label.x + offset.x,
+      y: label.y + offset.y,
+    })),
+  };
+}
+
+/** The average of a figure's corners — near enough its middle to push away from. */
+function centreOf(corners: Point[]): Point {
+  if (corners.length === 0) return { x: 0, y: 0 };
+  const total = corners.reduce(
+    (sum, point) => ({ x: sum.x + point.x, y: sum.y + point.y }),
+    { x: 0, y: 0 },
+  );
+  return {
+    x: Math.round(total.x / corners.length),
+    y: Math.round(total.y / corners.length),
+  };
+}
 
 /* ── Drawing one ───────────────────────────────────────────────────────── */
 

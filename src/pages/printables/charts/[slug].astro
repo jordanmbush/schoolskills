@@ -1,5 +1,6 @@
 ---
 import Content from "@/layouts/Content.astro";
+import SheetActions from "@/components/site/SheetActions.astro";
 import { trailTo } from "../_shelves";
 import AdSlot from "@/components/site/AdSlot.astro";
 import { SheetView } from "@/components/sheet/Sheet";
@@ -18,7 +19,7 @@ import {
  * One prerendered reference sheet per entry — and the page is the sheet (§8).
  * On this shelf what somebody searched for is a piece of paper rather than an
  * exercise, so the whole of the answer is the sheet: prose above it, the paper
- * under that, and nothing to click before pressing ⌘P.
+ * under that, and nothing to choose before it prints.
  *
  * **Only one page here has a key.** The rest withhold nothing — a chart, a line
  * and a grid are supposed to be blank — and printing the same page twice under
@@ -88,13 +89,7 @@ const group = groups.find((entry) => entry.id === sheet.group)!;
     </p>
     <h1 class="hero__title">{sheet.heading}</h1>
     <p class="hero__lead">{sheet.lead}</p>
-    <p class="aside">
-      The sheet below <strong>is</strong> the printout{
-        keyed(sheet) ? ", and the page behind it is the completed chart" : ""
-      }. Press <strong>&#8984;P</strong> &mdash; <strong>Ctrl+P</strong> on Windows
-      &mdash; and everything but the paper disappears. To keep a copy instead, pick
-      <em>Save as PDF</em> in the print dialog and your browser writes one.
-    </p>
+    <SheetActions builder={builderHref(sheet)} />
     <p class="hero__note">Free &middot; no account &middot; no download</p>
   </header>
 
@@ -151,9 +146,6 @@ const group = groups.find((entry) => entry.id === sheet.group)!;
       </p>
     </div>
     <div class="hero__actions">
-      <a class="cta cta--quiet" href={builderHref(sheet)}>
-        Open this sheet in the builder
-      </a>
       <a class="cta cta--quiet" href="/printables/charts">
         All the charts and grids
       </a>

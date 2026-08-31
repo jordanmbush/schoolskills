@@ -46,7 +46,11 @@ export function Problems({ block, metrics }: BlockProps<"problems">) {
               the question rather than the answer. */}
           {problem.art && <FractionArtView art={problem.art} />}
           {problem.figure && (
-            <FigureView figure={problem.figure} fontPt={metrics.fontPt} />
+            <FigureView
+              figure={problem.figure}
+              fontPt={metrics.fontPt}
+              font={metrics.font}
+            />
           )}
           {asked(problem) && problem.clock && (
             <ClockFaceView face={problem.clock} answers={metrics.answers} />
@@ -58,6 +62,15 @@ export function Problems({ block, metrics }: BlockProps<"problems">) {
             <Bracket problem={problem} answers={metrics.answers} />
           ) : problem.operands ? (
             <Stacked problem={problem} answers={metrics.answers} />
+          ) : problem.figure ? (
+            // Under the drawing, always — which is how the row was reserved: a
+            // figure, the wrap, and a line (`geometry.ts`). Left to the flex
+            // row it would sit beside the narrow shapes and under the wide
+            // ones, and a column of answer lines that do not line up is a
+            // sheet that looks like a mistake.
+            <span className="sheet__under">
+              <Written problem={problem} answers={metrics.answers} />
+            </span>
           ) : (
             <Written problem={problem} answers={metrics.answers} />
           )}

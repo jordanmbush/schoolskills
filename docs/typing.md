@@ -1087,6 +1087,9 @@ the ten checkpoints are always open. Passing checkpoint 30 sets `best` to 30
 and therefore clears 1–29 with it — which is the same `max` rule, not a special
 case.
 
+The one place unlocking and pointing come apart is a Hailstorm level, which is
+offered as the next rung and gates nothing behind it (§8.8).
+
 That single rule does the whole job of a placement test:
 
 - A nine-year-old who already types is not made to do `fff jjj` for a week.
@@ -1885,6 +1888,38 @@ otherwise: filled behind the child, outlined ahead of them, and locked with
 what would open it on a rung they have not climbed to (`lockNote`, which walks
 down past any storm in the way, so it never asks a child to pass a wave).
 
+**Skippable is not the same as skipped** (decision 72). For a while this
+shipped as though it were: the pointer was carried over a storm, so clearing
+lesson 44 pointed at 46, and the whole promise that a wave costs nothing was
+kept by never mentioning the wave. A child following the ladder's own "Start
+here", or pressing "Next lesson" on a results screen, could climb all hundred
+rungs and be shown none of the twenty. The sentence saying a storm is optional
+was on a door nobody was ever sent to.
+
+So the pointer stands on the storm and the unlock rule reaches past it, which
+is two numbers where there was one:
+
+| Field  | Is                                     | Answers                    |
+| ------ | -------------------------------------- | -------------------------- |
+| `next` | `best + 1`, storms included            | Where "Start here" goes    |
+| `open` | `next`, or the rung past a storm at it | Which tiles can be entered |
+
+They are the same number on ninety-nine rungs in a hundred and differ by one
+exactly where a storm is standing: 45 is what the ladder points at, 46 is open
+at the same moment, and a child who reads the brief and presses "Not now" has
+lost nothing but the reading. A screen that opened tiles on `n <= next` alone
+would now turn every wave into a wall — the failure `tileState`'s docstring
+warns about, in the direction that locks a child out.
+
+**The results screen makes the same offer**, in the same two halves. The lede
+names the storm that just opened and the rung that opened beside it; the
+forward button reads "Play the Hailstorm" and lands on the ladder with that
+storm's brief open rather than in the sky, because how a storm is played —
+only the lowest letter can be shot — is written on that door and nowhere else,
+and so is "Not now". On a device with no keyboard neither appears: `nextNote`
+steps past to `open`, which is the same answer the tile is already giving by
+staying shut.
+
 **A storm's door is its own screen** (`StormBrief`). The other eighty rungs
 open `LessonBrief`, which is three bars, a best and a keyboard control — and a
 storm has none of the three: it is marked on surviving a wave (§6.1), it holds
@@ -1944,11 +1979,14 @@ nothing reloaded and the pointer still reporting a tablet.
 The skip rule itself is held in the unit suite rather than in the browser, and
 in two halves that meet at the tile. `ladder.test.ts` has the rule — "opens
 lesson 46 when 44 is cleared, whatever happened at 45" takes both endings a
-storm can have, and "is stepped over at every one of the twenty rungs" says it
-is a property of the ladder rather than a fact about lesson 45.
-`LessonLadder.test.tsx` has what a child sees: "leaves a skipped storm open
-behind the pointer" is the storm still enterable with the pointer past it, and
-"says every tile's state out loud" is where `next` is spoken as "Start here".
+storm can have, "points at the storm rather than over it" is decision 72 in one
+assertion, and "is offered and stepped past at every one of the twenty rungs"
+says both are properties of the ladder rather than facts about lesson 45.
+`LessonLadder.test.tsx` has what a child sees: "points at a storm and opens the
+rung behind it", its twin "leaves a storm the child walked past open", and
+"says every tile's state out loud", where `next` is spoken as "Start here".
+`lessonNotes.test.ts` has the results screen's half, including the tablet,
+where the offer is not made at all.
 
 ### 8.9 · DOM, not canvas
 
@@ -2371,19 +2409,37 @@ replaced.
 
 `/typing` keeps its hash router; the island grows three screens.
 
-| Route                     | Screen                                                     |
-| ------------------------- | ---------------------------------------------------------- |
-| `#/`                      | Player select (unchanged)                                  |
-| `#/p/:id`                 | **The ladder** — a hundred tiles, plus a Free play section |
-| `#/p/:id/go`              | A lesson run, or a free-play run. Driven by `pending`.     |
-| `#/p/:id/storm/:lessonId` | A Hailstorm run — the level is the rung (§5.7)             |
-| `#/p/:id/results`         | Results — lesson bars, or the free-play scoreline          |
+| Route                     | Screen                                                 |
+| ------------------------- | ------------------------------------------------------ |
+| `#/`                      | Player select (unchanged)                              |
+| `#/p/:id`                 | **The ladder**, or free play — one switch at the top   |
+| `#/p/:id/go`              | A lesson run, or a free-play run. Driven by `pending`. |
+| `#/p/:id/storm/:lessonId` | A Hailstorm run — the level is the rung (§5.7)         |
+| `#/p/:id/results`         | Results — lesson bars, or the free-play scoreline      |
 
 The run routes are driven by `RaceContext.pending` exactly as today, so the
 guards that stop a mid-navigation flicker (the ones documented at the top of
 `TypingTrack` and `TypingResults`) keep working unchanged. That is deliberate —
 those two guards were each written after a real bug, and reworking the routing
 around them is how they come back.
+
+**The two halves are a choice, not a scroll** (decision 73). The ladder and
+free play share `#/p/:id`, and a switch at the top of it shows one of them at a
+time — lessons by default, because the course is what the screen is for. They
+were stacked at first, and stacked they read as one screen with a level picker
+below the course: a child had to scroll past a hundred tiles to find out free
+play was there at all, and nothing on the way down said the two were
+alternatives.
+
+The chosen half is state on the screen and is stored nowhere — it is a view
+rather than a setting. The one exit where coming back to the wrong half would
+be wrong is **Change level** on a free-play result, which would otherwise land
+on a hundred lessons; it hands `{ view: "free" }` over in `location.state`, the
+same mechanism "Play the Hailstorm" hands a rung over by (§8.8). Both are read
+once, into initial state: a hand-over is not a mode. And neither exit clears
+the outcome on its way out, because a `clear()` in the same handler lets
+`TypingResults`'s own `!outcome` guard write the history entry last — with
+`replace`, which drops whatever was being handed over.
 
 **The ladder screen** is the ice world's own overworld: ten rows of ten,
 blocks named down the side, cleared tiles filled, the next one lit with `--go`,
@@ -2517,6 +2573,8 @@ which is what every run saved before this is.
 | 69  | A clack has no pitch and does not know if the key was right                                  | It plays eight times a second under `correct` and `wrong`; a fourth opinion on a keystroke, arriving before the other three knew, is a commentary on a child's mistakes |
 | 70  | A shot is matched on the key AND the shift                                                   | `A` and `a` are one key and two letters, so the code alone let a wave of capitals fall to the bare alphabet — and the passage lessons were strict about it all along    |
 | 71  | A storm waits for a key, and shows no letter until it gets one                               | It is the one run entered with the hands in the wrong place, and what is being waited on is a child being ready — which is not an amount of time a counter can spend    |
+| 72  | The ladder points at a storm; only the unlock rule steps past it                             | Carrying the pointer over one kept the promise by hiding the game — a child could climb all hundred rungs and never be shown a wave to turn down                        |
+| 73  | The ladder and free play are a switch, not two sections                                      | Stacked, free play was something you found by scrolling past a hundred tiles, and nothing on the way down said the two were alternatives                                |
 
 ---
 

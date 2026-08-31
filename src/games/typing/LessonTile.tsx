@@ -33,13 +33,15 @@ export type TileState = "cleared" | "next" | "open" | "locked";
  * `LadderProgress.next` is the pointer and NOT the rule. A screen that opened a
  * tile on `n <= next` alone would pass every test anyone thought to write and
  * quietly delete the placement test, because what it removes is not on screen
- * to look broken. The pointer is also carried over Hailstorm levels rather than
- * made to jump them (§8.8), so a storm it stepped past stays playable.
+ * to look broken. `open` is the rule's own number, and the two differ by
+ * exactly one rung when the pointer is standing on a Hailstorm level: the storm
+ * is what a child is pointed at, and the lesson past it is open at the same
+ * moment, because nothing waits on a wave (§8.8).
  */
 export function tileState(lesson: Lesson, progress: LadderProgress): TileState {
   if (progress.cleared.has(lesson.n)) return "cleared";
   if (lesson.n === progress.next) return "next";
-  if (lesson.n < progress.next || lesson.checkpoint) return "open";
+  if (lesson.n <= progress.open || lesson.checkpoint) return "open";
   return "locked";
 }
 

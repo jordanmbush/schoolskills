@@ -51,18 +51,18 @@ export default function RaceTrack() {
   // results with one back to setup. The player finishes a race, their run saves
   // correctly, and they land on the setup screen having never seen their score.
   if (outcome) {
-    return <Navigate to={`/p/${profile.id}/race/results`} replace />;
+    return <Navigate to={`/p/${profile.id}/results`} replace />;
   }
   // A refresh mid-race clears the pending setup; send them back to configure.
   // The typing check can't fire — the two games are separate islands with
   // separate providers — but it's what narrows `config` to a card deck, and
   // it would be the right behaviour if they ever shared one.
   if (!pending || pending.profileId !== profile.id) {
-    return <Navigate to={`/p/${profile.id}/race`} replace />;
+    return <Navigate to={`/p/${profile.id}`} replace />;
   }
   const { config } = pending;
   if (config.kind === "typing") {
-    return <Navigate to={`/p/${profile.id}/race`} replace />;
+    return <Navigate to={`/p/${profile.id}`} replace />;
   }
 
   return (
@@ -193,7 +193,7 @@ function Track({
     finish,
     notify,
     navigate,
-    resultsPath: `/p/${profile.id}/race/results`,
+    resultsPath: `/p/${profile.id}/results`,
     onSaving: () => {
       setPhase("saving");
       measure.ended("finished");

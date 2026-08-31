@@ -1,0 +1,51 @@
+---
+/**
+ * What a parent does with the sheet on the page under this: print it, or open
+ * it in the builder to change it. The same pair the builder's own `PrintBar`
+ * offers, at the other end of the journey.
+ *
+ * The print click is an `onclick` attribute rather than a listener, because a
+ * catalog page hydrates nothing (docs/printables.md §2) and one call to
+ * `window.print()` is not worth a bundle, a selector to keep in step, or a
+ * second copy of the handler on a page that mounts this twice.
+ *
+ * Printing is the one thing JavaScript is needed for here, so the `<noscript>`
+ * block takes the button away rather than leaving a dead one and says which
+ * keys do the same job. The `<style>` has to be `is:inline`: Astro otherwise
+ * hoists a component's styles into the bundled sheet, where they would apply
+ * to everybody.
+ */
+interface Props {
+  /**
+   * Where the builder opens on this exact sheet. Omitted on the paper shelf,
+   * whose rulings are the whole configuration and have no bench behind them.
+   */
+  builder?: string;
+}
+
+const { builder } = Astro.props;
+---
+
+<div class="hero__actions">
+  <button class="cta" type="button" data-print onclick="window.print()">
+    Print this sheet
+  </button>
+  {
+    builder && (
+      <a class="cta cta--quiet" href={builder}>
+        Open this sheet in the builder
+      </a>
+    )
+  }
+  <noscript>
+    <style is:inline>
+      [data-print] {
+        display: none;
+      }
+    </style>
+    <p class="hero__note">
+      Press <strong>&#8984;P</strong> &mdash; <strong>Ctrl+P</strong> on Windows &mdash;
+      to print this sheet.
+    </p>
+  </noscript>
+</div>

@@ -167,7 +167,7 @@ export default function Progress() {
   const drill = ownsMode(subject, mode)
     ? () => {
         sfx.select();
-        navigate(`/p/${profile.id}/race`, {
+        navigate(`/p/${profile.id}`, {
           state: {
             config: buildDrill(
               trouble.map((fact) => fact.factId),
@@ -196,7 +196,7 @@ export default function Progress() {
     <main className="progress">
       <TopBar
         profile={profile}
-        back={{ to: `/p/${profile.id}`, label: "Hub" }}
+        back={{ to: `/p/${profile.id}`, label: "Set up" }}
       />
 
       <section className="progress__head anim-rise">
@@ -206,7 +206,7 @@ export default function Progress() {
         </h1>
       </section>
 
-      <section className="hub__strip panel anim-rise">
+      <section className="progress__strip panel anim-rise">
         <div className="stat">
           <span className="stat__value">{stats.races}</span>
           <span className="stat__label">Races</span>
