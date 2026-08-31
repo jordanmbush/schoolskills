@@ -157,17 +157,3 @@ export const WORLDS: WorldInfo[] = [
     ages: "Pre-K to Y8",
   },
 ];
-
-/**
- * Worlds that don't exist yet.
- *
- * Named on the map on purpose, and deliberately not dated or described as
- * anything more than a name — the honest version of a roadmap for a free site
- * built in evenings. There is nothing to sign up to; a new world just turns up.
- */
-export const UNBUILT_WORLDS = [
-  "The Old West",
-  "Deep Water",
-  "Chicken World",
-  "90s Web",
-] as const;

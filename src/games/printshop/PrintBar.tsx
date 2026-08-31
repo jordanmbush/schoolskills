@@ -97,8 +97,7 @@ export function PrintBar({
 
       <p className="printbar__hint">
         Choose <strong>Save as PDF</strong> in the print dialog if you want a
-        file rather than paper &mdash; that is the download, and it is the
-        browser&rsquo;s own.
+        file rather than paper, that is downloadable.
       </p>
       <p className="printbar__seed">
         Sheet <span className="u-mono">{seed}</span>. The number is printed at

@@ -36,19 +36,33 @@ export type LadderProgress = {
   /** The highest cleared. 0 if none. */
   best: number;
   /**
-   * What the ladder points at: `best + 1`, carried past any Hailstorm level
-   * standing in the way (§8.8) and capped at the top of the ladder. On a
-   * profile with no runs at all it is 1.
+   * What the ladder points at: `best + 1`, capped at the top of the ladder. On
+   * a profile with no runs at all it is 1.
    *
-   * **It is not the whole unlock rule**, and a screen that opens a tile on
+   * **A Hailstorm level can be it** (§8.8, decision 72). Nothing waits on a
+   * storm and nothing ever will, but the pointer used to be carried over one
+   * to say so — which said it by never mentioning the storm at all. A child
+   * who passed lesson 44 was sent to 46, and the wave in between was not so
+   * much skipped as unseen. Optional is a choice a child makes; offering it is
+   * the ladder's job.
+   *
+   * **It is not the unlock rule**, and a screen that opens a tile on
    * `n <= next` alone is wrong in the direction that locks a child out. A
-   * lesson is openable when *either* `n <= next` — the storm levels the
-   * pointer stepped over included — *or* it is a checkpoint: all ten are open
-   * at every value of `next`, on a profile that has never run anything
-   * included, which is what makes the placement test work (§6.6, decisions 16
-   * and 24). Nothing else gates, and a failed attempt costs nothing.
+   * lesson is openable when *either* `n <= open` — which is this plus the rung
+   * past a storm — *or* it is a checkpoint: all ten are open at every value of
+   * `next`, on a profile that has never run anything included, which is what
+   * makes the placement test work (§6.6, decisions 16 and 24). Nothing else
+   * gates, and a failed attempt costs nothing.
    */
   next: number;
+  /**
+   * The highest rung that can be entered, which is `next` unless a storm is
+   * standing there — then it is the rung past it, because a storm never gates
+   * (§8.8, decision 24). The two open together: lesson 46 is enterable the
+   * moment 44 is cleared, whatever happens at 45, which is the whole of what
+   * "skippable" means now that the pointer no longer does the skipping.
+   */
+  open: number;
 };
 
 /**
@@ -69,17 +83,19 @@ const BY_MODE = new Map(
 const LAST = LESSONS.reduce((top, lesson) => Math.max(top, lesson.n), 0);
 
 /**
- * The first lesson above `best` that can actually hold a child up.
+ * The rung past a storm, which opens along with it.
  *
  * A Hailstorm level never gates: lesson 46 opens when 44 is cleared, whatever
- * happened at 45 (§8.8, decision 24). The pointer is carried over them rather
- * than made to jump, so everything at or below `next` is open and a storm it
- * steps over stays playable — skippable is not the same as skipped.
+ * happened at 45 (§8.8, decision 24). So the two are open at once, and what
+ * separates them is only which one the ladder points at.
+ *
+ * A loop rather than a single step, because "no two storms sit together" is a
+ * fact about the table that ships rather than a rule the table is held to.
  */
-function carriedOverStorms(best: number): number {
-  let next = best + 1;
-  while (lessonNumbered(next)?.kind.type === "storm") next += 1;
-  return Math.min(next, LAST);
+function pastStorms(next: number): number {
+  let open = next;
+  while (lessonNumbered(open)?.kind.type === "storm") open += 1;
+  return Math.min(open, LAST);
 }
 
 function derive(sessions: readonly LadderRun[]): LadderProgress {
@@ -116,7 +132,8 @@ function derive(sessions: readonly LadderRun[]): LadderProgress {
   let best = 0;
   for (const n of cleared) best = Math.max(best, n);
 
-  return { cleared, best, next: carriedOverStorms(best) };
+  const next = Math.min(best + 1, LAST);
+  return { cleared, best, next, open: pastStorms(next) };
 }
 
 /**

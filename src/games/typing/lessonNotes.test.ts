@@ -136,16 +136,21 @@ describe("missNote", () => {
 });
 
 describe("nextNote", () => {
-  const progress = (best: number, next: number): LadderProgress => ({
+  const progress = (
+    best: number,
+    next: number,
+    open = next,
+  ): LadderProgress => ({
     cleared: new Set([best]),
     best,
     next,
+    open,
   });
 
   it("says which lesson just opened when the run cleared the frontier", () => {
     const seven = lessonNumbered(7)!;
     const eight = lessonNumbered(8)!;
-    const { next, text } = nextNote(seven, progress(7, 8));
+    const { next, text } = nextNote(seven, progress(7, 8), true);
 
     expect(next).toBe(eight);
     expect(text).toBe(`Lesson 8 just opened: ${eight.title}.`);
@@ -156,7 +161,7 @@ describe("nextNote", () => {
     // did would be the one thing this screen must not do.
     const three = lessonNumbered(3)!;
     const forty = lessonNumbered(41)!;
-    const { next, text } = nextNote(three, progress(40, 41));
+    const { next, text } = nextNote(three, progress(40, 41), true);
 
     expect(next).toBe(forty);
     expect(text).toBe(`Next up is lesson 41: ${forty.title}.`);
@@ -165,10 +170,41 @@ describe("nextNote", () => {
   it("has no next lesson at the top of the ladder", () => {
     // `next` is capped at the last rung, so clearing it points at itself.
     const hundred = lessonNumbered(100)!;
-    const { next, text } = nextNote(hundred, progress(100, 100));
+    const { next, text } = nextNote(hundred, progress(100, 100), true);
 
     expect(next).toBeNull();
     expect(text).toBe("That is the top of the ladder. Every lesson done.");
+  });
+
+  /**
+   * Decision 72. Passing lesson 8 reaches the storm at 9, and the screen that
+   * used to hand back lesson 10 without naming the wave is the reason a child
+   * could climb the whole ladder without meeting one.
+   */
+  it("offers the Hailstorm a pass reached, and what opens either way", () => {
+    const eight = lessonNumbered(8)!;
+    const storm = lessonNumbered(9)!;
+    const { next, text } = nextNote(eight, progress(8, 9, 10), true);
+
+    expect(storm.kind.type).toBe("storm");
+    expect(next).toBe(storm);
+    expect(text).toBe(
+      `Lesson 9 just opened: ${storm.title}. It is worth playing, and lesson 10 opens whether you do or not.`,
+    );
+  });
+
+  /**
+   * And the one device it is not offered on (§8.8). A tablet cannot press a
+   * key, so the rung past the wave is what this hands back — the same answer
+   * the ladder's own tile gives by staying shut.
+   */
+  it("steps past the Hailstorm where there is no keyboard to play it", () => {
+    const eight = lessonNumbered(8)!;
+    const ten = lessonNumbered(10)!;
+    const { next, text } = nextNote(eight, progress(8, 9, 10), false);
+
+    expect(next).toBe(ten);
+    expect(text).toBe(`Lesson 10 just opened: ${ten.title}.`);
   });
 });
 

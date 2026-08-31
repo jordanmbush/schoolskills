@@ -59,9 +59,7 @@ export default function RaceResults() {
    * mirror of this guard is in `RaceTrack`.
    */
   if (!outcome) {
-    return (
-      <Navigate to={`/p/${profile.id}/race${pending ? "/go" : ""}`} replace />
-    );
+    return <Navigate to={`/p/${profile.id}${pending ? "/go" : ""}`} replace />;
   }
 
   const {
@@ -106,7 +104,7 @@ export default function RaceResults() {
       seed: withGhost ? withGhost.session.seed : randomSeed(),
       ghost: withGhost,
     });
-    navigate(`/p/${profile!.id}/race/go`, { replace: true });
+    navigate(`/p/${profile!.id}/go`, { replace: true });
   }
 
   /**
@@ -127,7 +125,7 @@ export default function RaceResults() {
       seed: randomSeed(),
       ghost: null,
     });
-    navigate(`/p/${profile!.id}/race/go`, { replace: true });
+    navigate(`/p/${profile!.id}/go`, { replace: true });
   }
 
   const selfGhost = { session, profile: outcome.profileAfter, isSelf: true };
@@ -146,7 +144,7 @@ export default function RaceResults() {
       <Confetti burst={burst} />
       <TopBar
         profile={outcome.profileAfter}
-        back={{ to: `/p/${profile.id}`, label: "Hub" }}
+        back={{ to: `/p/${profile.id}`, label: "Set up" }}
       />
 
       <section
@@ -253,19 +251,10 @@ export default function RaceResults() {
           variant="ghost"
           onClick={() => {
             clear();
-            navigate(`/p/${profile.id}/race`);
-          }}
-        >
-          Change settings
-        </Button>
-        <Button
-          variant="ghost"
-          onClick={() => {
-            clear();
             navigate(`/p/${profile.id}`);
           }}
         >
-          Back to hub
+          Change settings
         </Button>
       </div>
     </main>

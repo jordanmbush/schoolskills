@@ -11,7 +11,6 @@ import {
 } from "@/components/state/SubjectContext";
 import { Button } from "@/components/ui/kit";
 import PlayerSelect from "@/components/screens/PlayerSelect";
-import PlayerHub from "@/components/screens/PlayerHub";
 import Progress from "@/components/screens/Progress";
 
 import RaceSetup from "./RaceSetup";
@@ -23,7 +22,7 @@ import RaceResults from "./RaceResults";
  *
  * ── Why HashRouter ──────────────────────────────────────────────────────────
  * The origin is S3 behind CloudFront: there is no server to rewrite
- * `/flash-cards/p/abc/race` back to an HTML file, so a real path router would
+ * `/flash-cards/p/abc/go` back to an HTML file, so a real path router would
  * 404 on refresh and on every shared deep link. The alternatives were a
  * CloudFront rewrite function (more infra, and it would have to not swallow
  * genuine 404s) or prerendering every route (impossible — profile ids are
@@ -81,11 +80,14 @@ function Shell() {
       <AdSlot name="game" className="ad--game" />
       <Routes>
         <Route path="/" element={<PlayerSelect />} />
-        <Route path="/p/:profileId" element={<PlayerHub />} />
+        {/* Picking a player lands on the setup screen itself. A screen in
+            front of it could only offer the one thing this screen already
+            is, and the ways on from here — the record book, the other
+            worlds — fit in its top bar. */}
+        <Route path="/p/:profileId" element={<RaceSetup />} />
         <Route path="/p/:profileId/progress" element={<Progress />} />
-        <Route path="/p/:profileId/race" element={<RaceSetup />} />
-        <Route path="/p/:profileId/race/go" element={<RaceTrack />} />
-        <Route path="/p/:profileId/race/results" element={<RaceResults />} />
+        <Route path="/p/:profileId/go" element={<RaceTrack />} />
+        <Route path="/p/:profileId/results" element={<RaceResults />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <ToastRail />

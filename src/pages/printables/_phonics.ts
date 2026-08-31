@@ -144,7 +144,7 @@ export const PHONICS_SHEETS: PhonicsSheet[] = [
     teaches: "Letter sounds",
     ages: "Ages 4–6",
     group: "sounds",
-    config: phonics("cards", LETTERS, 26, 4, { cutLines: true }),
+    config: phonics("cards", LETTERS, 26, 4),
   },
   {
     slug: "phonics-sounds-chart",
@@ -274,7 +274,7 @@ export const PHONICS_SHEETS: PhonicsSheet[] = [
     teaches: "Reading connected text made only of taught spellings",
     ages: "Ages 5–7",
     group: "words",
-    config: phonics("sentences", WITH_DIGRAPHS, 8, 1, { cutLines: true }),
+    config: phonics("sentences", WITH_DIGRAPHS, 8, 1),
   },
 ];
 

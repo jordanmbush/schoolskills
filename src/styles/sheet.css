@@ -157,6 +157,13 @@
 
 .sheet__blocks {
   flex: 1;
+  /* What the family reserved, set by the renderer off the header and footer
+     that were printed. `flex: 1` alone fills the page on screen and nothing at
+     all on paper, because print.css takes `.sheet`'s `min-height` away — so
+     the blocks would spread in the preview and huddle at the top of the sheet
+     that came out of the printer. This is the one height on a sheet that has
+     to be stated rather than inherited from the paper (§4). */
+  min-height: var(--sheet-blocks, 0);
   display: flex;
   flex-direction: column;
   gap: 0.14in;
@@ -165,6 +172,38 @@
 .sheet__block {
   display: flex;
   flex-direction: column;
+}
+
+/* ── The paper nobody asked for ─────────────────────────────────────────────
+   Capacity is arithmetic (§4): `layout.ts` divides the page by a declared row
+   height, and a family then asks for however many problems it wants — which is
+   usually fewer than fit. Twelve stacked sums fill four rows of a page that
+   holds nine, so five inches of it came out of the printer blank, with the
+   problems crowded into the top third and no room under any of them to work.
+
+   The blocks below take that space instead. Each one grows into whatever is
+   left, and the growth is shared out evenly: `align-content: stretch` is the
+   grid's default and does it for the two grids, and a flex column has to be
+   told item by item. Nothing shrinks — a row can only end up taller than the
+   family declared — so every promise the capacity arithmetic made still holds,
+   and a page that was already full is untouched.
+
+   **Only these four.** Spare paper is writing room on a sheet of sums or a
+   sentence with a gap in it, and it is a wrong answer on everything else here:
+   a ⅝ ruling stretched to fill the page is no longer ⅝ of an inch (§4), a
+   hundred chart is a square, and cards drawn a quarter-inch taller than the
+   scissors expect are cards that don't cut out. Those families space
+   themselves, and a `spacer` block is how one says so. */
+.sheet__problems,
+.sheet__wordshapes,
+.sheet__blanks,
+.sheet__questions {
+  flex-grow: 1;
+}
+
+.sheet__blanks > *,
+.sheet__questions > * {
+  flex-grow: 1;
 }
 
 .sheet__foot {
@@ -210,6 +249,15 @@
   display: block;
   max-width: 100%;
   font-family: var(--sheet-face, var(--font-body, system-ui, sans-serif));
+}
+
+/* A label reaches past the figure's own box when the measurement is a long one
+   — "100 cm" in a face half again as wide as Andika — and the box is sized for
+   about six characters. Half a measurement is worse than a crowded one, so the
+   overflow goes into the air beside the drawing rather than under the scissors.
+   Scoped to the figure: the traced rows below rely on the clip. */
+.sheet__figure {
+  overflow: visible;
 }
 
 /* A traced row is exactly one repeat of its ruling tall, because that is what
@@ -426,6 +474,17 @@
    anybody chose, stays right. */
 .sheet[data-answer-box] .sheet__slot {
   border: 0.75pt solid currentcolor;
+}
+
+/* A line to itself, under a drawing the answer is about — the same
+   `flex: 1 0 100%` a workspace and a set of ruled answers use, and for the same
+   reason: the row was reserved with the answer below the picture rather than
+   beside it. */
+.sheet__under {
+  display: flex;
+  align-items: baseline;
+  gap: 0.06in;
+  flex: 1 0 100%;
 }
 
 /* An answer, wherever it is written: in the slot at the end of a sum, in the

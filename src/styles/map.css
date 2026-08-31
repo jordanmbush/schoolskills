@@ -270,47 +270,6 @@
   pointer-events: none;
 }
 
-/* ── Worlds that don't exist yet ────────────────────────────────────────── */
-
-.soon {
-  margin-top: var(--gap-5);
-  padding-top: var(--gap-4);
-  border-top: 1px dashed var(--hairline);
-}
-
-.soon__head {
-  font-family: var(--font-mono);
-  font-size: var(--step--2);
-  font-weight: 700;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--chalk-dim);
-}
-
-.soon__list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-top: var(--gap-2);
-}
-
-.soon__list li {
-  padding: 0.4em 0.9em;
-  border-radius: 999px;
-  border: 1px dashed var(--hairline);
-  font-family: var(--font-display);
-  font-size: var(--step-0);
-  color: var(--chalk-dim);
-}
-
-.soon__note {
-  margin-top: var(--gap-2);
-  max-width: 56ch;
-  font-size: var(--step--1);
-  line-height: 1.6;
-  color: var(--chalk-dim);
-}
-
 /* ── What the child sees, and what you don't ────────────────────────────── */
 
 .ledger {

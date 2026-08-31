@@ -14,6 +14,7 @@
  * The stylesheets travel with the component rather than with a layout, so a
  * page that renders a sheet cannot forget to print it properly.
  */
+import { printedBlockBox } from "@/engine/sheets/chrome";
 import { contentBox } from "@/engine/sheets/layout";
 import { marginOf, pageSize } from "@/engine/sheets/paper";
 import type { Paper, Sheet } from "@/engine/sheets/types";
@@ -54,6 +55,13 @@ export function SheetView({ sheet }: { sheet: Sheet }) {
           "--sheet-h": inch(page.height),
           "--sheet-margin": inch(marginOf(sheet.paper)),
           "--sheet-pt": pt(sheet.fontPt),
+          // How much room the blocks were given, so they can use all of it —
+          // see "The paper nobody asked for" in sheet.css. It is the same
+          // number the family divided the page by, read back off the header
+          // and footer that were actually printed, and it has to come from
+          // here because CSS cannot ask: `.sheet` is `min-height` and print
+          // takes even that away, so a flex child has nothing to fill.
+          "--sheet-blocks": inch(printedBlockBox(sheet).height),
         } as CSSProperties
       }
     >
@@ -86,6 +94,13 @@ export function SheetView({ sheet }: { sheet: Sheet }) {
  * Both halves of the page, always: which of 2-up and 4-up a parent wanted is a
  * decision they make with the scissors, and a guide that is not followed costs
  * nothing where a guide that is missing costs a re-print.
+ *
+ * **It quarters the paper, and it knows nothing about what is on it.** That is
+ * the price of costing no height, and it is what the switch is for: a page that
+ * becomes four smaller pages. On a page whose own boxes are the cut it is the
+ * wrong guide — the middle of the sheet lands in the middle of a row of cards,
+ * and a child is left asking whether the four pieces or the little boxes are
+ * the thing to cut out.
  */
 function CutLines({ paper }: { paper: Paper }) {
   const { width, height } = pageSize(paper);
