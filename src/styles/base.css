@@ -26,7 +26,12 @@ body {
   background-color: var(--ink-900);
   background-image: var(--terrain);
   background-size: var(--terrain-size);
+  background-position: var(--terrain-position, 0 0);
   background-attachment: fixed;
+  /* Worlds with a photograph for ground lift their text off it; the rest
+     set this to none. Inherited, so one rule covers every heading and
+     paragraph, and the controls below opt back out. */
+  text-shadow: var(--text-lift, none);
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
 }
@@ -36,6 +41,7 @@ input,
 select {
   font: inherit;
   color: inherit;
+  text-shadow: none;
 }
 
 button {

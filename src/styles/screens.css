@@ -28,17 +28,18 @@
   gap: 0.4rem;
   padding: 0.4em 0.9em;
   border-radius: 999px;
-  border: 1px solid var(--hairline);
+  border: 1px solid color-mix(in oklab, var(--chalk) 30%, transparent);
+  background: color-mix(in oklab, var(--ink-950) 60%, transparent);
   font-family: var(--font-mono);
   font-size: var(--step--2);
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--chalk-dim);
+  color: var(--chalk-soft);
 }
 
 .exit:hover {
   color: var(--chalk);
-  border-color: var(--chalk-dim);
+  border-color: var(--chalk-soft);
 }
 
 .boot {
@@ -96,10 +97,7 @@
 
 .select__title {
   font-size: clamp(3rem, 11vw, 6.5rem);
-  background: linear-gradient(180deg, var(--chalk), #7f8ca3);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  color: #fff;
 }
 
 .select__totals {
@@ -514,16 +512,27 @@
 }
 
 .topbar__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
   font-family: var(--font-mono);
   font-size: var(--step--2);
+  font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--chalk-dim);
+  color: var(--chalk-soft);
+  text-shadow: var(--text-lift, none);
   white-space: nowrap;
 }
 
 .topbar__back:hover {
   color: var(--chalk);
+}
+
+.topbar__arrow {
+  width: 1.4em;
+  height: 1.4em;
+  flex: none;
 }
 
 .topbar__player {

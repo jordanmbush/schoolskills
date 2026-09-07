@@ -68,8 +68,9 @@
   display: grid;
   gap: var(--gap-3);
   position: sticky;
-  /* Under the masthead, which is the one piece of site chrome above it. */
-  top: var(--gap-3);
+  /* Under the masthead, which is stuck to the top at every width this column
+     is — its sticky range starts lower than this one's (see chrome.css). */
+  top: var(--mast-clear);
 }
 
 @media (width < 62rem) {

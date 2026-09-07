@@ -59,7 +59,19 @@ export default function TopBar({
   return (
     <header className="topbar">
       <Link className="topbar__back" to={back.to}>
-        <span aria-hidden="true">←</span> {back.label}
+        <svg
+          className="topbar__arrow"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.6"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M19 12H6M12.5 5.5 6 12l6.5 6.5" />
+        </svg>
+        {back.label}
       </Link>
 
       <div className="topbar__player">

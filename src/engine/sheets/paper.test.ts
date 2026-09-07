@@ -9,14 +9,17 @@ import {
   inches,
   marginOf,
   mm,
+  namedPitch,
   pageSize,
   points,
   ruleLines,
   rulePitch,
   rulingOf,
+  steppedSize,
   toInches,
   toMm,
   toPoints,
+  writingSpace,
 } from "./paper";
 import type { MarginSize, Paper, PaperSize, Rule, RuleStyle } from "./types";
 
@@ -148,13 +151,21 @@ describe("ruleLines", () => {
     ]);
   });
 
-  it("takes the descender space out of the repeat, not out of the pitch", () => {
-    // The tail space is a third of the repeat, so the writing space shrinks
-    // and the ⅝ paper stays ⅝ paper. Anything else would silently reprice
-    // every ruling the moment a parent ticked the box.
+  it("adds the descender space under the writing space, not out of it", () => {
+    // ⅝ paper is ⅝ from the top line to the baseline whether or not a `g` has
+    // anywhere to go. The tail is another half of that under each set, so
+    // what the box costs is sets to the page and never the size on the
+    // label (§5) — the other way round shrank every letter the moment a
+    // parent ticked it.
     const lines = ruleLines(hand({ descender: true }));
-    expect(lines.at(-1)).toEqual({ at: 417, role: "base", dashed: false });
-    expect(rulePitch(hand({ descender: true }))).toBe(625);
+    expect(lines).toEqual([
+      { at: 0, role: "top", dashed: false },
+      { at: 313, role: "mid", dashed: true },
+      { at: 625, role: "base", dashed: false },
+    ]);
+    expect(writingSpace(hand({ descender: true }))).toBe(625);
+    expect(rulePitch(hand({ descender: true }))).toBe(625 + 313);
+    expect(rulePitch(hand())).toBe(625);
   });
 
   it("dashes the midline unless asked not to", () => {
@@ -189,10 +200,21 @@ describe("grid pitches", () => {
     );
   });
 
-  it("ignores an override on a ruling that doesn't have squares", () => {
-    expect(rulePitch({ style: "hand-5-8", pitch: 999 })).toBe(625);
-    // And reports no square at all, rather than the vertical pitch: a
-    // handwriting rule has no grid for a renderer to draw.
+  it("writes a lined ruling at the size it was given, and blank at nothing", () => {
+    // `pitch` is the parent's own letter size on a lined ruling (§5): the
+    // writing space, with the midline and the tail following it.
+    const stepped: Rule = { style: "hand-5-8", pitch: 500, descender: true };
+    expect(namedPitch(stepped)).toBe(500);
+    expect(writingSpace(stepped)).toBe(500);
+    expect(ruleLines(stepped).map((line) => line.at)).toEqual([0, 250, 500]);
+    expect(rulePitch(stepped)).toBe(750);
+    expect(rulePitch({ style: "college", pitch: 400 })).toBe(400);
+    // A size that isn't one is the ruling's own.
+    expect(namedPitch({ style: "hand-5-8", pitch: 0 })).toBe(625);
+    // Nothing to write on, so nothing to write it at.
+    expect(rulePitch({ style: "blank", pitch: 500 })).toBe(0);
+    // And no square, whatever a rule says: a handwriting rule has no grid for
+    // a renderer to draw.
     expect(gridPitch({ style: "hand-5-8", pitch: 999 })).toBe(0);
     expect(gridPitch({ style: "college" })).toBe(0);
   });
@@ -203,5 +225,17 @@ describe("grid pitches", () => {
     expect(gridPitch({ style: "isometric" })).toBe(250);
     expect(rulePitch({ style: "isometric" })).toBe(217);
     expect(toInches(rulePitch({ style: "isometric" }))).toBeCloseTo(0.2165, 2);
+  });
+});
+
+describe("naming a stepped size", () => {
+  it("names a size only when it isn't the ruling's own", () => {
+    expect(steppedSize({ style: "hand-5-8" })).toBeUndefined();
+    expect(steppedSize({ style: "hand-5-8", pitch: 625 })).toBeUndefined();
+    expect(steppedSize({ style: "hand-5-8", pitch: 500 })).toBe("36pt");
+    expect(steppedSize({ style: "college", pitch: 400 })).toBe("29pt");
+    // A square is picked from a list of named squares, not stepped.
+    expect(steppedSize({ style: "graph", pitch: 200 })).toBeUndefined();
+    expect(steppedSize({ style: "blank", pitch: 500 })).toBeUndefined();
   });
 });

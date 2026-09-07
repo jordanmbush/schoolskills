@@ -360,7 +360,7 @@ export const CURSIVE_GROUPS: Array<{
   {
     id: "letters",
     label: "Letters",
-    blurb: "The shapes, which are not the printed ones, one page each.",
+    blurb: "The shapes, which are not the printed ones, a sheet each.",
   },
   {
     id: "joins",

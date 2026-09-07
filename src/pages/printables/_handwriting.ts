@@ -112,7 +112,7 @@ export const HANDWRITING_SHEETS: HandwritingSheet[] = [
     keyword: "Free printable letter tracing worksheets",
     summary:
       "Every letter of the alphabet as a capital and a small letter, on ⅝-inch ruled paper: a solid model, two dotted letters to trace, and an empty space to write it alone.",
-    lead: "All twenty-six letters on one page, each one written as the pair a child is taught — A then a, B then b. Every letter gets a solid model to look at, two dotted ones to trace over, and an empty space at the end where nobody is helping.",
+    lead: "All twenty-six letters, each one written as the pair a child is taught — A then a, B then b — on as many pages as ⅝ paper takes rather than shrunk to fit one. Every letter gets a solid model to look at, two dotted ones to trace over, and an empty space at the end where nobody is helping.",
     notes: [
       "The three steps on each line are the whole point of the sheet, and they are meant to be done in order. A child who traces a letter twenty times has practised following a line; a child who traces it once and then writes it from nothing has practised writing the letter. The empty space at the end of every group is where the actual learning happens, and it is why this page is worth more than a page of dotted letters twice the length.",
       "Capitals and small letters sit together rather than on separate pages, because they are one letter with two shapes and a child meets them that way in every book they open. It also makes the difference visible: b and d are a genuine problem at this age, and having Bb and Dd on the same sheet is a better answer than practising each of them alone a week apart.",
@@ -315,7 +315,7 @@ export const HANDWRITING_GROUPS: Array<{
   {
     id: "letters",
     label: "Letters and numbers",
-    blurb: "The shapes everything else is built out of, one page each.",
+    blurb: "The shapes everything else is built out of, a sheet each.",
   },
   {
     id: "words",

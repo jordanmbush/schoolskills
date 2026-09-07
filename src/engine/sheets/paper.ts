@@ -187,8 +187,10 @@ export type Ruling = {
 /**
  * Every ruling in §5, and nothing else claims to be one.
  *
- * Handwriting sizes are named by their pitch because that is what a teacher says
- * out loud — "we're on ⅝ paper this year" — and what a parent searches for.
+ * Handwriting sizes are named by their writing space — top line down to the
+ * baseline — because that is what a teacher says out loud ("we're on ⅝ paper
+ * this year") and what a parent searches for. Room for a tail is added under
+ * that, never taken out of it: see `rulePitch`.
  */
 export const RULINGS: Record<RuleStyle, Ruling> = {
   blank: {
@@ -297,27 +299,61 @@ export function rulingOf(rule: Rule): Ruling {
 }
 
 /**
- * How a handwriting repeat divides.
+ * The size a ruling is written at: its own, unless the rule asks for another.
  *
- * With descender space on, the writing space (top line down to the baseline)
- * takes two thirds of the repeat and the tail space below it one third — the
- * proportion primary paper is printed at (§5). With it off there is no tail
- * space, so one set's baseline is the next set's top line.
+ * `rule.pitch` is the parent's letter size on a lined ruling and the square on
+ * a grid. Blank paper has no size to override, so it stays blank whatever a
+ * saved rule says.
  */
-const DESCENDER_SHARE = 1 / 3;
+export function namedPitch(rule: Rule): Mil {
+  const ruling = rulingOf(rule);
+  if (ruling.pitch <= 0) return 0;
+  return rule.pitch !== undefined && rule.pitch > 0 ? rule.pitch : ruling.pitch;
+}
+
+/**
+ * "36pt", when a lined ruling is written at a size of the parent's own, and
+ * nothing when it is written at its own. A description that named only the
+ * preset would call a sheet ⅝ paper when nothing on it is ⅝ of an inch.
+ *
+ * Grids are left out: a square is chosen from a list of named squares rather
+ * than stepped, and their descriptions do not name it.
+ */
+export function steppedSize(rule: Rule): string | undefined {
+  const ruling = rulingOf(rule);
+  const pitch = namedPitch(rule);
+  if (ruling.grid || pitch === 0 || pitch === ruling.pitch) return undefined;
+  return `${Math.round(toPoints(pitch))}pt`;
+}
+
+/**
+ * How much room a tail gets, as a share of the writing space.
+ *
+ * Half, so the writing space is two thirds of the repeat and the tail space one
+ * third — the proportion primary paper is printed at (§5). It is added under
+ * the writing space rather than carved out of it: ⅜ paper with room for
+ * descenders still has ⅜ of an inch from its top line to its baseline. What it
+ * costs is sets to the page, and that is a second page rather than smaller
+ * letters.
+ */
+const TAIL_SHARE = 1 / 2;
+
+const tailOf = (rule: Rule): Mil =>
+  rulingOf(rule).handwriting && rule.descender
+    ? Math.round(namedPitch(rule) * TAIL_SHARE)
+    : 0;
 
 /**
  * How far it is from one repeat of a ruling to the next, down the page.
  *
- * Isometric is the one place the declared pitch isn't the answer: its rows are
- * the height of an equilateral triangle of that side, which is what makes the
- * grid 30° rather than square.
+ * Isometric is the one place the named size isn't the answer: its rows are the
+ * height of an equilateral triangle of that side, which is what makes the grid
+ * 30° rather than square.
  */
 export function rulePitch(rule: Rule): Mil {
-  const ruling = rulingOf(rule);
-  const pitch = ruling.grid ? (rule.pitch ?? ruling.pitch) : ruling.pitch;
+  const pitch = namedPitch(rule);
   if (rule.style === "isometric") return Math.round((pitch * Math.sqrt(3)) / 2);
-  return pitch;
+  return pitch + tailOf(rule);
 }
 
 /**
@@ -329,8 +365,7 @@ export function rulePitch(rule: Rule): Mil {
  * renderer to draw one that isn't there.
  */
 export function gridPitch(rule: Rule): Mil {
-  const ruling = rulingOf(rule);
-  return ruling.grid ? (rule.pitch ?? ruling.pitch) : 0;
+  return rulingOf(rule).grid ? namedPitch(rule) : 0;
 }
 
 /**
@@ -367,9 +402,7 @@ export function ruleLines(rule: Rule): RuleLine[] {
   if (pitch <= 0 || ruling.grid) return [];
   if (!ruling.handwriting) return [{ at: pitch, role: "line", dashed: false }];
 
-  const writing = rule.descender
-    ? Math.round(pitch * (1 - DESCENDER_SHARE))
-    : pitch;
+  const writing = namedPitch(rule);
   const midline = rule.midline ?? "dashed";
   return [
     { at: 0, role: "top", dashed: false },

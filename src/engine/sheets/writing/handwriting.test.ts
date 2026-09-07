@@ -42,11 +42,12 @@ import { JOIN_FAMILIES, joinPairs } from "./joins";
  * The family where the paper is the exercise.
  *
  * Three properties carry this sheet, and none of them can be seen by looking at
- * a screen: the ruling is the size it says it is, which is the row pitch and
- * nothing else; the tallest letter stands on the baseline and reaches the top
- * line in whichever of the five faces the sheet is set in; and what is asked
- * for is what is printed — a page that quietly dropped `8` and `9` off a sheet
- * of number formation is a sheet that teaches eight numerals.
+ * a screen: the ruling is the size it says it is — top line to baseline, with
+ * any tail space under that and never out of it; the tallest letter stands on
+ * the baseline and reaches the top line in whichever of the five faces the
+ * sheet is set in; and what is asked for is what is printed — a sheet that
+ * quietly dropped `8` and `9` off a page of number formation is a sheet that
+ * teaches eight numerals, so what outruns a page goes on to the next one.
  */
 
 const BASE: HandwritingConfig = {
@@ -66,11 +67,20 @@ const config = (over: Partial<HandwritingConfig> = {}): HandwritingConfig => ({
   ...over,
 });
 
-/** The rows a config actually printed. */
-function rowsOf(over: Partial<HandwritingConfig> = {}): TraceRow[] {
-  const [block] = HANDWRITING_SHEET.build(config(over), 1).blocks;
-  return block?.kind === "trace" ? block.rows : [];
+/** The rows a config actually printed, a page at a time. */
+function pagesOf(over: Partial<HandwritingConfig> = {}): TraceRow[][] {
+  const pages: TraceRow[][] = [[]];
+  for (const block of HANDWRITING_SHEET.build(config(over), 1).blocks) {
+    if (block.kind === "break") pages.push([]);
+    else if (block.kind === "trace")
+      pages[pages.length - 1].push(...block.rows);
+  }
+  return pages;
 }
+
+/** The rows a config actually printed, every page of them. */
+const rowsOf = (over: Partial<HandwritingConfig> = {}): TraceRow[] =>
+  pagesOf(over).flat();
 
 /**
  * Everything written on a sheet, in the order a child meets it.
@@ -102,10 +112,11 @@ describeSheetFamily("handwriting", {
 });
 
 describe("what goes on a handwriting sheet", () => {
-  it("writes the whole alphabet, upper and lower, on one page", () => {
-    // The acceptance criterion, and the reason a row carries a text per cell:
-    // fifty-two rows of one letter each is four sheets of ⅝ paper, and a sheet
-    // that stopped at M would be a sheet that teaches half an alphabet.
+  it("writes the whole alphabet, upper and lower, however many pages it takes", () => {
+    // The acceptance criterion. A sheet that stopped at M would be a sheet
+    // that teaches half an alphabet, and on ⅝ paper with a tail the whole of
+    // it is three pages rather than one — which is the page count giving way
+    // and not the letters (§5).
     const pairs = written(rowsOf({ letters: "both" }));
     for (const letter of "ABCDEFGHIJKLMNOPQRSTUVWXYZ") {
       expect(pairs, letter).toContain(`${letter}${letter.toLowerCase()}`);
@@ -117,12 +128,12 @@ describe("what goes on a handwriting sheet", () => {
   });
 
   it("writes every numeral from nought to nine", () => {
-    // Ten things at three repeats each is two to a row on inch-high paper —
-    // which is the point of checking it rather than assuming it, because one
-    // more repeat drops the last two numerals off the bottom of the page. A
-    // numeral that fills a 1-inch rule's writing space is 0.47in wide at
-    // Andika's mean advance (`Face.figure`, `Face.advance`), so four of them
-    // and their air is 3.79in and two groups no longer fit across 7.5in.
+    // Ten things at three repeats each is more rows than a page of inch-high
+    // paper holds, so the last of them are on the second page — and the test
+    // is that they are there at all. A numeral that fills a 1-inch rule's
+    // writing space is 0.47in wide at Andika's mean advance (`Face.figure`,
+    // `Face.advance`), so four of them and their air is 3.79in and two groups
+    // no longer fit across 7.5in.
     const rule: Rule = { style: "hand-1", midline: "solid", descender: true };
     const drawn = written(rowsOf({ style: "numbers", rule, repeats: 3 }));
     for (const numeral of "0123456789") {
@@ -203,7 +214,14 @@ describe("trace, copy, then write it alone", () => {
     // The whole of the difference between the styles: something short
     // enough to write several times on one line does, and a line of a passage
     // takes the next row instead.
-    const across = rowsOf({ letters: "upper", repeats: 4 });
+    // On ⅜ paper, where several groups fit across. On ⅝ with a tail a capital
+    // written four times is a row on its own, which is the packing's answer
+    // rather than a failure of it.
+    const across = rowsOf({
+      letters: "upper",
+      repeats: 4,
+      rule: { style: "hand-3-8" },
+    });
     const group = ["solid", "dotted", "dotted", "none"];
     const cells = across[0].cells.map((cell) => cell.style);
     // A whole number of progressions, more than one of them, and no partial
@@ -229,7 +247,11 @@ describe("trace, copy, then write it alone", () => {
     // A final row that divided the page between four cells instead of twelve
     // would set its letters three times as far apart as the row above it,
     // which looks like a mistake because it is one.
-    const rows = rowsOf({ letters: "upper", repeats: 4 });
+    const rows = rowsOf({
+      letters: "upper",
+      repeats: 4,
+      rule: { style: "hand-3-8" },
+    });
     const widths = new Set(rows.map((row) => row.cells.length));
     expect(widths.size).toBe(1);
   });
@@ -308,13 +330,73 @@ describe("every ruling with every trace style", () => {
     for (const style of STYLES) {
       for (const repeats of [1, 3, MAX_REPEATS]) {
         const rule: Rule = { style, descender: true };
-        const drawn = rowsOf({ rule, repeats, letters: "both" });
+        const pages = pagesOf({ rule, repeats, letters: "both" });
         const { box } = handwritingLayout(config({ rule, repeats }), 1);
         const held = ruleCapacity(
           box.height,
           rulePitch(rule) > 0 ? rule : DEFAULT_HAND_RULE,
         );
-        expect(drawn.length, `${style} × ${repeats}`).toBeLessThanOrEqual(held);
+        for (const page of pages) {
+          expect(page.length, `${style} × ${repeats}`).toBeLessThanOrEqual(
+            held,
+          );
+        }
+      }
+    }
+  });
+});
+
+/* ── Past the page ─────────────────────────────────────────────────────── */
+
+describe("a sheet that outruns the page", () => {
+  const OVER = { letters: "both", repeats: 4 } as const;
+
+  it("runs on to another page rather than shrinking or trimming", () => {
+    // Twenty-six pairs written four times on ⅝ paper with a tail is three
+    // pages of one pair to a row. The same sheet was one page once, and what
+    // gave was the letters, set at two thirds of the size on the label (§5).
+    const pages = pagesOf(OVER);
+    expect(pages.length).toBeGreaterThan(1);
+    expect(written(pages.flat())).toHaveLength(26);
+
+    // Every page but the last is full and none is fuller: the cut comes where
+    // the arithmetic says the page ends, not before it and not after.
+    const { rows } = handwritingLayout(config(OVER), 2);
+    for (const page of pages.slice(0, -1)) expect(page.length).toBe(rows);
+    expect(pages[pages.length - 1].length).toBeLessThanOrEqual(rows);
+  });
+
+  it("cuts the flow with a break and nothing else", () => {
+    const { blocks } = HANDWRITING_SHEET.build(config(OVER), 1);
+    expect(blocks.length).toBeGreaterThan(2);
+    blocks.forEach((block, at) => {
+      expect(block.kind, `block ${at}`).toBe(at % 2 === 0 ? "trace" : "break");
+    });
+    // One ruling throughout: the rules on page three are the rules on page one.
+    const rules = new Set(
+      blocks.flatMap((block) =>
+        block.kind === "trace" ? [JSON.stringify(block.rule)] : [],
+      ),
+    );
+    expect(rules.size).toBe(1);
+  });
+
+  it("keeps a line and its copies on one page", () => {
+    // A line of a passage and the rows under it are one exercise. A page that
+    // ended between the model and its trace would hand a child a line to copy
+    // with nothing above it to copy from.
+    const pages = pagesOf({
+      style: "passage",
+      text: "The quick brown fox jumps over the lazy dog. ".repeat(6),
+      repeats: 3,
+      rule: { style: "hand-1", descender: true },
+    });
+    expect(pages.length).toBeGreaterThan(1);
+    for (const page of pages) {
+      expect(page.length % 3).toBe(0);
+      for (let at = 0; at < page.length; at += 3) {
+        expect(page.slice(at, at + 3).map((row) => row.cells[0].style)) //
+          .toEqual(["solid", "dotted", "none"]);
       }
     }
   });
@@ -323,27 +405,32 @@ describe("every ruling with every trace style", () => {
 /* ── The paper is the size it says it is ───────────────────────────────── */
 
 describe("a ⅝ rule under a ruler", () => {
-  it("repeats every five eighths of an inch, down a whole page of them", () => {
+  it("is five eighths from the top line to the baseline, down a whole page of them", () => {
     const rule: Rule = {
       style: "hand-5-8",
       midline: "dashed",
       descender: true,
     };
-    // A row is one repeat of the ruling and rows sit against each other, so
-    // the distance between one baseline and the next is the pitch — measured
-    // from the repeat index rather than accumulated, which is what stops a
-    // rounding error compounding down the page (`layout.ts`).
-    expect(toInches(rulePitch(rule))).toBe(0.625);
+    // The size on the label is the writing space. The tail under it is half
+    // as much again, so with descenders on a set is 15/16 tall and the rows
+    // sit against each other at that — measured from the repeat index rather
+    // than accumulated, which is what stops a rounding error compounding down
+    // the page (`layout.ts`).
+    expect(toInches(writingSpace(rule))).toBe(0.625);
+    expect(rulePitch(rule)).toBe(inches(0.625) + inches(0.3125));
+    expect(toInches(rulePitch({ ...rule, descender: false }))).toBe(0.625);
 
-    const rows = rowsOf({ rule, letters: "both" });
+    const [rows] = pagesOf({ rule, letters: "both" });
     const page = ruledLines(
       { x: 0, y: 0, width: inches(7.5), height: rows.length * rulePitch(rule) },
       rule,
     );
+    const tops = page.filter((line) => line.role === "top").map((l) => l.y);
     const bases = page.filter((line) => line.role === "base").map((l) => l.y);
     expect(bases).toHaveLength(rows.length);
-    for (let at = 1; at < bases.length; at++) {
-      expect(bases[at] - bases[at - 1]).toBe(inches(0.625));
+    for (let at = 0; at < bases.length; at++) {
+      expect(bases[at] - tops[at]).toBe(inches(0.625));
+      if (at > 0) expect(bases[at] - bases[at - 1]).toBe(rulePitch(rule));
     }
   });
 
@@ -418,8 +505,10 @@ describe("a ⅝ rule under a ruler", () => {
   it("fits a wider face on the same line by writing fewer of them", () => {
     // OpenDyslexic is half as wide again as Andika, so a row of it holds
     // fewer groups — which is a fact about the font file, not a guess, and it
-    // is why the packing is per face rather than a constant.
-    const rule: Rule = { style: "hand-5-8", descender: true };
+    // is why the packing is per face rather than a constant. On ⅜ paper,
+    // where a row holds several: on ⅝ with a tail both are down to a group
+    // or two, and a floor cannot tell them apart.
+    const rule: Rule = { style: "hand-3-8" };
     const print = handwritingLayout(config({ rule, font: "print" }), 1);
     const wide = handwritingLayout(config({ rule, font: "dyslexic" }), 1);
     expect(wide.perRow).toBeLessThan(print.perRow);
@@ -485,7 +574,7 @@ describe("a ⅝ rule under a ruler", () => {
    use for, and a face that a sheet can insist on.                           */
 
 describe("joined writing", () => {
-  it("writes the joins, all six families, on one page", () => {
+  it("writes the joins, all six families, however many pages it takes", () => {
     // The story's own criterion. A join is only correct in the company of the
     // letters either side of it, so what goes on the page is pairs — and the
     // sheet has to hold every family rather than as many as happen to fit.
@@ -581,20 +670,22 @@ describe("joined writing", () => {
             rule: { style },
             trace,
           } as const;
-          const rows = rowsOf(over);
+          const pages = pagesOf(over);
+          const rows = pages.flat();
           const where = `${font} / ${style} / ${trace}`;
           expect(rows.length, where).toBeGreaterThan(0);
           expect(rows[0].cells.length, where).toBeGreaterThan(0);
-          // And never more rows than the paper holds, which is the only way a
-          // handwriting sheet can silently become two sheets.
+          // And never more rows on a page than the paper holds, which is the
+          // only way a page can silently become two sheets out of the printer.
           const rule: Rule = { style };
           const { box } = handwritingLayout(config(over), 2);
-          expect(rows.length, where).toBeLessThanOrEqual(
-            ruleCapacity(
-              box.height,
-              rulePitch(rule) > 0 ? rule : DEFAULT_HAND_RULE,
-            ),
+          const held = ruleCapacity(
+            box.height,
+            rulePitch(rule) > 0 ? rule : DEFAULT_HAND_RULE,
           );
+          for (const page of pages) {
+            expect(page.length, where).toBeLessThanOrEqual(held);
+          }
         }
       }
     }
@@ -781,6 +872,13 @@ describe("the sheet", () => {
     expect(describeSheet(config({ style: "numbers", repeats: 4 }))).toBe(
       'Number formation — 0 to 9 — handwriting ⅝" — written 4 times',
     );
+    // A stepped letter size is named, or a saved sheet would be called ⅝
+    // paper with nothing ⅝ of an inch on it.
+    expect(
+      describeSheet(config({ rule: { style: "hand-5-8", pitch: 500 } })),
+    ).toBe(
+      'Letter practice — capitals and small letters — handwriting ⅝" — 36pt letters — written 3 times',
+    );
   });
 
   it("survives a config that says something this build has never heard of", () => {
@@ -793,6 +891,9 @@ describe("the sheet", () => {
       rule: { style: "runes" },
     } as unknown as HandwritingConfig;
     expect(() => HANDWRITING_SHEET.build(stale, 1)).not.toThrow();
-    expect(HANDWRITING_SHEET.build(stale, 1).blocks.length).toBe(1);
+    const { blocks } = HANDWRITING_SHEET.build(stale, 1);
+    expect(blocks[0].kind).toBe("trace");
+    expect(blocks.every((b) => b.kind === "trace" || b.kind === "break")) //
+      .toBe(true);
   });
 });

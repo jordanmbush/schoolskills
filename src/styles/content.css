@@ -33,7 +33,7 @@
 @media (width >= 760px) {
   :target,
   .band[id] {
-    scroll-margin-top: 5.5rem;
+    scroll-margin-top: var(--mast-clear);
   }
 }
 
@@ -158,6 +158,7 @@
   gap: 0.5rem;
   padding: 0.75em 1.6em;
   border-radius: 999px;
+  text-shadow: none;
   background: var(--go);
   color: var(--go-ink);
   font-family: var(--font-display);
@@ -192,9 +193,9 @@
 }
 
 .cta--quiet {
-  background: transparent;
+  background: color-mix(in oklab, var(--ink-950) 55%, transparent);
   color: var(--chalk);
-  border: 1.5px solid var(--hairline);
+  border: 1.5px solid color-mix(in oklab, var(--chalk) 35%, transparent);
   box-shadow: none;
   font-size: var(--step-0);
 }
@@ -541,6 +542,77 @@
    they genuinely are a sequence with a number on each — this is the one place
    on the site where 01/02/03 would be telling the truth.                  */
 
+/* ── Folds ─────────────────────────────────────────────────────────────────
+   A shelf on the catalog hub, closed until asked for. Native <details>, so
+   the sheets inside are in the HTML a crawler reads and find-in-page opens
+   the fold that has the match; no script, and nothing to hydrate. The
+   summary is the whole row, at least 44px tall, so a five-year-old's thumb
+   lands on it. */
+.fold {
+  border-top: 1px solid var(--hairline);
+}
+
+.fold:first-of-type {
+  margin-top: var(--gap-4);
+}
+
+.fold:last-of-type {
+  border-bottom: 1px solid var(--hairline);
+}
+
+.fold__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--gap-3);
+  min-height: 44px;
+  padding-block: var(--gap-3);
+  cursor: pointer;
+  list-style: none;
+}
+
+.fold__head::-webkit-details-marker {
+  display: none;
+}
+
+.fold__head .h2 {
+  margin: 0;
+}
+
+.fold__head::after {
+  content: "";
+  flex: none;
+  width: 0.7em;
+  height: 0.7em;
+  margin-right: 0.4em;
+  border-right: 2.5px solid var(--chalk-soft);
+  border-bottom: 2.5px solid var(--chalk-soft);
+  transform: rotate(45deg);
+  transition: transform 0.2s;
+}
+
+.fold[open] > .fold__head::after {
+  transform: rotate(225deg);
+}
+
+.fold__head:hover {
+  color: var(--accent);
+}
+
+.fold__head:focus-visible {
+  outline: 3px solid var(--go);
+  outline-offset: 3px;
+  border-radius: var(--radius);
+}
+
+.fold__body {
+  padding-bottom: var(--gap-4);
+}
+
+.fold__body > .h2__sub {
+  margin-top: 0;
+}
+
 .stones {
   display: flex;
   flex-wrap: wrap;
@@ -581,6 +653,16 @@
   border-color: var(--accent);
   background: color-mix(in oklab, var(--accent) 22%, transparent);
   color: var(--accent);
+}
+
+/* A chip the current search has ruled out. Kept in the row so nothing moves
+   under the pointer, but it can neither lift nor be pressed. */
+.stone:disabled {
+  opacity: 0.6;
+  border-color: transparent;
+  background: rgb(0 0 0 / 35%);
+  color: var(--chalk-dim);
+  pointer-events: none;
 }
 
 /* ── A quiet aside ──────────────────────────────────────────────────────── */

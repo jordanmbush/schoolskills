@@ -23,7 +23,12 @@ export function Rules({ block, metrics }: BlockProps<"rules">) {
       viewBox={`0 0 ${width} ${height}`}
       aria-hidden="true"
     >
-      <Ruling rule={block.rule} box={metrics.box} sets={block.lines} />
+      <Ruling
+        rule={block.rule}
+        box={metrics.box}
+        sets={block.lines}
+        marginLine
+      />
     </svg>
   );
 }

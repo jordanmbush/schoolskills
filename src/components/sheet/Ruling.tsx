@@ -31,15 +31,22 @@ type Props = {
   box: Box;
   /** How many repeats to draw. */
   sets: number;
+  /**
+   * Draw the notebook margin line, where the ruling has one. Only lined paper
+   * asks for it: the same ruling under a line of copywork is ground for text
+   * that starts at the left edge, and a margin line there runs through the
+   * first word of every line.
+   */
+  marginLine?: boolean;
 };
 
-export function Ruling({ rule, box, sets }: Props) {
+export function Ruling({ rule, box, sets, marginLine = false }: Props) {
   const ruling = rulingOf(rule);
   if (sets <= 0 || rulePitch(rule) <= 0) return null;
   return ruling.grid ? (
     <GridRuling rule={rule} box={box} sets={sets} />
   ) : (
-    <LinedRuling rule={rule} box={box} sets={sets} />
+    <LinedRuling rule={rule} box={box} sets={sets} marginLine={marginLine} />
   );
 }
 
@@ -51,7 +58,7 @@ export function Ruling({ rule, box, sets }: Props) {
  * repeats fit is arithmetic (`ruledLines`) — both of which a unit test can
  * check without a browser, and neither of which a renderer should be deciding.
  */
-function LinedRuling({ rule, box, sets }: Props) {
+function LinedRuling({ rule, box, sets, marginLine }: Props) {
   const height = ruledHeight(rule, sets);
   const lines = ruledLines({ x: 0, y: 0, width: box.width, height }, rule);
   const ruling = rulingOf(rule);
@@ -61,7 +68,9 @@ function LinedRuling({ rule, box, sets }: Props) {
   // red, because the default sheet is black on white and nobody should pay
   // for a colour cartridge to get lined paper.
   const margin =
-    ruling.marginLine === undefined ? null : ruling.marginLine - box.x;
+    !marginLine || ruling.marginLine === undefined
+      ? null
+      : ruling.marginLine - box.x;
   const showMargin = margin !== null && margin > 0 && margin < box.width;
 
   return (

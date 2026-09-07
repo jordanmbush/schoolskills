@@ -61,11 +61,17 @@ export type Rule = {
   /** Handwriting only. Defaults to dashed, which is what schools print. */
   midline?: Midline;
   /**
-   * Handwriting only. Room below the baseline for the tail of a `g`, taken out
-   * of the repeat rather than added to it — the pitch is what it says it is.
+   * Handwriting only. Room below the baseline for the tail of a `g`, added
+   * under the writing space rather than taken out of it — the named size is
+   * always the top line to the baseline, and a set with a tail is half as tall
+   * again (`rulePitch`).
    */
   descender?: boolean;
-  /** Graph, dot and isometric only. Defaults per `GRID_PITCHES` in paper.ts. */
+  /**
+   * The size to write the ruling at instead of its own: the square on graph,
+   * dot and isometric paper (`GRID_PITCHES`), the writing space on a lined
+   * one. Absent means the ruling's named size.
+   */
   pitch?: Mil;
 };
 
@@ -671,7 +677,13 @@ export type Block =
   | { kind: "net"; net: Net }
   /** Where to cut, for cards and bookmarks. */
   | { kind: "cutline" }
-  | { kind: "spacer"; height: Mil };
+  | { kind: "spacer"; height: Mil }
+  /**
+   * The end of a page. What follows is printed on the next one, with the
+   * header and footer again. A family emits one where its own arithmetic says
+   * the page is full, rather than trimming what did not fit (§4).
+   */
+  | { kind: "break" };
 
 /* ── Type ──────────────────────────────────────────────────────────────── */
 
@@ -750,7 +762,7 @@ export type Sheet = {
   /**
    * The flow, in order. A sheet is one document that may run over more than one
    * page: keeping a block inside a page is the family's job, using layout.ts,
-   * and breaking between them is the print stylesheet's.
+   * and a `break` block is where it says one page ends and the next begins.
    */
   blocks: Block[];
   footer: SheetFooter;
