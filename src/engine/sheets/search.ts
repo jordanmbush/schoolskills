@@ -319,6 +319,31 @@ export function findSheets(index: SheetIndex, query: Query): SheetHit[] {
     .map(readRow);
 }
 
+/** The four rows of chips — every part of a query that isn't typed. */
+export type FacetKey = Exclude<keyof Query, "text">;
+
+/**
+ * Which chips in one row would still find a sheet, given everything else that
+ * has been asked for.
+ *
+ * Each chip is tried in place of the row's current value, not on top of it, so
+ * the row a parent has already chosen from stays open — picking "4th grade"
+ * greys out the subjects with nothing for a fourth grader, not the other years.
+ * The chip that is pressed is the caller's to keep enabled: even when it finds
+ * nothing, it has to stay pressable so it can be turned off.
+ */
+export function openChips(
+  index: SheetIndex,
+  query: Query,
+  key: FacetKey,
+): Set<string> {
+  const open = new Set<string>();
+  for (const [id] of index.facets[key]) {
+    if (findSheets(index, { ...query, [key]: id }).length > 0) open.add(id);
+  }
+  return open;
+}
+
 /* ── The state, in the fragment ────────────────────────────────────────── */
 
 /**

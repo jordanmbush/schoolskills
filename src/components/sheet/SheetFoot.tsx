@@ -12,13 +12,25 @@ import type { SheetFooter } from "@/engine/sheets/types";
  * `source` prints beside the note rather than instead of it, because an answer
  * key of a Scripture sheet has to say both things (§12).
  */
-export function SheetFoot({ footer }: { footer: SheetFooter }) {
+export function SheetFoot({
+  footer,
+  /** Which page of how many, on a sheet that ran to more than one. */
+  page,
+}: {
+  footer: SheetFooter;
+  page?: { at: number; of: number };
+}) {
   return (
     <footer className="sheet__foot">
       <span className="sheet__credit">{footer.credit}</span>
       {footer.source && <span className="sheet__source">{footer.source}</span>}
       {footer.note && <span className="sheet__note">{footer.note}</span>}
       {footer.url && <span className="sheet__link">{footer.url}</span>}
+      {page && (
+        <span className="sheet__page">
+          Page {page.at} of {page.of}
+        </span>
+      )}
       <span className="sheet__seed">#{footer.seed}</span>
     </footer>
   );

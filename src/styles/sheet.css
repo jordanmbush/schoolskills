@@ -17,6 +17,7 @@
    background graphics.                                                       */
 
 .sheet {
+  text-shadow: none;
   --ui-scale: 1;
 
   /* The face everything on the paper is set in, named once so the SVG blocks
@@ -220,6 +221,16 @@
 .sheet__seed {
   margin-left: auto;
   font-family: var(--font-mono, ui-monospace, monospace);
+}
+
+/* The page count keeps the seed company at the right-hand end, where a page
+   number is looked for. */
+.sheet__page {
+  margin-left: auto;
+}
+
+.sheet__page + .sheet__seed {
+  margin-left: 0;
 }
 
 /* Every list on a sheet numbers itself in `<span class="sheet__number">`

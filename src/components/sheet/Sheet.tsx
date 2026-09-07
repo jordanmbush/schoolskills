@@ -17,7 +17,7 @@
 import { printedBlockBox } from "@/engine/sheets/chrome";
 import { contentBox } from "@/engine/sheets/layout";
 import { marginOf, pageSize } from "@/engine/sheets/paper";
-import type { Paper, Sheet } from "@/engine/sheets/types";
+import type { Block, Paper, Sheet } from "@/engine/sheets/types";
 import type { CSSProperties } from "react";
 
 import "@/styles/sheet.css";
@@ -30,6 +30,54 @@ import { SheetHead } from "./SheetHead";
 import { DASH_CUT, HEAVY, inch, pt } from "./units";
 
 export function SheetView({ sheet }: { sheet: Sheet }) {
+  const pages = pagesOf(sheet.blocks);
+  return (
+    <>
+      <PageSize paper={sheet.paper} />
+      {pages.map((blocks, index) => (
+        <SheetPage
+          key={index}
+          sheet={sheet}
+          blocks={blocks}
+          at={index + 1}
+          of={pages.length}
+        />
+      ))}
+    </>
+  );
+}
+
+/**
+ * The blocks, cut at every `break`. Never fewer than one page: a sheet with
+ * nothing on it still prints its header.
+ */
+function pagesOf(blocks: Block[]): Block[][] {
+  const pages: Block[][] = [[]];
+  for (const block of blocks) {
+    if (block.kind === "break") pages.push([]);
+    else pages[pages.length - 1].push(block);
+  }
+  return pages;
+}
+
+/**
+ * One printed page: the header, this page's blocks, the footer.
+ *
+ * The header and footer print on every page rather than the first. A passage
+ * that runs to three sheets of paper is three loose sheets on a table, and each
+ * one has to say what it is, whose words are on it (§12) and which page it is.
+ */
+function SheetPage({
+  sheet,
+  blocks,
+  at,
+  of,
+}: {
+  sheet: Sheet;
+  blocks: Block[];
+  at: number;
+  of: number;
+}) {
   const page = pageSize(sheet.paper);
   const metrics: SheetMetrics = {
     box: contentBox(sheet.paper),
@@ -65,18 +113,17 @@ export function SheetView({ sheet }: { sheet: Sheet }) {
         } as CSSProperties
       }
     >
-      <PageSize paper={sheet.paper} />
       {sheet.cutLines && <CutLines paper={sheet.paper} />}
       <SheetHead header={sheet.header} />
       <div className="sheet__blocks">
         {/* Indexed keys: the list is rebuilt whole on every change of config
             and nothing in it is stateful, so there is nothing for a stable key
             to preserve. */}
-        {sheet.blocks.map((block, index) => (
+        {blocks.map((block, index) => (
           <BlockView key={index} block={block} metrics={metrics} />
         ))}
       </div>
-      <SheetFoot footer={sheet.footer} />
+      <SheetFoot footer={sheet.footer} page={of > 1 ? { at, of } : undefined} />
     </article>
   );
 }

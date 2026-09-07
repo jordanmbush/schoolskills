@@ -15,7 +15,7 @@ import type { PaperConfig, Sheet } from "../types";
 
 import { sheetBlockBox } from "../chrome";
 import { ruleCapacity } from "../layout";
-import { rulingOf } from "../paper";
+import { rulingOf, steppedSize } from "../paper";
 import { SHEET_CREDIT, SHEET_URL, SHEET_WORLD, type SheetSpec } from "../spec";
 
 function buildPaperSheet(config: PaperConfig, seed: number): Sheet {
@@ -54,12 +54,16 @@ function buildPaperSheet(config: PaperConfig, seed: number): Sheet {
  */
 function describePaper(config: PaperConfig): string {
   const ruling = rulingOf(config.rule);
-  const paper = `${ruling.label} paper`;
-  if (!ruling.handwriting) return paper;
+  const stepped = steppedSize(config.rule);
+  const paper = [
+    `${ruling.label} paper`,
+    ...(stepped ? [`${stepped} letters`] : []),
+  ];
+  if (!ruling.handwriting) return paper.join(" — ");
 
   const midline = config.rule.midline ?? "dashed";
   return [
-    paper,
+    ...paper,
     midline === "none" ? "no midline" : `${midline} midline`,
     config.rule.descender ? "room for descenders" : "no descender space",
   ].join(" — ");

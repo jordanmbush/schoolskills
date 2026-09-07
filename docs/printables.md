@@ -237,6 +237,17 @@ a real constraint on the design of each family, and the right one.
 
 ---
 
+### More than a page
+
+A family whose content outruns the page neither trims it to fit nor shrinks it.
+It emits a `break` block where its own arithmetic says the page is full, and
+`SheetView` prints what follows as the next page, with the header and footer
+again and "Page 2 of 3" in the foot — so a child set the whole of a psalm gets
+the whole of it, and a parent who wanted one page prints page one. Capacity is
+still arithmetic: the family cuts at `perPage`, never by measuring. Handwriting
+is the family that runs on today; memory work still fits its rounds to the page
+it has.
+
 ## 5 · The ruling systems
 
 The user-facing list, and the geometry behind it. All of these are two numbers:
@@ -260,6 +271,19 @@ a repeat pitch and where the lines sit inside it.
 Handwriting rules take a variant: solid midline, **dashed** midline (the usual),
 or no midline. And a "descender space" toggle, which is the difference between
 a sheet a child can write a `g` on and one they can't.
+
+The named size is always the writing space, top line to baseline. Room for a
+tail is **added under it**, half as much again, rather than carved out of it:
+⅜ paper with descenders on still has ⅜ of an inch between its top line and its
+baseline, and holds a third fewer sets to the page. Carving the tail out kept
+the page count and shrank the letters, which is the wrong one of the two to
+give up — the size on the label is the one thing a parent chose.
+
+Any lined ruling can also be written at a size of the parent's own, `Rule.pitch`
+in mil, which the builder offers as a letter size in points. The preset names
+stay; stepping the size keeps the ruling's midline and tail, and the one-line
+description says so — `handwriting ⅝" — 36pt letters` — because a saved sheet
+called ⅝ paper with nothing ⅝ of an inch on it is a label that lies.
 
 The margin line on wide and college is not decoration either: it is what makes
 a page read as notebook paper rather than as lined paper.
@@ -1533,15 +1557,17 @@ decision.
 
 ## 19 · Decisions, recorded
 
-| Question                    | Decided                                                                                                                   |
-| --------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| URL shape                   | `/printables`, with worksheet-shaped slugs beneath it. One-way door.                                                      |
-| Print or PDF                | Print only. "Save as PDF" in the dialog is the download path.                                                             |
-| Scripture placement         | Woven through — a peer subject, not a separate section.                                                                   |
-| Translation                 | WEB Updated (LORD/GOD, American spelling). KJV as an option.                                                              |
-| Credit                      | Constant in the engine, on every sheet and catalog page that uses it.                                                     |
-| Map card                    | Yes, with copy that's honest about it being a parent's screen.                                                            |
-| Scripture on the front door | Yes, where it's content — footer, the day-rhythm band, `/about`. Never in a title, description or `jsonLd`. Not marketed. |
+| Question                    | Decided                                                                                                                                                                     |
+| --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| URL shape                   | `/printables`, with worksheet-shaped slugs beneath it. One-way door.                                                                                                        |
+| Print or PDF                | Print only. "Save as PDF" in the dialog is the download path.                                                                                                               |
+| Scripture placement         | Woven through — a peer subject, not a separate section.                                                                                                                     |
+| Translation                 | WEB Updated (LORD/GOD, American spelling). KJV as an option.                                                                                                                |
+| Credit                      | Constant in the engine, on every sheet and catalog page that uses it.                                                                                                       |
+| Map card                    | Yes, with copy that's honest about it being a parent's screen.                                                                                                              |
+| Scripture on the front door | Yes, where it's content — footer, the day-rhythm band, `/about`. Never in a title, description or `jsonLd`. Not marketed.                                                   |
+| Descender space             | Added under the writing space, half as much again — the proportion primary paper is sold at. The label names top line to baseline; the tail costs pages, never letter size. |
+| Content past the page       | Runs on to the next page, header and footer again, never trimmed or shrunk. A parent who wants one page prints page one.                                                    |
 
 Nothing open. Phase 0 is unblocked.
 
@@ -1551,9 +1577,13 @@ Nothing open. Phase 0 is unblocked.
 
 The engine is pure, so most of this is cheap and worth having:
 
-- **Geometry.** A ⅝-inch rule set is 0.625in apart, at Letter and at A4, at
-  every margin. Off-by-one in a repeat is invisible on screen and obvious on
-  paper.
+- **Geometry.** A ⅝-inch rule set is 0.625in from top line to baseline, at
+  Letter and at A4, at every margin — and 15/16in from one top line to the
+  next once a tail is under it. Off-by-one in a repeat is invisible on screen
+  and obvious on paper.
+- **Paging.** A sheet that outruns the page cuts at the family's own `perPage`
+  and nowhere else, keeps a line's repeats on one page, and prints its header
+  and footer on every page it runs to.
 - **Determinism.** `buildSheet(config, seed)` twice is byte-identical. Same
   guarantee the ghost races already depend on.
 - **Answer keys.** Every generated answer is verified by an independent path,

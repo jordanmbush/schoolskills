@@ -33,10 +33,11 @@
   font-size: var(--step--2);
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--chalk-dim);
+  color: var(--chalk-soft);
   padding: 0.35em 0.8em;
   border-radius: 999px;
-  border: 1px solid var(--hairline);
+  border: 1px solid color-mix(in oklab, var(--chalk) 30%, transparent);
+  background: color-mix(in oklab, var(--ink-950) 60%, transparent);
 }
 
 .race__quit:hover {

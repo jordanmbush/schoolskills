@@ -38,16 +38,25 @@
 
 .find__legend {
   font-family: var(--font-mono);
-  font-size: var(--step--2);
-  letter-spacing: 0.14em;
+  font-size: var(--step-1);
+  font-weight: 600;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--chalk-dim);
+  color: var(--chalk-soft);
 }
 
 /* The `.stones` row inside a facet is tighter than the one under a heading:
    four of them stack, and the row's own caption is already the separation. */
 .find__facet .stones {
   margin-top: var(--gap-2);
+}
+
+/* A chip that can be pressed sits on darker ground than a hub link does: four
+   rows of near-transparent stones over the page read as faint text, and the
+   label has to be legible before the state does. */
+.find__facet .stone:not(:disabled):not([aria-pressed="true"]) {
+  border-color: #fff;
+  background: rgb(0 0 0 / 30%);
 }
 
 .find__count {
@@ -65,6 +74,10 @@
 
 .find__hits {
   margin-top: var(--gap-2);
+  padding: var(--gap-3) var(--gap-4);
+  border-radius: var(--radius);
+  background: rgb(0 0 0 / 45%);
+  color: #fff;
 }
 
 .find__ages {

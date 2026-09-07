@@ -52,9 +52,9 @@
 }
 
 .btn--ghost {
-  --btn-bg: transparent;
-  --btn-fg: var(--chalk-soft);
-  border: 1.5px solid var(--hairline);
+  --btn-bg: color-mix(in oklab, var(--ink-950) 60%, transparent);
+  --btn-fg: var(--chalk);
+  border: 1.5px solid color-mix(in oklab, var(--chalk) 30%, transparent);
   box-shadow: none;
 }
 

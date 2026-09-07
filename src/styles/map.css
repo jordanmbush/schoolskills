@@ -251,6 +251,15 @@
   text-underline-offset: 0.25em;
 }
 
+/* A card's ground is five rems tall, so it takes the smallest rendition of the
+   world's photograph whatever the screen (`--photo-small`, worlds.css). The
+   override sits on the node rather than on the strip: `--terrain` is put
+   together on the element that carries `data-world`, and the strip only
+   inherits the result. */
+.map__node[data-world] {
+  --photo: var(--photo-small);
+}
+
 /* The strip of that world's actual ground, cropped and faded into the card.
    `--terrain` here resolves to the CARD's world, not the page's. */
 .world__ground {
@@ -265,6 +274,7 @@
   background-color: var(--ink-850);
   background-image: var(--terrain);
   background-size: var(--terrain-size);
+  background-position: var(--terrain-position, 0 0);
   box-shadow: inset 0 1px 0 color-mix(in oklab, var(--accent) 30%, transparent);
   mask-image: linear-gradient(180deg, transparent, #000 28%);
   pointer-events: none;

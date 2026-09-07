@@ -4,7 +4,7 @@ import { sheetBlockBox } from "../chrome";
 import { answerKey, buildSheet, describeSheet } from "../index";
 import { describeSheetFamily } from "../contract";
 import { contentBox, ruledLines } from "../layout";
-import { RULINGS, inches, rulePitch } from "../paper";
+import { RULINGS, inches, rulePitch, writingSpace } from "../paper";
 import type {
   MarginSize,
   Paper,
@@ -89,22 +89,26 @@ describe("the paper family", () => {
 /* ── The geometry, which is the whole point ────────────────────────────── */
 
 describe("what a ruler would find", () => {
-  it("puts a ⅝ rule ⅝ of an inch from the next one, on Letter and on A4", () => {
+  it("puts a ⅝ rule ⅝ of an inch above its baseline, on Letter and on A4", () => {
     for (const size of SIZES) {
       for (const margin of MARGINS) {
         const rule: Rule = { style: "hand-5-8", descender: true };
         const block = rulesOf({ paper: paper({ size, margin }), rule });
         const box = contentBox(paper({ size, margin }));
-        const tops = ruledLines(
+        const lines = ruledLines(
           { ...box, height: block.lines * rulePitch(rule) },
           rule,
-        )
-          .filter((line) => line.role === "top")
-          .map((line) => line.y);
+        );
+        const tops = lines.filter((l) => l.role === "top").map((l) => l.y);
+        const bases = lines.filter((l) => l.role === "base").map((l) => l.y);
 
         expect(tops.length).toBe(block.lines);
-        for (let i = 1; i < tops.length; i++) {
-          expect(tops[i] - tops[i - 1]).toBe(inches(0.625));
+        for (let i = 0; i < tops.length; i++) {
+          expect(bases[i] - tops[i]).toBe(inches(0.625));
+          // With a tail under every set, the next top line is 15/16 down.
+          if (i > 0) {
+            expect(tops[i] - tops[i - 1]).toBe(inches(0.625) + inches(0.3125));
+          }
         }
       }
     }
@@ -191,16 +195,17 @@ describe("handwriting rules", () => {
     expect(hand({ midline: "none" }).midline).toBe("none");
   });
 
-  it("takes the descender space out of the repeat, not out of the pitch", () => {
+  it("adds the descender space under the writing space, so a page holds fewer sets", () => {
     // The toggle is the difference between a sheet a child can write a `g` on
-    // and one they can't — but ⅝ paper stays ⅝ paper either way, or every
-    // ruling would silently reprice itself when the box was ticked.
+    // and one they can't — and ⅝ paper stays ⅝ from top line to baseline
+    // either way. What the tail costs is sets to the page (§5).
     const rule: Rule = { style: "hand-5-8", descender: true };
     const withTail = rulesOf({ rule });
     const without = rulesOf({ rule: { style: "hand-5-8" } });
     expect(withTail.rule.descender).toBe(true);
     expect(without.rule.descender).toBeUndefined();
-    expect(withTail.lines).toBe(without.lines);
+    expect(writingSpace(withTail.rule)).toBe(writingSpace(without.rule));
+    expect(withTail.lines).toBeLessThan(without.lines);
   });
 
   it("names the midline and the tail space, because a shop's label doesn't", () => {
@@ -213,5 +218,14 @@ describe("handwriting rules", () => {
     expect(
       describeSheet(config({ rule: { style: "hand-3-8", midline: "none" } })),
     ).toBe('Handwriting ⅜" paper — no midline — no descender space');
+    // A stepped size is named, or the label would call this ⅝ paper with
+    // nothing ⅝ of an inch on it.
+    expect(
+      describeSheet(config({ rule: { style: "hand-5-8", pitch: 500 } })),
+    ).toBe(
+      'Handwriting ⅝" paper — 36pt letters — dashed midline — no descender space',
+    );
+    expect(describeSheet(config({ rule: { style: "college", pitch: 400 } }))) //
+      .toBe("College ruled paper — 29pt letters");
   });
 });
