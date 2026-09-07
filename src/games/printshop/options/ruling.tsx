@@ -7,8 +7,19 @@
  * right way to ask for it — so a ruling added to §5, or a hint reworded, is one
  * edit here rather than two that can be made singly.
  */
-import { Checkbox, type SegmentedOption } from "@/components/ui/kit";
-import { GRID_PITCHES, RULINGS, rulingOf } from "@/engine/sheets/paper";
+import {
+  Checkbox,
+  FieldSet,
+  NumberStepper,
+  type SegmentedOption,
+} from "@/components/ui/kit";
+import {
+  GRID_PITCHES,
+  RULINGS,
+  namedPitch,
+  points,
+  rulingOf,
+} from "@/engine/sheets/paper";
 import type { Midline, Mil, Rule, RuleStyle } from "@/engine/sheets/types";
 
 import { Choice, opt } from "./parts";
@@ -46,6 +57,17 @@ const SQUARES = [
 type Square = keyof typeof GRID_PITCHES;
 
 /**
+ * How big the letters on a lined ruling may be, in points.
+ *
+ * Points rather than inches because it sits under a "Type size" control that
+ * is already in points, and because a parent who wants "a bit bigger than ⅝"
+ * has no fraction of an inch in mind. 1" paper is 72pt; college ruled is 20.
+ */
+const LETTER_PT = { min: 12, max: 108 };
+
+const pointsOf = (mil: number): number => Math.round((mil * 72) / 1000);
+
+/**
  * Which paper, and the two extras that only some papers have.
  *
  * §17 asks for "ruling and rule size · line spacing", and all three are one
@@ -77,15 +99,33 @@ export function RulingControls({
       (key) => GRID_PITCHES[key] === rule.pitch,
     ) ?? "quarter-inch";
 
+  // Picking a ruling clears a stepped size, so the preset means what it says
+  // again; stepping the size keeps the ruling, so its midline and tail stay.
   return (
     <>
       <Choice
         label="Ruling and line spacing"
         value={rule.style}
-        onChange={(style) => onChange({ style })}
+        onChange={(style) => onChange({ style, pitch: undefined })}
         options={options}
-        hint="Handwriting sizes are named by the space between one set of lines and the next."
+        hint="Handwriting sizes are named by the space from the top line to the baseline."
       />
+
+      {!ruling.grid && ruling.pitch > 0 && (
+        <FieldSet
+          legend="Letter size"
+          hint="How tall the letters stand, top line to baseline. The presets above are the sizes schools name; step this for anything between. Bigger letters mean fewer lines to a page, and the sheet runs on to another."
+        >
+          <NumberStepper
+            label="Letter size in points"
+            value={pointsOf(namedPitch(rule))}
+            min={LETTER_PT.min}
+            max={LETTER_PT.max}
+            unit="pt"
+            onChange={(pt) => onChange({ pitch: points(pt) })}
+          />
+        </FieldSet>
+      )}
 
       {ruling.handwriting && (
         <>
@@ -97,7 +137,7 @@ export function RulingControls({
           />
           <Checkbox
             label="Room for descenders"
-            hint="Space below the baseline for the tail of a g."
+            hint="Space below the baseline for the tail of a g, added under each set of lines."
             checked={rule.descender === true}
             onChange={(descender) => onChange({ descender })}
           />

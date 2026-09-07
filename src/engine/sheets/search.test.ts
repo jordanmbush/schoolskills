@@ -7,6 +7,7 @@ import {
   TYPE_OF,
   findSheets,
   isIdle,
+  openChips,
   readQuery,
   readRow,
   reachesGrade,
@@ -14,7 +15,9 @@ import {
   terms,
   typeOf,
   writeQuery,
+  type FacetKey,
   type IndexRow,
+  type Query,
   type SheetIndex,
 } from "./search";
 import type { PaperConfig, SheetOptions } from "./types";
@@ -169,6 +172,35 @@ describe("asking the index something", () => {
     expect(hrefs({ ...EMPTY_QUERY, rule: "wide", text: "paper" })).toEqual([
       "/printables/lined-paper",
     ]);
+  });
+});
+
+describe("which chips are still worth pressing", () => {
+  const chips = (query: Partial<Query>, key: FacetKey) => [
+    ...openChips(INDEX, { ...EMPTY_QUERY, ...query }, key),
+  ];
+
+  it("greys out what the rest of the query has ruled out", () => {
+    expect(chips({ subject: "math" }, "grade")).toEqual(["3rd-grade"]);
+    expect(chips({ grade: "pre-k" }, "subject")).toEqual(["paper"]);
+    expect(chips({ grade: "pre-k" }, "rule")).toEqual(["wide"]);
+    expect(chips({ subject: "math" }, "rule")).toEqual([]);
+  });
+
+  it("tries a chip in place of its row's value, not on top of it", () => {
+    // Picking maths must not grey out paper: the row a parent has chosen
+    // from stays open, so the choice can be changed and not only cleared.
+    expect(chips({ subject: "math" }, "subject")).toEqual(["math", "paper"]);
+  });
+
+  it("counts the typed words as part of the query", () => {
+    expect(chips({ text: "lined" }, "subject")).toEqual(["paper"]);
+  });
+
+  it("opens every chip when nothing has been asked for", () => {
+    for (const key of ["subject", "grade", "type", "rule"] as const) {
+      expect(chips({}, key)).toHaveLength(INDEX.facets[key].length);
+    }
   });
 });
 

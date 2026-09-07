@@ -23,7 +23,7 @@ export type World =
 /** Matches `--ink-900` for each world, so the browser chrome joins the page. */
 export const THEME_COLOUR: Record<World, string> = {
   map: "#0a0819",
-  grid: "#0a0c16",
+  grid: "#120d08",
   jungle: "#08160f",
   ice: "#06121e",
   paper: "#131211",

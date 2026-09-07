@@ -5,9 +5,11 @@ import {
   EMPTY_QUERY,
   findSheets,
   isIdle,
+  openChips,
   readQuery,
   writeQuery,
   type Facet,
+  type FacetKey,
   type Query,
   type SheetIndex,
 } from "@/engine/sheets/search";
@@ -95,16 +97,24 @@ export function countNote(
  * Pressing the chosen one again clears it, which is what a row with no "any"
  * chip has to mean — and `aria-pressed` says so out loud rather than leaving the
  * state to the colour.
+ *
+ * A chip that would find nothing alongside what is already chosen is disabled
+ * rather than hidden. Hidden, the row would reshuffle under the pointer on every
+ * pick; greyed, it stays where it was and says what the pick ruled out. The
+ * pressed chip is never disabled, whatever it finds, or there would be no way
+ * to un-press it.
  */
 function Chips({
   legend,
   facet,
   value,
+  open,
   onPick,
 }: {
   legend: string;
   facet: Facet;
   value: string;
+  open: Set<string>;
   onPick: (id: string) => void;
 }) {
   if (facet.length === 0) return null;
@@ -119,6 +129,7 @@ function Chips({
             variant="bare"
             className="stone"
             pressed={value === id}
+            disabled={value !== id && !open.has(id)}
             onClick={() => onPick(value === id ? "" : id)}
           >
             {label}
@@ -166,6 +177,8 @@ export default function Find() {
   const narrowed = !isIdle(query);
   const hits = index && narrowed ? findSheets(index, query) : [];
   const set = (part: Partial<Query>) => setQuery({ ...query, ...part });
+  const open = (key: FacetKey) =>
+    index ? openChips(index, query, key) : new Set<string>();
 
   return (
     <section className="band band--tight wrap no-print find">
@@ -194,24 +207,28 @@ export default function Find() {
             legend="School year"
             facet={index.facets.grade}
             value={query.grade}
+            open={open("grade")}
             onPick={(grade) => set({ grade })}
           />
           <Chips
             legend="Subject"
             facet={index.facets.subject}
             value={query.subject}
+            open={open("subject")}
             onPick={(subject) => set({ subject })}
           />
           <Chips
             legend="Kind of sheet"
             facet={index.facets.type}
             value={query.type}
+            open={open("type")}
             onPick={(type) => set({ type })}
           />
           <Chips
             legend="Ruling"
             facet={index.facets.rule}
             value={query.rule}
+            open={open("rule")}
             onPick={(rule) => set({ rule })}
           />
         </>

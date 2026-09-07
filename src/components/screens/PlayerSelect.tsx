@@ -11,7 +11,7 @@ import { sfx } from "@/services/sound";
 import type { Profile } from "@/engine/types";
 
 /**
- * Who's racing — the entry screen, and the only screen the racing islands
+ * Who's playing — the entry screen, and the only screen the racing islands
  * share.
  *
  * `/flash-cards`, `/spelling/play` and `/typing` all mount it at their `/`,
@@ -56,7 +56,7 @@ export default function PlayerSelect() {
         <h1 className="u-display select__title">
           Who&apos;s
           <br />
-          racing?
+          playing?
         </h1>
         {profiles.length > 0 && (
           <p className="select__totals u-mono">

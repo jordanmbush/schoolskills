@@ -581,10 +581,16 @@ describe("rendering a sheet", () => {
     // stays green while every printed rule is a thousand times the wrong size
     // — the one bug this feature cannot afford, and the one a screen never
     // shows. The engine's own tests stop short of it: they never render.
+    //
+    // No tail under the sets, so a repeat is the ⅝ on the label and fourteen
+    // of them are 8.75in — measured baseline to baseline, because without a
+    // tail one set's baseline is the next set's top line and the pair prints
+    // once (`ruledLines`). The 313 mil a descender adds under each set is
+    // paper.test.ts's to hold; here the claim is the unit.
     const LINES = 14;
     const ruled: Block = {
       kind: "rules",
-      rule: { style: "hand-5-8", descender: true },
+      rule: { style: "hand-5-8" },
       lines: LINES,
     };
 
@@ -594,12 +600,12 @@ describe("rendering a sheet", () => {
         `<svg class="sheet__ink" width="${inches}in" height="8.75in" viewBox="0 0 ${mil} 8750"`,
       );
 
-      const tops = [...html.matchAll(/sheet__rule--top"[^>]*y1="(\d+)"/g)].map(
-        (line) => Number(line[1]),
-      );
-      expect(tops.length).toBe(LINES);
-      for (let i = 1; i < tops.length; i++) {
-        expect(tops[i] - tops[i - 1]).toBe(625);
+      const bases = [
+        ...html.matchAll(/sheet__rule--base"[^>]*y1="(\d+)"/g),
+      ].map((line) => Number(line[1]));
+      expect(bases.length).toBe(LINES);
+      for (let i = 1; i < bases.length; i++) {
+        expect(bases[i] - bases[i - 1]).toBe(625);
       }
     };
 
@@ -2452,5 +2458,67 @@ describe("the zero-JavaScript property", () => {
     // with `noindex` rather than by pretending to be crawlable content.
     expect(html).toContain("astro-island");
     expect(html).toMatch(/<meta name="robots" content="[^"]*noindex/);
+  });
+});
+
+/* ── More than a page ────────────────────────────────────────────────────── */
+
+describe("a sheet that runs to more than one page", () => {
+  const twoPages = (over: Partial<Sheet> = {}) =>
+    sheet({
+      blocks: [
+        { kind: "spacer", height: 1000 },
+        { kind: "break" },
+        { kind: "spacer", height: 1000 },
+      ],
+      ...over,
+    });
+
+  it("prints a page per break, each with the header and the footer again", () => {
+    // Two sheets of paper on a table are two loose pages, and each has to say
+    // what it is, whose words are on it and which page it is (§4).
+    const html = render(twoPages());
+    expect(html.match(/<article class="sheet"/g)).toHaveLength(2);
+    expect(html.match(/Times tables/g)).toHaveLength(2);
+    expect(html.match(/#4242/g)).toHaveLength(2);
+    expect(html).toContain("Page 1 of 2");
+    expect(html).toContain("Page 2 of 2");
+  });
+
+  it("states the stock once, however many pages are on it", () => {
+    // `@page` is a document rule (`PageSize`), so a second copy is at best
+    // redundant and at worst a second answer.
+    const a4: Paper = { size: "a4", orientation: "portrait", margin: "normal" };
+    expect(render(twoPages({ paper: a4 })).match(/<style>/g)).toHaveLength(1);
+  });
+
+  it("says nothing about pages on a sheet that has one", () => {
+    const html = render();
+    expect(html.match(/<article class="sheet"/g)).toHaveLength(1);
+    expect(html).not.toContain("Page 1 of");
+  });
+});
+
+/* ── The notebook margin ─────────────────────────────────────────────────── */
+
+describe("the notebook margin line", () => {
+  it("is ruled on lined paper and not under a line of copywork", () => {
+    // Both draw the same ruling. On paper the margin is where the date goes;
+    // under a line of copywork that starts at the left edge it would run
+    // through the first word of every line.
+    const college = { style: "college" } as const;
+    const paper = render(
+      sheet({ blocks: [{ kind: "rules", rule: college, lines: 4 }] }),
+    );
+    expect(paper).toContain("sheet__rule--margin");
+
+    const trace: Block = {
+      kind: "trace",
+      rule: college,
+      rows: [{ cells: [{ text: "Love is patient", style: "solid" }] }],
+    };
+    expect(render(sheet({ blocks: [trace] }))).not.toContain(
+      "sheet__rule--margin",
+    );
   });
 });

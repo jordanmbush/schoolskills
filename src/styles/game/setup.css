@@ -73,17 +73,20 @@
 }
 
 .setup__drill {
-  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.45em 1em;
+  border-radius: 999px;
   font-size: var(--step--1);
+  font-weight: 600;
   color: var(--accent);
-  text-decoration: underline;
-  text-underline-offset: 0.25em;
-  text-decoration-thickness: 1px;
-  text-decoration-color: color-mix(in oklab, var(--accent) 45%, transparent);
+  background: color-mix(in oklab, var(--ink-950) 60%, transparent);
+  border: 1.5px solid color-mix(in oklab, var(--accent) 45%, transparent);
 }
 
 .setup__drill:hover {
-  text-decoration-color: var(--accent);
+  border-color: var(--accent);
+  background: color-mix(in oklab, var(--ink-950) 75%, transparent);
 }
 
 .preset-row {

@@ -44,7 +44,7 @@ import type {
 
 import { sheetBlockBox } from "../chrome";
 import { ruleCapacity, type Box } from "../layout";
-import { own, rulePitch, rulingOf, writingSpace } from "../paper";
+import { own, rulePitch, rulingOf, steppedSize, writingSpace } from "../paper";
 import { SHEET_CREDIT, SHEET_URL, SHEET_WORLD, type SheetSpec } from "../spec";
 import { copyworkSource, type CopyworkSource } from "./copywork";
 import { joinFamily, joinPairs } from "./joins";
@@ -355,12 +355,27 @@ const rowsDown = (lines: string[], styles: TraceStyle[]): TraceRow[] =>
   );
 
 /**
- * The one block a handwriting sheet is.
+ * The rows, a page at a time.
  *
- * One block and not two, so there is no `BLOCK_GAP` to pay for and no way for
- * the rules under a passage to drift out of step with the rules it is written
- * on: the blank places are rows of the same block.
+ * One block per page and not one per row, so there is no `BLOCK_GAP` to pay
+ * for and no way for the rules under a passage to drift out of step with the
+ * rules it is written on: the blank places are rows of the same block.
+ *
+ * Nothing is trimmed to fit. A passage that runs past the page runs on to the
+ * next, because a child set the whole of a psalm should get the whole of it —
+ * and a parent who wanted one page can print page one. `perPage` is in rows
+ * here, so a line's repeats never straddle a break.
  */
+function paged(rule: Rule, rows: TraceRow[], perPage: number): Block[] {
+  const take = Math.max(1, perPage);
+  const blocks: Block[] = [];
+  for (let at = 0; at < rows.length; at += take) {
+    if (at > 0) blocks.push({ kind: "break" });
+    blocks.push({ kind: "trace", rule, rows: rows.slice(at, at + take) });
+  }
+  return blocks.length > 0 ? blocks : [{ kind: "trace", rule, rows: [] }];
+}
+
 function bodyOf(config: HandwritingConfig): Block[] {
   const styles = traceStyles(config);
 
@@ -368,23 +383,12 @@ function bodyOf(config: HandwritingConfig): Block[] {
     const { box, em, face, perPage, rule } = handwritingLayout(config, 1);
     const { text } = copyworkSource(config);
     const lines = wrapPassage(text, fittedCharacters(box.width, em, face));
-    return [
-      { kind: "trace", rule, rows: rowsDown(lines.slice(0, perPage), styles) },
-    ];
+    return paged(rule, rowsDown(lines, styles), perPage * styles.length);
   }
 
   const things = contentOf(config);
-  const { perPage, perRow, rule } = handwritingLayout(
-    config,
-    longestOf(things),
-  );
-  return [
-    {
-      kind: "trace",
-      rule,
-      rows: rowsAcross(things.slice(0, perPage), styles, perRow),
-    },
-  ];
+  const { rows, perRow, rule } = handwritingLayout(config, longestOf(things));
+  return paged(rule, rowsAcross(things, styles, perRow), rows);
 }
 
 /* ── What it is called ─────────────────────────────────────────────────── */
@@ -520,10 +524,13 @@ function headerOf(config: HandwritingConfig): SheetOptions {
 /** One line naming what the sheet holds, for the catalog and the record. */
 function describeHandwriting(config: HandwritingConfig): string {
   const styles = traceStyles(config);
+  const rule = ruleOf(config);
+  const stepped = steppedSize(rule);
   return [
     titleOf(config),
     contentLabel(config),
-    rulingOf(ruleOf(config)).label.toLowerCase(),
+    rulingOf(rule).label.toLowerCase(),
+    ...(stepped ? [`${stepped} letters`] : []),
     `written ${styles.length} ${styles.length === 1 ? "time" : "times"}`,
   ].join(" — ");
 }

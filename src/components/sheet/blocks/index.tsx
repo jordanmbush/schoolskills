@@ -91,5 +91,10 @@ export function BlockView({
       return <Cutline block={block} metrics={metrics} />;
     case "spacer":
       return <Spacer block={block} metrics={metrics} />;
+    case "break":
+      // Consumed by `SheetView`, which cuts the flow into pages at each one
+      // before any block reaches here. The arm exists so the switch stays
+      // exhaustive; a break that did arrive draws nothing.
+      return <></>;
   }
 }

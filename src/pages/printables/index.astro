@@ -123,210 +123,265 @@ const paperwork = templateShelf();
     */
   }
   <section class="band band--tight wrap">
-    <h2 class="h2">On the shelf now</h2>
+    <h2 class="h2">What&rsquo;s in the Library</h2>
     <p class="h2__sub">
-      Ten families: maths worksheets, each with its answer key on the page
-      behind it, handwriting practice that traces before it copies, the same
-      progression again in cursive, Scripture copywork and memory work, spelling
-      and word study on this week&rsquo;s list or your own, grammar whose
-      answers were written down rather than worked out, phonics built from the
-      sounds you have taught, charts and grids with nothing to answer on them,
-      the forms, planners and cards that are supposed to be empty, and paper in
-      every ruling. Each of these is a page that is itself the sheet &mdash;
-      open it, press print, and that is the whole of it. Everything ruled comes
-      on both stocks, because a ruling shrunk to fit whatever is in the tray is
-      no longer the ruling you chose.
+      Everything is completely print-ready: just open the file and hit print.
+    </p>
+    <p class="h2__sub">
+      You&rsquo;ll find 10 core printable collections ready to go: math
+      worksheets (with answer keys included), print and cursive handwriting,
+      Scripture memory work, flexible spelling and phonics sheets, blank charts,
+      and everyday homeschool planners. All lined and ruled pages are pre-scaled
+      for both US Letter and A4, so your line spacing stays the exact size you
+      intended.
     </p>
 
-    <h3 class="h2 h2--next">Maths worksheets</h3>
-    <p class="h2__sub">
-      {MATHS_SHEETS.length} topics, from adding to twenty through to word problems.
-      Every one prints its answer key as the second page.
-    </p>
-    {
-      strands.map((strand) => (
-        <nav class="stones" aria-label={strand.label}>
-          {strand.sheets.map((sheet) => (
-            <a class="stone" href={mathsPath(sheet)}>
-              {sheet.short}
-            </a>
-          ))}
-        </nav>
-      ))
-    }
-    <div class="hero__actions">
-      <a class="cta" href="/printables/math">All the maths sheets</a>
-    </div>
+    <details class="fold">
+      <summary class="fold__head">
+        <h3 class="h2">Maths worksheets</h3>
+      </summary>
+      <div class="fold__body">
+        <p class="h2__sub">
+          {MATHS_SHEETS.length} topics, from adding to twenty through to word problems.
+          Every one prints its answer key as the second page.
+        </p>
+        {
+          strands.map((strand) => (
+            <nav class="stones" aria-label={strand.label}>
+              {strand.sheets.map((sheet) => (
+                <a class="stone" href={mathsPath(sheet)}>
+                  {sheet.short}
+                </a>
+              ))}
+            </nav>
+          ))
+        }
+        <div class="hero__actions">
+          <a class="cta" href="/printables/math">All the maths sheets</a>
+        </div>
+      </div>
+    </details>
 
-    <h3 class="h2 h2--next">Handwriting</h3>
-    <p class="h2__sub">
-      {HANDWRITING_SHEETS.length} sheets, from the first capital letter to copying
-      out a poem. Each one traces, then copies, then leaves an empty line.
-    </p>
-    {
-      writing.map((group) => (
-        <nav class="stones" aria-label={group.label}>
-          {group.sheets.map((sheet) => (
-            <a class="stone" href={handwritingHref(sheet, letter)}>
-              {sheet.short}
-            </a>
-          ))}
-        </nav>
-      ))
-    }
-    <div class="hero__actions">
-      <a class="cta" href="/printables/handwriting">
-        All the handwriting sheets
-      </a>
-    </div>
+    <details class="fold">
+      <summary class="fold__head">
+        <h3 class="h2">Handwriting</h3>
+      </summary>
+      <div class="fold__body">
+        <p class="h2__sub">
+          {HANDWRITING_SHEETS.length} sheets, from the first capital letter to copying
+          out a poem. Each one traces, then copies, then leaves an empty line.
+        </p>
+        {
+          writing.map((group) => (
+            <nav class="stones" aria-label={group.label}>
+              {group.sheets.map((sheet) => (
+                <a class="stone" href={handwritingHref(sheet, letter)}>
+                  {sheet.short}
+                </a>
+              ))}
+            </nav>
+          ))
+        }
+        <div class="hero__actions">
+          <a class="cta" href="/printables/handwriting">
+            All the handwriting sheets
+          </a>
+        </div>
+      </div>
+    </details>
 
-    <h3 class="h2 h2--next">Cursive</h3>
-    <p class="h2__sub">
-      {CURSIVE_SHEETS.length} sheets in a joined hand, including the page printing
-      never needed &mdash; the joins themselves. Three cursive models to choose between.
-    </p>
-    {
-      joined.map((group) => (
-        <nav class="stones" aria-label={`Cursive — ${group.label}`}>
-          {group.sheets.map((sheet) => (
-            <a class="stone" href={cursiveHref(sheet, letter)}>
-              {sheet.short}
-            </a>
-          ))}
-        </nav>
-      ))
-    }
-    <div class="hero__actions">
-      <a class="cta" href="/printables/cursive">All the cursive sheets</a>
-    </div>
+    <details class="fold">
+      <summary class="fold__head">
+        <h3 class="h2">Cursive</h3>
+      </summary>
+      <div class="fold__body">
+        <p class="h2__sub">
+          {CURSIVE_SHEETS.length} sheets in a joined hand, including the page printing
+          never needed &mdash; the joins themselves. Three cursive models to choose
+          between.
+        </p>
+        {
+          joined.map((group) => (
+            <nav class="stones" aria-label={`Cursive — ${group.label}`}>
+              {group.sheets.map((sheet) => (
+                <a class="stone" href={cursiveHref(sheet, letter)}>
+                  {sheet.short}
+                </a>
+              ))}
+            </nav>
+          ))
+        }
+        <div class="hero__actions">
+          <a class="cta" href="/printables/cursive">All the cursive sheets</a>
+        </div>
+      </div>
+    </details>
 
-    <h3 class="h2 h2--next">Bible</h3>
-    <p class="h2__sub">
-      {BIBLE_SHEETS.length} sheets of Scripture copywork, handwriting and memory work
-      &mdash; the same families above with a passage on them, in a public-domain translation.
-    </p>
-    {
-      scripture.map((group) => (
-        <nav class="stones" aria-label={`Bible — ${group.label}`}>
-          {group.sheets.map((sheet) => (
-            <a class="stone" href={bibleHref(sheet, letter)}>
-              {sheet.short}
-            </a>
-          ))}
-        </nav>
-      ))
-    }
-    <div class="hero__actions">
-      <a class="cta" href="/printables/bible">All the Scripture sheets</a>
-    </div>
+    <details class="fold">
+      <summary class="fold__head">
+        <h3 class="h2">Bible</h3>
+      </summary>
+      <div class="fold__body">
+        <p class="h2__sub">
+          {BIBLE_SHEETS.length} sheets of Scripture copywork, handwriting and memory
+          work &mdash; the same families above with a passage on them, in a public-domain
+          translation.
+        </p>
+        {
+          scripture.map((group) => (
+            <nav class="stones" aria-label={`Bible — ${group.label}`}>
+              {group.sheets.map((sheet) => (
+                <a class="stone" href={bibleHref(sheet, letter)}>
+                  {sheet.short}
+                </a>
+              ))}
+            </nav>
+          ))
+        }
+        <div class="hero__actions">
+          <a class="cta" href="/printables/bible">All the Scripture sheets</a>
+        </div>
+      </div>
+    </details>
 
-    <h3 class="h2 h2--next">Spelling and words</h3>
-    <p class="h2__sub">
-      {SPELLING_SHEETS.length} sheets: a week&rsquo;s list in five shapes, sight words
-      to trace, write and find, and ten pages on how words work. Answer keys where
-      there is an answer.
-    </p>
-    {
-      words.map((group) => (
-        <nav class="stones" aria-label={`Spelling — ${group.label}`}>
-          {group.sheets.map((sheet) => (
-            <a class="stone" href={spellingPath(sheet)}>
-              {sheet.short}
-            </a>
-          ))}
-        </nav>
-      ))
-    }
-    <div class="hero__actions">
-      <a class="cta" href="/printables/spelling">All the spelling sheets</a>
-    </div>
+    <details class="fold">
+      <summary class="fold__head">
+        <h3 class="h2">Spelling and words</h3>
+      </summary>
+      <div class="fold__body">
+        <p class="h2__sub">
+          {SPELLING_SHEETS.length} sheets: a week&rsquo;s list in five shapes, sight
+          words to trace, write and find, and ten pages on how words work. Answer
+          keys where there is an answer.
+        </p>
+        {
+          words.map((group) => (
+            <nav class="stones" aria-label={`Spelling — ${group.label}`}>
+              {group.sheets.map((sheet) => (
+                <a class="stone" href={spellingPath(sheet)}>
+                  {sheet.short}
+                </a>
+              ))}
+            </nav>
+          ))
+        }
+        <div class="hero__actions">
+          <a class="cta" href="/printables/spelling">All the spelling sheets</a>
+        </div>
+      </div>
+    </details>
 
-    <h3 class="h2 h2--next">Grammar</h3>
-    <p class="h2__sub">
-      {GRAMMAR_SHEETS.length} sheets on how a sentence is put together &mdash; the
-      parts of speech, the two halves of a sentence, what it is for, and the marks
-      that finish it. Every one prints its answer key.
-    </p>
-    {
-      sentences.map((group) => (
-        <nav class="stones" aria-label={`Grammar — ${group.label}`}>
-          {group.sheets.map((sheet) => (
-            <a class="stone" href={grammarPath(sheet)}>
-              {sheet.short}
-            </a>
-          ))}
-        </nav>
-      ))
-    }
-    <div class="hero__actions">
-      <a class="cta" href="/printables/grammar">All the grammar sheets</a>
-    </div>
+    <details class="fold">
+      <summary class="fold__head">
+        <h3 class="h2">Grammar</h3>
+      </summary>
+      <div class="fold__body">
+        <p class="h2__sub">
+          {GRAMMAR_SHEETS.length} sheets on how a sentence is put together &mdash;
+          the parts of speech, the two halves of a sentence, what it is for, and the
+          marks that finish it. Every one prints its answer key.
+        </p>
+        {
+          sentences.map((group) => (
+            <nav class="stones" aria-label={`Grammar — ${group.label}`}>
+              {group.sheets.map((sheet) => (
+                <a class="stone" href={grammarPath(sheet)}>
+                  {sheet.short}
+                </a>
+              ))}
+            </nav>
+          ))
+        }
+        <div class="hero__actions">
+          <a class="cta" href="/printables/grammar">All the grammar sheets</a>
+        </div>
+      </div>
+    </details>
 
-    <h3 class="h2 h2--next">Phonics</h3>
-    <p class="h2__sub">
-      {PHONICS_SHEETS.length} sheets built from the sounds a child has been taught
-      &mdash; cards, a wall chart, blending, word families, dictation and sentences
-      with nothing untaught in them. Tick the spellings; the words follow.
-    </p>
-    {
-      sounds.map((group) => (
-        <nav class="stones" aria-label={`Phonics — ${group.label}`}>
-          {group.sheets.map((sheet) => (
-            <a class="stone" href={phonicsPath(sheet)}>
-              {sheet.short}
-            </a>
-          ))}
-        </nav>
-      ))
-    }
-    <div class="hero__actions">
-      <a class="cta" href="/printables/phonics">All the phonics sheets</a>
-    </div>
+    <details class="fold">
+      <summary class="fold__head">
+        <h3 class="h2">Phonics</h3>
+      </summary>
+      <div class="fold__body">
+        <p class="h2__sub">
+          {PHONICS_SHEETS.length} sheets built from the sounds a child has been taught
+          &mdash; cards, a wall chart, blending, word families, dictation and sentences
+          with nothing untaught in them. Tick the spellings; the words follow.
+        </p>
+        {
+          sounds.map((group) => (
+            <nav class="stones" aria-label={`Phonics — ${group.label}`}>
+              {group.sheets.map((sheet) => (
+                <a class="stone" href={phonicsPath(sheet)}>
+                  {sheet.short}
+                </a>
+              ))}
+            </nav>
+          ))
+        }
+        <div class="hero__actions">
+          <a class="cta" href="/printables/phonics">All the phonics sheets</a>
+        </div>
+      </div>
+    </details>
 
-    <h3 class="h2 h2--next">Charts and grids</h3>
-    <p class="h2__sub">
-      {CHART_SHEETS.length} references with no problems on them &mdash; hundred charts
-      blank and filled, number lines at the interval you choose, coordinate grids
-      with and without negative numbers, and place-value columns down to thousandths.
-    </p>
-    {
-      references.map((group) => (
-        <nav class="stones" aria-label={`Charts — ${group.label}`}>
-          {group.sheets.map((sheet) => (
-            <a class="stone" href={chartPath(sheet)}>
-              {sheet.short}
-            </a>
-          ))}
-        </nav>
-      ))
-    }
-    <div class="hero__actions">
-      <a class="cta" href="/printables/charts">All the charts and grids</a>
-    </div>
+    <details class="fold">
+      <summary class="fold__head">
+        <h3 class="h2">Charts and grids</h3>
+      </summary>
+      <div class="fold__body">
+        <p class="h2__sub">
+          {CHART_SHEETS.length} references with no problems on them &mdash; hundred
+          charts blank and filled, number lines at the interval you choose, coordinate
+          grids with and without negative numbers, and place-value columns down to
+          thousandths.
+        </p>
+        {
+          references.map((group) => (
+            <nav class="stones" aria-label={`Charts — ${group.label}`}>
+              {group.sheets.map((sheet) => (
+                <a class="stone" href={chartPath(sheet)}>
+                  {sheet.short}
+                </a>
+              ))}
+            </nav>
+          ))
+        }
+        <div class="hero__actions">
+          <a class="cta" href="/printables/charts">All the charts and grids</a>
+        </div>
+      </div>
+    </details>
 
-    <h3 class="h2 h2--next">Forms, planners and cards</h3>
-    <p class="h2__sub">
-      {TEMPLATE_SHEETS.length} sheets that are supposed to be empty &mdash; reading
-      logs, book reports, lab reports, calendars, chore charts, award certificates,
-      blank flashcards, bookmarks, and dice and spinners to cut out. Nothing on any
-      of them is generated, which is exactly what makes them useful.
-    </p>
-    {
-      paperwork.map((group) => (
-        <nav class="stones" aria-label={`Templates — ${group.label}`}>
-          {group.sheets.map((sheet) => (
-            <a class="stone" href={templatePath(sheet)}>
-              {sheet.short}
-            </a>
-          ))}
-        </nav>
-      ))
-    }
-    <div class="hero__actions">
-      <a class="cta" href="/printables/templates">
-        All the forms, planners and cards
-      </a>
-    </div>
+    <details class="fold">
+      <summary class="fold__head">
+        <h3 class="h2">Forms, planners and cards</h3>
+      </summary>
+      <div class="fold__body">
+        <p class="h2__sub">
+          {TEMPLATE_SHEETS.length} sheets that are supposed to be empty &mdash; reading
+          logs, book reports, lab reports, calendars, chore charts, award certificates,
+          blank flashcards, bookmarks, and dice and spinners to cut out. Nothing on
+          any of them is generated, which is exactly what makes them useful.
+        </p>
+        {
+          paperwork.map((group) => (
+            <nav class="stones" aria-label={`Templates — ${group.label}`}>
+              {group.sheets.map((sheet) => (
+                <a class="stone" href={templatePath(sheet)}>
+                  {sheet.short}
+                </a>
+              ))}
+            </nav>
+          ))
+        }
+        <div class="hero__actions">
+          <a class="cta" href="/printables/templates">
+            All the forms, planners and cards
+          </a>
+        </div>
+      </div>
+    </details>
 
     {
       /*
@@ -338,22 +393,26 @@ const paperwork = templateShelf();
     }
     {
       groups.map((group) => (
-        <>
-          <h3 class="h2 h2--next">{group.label}</h3>
-          <p class="h2__sub">{group.blurb}</p>
-          <div class="prose">
-            <ul>
-              {group.sheets.map((sheet) => (
-                <li>
-                  <a href={`/printables/${pathFor(sheet, letter)}`}>
-                    {sheet.name}
-                  </a>{" "}
-                  &mdash; {sheet.summary}
-                </li>
-              ))}
-            </ul>
+        <details class="fold">
+          <summary class="fold__head">
+            <h3 class="h2">{group.label}</h3>
+          </summary>
+          <div class="fold__body">
+            <p class="h2__sub">{group.blurb}</p>
+            <div class="prose">
+              <ul>
+                {group.sheets.map((sheet) => (
+                  <li>
+                    <a href={`/printables/${pathFor(sheet, letter)}`}>
+                      {sheet.name}
+                    </a>{" "}
+                    &mdash; {sheet.summary}
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
-        </>
+        </details>
       ))
     }
   </section>

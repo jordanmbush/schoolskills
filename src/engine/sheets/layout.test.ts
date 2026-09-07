@@ -10,7 +10,7 @@ import {
   ruleCapacity,
   ruledLines,
 } from "./layout";
-import { MARGINS, RULINGS, inches, toInches } from "./paper";
+import { MARGINS, RULINGS, inches, rulePitch, toInches } from "./paper";
 import type { MarginSize, Paper, PaperSize, Rule } from "./types";
 
 const MARGIN_SIZES = Object.keys(MARGINS) as MarginSize[];
@@ -56,7 +56,7 @@ describe("boxes", () => {
 });
 
 describe("rule geometry", () => {
-  it("keeps a ⅝ rule 0.625in apart, on Letter and A4, at every margin", () => {
+  it("keeps a ⅝ rule 0.625in top line to baseline, on Letter and A4, at every margin", () => {
     // The assertion the whole unit choice exists for. An off-by-one in a
     // repeat is invisible on screen and obvious on paper, and a child taught
     // to write between two lines finds it before an adult does.
@@ -66,15 +66,23 @@ describe("rule geometry", () => {
           const rule: Rule = { style: "hand-5-8", descender };
           const box = contentBox(paper(size, margin));
           const lines = ruledLines(box, rule);
-          const baselines = lines
-            .filter((line) => line.role === "base")
-            .map((line) => line.y);
+          const bases = lines.filter((l) => l.role === "base").map((l) => l.y);
+          // Each set's top line is a repeat down from the first. Without a
+          // tail it is also the previous set's baseline, drawn once, so the
+          // top lines cannot simply be counted off.
+          const top = (set: number) => box.y + set * rulePitch(rule);
 
-          expect(baselines.length).toBeGreaterThan(10);
-          for (const gap of gaps(baselines)) {
-            expect(gap).toBe(625);
-            expect(toInches(gap)).toBeCloseTo(0.625, 6);
+          expect(bases.length).toBe(ruleCapacity(box.height, rule));
+          expect(bases.length).toBeGreaterThan(5);
+          for (let i = 0; i < bases.length; i++) {
+            expect(bases[i] - top(i)).toBe(625);
+            expect(toInches(bases[i] - top(i))).toBeCloseTo(0.625, 6);
           }
+          // Baselines are a repeat apart: ⅝, or with a tail under every set
+          // 15/16 — the tail is added under the writing space, never taken
+          // out of it.
+          for (const gap of gaps(bases))
+            expect(gap).toBe(descender ? 938 : 625);
         }
       }
     }
