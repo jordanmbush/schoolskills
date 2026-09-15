@@ -21,10 +21,16 @@
  * footer wraps because it is a flex row that a Scripture credit joins (§12).
  * Each is counted below rather than assumed.
  */
-import type { Mil, Sheet, SheetOptions } from "./types";
+import type { Block, Mil, Problem, Sheet, SheetOptions } from "./types";
 
 import { faceOf } from "./faces";
-import { blockBox, contentBox, type Box } from "./layout";
+import {
+  blockBox,
+  contentBox,
+  problemPages,
+  wantedOf,
+  type Box,
+} from "./layout";
 import { inches, points } from "./paper";
 import { LONGEST_SHEET_URL, SHEET_CREDIT } from "./spec";
 
@@ -268,9 +274,11 @@ export function chromeHeight(
  * What the instruction line says when a sheet holds fewer problems than were
  * asked for, and nothing when it holds them all.
  *
- * `fit` is what the page had room for and `made` is what the draw managed
- * inside that. A family that prints the sentence lays the page out again
- * under it (§4).
+ * `fit` is what one page has room for and `made` is what the draw managed.
+ * The paper itself is never the reason any more — what does not fit runs on
+ * to the next page (§4) — except at zero, when not even one row fits at this
+ * type size and nothing was drawn for it. A family that prints the sentence
+ * lays the page out again under it.
  */
 export function shortfall(
   asked: number,
@@ -283,9 +291,44 @@ export function shortfall(
       ? "Nothing fits on the page at this size."
       : "Nothing could be made with these settings.";
   }
-  return made < fit
-    ? `Only ${made} of the ${asked} asked for could be made with these settings.`
-    : `Only ${made} of the ${asked} asked for fit on the page at this size.`;
+  return `Only ${made} of the ${asked} asked for could be made with these settings.`;
+}
+
+/**
+ * The pages of a family that says on the paper when it came out short.
+ *
+ * The draw is asked for the whole count, the sentence is written from what it
+ * made, and the pages are cut under the header that sentence is part of,
+ * because it can take a row from each of them. At the largest type that row
+ * can be the only one — and then the sentence has to change: nothing fits
+ * under the header that says why, so the page says that instead of printing
+ * one problem to a page with its bottom cut off.
+ *
+ * `note` is what the family writes for a shortfall, when it has more to say
+ * than `shortfall` does.
+ */
+export function pagesUnder(
+  asked: number,
+  draw: (wanted: number) => Problem[],
+  headerOf: (note: string | null) => SheetOptions,
+  layoutOf: (header: SheetOptions) => { columns: number; perPage: number },
+  note: (fit: number, made: number) => string | null = (fit, made) =>
+    shortfall(asked, fit, made),
+): { blocks: Block[]; header: SheetOptions; count: number } {
+  const fit = layoutOf(headerOf(null)).perPage;
+  let problems = draw(wantedOf(asked, fit));
+  let header = headerOf(note(fit, problems.length));
+  let under = layoutOf(header);
+  if (under.perPage === 0 && problems.length > 0) {
+    problems = [];
+    header = headerOf(note(0, 0));
+    under = layoutOf(header);
+  }
+  return {
+    blocks: problemPages(problems, under.columns, under.perPage),
+    header,
+    count: problems.length,
+  };
 }
 
 /** The same sentence as a part of the line that names a saved sheet. */

@@ -5,12 +5,14 @@ import { printedBlockBox } from "../chrome";
 import { describeSheetFamily } from "../contract";
 import { PROBLEM_GAP, answerLine, numberRoom } from "../layout";
 import type {
+  Block,
   GridSpec,
   MarginSize,
   MultiplicationConfig,
   Paper,
   PaperSize,
   Problem,
+  Sheet,
 } from "../types";
 
 import {
@@ -143,14 +145,35 @@ describeSheetFamily("multiplication", {
 const COLUMN_COUNTS = [1, 2, 3, 4, 5, 6];
 
 /** The one block a fact or long-form sheet has, narrowed for the reader. */
+/** Every problem on the sheet, page after page. */
 function problemsOf(
   over: Partial<MultiplicationConfig>,
   seed: number,
 ): Problem[] {
-  const block = buildSheet(config(over), seed).blocks[0];
-  if (block.kind !== "problems")
-    throw new Error(`expected problems, got ${block.kind}`);
-  return block.items;
+  return pagesOf(buildSheet(config(over), seed)).flatMap((page) => page.items);
+}
+
+/**
+ * The problems block of each page, in order. A problems family prints one
+ * such block a page and nothing else, so anything else on a page is a
+ * failure here rather than a page silently skipped.
+ */
+function pagesOf(sheet: Sheet): Array<Extract<Block, { kind: "problems" }>> {
+  const pages: Array<Extract<Block, { kind: "problems" }>> = [];
+  let open = false;
+  for (const block of sheet.blocks) {
+    if (block.kind === "break") {
+      expect(open, "a break with no page before it").toBe(true);
+      open = false;
+      continue;
+    }
+    if (block.kind !== "problems")
+      throw new Error(`expected problems, got ${block.kind}`);
+    expect(open, "two problems blocks on one page").toBe(false);
+    pages.push(block);
+    open = true;
+  }
+  return pages;
 }
 
 /* ── Reading a sheet the way a child does ──────────────────────────────────
@@ -282,13 +305,26 @@ describe("the multiplication family", () => {
       "Multiplication grid to 12",
     );
     // A page that will come out short says so in its line too, as far as the
-    // line can know without a seed: what the paper holds against what was
-    // asked, and a pool with nothing in it.
+    // line can know without a seed: a pool with nothing in it, and a row
+    // taller than the page. Not the paper — a count past one page runs on to
+    // the next, so column form's eighteen to a page is not a shortfall.
     expect(describeSheet(config({ form: "vertical" }))).toBe(
-      "Multiplication to 12 — worked in columns — only 18 of the 20 asked for fit on the page at this size",
+      "Multiplication to 12 — worked in columns",
     );
     expect(describeSheet(config({ tables: [] }))).toContain(
       "nothing could be made with these settings",
+    );
+    expect(
+      describeSheet(
+        config({
+          style: "long",
+          operation: "divide",
+          digits: { into: 5, by: 1 },
+          fontPt: 36,
+        }),
+      ),
+    ).toBe(
+      "Long division — 5-digit by 1-digit — nothing fits on the page at this size",
     );
     // The help level is in the line because it changes what a saved sheet is:
     // a guided division and a bare one are two different weeks' work.
@@ -353,10 +389,9 @@ describe("the multiplication family", () => {
       "Work out each answer. Only 13 of the 20 asked for could be made with these settings.",
     );
     expect(buildSheet(config({ tables: [7] }), 3).header.score?.outOf).toBe(13);
-    // Column form fits eighteen of the twenty on a Letter page.
-    expect(told({ form: "vertical" })).toBe(
-      "Work out each answer. Only 18 of the 20 asked for fit on the page at this size.",
-    );
+    // Column form holds eighteen of the twenty on a Letter page. The other
+    // two go on to page two, and nothing is said, because nothing is short.
+    expect(told({ form: "vertical" })).toBe("Work out each answer.");
     expect(told({ tables: [] })).toBe(
       "Work out each answer. Nothing could be made with these settings.",
     );
@@ -380,23 +415,70 @@ describe("the multiplication family", () => {
     // And a page that fits what it was asked for says nothing.
     expect(told({ tables: [7], count: 12 })).toBe("Work out each answer.");
     // The sentence is part of the printed header, and the header is what the
-    // page was laid out under — so the problems fit beneath it, whatever row
-    // the sentence took.
+    // pages were cut under — so every page's problems fit beneath it,
+    // whatever row the sentence took. Thirteen facts in column form at the
+    // largest type is more than one page of them under that sentence.
     for (const fontPt of [12, 24, 36]) {
-      const over = { form: "vertical" as const, fontPt, count: 200 };
+      const over = {
+        tables: [7],
+        form: "vertical" as const,
+        fontPt,
+        count: 200,
+      };
       const sheet = buildSheet(config(over), 3);
-      const block = sheet.blocks[0];
-      if (block.kind !== "problems") throw new Error("no problems");
-      const { row } = multiplicationLayout(config(over));
-      const rows = Math.ceil(block.items.length / block.columns);
-      expect(
-        rows * row + Math.max(0, rows - 1) * PROBLEM_GAP.y,
-        `${fontPt}pt`,
-      ).toBeLessThanOrEqual(printedBlockBox(sheet).height);
-      expect(sheet.header.instructions, `${fontPt}pt`).toMatch(
-        /Only \d+ of the 200 asked for fit on the page at this size\.$/,
+      expect(sheet.header.instructions, `${fontPt}pt`).toBe(
+        "Work out each answer. Only 13 of the 200 asked for could be made with these settings.",
       );
+      const { row } = multiplicationLayout(config(over));
+      const pages = pagesOf(sheet);
+      expect(pages.flatMap((page) => page.items).length, `${fontPt}pt`).toBe(
+        13,
+      );
+      for (const [at, page] of pages.entries()) {
+        const rows = Math.ceil(page.items.length / page.columns);
+        expect(
+          rows * row + Math.max(0, rows - 1) * PROBLEM_GAP.y,
+          `${fontPt}pt, page ${at + 1}`,
+        ).toBeLessThanOrEqual(printedBlockBox(sheet).height);
+      }
     }
+    expect(
+      pagesOf(
+        buildSheet(
+          config({ tables: [7], form: "vertical", fontPt: 36, count: 200 }),
+          3,
+        ),
+      ).length,
+    ).toBeGreaterThan(1);
+  });
+
+  it("runs on to another page rather than cutting the count to the paper", () => {
+    // Twenty long divisions at six to a page are four pages, not six
+    // problems: a parent who wanted one page prints page one (§4). The
+    // numbering carries on, so a child told to do 14 to 20 finds them.
+    const over = {
+      style: "long" as const,
+      operation: "divide" as const,
+      digits: { into: 3, by: 1 },
+      count: 20,
+    };
+    const sheet = buildSheet(config(over), 3);
+    const { perPage } = multiplicationLayout(config(over));
+    const pages = pagesOf(sheet);
+    expect(pages.length).toBe(Math.ceil(20 / perPage));
+    expect(pages.flatMap((page) => page.items).length).toBe(20);
+    expect(sheet.header.score?.outOf).toBe(20);
+    expect(sheet.header.instructions).toBe("Show your working.");
+    for (const [at, page] of pages.entries()) {
+      expect(page.start, `page ${at + 1}`).toBe(
+        at > 0 ? at * perPage + 1 : undefined,
+      );
+      if (at < pages.length - 1)
+        expect(page.items.length, `page ${at + 1}`).toBe(perPage);
+    }
+    // And the key runs on with it, page for page.
+    expect(pagesOf(answerKey(config(over), 3)).map((page) => page.items.length)) //
+      .toEqual(pages.map((page) => page.items.length));
   });
 
   it("tells a child what to do with a form they have not met before", () => {
@@ -944,12 +1026,14 @@ describe("how much fits", () => {
   const SIZES: PaperSize[] = ["letter", "a4", "legal"];
   const MARGINS: MarginSize[] = ["none", "narrow", "normal", "wide"];
 
-  it("never prints more problems than the paper holds", () => {
+  it("never prints more problems on a page than the paper holds", () => {
     // The failure is silent on screen and obvious on paper: one row too many
-    // is a second sheet out of the printer with two problems on it, and print
-    // is the whole of the output path (§10). Against the box the printed
-    // header leaves — which carries the sentence that says the page came out
-    // short, and may be a row shorter for it — rather than the config's.
+    // is a page's last row on the next sheet out of the printer, and print is
+    // the whole of the output path (§10). Against the box the printed header
+    // leaves — which carries the sentence that says the page came out short,
+    // and may be a row shorter for it — rather than the config's. And every
+    // page but the last is full: a page cut short of what fits would be a
+    // sheet of paper for nothing.
     for (const size of SIZES) {
       for (const margin of MARGINS) {
         for (const fontPt of [8, 12, 18, 24, 36]) {
@@ -957,18 +1041,27 @@ describe("how much fits", () => {
             const over = { ...shape, paper: paper({ size, margin }), fontPt };
             const where = `${size}/${margin}/${fontPt}pt ${JSON.stringify(shape)}`;
             const sheet = buildSheet(config({ ...over, count: 200 }), 8);
-            const block = sheet.blocks[0];
-            if (block.kind !== "problems")
-              throw new Error(`${where}: no block`);
+            const pages = pagesOf(sheet);
+            expect(pages.length, where).toBeGreaterThan(0);
             const { row, perPage } = multiplicationLayout(config(over));
-            const rows = Math.ceil(block.items.length / block.columns);
-            const used = rows * row + Math.max(0, rows - 1) * PROBLEM_GAP.y;
-            expect(used, where).toBeLessThanOrEqual(
-              printedBlockBox(sheet).height,
-            );
+            for (const [at, page] of pages.entries()) {
+              const rows = Math.ceil(page.items.length / page.columns);
+              const used = rows * row + Math.max(0, rows - 1) * PROBLEM_GAP.y;
+              expect(used, `${where}, page ${at + 1}`).toBeLessThanOrEqual(
+                printedBlockBox(sheet).height,
+              );
+              if (at < pages.length - 1) {
+                expect(page.items.length, `${where}, page ${at + 1}`).toBe(
+                  pages[0].items.length,
+                );
+              }
+            }
             // A row taller than the page holds nothing, and says so.
             if (perPage === 0) {
-              expect(block.items, where).toEqual([]);
+              expect(
+                pages.map((page) => page.items),
+                where,
+              ).toEqual([[]]);
               expect(sheet.header.instructions, where).toMatch(
                 /Nothing fits on the page at this size\.$/,
               );
@@ -1345,13 +1438,17 @@ describe("the facts they keep missing", () => {
       .toBe("Multiplication to 12");
   });
 
-  it("never prints more of them than the paper holds", () => {
+  it("runs the whole list on to another page rather than cutting it", () => {
     const many: string[] = [];
     for (let a = 1; a <= 12; a += 1) {
       for (let b = 1; b <= 12; b += 1) many.push(`${a}:${b}`);
     }
     const over = { facts: many, count: many.length };
-    expect(problemsOf(over, 1).length) //
-      .toBe(multiplicationLayout(config(over)).perPage);
+    const { perPage } = multiplicationLayout(config(over));
+    const pages = pagesOf(buildSheet(config(over), 1));
+    expect(pages.length).toBe(Math.ceil(many.length / perPage));
+    expect(pages[0].items.length).toBe(perPage);
+    expect(pages[1].start).toBe(perPage + 1);
+    expect(problemsOf(over, 1).length).toBe(many.length);
   });
 });

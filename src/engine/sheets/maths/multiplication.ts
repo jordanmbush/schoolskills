@@ -39,11 +39,12 @@ import type {
   SheetOptions,
 } from "../types";
 
-import { sheetBlockBox, shortfall, shortfallPart } from "../chrome";
+import { pagesUnder, sheetBlockBox, shortfall, shortfallPart } from "../chrome";
 import {
   PROBLEM_GAP,
   answerLine,
   columnWidth,
+  countOf,
   fitAcross,
   numberRoom,
   type Box,
@@ -334,9 +335,7 @@ function problemOf(
 const clamp = (value: number, low: number, high: number): number =>
   Math.max(low, Math.min(high, Math.floor(value)));
 
-/** How many problems were asked for. A count from outside this build may be nothing at all. */
-const askedOf = (config: MultiplicationConfig): number =>
-  Math.max(0, Math.floor(config.count) || 0);
+const askedOf = (config: MultiplicationConfig): number => countOf(config.count);
 
 /** How tall one problem stands, working space and all. */
 function rowHeight(config: MultiplicationConfig): Mil {
@@ -448,32 +447,21 @@ export function multiplicationLayout(config: MultiplicationConfig): Layout {
 }
 
 /**
- * The problems and the header they print under.
- *
- * A count is a request, not a promise: the page holds what it holds, and the
- * draw makes what it can. When either comes up short the instruction line says
- * so, and because that sentence can take a row from the page, the layout is
- * asked again under the header that will actually print, until the problems
- * are the ones that fit beneath it.
+ * The problems, paged, and the header they print under. A count is a
+ * request, not a promise: the draw makes what it can, the instruction line
+ * says when that is short, and what one page has no room for runs on to the
+ * next rather than being cut (§4).
  */
-function multiplicationPage(
+function multiplicationPages(
   config: MultiplicationConfig,
   seed: number,
-): { problems: Problem[]; header: SheetOptions; columns: number } {
-  const asked = askedOf(config);
-  let header = headerOf(config);
-  let fit = layoutOf(config, header).perPage;
-  let problems = drawProblems(config, seed, Math.min(asked, fit));
-  for (;;) {
-    const short = shortfall(asked, fit, problems.length);
-    header = headerOf(config, short);
-    const under = layoutOf(config, header);
-    if (problems.length <= under.perPage) {
-      return { problems, header, columns: under.columns };
-    }
-    fit = under.perPage;
-    problems = problems.slice(0, fit);
-  }
+): { blocks: Block[]; header: SheetOptions; count: number } {
+  return pagesUnder(
+    askedOf(config),
+    (wanted) => drawProblems(config, seed, wanted),
+    (note) => headerOf(config, note),
+    (header) => layoutOf(config, header),
+  );
 }
 
 /**
@@ -717,9 +705,8 @@ function headerOf(
  */
 /**
  * What the line that names a saved sheet can say about a page coming out
- * short without a seed to draw from: what the paper holds against what was
- * asked, and a pool with nothing in it. A draw that misses is the page's to
- * report.
+ * short without a seed to draw from: a pool with nothing in it, and a row
+ * taller than the page. A draw that misses is the page's to report.
  */
 function describedShortfall(config: MultiplicationConfig): string | null {
   if (config.style === "grid") return null;
@@ -729,7 +716,7 @@ function describedShortfall(config: MultiplicationConfig): string | null {
     config.style !== "long" &&
     namedFacts(config).length === 0 &&
     poolOf(config).multiply.length === 0;
-  return shortfall(asked, perPage, empty ? 0 : Math.min(asked, perPage));
+  return shortfall(asked, perPage, empty || perPage === 0 ? 0 : asked);
 }
 
 function describeMultiplication(config: MultiplicationConfig): string {
@@ -782,12 +769,8 @@ function bodyOf(
     };
   }
 
-  const { problems: items, header, columns } = multiplicationPage(config, seed);
-  return {
-    blocks: [{ kind: "problems", columns, items }],
-    header,
-    outOf: items.length,
-  };
+  const { blocks, header, count } = multiplicationPages(config, seed);
+  return { blocks, header, outOf: count };
 }
 
 function buildMultiplicationSheet(

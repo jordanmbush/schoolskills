@@ -236,11 +236,13 @@ is that a problem cell has a **declared** size, not a measured one — which is
 a real constraint on the design of each family, and the right one.
 
 A page that comes up short — fewer problems than were asked for, because the
-paper had no room for them or the draw could make no more — says so on the
-paper, in the instruction line (`shortfall` in `chrome.ts`), rather than
-printing a title, a score box and a silence. The family then lays the page out
-again under that header: a longer instruction line can take a row from the
-problems it is about, and a page laid out for the shorter line would run over.
+draw could make no more, or because not even one row fits at this type size —
+says so on the paper, in the instruction line (`shortfall` in `chrome.ts`),
+rather than printing a title, a score box and a silence. The family then lays
+the page out again under that header: a longer instruction line can take a row
+from the problems it is about, and a page laid out for the shorter line would
+run over. The paper having no room is not on that list, because a count is
+never cut to the page: what does not fit runs on.
 
 ---
 
@@ -251,9 +253,15 @@ It emits a `break` block where its own arithmetic says the page is full, and
 `SheetView` prints what follows as the next page, with the header and footer
 again and "Page 2 of 3" in the foot — so a child set the whole of a psalm gets
 the whole of it, and a parent who wanted one page prints page one. Capacity is
-still arithmetic: the family cuts at `perPage`, never by measuring. Handwriting
-is the family that runs on today; memory work still fits its rounds to the page
-it has.
+still arithmetic: the family cuts at `perPage`, never by measuring, through
+`paged` in `layout.ts` — and every family that takes a count runs on this way.
+The problems families go through `problemPages`, which numbers page two on
+from where page one stopped, so twenty long divisions at six to a page are
+four pages and a child told to do 14 to 20 finds them; handwriting cuts its
+rows the same way. The one shortfall the paper still causes is a single row
+taller than the page, which no number of pages would mend: then nothing is
+drawn and the instruction line says so. Memory work still fits its rounds to
+the page it has.
 
 ## 5 · The ruling systems
 

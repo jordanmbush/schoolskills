@@ -13,7 +13,7 @@
  * silent: a sheet that looks right on screen and prints its bottom row on a
  * second sheet of paper.
  */
-import type { Mil, Paper, Rule } from "./types";
+import type { Block, Mil, Paper, Problem, Rule } from "./types";
 
 import {
   inches,
@@ -197,11 +197,66 @@ export function columnWidth(box: Box, columns: number, gap: Mil = 0): Mil {
   return Math.max(0, Math.floor((box.width - gap * (columns - 1)) / columns));
 }
 
-/** Pages needed for a run of items, at a given capacity. Never divides by zero. */
-export function pageCount(items: number, perPage: number): number {
-  if (items <= 0) return 0;
-  if (perPage <= 0) return 1;
-  return Math.ceil(items / perPage);
+/**
+ * The most problems a sheet is asked for: the top of the builder's stepper,
+ * and the ceiling on a count from outside this build. A config in a
+ * bookmarked URL may ask for a million, and a family that drew them would
+ * hang the page before it printed one.
+ */
+export const MAX_COUNT = 200;
+
+/** How many were asked for: whole, never negative, never past `MAX_COUNT`. */
+export function countOf(count: number): number {
+  return Math.max(0, Math.min(MAX_COUNT, Math.floor(count) || 0));
+}
+
+/**
+ * How many problems a family draws for the count it was given. The count is
+ * not cut to the page — what does not fit runs on (§4) — with one exception:
+ * when not even one row fits at this type size, nothing is drawn at all,
+ * because no number of pages would mend a row taller than the paper.
+ */
+export function wantedOf(count: number, perPage: number): number {
+  return perPage <= 0 ? 0 : countOf(count);
+}
+
+/**
+ * A list cut into pages: one block a page and a `break` between, never fewer
+ * than one block, so a sheet with nothing on it still has a block to be
+ * empty in. `perPage` is the family's own arithmetic, never a measurement,
+ * and a page holds at least one item however small the number handed in — a
+ * family with nothing that fits draws nothing rather than handing a list
+ * here (§4).
+ */
+export function paged<T>(
+  items: T[],
+  perPage: number,
+  block: (page: T[], from: number) => Block,
+): Block[] {
+  const take = Math.max(1, Math.floor(perPage) || 1);
+  const blocks: Block[] = [];
+  for (let from = 0; from < items.length; from += take) {
+    if (from > 0) blocks.push({ kind: "break" });
+    blocks.push(block(items.slice(from, from + take), from));
+  }
+  return blocks.length > 0 ? blocks : [block([], 0)];
+}
+
+/**
+ * Problems a page at a time, numbered on from where the page before left
+ * off, so a child told to do 14 to 20 finds them on page two.
+ */
+export function problemPages(
+  items: Problem[],
+  columns: number,
+  perPage: number,
+): Block[] {
+  return paged(items, perPage, (page, from) => ({
+    kind: "problems",
+    columns,
+    items: page,
+    ...(from > 0 ? { start: from + 1 } : {}),
+  }));
 }
 
 /** How many whole repeats of a ruling fit in a height. Never more than fit. */

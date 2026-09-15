@@ -16,6 +16,7 @@
 import { mulberry32 } from "@/engine/random";
 
 import type {
+  Block,
   DecimalConfig,
   DecimalOperation,
   DecimalStyle,
@@ -27,13 +28,14 @@ import type {
   SheetOptions,
 } from "../types";
 
-import { sheetBlockBox, shortfall, shortfallPart } from "../chrome";
+import { pagesUnder, sheetBlockBox, shortfall, shortfallPart } from "../chrome";
 import {
   DIGIT_EM,
   PROBLEM_GAP,
   WRAP_GAP,
   answerLine,
   columnWidth,
+  countOf,
   fitAcross,
   numberRoom,
   type Box,
@@ -358,9 +360,7 @@ function problemOf(
   return { prompt: drawn.prompt, answer: drawn.answer, ...extras };
 }
 
-/** How many problems were asked for. A count from outside this build may be nothing at all. */
-const askedOf = (config: DecimalConfig): number =>
-  Math.max(0, Math.floor(config.count) || 0);
+const askedOf = (config: DecimalConfig): number => countOf(config.count);
 
 /** Up to `wanted` problems, in the order they are printed. */
 function drawProblems(
@@ -416,31 +416,22 @@ function shortfallOf(
 }
 
 /**
- * The problems and the header they print under.
- *
- * A count is a request, not a promise: the page holds what it holds, and the
- * draw makes what it can. When either comes up short the instruction line says
- * so, and because that sentence can take a row from the page, the layout is
- * asked again under the header that will actually print, until the problems
- * are the ones that fit beneath it.
+ * The problems, paged, and the header they print under. A count is a
+ * request, not a promise: the draw makes what it can, the instruction line
+ * says when that is short, and what one page has no room for runs on to the
+ * next rather than being cut (§4).
  */
-function decimalPage(
+function decimalPages(
   config: DecimalConfig,
   seed: number,
-): { problems: Problem[]; header: SheetOptions; columns: number } {
-  const asked = askedOf(config);
-  let header = headerOf(config);
-  let fit = layoutOf(config, header).perPage;
-  let problems = drawProblems(config, seed, Math.min(asked, fit));
-  for (;;) {
-    header = headerOf(config, shortfallOf(config, fit, problems.length));
-    const under = layoutOf(config, header);
-    if (problems.length <= under.perPage) {
-      return { problems, header, columns: under.columns };
-    }
-    fit = under.perPage;
-    problems = problems.slice(0, fit);
-  }
+): { blocks: Block[]; header: SheetOptions; count: number } {
+  return pagesUnder(
+    askedOf(config),
+    (wanted) => drawProblems(config, seed, wanted),
+    (note) => headerOf(config, note),
+    (header) => layoutOf(config, header),
+    (fit, made) => shortfallOf(config, fit, made),
+  );
 }
 
 /* ── What it is called ─────────────────────────────────────────────────── */
@@ -607,14 +598,13 @@ function placesPart(config: DecimalConfig): string | null {
 
 /**
  * What the line that names a saved sheet can say about a page coming out
- * short without a seed to draw from: what the paper holds against what was
- * asked, and a divisor span nothing in it can stop. A draw that misses is the
- * page's to report.
+ * short without a seed to draw from: a divisor span nothing in it can stop,
+ * and a row taller than the page. A draw that misses is the page's to report.
  */
 function describedShortfall(config: DecimalConfig): string | null {
   const asked = askedOf(config);
   const { perPage } = decimalLayout(config);
-  const made = nothingStops(config) ? 0 : Math.min(asked, perPage);
+  const made = nothingStops(config) || perPage === 0 ? 0 : asked;
   return shortfallOf(config, perPage, made);
 }
 
@@ -644,7 +634,7 @@ function describeDecimals(config: DecimalConfig): string {
 }
 
 function buildDecimalSheet(config: DecimalConfig, seed: number): Sheet {
-  const { problems: items, header: head, columns } = decimalPage(config, seed);
+  const { blocks, header: head, count } = decimalPages(config, seed);
 
   return {
     paper: config.paper,
@@ -653,9 +643,9 @@ function buildDecimalSheet(config: DecimalConfig, seed: number): Sheet {
       title: head.title ?? "",
       instructions: head.instructions,
       fields: head.fields,
-      score: { outOf: items.length },
+      score: { outOf: count },
     },
-    blocks: [{ kind: "problems", columns, items }],
+    blocks,
     footer: { credit: SHEET_CREDIT, url: SHEET_URL, seed },
     answers: false,
   };

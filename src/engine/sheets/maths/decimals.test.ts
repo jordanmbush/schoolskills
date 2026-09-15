@@ -5,11 +5,13 @@ import { printedBlockBox } from "../chrome";
 import { describeSheetFamily } from "../contract";
 import { PROBLEM_GAP, answerLine, numberRoom } from "../layout";
 import type {
+  Block,
   DecimalConfig,
   MarginSize,
   Paper,
   PaperSize,
   Problem,
+  Sheet,
 } from "../types";
 
 import { decimalTableau, stoppingDivisors } from "./decimal-division";
@@ -171,11 +173,32 @@ describeSheetFamily("decimals", {
 });
 
 /** The one block a decimals sheet has, narrowed for the reader. */
+/** Every problem on the sheet, page after page. */
 function problemsOf(over: Partial<DecimalConfig>, seed: number): Problem[] {
-  const block = buildSheet(config(over), seed).blocks[0];
-  if (block.kind !== "problems")
-    throw new Error(`expected problems, got ${block.kind}`);
-  return block.items;
+  return pagesOf(buildSheet(config(over), seed)).flatMap((page) => page.items);
+}
+
+/**
+ * The problems block of each page, in order. A problems family prints one
+ * such block a page and nothing else, so anything else on a page is a
+ * failure here rather than a page silently skipped.
+ */
+function pagesOf(sheet: Sheet): Array<Extract<Block, { kind: "problems" }>> {
+  const pages: Array<Extract<Block, { kind: "problems" }>> = [];
+  let open = false;
+  for (const block of sheet.blocks) {
+    if (block.kind === "break") {
+      expect(open, "a break with no page before it").toBe(true);
+      open = false;
+      continue;
+    }
+    if (block.kind !== "problems")
+      throw new Error(`expected problems, got ${block.kind}`);
+    expect(open, "two problems blocks on one page").toBe(false);
+    pages.push(block);
+    open = true;
+  }
+  return pages;
 }
 
 /* ── Reading a sheet the way a child does ────────────────────────────────── */
@@ -440,10 +463,11 @@ describe("the decimals family", () => {
       "Dividing decimals — hundredths",
     );
     // A page that will come out short says so in its line too, as far as the
-    // line can know without a seed: what the paper holds against what was
-    // asked, and a divisor nothing divides by to an answer that stops.
+    // line can know without a seed: a divisor nothing divides by to an
+    // answer that stops, and a row taller than the page. Not the paper — a
+    // count past one page runs on to the next.
     expect(describeSheet(config({ ...inColumns, count: 12 }))).toBe(
-      "Dividing decimals — hundredths — in columns — only 4 of the 12 asked for fit on the page at this size",
+      "Dividing decimals — hundredths — in columns",
     );
     expect(
       describeSheet(
@@ -605,15 +629,24 @@ describe("the decimals family", () => {
         / Nothing could be made with these settings\.$/,
       );
     }
-    // Fewer than were asked for: the count and the ask, on the page, and the
-    // sheet marked out of what is on it.
-    expect(told({ operation: "divide", form: "vertical" })).toBe(
-      "Work out each answer. Put the point in the answer straight above the point in the number. Only 4 of the 12 asked for fit on the page at this size.",
+    // Four brackets to a page and twelve asked for is three pages, marked
+    // out of twelve, and nothing said — nothing is short.
+    const inColumns = buildSheet(
+      config({ operation: "divide", form: "vertical" }),
+      1,
     );
-    expect(
-      buildSheet(config({ operation: "divide", form: "vertical" }), 1).header
-        .score?.outOf,
-    ).toBe(4);
+    expect(inColumns.header.instructions).toBe(
+      "Work out each answer. Put the point in the answer straight above the point in the number.",
+    );
+    expect(inColumns.header.score?.outOf).toBe(12);
+    expect(pagesOf(inColumns).map((page) => page.items.length)).toEqual([
+      4, 4, 4,
+    ]);
+    expect(pagesOf(inColumns).map((page) => page.start)).toEqual([
+      undefined,
+      5,
+      9,
+    ]);
     // On the end of a parent's own instruction line as well as the family's.
     expect(told({ ...three, instructions: "Do these." })).toBe(
       "Do these. Dividing by 3 never gives an answer that stops, so there is nothing to print.",
@@ -622,23 +655,27 @@ describe("the decimals family", () => {
     expect(told({ operation: "divide", form: "vertical", count: 4 })).toBe(
       "Work out each answer. Put the point in the answer straight above the point in the number.",
     );
-    // The sentence is part of the printed header, and the header is what the
-    // page was laid out under — so the problems fit beneath it whatever row
-    // the sentence took, at every type size.
+    // Two hundred in columns is many pages at every type size, every one of
+    // them cut under the header that prints, and all two hundred there.
     for (const fontPt of [12, 24, 36]) {
       const over = { form: "vertical" as const, fontPt, count: 200 };
       const sheet = buildSheet(config(over), 3);
-      const block = sheet.blocks[0];
-      if (block.kind !== "problems") throw new Error("no problems");
-      const { row } = decimalLayout(config(over));
-      const rows = Math.ceil(block.items.length / block.columns);
-      expect(
-        rows * row + Math.max(0, rows - 1) * PROBLEM_GAP.y,
-        `${fontPt}pt`,
-      ).toBeLessThanOrEqual(printedBlockBox(sheet).height);
-      expect(sheet.header.instructions, `${fontPt}pt`).toMatch(
-        /Only \d+ of the 200 asked for fit on the page at this size\.$/,
+      expect(sheet.header.instructions, `${fontPt}pt`).toBe(
+        "Work out each answer. Keep the points under one another.",
       );
+      const { row } = decimalLayout(config(over));
+      const pages = pagesOf(sheet);
+      expect(pages.length, `${fontPt}pt`).toBeGreaterThan(1);
+      expect(pages.flatMap((page) => page.items).length, `${fontPt}pt`).toBe(
+        200,
+      );
+      for (const [at, page] of pages.entries()) {
+        const rows = Math.ceil(page.items.length / page.columns);
+        expect(
+          rows * row + Math.max(0, rows - 1) * PROBLEM_GAP.y,
+          `${fontPt}pt, page ${at + 1}`,
+        ).toBeLessThanOrEqual(printedBlockBox(sheet).height);
+      }
     }
   });
 });
@@ -1322,10 +1359,11 @@ describe("how much fits", () => {
   const SIZES: PaperSize[] = ["letter", "a4", "legal"];
   const MARGINS: MarginSize[] = ["none", "narrow", "normal", "wide"];
 
-  it("never prints more problems than the paper holds", () => {
+  it("never prints more problems on a page than the paper holds", () => {
     // Against the box the printed header leaves — which carries the sentence
     // that says the page came out short, and may be a row shorter for it —
-    // rather than the config's.
+    // rather than the config's. And every page but the last is full: a page
+    // cut short of what fits would be a sheet of paper for nothing.
     for (const size of SIZES) {
       for (const margin of MARGINS) {
         for (const fontPt of [8, 12, 18, 24, 36]) {
@@ -1333,20 +1371,29 @@ describe("how much fits", () => {
             const over = { ...shape, paper: paper({ size, margin }), fontPt };
             const where = `${size}/${margin}/${fontPt}pt ${JSON.stringify(shape)}`;
             const sheet = buildSheet(config({ ...over, count: 200 }), 8);
-            const block = sheet.blocks[0];
-            if (block.kind !== "problems")
-              throw new Error(`${where}: no block`);
+            const pages = pagesOf(sheet);
+            expect(pages.length, where).toBeGreaterThan(0);
             const { row, perPage } = decimalLayout(config(over));
-            const rows = Math.ceil(block.items.length / block.columns);
-            const used = rows * row + Math.max(0, rows - 1) * PROBLEM_GAP.y;
-            expect(used, where).toBeLessThanOrEqual(
-              printedBlockBox(sheet).height,
-            );
+            for (const [at, page] of pages.entries()) {
+              const rows = Math.ceil(page.items.length / page.columns);
+              const used = rows * row + Math.max(0, rows - 1) * PROBLEM_GAP.y;
+              expect(used, `${where}, page ${at + 1}`).toBeLessThanOrEqual(
+                printedBlockBox(sheet).height,
+              );
+              if (at < pages.length - 1) {
+                expect(page.items.length, `${where}, page ${at + 1}`).toBe(
+                  pages[0].items.length,
+                );
+              }
+            }
             // A bracket that reserves more than the box at the largest type
             // holds nothing, and says so, rather than printing a title over
             // blank paper.
             if (perPage === 0) {
-              expect(block.items, where).toEqual([]);
+              expect(
+                pages.map((page) => page.items),
+                where,
+              ).toEqual([[]]);
               expect(sheet.header.instructions, where).toMatch(
                 /Nothing fits on the page at this size\.$/,
               );

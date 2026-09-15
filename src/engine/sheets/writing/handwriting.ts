@@ -43,7 +43,7 @@ import type {
 } from "../types";
 
 import { sheetBlockBox } from "../chrome";
-import { ruleCapacity, type Box } from "../layout";
+import { paged, ruleCapacity, type Box } from "../layout";
 import { own, rulePitch, rulingOf, steppedSize, writingSpace } from "../paper";
 import { SHEET_CREDIT, SHEET_URL, SHEET_WORLD, type SheetSpec } from "../spec";
 import { copyworkSource, type CopyworkSource } from "./copywork";
@@ -366,15 +366,8 @@ const rowsDown = (lines: string[], styles: TraceStyle[]): TraceRow[] =>
  * and a parent who wanted one page can print page one. `perPage` is in rows
  * here, so a line's repeats never straddle a break.
  */
-function paged(rule: Rule, rows: TraceRow[], perPage: number): Block[] {
-  const take = Math.max(1, perPage);
-  const blocks: Block[] = [];
-  for (let at = 0; at < rows.length; at += take) {
-    if (at > 0) blocks.push({ kind: "break" });
-    blocks.push({ kind: "trace", rule, rows: rows.slice(at, at + take) });
-  }
-  return blocks.length > 0 ? blocks : [{ kind: "trace", rule, rows: [] }];
-}
+const tracePages = (rule: Rule, rows: TraceRow[], perPage: number): Block[] =>
+  paged(rows, perPage, (page) => ({ kind: "trace", rule, rows: page }));
 
 function bodyOf(config: HandwritingConfig): Block[] {
   const styles = traceStyles(config);
@@ -383,12 +376,12 @@ function bodyOf(config: HandwritingConfig): Block[] {
     const { box, em, face, perPage, rule } = handwritingLayout(config, 1);
     const { text } = copyworkSource(config);
     const lines = wrapPassage(text, fittedCharacters(box.width, em, face));
-    return paged(rule, rowsDown(lines, styles), perPage * styles.length);
+    return tracePages(rule, rowsDown(lines, styles), perPage * styles.length);
   }
 
   const things = contentOf(config);
   const { rows, perRow, rule } = handwritingLayout(config, longestOf(things));
-  return paged(rule, rowsAcross(things, styles, perRow), rows);
+  return tracePages(rule, rowsAcross(things, styles, perRow), rows);
 }
 
 /* ── What it is called ─────────────────────────────────────────────────── */

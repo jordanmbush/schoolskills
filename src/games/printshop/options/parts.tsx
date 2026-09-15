@@ -23,6 +23,7 @@ import {
   TextArea,
   type SegmentedOption,
 } from "@/components/ui/kit";
+import { MAX_COUNT } from "@/engine/sheets/layout";
 import type { DivisionHelp, SheetConfig } from "@/engine/sheets/types";
 import { parseWords } from "@/services/decks";
 
@@ -184,12 +185,15 @@ export function Sizing({
 }) {
   return (
     <>
-      <FieldSet legend={label} hint="Capped at what fits on the page.">
+      <FieldSet
+        legend={label}
+        hint="More than fit on one page run on to the next."
+      >
         <NumberStepper
           label={label}
           value={count}
           min={1}
-          max={200}
+          max={MAX_COUNT}
           onChange={onCount}
         />
       </FieldSet>
