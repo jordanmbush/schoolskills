@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { answerKey, buildSheet, describeSheet } from "../index";
 import { printedBlockBox } from "../chrome";
 import { describeSheetFamily } from "../contract";
-import { MAX_COUNT, PROBLEM_GAP } from "../layout";
+import { MAX_COUNT } from "../layout";
 import type {
   Block,
   Paper,
@@ -74,16 +74,13 @@ const EVERY_SHEET: WordStudyConfig[] = STUDY_TOPICS.flatMap((topic) =>
 
 const where = (one: WordStudyConfig) => `${one.topic}/${one.style}`;
 
-const blockOf = (one: WordStudyConfig, seed = 1): Block =>
-  buildSheet(one, seed).blocks[0];
-
 /**
- * The problems block of each page, in order. A written sheet prints one such
- * block a page and nothing else, so anything else on a page is a failure
- * here rather than a page silently skipped.
+ * One block a page, in order, with a `break` between. A word-study sheet
+ * prints nothing else, so a second block on a page is a failure here rather
+ * than a page silently skipped.
  */
-function pagesOf(sheet: Sheet): Array<Extract<Block, { kind: "problems" }>> {
-  const pages: Array<Extract<Block, { kind: "problems" }>> = [];
+function pagesOf(sheet: Sheet): Block[] {
+  const pages: Block[] = [];
   let open = false;
   for (const block of sheet.blocks) {
     if (block.kind === "break") {
@@ -91,21 +88,45 @@ function pagesOf(sheet: Sheet): Array<Extract<Block, { kind: "problems" }>> {
       open = false;
       continue;
     }
-    if (block.kind !== "problems")
-      throw new Error(`expected problems, got ${block.kind}`);
-    expect(open, "two problems blocks on one page").toBe(false);
+    expect(open, "two blocks on one page").toBe(false);
     pages.push(block);
     open = true;
   }
   return pages;
 }
 
+/** The pages of a sheet, each narrowed to the block kind its style prints. */
+function pagesAs<K extends Block["kind"]>(
+  sheet: Sheet,
+  kind: K,
+): Array<Extract<Block, { kind: K }>> {
+  return pagesOf(sheet).map((block) => {
+    if (block.kind !== kind)
+      throw new Error(`expected ${kind}, got ${block.kind}`);
+    return block as Extract<Block, { kind: K }>;
+  });
+}
+
+const blockOf = (one: WordStudyConfig, seed = 1): Block =>
+  pagesOf(buildSheet(one, seed))[0];
+
+/** Every choice a sheet put on paper, whichever pages it took. */
+const questionsOn = (one: WordStudyConfig, seed = 1) =>
+  pagesAs(buildSheet(one, seed), "choice").flatMap((page) => page.questions);
+
 /** Every question a sheet put on paper, whichever pages it took. */
 const printedOf = (sheet: Sheet): number =>
-  sheet.blocks.reduce(
-    (total, block) => total + (block.kind === "break" ? 0 : countOf(block)),
-    0,
-  );
+  pagesOf(sheet).reduce((total, block) => total + countOf(block), 0);
+
+/** The number a page's first question carries; a matching column numbers nothing. */
+const startOf = (block: Block): number | undefined =>
+  block.kind === "problems" || block.kind === "choice"
+    ? block.start
+    : undefined;
+
+/** How many across a page lays its questions; a list down the page is one. */
+const columnsOf = (block: Block): number =>
+  block.kind === "problems" ? block.columns : 1;
 
 /* ── The bank ──────────────────────────────────────────────────────────── */
 
@@ -241,58 +262,60 @@ describe("the word-study family", () => {
     }
   });
 
-  it("runs a written sheet on to another page, and cuts the other two to it", () => {
-    // A written sheet asked for more than a page holds is more pages; a list
-    // of choices numbers from one with no `start` to continue from, and a
-    // matching column is shuffled as one whole, so those two stay one page.
-    // Neither ever prints more than the bank has: a page with room for forty
-    // rhymes still only has fourteen families.
+  it("runs every style on to another page rather than cutting it", () => {
+    // A sheet asked for more than a page holds is more pages, whichever of
+    // the three shapes it is (§4) — and never more than the bank has: a page
+    // with room for forty rhymes still only has fourteen families.
     for (const size of ["letter", "a4"] as const) {
-      for (const fontPt of [10, 12, 18]) {
+      for (const fontPt of [10, 12, 18, 36]) {
         for (const one of EVERY_SHEET) {
           const big = { ...one, paper: { ...paper, size }, fontPt, count: 200 };
           const label = `${where(one)} ${size}@${fontPt}`;
           const { perPage } = studyLayout(big);
           const bank = Math.min(topicOf(one.topic).questions.length, MAX_COUNT);
           const sheet = buildSheet(big, 1);
-          if (one.style === "write") {
-            const pages = pagesOf(sheet);
-            expect(pages.length, label).toBe(Math.ceil(bank / perPage));
-            expect(printedOf(sheet), label).toBe(bank);
-            for (const [at, page] of pages.entries())
-              if (at < pages.length - 1)
-                expect(page.items.length, `${label}, page ${at + 1}`) //
-                  .toBe(perPage);
-          } else {
-            expect(sheet.blocks, label).toHaveLength(1);
-            expect(printedOf(sheet), label).toBe(Math.min(perPage, bank));
+          const pages = pagesOf(sheet);
+          // A row taller than the page holds nothing at all, and no number
+          // of pages would mend it.
+          if (perPage === 0) {
+            expect(pages.map(countOf), label).toEqual([0]);
+            continue;
           }
+          expect(pages.length, label).toBe(Math.ceil(bank / perPage));
+          expect(printedOf(sheet), label).toBe(bank);
+          for (const [at, page] of pages.entries())
+            if (at < pages.length - 1)
+              expect(countOf(page), `${label}, page ${at + 1}`).toBe(perPage);
         }
       }
     }
   });
 
   it("runs on to another page rather than cutting the count to the paper", () => {
-    // Every word family at 18pt is several pages, not one page of the first
-    // twenty-odd (§4). The numbering carries on, the score box counts every
+    // Every word family at 18pt, and every syllable count or contraction at
+    // 36pt, is several pages rather than one page of the first few (§4). The
+    // numbering carries on where a block numbers, the score box counts every
     // page, and the key runs on page for page.
-    const one = config({
-      topic: "families",
-      style: "write",
-      count: 200,
-      fontPt: 18,
-    });
-    const { perPage } = studyLayout(one);
-    const bank = Math.min(topicOf("families").questions.length, MAX_COUNT);
-    const sheet = buildSheet(one, 3);
-    const pages = pagesOf(sheet);
-    expect(pages.length).toBeGreaterThan(1);
-    expect(pages.length).toBe(Math.ceil(bank / perPage));
-    expect(pages[0].items.length).toBe(perPage);
-    expect(pages[1].start).toBe(perPage + 1);
-    expect(sheet.header.score?.outOf).toBe(bank);
-    expect(pagesOf(answerKey(one, 3)).map((page) => page.items.length)) //
-      .toEqual(pages.map((page) => page.items.length));
+    const shapes: Array<Partial<WordStudyConfig>> = [
+      { topic: "families", style: "write", fontPt: 18 },
+      { topic: "syllables", style: "choose", fontPt: 36 },
+      { topic: "contractions", style: "match", fontPt: 36 },
+    ];
+    for (const shape of shapes) {
+      const one = config({ ...shape, count: 200 });
+      const { perPage } = studyLayout(one);
+      const bank = Math.min(topicOf(one.topic).questions.length, MAX_COUNT);
+      const sheet = buildSheet(one, 3);
+      const pages = pagesOf(sheet);
+      expect(pages.length, where(one)).toBeGreaterThan(1);
+      expect(pages.length, where(one)).toBe(Math.ceil(bank / perPage));
+      expect(countOf(pages[0]), where(one)).toBe(perPage);
+      if (one.style !== "match")
+        expect(startOf(pages[1]), where(one)).toBe(perPage + 1);
+      expect(sheet.header.score?.outOf, where(one)).toBe(bank);
+      expect(pagesOf(answerKey(one, 3)).map(countOf), where(one)) //
+        .toEqual(pages.map(countOf));
+    }
   });
 
   it("never prints more questions on a page than the paper holds", () => {
@@ -303,7 +326,6 @@ describe("the word-study family", () => {
       for (const margin of ["narrow", "normal", "wide"] as const) {
         for (const fontPt of [8, 12, 18, 24, 36]) {
           for (const one of EVERY_SHEET) {
-            if (one.style !== "write") continue;
             const big = {
               ...one,
               paper: { ...paper, size, margin },
@@ -314,24 +336,20 @@ describe("the word-study family", () => {
             const sheet = buildSheet(big, 8);
             const pages = pagesOf(sheet);
             expect(pages.length, label).toBeGreaterThan(0);
-            const { row, perPage } = studyLayout(big);
+            const { row, gap, perPage } = studyLayout(big);
             for (const [at, page] of pages.entries()) {
-              const rows = Math.ceil(page.items.length / page.columns);
-              const used = rows * row + Math.max(0, rows - 1) * PROBLEM_GAP.y;
+              const rows = Math.ceil(countOf(page) / columnsOf(page));
+              const used = rows * row + Math.max(0, rows - 1) * gap;
               expect(used, `${label}, page ${at + 1}`).toBeLessThanOrEqual(
                 printedBlockBox(sheet).height,
               );
               if (at < pages.length - 1)
-                expect(page.items.length, `${label}, page ${at + 1}`).toBe(
-                  pages[0].items.length,
+                expect(countOf(page), `${label}, page ${at + 1}`).toBe(
+                  countOf(pages[0]),
                 );
             }
             // A row taller than the page holds nothing at all.
-            if (perPage === 0)
-              expect(
-                pages.map((page) => page.items),
-                label,
-              ).toEqual([[]]);
+            if (perPage === 0) expect(pages.map(countOf), label).toEqual([0]);
           }
         }
       }
@@ -355,8 +373,9 @@ describe("writing the answer", () => {
     // correct answers attached to the wrong prompts.
     for (const topic of STUDY_TOPICS) {
       if (!studyStyles(topic).includes("write")) continue;
-      const items = pagesOf(
+      const items = pagesAs(
         buildSheet(config({ topic, style: "write", count: 12 }), 1),
+        "problems",
       ).flatMap((page) => page.items);
       const bank = new Map(
         topicOf(topic).questions.map((one) => [one.ask, one.answer]),
@@ -373,12 +392,13 @@ describe("circling one of four", () => {
     for (const topic of STUDY_TOPICS) {
       if (!studyStyles(topic).includes("choose")) continue;
       const { questions, options: scale } = topicOf(topic);
-      const block = blockOf(config({ topic, style: "choose", count: 12 }));
-      if (block.kind !== "choice") throw new Error("expected choice");
+      const printed = questionsOn(
+        config({ topic, style: "choose", count: 12 }),
+      );
 
       const bank = new Map(questions.map((one) => [one.cue, one.answer]));
       const answers = new Set(questions.map((one) => one.answer));
-      for (const question of block.questions) {
+      for (const question of printed) {
         const right = bank.get(question.prompt);
         expect(right, question.prompt).toBeDefined();
         expect(question.options[question.answer], question.prompt).toBe(right);
@@ -400,9 +420,10 @@ describe("circling one of four", () => {
   });
 
   it("offers a syllable count as a scale rather than as a shuffle", () => {
-    const block = blockOf(config({ topic: "syllables", style: "choose" }));
-    if (block.kind !== "choice") throw new Error("expected choice");
-    for (const question of block.questions) {
+    const printed = questionsOn(
+      config({ topic: "syllables", style: "choose" }),
+    );
+    for (const question of printed) {
       expect(question.options).toEqual(["1", "2", "3", "4"]);
     }
   });
@@ -410,21 +431,30 @@ describe("circling one of four", () => {
 
 describe("joining two columns", () => {
   it("points every left-hand word at the row its answer landed in", () => {
+    // Page by page, at a size that takes more than one: every page is its own
+    // exercise, so its right column is that page's answers shuffled and its
+    // `answer` indexes into that column and no other.
     for (const topic of STUDY_TOPICS) {
       if (!studyStyles(topic).includes("match")) continue;
-      const block = blockOf(config({ topic, style: "match", count: 12 }));
-      if (block.kind !== "matching") throw new Error("expected matching");
+      const pages = pagesAs(
+        buildSheet(config({ topic, style: "match", count: 12, fontPt: 36 }), 1),
+        "matching",
+      );
+      expect(pages.length, topic).toBeGreaterThan(1);
 
       const bank = new Map(
         topicOf(topic).questions.map((one) => [one.cue, one.answer]),
       );
-      expect(block.left.length).toBe(block.right.length);
-      expect([...block.right].sort()).toEqual(
-        block.left.map((cue) => bank.get(cue) ?? "").sort(),
-      );
-      block.left.forEach((cue, at) => {
-        expect(block.right[block.answer[at]], cue).toBe(bank.get(cue));
-      });
+      for (const block of pages) {
+        expect(block.left.length, topic).toBeGreaterThan(0);
+        expect(block.left.length).toBe(block.right.length);
+        expect([...block.right].sort()).toEqual(
+          block.left.map((cue) => bank.get(cue) ?? "").sort(),
+        );
+        block.left.forEach((cue, at) => {
+          expect(block.right[block.answer[at]], cue).toBe(bank.get(cue));
+        });
+      }
     }
   });
 });

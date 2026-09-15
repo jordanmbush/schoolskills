@@ -31,6 +31,7 @@ import {
   PROBLEM_GAP,
   columnWidth,
   fitAcross,
+  paged,
   problemPages,
   wantedOf,
   type Box,
@@ -358,6 +359,8 @@ export function studyLayout(config: WordStudyConfig): {
   columns: number;
   cell: Mil;
   row: Mil;
+  /** The air between one row and the next, as the page was divided by it. */
+  gap: Mil;
   perPage: number;
 } {
   // Against the header the sheet will print rather than the one the config
@@ -387,25 +390,22 @@ export function studyLayout(config: WordStudyConfig): {
     columns,
     cell,
     row,
+    gap,
     perPage: columns * fitAcross(box.height, row, gap),
   };
 }
 
 /**
  * How many questions this sheet draws: what was asked for, or the whole bank,
- * and never more than the bank holds.
- *
- * A written sheet runs on to another page (§4). The other two are still cut
- * to the page: a `choice` block numbers from one with no `start` to continue
- * from, and a matching column is shuffled as one whole.
+ * and never more than the bank holds. Every style runs on to another page
+ * (§4).
  */
 function studyWanted(config: WordStudyConfig, perPage: number): number {
   const { questions } = topicOf(config.topic);
-  const wanted = Math.min(
+  return Math.min(
     questions.length,
     wantedOf(config.count ?? questions.length, perPage),
   );
-  return styleOf(config) === "write" ? wanted : Math.min(wanted, perPage);
 }
 
 /**
@@ -480,26 +480,34 @@ function bodyOf(
 
   if (style === "choose") {
     const questions = drawn.map((question) => chosen(question, topic, rand));
-    return { blocks: [{ kind: "choice", questions }], outOf };
+    return {
+      blocks: paged(questions, perPage, (page, from) => ({
+        kind: "choice",
+        questions: page,
+        ...(from > 0 ? { start: from + 1 } : {}),
+      })),
+      outOf,
+    };
   }
 
   if (style === "match") {
     // The right column is shuffled and the left is not: the left is the order
     // the questions were drawn in, and a matching sheet whose columns lined up
-    // would be a sheet a child could answer with a ruler.
-    const right = shuffled(
-      drawn.map((question) => question.answer),
-      rand,
-    );
+    // would be a sheet a child could answer with a ruler. Shuffled within the
+    // page, so every page is its own exercise.
     return {
-      blocks: [
-        {
+      blocks: paged(drawn, perPage, (page) => {
+        const right = shuffled(
+          page.map((question) => question.answer),
+          rand,
+        );
+        return {
           kind: "matching",
-          left: drawn.map((question) => question.cue),
+          left: page.map((question) => question.cue),
           right,
-          answer: drawn.map((question) => right.indexOf(question.answer)),
-        },
-      ],
+          answer: page.map((question) => right.indexOf(question.answer)),
+        };
+      }),
       outOf,
     };
   }

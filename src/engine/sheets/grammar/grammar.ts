@@ -32,6 +32,7 @@ import {
   answerLine,
   columnWidth,
   fitAcross,
+  paged,
   problemPages,
   wantedOf,
   type Box,
@@ -353,6 +354,8 @@ export function grammarLayout(config: GrammarConfig): {
   columns: number;
   cell: Mil;
   row: Mil;
+  /** The air between one row and the next, as the page was divided by it. */
+  gap: Mil;
   perPage: number;
 } {
   // Against the header the sheet will print rather than the one the config
@@ -375,31 +378,28 @@ export function grammarLayout(config: GrammarConfig): {
           (ROW_EMS * prompt + OPTIONS_EMS * optionRows(topic, config, cell)),
       );
 
+  const gap = write ? PROBLEM_GAP.y : LIST_GAP;
   return {
     box,
     columns,
     cell,
     row,
-    perPage:
-      columns * fitAcross(box.height, row, write ? PROBLEM_GAP.y : LIST_GAP),
+    gap,
+    perPage: columns * fitAcross(box.height, row, gap),
   };
 }
 
 /**
  * How many sentences this sheet draws: what was asked for, or the whole bank,
- * and never more than the bank holds.
- *
- * A written sheet runs on to another page (§4). A circled one is still cut to
- * the page: a `choice` block numbers from one with no `start` to continue
- * from.
+ * and never more than the bank holds. Both styles run on to another page
+ * (§4).
  */
 function grammarWanted(config: GrammarConfig, perPage: number): number {
   const { questions } = topicOf(config.topic);
-  const wanted = Math.min(
+  return Math.min(
     questions.length,
     wantedOf(config.count ?? questions.length, perPage),
   );
-  return styleOf(config) === "write" ? wanted : Math.min(wanted, perPage);
 }
 
 /**
@@ -487,12 +487,15 @@ function bodyOf(
 
   if (styleOf(config) === "choose") {
     return {
-      blocks: [
-        {
+      blocks: paged(
+        drawn.map((question) => circled(question, topic)),
+        perPage,
+        (page, from) => ({
           kind: "choice",
-          questions: drawn.map((question) => circled(question, topic)),
-        },
-      ],
+          questions: page,
+          ...(from > 0 ? { start: from + 1 } : {}),
+        }),
+      ),
       outOf,
     };
   }

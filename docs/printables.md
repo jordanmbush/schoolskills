@@ -256,12 +256,14 @@ the whole of it, and a parent who wanted one page prints page one. Capacity is
 still arithmetic: the family cuts at `perPage`, never by measuring, through
 `paged` in `layout.ts` — and every family that takes a count runs on this way.
 The problems families go through `problemPages`, which numbers page two on
-from where page one stopped, so twenty long divisions at six to a page are
-four pages and a child told to do 14 to 20 finds them; handwriting cuts its
-rows the same way. The one shortfall the paper still causes is a single row
-taller than the page, which no number of pages would mend: then nothing is
-drawn and the instruction line says so. Memory work still fits its rounds to
-the page it has.
+from where page one stopped, so twenty long divisions at nine to a page are
+three pages and a child told to do 14 to 20 finds them. The other numbered
+lists — sentences with gaps, multiple choice and word shapes — carry the same
+`start`, and a matching set or a page of cards is cut the same way, each page
+its own. Handwriting cuts its rows the same way. The one shortfall the paper
+still causes is a single row taller than the page, which no number of pages
+would mend: then nothing is drawn and the instruction line says so. Memory
+work still fits its rounds to the page it has.
 
 ## 5 · The ruling systems
 
