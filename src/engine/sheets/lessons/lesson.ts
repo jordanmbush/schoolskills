@@ -30,9 +30,21 @@ import type {
 } from "../types";
 
 import { blockHeight, note, tryIt, type Page, type Topic } from "./blocks";
+import { DECIMAL_TOPICS } from "./decimals";
 import { DIVISION_TOPICS } from "./division";
+import { WRITTEN_TOPICS } from "./written";
 
-const TOPICS: Record<LessonTopic, Topic> = { ...DIVISION_TOPICS };
+/**
+ * Every lesson, in the order a child meets them: the three meanings of
+ * division, then leftovers and the two written methods, then decimals. The
+ * record type is what holds the three modules to covering `LessonTopic`
+ * between them.
+ */
+const TOPICS: Record<LessonTopic, Topic> = {
+  ...DIVISION_TOPICS,
+  ...WRITTEN_TOPICS,
+  ...DECIMAL_TOPICS,
+};
 
 /** Every topic, in the order a child meets them — for a picker. */
 export const LESSON_TOPICS = Object.keys(TOPICS) as LessonTopic[];

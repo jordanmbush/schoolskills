@@ -28,7 +28,7 @@ export function LessonsPanel({ config, set }: PanelProps<LessonConfig>) {
         value={config.topic}
         onChange={(topic) => set({ topic })}
         options={TOPICS}
-        hint="One idea to a page, in the order a child meets them: sharing out, then making groups, then the array that holds both."
+        hint="One idea to a page, in the order a child meets them: sharing, grouping and arrays; leftovers and the two written methods; then decimals."
       />
       <Checkbox
         label="Problems to try"

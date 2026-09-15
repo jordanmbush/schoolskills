@@ -302,6 +302,84 @@ export const MATHS_SHEETS: MathsSheet[] = [
     },
   },
   {
+    slug: "division-with-remainders-worksheets",
+    name: "Division with remainders, a lesson",
+    short: "Remainders",
+    heading: "Division with remainders: a lesson in what is left over",
+    keyword: "Free printable division with remainders worksheets for beginners",
+    summary:
+      "A one-page lesson on remainders: 14 counters dealt into 4 rings with 2 left outside, the check line written as a multiplication, one story where the leftover changes the answer, and six to try.",
+    lead: "The fourth division lesson, for the day the sweets do not share out. Fourteen counters are drawn already dealt into four rings with two left over outside them, the sum is worked step by step to 3 r 2, and the check is written the way it should be — 4 × 3 + 2 = 14 — before five more to try with the same picture, and one story about tables.",
+    notes: [
+      "A remainder is drawn before it is written. The two counters that would not go round sit outside every ring, which is what a leftover looks like on a table, and the answer is written as 3 r 2 with the check as a multiplication sentence rather than a chain of equals signs — because 3 r 2 is not a number, and a child who writes 14 ÷ 4 = 3 r 2 = 4 × 3 + 2 has been taught that it is. The five counter problems keep every total under two dozen and every divisor at what a child can ring.",
+      "The sixth problem is a story, and it is the reason this page exists: nine children sit four to a table, and the answer is three tables, not 2 r 1. Children who can do the division perfectly still stop at the remainder when the story wants it rounded up — it is the best-known failure in the whole research on division — so the lesson works one such story on the page before asking for one. The problems run on to a second page; a parent who wants the lesson alone prints page one.",
+    ],
+    teaches: "Division with a remainder, and what the remainder means",
+    ages: "Ages 7–9",
+    strand: "tables",
+    tables: [3, 4, 5, 6],
+    play: "The Grid's division deck has no remainders in it, on purpose: once a child has this page, the exact facts are the ones to race.",
+    config: {
+      ...SHEET,
+      kind: "lesson",
+      topic: "division-remainders",
+      practice: true,
+      fontPt: 14,
+    },
+  },
+  {
+    slug: "partial-quotients-division-worksheets",
+    name: "Partial quotients: division by chunking",
+    short: "Chunking",
+    heading: "Partial quotients worksheets: division by chunking, explained",
+    keyword: "Free printable partial quotients division worksheets",
+    summary:
+      "A one-page lesson on chunking, or partial quotients: 156 ÷ 12 as one hop of 120 and one of 36 along a number line, the column written down the page, and six to try with room to work.",
+    lead: "Division by taking away big lumps of the divisor — ten twelves at once, then three more — which is what partial quotients means. The number line shows the two hops, the column is written down the page the way a child writes it, the steps say why each lump was chosen, and six divisions by two-digit numbers follow with blank room under each for the lumps.",
+    notes: [
+      "This page comes before long division, not after it, and that is the research talking. Children who reach the compact algorithm by way of chunking make fewer of the errors that come from following steps without a reason, because every line of a chunked division says what it means: 156 take away 120 is ten twelves gone. Every divisor here has two digits, since a one-digit divisor is a table fact a child can already do in their head and would learn nothing from, and the last one leaves a remainder to show the method survives one.",
+      "Any lump works, and the lesson says so: five twelves at a time gets to the same answer in more steps, and ten-lumps are only the fastest. What the child is practising is writing every lump down and adding them at the end — the side column — which is the habit the long-division page then abbreviates into a digit over each column. The six problems run on to a second page, each with six lines of room, so the working has somewhere to go.",
+    ],
+    teaches: "Division by partial quotients (chunking)",
+    ages: "Ages 9–11",
+    strand: "tables",
+    tables: [11, 12],
+    play: "Not in the games. The multiples a child reaches for — ten twelves, three twelves — are, in The Grid.",
+    config: {
+      ...SHEET,
+      kind: "lesson",
+      topic: "division-chunking",
+      practice: true,
+      fontPt: 14,
+    },
+  },
+  {
+    slug: "how-to-do-long-division-worksheets",
+    name: "How to do long division, step by step",
+    short: "Long division lesson",
+    heading: "How to do long division: a step-by-step lesson",
+    keyword: "How to do long division, a free printable step-by-step lesson",
+    summary:
+      "A one-page lesson on long division: 657 ÷ 3 worked in the bracket with every written square shaded, the four steps explained in place-value words, and six to try on the guided grid.",
+    lead: "Divide, multiply, subtract, bring down — the four words a child meets at school, each printed beside what it means. The worked example is 657 ÷ 3 in the bracket with the shaded squares filled in, the steps under it say what every digit is worth, and six three-digit divisions follow: four with the squares shaded, two with the shape of the working drawn and the squares left plain.",
+    notes: [
+      "The words are the abbreviation, and the page's job is the thing abbreviated. A child chanting the four steps can carry them out with no idea that the 2 they wrote is two hundreds, and that child brings the next digit down into the wrong column, which is the commonest long-division error there is. So every step here is said in place-value language — how many 3s in 6 hundreds? — and the grid under the bracket gives every digit a column of its own. Read the chunking page first if the bracket is new: this is the same method, written shorter.",
+      "The six to try are chosen so the method is met clean: three digits by one, the first digit at least the divisor, no remainder and no zero in the answer. Four are guided, with the squares that get written in shaded and the last row marked R; two show only the minus signs and the rules, for a child who no longer needs to be shown which square. The problems run on to a second page. The long-division drill pages carry on from here, with the grid, the zeros and the two-digit divisors.",
+    ],
+    teaches: "Long division, three digits by one, in the bracket",
+    ages: "Ages 9–11",
+    strand: "tables",
+    tables: [3, 4, 5, 7],
+    play: "Every subtraction under the bar and every fact over it is in The Grid; the bracket itself is paper's.",
+    config: {
+      ...SHEET,
+      kind: "lesson",
+      topic: "long-division-steps",
+      practice: true,
+      fontPt: 14,
+    },
+  },
+  {
     slug: "division-worksheets",
     name: "Division facts, 1 to 12",
     short: "Division",
@@ -637,6 +715,34 @@ export const MATHS_SHEETS: MathsSheet[] = [
     },
   },
   {
+    slug: "multiplying-decimals-by-10-explained-worksheets",
+    name: "Multiplying and dividing by 10, 100 and 1000, explained",
+    short: "By 10, explained",
+    heading:
+      "Multiplying decimals by 10, 100 and 1000, explained on a place-value chart",
+    keyword:
+      "Multiplying and dividing decimals by 10, 100 and 1000 explained, a free printable lesson",
+    summary:
+      "A one-page lesson on a place-value chart: 3.7 sliding one column left under × 10, 48 sliding three right under ÷ 1000 with its noughts written in, the sentence the digits move and the point stays, and six to try.",
+    lead: "A place-value chart with the point drawn as a fixed heavy line, and the digits moving past it: 3.7 becomes 37 when every digit steps one column left, 48 becomes 0.048 when every digit steps three columns right and the empty places are filled with noughts. The steps say what each digit is worth before and after, and six questions follow.",
+    notes: [
+      "Move the decimal point is the rule most parents were taught, and it is not what this page says, for a reason that is worth a sentence. A digit one column to the left is worth ten times as much — that is what × 10 does — and a child who says the 7 was tenths and is now ones can explain the answer; a child who slid a point can only report it. The two pictures give the same answers, and the lesson does not call the other one wrong; it teaches the one that keeps a child saying what each digit is worth.",
+      "The division example is a whole number on purpose. 48 ÷ 1000 is the question a child who has only ever slid a point along a decimal has nowhere to start on, and the chart shows what happens: the 4 and the 8 step three columns right, and the ones and tenths columns are left empty until noughts are written in them, so the answer is 0.048 and not .48. The six to try mix decimals with whole numbers the same way, and run on to a second page.",
+    ],
+    teaches: "Multiplying and dividing by powers of ten, as the digits moving",
+    ages: "Ages 9–12",
+    strand: "parts",
+    tables: [10],
+    play: "Not in the games. The ten times table underneath is, in The Grid.",
+    config: {
+      ...SHEET,
+      kind: "lesson",
+      topic: "decimals-powers-of-ten",
+      practice: true,
+      fontPt: 14,
+    },
+  },
+  {
     slug: "multiplying-decimals-by-10-100-1000-worksheets",
     name: "Multiplying and dividing by 10, 100 and 1000",
     short: "By 10, 100, 1000",
@@ -725,6 +831,61 @@ export const MATHS_SHEETS: MathsSheet[] = [
       range: { min: 0, max: 9 },
       count: 12,
       columns: 3,
+    },
+  },
+  {
+    slug: "dividing-decimals-explained-worksheets",
+    name: "Dividing decimals, explained",
+    short: "Dividing decimals lesson",
+    heading:
+      "Dividing decimals explained: 8.46 ÷ 3 in the bracket, step by step",
+    keyword:
+      "Dividing decimals explained, a free printable step-by-step lesson",
+    summary:
+      "A one-page lesson on dividing a decimal by a whole number: 8.46 ÷ 3 worked in the bracket with the point carried straight up, an estimate first, and six to try on the guided grid.",
+    lead: "A decimal divided exactly like a whole number, with one extra thing to get right: the point in the answer sits directly above the point in the question. 8.46 ÷ 3 is worked in the bracket with every written square shaded, the steps say what each column is worth — ones, tenths, hundredths — and six divisions follow, three guided and three with the shape of the working alone.",
+    notes: [
+      "The first step is an estimate, and it is there to make the point's position a matter of size rather than of counting. 8.46 is nearly 9, and 9 ÷ 3 is 3, so the answer is a bit under 3 — which means 2.82 is right and 28.2 and 0.282 are not, whatever the digits say. A child who checks the answer against the estimate has a way of catching the commonest decimal-division error; a child who counts places has a rule, and rules slip.",
+      "Two of the six to try are chosen for the squares a child leaves empty. 5.46 ÷ 6 starts with a nought, which has to be written — 0.91, never .91 — and 8.16 ÷ 4 has a nought in the tenths, which has to be written too or the answer is 2.4. Both are among the guided three, where the shading says the square is written in. The problems run on to a second page, and the dividing-decimals drill pages follow with the grid alone.",
+    ],
+    teaches:
+      "Dividing a decimal by a whole number, with the point placed by size",
+    ages: "Ages 10–12",
+    strand: "parts",
+    tables: [3, 4, 5, 6, 8],
+    play: "A decimal division is a long division with the point carried up, and a long division is a stack of table facts. The Grid drills the facts.",
+    config: {
+      ...SHEET,
+      kind: "lesson",
+      topic: "decimal-division",
+      practice: true,
+      fontPt: 14,
+    },
+  },
+  {
+    slug: "how-to-divide-by-a-decimal-worksheets",
+    name: "How to divide by a decimal",
+    short: "Divide by a decimal, explained",
+    heading: "How to divide by a decimal: 8.4 ÷ 0.2 is 84 ÷ 2",
+    keyword: "How to divide by a decimal, a free printable lesson",
+    summary:
+      "A one-page lesson on dividing by a decimal: 8.4 ÷ 0.2 asked as how many 0.2s make 8.4, rewritten as 84 ÷ 2 by scaling both numbers by ten, and six to try with a line for the rewrite and a line for the answer.",
+    lead: "You cannot share between 0.2 of a person, but you can ask how many 0.2s make 8.4 — and that question has the same answer as how many 2s make 84. The lesson scales both numbers by ten, works 84 ÷ 2, checks that 42 × 0.2 is 8.4, and says why the answer came out bigger than the number you started with. Six to try follow, two of them needing a hundred rather than ten.",
+    notes: [
+      "This is the page where division stops making things smaller, and it says so out loud. Every child arrives with the belief that dividing shrinks a number, because it always has; 8.4 ÷ 0.2 = 42 breaks it, and a child who is not told why concludes the sum is wrong. It is a grouping question — how many small pieces fit — so a big answer is the right kind of answer, and the fraction bar at the top shows five 0.2s in a single one before the sum is attempted.",
+      "The six to try are written along a line with two ruled lines under each, not in a bracket: the first line is for the rewritten sum, the second for the answer. Scaling only one of the two numbers is the mistake this shape catches, since the rewrite has to be written down before it is divided, and the answer key shows both lines. Four are scaled by ten and two by a hundred, so the multiplier is a thing to decide rather than a number to remember. The problems run on to a second page.",
+    ],
+    teaches:
+      "Dividing by a decimal, by rewriting as an equivalent whole-number division",
+    ages: "Ages 11–13",
+    strand: "parts",
+    play: "Not in the games. The whole-number division each one turns into is, in The Grid.",
+    config: {
+      ...SHEET,
+      kind: "lesson",
+      topic: "dividing-by-decimals",
+      practice: true,
+      fontPt: 14,
     },
   },
   {

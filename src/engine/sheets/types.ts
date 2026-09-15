@@ -98,12 +98,14 @@ export type NumberLine = {
    */
   label?: number;
   /**
-   * Hops drawn back along the line, `size` at a time, from `start` down to
-   * the line's own left end — division as repeated subtraction (§23). Each
-   * hop is labelled with what was taken away. The line stands taller to hold
-   * them: `lineHeight` in numberline.ts says by how much.
+   * Hops drawn back along the line from `start` towards the line's own left
+   * end — division as repeated subtraction (§23): `size` at a time, or the
+   * `sizes` listed, in order, which is what chunking looks like (a hop of
+   * 120 and then one of 36). Each hop is labelled with what was taken away.
+   * The line stands taller to hold them: `lineHeight` in numberline.ts says
+   * by how much.
    */
-  jumps?: { start: number; size: number };
+  jumps?: { start: number; size: number } | { start: number; sizes: number[] };
 };
 
 /**
@@ -1775,8 +1777,21 @@ export type GrammarConfig = SheetOptions & {
  * written; a topic this build has never heard of prints a page saying so
  * rather than failing, for the reason `sheetSpec` never throws.
  */
+/**
+ * The lessons, in the order a child meets them (§23): the three meanings of
+ * division, then leftovers and the two written methods, then decimals. The
+ * order is `LESSON_TOPICS` in lessons/lesson.ts; this is only the names.
+ */
 export type LessonTopic =
-  "division-sharing" | "division-grouping" | "division-arrays";
+  | "division-sharing"
+  | "division-grouping"
+  | "division-arrays"
+  | "division-remainders"
+  | "division-chunking"
+  | "long-division-steps"
+  | "decimals-powers-of-ten"
+  | "decimal-division"
+  | "dividing-by-decimals";
 
 export type LessonConfig = SheetOptions & {
   kind: "lesson";

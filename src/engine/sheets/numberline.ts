@@ -47,17 +47,21 @@ const MOST_JUMPS = 40;
  * Hops stop when the next would land short of the line's own left end, so a
  * total that does not divide leaves the last landing above it — which is the
  * remainder, drawn. A start off the line, or a size of nothing, is no hops at
- * all rather than a guess.
+ * all rather than a guess. Listed sizes are taken in order and stop when the
+ * list does.
  */
 export function jumps(line: NumberLine): Array<{ from: number; to: number }> {
   const hop = line.jumps;
-  if (!hop || hop.size <= 0 || hop.start > line.to || hop.start < line.from)
-    return [];
+  if (!hop || hop.start > line.to || hop.start < line.from) return [];
+  const sizeOf = (index: number): number =>
+    "sizes" in hop ? (hop.sizes[index] ?? 0) : hop.size;
   const out: Array<{ from: number; to: number }> = [];
   let at = hop.start;
-  while (at - hop.size >= line.from && out.length < MOST_JUMPS) {
-    out.push({ from: at, to: at - hop.size });
-    at -= hop.size;
+  while (out.length < MOST_JUMPS) {
+    const size = sizeOf(out.length);
+    if (size <= 0 || at - size < line.from) break;
+    out.push({ from: at, to: at - size });
+    at -= size;
   }
   return out;
 }

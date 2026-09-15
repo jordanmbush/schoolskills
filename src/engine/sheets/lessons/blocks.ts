@@ -12,6 +12,7 @@
  */
 import { CAPTION_EMS, counters as place } from "../counters";
 import { faceOf, fittedCharacters } from "../faces";
+import { artHeight } from "../fractionart";
 import {
   ASIDE_EM,
   NOTE_PAD,
@@ -20,9 +21,19 @@ import {
   answerLine,
   noteHeight,
 } from "../layout";
+import { decimalTableau } from "../maths/decimal-division";
+import { bracketHeight, divisionLines } from "../maths/long";
+import type { Tableau } from "../maths/tableau";
 import { lineHeight, numberLine } from "../numberline";
 import { inches, points } from "../paper";
-import type { Block, CounterLayout, Mil, Problem, SheetFont } from "../types";
+import type {
+  Block,
+  CounterLayout,
+  DivisionHelp,
+  Mil,
+  Problem,
+  SheetFont,
+} from "../types";
 
 /** The page a topic is written for: its width, a column of it, and the type. */
 export type Page = {
@@ -52,10 +63,10 @@ export type Topic = {
   practice(page: Page, rand: () => number): Problem[];
 };
 
-/** The four kinds of block a lesson is made of. */
+/** The five kinds of block a lesson is made of. */
 export type LessonBlock = Extract<
   Block,
-  { kind: "note" | "counters" | "numberline" | "problems" }
+  { kind: "note" | "counters" | "numberline" | "problems" | "grid" }
 >;
 
 /** Room for the "1." in front of a note's step, and the air after it. */
@@ -146,11 +157,75 @@ export function jumpsLine(
   };
 }
 
-/** A row of facts with their answers shown — the sentence, written each way. */
-export function worked(
-  facts: Array<{ prompt: string; answer: string }>,
-  columns: number,
+/**
+ * The line again, with hops of the sizes listed rather than one size over
+ * and over — chunking: 156 with 120 taken away and then 36.
+ */
+export function chunkLine(
+  page: Page,
+  dividend: number,
+  chunks: number[],
 ): LessonBlock {
+  const line = numberLine(0, dividend, page.width);
+  return {
+    kind: "numberline",
+    line: { ...line, jumps: { start: dividend, sizes: chunks } },
+  };
+}
+
+/**
+ * A division set in the bracket with its working already computed, so a
+ * lesson's example is the same tableau a drill sheet keys (§21). The dividend
+ * may carry a point (§22); the working is over the digits alone, and the
+ * answer is read back off it with the point on the same boundary, or with
+ * the remainder after it.
+ *
+ * `rows` is the squares reserved under the dividend, which the standard
+ * algorithm needs two of per quotient digit; a lesson that has a child work
+ * some other way underneath — chunking — says how many lines it wants.
+ */
+export function bracket(
+  page: Page,
+  dividend: string,
+  divisor: number,
+  help: DivisionHelp,
+  over: { rows?: number; worked?: boolean } = {},
+): Problem {
+  const digits = dividend.replace(".", "");
+  const tableau = decimalTableau(dividend, divisor);
+  return {
+    prompt: "",
+    bracket: {
+      divisor: String(divisor),
+      dividend,
+      cell: answerLine(page.fontPt),
+      rows:
+        over.rows ??
+        divisionLines({ into: digits.length, by: String(divisor).length }),
+      help,
+      tableau,
+    },
+    answer: bracketAnswer(dividend, tableau),
+    ...(over.worked ? { worked: true } : {}),
+  };
+}
+
+/** "219", "2 r 5" or "2.82" — what the key writes over the bar, as one string. */
+function bracketAnswer(dividend: string, tableau: Tableau): string {
+  const { text, start } = tableau.quotient;
+  const point = dividend.indexOf(".");
+  if (point < 0) {
+    const quotient = String(Number(text));
+    return tableau.remainder > 0
+      ? `${quotient} r ${tableau.remainder}`
+      : quotient;
+  }
+  const cut = point - start;
+  return `${text.slice(0, cut)}.${text.slice(cut)}`;
+}
+
+/** A row of facts with their answers shown — the sentence, written each way. */
+export function worked(facts: Problem[], columns: number): LessonBlock {
   return {
     kind: "problems",
     columns,
@@ -182,13 +257,18 @@ function promptLines(problem: Problem, page: Page, ruled: boolean): number {
 }
 
 /**
- * How tall one problem stands: its picture, then the line it is written on,
- * then the ruled lines its answer goes on — whichever of the three it has,
- * with the wrap between each pair. This is the order `Problems.tsx` lays a
- * problem out in.
+ * How tall one problem stands: its picture, then the bracket or the line it
+ * is written on, then the ruled lines its answer goes on — whichever of them
+ * it has, with the wrap between each pair. This is the order `Problems.tsx`
+ * lays a problem out in.
+ *
+ * A fraction bar and a prompt are summed though the renderer sets them side
+ * by side when the column is wide enough, which is the long side to be wrong
+ * on (§4).
  */
 function problemHeight(problem: Problem, page: Page): Mil {
   const parts: Mil[] = [];
+  if (problem.art) parts.push(artHeight(problem.art));
   if (problem.counters) {
     parts.push(
       problem.counters.height +
@@ -196,8 +276,14 @@ function problemHeight(problem: Problem, page: Page): Mil {
     );
   }
   if (problem.line) parts.push(lineHeight(problem.line));
+  if (problem.bracket) {
+    parts.push(
+      bracketHeight(page.fontPt) + problem.bracket.rows * problem.bracket.cell,
+    );
+  }
   const ruled = (problem.answers?.length ?? 0) > 0;
-  if (problem.prompt !== "" || !ruled) {
+  // A bracket has no prompt and no slot: its answer goes over the dividend.
+  if (problem.prompt !== "" || !(ruled || problem.bracket)) {
     parts.push(
       points(page.fontPt * LINE_EMS) * promptLines(problem, page, ruled),
     );
@@ -207,6 +293,8 @@ function problemHeight(problem: Problem, page: Page): Mil {
       problem.workspace ??
         (problem.answers?.length ?? 0) * answerLine(page.fontPt),
     );
+  } else if (problem.workspace !== undefined) {
+    parts.push(problem.workspace);
   }
   return (
     parts.reduce((sum, part) => sum + part, 0) +
@@ -226,6 +314,8 @@ export function blockHeight(block: LessonBlock, page: Page): Mil {
       );
     case "numberline":
       return lineHeight(block.line);
+    case "grid":
+      return block.grid.rows * (block.grid.row ?? block.grid.cell);
     case "problems": {
       const columns = Math.max(1, block.columns);
       const rows = Math.ceil(block.items.length / columns);

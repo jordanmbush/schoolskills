@@ -4,10 +4,13 @@ import { answerKey, buildSheet, describeSheet } from "../index";
 import { printedBlockBox } from "../chrome";
 import { describeSheetFamily } from "../contract";
 import { grouped } from "../counters";
-import { BLOCK_GAP } from "../layout";
+import { BLOCK_GAP, answerLine } from "../layout";
+import { jumps } from "../numberline";
 import type {
   Block,
   Counters,
+  DivisionHelp,
+  GridSpec,
   LessonConfig,
   LessonTopic,
   Paper,
@@ -15,6 +18,7 @@ import type {
 } from "../types";
 
 import { blockHeight, type LessonBlock } from "./blocks";
+import { DECIMAL_TRY_ITS } from "./decimals";
 import { TRY_ITS } from "./division";
 import {
   LESSON_SHEET,
@@ -23,6 +27,7 @@ import {
   lessonLayout,
   topicOf,
 } from "./lesson";
+import { WRITTEN_TRY_ITS } from "./written";
 
 /**
  * Lessons, held to the bar every other family meets — and to the two that
@@ -32,16 +37,20 @@ import {
  * its sentence is the answer, printed side by side, and a picture of twelve
  * in three rings under a sentence that says four rings is a page that teaches
  * something false. So every caption and every worked fact on every lesson is
- * parsed back to its numbers here and held to the counters it stands beside.
+ * parsed back to its numbers here and held to the counters it stands beside;
+ * a worked bracket is walked row by row against the divisor; the place-value
+ * chart is read back column by column.
  *
  * **Every try-it answer is checked by a path the family does not use.** The
- * family writes `dividend / divisor`; this file adds the divisor to itself
- * `answer` times and expects to arrive at the dividend, which is what division
- * means before it is a key on a calculator.
+ * family writes `dividend / divisor`, or shifts a `Fixed`; this file adds the
+ * divisor to itself `answer` times and expects to arrive at the dividend,
+ * and slides a decimal's digits along a string, which is what division and
+ * a power of ten mean before either is a key on a calculator.
  *
  * The rest is the reservation: a lesson is the one family whose prose is long
  * enough for a wrong line count to put the problems on a second sheet, so the
- * two lessons written to fit one page are held to fitting it.
+ * two lessons written to fit one page are held to fitting it, and the seven
+ * whose problems go over are held to going over whole.
  */
 
 const paper: Paper = {
@@ -83,9 +92,34 @@ const countersOf = (blocks: Block[]): Counters[] =>
     block.kind === "counters" ? [block.counters] : [],
   );
 
+const gridsOf = (blocks: Block[]): GridSpec[] =>
+  blocks.flatMap((block) => (block.kind === "grid" ? [block.grid] : []));
+
+/** The problems a child answers on a built sheet, in the order dealt. */
+const tryIts = (topic: LessonTopic, seed: number): Problem[] =>
+  problemsOf(buildSheet(config({ topic }), seed).blocks).filter(
+    (problem) => !problem.worked,
+  );
+
+/** What a problem is called: its prompt, or the division in its bracket. */
+const nameOf = (problem: Problem): string =>
+  problem.prompt !== ""
+    ? problem.prompt
+    : `${problem.bracket?.dividend} ÷ ${problem.bracket?.divisor}`;
+
 /** Every whole number in a string, in order. */
 const numbersIn = (text: string): number[] =>
   (text.match(/\d+/g) ?? []).map(Number);
+
+/** Every number in a string, point and all, as written. */
+const decimalsIn = (text: string): string[] =>
+  text.match(/\d+(?:\.\d+)?/g) ?? [];
+
+/** "6.39" as 639 hundredths — read here, never through `exact.ts`. */
+function unitsOf(text: string): { units: number; places: number } {
+  const [whole, part = ""] = text.split(".");
+  return { units: Number(whole + part), places: part.length };
+}
 
 /** `divisor` added to itself `times` times — division's definition, undone. */
 const added = (divisor: number, times: number): number => {
@@ -93,6 +127,32 @@ const added = (divisor: number, times: number): number => {
   for (let at = 0; at < times; at += 1) sum += divisor;
   return sum;
 };
+
+/**
+ * The digits of `text` slid `by` places left (right when negative), done on
+ * the string: the point stays where it is and the digits move past it, with
+ * noughts written into any place left empty. The check the family's
+ * `shifted` is held to.
+ */
+function slid(text: string, by: number): string {
+  const [whole, part = ""] = text.split(".");
+  let digits = whole + part;
+  let point = whole.length + by;
+  if (point > digits.length) digits = digits.padEnd(point, "0");
+  if (point < 1) {
+    digits = "0".repeat(1 - point) + digits;
+    point = 1;
+  }
+  const front = digits.slice(0, point).replace(/^0+(?=\d)/, "");
+  const back = digits.slice(point);
+  return back === "" ? front : `${front}.${back}`;
+}
+
+/** `q r r` or `q` as the two numbers. */
+function quotientOf(answer: string): { quotient: number; left: number } {
+  const [quotient, left = 0] = numbersIn(answer);
+  return { quotient, left };
+}
 
 /* ── The lesson half ───────────────────────────────────────────────────── */
 
@@ -103,15 +163,22 @@ describe("a lesson", () => {
       const blocks = topicOf(topic).lesson(page);
       const notes = blocks.filter((block) => block.kind === "note");
       expect(notes.length, topic).toBeGreaterThanOrEqual(2);
-      expect(
-        blocks.some(
-          (block) => block.kind === "counters" || block.kind === "numberline",
-        ),
-        `${topic}: no picture`,
-      ).toBe(true);
       const worked = problemsOf(blocks);
       expect(worked.length, `${topic}: no worked example`).toBeGreaterThan(0);
       expect(worked.every((problem) => problem.worked)).toBe(true);
+      // The picture: counters, a line, a chart — or, on a worked example,
+      // a fraction bar or a division in the bracket with every written
+      // square shaded.
+      expect(
+        blocks.some((block) =>
+          ["counters", "numberline", "grid"].includes(block.kind),
+        ) ||
+          worked.some(
+            (problem) =>
+              problem.art !== undefined || problem.bracket?.help === "guided",
+          ),
+        `${topic}: no picture`,
+      ).toBe(true);
       // The sentence for the grown-up, set small, last.
       const last = blocks[blocks.length - 1];
       expect(last.kind === "note" && last.aside, topic).toBe(true);
@@ -121,33 +188,47 @@ describe("a lesson", () => {
     }
   });
 
-  it("says in words what the picture shows, and no other numbers", () => {
-    // Every caption reads as the two counts of its layout, and every worked
-    // fact's numbers are the picture's total and the two that make it.
+  it("says in words what the counters show, and no other numbers", () => {
+    // Every caption reads as the counts of its layout — and the leftover,
+    // where there is one — and every worked fact's numbers are the picture's
+    // total, the two that make it, and the leftover if the picture has one.
     for (const topic of LESSON_TOPICS) {
       const { page } = lessonLayout(config({ topic }));
       const blocks = topicOf(topic).lesson(page);
       const [picture] = countersOf(blocks);
-      expect(picture, `${topic}: no counters`).toBeDefined();
+      if (!picture) continue;
       const { groups, left } = grouped(picture);
-      expect(left, `${topic}: the lesson's picture has a remainder`).toBe(0);
 
       const caption = numbersIn(picture.caption ?? "");
-      const expected = {
+      const counts = {
         share: [groups, picture.per],
         group: [picture.per, groups],
         array: [groups, picture.per],
       }[picture.layout];
-      expect(caption, `${topic}: "${picture.caption}"`).toEqual(expected);
+      expect(caption, `${topic}: "${picture.caption}"`).toEqual(
+        left > 0 ? [...counts, left] : counts,
+      );
 
       for (const fact of problemsOf(blocks)) {
         const numbers = [...numbersIn(fact.prompt), ...numbersIn(fact.answer)];
-        expect(numbers, fact.prompt).toHaveLength(3);
-        const [product, ...factors] = [...numbers].sort((a, b) => b - a);
+        const [product, ...rest] = [...numbers].sort((a, b) => b - a);
         expect(product, `${topic}: ${fact.prompt} ${fact.answer}`).toBe(
           picture.total,
         );
-        expect(added(factors[0], factors[1]), fact.prompt).toBe(product);
+        if (left === 0) {
+          expect(numbers, fact.prompt).toHaveLength(3);
+          expect(added(rest[0], rest[1]), fact.prompt).toBe(product);
+        } else {
+          // `14 ÷ 4 = 3 r 2` and `4 × 3 + 2 = 14` both hold the same four.
+          expect(numbers, fact.prompt).toHaveLength(4);
+          expect(
+            rest.some((over, at) => {
+              const [a, b] = rest.filter((_, other) => other !== at);
+              return over === left && added(a, b) + over === product;
+            }),
+            fact.prompt,
+          ).toBe(true);
+        }
       }
     }
   });
@@ -165,7 +246,110 @@ describe("a lesson", () => {
     // Four hops of three from twelve is nought: the same fact as the rings.
     const [picture] = countersOf(topicOf("division-grouping").lesson(page));
     expect(line.jumps?.start).toBe(picture.total);
-    expect(line.jumps?.size).toBe(picture.per);
+    expect(line.jumps && "size" in line.jumps && line.jumps.size).toBe(
+      picture.per,
+    );
+  });
+
+  it("chunks the line into the lumps the steps name, and lands on nought", () => {
+    const { page } = lessonLayout(config({ topic: "division-chunking" }));
+    const blocks = topicOf("division-chunking").lesson(page);
+    const [line] = blocks.flatMap((block) =>
+      block.kind === "numberline" ? [block.line] : [],
+    );
+    expect(line.jumps).toEqual({ start: 156, sizes: [120, 36] });
+    const hops = jumps(line);
+    expect(hops).toHaveLength(2);
+    expect(hops[hops.length - 1].to).toBe(0);
+    // Every lump is a whole number of twelves, and the lumps add up to 156.
+    for (const hop of hops) {
+      const size = hop.from - hop.to;
+      expect(added(12, size / 12), `${size} is not twelves`).toBe(size);
+    }
+    expect(hops.reduce((sum, hop) => sum + (hop.from - hop.to), 0)).toBe(156);
+    // And the column written down the page names the same two lumps.
+    const column = blocks.find(
+      (block) => block.kind === "note" && block.heading?.startsWith("Written"),
+    );
+    expect(column?.kind === "note" && column.text.join(" ")).toContain("120");
+    expect(column?.kind === "note" && column.text.join(" ")).toContain("36");
+  });
+
+  it("works the bracket the way the steps say", () => {
+    for (const topic of ["long-division-steps", "decimal-division"] as const) {
+      const { page } = lessonLayout(config({ topic }));
+      const blocks = topicOf(topic).lesson(page);
+      const [example] = problemsOf(blocks);
+      const bracket = example.bracket;
+      if (!bracket?.tableau) throw new Error(`${topic}: no worked bracket`);
+      expect(example.worked).toBe(true);
+      expect(bracket.help).toBe("guided");
+      expect(bracket.rows).toBeGreaterThanOrEqual(bracket.tableau.rows.length);
+
+      const divisor = Number(bracket.divisor);
+      const digits = bracket.dividend.replace(".", "");
+      const { quotient, rows, remainder } = bracket.tableau;
+      // Every take-away row is the divisor times the digit written over it.
+      for (const row of rows.filter((row) => row.role === "take")) {
+        const digit = Number(quotient.text[row.end - quotient.start]);
+        expect(Number(row.text), `${topic}: row under ${row.end}`).toBe(
+          added(divisor, digit),
+        );
+      }
+      expect(remainder).toBe(0);
+      expect(added(divisor, Number(quotient.text))).toBe(Number(digits));
+      // The answer over the bar is the one the heading of the steps names.
+      const steps = blocks.find(
+        (block) => block.kind === "note" && block.items?.length,
+      );
+      expect(steps?.kind === "note" && steps.heading).toContain(example.answer);
+      expect(unitsOf(example.answer).places).toBe(
+        unitsOf(bracket.dividend).places,
+      );
+    }
+  });
+
+  it("reads the chart the way the steps say, the digits one column along", () => {
+    const { page } = lessonLayout(config({ topic: "decimals-powers-of-ten" }));
+    const [chart] = gridsOf(topicOf("decimals-powers-of-ten").lesson(page));
+    expect(chart.columns).toBe(8);
+    expect(chart.rows).toBe(5);
+    const cells = chart.cells ?? [];
+    const row = (at: number): string[] =>
+      cells.slice(at * chart.columns, (at + 1) * chart.columns);
+    expect(row(0)).toEqual(["", "Th", "H", "T", "O", "t", "h", "th"]);
+    // The point is the heavy rule after the ones column.
+    expect(chart.origin).toEqual({ column: 5, row: 1 });
+
+    /** The number a row holds, read column by column with the point put in. */
+    const read = (at: number): string => {
+      const [, ...places] = row(at);
+      const whole = places.slice(0, 4).join("");
+      const part = places.slice(4).join("");
+      return part === "" ? whole : `${whole}.${part}`;
+    };
+    /** Which column each digit of a row stands in. */
+    const columnsOf = (at: number): Array<[number, string]> =>
+      row(at).flatMap((digit, column) =>
+        column > 0 && digit !== "" ? [[column, digit] as [number, string]] : [],
+      );
+
+    expect(row(1)[0]).toBe("3.7");
+    expect(read(1)).toBe("3.7");
+    expect(row(2)[0]).toBe("× 10");
+    expect(read(2)).toBe(slid("3.7", 1));
+    expect(columnsOf(2)).toEqual(
+      columnsOf(1).map(([column, digit]) => [column - 1, digit]),
+    );
+    expect(row(3)[0]).toBe("48");
+    expect(read(3)).toBe("48");
+    expect(row(4)[0]).toBe("÷ 1000");
+    expect(read(4)).toBe(slid("48", -3));
+    // The noughts are written digits, in the ones and tenths columns.
+    expect(row(4).slice(4, 6)).toEqual(["0", "0"]);
+    expect(DECIMAL_TRY_ITS.CHART.map((line) => line.label)).toEqual(
+      [1, 2, 3, 4].map((at) => row(at)[0]),
+    );
   });
 });
 
@@ -173,63 +357,148 @@ describe("a lesson", () => {
 
 describe("the problems to try", () => {
   it("are the topic's own, dealt in the seed's order", () => {
+    const divide = ([a, b]: readonly [number, number]) => `${a} ÷ ${b} =`;
     const expected: Record<LessonTopic, string[]> = {
-      "division-sharing": TRY_ITS.SHARES.map(([a, b]) => `${a} ÷ ${b} =`),
-      "division-grouping": TRY_ITS.GROUPS.map(([a, b]) => `${a} ÷ ${b} =`),
+      "division-sharing": TRY_ITS.SHARES.map(divide),
+      "division-grouping": TRY_ITS.GROUPS.map(divide),
       "division-arrays": [
         ...TRY_ITS.ARRAYS.map(() => "Write the two divisions."),
         "18 ÷ 3 = _  Think: 3 × ? = 18.",
       ],
+      "division-remainders": [
+        ...WRITTEN_TRY_ITS.REMAINDERS.map(divide),
+        WRITTEN_TRY_ITS.TABLES.prompt,
+      ],
+      "division-chunking": WRITTEN_TRY_ITS.CHUNKS.map(divide),
+      "long-division-steps": WRITTEN_TRY_ITS.LONG.map(
+        ([a, b]) => `${a} ÷ ${b}`,
+      ),
+      "decimals-powers-of-ten": DECIMAL_TRY_ITS.POWERS.map(
+        ([value, by]) =>
+          `${value} ${by > 0 ? "×" : "÷"} ${10 ** Math.abs(by)} =`,
+      ),
+      "decimal-division": DECIMAL_TRY_ITS.DECIMALS.map(
+        ([a, b]) => `${a} ÷ ${b}`,
+      ),
+      "dividing-by-decimals": DECIMAL_TRY_ITS.BY_DECIMAL.map(
+        ([a, b]) => `${a} ÷ ${b}`,
+      ),
     };
     for (const topic of LESSON_TOPICS) {
-      const prompts = (seed: number) =>
-        problemsOf(buildSheet(config({ topic }), seed).blocks)
-          .filter((problem) => !problem.worked)
-          .map((problem) => problem.prompt);
-      expect([...prompts(1)].sort(), topic).toEqual(
-        [...expected[topic]].sort(),
-      );
-      // Another seed is the same six in another order — a lesson's problems
-      // are written, not drawn.
-      expect([...prompts(2)].sort()).toEqual([...prompts(1)].sort());
-      expect(prompts(1)).not.toEqual(prompts(2));
+      const names = (seed: number) => tryIts(topic, seed).map(nameOf);
+      expect([...names(1)].sort(), topic).toEqual([...expected[topic]].sort());
+      // Another seed is the same problems in another order — a lesson's
+      // problems are written, not drawn.
+      expect([...names(2)].sort()).toEqual([...names(1)].sort());
+      expect(names(1), topic).not.toEqual(names(2));
     }
   });
 
   it("have answers that add back up to the dividend", () => {
     for (const topic of LESSON_TOPICS) {
       for (const seed of [1, 2, 3]) {
-        const problems = problemsOf(
-          buildSheet(config({ topic }), seed).blocks,
-        ).filter((problem) => !problem.worked);
-        for (const problem of problems) {
-          if (problem.answers) {
-            // An array's two divisions, each a sentence on its own line.
-            expect(problem.answers).toHaveLength(2);
-            for (const sentence of problem.answers) {
-              const [dividend, divisor, quotient] = numbersIn(sentence);
-              expect(added(divisor, quotient), sentence).toBe(dividend);
-              expect(problem.counters?.total, sentence).toBe(dividend);
-            }
-            expect(problem.answer).toBe(problem.answers.join(" · "));
-            continue;
-          }
-          const [dividend, divisor] = numbersIn(problem.prompt);
-          const quotient = Number(problem.answer);
-          expect(Number.isInteger(quotient), problem.prompt).toBe(true);
-          expect(added(divisor, quotient), problem.prompt).toBe(dividend);
-        }
+        for (const problem of tryIts(topic, seed)) check(topic, problem);
       }
     }
   });
 
+  /** One try-it, held to what its answer means, by the topic it is on. */
+  function check(topic: LessonTopic, problem: Problem): void {
+    const name = `${topic}: ${nameOf(problem)}`;
+    switch (topic) {
+      case "division-arrays": {
+        if (!problem.answers) {
+          const [dividend, divisor] = numbersIn(problem.prompt);
+          expect(added(divisor, Number(problem.answer)), name).toBe(dividend);
+          return;
+        }
+        // An array's two divisions, each a sentence on its own line.
+        expect(problem.answers).toHaveLength(2);
+        for (const sentence of problem.answers) {
+          const [dividend, divisor, quotient] = numbersIn(sentence);
+          expect(added(divisor, quotient), sentence).toBe(dividend);
+          expect(problem.counters?.total, sentence).toBe(dividend);
+        }
+        expect(problem.answer).toBe(problem.answers.join(" · "));
+        return;
+      }
+      case "division-remainders":
+      case "division-chunking": {
+        const [dividend, divisor] = numbersIn(problem.prompt);
+        const { quotient, left } = quotientOf(problem.answer);
+        if (problem.prompt === WRITTEN_TRY_ITS.TABLES.prompt) {
+          // The story: enough tables for everyone, so one more than the
+          // full tables when anyone is left standing.
+          expect(added(divisor, quotient), name).toBeGreaterThanOrEqual(
+            dividend,
+          );
+          expect(added(divisor, quotient - 1), name).toBeLessThan(dividend);
+          return;
+        }
+        expect(left, name).toBeLessThan(divisor);
+        expect(added(divisor, quotient) + left, name).toBe(dividend);
+        if (topic === "division-remainders")
+          expect(left, name).toBeGreaterThan(0);
+        return;
+      }
+      case "long-division-steps": {
+        const bracket = problem.bracket;
+        if (!bracket) throw new Error(`${name}: no bracket`);
+        expect(problem.answer, name).toMatch(/^\d+$/);
+        expect(added(Number(bracket.divisor), Number(problem.answer))).toBe(
+          Number(bracket.dividend),
+        );
+        return;
+      }
+      case "decimal-division": {
+        const bracket = problem.bracket;
+        if (!bracket) throw new Error(`${name}: no bracket`);
+        const dividend = unitsOf(bracket.dividend);
+        const answer = unitsOf(problem.answer);
+        expect(problem.answer, name).toMatch(/^\d+\.\d+$/);
+        expect(answer.places, name).toBe(dividend.places);
+        expect(added(Number(bracket.divisor), answer.units), name).toBe(
+          dividend.units,
+        );
+        return;
+      }
+      case "dividing-by-decimals": {
+        const [a, b] = decimalsIn(problem.prompt).map(unitsOf);
+        const lines = problem.answers ?? [];
+        expect(lines, name).toHaveLength(2);
+        expect(problem.answer).toBe(lines.join(" · "));
+        // The first line scales both by the same power of ten, the second
+        // is the whole division that leaves.
+        const [by, top, bottom] = numbersIn(lines[0]);
+        expect(top * 10 ** a.places, name).toBe(a.units * by);
+        expect(bottom * 10 ** b.places, name).toBe(b.units * by);
+        expect(bottom, name).toBeGreaterThan(0);
+        const quotient = Number(lines[1]);
+        expect(added(bottom, quotient), name).toBe(top);
+        return;
+      }
+      case "decimals-powers-of-ten": {
+        const [value, factor] = decimalsIn(problem.prompt);
+        const places = factor.length - 1;
+        const by = problem.prompt.includes("×") ? places : -places;
+        expect(problem.answer, name).toBe(slid(value, by));
+        return;
+      }
+      default: {
+        const [dividend, divisor] = numbersIn(problem.prompt);
+        const quotient = Number(problem.answer);
+        expect(Number.isInteger(quotient), name).toBe(true);
+        expect(added(divisor, quotient), name).toBe(dividend);
+      }
+    }
+  }
+
   it("draw the picture the question is about", () => {
     // Sharing: as many rings as the divisor, the answer in each. Grouping: the
     // divisor to a group, unringed, and the answer is how many. An array: the
-    // total in rows, so both divisions are in it.
-    for (const problem of problemsOf(
-      buildSheet(config({ topic: "division-sharing" }), 1).blocks,
-    ).filter((problem) => !problem.worked)) {
+    // total in rows, so both divisions are in it. Remainders: sharing again,
+    // with the leftover outside every ring.
+    for (const problem of tryIts("division-sharing", 1)) {
       const [dividend, divisor] = numbersIn(problem.prompt);
       const picture = problem.counters;
       if (!picture) throw new Error(`no picture on ${problem.prompt}`);
@@ -240,9 +509,7 @@ describe("the problems to try", () => {
       expect(grouped(picture)).toEqual({ groups: divisor, left: 0 });
       expect(picture.per).toBe(Number(problem.answer));
     }
-    const grouping = problemsOf(
-      buildSheet(config({ topic: "division-grouping" }), 1).blocks,
-    ).filter((problem) => !problem.worked);
+    const grouping = tryIts("division-grouping", 1);
     const onCounters = grouping.filter((problem) => problem.counters);
     const onTheLine = grouping.filter((problem) => problem.line);
     expect(onCounters).toHaveLength(4);
@@ -261,13 +528,65 @@ describe("the problems to try", () => {
       // Blank: the jumps are the child's to draw.
       expect(problem.line?.jumps).toBeUndefined();
     }
-    for (const problem of problemsOf(
-      buildSheet(config({ topic: "division-arrays" }), 1).blocks,
-    ).filter((problem) => !problem.worked && problem.counters)) {
+    for (const problem of tryIts("division-arrays", 1).filter(
+      (problem) => problem.counters,
+    )) {
       expect(problem.counters?.layout).toBe("array");
       const rows = grouped(problem.counters as Counters).groups;
       const columns = problem.counters?.per;
       expect(rows, problem.prompt).not.toBe(columns);
+    }
+    const remainders = tryIts("division-remainders", 1);
+    expect(remainders.filter((problem) => problem.counters)).toHaveLength(5);
+    for (const problem of remainders.filter((problem) => problem.counters)) {
+      const [dividend, divisor] = numbersIn(problem.prompt);
+      const { quotient, left } = quotientOf(problem.answer);
+      const picture = problem.counters as Counters;
+      expect(picture.layout).toBe("share");
+      expect(picture.rings).toBe(true);
+      expect(picture.total).toBe(dividend);
+      expect(picture.per).toBe(quotient);
+      expect(grouped(picture)).toEqual({ groups: divisor, left });
+    }
+  });
+
+  it("reserve room to work where the method is worked on paper", () => {
+    const line = answerLine(14);
+    // Chunking: blank paper under each, for the lumps.
+    for (const problem of tryIts("division-chunking", 1)) {
+      expect(problem.workspace).toBe(WRITTEN_TRY_ITS.CHUNK_LINES * line);
+      expect(problem.counters).toBeUndefined();
+      expect(problem.bracket).toBeUndefined();
+    }
+    // Long division and decimals: the bracket, the guided ones first and
+    // then the steps alone, whatever the seed.
+    const helps = (topic: LessonTopic, seed: number): DivisionHelp[] =>
+      tryIts(topic, seed).map((problem) => {
+        if (!problem.bracket) throw new Error(`${topic}: no bracket`);
+        expect(problem.bracket.cell).toBe(line);
+        expect(problem.bracket.rows).toBe(6);
+        expect(problem.bracket.tableau).toBeDefined();
+        return problem.bracket.help;
+      });
+    for (const seed of [1, 2, 3]) {
+      expect(helps("long-division-steps", seed)).toEqual([
+        ...Array<DivisionHelp>(WRITTEN_TRY_ITS.GUIDED).fill("guided"),
+        "steps",
+        "steps",
+      ]);
+      expect(helps("decimal-division", seed)).toEqual([
+        "guided",
+        "guided",
+        "guided",
+        "steps",
+        "steps",
+        "steps",
+      ]);
+    }
+    // Dividing by a decimal: two ruled lines, the rewrite and the answer.
+    for (const problem of tryIts("dividing-by-decimals", 1)) {
+      expect(problem.answers).toHaveLength(2);
+      expect(problem.workspace).toBe(2 * line);
     }
   });
 
@@ -282,8 +601,12 @@ describe("the problems to try", () => {
         "the lesson only",
       );
       const on = buildSheet(config({ topic }), 1);
-      expect(on.header.score?.outOf).toBe(6);
-      expect(describeSheet(config({ topic }))).toContain("with 6 to try");
+      const count = tryIts(topic, 1).length;
+      expect(count, topic).toBeGreaterThanOrEqual(6);
+      expect(on.header.score?.outOf).toBe(count);
+      expect(describeSheet(config({ topic }))).toContain(
+        `with ${count} to try`,
+      );
     }
   });
 });
@@ -333,15 +656,16 @@ describe("the page", () => {
     }
   });
 
-  it("puts the arrays' problems on a second page, whole", () => {
-    // Five arrays with two ruled lines each are taller than the room left
-    // under the lesson, so they go over — the whole block, never a row of it.
-    const pages = pagesOf(
-      lessonBlocks(config({ topic: "division-arrays" }), 1).blocks,
-    );
-    expect(pages).toHaveLength(2);
-    expect(pages[1]).toHaveLength(1);
-    expect(pages[1][0].kind).toBe("problems");
+  it("puts every later lesson's problems on a second page, whole", () => {
+    // From the arrays on, the lesson and its problems are more than a page:
+    // the problems go over — the whole block, never a row of it — and the
+    // catalog says so.
+    for (const topic of LESSON_TOPICS.slice(2)) {
+      const pages = pagesOf(lessonBlocks(config({ topic }), 1).blocks);
+      expect(pages, topic).toHaveLength(2);
+      expect(pages[1], topic).toHaveLength(1);
+      expect(pages[1][0].kind, topic).toBe("problems");
+    }
   });
 
   it("breaks before a block rather than through one, at any type size", () => {

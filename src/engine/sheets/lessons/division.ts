@@ -246,12 +246,12 @@ const arrays: Topic = {
     ),
 };
 
-/** The lesson each division topic prints. */
-export const DIVISION_TOPICS: Record<LessonTopic, Topic> = {
+/** The lesson each of the three prints, in the order they are met. */
+export const DIVISION_TOPICS = {
   "division-sharing": sharing,
   "division-grouping": grouping,
   "division-arrays": arrays,
-};
+} satisfies Partial<Record<LessonTopic, Topic>>;
 
 /** The problems to try, as a topic's own list — for the suite to check against. */
 export const TRY_ITS = { SHARES, GROUPS, ARRAYS } as const;

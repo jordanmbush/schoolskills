@@ -1879,8 +1879,35 @@ teachers could not make sense of 8 ÷ 0.5 for that reason — and because every
 later method leans on it: chunking is repeated subtraction, and dividing by a
 decimal is a grouping question. Arrays third, because one picture holds the
 multiplication and both divisions, and "think multiplication" is the reflex
-every step of a written method later depends on. After these come remainders,
-the written methods and decimals, each a topic added to the same family.
+every step of a written method later depends on. Then remainders, drawn as
+the counters that would not go round standing outside every ring, with the
+check written as a multiplication sentence — `4 × 3 + 2 = 14` — and never as
+a chain of equals signs after `3 r 2`, because `3 r 2` is not a number; and
+one story on the page whose leftover pushes the answer up, since the
+best-documented failure with remainders is not the division but stopping at
+it. Chunking before long division, though the compact method is the one a
+parent asks for by name: every line of a chunked division says what it means,
+and children who reach the algorithm by way of it make fewer of the errors
+that come from following steps without a reason. Long division last of the
+whole-number pages, with the four words a child will meet at school each
+printed beside what it means in place-value language. Then decimals, the
+place-value chart first because the other two lean on it.
+
+**The written methods draw the bracket rather than a picture.** From
+remainders on, a picture of counters stops showing the structure, so the
+worked example is the thing itself: a division set in the bracket at
+`guided` (§21) with `worked` on, which prints the whole tableau shaded and
+filled in — the same tableau the drill pages key, computed by the same code.
+The `bracket` builder in `lessons/blocks.ts` reads the answer back off the
+tableau, so a lesson's example cannot disagree with the key of the sheet it
+teaches. Chunking is the one exception, and it is a picture again: a number
+line with two hops of different sizes (`NumberLine.jumps` takes a list as
+well as a size), and the column written down the page as a note — a stacked
+sum's working lines are blank on the sheet and hold one number each, with no
+room for "ten 12s" beside them. The chart for powers of ten is a `grid` with
+`row` set, the shop's own place-value chart at four rows (§11), with the
+abbreviations a classroom wall uses at its head so the type stays at the
+lesson's size, and the point drawn as the heavy rule after the ones column.
 
 The words on a page are for the child. "Partitive" and "quotative" belong
 here, not on the paper.
@@ -1921,3 +1948,52 @@ here, not on the paper.
 - Common Core State Standards for Mathematics, 3.OA.A.2, 3.OA.B.6 and 3.OA.C.7;
   Department for Education (2013), _National curriculum in England: mathematics
   programmes of study_, Years 2 to 4.
+
+The six that follow — remainders, chunking, long division, and the three
+decimal lessons — draw besides on:
+
+- Anghileri, J. (2001). Development of division strategies for Year 5 pupils
+  in ten English schools. _British Educational Research Journal_, 27(1),
+  85–103.
+- Anghileri, J., Beishuizen, M., & van Putten, K. (2002). From informal
+  strategies to structured procedures: mind the gap! _Educational Studies in
+  Mathematics_, 49, 149–170.
+- Bell, A., Fischbein, E., & Greer, B. (1984). Choice of operation in verbal
+  arithmetic problems: the effects of number size, problem structure and
+  context. _Educational Studies in Mathematics_, 15, 129–147.
+- Carpenter, T. P., Lindquist, M. M., Matthews, W., & Silver, E. A. (1983).
+  Results of the third NAEP mathematics assessment: secondary school.
+  _Mathematics Teacher_, 76(9), 652–659.
+- Common Core Standards Writing Team (2015). _Progressions for the Common Core
+  State Standards in Mathematics: Number and Operations in Base Ten, K–5_.
+- Department for Education (2020). _Mathematics guidance: key stages 1 and 2 —
+  Year 6_, ready-to-progress criteria 6NPV–1 and the division section.
+- Foster, C. (2017). Can I just move the decimal point? _Mathematics in
+  School_, 46(4), 39.
+- Graeber, A. O., Tirosh, D., & Glover, R. (1989). Preservice teachers'
+  misconceptions in solving verbal problems in multiplication and division.
+  _Journal for Research in Mathematics Education_, 20(1), 95–102.
+- Guarino, J. (2018). Instructional materials matter: interpreting remainders
+  in division. Illustrative Mathematics.
+- NCETM. _Calculation: ×/÷ decimal fractions by whole numbers_ (Year 5) and
+  _Decimal place-value knowledge, multiplication and division_ (Year 6).
+- Rittle-Johnson, B., Schneider, M., & Star, J. R. (2015). Not a one-way
+  street: bidirectional relations between procedural and conceptual knowledge
+  of mathematics. _Educational Psychology Review_, 27(4), 587–597.
+- Silver, E. A., Shapiro, L. J., & Deutsch, A. (1993). Sense making and the
+  solution of division problems involving remainders. _Journal for Research
+  in Mathematics Education_, 24(2), 117–135.
+- Skemp, R. R. (1976). Relational understanding and instrumental
+  understanding. _Mathematics Teaching_, 77, 20–26.
+- Steinle, V., & Stacey, K. (2004). Persistence of decimal misconceptions and
+  readiness to move to expertise. In _Proceedings of the 28th PME Conference_
+  (Vol. 4, pp. 225–232).
+- van Putten, C. M., van den Brom-Snijders, P. A., & Beishuizen, M. (2005).
+  Progressive mathematization of long division strategies in Dutch primary
+  schools. _Journal for Research in Mathematics Education_, 36(1), 44–73.
+- Van de Walle, J. A., Karp, K. S., & Bay-Williams, J. M. _Elementary and
+  Middle School Mathematics: Teaching Developmentally_. Pearson.
+- Common Core State Standards for Mathematics, 4.OA.A.3, 4.NBT.B.6, 5.NBT.A.2,
+  5.NBT.B.7, 6.NS.B.2 and 6.NS.B.3; Department for Education (2013),
+  _National curriculum in England: mathematics programmes of study_, Years 4
+  to 6.

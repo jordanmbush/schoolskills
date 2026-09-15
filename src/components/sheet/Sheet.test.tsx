@@ -13,6 +13,7 @@ import { ASIDE_EM, noteHeight } from "@/engine/sheets/layout";
 import { decimalTableau } from "@/engine/sheets/maths/decimal-division";
 import { divisionLines } from "@/engine/sheets/maths/long";
 import { divisionTableau } from "@/engine/sheets/maths/tableau";
+import { LESSON_TOPICS } from "@/engine/sheets/lessons/lesson";
 import { jumps, lineHeight, ticks } from "@/engine/sheets/numberline";
 import { DEFAULT_PAPER, toInches } from "@/engine/sheets/paper";
 import { SCRIPTURE_CREDIT } from "@/engine/sheets/passages";
@@ -3087,13 +3088,13 @@ describe("a rendered lesson", () => {
   });
 
   it("prints nothing in a try-it's answer place until the sheet is a key", () => {
-    for (const topic of [
-      "division-sharing",
-      "division-grouping",
-      "division-arrays",
-    ] as const) {
+    for (const topic of LESSON_TOPICS) {
+      const built = buildSheet(lesson({ topic }), SEED);
+      const count = built.blocks
+        .flatMap((block) => (block.kind === "problems" ? block.items : []))
+        .filter((problem) => !problem.worked).length;
       const blank = asked(lessonSheet({ topic }));
-      expect(blank).toHaveLength(6);
+      expect(blank, topic).toHaveLength(count);
       for (const item of blank) {
         expect(item, topic).not.toContain("--answered");
         for (const [, inside] of item.matchAll(
@@ -3118,5 +3119,60 @@ describe("a rendered lesson", () => {
     expect(count(html, '<article class="sheet"')).toBe(2);
     expect(count(html, 'class="sheet__title"')).toBe(2);
     expect(count(lessonSheet(), '<article class="sheet"')).toBe(1);
+  });
+
+  it("draws a chunked line's hops at their own sizes", () => {
+    const html = lessonSheet({ topic: "division-chunking" });
+    expect(count(html, 'class="sheet__jump"')).toBe(2);
+    expect(html).toContain(">−120</text>");
+    expect(html).toContain(">−36</text>");
+  });
+
+  it("fills the worked bracket in on the sheet, and the try-its only on the key", () => {
+    for (const topic of ["long-division-steps", "decimal-division"] as const) {
+      const built = buildSheet(lesson({ topic }), SEED);
+      const items = built.blocks.flatMap((block) =>
+        block.kind === "problems" ? block.items : [],
+      );
+      const written = (problem: Problem): number => {
+        const tableau = problem.bracket?.tableau;
+        if (!tableau) return 0;
+        return (
+          tableau.quotient.text.length +
+          tableau.rows.reduce((sum, row) => sum + row.text.length, 0)
+        );
+      };
+      const [example, ...rest] = items;
+      expect(example.worked, topic).toBe(true);
+      const sheet = lessonSheet({ topic });
+      expect(count(sheet, "sheet__square--answered"), topic).toBe(
+        written(example),
+      );
+      // Every try-it is shaded or stepped, and none is written in.
+      expect(count(sheet, 'class="sheet__shading"'), topic).toBe(
+        1 + rest.filter((item) => item.bracket?.help === "guided").length,
+      );
+      expect(count(lessonKey({ topic }), "sheet__square--answered")).toBe(
+        items.reduce((sum, item) => sum + written(item), 0),
+      );
+    }
+    // The decimal example carries its point above the bar and below it.
+    expect(
+      count(lessonSheet({ topic: "decimal-division" }), 'class="sheet__point"'),
+    ).toBeGreaterThanOrEqual(2);
+  });
+
+  it("draws the place-value chart as a grid with the point as a heavy rule", () => {
+    const html = lessonSheet({ topic: "decimals-powers-of-ten" });
+    const chart = html.slice(html.indexOf("<title>8 by 5 chart grid</title>"));
+    const grid = chart.slice(0, chart.indexOf("</svg>"));
+    expect(count(grid, 'class="sheet__rule sheet__rule--axis"')).toBe(2);
+    for (const head of ["Th", "H", "T", "O", "t", "h", "th"]) {
+      expect(grid).toContain(`>${head}</text>`);
+    }
+    expect(grid).toContain(">× 10</text>");
+    expect(grid).toContain(">÷ 1000</text>");
+    // Printed as cells on the sheet, not held back for the key.
+    expect(grid).not.toContain("sheet__cell--answered");
   });
 });
