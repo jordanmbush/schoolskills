@@ -588,7 +588,17 @@ export type Net =
     };
 
 export type Block =
-  | { kind: "problems"; columns: number; items: Problem[] }
+  | {
+      kind: "problems";
+      columns: number;
+      items: Problem[];
+      /**
+       * The number the first problem carries when the block continues a list
+       * cut across blocks — a lesson's problems to try, one row to a block
+       * when the whole set is taller than the page. Absent is 1.
+       */
+      start?: number;
+    }
   | { kind: "rules"; rule: Rule; lines: number }
   | { kind: "trace"; rule: Rule; rows: TraceRow[] }
   | { kind: "copywork"; text: string; rule: Rule; mode: TraceStyle }

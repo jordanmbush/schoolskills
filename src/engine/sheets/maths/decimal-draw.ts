@@ -132,10 +132,28 @@ export function drawValue(
   return units > 0 ? fixed(units, places) : null;
 }
 
+const OPERATIONS: readonly DecimalOperation[] = [
+  "add",
+  "subtract",
+  "multiply",
+  "divide",
+  "both",
+];
+
+/**
+ * The operation, made safe to read from whatever a saved config says. One
+ * reader for the title, the instruction and the draw, so the three cannot
+ * disagree about what an unknown one means.
+ */
+export function operationOf(config: DecimalConfig): DecimalOperation {
+  const asked = config.operation;
+  return OPERATIONS.includes(asked) ? asked : "add";
+}
+
 /* ── Sums ──────────────────────────────────────────────────────────────── */
 
 /** Which way round an `either` sheet's problem reads. */
-function operationOf(
+function chosenOperation(
   operation: DecimalOperation,
   rand: () => number,
 ): Exclude<DecimalOperation, "both"> {
@@ -148,7 +166,7 @@ export function drawStandard(
   config: DecimalConfig,
   rand: () => number,
 ): Drawn | null {
-  const operation = operationOf(config.operation, rand);
+  const operation = chosenOperation(operationOf(config), rand);
   const left = drawValue(config, rand);
   if (left === null) return null;
 

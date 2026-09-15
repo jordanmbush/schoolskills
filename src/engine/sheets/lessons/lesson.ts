@@ -25,11 +25,20 @@ import type {
   Block,
   LessonConfig,
   LessonTopic,
+  Mil,
+  Problem,
   Sheet,
   SheetOptions,
 } from "../types";
 
-import { blockHeight, note, tryIt, type Page, type Topic } from "./blocks";
+import {
+  blockHeight,
+  note,
+  tryIt,
+  type LessonBlock,
+  type Page,
+  type Topic,
+} from "./blocks";
 import { DECIMAL_TOPICS } from "./decimals";
 import { DIVISION_TOPICS } from "./division";
 import { WRITTEN_TOPICS } from "./written";
@@ -113,16 +122,42 @@ export function lessonLayout(config: LessonConfig): {
   // there is something on the page to mark.
   const box = sheetBlockBox(headerOf(config), practising(config));
   const columns = clamp(topic.columns, 1, MAX_COLUMNS);
+  const cellOf = (across: number): Mil =>
+    columnWidth(box, Math.max(1, across), PROBLEM_GAP.x);
   return {
     box,
     columns,
     page: {
       width: box.width,
-      cell: columnWidth(box, columns, PROBLEM_GAP.x),
+      cell: cellOf(columns),
+      cellOf,
       fontPt: config.fontPt,
       font: config.font,
     },
   };
+}
+
+/**
+ * The problems to try as blocks the page can hold: one block when it fits a
+ * page, else one block to a row, each numbered on from the last. A row is the
+ * smallest piece the renderer prints whole, and a block taller than the page
+ * would run off the foot of it — which at the largest type every lesson's
+ * six did.
+ */
+function tryIts(
+  problems: Problem[],
+  columns: number,
+  page: Page,
+  limit: Mil,
+): LessonBlock[] {
+  const whole = tryIt(problems, columns);
+  if (blockHeight(whole, page) <= limit) return [whole];
+  const rows: LessonBlock[] = [];
+  for (let at = 0; at < problems.length; at += columns) {
+    const before = problems.slice(0, at).filter((one) => !one.worked).length;
+    rows.push(tryIt(problems.slice(at, at + columns), columns, before + 1));
+  }
+  return rows;
 }
 
 /**
@@ -163,7 +198,9 @@ export function lessonBlocks(
     ? topic.practice(page, mulberry32(seed))
     : [];
   const flow =
-    problems.length > 0 ? [...lesson, tryIt(problems, columns)] : lesson;
+    problems.length > 0
+      ? [...lesson, ...tryIts(problems, columns, page, box.height)]
+      : lesson;
   return {
     blocks: paged(
       flow,

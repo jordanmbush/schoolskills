@@ -27,11 +27,12 @@ import type {
   LongDigits,
   Mil,
   MultiplicationConfig,
+  MultiplicationOperation,
   Problem,
 } from "../types";
 
-import { answerLine } from "../layout";
-import { points } from "../paper";
+import { DIGIT_EM, answerLine } from "../layout";
+import { inches, points } from "../paper";
 import { divisionTableau } from "./tableau";
 
 /**
@@ -67,6 +68,27 @@ export const STACK_EMS = 4.4;
  */
 export const bracketHeight = (fontPt: number): Mil => 2 * answerLine(fontPt);
 
+/** `.sheet__remainder`'s padding: the air between the quotient and "r 2". */
+const REMAINDER_PAD: Mil = inches(0.06);
+
+/**
+ * How wide the bracket stands: a square per digit of the divisor in the
+ * gutter, then a square per digit of the dividend — and, where a remainder
+ * may be written, room after the quotient for "r " and as many digits as the
+ * divisor has, which the key prints and the sheet does not. The one width both
+ * families cut their columns to (§21), because a bracket wider than its column
+ * prints over the problem beside it and nothing measures that before paper.
+ */
+export function bracketWidth(
+  digits: LongDigits,
+  fontPt: number,
+  remainders = false,
+): Mil {
+  const squares = (digits.by + digits.into) * answerLine(fontPt);
+  if (!remainders) return squares;
+  return squares + REMAINDER_PAD + points(fontPt * DIGIT_EM * (2 + digits.by));
+}
+
 const HELP: readonly DivisionHelp[] = ["none", "grid", "steps", "guided"];
 
 /**
@@ -89,18 +111,44 @@ export const HELP_NAME: Record<DivisionHelp, string | null> = {
   guided: "guided",
 };
 
+const OPERATIONS: readonly MultiplicationOperation[] = [
+  "multiply",
+  "divide",
+  "both",
+];
+
+/**
+ * The operation, made safe to read from whatever a saved config says. Here
+ * beside `divisionHelp` because both modules of the family read it and this
+ * is the one the other imports.
+ */
+export function operationOf(
+  config: MultiplicationConfig,
+): MultiplicationOperation {
+  const asked = config.operation;
+  return OPERATIONS.includes(asked) ? asked : "multiply";
+}
+
 /** The smallest and largest whole number with exactly this many digits. */
 function span(digits: number): { min: number; max: number } {
   const places = Math.max(1, Math.min(MAX_DIGITS, Math.floor(digits) || 1));
   return { min: places === 1 ? 1 : 10 ** (places - 1), max: 10 ** places - 1 };
 }
 
-/** The digit counts, made safe to draw from whatever a saved config says. */
+/**
+ * The digit counts, made safe to draw from whatever a saved config says.
+ *
+ * The number doing the working never has more digits than the one worked on:
+ * a two-digit divisor into a one-digit dividend is not a division, and a
+ * sheet that quietly drew nothing would be a titled page with no problems on
+ * it. The description says what was actually set.
+ */
 export function longDigits(config: MultiplicationConfig): LongDigits {
   const asked = config.digits ?? DEFAULT_DIGITS;
   const clamp = (value: number, low: number): number =>
     Math.max(low, Math.min(MAX_DIGITS, Math.floor(value) || low));
-  return { into: clamp(asked.into, 1), by: clamp(asked.by, 1) };
+  const into = clamp(asked.into, 1);
+  return { into, by: Math.min(into, clamp(asked.by, 1)) };
 }
 
 /* ── What is drawn ─────────────────────────────────────────────────────── */
@@ -200,8 +248,9 @@ function drawDivision(
   const { min, max } = span(digits.into);
   const low = Math.max(1, Math.ceil((min - remainder) / divisor));
   const high = Math.floor((max - remainder) / divisor);
-  // Nothing to draw: a two-digit divisor into a one-digit dividend is not a
-  // division, and an empty sheet is the honest answer to asking for one.
+  // Only when the digit counts are equal and the remainder was drawn large:
+  // 9 with 8 left over needs a dividend of at least 17, which has two digits.
+  // A miss rather than an empty sheet, since a smaller remainder is drawn next.
   if (high < low) return null;
 
   const quotient = between(low, high, rand);
@@ -274,15 +323,20 @@ export function longRow(config: MultiplicationConfig, fontPt: number): Mil {
   const multiplication =
     points(fontPt * STACK_EMS) + partialLines(digits) * line;
   const division = bracketHeight(fontPt) + divisionLines(digits) * line;
-  switch (config.operation) {
+  const operation = operationOf(config);
+  switch (operation) {
     case "multiply":
       return multiplication;
     case "divide":
       return division;
     // A mixed sheet reserves for whichever is taller, because it prints both
     // and the row height is one number for the whole grid of them.
-    default:
+    case "both":
       return Math.max(multiplication, division);
+    default: {
+      const unknown: never = operation;
+      return unknown;
+    }
   }
 }
 

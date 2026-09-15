@@ -1,12 +1,14 @@
 /**
  * Times tables, division, and the two written methods.
  *
- * Two of the controls below are shown conditionally, and neither is a nicety.
+ * Three of the controls below are shown conditionally, and none is a nicety.
  * "Written" has nothing to decide on a multiplication square or a long form —
- * one is a grid and the other is always stacked — and the digit pair means
- * nothing at all to a fact sheet, which draws from the tables instead. An
- * option that does nothing is worse than a missing one: it teaches a parent
- * that the panel doesn't do what it says.
+ * one is a grid and the other is always stacked — the digit pair means
+ * nothing at all to a fact sheet, which draws from the tables instead, and
+ * the work-space box does nothing on a long form, whose working goes inside
+ * the drawing: between the rule and the total, or in the squares under the
+ * bracket. An option that does nothing is worse than a missing one: it
+ * teaches a parent that the panel doesn't do what it says.
  */
 import { Checkbox, FieldSet, NumberStepper } from "@/components/ui/kit";
 import type {
@@ -145,11 +147,13 @@ export function MultiplicationPanel({
           />
         </>
       )}
-      <Checkbox
-        label="Work space under every problem"
-        checked={config.workspace === true}
-        onChange={(workspace) => set({ workspace })}
-      />
+      {!long && (
+        <Checkbox
+          label="Work space under every problem"
+          checked={config.workspace === true}
+          onChange={(workspace) => set({ workspace })}
+        />
+      )}
     </>
   );
 }

@@ -10,7 +10,8 @@ import { between } from "@/engine/random";
 
 import type { DecimalConfig } from "../types";
 
-import { bounds, clamp, drawValue, placesOf, type Drawn } from "./decimal-draw";
+import { whole } from "../paper";
+import { bounds, drawValue, placesOf, type Drawn } from "./decimal-draw";
 import { fixed, fixedText, gcd, scale, timesWhole, type Fixed } from "./exact";
 import { divisionTableau, type Tableau } from "./tableau";
 
@@ -26,10 +27,28 @@ const MAX_DIVISOR = 99;
 
 /** The divisor span, made safe to draw from whatever a saved config says. */
 export function divisorOf(config: DecimalConfig): { min: number; max: number } {
-  const asked = config.divisor ?? DIVISOR;
-  const min = clamp(asked.min ?? DIVISOR.min, DIVISOR.min, MAX_DIVISOR);
-  const max = clamp(Math.max(min, asked.max ?? min), DIVISOR.min, MAX_DIVISOR);
+  const asked: Partial<Record<"min" | "max", unknown>> =
+    config.divisor ?? DIVISOR;
+  const min = whole(asked.min, DIVISOR.min, DIVISOR.min, MAX_DIVISOR);
+  const max = whole(asked.max, min, min, MAX_DIVISOR);
   return { min, max };
+}
+
+/**
+ * The divisors in the span that a whole dividend divides by to an answer that
+ * stops at the sheet's places: the ones sharing a factor with the power of
+ * ten, which among the single digits is 2, 4, 5, 6 and 8 and never 3, 7 or 9
+ * (§22). Empty when the span holds none — a page that says so, and a box the
+ * builder greys out.
+ */
+export function stoppingDivisors(config: DecimalConfig): number[] {
+  const by = scale(placesOf(config));
+  const { min, max } = divisorOf(config);
+  const out: number[] = [];
+  for (let divisor = min; divisor <= max; divisor += 1) {
+    if (gcd(by, divisor) > 1) out.push(divisor);
+  }
+  return out;
 }
 
 /**
@@ -50,14 +69,17 @@ export function divisionOf(config: DecimalConfig): Division {
  *
  * The quotient is drawn and the dividend made from it, so the division comes
  * out exactly and every promise the config makes holds of the answer — which
- * is the number a parent set the places and the range for.
+ * is the number a parent set the places and the range for. A quotient ending
+ * in a zero is thrown away: `20.50 ÷ 5 = 4.10` is `20.5 ÷ 5` written to two
+ * places, an exercise nobody sets, with a tableau of nothing rows. The
+ * dividend may still end in one — `4.15 × 2` is `8.30`, and that is real.
  */
 export function drawByWhole(
   config: DecimalConfig,
   rand: () => number,
 ): Drawn | null {
   const quotient = drawValue(config, rand);
-  if (quotient === null) return null;
+  if (quotient === null || quotient.units % 10 === 0) return null;
   const { min, max } = divisorOf(config);
   const divisor = between(min, max, rand);
   const dividend = fixedText(timesWhole(quotient, divisor));
@@ -67,14 +89,14 @@ export function drawByWhole(
 /**
  * A whole number divided to a decimal answer: 7 ÷ 4 = 1.75.
  *
- * The divisor is drawn first and the quotient then walked in the steps that
- * make their product whole, for the reason `drawPercent` gives: a divisor
- * makes a whole number of one quotient in fifty at two places (2) or one in
- * twenty-five (4), so a draw that made a pair and rejected it would print the
- * friendliest divisors over and over. A divisor with no factor of ten in it —
- * 3, 7, 9 — makes a whole number of no decimal quotient at all, and is left
- * out rather than rounded in. A whole quotient is left out too, because an
- * answer that runs past the point is what this sheet promises.
+ * The divisor is drawn first, from the ones that can stop, and the quotient
+ * then walked in the steps that make their product whole, for the reason
+ * `drawPercent` gives: a divisor makes a whole number of one quotient in fifty
+ * at two places (2) or one in twenty-five (4), so a draw that made a pair and
+ * rejected it would print the friendliest divisors over and over. A whole
+ * quotient is left out, because an answer that runs past the point is what
+ * this sheet promises — and its last digit may be a zero, since `1.50` is the
+ * last annexed zero divided into and found empty (§22).
  *
  * In columns the dividend prints with the zeros annexed, `7.00`, which is the
  * form a child keeps dividing into; along a line it is the whole number it is.
@@ -85,10 +107,10 @@ export function drawWholeDividend(
 ): Drawn | null {
   const places = placesOf(config);
   const by = scale(places);
-  const span = divisorOf(config);
-  const divisor = between(span.min, span.max, rand);
+  const usable = stoppingDivisors(config);
+  if (usable.length === 0) return null;
+  const divisor = usable[Math.floor(rand() * usable.length)];
   const step = by / gcd(by, divisor);
-  if (step === by) return null;
   const { min, max } = bounds(config.range);
   const first = Math.ceil(Math.max(min * by, 1) / step);
   const last = Math.floor((max * by) / step);

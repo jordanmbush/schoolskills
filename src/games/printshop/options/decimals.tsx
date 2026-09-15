@@ -16,6 +16,7 @@
  * under each set is the working space.
  */
 import { Checkbox, FieldSet, NumberStepper } from "@/components/ui/kit";
+import { stoppingDivisors } from "@/engine/sheets/maths/decimal-division";
 import type {
   DecimalConfig,
   DecimalForm,
@@ -80,6 +81,11 @@ export function DecimalsPanel({ config, set }: PanelProps<DecimalConfig>) {
   const multiplying = standard && config.operation === "multiply";
   const byDecimal = config.by === "decimal";
   const bracketed = dividing && !byDecimal && config.form === "vertical";
+  // Whether any divisor in the span can give a decimal answer that stops. A
+  // span of 3 to 3 cannot, and a box that turned on a sheet with nothing on
+  // it would be an option that does nothing, so the box goes grey and the
+  // span's own change clears it.
+  const stops = stoppingDivisors(config).length > 0;
 
   return (
     <>
@@ -131,7 +137,13 @@ export function DecimalsPanel({ config, set }: PanelProps<DecimalConfig>) {
           <Span
             label="Divisors"
             value={config.divisor ?? DIVISOR}
-            onChange={(divisor) => set({ divisor })}
+            onChange={(divisor) =>
+              set(
+                stoppingDivisors({ ...config, divisor }).length > 0
+                  ? { divisor }
+                  : { divisor, wholeDividend: false },
+              )
+            }
             min={2}
             max={99}
             hint="The whole numbers to divide by. Two digits is the harder sheet; a decimal divisor is one of these with a point in it."
@@ -139,8 +151,13 @@ export function DecimalsPanel({ config, set }: PanelProps<DecimalConfig>) {
           {!byDecimal && (
             <Checkbox
               label="Whole numbers in, decimal answers out"
-              hint="7 ÷ 4 = 1.75. Only divisors with a factor of 2 or 5 give an answer that stops, so 3, 7 and 9 draw nothing. In columns the zeros are written in after the point, so there is something to keep dividing into."
+              hint={
+                stops
+                  ? "7 ÷ 4 = 1.75. Only divisors with a factor of 2 or 5 give an answer that stops, so 3, 7 and 9 are left out. In columns the zeros are written in after the point, so there is something to keep dividing into."
+                  : "No divisor in this span has a factor of 2 or 5, so no answer would stop. Widen the span to turn this on."
+              }
               checked={config.wholeDividend === true}
+              disabled={!stops}
               onChange={(wholeDividend) => set({ wholeDividend })}
             />
           )}

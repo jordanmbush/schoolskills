@@ -7,15 +7,26 @@ import { describe, expect, it } from "vitest";
 
 import { answerKey, buildSheet } from "@/engine/sheets";
 import { printedBlockBox } from "@/engine/sheets/chrome";
-import { counters, grouped } from "@/engine/sheets/counters";
+import { CAPTION_EMS, counters, grouped } from "@/engine/sheets/counters";
 import { figureInk } from "@/engine/sheets/figure";
-import { ASIDE_EM, noteHeight } from "@/engine/sheets/layout";
+import {
+  ASIDE_EM,
+  NOTE_LINE_EMS,
+  NOTE_PAD,
+  NOTE_RULE,
+  noteHeight,
+} from "@/engine/sheets/layout";
 import { decimalTableau } from "@/engine/sheets/maths/decimal-division";
 import { divisionLines } from "@/engine/sheets/maths/long";
 import { divisionTableau } from "@/engine/sheets/maths/tableau";
 import { LESSON_TOPICS } from "@/engine/sheets/lessons/lesson";
-import { jumps, lineHeight, ticks } from "@/engine/sheets/numberline";
-import { DEFAULT_PAPER, toInches } from "@/engine/sheets/paper";
+import {
+  LABEL_SIZE,
+  jumps,
+  lineHeight,
+  ticks,
+} from "@/engine/sheets/numberline";
+import { DEFAULT_PAPER, toInches, toPoints } from "@/engine/sheets/paper";
 import { SCRIPTURE_CREDIT } from "@/engine/sheets/passages";
 import type {
   ArithmeticConfig,
@@ -950,6 +961,59 @@ describe("a rendered multiplication sheet", () => {
     );
   });
 
+  it("right-aligns a fact's quotient over the dividend when there is no working", () => {
+    // A times-table division worked in columns has no tableau — its bracket
+    // is the quotient row over the dividend and nothing else — so the key
+    // puts the answer's last digit over the dividend's last digit: the 8 of
+    // 56 ÷ 7 lands in the square over the 6, with the one before it empty.
+    const fact = (dividend: string, answer: string): Problem => ({
+      prompt: "",
+      answer,
+      bracket: { divisor: "7", dividend, cell: 250, rows: 0, help: "none" },
+    });
+    const keyed = (items: Problem[]) =>
+      problems(
+        render(
+          sheet({
+            answers: true,
+            blocks: [{ kind: "problems", columns: 1, items }],
+          }),
+        ),
+      );
+    const quotientOf = (item: string) =>
+      item.slice(
+        item.indexOf('class="sheet__quotient'),
+        item.indexOf('class="sheet__dividend"'),
+      );
+    const answered = (digit: string) =>
+      `<span class="sheet__square sheet__square--answered">${digit}</span>`;
+    const [one] = keyed([fact("56", "8")]);
+    expect(quotientOf(one)).toContain(
+      `<span class="sheet__square"></span>${answered("8")}`,
+    );
+    const [two] = keyed([fact("84", "12")]);
+    expect(quotientOf(two)).toContain(`${answered("1")}${answered("2")}`);
+    const [left] = keyed([fact("57", "8 r 1")]);
+    expect(quotientOf(left)).toContain(
+      `<span class="sheet__square"></span>${answered("8")}<span class="sheet__remainder">r 1</span>`,
+    );
+    // And so on the family's own key, for every division on the page.
+    const divided = { operation: "divide" as const, form: "vertical" as const };
+    const items = itemsOf(multiplication(divided));
+    const html = problems(timesKey(divided));
+    expect(items.length).toBeGreaterThan(0);
+    items.forEach((problem, index) => {
+      const bracket = problem.bracket;
+      if (!bracket) throw new Error("no bracket");
+      const digits = problem.answer.split(" r ")[0];
+      expect(quotientOf(html[index]), problem.answer).toContain(
+        '<span class="sheet__square"></span>'.repeat(
+          bracket.dividend.length - digits.length,
+        ) + [...digits].map(answered).join(""),
+      );
+    });
+  });
+
   it("rules the bracket rather than drawing it, so it always prints", () => {
     // §5: browsers drop background paint, and a bracket that came out of the
     // printer as three numbers in a row is not a long division.
@@ -1071,17 +1135,21 @@ describe("a rendered multiplication sheet", () => {
     }
   });
 
-  it("writes the whole tableau on the key of a grid, and none of it on the sheet", () => {
-    for (const help of ["grid", "steps", "guided"] as const) {
+  it("writes the whole tableau on the key at every level, and none of it on the sheet", () => {
+    // The squares are there at every level and only the borders differ, so
+    // the key writes the working into them whether or not the sheet drew
+    // them: a parent marking from the key wants it under a bare bracket too.
+    for (const help of [undefined, "grid", "steps", "guided"] as const) {
+      const where = help ?? "none";
       for (const { tableau, item } of divisions(help, true)) {
         const written =
           tableau.quotient.text.length +
           tableau.rows.reduce((sum, row) => sum + row.text.length, 0);
-        expect(count(item, "sheet__square--answered")).toBe(written);
+        expect(count(item, "sheet__square--answered"), where).toBe(written);
         for (const row of tableau.rows) {
           for (const digit of row.text) {
             // Bold, in a square, and on a take-away row under the heavier rule.
-            expect(item).toMatch(
+            expect(item, where).toMatch(
               new RegExp(
                 `<span class="sheet__square sheet__square--answered( sheet__square--take)?">${digit}</span>`,
               ),
@@ -1090,15 +1158,8 @@ describe("a rendered multiplication sheet", () => {
         }
       }
       for (const { item } of divisions(help, false)) {
-        expect(item).not.toContain("--answered");
+        expect(item, where).not.toContain("--answered");
       }
-    }
-    // Without a grid there is nowhere to write the working, so the key shows
-    // the quotient and the remainder as it always has.
-    for (const { tableau, item } of divisions(undefined, true)) {
-      expect(count(item, "sheet__square--answered")).toBe(
-        tableau.quotient.text.length,
-      );
     }
   });
 
@@ -1186,7 +1247,7 @@ describe("a rendered decimal division", () => {
   };
 
   it("draws the point between two squares, and the quotient's on the same boundary", () => {
-    for (const help of ["none", "grid", "guided"] as const) {
+    for (const help of ["none", "grid", "steps", "guided"] as const) {
       for (const answers of [false, true]) {
         const config = decimals({ help });
         const items = itemsOf(config);
@@ -3011,6 +3072,48 @@ describe("a rendered lesson", () => {
     expect(html).toContain(`height="${toInches(lineHeight(line))}in"`);
     // The two blank lines to try carry no hops.
     expect(count(html, 'class="sheet__ink sheet__number-line"')).toBe(3);
+    // Every label sits inside the room the engine reserved over the axis: an
+    // <svg> clips to its viewBox, and a label above it is a hop with no
+    // number on it. Measured off the ink — the baseline less the size.
+    const labels = [
+      ...html.matchAll(
+        /<g class="sheet__jump">[\s\S]*?<text[^>]*\by="(\d+)"[^>]*font-size="(\d+)"/g,
+      ),
+    ];
+    expect(labels).toHaveLength(hops.length);
+    for (const [, y, size] of labels) {
+      expect(Number(size)).toBe(LABEL_SIZE);
+      expect(Number(y) - Number(size)).toBeGreaterThanOrEqual(0);
+    }
+  });
+
+  it("draws with the numbers the engine reserved by, read back from sheet.css", () => {
+    // Every height a lesson declares trails a rule in the stylesheet, and the
+    // failure when they drift is silent: a page that looks right on screen
+    // and prints its last block on a second sheet. So the rules are read.
+    const css = read(join(ROOT, "src/styles/sheet.css"));
+    const rule = (selector: string): string => {
+      const at = css.indexOf(`${selector} {`);
+      expect(at, selector).toBeGreaterThanOrEqual(0);
+      return css.slice(at, css.indexOf("}", at));
+    };
+    const number = (text: string, property: string): number =>
+      Number(new RegExp(`${property}: ([\\d.]+)`).exec(text)?.[1]);
+    expect(rule(".sheet__bracket-row")).toContain("height: var(--sheet-cell)");
+    expect(number(rule(".sheet__panel"), "padding")).toBe(toInches(NOTE_PAD));
+    expect(number(rule(".sheet__panel"), "border")).toBeCloseTo(
+      toPoints(NOTE_RULE),
+      1,
+    );
+    expect(number(rule(".sheet__panel--aside"), "font-size")).toBe(ASIDE_EM);
+    expect(number(rule(".sheet"), "line-height")).toBe(NOTE_LINE_EMS);
+    // The caption's size times the sheet's leading is what `CAPTION_EMS`
+    // reserves. Scoped to the counters, because a net's caption is set
+    // smaller further down the file and a bare selector loses to it.
+    expect(
+      number(rule(".sheet__counters .sheet__caption"), "font-size") *
+        NOTE_LINE_EMS,
+    ).toBeCloseTo(CAPTION_EMS, 2);
   });
 
   it("prints a worked example's answer on the sheet, unnumbered, and numbers the rest from one", () => {
@@ -3045,9 +3148,11 @@ describe("a rendered lesson", () => {
       },
       {
         prompt: "",
-        operands: ["47", "28"],
-        operator: "+",
-        answer: "75",
+        operands: ["347", "26"],
+        operator: "×",
+        working: ["2082", "6940"],
+        workspace: 500,
+        answer: "9022",
         worked: true,
       },
       {
@@ -3077,8 +3182,14 @@ describe("a rendered lesson", () => {
       count(html, 'class="sheet__answer-line sheet__answer-line--answered"'),
     ).toBe(2);
     expect(html).toContain("10 ÷ 5 = 2");
+    // The partials between the rule and the total, as well as the total.
+    expect(
+      count(html, 'class="sheet__work-line sheet__work-line--answered"'),
+    ).toBe(2);
+    expect(html).toContain(">2082</span>");
+    expect(html).toContain(">6940</span>");
     expect(html).toContain(
-      '<span class="sheet__total sheet__total--answered">75</span>',
+      '<span class="sheet__total sheet__total--answered">9022</span>',
     );
     const written =
       tableau.quotient.text.length +
@@ -3119,6 +3230,31 @@ describe("a rendered lesson", () => {
     expect(count(html, '<article class="sheet"')).toBe(2);
     expect(count(html, 'class="sheet__title"')).toBe(2);
     expect(count(lessonSheet(), '<article class="sheet"')).toBe(1);
+  });
+
+  it("numbers a block on from where the one before it left off", () => {
+    // A lesson's problems to try go one row to a block when the whole set is
+    // taller than the page, and the second row's first problem is 4, not 1.
+    const items: Problem[] = [
+      { prompt: "7 × 8 =", answer: "56" },
+      { prompt: "6 × 9 =", answer: "54" },
+    ];
+    const html = render(
+      sheet({ blocks: [{ kind: "problems", columns: 2, items, start: 4 }] }),
+    );
+    expect(html).toContain('<span class="sheet__number">4.</span>');
+    expect(html).toContain('<span class="sheet__number">5.</span>');
+    expect(html).not.toContain('<span class="sheet__number">1.</span>');
+    // So on a lesson at the largest type the six are numbered 1 to 6, once
+    // each and in order, across however many blocks they were cut into. A
+    // note's steps carry the same number span, so only the problems count.
+    const large = lessonSheet({ topic: "division-arrays", fontPt: 36 });
+    expect(count(large, 'class="sheet__problems"')).toBeGreaterThan(1);
+    expect(
+      asked(large).map(
+        (item) => /<span class="sheet__number">(\d+)\.<\/span>/.exec(item)?.[1],
+      ),
+    ).toEqual(["1", "2", "3", "4", "5", "6"]);
   });
 
   it("draws a chunked line's hops at their own sizes", () => {

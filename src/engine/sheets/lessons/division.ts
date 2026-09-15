@@ -13,7 +13,7 @@ import { shuffled } from "@/engine/random";
 
 import { counters as place } from "../counters";
 import { answerLine } from "../layout";
-import { numberLine } from "../numberline";
+import { hopLine } from "../numberline";
 import type { LessonTopic, Problem } from "../types";
 
 import {
@@ -132,13 +132,16 @@ const grouping: Topic = {
         "Start at 12 on the line. Jump back 3 at a time. Four jumps reach 0.",
       ],
     }),
+    // The sum and the question it is read as, two across so the question
+    // keeps to one line: three across put its blank on a second line and
+    // the page over its foot by a hair. The multiplication is the next
+    // lesson's, which holds all four facts in one picture.
     worked(
       [
         { prompt: "12 ÷ 3 =", answer: "4" },
         { prompt: "How many 3s in 12? _", answer: "4" },
-        { prompt: "3 × 4 =", answer: "12" },
       ],
-      3,
+      2,
     ),
     note(page, {
       aside: true,
@@ -156,7 +159,9 @@ const grouping: Topic = {
               // Evenly spaced and unringed: the rings are the child's to draw.
               counters: place(total, of, "group", page.cell, { rings: false }),
             }
-          : { ...divide(total, of), line: numberLine(0, total, page.cell) },
+          : // Blank, with the dividend and every landing on a tick, so the
+            // child's hops have somewhere to land.
+            { ...divide(total, of), line: hopLine(total, [of], page.cell) },
       ),
       rand,
     ),

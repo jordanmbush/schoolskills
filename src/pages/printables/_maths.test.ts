@@ -140,11 +140,21 @@ describe("the sheet on a catalog page", () => {
   it("asks for no more than the paper holds", () => {
     // A count is a request, not a promise: the families cap it at what fits.
     // A page that asked for thirty and got twenty-nine is fine; the failure
-    // this catches is prose that says "thirty" over a sheet of nine.
+    // this catches is prose that says "thirty" over a sheet of nine. A lesson
+    // has no count to ask with, so its prose is held to the six it says.
     for (const sheet of MATHS_SHEETS) {
-      const problems = problemsOf(buildSheet(sheet.config, MATHS_SEED).blocks);
+      const built = buildSheet(sheet.config, MATHS_SEED);
+      const problems = problemsOf(built.blocks);
       const asked = "count" in sheet.config ? sheet.config.count : 0;
       if (asked > 0) expect(problems.length, sheet.slug).toBe(asked);
+      const prose = [sheet.summary, sheet.lead, ...sheet.notes].join(" ");
+      if (sheet.config.kind === "lesson" && /\bsix\b/i.test(prose)) {
+        expect(built.header.score?.outOf, sheet.slug).toBe(6);
+      }
+      // And never a page that had to say it came out short.
+      expect(built.header.instructions ?? "", sheet.slug).not.toMatch(
+        /asked for|Nothing (fits|could be made)/,
+      );
     }
   });
 

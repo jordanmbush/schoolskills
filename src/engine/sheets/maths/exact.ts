@@ -224,6 +224,21 @@ export function fixedText(value: Fixed): string {
   return `${sign}${front}.${back}`;
 }
 
+/**
+ * The number read back off its text — `fixedText` undone, and the one other
+ * place that knows where the point goes: "3.45" is `{ units: 345, places: 2 }`
+ * and "12" is `{ units: 12, places: 0 }`. Anything that is not digits with at
+ * most one point between them is `null`, so a caller with an authored string
+ * can refuse it rather than divide by a mistyped one.
+ */
+export function parseFixed(text: string): Fixed | null {
+  const match = /^(-?)(\d+)(?:\.(\d+))?$/.exec(text.trim());
+  if (!match) return null;
+  const [, sign, front, back = ""] = match;
+  const units = Number(front + back);
+  return fixed(sign ? -units : units, back.length);
+}
+
 /** The same value as a fraction, for the sheets that ask for both forms. */
 export const fixedFraction = (value: Fixed): Fraction =>
   reduced({ n: value.units, d: scale(value.places) });

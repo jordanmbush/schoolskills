@@ -17,6 +17,7 @@ import { mulberry32 } from "@/engine/random";
 
 import type {
   DecimalConfig,
+  DecimalOperation,
   DecimalStyle,
   DivisionHelp,
   Mil,
@@ -26,13 +27,15 @@ import type {
   SheetOptions,
 } from "../types";
 
-import { sheetBlockBox } from "../chrome";
+import { sheetBlockBox, shortfall, shortfallPart } from "../chrome";
 import {
+  DIGIT_EM,
   PROBLEM_GAP,
   WRAP_GAP,
   answerLine,
   columnWidth,
   fitAcross,
+  numberRoom,
   type Box,
 } from "../layout";
 import { inches, points } from "../paper";
@@ -44,6 +47,7 @@ import {
   drawByWhole,
   drawWholeDividend,
   decimalTableau,
+  stoppingDivisors,
   type Division,
 } from "./decimal-division";
 import {
@@ -52,6 +56,7 @@ import {
   drawConvert,
   drawPercent,
   drawStandard,
+  operationOf,
   placesOf,
   type Draw,
   type Drawn,
@@ -67,7 +72,13 @@ import {
   roundingPlaces,
 } from "./decimal-sense";
 import { scale } from "./exact";
-import { HELP_NAME, bracketHeight, divisionHelp, divisionLines } from "./long";
+import {
+  HELP_NAME,
+  bracketHeight,
+  bracketWidth,
+  divisionHelp,
+  divisionLines,
+} from "./long";
 
 /* ── What a problem takes on the page ─────────────────────────────────────
    Declared, not measured (§4). Stacked it is the two numbers, the rule and the
@@ -97,19 +108,18 @@ const MAX_COLUMNS = 4;
  */
 const SENTENCE_COLUMNS = 2;
 
-/**
- * How wide a figure is, in ems of the body type. A tabular figure in the face
- * a sheet prints in is about six tenths of an em, and a comma and a space are
- * narrower, so a line reserved by this is wider than the line it holds.
- */
-const DIGIT_EM = 0.6;
-
 /** As `arithmetic.ts` — see the note there on why a budget rather than a proof. */
 const MISS_BUDGET = 500;
 
 /* ── Which draw a sheet is made of ───────────────────────────────────────── */
 
-const DRAW: Partial<Record<DecimalStyle, Draw>> = {
+/**
+ * Every style and its draw. A full record rather than a partial one, so a
+ * style added to the union and not filed here fails to compile instead of
+ * quietly printing sums under the wrong title.
+ */
+const DRAW: Record<DecimalStyle, Draw> = {
+  standard: drawStandard,
   percent: drawPercent,
   convert: drawConvert,
   powers: drawPowers,
@@ -119,18 +129,35 @@ const DRAW: Partial<Record<DecimalStyle, Draw>> = {
   place: drawPlace,
 };
 
-/** A style this build does not know is arithmetic, as it was before it existed. */
+const STYLES = Object.keys(DRAW) as DecimalStyle[];
+
+/**
+ * The style, made safe to read from whatever a saved config says. A style
+ * this build does not know is arithmetic, as it was before it existed.
+ */
+function styleOf(config: DecimalConfig): DecimalStyle {
+  const asked = config.style;
+  return STYLES.includes(asked) ? asked : "standard";
+}
+
+/** Whether the sheet is the arithmetic style's division, whichever of the three. */
+const dividing = (config: DecimalConfig): boolean =>
+  styleOf(config) === "standard" && operationOf(config) === "divide";
+
 function drawerOf(config: DecimalConfig): Draw {
-  const draw = DRAW[config.style];
-  if (draw) return draw;
-  if (config.operation !== "divide") return drawStandard;
-  switch (divisionOf(config)) {
+  if (!dividing(config)) return DRAW[styleOf(config)];
+  const division = divisionOf(config);
+  switch (division) {
     case "byDecimal":
       return drawByDecimal;
     case "wholeDividend":
       return drawWholeDividend;
-    default:
+    case "byWhole":
       return drawByWhole;
+    default: {
+      const unknown: never = division;
+      return unknown;
+    }
   }
 }
 
@@ -142,13 +169,13 @@ function drawerOf(config: DecimalConfig): Draw {
  * bracket round it would be the rewritten sum rather than the question (§22).
  */
 const stacked = (config: DecimalConfig): boolean =>
-  config.style === "standard" &&
+  styleOf(config) === "standard" &&
   config.form === "vertical" &&
-  !(config.operation === "divide" && divisionOf(config) === "byDecimal");
+  !(dividing(config) && divisionOf(config) === "byDecimal");
 
 /** Whether its divisions are set in the bracket. */
 const bracketed = (config: DecimalConfig): boolean =>
-  stacked(config) && config.operation === "divide";
+  stacked(config) && dividing(config);
 
 /**
  * How many digits the longest dividend on the sheet can have, the point aside:
@@ -175,6 +202,20 @@ function bracketOf(
   };
 }
 
+/**
+ * How wide the widest bracket on the sheet stands: the longest dividend and
+ * the longest divisor, in squares (§21). A bracket is a fixed drawing and does
+ * not wrap to its column, so the columns are cut to it.
+ */
+const widestBracket = (config: DecimalConfig): Mil =>
+  bracketWidth(
+    {
+      into: dividendDigits(config),
+      by: String(divisorOf(config).max).length,
+    },
+    config.fontPt,
+  );
+
 /** How tall one problem stands, working space and all. */
 function rowHeight(config: DecimalConfig): Mil {
   // A bracket spends its reservation on the squares under the dividend and
@@ -184,7 +225,7 @@ function rowHeight(config: DecimalConfig): Mil {
     return bracketHeight(config.fontPt) + bracket.rows * bracket.cell;
   // An ordering's answer is the ruled line under the sentence, on a line of
   // its own; the line is its working space, so the config's is not added.
-  if (config.style === "order")
+  if (styleOf(config) === "order")
     return writtenRow(config.fontPt) + WRAP_GAP + answerLine(config.fontPt);
   // A stack is one flex item and cannot wrap, so it is reserved for as what it
   // is: two numbers, a rule and the answer under it.
@@ -210,7 +251,8 @@ function orderLine(config: DecimalConfig): Mil {
 /** How many columns the sheet is set in: what was asked, cut to what the style can hold. */
 function columnsOf(config: DecimalConfig, box: Box): number {
   const asked = clamp(config.columns, 1, MAX_COLUMNS);
-  switch (config.style) {
+  const style = styleOf(config);
+  switch (style) {
     case "place":
       return Math.min(asked, SENTENCE_COLUMNS);
     case "order":
@@ -222,22 +264,44 @@ function columnsOf(config: DecimalConfig, box: Box): number {
           fitAcross(box.width, orderLine(config), PROBLEM_GAP.x),
         ),
       );
-    default:
+    case "standard":
+      if (!bracketed(config)) return asked;
+      return Math.max(
+        1,
+        Math.min(
+          asked,
+          fitAcross(
+            box.width,
+            widestBracket(config) + numberRoom(config.fontPt),
+            PROBLEM_GAP.x,
+          ),
+        ),
+      );
+    case "percent":
+    case "convert":
+    case "powers":
+    case "compare":
+    case "round":
       return asked;
+    default: {
+      const unknown: never = style;
+      return unknown;
+    }
   }
 }
 
-/** How many problems the paper holds, and how wide a column of them is (§4). */
-export function decimalLayout(config: DecimalConfig): {
+type Layout = {
   box: Box;
   columns: number;
   cell: Mil;
   row: Mil;
   perPage: number;
-} {
-  // Against the header the sheet will print, not the one the config holds, and
+};
+
+/** The layout under a given header — the printed one, which may carry a sentence the config's does not. */
+function layoutOf(config: DecimalConfig, header: SheetOptions): Layout {
   // `true` for the score box because a sheet of problems is marked out of them.
-  const box = sheetBlockBox(headerOf(config), true);
+  const box = sheetBlockBox(header, true);
   const columns = columnsOf(config, box);
   const row = rowHeight(config);
   return {
@@ -247,6 +311,11 @@ export function decimalLayout(config: DecimalConfig): {
     row,
     perPage: columns * fitAcross(box.height, row, PROBLEM_GAP.y),
   };
+}
+
+/** How many problems the paper holds, and how wide a column of them is (§4). */
+export function decimalLayout(config: DecimalConfig): Layout {
+  return layoutOf(config, headerOf(config));
 }
 
 /**
@@ -291,20 +360,16 @@ function problemOf(
   return { prompt: drawn.prompt, answer: drawn.answer, ...extras };
 }
 
-/**
- * Every problem on the sheet, in the order they are printed.
- *
- * Exported because it is the whole of what a test has to check.
- */
-export function decimalProblems(
+/** How many problems were asked for. A count from outside this build may be nothing at all. */
+const askedOf = (config: DecimalConfig): number =>
+  Math.max(0, Math.floor(config.count) || 0);
+
+/** Up to `wanted` problems, in the order they are printed. */
+function drawProblems(
   config: DecimalConfig,
   seed: number,
+  wanted: number,
 ): Problem[] {
-  const { perPage } = decimalLayout(config);
-  // The count is a request, not a promise: a count that overruns is a second
-  // sheet out of the printer with two problems on it.
-  const wanted = clamp(config.count, 0, perPage);
-
   const draw = drawerOf(config);
   const squares = bracketOf(config);
   const rand = mulberry32(seed);
@@ -326,15 +391,69 @@ export function decimalProblems(
   return problems;
 }
 
+/** Whether a whole-dividend sheet has been given a span with no divisor that can stop. */
+const nothingStops = (config: DecimalConfig): boolean =>
+  dividing(config) &&
+  divisionOf(config) === "wholeDividend" &&
+  stoppingDivisors(config).length === 0;
+
+/**
+ * What the paper says when it holds fewer than were asked for — with the one
+ * reason this family can name said outright, because "nothing could be made"
+ * over a sheet set to divide by 3 is true and unhelpful. A span with no
+ * divisor that can stop is always one number: any two in a row hold an even
+ * one.
+ */
+function shortfallOf(
+  config: DecimalConfig,
+  fit: number,
+  made: number,
+): string | null {
+  const asked = askedOf(config);
+  if (made >= asked) return null;
+  if (made === 0 && fit > 0 && nothingStops(config)) {
+    return `Dividing by ${divisorOf(config).min} never gives an answer that stops, so there is nothing to print.`;
+  }
+  return shortfall(asked, fit, made);
+}
+
+/**
+ * The problems and the header they print under.
+ *
+ * A count is a request, not a promise: the page holds what it holds, and the
+ * draw makes what it can. When either comes up short the instruction line says
+ * so, and because that sentence can take a row from the page, the layout is
+ * asked again under the header that will actually print, until the problems
+ * are the ones that fit beneath it.
+ */
+function decimalPage(
+  config: DecimalConfig,
+  seed: number,
+): { problems: Problem[]; header: SheetOptions; columns: number } {
+  const asked = askedOf(config);
+  let header = headerOf(config);
+  let fit = layoutOf(config, header).perPage;
+  let problems = drawProblems(config, seed, Math.min(asked, fit));
+  for (;;) {
+    header = headerOf(config, shortfallOf(config, fit, problems.length));
+    const under = layoutOf(config, header);
+    if (problems.length <= under.perPage) {
+      return { problems, header, columns: under.columns };
+    }
+    fit = under.perPage;
+    problems = problems.slice(0, fit);
+  }
+}
+
 /* ── What it is called ─────────────────────────────────────────────────── */
 
-const OPERATION_NAME = {
+const OPERATION_NAME: Record<DecimalOperation, string> = {
   add: "Adding",
   subtract: "Subtracting",
   multiply: "Multiplying",
   divide: "Dividing",
   both: "Adding and subtracting",
-} as const;
+};
 
 /** The three divisions, named by what makes each a different lesson (§22). */
 const DIVISION_NAME: Record<Division, string> = {
@@ -343,8 +462,9 @@ const DIVISION_NAME: Record<Division, string> = {
   wholeDividend: "Division with decimal answers",
 };
 
-/** Every style but arithmetic, which is named by its operation. */
-const STYLE_NAME: Partial<Record<DecimalStyle, string>> = {
+/** Every style's name; arithmetic has none, being named by its operation. */
+const STYLE_NAME: Record<DecimalStyle, string | null> = {
+  standard: null,
   percent: "Percentages of amounts",
   convert: "Fractions, decimals and percents",
   powers: "Multiplying and dividing by 10, 100 and 1000",
@@ -365,11 +485,12 @@ const TO_NAME: Record<RoundTo, string> = {
 
 /** "Adding decimals" — the phrase a parent says, and the one they search. */
 function titleOf(config: DecimalConfig): string {
-  const named = STYLE_NAME[config.style];
+  const named = STYLE_NAME[styleOf(config)];
   if (named) return named;
-  if (config.operation === "divide") return DIVISION_NAME[divisionOf(config)];
-  const name = `${OPERATION_NAME[config.operation] ?? OPERATION_NAME.add} decimals`;
-  return config.operation === "multiply" && config.by === "decimal"
+  const operation = operationOf(config);
+  if (operation === "divide") return DIVISION_NAME[divisionOf(config)];
+  const name = `${OPERATION_NAME[operation]} decimals`;
+  return operation === "multiply" && config.by === "decimal"
     ? `${name} by decimals`
     : name;
 }
@@ -379,17 +500,22 @@ function titleOf(config: DecimalConfig): string {
  * method turns on: where the point goes, or that the sum is rewritten first.
  */
 function divisionInstruction(config: DecimalConfig): string {
-  switch (divisionOf(config)) {
+  const division = divisionOf(config);
+  switch (division) {
     case "byDecimal":
       return "Work out each answer. Multiply both numbers by 10, or by 100, until you are dividing by a whole number, then divide.";
     case "wholeDividend":
       return stacked(config)
         ? "Work out each answer. Keep dividing into the zeros after the point, and put the point in the answer straight above the point in the number."
         : "Work out each answer. Keep dividing past the point, writing zeros after it if you need them.";
-    default:
+    case "byWhole":
       return stacked(config)
         ? "Work out each answer. Put the point in the answer straight above the point in the number."
         : "Work out each answer.";
+    default: {
+      const unknown: never = division;
+      return unknown;
+    }
   }
 }
 
@@ -404,14 +530,15 @@ function divisionInstruction(config: DecimalConfig): string {
  * the whole of the guidance a child gets.
  */
 function arithmeticInstruction(config: DecimalConfig): string {
-  if (config.operation === "divide") return divisionInstruction(config);
-  if (config.operation === "multiply" && config.by === "decimal") {
+  const operation = operationOf(config);
+  if (operation === "divide") return divisionInstruction(config);
+  if (operation === "multiply" && config.by === "decimal") {
     return stacked(config)
       ? "Work out each answer. Line the digits up on the right and multiply as if there were no points, then count the decimal places in both numbers: the answer has that many."
       : "Work out each answer. Multiply as if there were no points, then count the decimal places in both numbers: the answer has that many.";
   }
   if (!stacked(config)) return "Work out each answer.";
-  return config.operation === "multiply"
+  return operation === "multiply"
     ? "Work out each answer. Line the digits up on the right, then put the point back in."
     : "Work out each answer. Keep the points under one another.";
 }
@@ -422,7 +549,10 @@ function arithmeticInstruction(config: DecimalConfig): string {
  * — "the digits move", never "move the point".
  */
 function instructionOf(config: DecimalConfig): string {
-  switch (config.style) {
+  const style = styleOf(config);
+  switch (style) {
+    case "standard":
+      return arithmeticInstruction(config);
     case "percent":
       return "Work out each amount.";
     case "convert":
@@ -440,22 +570,29 @@ function instructionOf(config: DecimalConfig): string {
       return `Round each decimal to the nearest ${TO_NAME[roundTo(config)]}. Look at the ${PLACE_NAME[roundingPlaces(config)]} digit: 5 or more rounds up, 4 or less leaves the number as it is.`;
     case "place":
       return "Write what each digit is worth. In 3.75 the 7 is worth 0.7 and the 5 is worth 0.05.";
-    default:
-      return arithmeticInstruction(config);
+    default: {
+      const unknown: never = style;
+      return unknown;
+    }
   }
 }
 
 /**
  * The header this sheet will actually print, which is what the layout reserves
- * space against — see the note in `arithmetic.ts`.
+ * space against — see the note in `arithmetic.ts`. `note` is the sentence that
+ * says the page came out short, on the end of the instruction line.
  */
-function headerOf(config: DecimalConfig): SheetOptions {
+function headerOf(
+  config: DecimalConfig,
+  note: string | null = null,
+): SheetOptions {
+  const instructions = config.instructions ?? instructionOf(config);
   return {
     paper: config.paper,
     fontPt: config.fontPt,
     fields: config.fields,
     title: config.title ?? titleOf(config),
-    instructions: config.instructions ?? instructionOf(config),
+    instructions: note ? `${instructions} ${note}` : instructions,
   };
 }
 
@@ -464,10 +601,23 @@ function headerOf(config: DecimalConfig): SheetOptions {
  * sheet's values are set by the place they round to, and a percent has none.
  */
 function placesPart(config: DecimalConfig): string | null {
-  if (config.style === "percent") return null;
-  if (config.style === "round")
-    return `to the nearest ${TO_NAME[roundTo(config)]}`;
+  const style = styleOf(config);
+  if (style === "percent") return null;
+  if (style === "round") return `to the nearest ${TO_NAME[roundTo(config)]}`;
   return PLACE_NAME[placesOf(config)];
+}
+
+/**
+ * What the line that names a saved sheet can say about a page coming out
+ * short without a seed to draw from: what the paper holds against what was
+ * asked, and a divisor span nothing in it can stop. A draw that misses is the
+ * page's to report.
+ */
+function describedShortfall(config: DecimalConfig): string | null {
+  const asked = askedOf(config);
+  const { perPage } = decimalLayout(config);
+  const made = nothingStops(config) ? 0 : Math.min(asked, perPage);
+  return shortfallOf(config, perPage, made);
 }
 
 /**
@@ -479,23 +629,24 @@ function placesPart(config: DecimalConfig): string | null {
  * and how much help is drawn under the bracket.
  */
 function describeDecimals(config: DecimalConfig): string {
-  const dividing = config.style === "standard" && config.operation === "divide";
   const squares = bracketOf(config);
+  const short = describedShortfall(config);
   return [
     titleOf(config),
-    dividing && divisorOf(config).min >= 10 ? "by two-digit numbers" : null,
+    dividing(config) && divisorOf(config).min >= 10
+      ? "by two-digit numbers"
+      : null,
     placesPart(config),
     stacked(config) ? "in columns" : null,
     squares ? HELP_NAME[squares.help] : null,
+    short === null ? null : shortfallPart(short),
   ]
     .filter((part): part is string => part !== null)
     .join(" — ");
 }
 
 function buildDecimalSheet(config: DecimalConfig, seed: number): Sheet {
-  const items = decimalProblems(config, seed);
-  const { columns } = decimalLayout(config);
-  const head = headerOf(config);
+  const { problems: items, header: head, columns } = decimalPage(config, seed);
 
   return {
     paper: config.paper,

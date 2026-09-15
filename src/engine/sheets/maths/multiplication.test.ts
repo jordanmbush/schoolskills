@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 import { answerKey, buildSheet, describeSheet } from "../index";
+import { printedBlockBox } from "../chrome";
 import { describeSheetFamily } from "../contract";
-import { PROBLEM_GAP, answerLine } from "../layout";
+import { PROBLEM_GAP, answerLine, numberRoom } from "../layout";
 import type {
   GridSpec,
   MarginSize,
@@ -12,7 +13,13 @@ import type {
   Problem,
 } from "../types";
 
-import { bracketHeight, divisionLines, longDigits, partialLines } from "./long";
+import {
+  bracketHeight,
+  bracketWidth,
+  divisionLines,
+  longDigits,
+  partialLines,
+} from "./long";
 import {
   MULTIPLICATION_SHEET,
   multiplicationGrid,
@@ -265,7 +272,7 @@ describe("the multiplication family", () => {
     expect(describeSheet(config({ tables: [7], operation: "both" }))).toBe(
       "The 7 times table, both ways",
     );
-    expect(describeSheet(config({ form: "vertical" }))).toBe(
+    expect(describeSheet(config({ form: "vertical", count: 12 }))).toBe(
       "Multiplication to 12 — worked in columns",
     );
     expect(describeSheet(config({ style: "missing" }))).toBe(
@@ -274,12 +281,22 @@ describe("the multiplication family", () => {
     expect(describeSheet(config({ style: "grid" }))).toBe(
       "Multiplication grid to 12",
     );
+    // A page that will come out short says so in its line too, as far as the
+    // line can know without a seed: what the paper holds against what was
+    // asked, and a pool with nothing in it.
+    expect(describeSheet(config({ form: "vertical" }))).toBe(
+      "Multiplication to 12 — worked in columns — only 18 of the 20 asked for fit on the page at this size",
+    );
+    expect(describeSheet(config({ tables: [] }))).toContain(
+      "nothing could be made with these settings",
+    );
     // The help level is in the line because it changes what a saved sheet is:
     // a guided division and a bare one are two different weeks' work.
     const divided = {
       style: "long" as const,
       operation: "divide" as const,
       digits: { into: 3, by: 1 },
+      count: 6,
     };
     expect(describeSheet(config(divided))).toBe(
       "Long division — 3-digit by 1-digit",
@@ -294,19 +311,19 @@ describe("the multiplication family", () => {
       describeSheet(config({ ...divided, help: "guided", remainders: true })),
     ).toBe("Long division with remainders — 3-digit by 1-digit — guided");
     // Nothing to help with on a long multiplication, so nothing is said.
+    const multiplied = { style: "long" as const, count: 6 };
     expect(
       describeSheet(
-        config({ style: "long", digits: { into: 3, by: 2 }, help: "grid" }),
+        config({ ...multiplied, digits: { into: 3, by: 2 }, help: "grid" }),
       ),
     ).toBe("Long multiplication — 3-digit by 2-digit");
     expect(
-      describeSheet(config({ style: "long", digits: { into: 3, by: 2 } })),
+      describeSheet(config({ ...multiplied, digits: { into: 3, by: 2 } })),
     ).toBe("Long multiplication — 3-digit by 2-digit");
     expect(
       describeSheet(
         config({
-          style: "long",
-          operation: "divide",
+          ...divided,
           digits: { into: 4, by: 1 },
           remainders: true,
         }),
@@ -315,7 +332,7 @@ describe("the multiplication family", () => {
   });
 
   it("gives the sheet a title and a score box it can be marked against", () => {
-    const sheet = buildSheet(config({ tables: [7] }), 3);
+    const sheet = buildSheet(config({ tables: [7], count: 12 }), 3);
     const block = sheet.blocks[0];
     expect(sheet.header.title).toBe("The 7 times table");
     expect(sheet.header.instructions).toBe("Work out each answer.");
@@ -325,16 +342,93 @@ describe("the multiplication family", () => {
     );
   });
 
+  it("says on the page when it came out short, and lays the page out under the sentence", () => {
+    // A count is a request, and the paper is the one place a parent looks:
+    // a sheet that printed a title, a score box and thirteen problems where
+    // twenty were asked for said nothing about the other seven.
+    const told = (over: Partial<MultiplicationConfig>, seed = 3) =>
+      buildSheet(config(over), seed).header.instructions;
+    // The seven times table is thirteen facts.
+    expect(told({ tables: [7] })).toBe(
+      "Work out each answer. Only 13 of the 20 asked for could be made with these settings.",
+    );
+    expect(buildSheet(config({ tables: [7] }), 3).header.score?.outOf).toBe(13);
+    // Column form fits eighteen of the twenty on a Letter page.
+    expect(told({ form: "vertical" })).toBe(
+      "Work out each answer. Only 18 of the 20 asked for fit on the page at this size.",
+    );
+    expect(told({ tables: [] })).toBe(
+      "Work out each answer. Nothing could be made with these settings.",
+    );
+    // On the end of a parent's own instruction line as well as the family's.
+    expect(told({ tables: [7], instructions: "Do these." })).toBe(
+      "Do these. Only 13 of the 20 asked for could be made with these settings.",
+    );
+    // A row too tall for the page at the largest type: nothing fits, and the
+    // page says so rather than printing a heading over blank paper.
+    const tall = {
+      style: "long" as const,
+      operation: "divide" as const,
+      digits: { into: 5, by: 1 },
+      fontPt: 36,
+    };
+    expect(multiplicationLayout(config(tall)).perPage).toBe(0);
+    expect(problemsOf(tall, 1)).toEqual([]);
+    expect(told(tall)).toBe(
+      "Show your working. Nothing fits on the page at this size.",
+    );
+    // And a page that fits what it was asked for says nothing.
+    expect(told({ tables: [7], count: 12 })).toBe("Work out each answer.");
+    // The sentence is part of the printed header, and the header is what the
+    // page was laid out under — so the problems fit beneath it, whatever row
+    // the sentence took.
+    for (const fontPt of [12, 24, 36]) {
+      const over = { form: "vertical" as const, fontPt, count: 200 };
+      const sheet = buildSheet(config(over), 3);
+      const block = sheet.blocks[0];
+      if (block.kind !== "problems") throw new Error("no problems");
+      const { row } = multiplicationLayout(config(over));
+      const rows = Math.ceil(block.items.length / block.columns);
+      expect(
+        rows * row + Math.max(0, rows - 1) * PROBLEM_GAP.y,
+        `${fontPt}pt`,
+      ).toBeLessThanOrEqual(printedBlockBox(sheet).height);
+      expect(sheet.header.instructions, `${fontPt}pt`).toMatch(
+        /Only \d+ of the 200 asked for fit on the page at this size\.$/,
+      );
+    }
+  });
+
   it("tells a child what to do with a form they have not met before", () => {
     expect(buildSheet(config({ style: "grid" }), 1).header.instructions).toBe(
       "Write each product in the square where its row meets its column.",
     );
     expect(
       buildSheet(
-        config({ style: "long", operation: "divide", remainders: true }),
+        config({
+          style: "long",
+          operation: "divide",
+          remainders: true,
+          count: 6,
+        }),
         1,
       ).header.instructions,
     ).toBe("Show your working. Write what is left over after an r.");
+  });
+
+  it("reads a saved config's operation back safely", () => {
+    // An operation from outside this build is multiplication rather than a
+    // sheet whose title says one thing and whose sums print `undefined`.
+    const stray = { operation: "pink" as unknown as "multiply" };
+    expect(buildSheet(config(stray), 1).header.title).toBe(
+      "Multiplication to 12",
+    );
+    for (const problem of problemsOf(stray, 1)) {
+      expect(problem.prompt).toContain("×");
+    }
+    expect(
+      buildSheet(config({ ...stray, style: "long", count: 6 }), 1).header.title,
+    ).toBe("Long multiplication");
   });
 });
 
@@ -648,21 +742,31 @@ describe("what may be on the page", () => {
   });
 
   it("prints nothing rather than something wrong when the ask is impossible", () => {
-    // No tables at all, and a long division of a one-digit number by a
-    // two-digit one. Both are empty sheets, which is the honest answer and the
+    // No tables at all is an empty sheet, which is the honest answer and the
     // builder's job to prevent.
     expect(problemsOf({ tables: [] }, 1)).toEqual([]);
-    expect(
-      problemsOf(
-        {
-          style: "long",
-          operation: "divide",
-          digits: { into: 1, by: 2 },
-          count: 4,
-        },
-        1,
-      ),
-    ).toEqual([]);
+  });
+
+  it("never divides a number by one with more digits than it has", () => {
+    // A two-digit divisor into a one-digit dividend is not a division. The
+    // ask is clamped to one digit each rather than printed as a titled page
+    // with nothing on it, and the line that names the sheet says what was set.
+    const asked = {
+      style: "long" as const,
+      operation: "divide" as const,
+      digits: { into: 1, by: 2 },
+      count: 4,
+    };
+    const problems = problemsOf(asked, 1);
+    expect(problems.length).toBeGreaterThan(0);
+    for (const problem of problems) {
+      expect(problem.bracket?.divisor).toMatch(/^\d$/);
+      expect(problem.bracket?.dividend).toMatch(/^\d$/);
+      expect(holds(sentences(problem)[0])).toBe(true);
+    }
+    expect(describeSheet(config(asked))).toBe(
+      "Long division — 1-digit by 1-digit",
+    );
   });
 });
 
@@ -843,23 +947,111 @@ describe("how much fits", () => {
   it("never prints more problems than the paper holds", () => {
     // The failure is silent on screen and obvious on paper: one row too many
     // is a second sheet out of the printer with two problems on it, and print
-    // is the whole of the output path (§10).
+    // is the whole of the output path (§10). Against the box the printed
+    // header leaves — which carries the sentence that says the page came out
+    // short, and may be a row shorter for it — rather than the config's.
     for (const size of SIZES) {
       for (const margin of MARGINS) {
-        for (const fontPt of [12, 18]) {
+        for (const fontPt of [8, 12, 18, 24, 36]) {
           for (const shape of EVERY_SHAPE) {
             const over = { ...shape, paper: paper({ size, margin }), fontPt };
-            const problems = problemsOf({ ...over, count: 200 }, 8);
-            const { box, columns, row } = multiplicationLayout(config(over));
-            const rows = Math.ceil(problems.length / columns);
+            const where = `${size}/${margin}/${fontPt}pt ${JSON.stringify(shape)}`;
+            const sheet = buildSheet(config({ ...over, count: 200 }), 8);
+            const block = sheet.blocks[0];
+            if (block.kind !== "problems")
+              throw new Error(`${where}: no block`);
+            const { row, perPage } = multiplicationLayout(config(over));
+            const rows = Math.ceil(block.items.length / block.columns);
             const used = rows * row + Math.max(0, rows - 1) * PROBLEM_GAP.y;
-            expect(used, `${size}/${margin}/${fontPt}pt`).toBeLessThanOrEqual(
-              box.height,
+            expect(used, where).toBeLessThanOrEqual(
+              printedBlockBox(sheet).height,
             );
+            // A row taller than the page holds nothing, and says so.
+            if (perPage === 0) {
+              expect(block.items, where).toEqual([]);
+              expect(sheet.header.instructions, where).toMatch(
+                /Nothing fits on the page at this size\.$/,
+              );
+            }
           }
         }
       }
     }
+  });
+
+  it("cuts the columns to the widest bracket, at every type size", () => {
+    // A bracket is a fixed drawing in squares and does not wrap to its
+    // column: a five-digit dividend by a two-digit divisor at 36pt is over
+    // five inches of house, and four columns of it would print each over the
+    // next. Read off the printed problem — divisor and dividend digits at the
+    // bracket's own cell — with the number in front, against the column the
+    // layout gave it.
+    const SHAPES: Array<Partial<MultiplicationConfig>> = [
+      { style: "long", operation: "divide", digits: { into: 3, by: 1 } },
+      { style: "long", operation: "divide", digits: { into: 5, by: 2 } },
+      {
+        style: "long",
+        operation: "divide",
+        digits: { into: 4, by: 2 },
+        remainders: true,
+      },
+      { style: "long", operation: "both", digits: { into: 5, by: 3 } },
+      { operation: "divide", form: "vertical" },
+      {
+        operation: "both",
+        form: "vertical",
+        tables: [12],
+        factors: { min: 12, max: 20 },
+      },
+    ];
+    for (const shape of SHAPES) {
+      for (const fontPt of [8, 12, 18, 24, 36]) {
+        for (const columns of [1, 2, 3, 4]) {
+          const over = { ...shape, fontPt, columns, count: 200 };
+          const where = `${JSON.stringify(shape)} ${fontPt}pt ${columns} columns`;
+          const { cell } = multiplicationLayout(config(over));
+          for (const problem of problemsOf(over, 8)) {
+            const bracket = problem.bracket;
+            if (!bracket) continue;
+            const digits = {
+              into: bracket.dividend.length,
+              by: bracket.divisor.length,
+            };
+            expect(
+              bracketWidth(digits, fontPt, shape.remainders === true) +
+                numberRoom(fontPt),
+              `${where}: ${bracket.dividend} ÷ ${bracket.divisor}`,
+            ).toBeLessThanOrEqual(cell);
+          }
+        }
+      }
+    }
+    // Cut only where it has to be: a three-by-one at the body size keeps
+    // its four columns; a five-by-two is seven squares, wider than a
+    // four-column cell at the body size and than a two-column one at the
+    // largest.
+    const narrow = (fontPt: number) =>
+      multiplicationLayout(
+        config({
+          style: "long",
+          operation: "divide",
+          digits: { into: 5, by: 2 },
+          fontPt,
+          columns: 4,
+        }),
+      ).columns;
+    expect(narrow(12)).toBe(3);
+    expect(narrow(36)).toBe(1);
+    expect(
+      multiplicationLayout(
+        config({
+          style: "long",
+          operation: "divide",
+          digits: { into: 3, by: 1 },
+          columns: 4,
+        }),
+      ).columns,
+    ).toBe(4);
   });
 
   it("does not throw the page away either", () => {
@@ -1018,10 +1210,15 @@ describe("how much fits", () => {
     // that may be nonsense. A row taller than the paper is a sheet with
     // nothing on it.
     expect(longDigits(config({ style: "long" }))).toEqual({ into: 3, by: 2 });
+    // And the number doing the working never has more digits than the one
+    // worked on: a two-digit divisor into a one-digit dividend is no division.
     expect(
       longDigits(config({ style: "long", digits: { into: 0, by: 99 } })),
-    ).toEqual({ into: 1, by: 5 });
-    expect(divisionLines({ into: 1, by: 5 })).toBe(2);
+    ).toEqual({ into: 1, by: 1 });
+    expect(
+      longDigits(config({ style: "long", digits: { into: 3, by: 5 } })),
+    ).toEqual({ into: 3, by: 3 });
+    expect(divisionLines({ into: 1, by: 1 })).toBe(2);
   });
 });
 

@@ -31,8 +31,9 @@ import type { BlockProps } from "./block";
 export function Problems({ block, metrics }: BlockProps<"problems">) {
   const columns = Math.max(1, Math.floor(block.columns));
   // Worked examples carry no number, so the problems a child answers still
-  // count from one however many examples stand before them.
-  let counted = 0;
+  // count from one — or from where the block before this one left off —
+  // however many examples stand before them.
+  let counted = Math.max(1, Math.floor(block.start ?? 1) || 1) - 1;
   const numbers = block.items.map((problem) => {
     if (problem.worked) return null;
     counted += 1;
@@ -40,7 +41,8 @@ export function Problems({ block, metrics }: BlockProps<"problems">) {
   });
   // A block of nothing but worked examples is a lesson's, and keeps the height
   // it was given: the spare paper on the page belongs to the problems after it.
-  const example = counted === 0 && block.items.length > 0;
+  const example =
+    block.items.length > 0 && numbers.every((number) => number === null);
 
   return (
     <ol

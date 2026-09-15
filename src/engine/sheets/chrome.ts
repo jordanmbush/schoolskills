@@ -265,6 +265,37 @@ export function chromeHeight(
 }
 
 /**
+ * What the instruction line says when a sheet holds fewer problems than were
+ * asked for, and nothing when it holds them all.
+ *
+ * `fit` is what the page had room for and `made` is what the draw managed
+ * inside that. The paper is the one place a parent will look, so a page that
+ * came out short says so on the page rather than printing a title, a score
+ * box and a silence — and a family that prints the sentence lays the page out
+ * again under it, because a longer instruction line can take a row from the
+ * problems it is about (§4).
+ */
+export function shortfall(
+  asked: number,
+  fit: number,
+  made: number,
+): string | null {
+  if (made >= asked) return null;
+  if (made === 0) {
+    return fit === 0
+      ? "Nothing fits on the page at this size."
+      : "Nothing could be made with these settings.";
+  }
+  return made < fit
+    ? `Only ${made} of the ${asked} asked for could be made with these settings.`
+    : `Only ${made} of the ${asked} asked for fit on the page at this size.`;
+}
+
+/** The same sentence as a part of the line that names a saved sheet. */
+export const shortfallPart = (sentence: string): string =>
+  sentence.charAt(0).toLowerCase() + sentence.slice(1).replace(/\.$/, "");
+
+/**
  * What is left for the blocks: the page, less its margins, less the chrome.
  *
  * Exported because it is the reservation itself, and the reservation is the

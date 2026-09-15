@@ -20,6 +20,7 @@ import { between } from "@/engine/random";
 
 import type { DecimalConfig, RoundTo } from "../types";
 
+import { own } from "../paper";
 import {
   MAX_PLACES,
   bounds,
@@ -49,17 +50,26 @@ export function drawPowers(
   config: DecimalConfig,
   rand: () => number,
 ): Drawn | null {
+  const power = between(1, 3, rand);
+  const multiply = rand() < 0.5;
+  // Dividing moves the digits right, so the value is drawn with fewer places
+  // to leave the answer room to stop inside `MAX_PLACES`: at three places, ÷
+  // 10 is asked of hundredths and ÷ 1000 of a whole number. Drawn at the full
+  // places and rejected afterwards, every decimal division on a thousandths
+  // sheet was thrown away and the page taught dividing on whole numbers only.
+  const places = multiply
+    ? placesOf(config)
+    : Math.min(placesOf(config), MAX_PLACES - power);
   const value =
-    rand() < WHOLE_SHARE ? drawWhole(config, rand) : drawValue(config, rand);
+    places === 0 || rand() < WHOLE_SHARE
+      ? drawWhole(config, rand)
+      : drawValue(config, rand, places);
   if (value === null) return null;
   // A value ending in a zero moves into `37.0` or `0.20`: right, and a fair
   // thing to mark a child's `37` against, but not a fair thing to print as
   // the key.
   if (value.units % 10 === 0) return null;
-  const power = between(1, 3, rand);
-  const multiply = rand() < 0.5;
   const answer = shifted(value, multiply ? power : -power);
-  if (answer.places > MAX_PLACES) return null;
   const text = fixedText(value);
   const by = scale(power);
   const sign = multiply ? "×" : "÷";
@@ -216,8 +226,9 @@ const TARGET_PLACES: Record<RoundTo, number> = {
 
 /** What a rounding sheet rounds to, made safe to read from a saved config. */
 export function roundTo(config: DecimalConfig): RoundTo {
-  const asked = config.to;
-  return asked !== undefined && asked in TARGET_PLACES ? asked : "whole";
+  const asked = String(config.to);
+  const known = own(TARGET_PLACES as Record<string, number>, asked, -1) >= 0;
+  return known ? (asked as RoundTo) : "whole";
 }
 
 /** The places the values on a rounding sheet carry: one past the target. */

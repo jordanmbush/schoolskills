@@ -15,7 +15,13 @@ import { shuffled } from "@/engine/random";
 
 import { fractionArt } from "../fractionart";
 import { answerLine } from "../layout";
-import { fixed, fixedText, shifted, type Fixed } from "../maths/exact";
+import {
+  fixed,
+  fixedText,
+  parseFixed,
+  shifted,
+  type Fixed,
+} from "../maths/exact";
 import type { DivisionHelp, LessonTopic, Problem } from "../types";
 
 import {
@@ -27,11 +33,12 @@ import {
   type Topic,
 } from "./blocks";
 
-/** "4.2" as `{ units: 42, places: 1 }` — the one place a lesson reads a decimal. */
-const fixedOf = (text: string): Fixed => {
-  const [whole, part = ""] = text.split(".");
-  return fixed(Number(whole + part), part.length);
-};
+/** An authored decimal, read back — and refused at build time if it was mistyped. */
+function fixedOf(text: string): Fixed {
+  const value = parseFixed(text);
+  if (value === null) throw new Error(`not a decimal: "${text}"`);
+  return value;
+}
 
 /* ── Powers of ten ─────────────────────────────────────────────────────── */
 

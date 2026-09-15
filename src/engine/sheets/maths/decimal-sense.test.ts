@@ -5,7 +5,14 @@ import { answerLine } from "../layout";
 import type { DecimalConfig, Paper, Problem } from "../types";
 
 import { decimalLayout } from "./decimals";
-import { compareFixed, shifted, timesFixed } from "./exact";
+import {
+  compareFixed,
+  fixed,
+  fixedText,
+  parseFixed,
+  shifted,
+  timesFixed,
+} from "./exact";
 
 /**
  * The number-sense styles and decimal × decimal, held to what each promises
@@ -124,6 +131,37 @@ describe("multiplying and dividing by 10, 100 and 1000", () => {
     // look about it.
     for (const problem of problems) {
       expect(read(problem).value, problem.prompt).toMatch(/[1-9]$/);
+    }
+    // At three places a division has to be drawn with fewer, or every decimal
+    // division lands past the cap and the page teaches dividing on whole
+    // numbers only while the instruction line teaches dividing.
+    const thousandths = SEEDS.flatMap((seed) =>
+      problemsOf({ style: "powers", places: 3, count: 20 }, seed),
+    );
+    const divisions = thousandths.filter((p) => read(p).sign === "÷");
+    expect(divisions.length).toBeGreaterThan(0);
+    expect(
+      divisions.filter((p) => read(p).value.includes(".")).length,
+    ).toBeGreaterThan(divisions.length / 3);
+  });
+
+  it("reads a decimal back, in `exact.ts`", () => {
+    // `fixedText` undone — the one other place that knows where the point
+    // goes, so a lesson's authored "4.2" is read by it and not by a second
+    // parser.
+    expect(parseFixed("3.45")).toEqual({ units: 345, places: 2 });
+    expect(parseFixed("12")).toEqual({ units: 12, places: 0 });
+    expect(parseFixed("0.048")).toEqual({ units: 48, places: 3 });
+    expect(parseFixed(" 7.00 ")).toEqual({ units: 700, places: 2 });
+    expect(parseFixed("-3.45")).toEqual({ units: -345, places: 2 });
+    for (const bad of ["", ".5", "5.", "1.2.3", "12a", "3,45", "1 2"]) {
+      expect(parseFixed(bad), bad).toBeNull();
+    }
+    for (let units = 0; units < 1200; units += 37) {
+      for (const places of [0, 1, 2, 3]) {
+        const value = fixed(units, places);
+        expect(parseFixed(fixedText(value))).toEqual(value);
+      }
     }
   });
 
@@ -370,14 +408,21 @@ describe("rounding decimals", () => {
   });
 
   it("reads a saved config's target back safely", () => {
-    const stray = { style: "round" as const, to: "pink" as unknown as "whole" };
-    for (const [problem, where] of sweep(stray)) {
-      expect(placesOf(read(problem)), where).toBe(1);
-      expect(placesOf(problem.answer), where).toBe(0);
+    // A name off `Object.prototype` is the case `in` gets wrong: `toString`
+    // is in every table, and the header would print the function's source.
+    for (const to of ["pink", "toString", "constructor", "__proto__"]) {
+      const stray = { style: "round" as const, to: to as unknown as "whole" };
+      for (const [problem, where] of sweep(stray)) {
+        expect(placesOf(read(problem)), where).toBe(1);
+        expect(placesOf(problem.answer), where).toBe(0);
+      }
+      expect(describeSheet(config(stray)), to).toBe(
+        "Rounding decimals — to the nearest whole number",
+      );
+      expect(buildSheet(config(stray), 1).header.instructions, to).toContain(
+        "nearest whole number",
+      );
     }
-    expect(describeSheet(config(stray))).toBe(
-      "Rounding decimals — to the nearest whole number",
-    );
   });
 });
 
@@ -602,10 +647,10 @@ describe("the number-sense sheets", () => {
  */
 const GOLDEN = {
   powers: [
-    ["2 ÷ 1000 =", "0.002"],
-    ["8.11 × 100 =", "811"],
+    ["13.98 × 10 =", "139.8"],
+    ["4 ÷ 100 =", "0.04"],
     ["4 ÷ 1000 =", "0.004"],
-    ["8 ÷ 10 =", "0.8"],
+    ["5.92 × 100 =", "592"],
   ],
   compare: [
     ["4.55 _ 4.8", "<"],

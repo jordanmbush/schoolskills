@@ -15,6 +15,7 @@
  */
 import type { Mil, NumberLine } from "./types";
 
+import { gcd } from "./maths/exact";
 import { inches } from "./paper";
 
 /** The axis, its ticks, and the labels under them. */
@@ -176,6 +177,34 @@ export function numberLine(low: number, high: number, width: Mil): NumberLine {
   // Nothing fits, which means the column is too narrow for the numbers on it
   // whatever is done. The coarsest spacing is the fewest labels there are.
   return lineAt(low, high, width, STEPS[STEPS.length - 1], 1);
+}
+
+/**
+ * A line from nought to `start` for hopping back along it in the sizes given
+ * (§23). Every landing is a tick, so the spacing divides the start and every
+ * hop, and the line ends on the start rather than on a round number past it:
+ * a line to 22 for 21 ÷ 3 has no 21 on it and no 18, 15 or 12 either. The
+ * finest such spacing whose labels fit, or the coarsest there is when none
+ * does — which for a lesson's numbers is the divisor itself.
+ */
+export function hopLine(
+  start: number,
+  sizes: number[],
+  width: Mil,
+): NumberLine {
+  const common = [start, ...sizes].reduce((left, right) => gcd(left, right), 0);
+  if (start <= 0 || common <= 0)
+    return numberLine(0, Math.max(1, start), width);
+  const at = (step: number): NumberLine => ({
+    from: 0,
+    to: start,
+    step,
+    width,
+  });
+  for (let step = 1; step <= common; step += 1) {
+    if (common % step === 0 && fits(at(step))) return at(step);
+  }
+  return at(common);
 }
 
 /**

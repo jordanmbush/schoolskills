@@ -24,7 +24,7 @@ import {
 import { decimalTableau } from "../maths/decimal-division";
 import { bracketHeight, divisionLines } from "../maths/long";
 import type { Tableau } from "../maths/tableau";
-import { lineHeight, numberLine } from "../numberline";
+import { hopLine, lineHeight } from "../numberline";
 import { inches, points } from "../paper";
 import type {
   Block,
@@ -40,6 +40,12 @@ export type Page = {
   width: Mil;
   /** One column of the problems to try, at the topic's own column count. */
   cell: Mil;
+  /**
+   * One column at any count — what a row of worked facts set three across on
+   * a two-column topic is measured against, since a prompt wraps in the
+   * column it is printed in and not in the topic's.
+   */
+  cellOf(columns: number): Mil;
   fontPt: number;
   font?: SheetFont;
 };
@@ -150,7 +156,7 @@ export function jumpsLine(
   dividend: number,
   divisor: number,
 ): LessonBlock {
-  const line = numberLine(0, dividend, page.width);
+  const line = hopLine(dividend, [divisor], page.width);
   return {
     kind: "numberline",
     line: { ...line, jumps: { start: dividend, size: divisor } },
@@ -166,31 +172,38 @@ export function chunkLine(
   dividend: number,
   chunks: number[],
 ): LessonBlock {
-  const line = numberLine(0, dividend, page.width);
+  const line = hopLine(dividend, chunks, page.width);
   return {
     kind: "numberline",
     line: { ...line, jumps: { start: dividend, sizes: chunks } },
   };
 }
 
+/** Digits with at most one point between them: the one shape a dividend has. */
+const DIVIDEND = /^\d+(?:\.\d+)?$/;
+
 /**
  * A division set in the bracket with its working already computed, so a
  * lesson's example is the same tableau a drill sheet keys (§21). The dividend
  * may carry a point (§22); the working is over the digits alone, and the
  * answer is read back off it with the point on the same boundary, or with
- * the remainder after it.
+ * the remainder after it. The squares reserved under the dividend are the
+ * standard algorithm's two per quotient digit.
  *
- * `rows` is the squares reserved under the dividend, which the standard
- * algorithm needs two of per quotient digit; a lesson that has a child work
- * some other way underneath — chunking — says how many lines it wants.
+ * The numbers are authored, so a dividend that is not a number or a divisor
+ * that is not a whole number above nought is refused here, where the suite
+ * builds every topic, rather than printed as an empty tableau over a "0".
  */
 export function bracket(
   page: Page,
   dividend: string,
   divisor: number,
   help: DivisionHelp,
-  over: { rows?: number; worked?: boolean } = {},
+  over: { worked?: boolean } = {},
 ): Problem {
+  if (!DIVIDEND.test(dividend) || !Number.isInteger(divisor) || divisor < 1) {
+    throw new Error(`not a division: ${dividend} ÷ ${divisor}`);
+  }
   const digits = dividend.replace(".", "");
   const tableau = decimalTableau(dividend, divisor);
   return {
@@ -199,9 +212,7 @@ export function bracket(
       divisor: String(divisor),
       dividend,
       cell: answerLine(page.fontPt),
-      rows:
-        over.rows ??
-        divisionLines({ into: digits.length, by: String(divisor).length }),
+      rows: divisionLines({ into: digits.length, by: String(divisor).length }),
       help,
       tableau,
     },
@@ -215,10 +226,7 @@ function bracketAnswer(dividend: string, tableau: Tableau): string {
   const { text, start } = tableau.quotient;
   const point = dividend.indexOf(".");
   if (point < 0) {
-    const quotient = String(Number(text));
-    return tableau.remainder > 0
-      ? `${quotient} r ${tableau.remainder}`
-      : quotient;
+    return tableau.remainder > 0 ? `${text} r ${tableau.remainder}` : text;
   }
   const cut = point - start;
   return `${text.slice(0, cut)}.${text.slice(cut)}`;
@@ -233,27 +241,38 @@ export function worked(facts: Problem[], columns: number): LessonBlock {
   };
 }
 
-/** The problems to try. */
-export function tryIt(items: Problem[], columns: number): LessonBlock {
-  return { kind: "problems", columns, items };
+/** The problems to try, numbered from `start` when they carry on from a block before. */
+export function tryIt(
+  items: Problem[],
+  columns: number,
+  start = 1,
+): LessonBlock {
+  return { kind: "problems", columns, items, ...(start > 1 ? { start } : {}) };
 }
 
 /**
- * How many lines a prompt wraps onto in its column, with its number in front
- * and its slot on the end — counted from the characters the way a note's
- * lines are, and for the same reason: "12 shared between 3 is ___ each" is
- * two lines in a third of a page, and a row reserved for one prints the last
- * row of the page on a second sheet.
+ * How many lines a prompt wraps onto in the column it is printed in, with its
+ * number in front — a worked example carries none — and its slot on the end.
+ * Counted from the characters the way a note's lines are, and for the same
+ * reason: "12 shared between 3 is ___ each" is two lines in a third of a
+ * page, and a row reserved for one prints the last row of the page on a
+ * second sheet.
  */
-function promptLines(problem: Problem, page: Page, ruled: boolean): number {
-  const text = problem.prompt.replace("_", "");
+function promptLines(
+  problem: Problem,
+  page: Page,
+  ruled: boolean,
+  columns: number,
+): number {
+  const text = problem.prompt.replace("_", "").trim();
   const across = fittedCharacters(
-    Math.max(1, page.cell - (ruled ? 0 : SLOT_WIDTH)),
+    Math.max(1, page.cellOf(columns) - (ruled ? 0 : SLOT_WIDTH)),
     points(page.fontPt),
     faceOf(page.font),
     text,
   );
-  return Math.max(1, Math.ceil((text.length + NUMBER_CHARACTERS) / across));
+  const number = problem.worked ? 0 : NUMBER_CHARACTERS;
+  return Math.max(1, Math.ceil((text.length + number) / across));
 }
 
 /**
@@ -266,7 +285,7 @@ function promptLines(problem: Problem, page: Page, ruled: boolean): number {
  * by side when the column is wide enough, which is the long side to be wrong
  * on (§4).
  */
-function problemHeight(problem: Problem, page: Page): Mil {
+function problemHeight(problem: Problem, page: Page, columns: number): Mil {
   const parts: Mil[] = [];
   if (problem.art) parts.push(artHeight(problem.art));
   if (problem.counters) {
@@ -285,7 +304,8 @@ function problemHeight(problem: Problem, page: Page): Mil {
   // A bracket has no prompt and no slot: its answer goes over the dividend.
   if (problem.prompt !== "" || !(ruled || problem.bracket)) {
     parts.push(
-      points(page.fontPt * LINE_EMS) * promptLines(problem, page, ruled),
+      points(page.fontPt * LINE_EMS) *
+        promptLines(problem, page, ruled, columns),
     );
   }
   if (ruled) {
@@ -320,7 +340,8 @@ export function blockHeight(block: LessonBlock, page: Page): Mil {
       const columns = Math.max(1, block.columns);
       const rows = Math.ceil(block.items.length / columns);
       const row = block.items.reduce(
-        (tallest, item) => Math.max(tallest, problemHeight(item, page)),
+        (tallest, item) =>
+          Math.max(tallest, problemHeight(item, page, columns)),
         0,
       );
       return rows * row + PROBLEM_GAP.y * Math.max(0, rows - 1);

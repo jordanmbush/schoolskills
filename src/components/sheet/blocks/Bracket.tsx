@@ -118,7 +118,10 @@ export function Bracket({
           </span>
           {columns.map((column) => {
             const digit = row && digitAt(spanOf(row), column);
-            const written = answers && ruled && digit !== undefined;
+            // The squares are there at every level and only the borders
+            // differ, so the key writes the working into them whether or not
+            // the sheet drew them: a parent marking from the key wants it.
+            const written = answers && digit !== undefined;
             return (
               <Square
                 key={column}

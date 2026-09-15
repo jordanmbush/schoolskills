@@ -42,6 +42,23 @@ export const answerLine = (fontPt: number): Mil =>
   Math.max(inches(0.25), points(fontPt * 1.35));
 
 /**
+ * How wide a figure is, in ems of the body type. A tabular figure in the face
+ * a sheet prints in is about six tenths of an em, and a comma and a space are
+ * narrower, so a line reserved by this is wider than the line it holds.
+ */
+export const DIGIT_EM = 0.6;
+
+/**
+ * The room a problem's number takes in front of it: two digits and a full
+ * stop at the body size, `.sheet__number`'s margin, and the gap
+ * `.sheet__problem` puts after it. What a family adds to a drawing's own width
+ * before asking how many columns of it fit — a bracket exactly as wide as its
+ * column would print its number on the line above.
+ */
+export const numberRoom = (fontPt: number): Mil =>
+  points(fontPt * DIGIT_EM * 3) + inches(0.12);
+
+/**
  * The air between one problem and the next, down and across.
  *
  * `.sheet__problems` in sheet.css is the grid every maths family prints
@@ -96,7 +113,7 @@ export const ASIDE_EM = 0.85;
 export const NOTE_PAD: Mil = inches(0.08);
 
 /** The border itself, top and bottom. */
-const NOTE_RULE: Mil = points(0.75);
+export const NOTE_RULE: Mil = points(0.75);
 
 /**
  * How tall a note of `lines` lines stands, border and all, at the size its

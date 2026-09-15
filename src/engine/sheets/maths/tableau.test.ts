@@ -97,7 +97,10 @@ describe("the tableau of a long division", () => {
       const by = 1 + Math.floor(rand() * 3);
       const dividend = Math.floor(rand() * 10 ** into);
       const divisor = Math.max(1, Math.floor(rand() * 10 ** by));
-      const digits = String(dividend);
+      // With noughts in front some of the time: a decimal dividend's digits
+      // arrive that way — `0.69` is `069` — and the working has to start at
+      // the first column the divisor goes into, not at the first digit.
+      const digits = "0".repeat(Math.floor(rand() * 3)) + String(dividend);
       const where = `${digits} ÷ ${divisor}`;
 
       const tableau = divisionTableau(digits, divisor);

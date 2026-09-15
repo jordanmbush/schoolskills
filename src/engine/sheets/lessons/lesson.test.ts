@@ -5,7 +5,7 @@ import { printedBlockBox } from "../chrome";
 import { describeSheetFamily } from "../contract";
 import { grouped } from "../counters";
 import { BLOCK_GAP, answerLine } from "../layout";
-import { jumps } from "../numberline";
+import { jumps, ticks } from "../numberline";
 import type {
   Block,
   Counters,
@@ -17,7 +17,7 @@ import type {
   Problem,
 } from "../types";
 
-import { blockHeight, type LessonBlock } from "./blocks";
+import { blockHeight, bracket, type LessonBlock } from "./blocks";
 import { DECIMAL_TRY_ITS } from "./decimals";
 import { TRY_ITS } from "./division";
 import {
@@ -251,6 +251,52 @@ describe("a lesson", () => {
     );
   });
 
+  it("puts the dividend and every landing of a hop on a tick", () => {
+    // A line counted in twos to 22 has no 21 on it, and a child sent to jump
+    // back in threes from 21 has nowhere to start. Every line a lesson draws
+    // hops on, and every blank one a child hops on, ends on the dividend
+    // with every landing marked.
+    const landings = (line: Block & { kind: "numberline" }): number[] =>
+      jumps(line.line).flatMap((hop) => [hop.from, hop.to]);
+    for (const topic of ["division-grouping", "division-chunking"] as const) {
+      const { page } = lessonLayout(config({ topic }));
+      for (const block of topicOf(topic).lesson(page)) {
+        if (block.kind !== "numberline") continue;
+        const marks = ticks(block.line);
+        expect(block.line.to, topic).toBe(block.line.jumps?.start);
+        expect(landings(block).length, topic).toBeGreaterThan(0);
+        for (const at of landings(block)) expect(marks, topic).toContain(at);
+      }
+    }
+    const onTheLine = TRY_ITS.GROUPS.slice(4);
+    expect(onTheLine.length).toBeGreaterThan(0);
+    for (const problem of tryIts("division-grouping", 1)) {
+      if (!problem.line) continue;
+      const [dividend, divisor] = numbersIn(problem.prompt);
+      const marks = ticks(problem.line);
+      expect(problem.line.to, problem.prompt).toBe(dividend);
+      for (let at = dividend; at >= 0; at -= divisor) {
+        expect(marks, `${problem.prompt} at ${at}`).toContain(at);
+      }
+    }
+  });
+
+  it("refuses a division that is not one, at build time", () => {
+    // The numbers are authored, so a mistyped dividend fails the suite
+    // rather than printing an empty tableau over a "0".
+    const { page } = lessonLayout(config());
+    for (const dividend of ["", "12a", "1.2.3", ".5", "5.", "6 57"]) {
+      expect(() => bracket(page, dividend, 3, "grid"), dividend).toThrow();
+    }
+    for (const divisor of [0, -3, 2.5, NaN]) {
+      expect(() => bracket(page, "657", divisor, "grid"), `${divisor}`) //
+        .toThrow();
+    }
+    expect(bracket(page, "657", 3, "grid").answer).toBe("219");
+    expect(bracket(page, "8.46", 3, "grid").answer).toBe("2.82");
+    expect(bracket(page, "14", 4, "grid").answer).toBe("3 r 2");
+  });
+
   it("chunks the line into the lumps the steps name, and lands on nought", () => {
     const { page } = lessonLayout(config({ topic: "division-chunking" }));
     const blocks = topicOf("division-chunking").lesson(page);
@@ -394,6 +440,29 @@ describe("the problems to try", () => {
     }
   });
 
+  it("are dealt the same way for a seed as they were the day this shipped", () => {
+    // The footer's promise: a seed is the same order next week, across a
+    // deploy. Held on the two shapes of deal — one shuffle, and long
+    // division's two halves each shuffled on their own — so a refactor that
+    // moved where the deal spends `rand()` is a decision rather than a slip.
+    expect(tryIts("division-sharing", 1).map(nameOf)).toEqual([
+      "20 ÷ 5 =",
+      "15 ÷ 3 =",
+      "24 ÷ 4 =",
+      "12 ÷ 4 =",
+      "8 ÷ 2 =",
+      "18 ÷ 3 =",
+    ]);
+    expect(tryIts("long-division-steps", 1).map(nameOf)).toEqual([
+      "528 ÷ 4",
+      "735 ÷ 5",
+      "848 ÷ 4",
+      "936 ÷ 4",
+      "861 ÷ 7",
+      "975 ÷ 3",
+    ]);
+  });
+
   it("have answers that add back up to the dividend", () => {
     for (const topic of LESSON_TOPICS) {
       for (const seed of [1, 2, 3]) {
@@ -412,13 +481,20 @@ describe("the problems to try", () => {
           expect(added(divisor, Number(problem.answer)), name).toBe(dividend);
           return;
         }
-        // An array's two divisions, each a sentence on its own line.
+        // An array's two divisions, each a sentence on its own line — and
+        // each the picture's own numbers: by its rows, then by its columns.
         expect(problem.answers).toHaveLength(2);
-        for (const sentence of problem.answers) {
+        const picture = problem.counters;
+        if (!picture) throw new Error(`${name}: no array`);
+        const rows = grouped(picture).groups;
+        problem.answers.forEach((sentence, at) => {
           const [dividend, divisor, quotient] = numbersIn(sentence);
           expect(added(divisor, quotient), sentence).toBe(dividend);
-          expect(problem.counters?.total, sentence).toBe(dividend);
-        }
+          expect(picture.total, sentence).toBe(dividend);
+          expect([divisor, quotient], sentence).toEqual(
+            at === 0 ? [rows, picture.per] : [picture.per, rows],
+          );
+        });
         expect(problem.answer).toBe(problem.answers.join(" · "));
         return;
       }
@@ -565,7 +641,9 @@ describe("the problems to try", () => {
         if (!problem.bracket) throw new Error(`${topic}: no bracket`);
         expect(problem.bracket.cell).toBe(line);
         expect(problem.bracket.rows).toBe(6);
-        expect(problem.bracket.tableau).toBeDefined();
+        // Never a line of working past the squares reserved for it.
+        expect(problem.bracket.tableau?.rows.length, topic) //
+          .toBeLessThanOrEqual(problem.bracket.rows);
         return problem.bracket.help;
       });
     for (const seed of [1, 2, 3]) {
@@ -624,11 +702,28 @@ describe("the page", () => {
     return pages;
   };
 
+  /**
+   * A lone block the family cannot cut smaller — a paragraph, a picture, a
+   * chart, or one row of problems: everything but a block of problems with
+   * more than one row in it. Taller than the page, it runs over the foot,
+   * which is the honest answer to paper that cannot hold one paragraph — and
+   * at the largest type on Letter, the only one.
+   */
+  const uncuttable = (blocks: LessonBlock[]): boolean =>
+    blocks.length === 1 &&
+    !(
+      blocks[0].kind === "problems" &&
+      blocks[0].items.length > Math.max(1, blocks[0].columns)
+    );
+
   it("reserves no more than the printed header and footer leave", () => {
     // Against the box the printed sheet actually has, not the one the config
     // was laid out against — the one way a family can be caught out (§4).
+    // Strict at the sizes the lessons were written for. From 24pt up one
+    // paragraph — the long-division steps — or one row of arrays is taller
+    // than a Letter page, and a page of nothing but that may run over.
     for (const one of EVERY_SHEET) {
-      for (const fontPt of [12, 14, 18]) {
+      for (const fontPt of [12, 14, 18, 24, 36]) {
         const sheet = buildSheet({ ...one, fontPt }, 1);
         const { page } = lessonLayout({ ...one, fontPt });
         const limit = printedBlockBox(sheet).height;
@@ -638,11 +733,59 @@ describe("the page", () => {
               sum + blockHeight(block, page) + (index > 0 ? BLOCK_GAP : 0),
             0,
           );
+          if (fontPt >= 24 && uncuttable(blocks) && used > limit) continue;
           expect(used, `${one.topic} at ${fontPt}pt`).toBeLessThanOrEqual(
             limit,
           );
         }
       }
+    }
+  });
+
+  it("cuts the problems to try into rows when the whole block is taller than the page", () => {
+    // A block taller than the page runs off the foot of it, and a row is the
+    // smallest piece the renderer prints whole — so at the largest type the
+    // six go one row to a block, numbered on from the last, and every block
+    // fits the box. At the size a lesson was written for they stay one block.
+    const asked = (blocks: Block[]) =>
+      blocks.filter(
+        (block): block is Block & { kind: "problems" } =>
+          block.kind === "problems" && !block.items.every((one) => one.worked),
+      );
+    let cut = 0;
+    for (const topic of LESSON_TOPICS) {
+      const at = config({ topic, fontPt: 36 });
+      const { box, page, columns } = lessonLayout(at);
+      const blocks = asked(lessonBlocks(at, 1).blocks);
+      const items = blocks.flatMap((block) => block.items);
+      expect(items.map(nameOf), topic).toEqual(tryIts(topic, 1).map(nameOf));
+      const whole = blockHeight({ kind: "problems", columns, items }, page);
+      if (whole <= box.height) {
+        expect(blocks, topic).toHaveLength(1);
+        continue;
+      }
+      cut += 1;
+      expect(blocks.length, topic).toBeGreaterThan(1);
+      let next = 1;
+      for (const block of blocks) {
+        // One row each — the smallest piece there is, so a row taller than
+        // the page is the page's to run over rather than the split's to fix.
+        expect(block.items.length, topic).toBeLessThanOrEqual(columns);
+        expect(block.start ?? 1, topic).toBe(next);
+        next += block.items.length;
+      }
+      // And at 24pt, where every row fits, every block does.
+      const smaller = config({ topic, fontPt: 24 });
+      const { box: room, page: at24 } = lessonLayout(smaller);
+      for (const block of asked(lessonBlocks(smaller, 1).blocks)) {
+        expect(blockHeight(block, at24), `${topic} at 24pt`) //
+          .toBeLessThanOrEqual(room.height);
+      }
+    }
+    expect(cut).toBeGreaterThan(0);
+    for (const topic of LESSON_TOPICS) {
+      expect(asked(lessonBlocks(config({ topic }), 1).blocks), topic) //
+        .toHaveLength(1);
     }
   });
 

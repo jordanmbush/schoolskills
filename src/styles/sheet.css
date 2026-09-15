@@ -521,7 +521,9 @@
   max-width: 100%;
 }
 
-.sheet__caption {
+/* Scoped to the counters, because a net's and a clock's `.sheet__caption`
+   is set at 0.8em further down and a bare selector here would lose to it. */
+.sheet__counters .sheet__caption {
   font-size: 0.85em;
 }
 
