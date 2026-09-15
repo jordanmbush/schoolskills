@@ -21,7 +21,7 @@ const L01 = lessonById("L01")!;
 describe("lessonConfig", () => {
   it("files every attempt under one key, whatever the passage", () => {
     // §5.4, and the reason `configKey` leaves the words out when a lesson id
-    // is there to stand in for them: lesson 7 generates a fresh passage every
+    // is there to stand in for them: lesson 9 generates a fresh passage every
     // run, so folding them in would put each attempt in a bucket of one and a
     // child would never be shown their own best.
     const first = lessonConfig(L01, 1);

@@ -1,5 +1,5 @@
 import { percent } from "@/engine/format";
-import type { Lesson } from "@/engine/typing/lessons";
+import { isHeldKeyLesson, type Lesson } from "@/engine/typing/lessons";
 import type { Bar, Verdict } from "@/engine/typing/verdict";
 import { weakestKey } from "./lessonNotes";
 
@@ -34,7 +34,9 @@ export function PassBars({
           Which of many keys gets the room is `weakestKey`'s to say. */}
       {key && (
         <Meter
-          label={`New key ${key.key}`}
+          // Nothing a held-key lesson drills is new to the child (§5.8) —
+          // the gate is the same one under an honest name.
+          label={`${isHeldKeyLesson(lesson) ? "Key" : "New key"} ${key.key}`}
           bar={key}
           value={percent(key.got)}
           target={percent(key.need)}

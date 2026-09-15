@@ -11,7 +11,7 @@ import type { Run } from "./verdict";
  * What the three bars have to prove (§6.1, §6.4).
  *
  * The criteria are built here rather than taken from the ladder, because what
- * is under test is the gate and not lesson 25's tuning — a test that read
+ * is under test is the gate and not lesson 29's tuning — a test that read
  * `keyStrikes` off the table would go green the day someone lowered it. The
  * shipped hundred get their own describe at the end, asserting only what the
  * verdict promises about any of them.
@@ -62,7 +62,7 @@ const run = (
 
 /** A lesson that introduces `z`, with criteria the test can dictate. */
 const lessonWith = (over: Partial<Lesson> = {}): Lesson => ({
-  n: 25,
+  n: 29,
   id: "L25",
   block: 3,
   title: "The last corner",
@@ -112,7 +112,7 @@ describe("the new-key gate", () => {
   /**
    * §6.4, in one test: two wrong words out of forty-two is 5% of the run and
    * 50% of the letter, so the run passes on accuracy and on speed and fails on
-   * the only thing lesson 25 was for.
+   * the only thing lesson 29 was for.
    */
   it("fails a run that was fast and accurate but fumbled the new key", () => {
     const lesson = lessonWith({
@@ -371,7 +371,7 @@ describe("against the shipped ladder", () => {
   };
 
   it("gives one bar per character the lesson introduces", () => {
-    // Lesson 25 hands over `z` and `/` together.
+    // Lesson 29 hands over `z` and `/` together.
     const verdict = verdictFor(run(right(26, "zip")), lesson("L25"));
 
     expect(verdict.keys.map((k) => k.key)).toEqual(["z", "/"]);

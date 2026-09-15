@@ -10,8 +10,8 @@ import { buildWave, type Wave, type WaveSpec } from "./storm";
  * criterion rather than bookkeeping: a `StormShape` has no `keys` field and
  * the table `satisfies` it, so there is nowhere to write a character down and
  * the pool can only ever come from `unlockedAt(n)` — **a storm can never ask
- * for a key the ladder has not taught** (decision 56). Move lesson 39's storm
- * to rung 12 and it rains what a child at lesson 12 has met, with nothing to
+ * for a key the ladder has not taught** (decision 56). Move lesson 45's storm
+ * to rung 14 and it rains what a child at lesson 14 has met, with nothing to
  * edit.
  *
  * It cannot live in `lessons.ts`. That module is the one file in
@@ -60,7 +60,7 @@ export const STORM_LESSONS: readonly StormLesson[] =
  *
  * Named classes rather than character lists, because the list is always "the
  * ones this child has met" — `unlockedAt(n)` filtered, never a set written
- * down beside it. Lesson 53 is the case that makes the difference: the digits
+ * down beside it. Lesson 61 is the case that makes the difference: the digits
  * a child has by then are `3 4 5 6`, and a hand-written `0123456789` would
  * rain four keys the ladder has not taught.
  *
@@ -77,9 +77,9 @@ const FOCUS: Record<StormFocus, (ch: string) => boolean> = {
  * How much of a focused level is its focus: **about half** (§5.7).
  *
  * A share rather than a fixed multiplier, because the two ends of the ladder
- * pull opposite ways. At lesson 53 four digits stand against sixty letters and
+ * pull opposite ways. At lesson 61 four digits stand against sixty letters and
  * marks, so "three copies of each" would put 17% of "Hailstorm · Digits" on
- * the number row; at lesson 34 the alphabet is already nearly half capitals,
+ * the number row; at lesson 40 the alphabet is already nearly half capitals,
  * and the same multiplier would rain almost nothing else. So the number of
  * copies is solved for rather than chosen.
  */
@@ -142,7 +142,7 @@ export function waveSpecFor(lesson: StormLesson): WaveSpec {
  * This level's storm, built.
  *
  * One call, so that nothing outside this module has to hold both halves of
- * `(spec, seed)` and no screen can build lesson 45's spec at lesson 39's seed.
+ * `(spec, seed)` and no screen can build lesson 51's spec at lesson 45's seed.
  * It is not memoised: a wave is a few dozen small objects and it is built once
  * per run, where a cache would be a second place a level's weather lives.
  */

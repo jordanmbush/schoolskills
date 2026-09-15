@@ -5,7 +5,7 @@ import type { CardResult, Session } from "@/engine/types";
 import { buildDrill } from "@/engine/decks";
 import { typingMode } from "@/engine/decks/typing";
 import { ladderProgress } from "./ladder";
-import { LESSONS } from "./lessons";
+import { HELD_KEY_LESSONS, LESSONS } from "./lessons";
 import type { Lesson } from "./lessons";
 
 /**
@@ -101,7 +101,7 @@ const diedInTheStorm = (of: Lesson) =>
 
 /**
  * Re-tune a lesson's speed bar for the length of one test, and put it back:
- * the deploy that lowers lesson 41 from 18 wpm to 17. Nothing else changes —
+ * the deploy that lowers lesson 47 from 18 wpm to 17. Nothing else changes —
  * least of all the sessions, which is the point.
  */
 function retuned(n: number, wpm: number, body: () => void) {
@@ -130,7 +130,7 @@ describe("a child who has done nothing", () => {
    */
   it("is not advanced by runs that are not lessons", () => {
     const notALesson = (mode: string): Session => ({
-      ...passing(lesson(30)),
+      ...passing(lesson(36)),
       mode,
     });
     const progress = ladderProgress([
@@ -150,7 +150,7 @@ describe("a child who has done nothing", () => {
    */
   it("is not advanced by a drill filed under a lesson's mode", () => {
     const drill = {
-      ...passing(lesson(41)),
+      ...passing(lesson(47)),
       config: buildDrill(["all", "glad"], typingMode("L41"), {
         inputMode: "type" as const,
         timeLimitMs: null,
@@ -161,12 +161,12 @@ describe("a child who has done nothing", () => {
     expect(ladderProgress([drill]).cleared.has(41)).toBe(false);
     // And the lesson itself still clears it, so this is a discriminator and
     // not a wall.
-    expect(ladderProgress([passing(lesson(41))]).cleared.has(41)).toBe(true);
+    expect(ladderProgress([passing(lesson(47))]).cleared.has(47)).toBe(true);
   });
 
-  /** Fast enough, and half of it wrong. Lesson 41 asks 95%. */
+  /** Fast enough, and half of it wrong. Lesson 47 asks 95%. */
   it("is not advanced by a run that missed a bar", () => {
-    const sloppy = run(lesson(41), [card("all", "all"), card("glad", "glaf")], {
+    const sloppy = run(lesson(47), [card("all", "all"), card("glad", "glaf")], {
       wpm: 30,
     });
     expect(ladderProgress([sloppy]).cleared.has(41)).toBe(false);
@@ -182,34 +182,34 @@ describe("unlocking", () => {
   });
 
   /**
-   * §6.6's placement test. Note what `cleared` does *not* say: 1–29 are not in
+   * §6.6's placement test. Note what `cleared` does *not* say: 1–35 are not in
    * it, because nothing was ever run at them and this set is proof rather than
    * permission. They are behind the child all the same, because `best` is what
    * the ladder locks against and `best` is a maximum.
    */
   it("carries a child to the checkpoint they passed", () => {
-    const progress = ladderProgress([passing(lesson(30))]);
-    expect(progress.cleared.has(30)).toBe(true);
-    expect(progress.cleared.has(29)).toBe(false);
-    expect(progress.best).toBe(30);
-    expect(progress.next).toBe(31);
+    const progress = ladderProgress([passing(lesson(36))]);
+    expect(progress.cleared.has(36)).toBe(true);
+    expect(progress.cleared.has(35)).toBe(false);
+    expect(progress.best).toBe(36);
+    expect(progress.next).toBe(37);
   });
 
   /** A maximum, not the latest: a child revisiting lesson 5 keeps their place. */
   it("takes the highest pass, whatever order the runs are in", () => {
     const progress = ladderProgress([
-      passing(lesson(60)),
+      passing(lesson(70)),
       passing(lesson(5)),
       passing(lesson(6)),
     ]);
-    expect(progress.best).toBe(60);
-    expect(progress.next).toBe(61);
+    expect(progress.best).toBe(70);
+    expect(progress.next).toBe(71);
   });
 
   it("stops at the top of the ladder", () => {
-    const progress = ladderProgress([passing(lesson(100))]);
-    expect(progress.best).toBe(100);
-    expect(progress.next).toBe(100);
+    const progress = ladderProgress([passing(lesson(110))]);
+    expect(progress.best).toBe(110);
+    expect(progress.next).toBe(110);
   });
 
   /**
@@ -222,7 +222,7 @@ describe("unlocking", () => {
       passing(lesson(1)),
       passing(lesson(5)),
       passing(lesson(6)),
-      passing(lesson(7)),
+      passing(lesson(9)),
     ];
     const whole = ladderProgress(runs);
     const pruned = ladderProgress(runs.slice(1));
@@ -232,35 +232,35 @@ describe("unlocking", () => {
     // A count would have moved; the maximum does not.
     expect(pruned.best).toBe(whole.best);
     expect(pruned.next).toBe(whole.next);
-    expect(pruned.next).toBe(8);
+    expect(pruned.next).toBe(10);
   });
 });
 
 describe("Hailstorm never gates the ladder", () => {
-  it("opens lesson 46 when 44 is cleared, whatever happened at 45", () => {
+  it("opens lesson 52 when 50 is cleared, whatever happened at 51", () => {
     const failed = ladderProgress([
-      passing(lesson(44)),
-      diedInTheStorm(lesson(45)),
+      passing(lesson(50)),
+      diedInTheStorm(lesson(51)),
     ]);
-    expect(failed.cleared.has(45)).toBe(false);
-    expect(failed.best).toBe(44);
-    expect(failed.open).toBe(46);
+    expect(failed.cleared.has(51)).toBe(false);
+    expect(failed.best).toBe(50);
+    expect(failed.open).toBe(52);
 
-    // And the same for a child who never opened the storm at all: 46 is open
-    // on `open` alone, with nothing at 45 to show for it.
-    expect(ladderProgress([passing(lesson(44))]).open).toBe(46);
+    // And the same for a child who never opened the storm at all: 52 is open
+    // on `open` alone, with nothing at 51 to show for it.
+    expect(ladderProgress([passing(lesson(50))]).open).toBe(52);
   });
 
   /**
    * Decision 72, and the other half of the rule above. `open` is what keeps a
    * wave optional; the pointer is what stops it being invisible. Carrying both
-   * — which is what shipped first — meant a child passed 44, was sent to 46,
-   * and never learnt there was a game at 45 to turn down.
+   * — which is what shipped first — meant a child passed 50, was sent to 52,
+   * and never learnt there was a game at 51 to turn down.
    */
   it("points at the storm rather than over it", () => {
-    const progress = ladderProgress([passing(lesson(44))]);
-    expect(progress.next).toBe(45);
-    expect(lesson(45).kind.type).toBe("storm");
+    const progress = ladderProgress([passing(lesson(50))]);
+    expect(progress.next).toBe(51);
+    expect(lesson(51).kind.type).toBe("storm");
   });
 
   /**
@@ -287,40 +287,40 @@ describe("Hailstorm never gates the ladder", () => {
    * older ones are pruned.
    */
   it("still clears a wave that was survived", () => {
-    const progress = ladderProgress([passing(lesson(45))]);
-    expect(progress.cleared.has(45)).toBe(true);
-    expect(progress.best).toBe(45);
-    expect(progress.next).toBe(46);
-    expect(progress.open).toBe(46);
+    const progress = ladderProgress([passing(lesson(51))]);
+    expect(progress.cleared.has(51)).toBe(true);
+    expect(progress.best).toBe(51);
+    expect(progress.next).toBe(52);
+    expect(progress.open).toBe(52);
   });
 
-  /** Nothing to step past on the ninety-nine rungs that are not a wave. */
+  /** Nothing to step past on the ninety rungs that are not a wave. */
   it("leaves the pointer and the frontier together off a storm", () => {
-    const progress = ladderProgress([passing(lesson(7))]);
-    expect(progress.next).toBe(8);
-    expect(progress.open).toBe(8);
+    const progress = ladderProgress([passing(lesson(9))]);
+    expect(progress.next).toBe(10);
+    expect(progress.open).toBe(10);
   });
 });
 
 describe("criteria that change", () => {
   /**
-   * §6.5's second claim: tune lesson 41's speed bar down and every child who
+   * §6.5's second claim: tune lesson 47's speed bar down and every child who
    * was one wpm short is through, with nothing written back to a record book
    * that holds the only copy there is.
    */
   it("clears a run that was one wpm short, without touching it", () => {
-    const asked = lesson(41).pass;
-    if (asked.kind !== "lesson") throw new Error("lesson 41 has no speed bar");
-    const runs = [passing(lesson(41), asked.wpm - 1)];
+    const asked = lesson(47).pass;
+    if (asked.kind !== "lesson") throw new Error("lesson 47 has no speed bar");
+    const runs = [passing(lesson(47), asked.wpm - 1)];
     const asSaved = structuredClone(runs[0]);
 
-    expect(ladderProgress(runs).cleared.has(41)).toBe(false);
+    expect(ladderProgress(runs).cleared.has(47)).toBe(false);
 
-    retuned(41, asked.wpm - 1, () => {
+    retuned(47, asked.wpm - 1, () => {
       // A fresh array only because the memo is keyed on identity; in the app
       // the criteria change with a deploy and the sessions are read back out
       // of IndexedDB on the next load.
-      expect(ladderProgress([...runs]).cleared.has(41)).toBe(true);
+      expect(ladderProgress([...runs]).cleared.has(47)).toBe(true);
     });
 
     // The backfill that never happened.
@@ -339,5 +339,29 @@ describe("the memo", () => {
     const copy = [...runs];
     expect(ladderProgress(copy)).not.toBe(ladderProgress(runs));
     expect(ladderProgress(copy)).toEqual(ladderProgress(runs));
+  });
+});
+
+describe("a held-key lesson", () => {
+  const [H01, H02] = HELD_KEY_LESSONS;
+
+  /** A rung like any other (§5.8): cleared by number, and it moves the ladder. */
+  it("is cleared by a passing run, and moves the pointer past it", () => {
+    const progress = ladderProgress([passing(H01)]);
+    expect(progress.cleared.has(H01.n)).toBe(true);
+    expect(progress.best).toBe(H01.n);
+    expect(progress.next).toBe(H02.n);
+  });
+
+  it("is not cleared by a run that missed its bars", () => {
+    expect(ladderProgress([passing(H01, 1)]).cleared.size).toBe(0);
+  });
+
+  it("is not cleared by a drill filed under its mode", () => {
+    const drill: Session = {
+      ...passing(H01),
+      config: { kind: "typing", levelId: H01.id, wordCount: 24 },
+    };
+    expect(ladderProgress([drill]).cleared.size).toBe(0);
   });
 });

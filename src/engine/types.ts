@@ -124,7 +124,7 @@ export type TypingConfig = {
    * award it.
    *
    * Inert in `configKey` (`decks/typing.ts#typingConfigKey`) — a child's best
-   * at lesson 7 is their best at lesson 7, and splitting the record book by how
+   * at lesson 9 is their best at lesson 9, and splitting the record book by how
    * much help was on screen would hide their own record from them the first
    * time they turned the guide off.
    */
@@ -136,7 +136,7 @@ export type TypingConfig = {
    * the site inherits one judgement.
    *
    * On the run rather than derived from `lessonById(lessonId)`, because what a
-   * run *was* is a fact about the run: re-tune lesson 39 out of a Hailstorm and
+   * run *was* is a fact about the run: re-tune lesson 45 out of a Hailstorm and
    * a derived rule would start ranking every storm already saved.
    *
    * Optional and never `false`, like `lessonId` and `keyboard` above, so it

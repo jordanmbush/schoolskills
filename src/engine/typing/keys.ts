@@ -16,7 +16,7 @@ import { LESSONS } from "./lessons";
  *
  * A shifted character needs both of its keys: `strokeFor("A")` names KeyA
  * *and* ShiftRight (§3.3), so `A` is locked until both have been taught. That
- * is why the capitals are still out of reach at lesson 30, where every letter
+ * is why the capitals are still out of reach at lesson 36, where every letter
  * has arrived and neither shift has — a naive union would hand them over and
  * leave block 4 with nothing to teach.
  */
@@ -49,7 +49,7 @@ const LETTER = /^[a-z]$/;
  * lesson 1 or unreachable forever. Block 4 unlocks it by introducing the
  * capitals each shift reaches (§5.5), so each of its two lessons teaches only
  * the shift it is actually held with: ShiftLeft is still locked when lesson
- * 31's fifteen right-shift capitals end.
+ * 37's fifteen right-shift capitals end.
  *
  * Every *other* shifted character on the board — `!`, `?`, `:`, `"` — arrives
  * in block 7 assuming the child already knows to hold shift. So a capital
@@ -74,10 +74,10 @@ function shiftTaughtBy(ch: string): ShiftCode | null {
  *     this too, but the alphabet is handed to other callers (the generator's
  *     pools, Hailstorm's waves) and it should not carry a character no
  *     keyboard can type.
- *   - **No shift has been taught yet.** The capitals at lesson 30.
+ *   - **No shift has been taught yet.** The capitals at lesson 36.
  *   - **Its base key has not arrived.** `_` before `-`, `?` before `/`.
  *
- * Today's ladder never hits the last two — the test at lesson 100 asserts the
+ * Today's ladder never hits the last two — the test at lesson 110 asserts the
  * whole union survives — and dropping is the safe direction anyway: a lesson
  * that loses its own new keys fails §5.2's reachability test loudly, where
  * handing a child an untaught key fails silently, in front of them.
@@ -104,14 +104,14 @@ function strikeable(
 /**
  * Every alphabet on the ladder, indexed by lesson number.
  *
- * Built once, walking the lessons in order of `n` rather than array order —
- * `n` is the number in `Session.mode` and the array is a table someone will
- * one day re-order in place, so "lessons 1…n" means what it says. Index 0 is
- * the alphabet before the ladder starts: the space bar and nothing else.
+ * Built once, walking the lessons in order of `n` — the array's own order
+ * today, and sorted anyway so "lessons 1…n" means what it says if the two
+ * ever part. Index 0 is the alphabet before the ladder starts: the space bar
+ * and nothing else.
  *
- * A hundred sets of a hundred characters is a few thousand strings held for
- * the life of the process, and the alternative is rebuilding the union on
- * every call from a generator that asks per lesson, per seed, per word.
+ * A hundred-odd sets of a hundred characters is a few thousand strings held
+ * for the life of the process, and the alternative is rebuilding the union
+ * on every call from a generator that asks per lesson, per seed, per word.
  */
 const ALPHABETS: readonly ReadonlySet<string>[] = (() => {
   const unlocked = new Set([SPACE]);
@@ -126,8 +126,8 @@ const ALPHABETS: readonly ReadonlySet<string>[] = (() => {
     }
     // A gap in the numbering carries the previous alphabet forward rather than
     // leaving a hole `unlockedAt` would return `undefined` from. The ladder is
-    // 1–100 with no gaps and lessons.test.ts pins that; this is what keeps the
-    // signature honest anyway.
+    // numbered 1 to the top with no gaps and lessons.test.ts pins that; this
+    // is what keeps the signature honest anyway.
     while (alphabets.length < lesson.n)
       alphabets.push(alphabets[alphabets.length - 1]);
     alphabets[lesson.n] = strikeable(unlocked, shifts);

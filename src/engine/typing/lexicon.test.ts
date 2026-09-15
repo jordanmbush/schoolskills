@@ -151,18 +151,18 @@ describe("WORDS", () => {
   });
 
   /**
-   * Lesson 7 is where words start, and its alphabet is `a s d f g h j k l ;`
+   * Lesson 9 is where words start, and its alphabet is `a s d f g h j k l ;`
    * — nine letters, in which English has barely two dozen words (§5.5). This
    * is the assertion the "words the home row needs" band exists for, and the
    * one a corpus assembled purely by frequency would fail.
    */
   it("still has words when the alphabet is the home row", () => {
-    const home = WORDS.filter((word) => word.length >= 2 && canType(word, 7));
+    const home = WORDS.filter((word) => word.length >= 2 && canType(word, 9));
     expect(home.length).toBeGreaterThanOrEqual(20);
   });
 
   /** The two lessons that are a `slice` of this array, and nothing else. */
-  it("opens with the words lessons 41 and 48 ask for", () => {
+  it("opens with the words lessons 47 and 56 ask for", () => {
     expect(WORDS.slice(0, 25)).toContain("the");
     expect(WORDS.slice(0, 25).every((word) => word.length <= 5)).toBe(true);
     expect(new Set(WORDS.slice(0, 100)).size).toBe(100);
@@ -230,7 +230,7 @@ describe("the hand sets", () => {
       expect([...word].map(handOf).every((h) => h === hand)).toBe(true);
   });
 
-  /** Lesson 47 runs forty words. Below this it is one word four times. */
+  /** Lesson 53 runs forty words. Below this it is one word four times. */
   it("has enough of each to fill a lesson", () => {
     expect(ALTERNATING.length).toBeGreaterThanOrEqual(50);
     expect(LEFT_HAND.length).toBeGreaterThanOrEqual(40);
@@ -239,16 +239,16 @@ describe("the hand sets", () => {
 });
 
 /**
- * Lesson 33, "Names, and the word I", is a **words** lesson whose entire
+ * Lesson 39, "Names, and the word I", is a **words** lesson whose entire
  * subject is the one thing `WORDS` is deliberately empty of. Without a pool of
  * its own it is a lesson about names with no name in anything it can reach.
  */
 describe("NAMES", () => {
-  const LESSON_33 = LESSONS.find((lesson) => lesson.n === 33);
+  const LESSON_39 = LESSONS.find((lesson) => lesson.n === 39);
 
   it("is the pool a names lesson can be built out of", () => {
-    expect(LESSON_33?.kind.type).toBe("words");
-    expect(NAMES.length).toBeGreaterThanOrEqual(LESSON_33?.wordCount ?? 0);
+    expect(LESSON_39?.kind.type).toBe("words");
+    expect(NAMES.length).toBeGreaterThanOrEqual(LESSON_39?.wordCount ?? 0);
     expect(NAMES.length).toBe(new Set(NAMES).size);
   });
 
@@ -257,12 +257,12 @@ describe("NAMES", () => {
   });
 
   /**
-   * The shifts land at 31 and 32 and the apostrophe not until 35, so lesson 33
+   * The shifts land at 37 and 38 and the apostrophe not until 41, so lesson 39
    * is the first place a capital is typeable at all — and a name needing a key
    * the child has not met is a lesson that cannot be generated (§5.2).
    */
   it("is typeable at the lesson that asks for it", () => {
-    for (const name of NAMES) expect(canType(name, 33)).toBe(true);
+    for (const name of NAMES) expect(canType(name, 39)).toBe(true);
   });
 
   /**
@@ -289,7 +289,7 @@ describe("SENTENCES", () => {
   });
 
   /**
-   * Lessons 30 and 36 are sentence lessons with no punctuation past the full
+   * Lessons 36 and 42 are sentence lessons with no punctuation past the full
    * stop unlocked, so the pool has to hold enough of the plain kind for them
    * to be generated out of. Case is the generator's to fold — see the
    * `SENTENCES` doc block in `lexicon.ts`, which is where that is written down
@@ -319,7 +319,7 @@ describe("PASSAGES", () => {
   );
 
   /**
-   * The exam is not a pool of one: a single passage clearing lesson 100 would
+   * The exam is not a pool of one: a single passage clearing lesson 110 would
    * mean every child's Ice Exam is the same text, every attempt.
    */
   it("gives the longest lesson on the ladder a choice", () => {
@@ -339,7 +339,7 @@ describe("PASSAGES", () => {
   });
 
   /**
-   * Lesson 76 is "Someone speaking" and lesson 78 is "Numbers in prose", and
+   * Lesson 86 is "Someone speaking" and lesson 88 is "Numbers in prose", and
    * neither can be generated out of a pool of plain paragraphs. One of each is
    * the floor, not the intent.
    */

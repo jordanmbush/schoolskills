@@ -71,7 +71,7 @@ export function stormReason(hasKeyboard: boolean): string | null {
 }
 
 /** The state, said out loud. Read after the lesson's number and title. */
-const SAID: Record<TileState, string> = {
+export const SAID: Record<TileState, string> = {
   cleared: "Passed",
   next: "Start here",
   open: "Open",
@@ -128,9 +128,9 @@ export function LessonTile({
   progress: LadderProgress;
   /**
    * Whether this device looks like it has a physical keyboard
-   * (`useKeyboardPresence`). Only a Hailstorm tile reads it — every other rung
-   * of the ladder is a passage, and a passage on a tablet is typed on the
-   * software keyboard like anything else (§4.5).
+   * (`useKeyboardPresence`). Only a Hailstorm tile reads it: the course is
+   * for a real keyboard (§4.5), and a held-key lesson waits for its key
+   * rather than shutting on a guess (§5.8).
    */
   hasKeyboard: boolean;
   onOpen: (lesson: Lesson) => void;

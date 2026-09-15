@@ -60,4 +60,18 @@ describe("LiveKeyboard", () => {
     expect(html).not.toContain("<input");
     expect(html).not.toContain("tabindex");
   });
+
+  /** The held key is drawn in both modes: it is not a hint (§5.8). */
+  it("draws the held key whichever mode is up", () => {
+    for (const mode of ["keys", "guide"] as const) {
+      const html = renderToStaticMarkup(
+        <LiveKeyboard
+          mode={mode}
+          next="j"
+          hold={{ code: "KeyF", held: true }}
+        />,
+      );
+      expect(html.match(/is-held/g), mode).toHaveLength(1);
+    }
+  });
 });

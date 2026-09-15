@@ -2,7 +2,7 @@
  * The words Frost Keys builds its lessons out of (docs/typing.md §5.3).
  *
  * A few thousand common English words, commonest first, so that a lesson
- * asking for "the twenty-five" or "the hundred" (§5.6, lessons 41 and 48) is a
+ * asking for "the twenty-five" or "the hundred" (§5.6, lessons 47 and 56) is a
  * `slice` rather than a second list to keep in step with this one. §5.3 says
  * why it is this rather than the Dolch lists in `decks/wordlists.ts`.
  *
@@ -77,7 +77,7 @@
  */
 export const WORDS: readonly string[] = [
   // ── The first hundred ──────────────────────────────────────────────────────
-  // The usual rank order of written English. Lesson 48 is this slice exactly.
+  // The usual rank order of written English. Lesson 56 is this slice exactly.
   "the",
   "be",
   "to",
@@ -2203,10 +2203,10 @@ export const WORDS: readonly string[] = [
 
   // ── The words the home row needs ───────────────────────────────────────────
   // No frequency list would put `flask` or `gala` in a top few thousand, and
-  // lesson 7 is the reason they are here anyway: the alphabet at that point is
+  // lesson 9 is the reason they are here anyway: the alphabet at that point is
   // `a s d f g h j k l ;` and English has barely two dozen words in it. A
   // corpus that stopped at "common" would hand the first words lesson an empty
-  // bag (§5.5 — words cannot start until lesson 7, and they have to start
+  // bag (§5.5 — words cannot start until lesson 9, and they have to start
   // there).
   "ash",
   "gas",
@@ -2241,7 +2241,7 @@ export const WORDS: readonly string[] = [
   "flashes",
 
   // ── The words one hand needs ───────────────────────────────────────────────
-  // Lesson 47 is "One hand at a time", and QWERTY is not symmetrical about it.
+  // Lesson 53 is "One hand at a time", and QWERTY is not symmetrical about it.
   // The left hand owns `a e r s t` and will write half a sentence on its own;
   // the right hand's alphabet is `h j k l m n o p u y`, and a corpus of common
   // words turns up barely thirty it can spell. These are the rest of them.
@@ -2266,7 +2266,7 @@ export const WORDS: readonly string[] = [
   "jumpy",
 
   // ── Contractions ───────────────────────────────────────────────────────────
-  // The apostrophe arrives at lesson 35 and is the only punctuation mark a
+  // The apostrophe arrives at lesson 41 and is the only punctuation mark a
   // word carries, so it is the only one this list may hold.
   "don't",
   "can't",
@@ -2308,7 +2308,7 @@ export const WORDS: readonly string[] = [
 /**
  * The commonest letter pairs in written English, commonest first.
  *
- * What lessons 18, 28, 42 and 43 drill (§5.6). A bigram lesson is not "type
+ * What lessons 22, 34, 48 and 49 drill (§5.6). A bigram lesson is not "type
  * these two letters" — it is a normal lesson whose words were chosen because
  * they contain the pair, which is why the corpus above has to be big enough to
  * offer a choice of them.
@@ -2366,10 +2366,10 @@ export const BIGRAMS: readonly string[] = [
 ];
 
 /**
- * The letters that come in twos. Lesson 8, "Pairs that repeat".
+ * The letters that come in twos. Lesson 10, "Pairs that repeat".
  *
  * A double is the one sequence a beginner can be given before they can spell:
- * it is the same key twice, at lesson 8, when the alphabet is nine letters and
+ * it is the same key twice, at lesson 10, when the alphabet is nine letters and
  * an ordinary word is still three lessons away. Ordered by how much use the
  * home row's alphabet can make of them, because that is the lesson that asks.
  */
@@ -2393,7 +2393,7 @@ export const DOUBLES: readonly string[] = [
 /**
  * The pairs one finger has to type twice, which is what makes them hard.
  *
- * Lesson 44 is "The hard pairs" and lesson 84 sprints them, and the thing they
+ * Lesson 50 is "The hard pairs" and lesson 94 sprints them, and the thing they
  * have in common is not that they are rare — `ed` is the sixteenth commonest
  * pair in the language. It is that both letters sit under the same finger:
  * `e` and `d` are both the left middle, `ju` and `ki` and `ny` are the right
@@ -2474,7 +2474,7 @@ export const TRIGRAMS: readonly string[] = [
 ];
 
 /**
- * Words the two hands take in turns. Lesson 46, "Hands that take turns".
+ * Words the two hands take in turns. Lesson 52, "Hands that take turns".
  *
  * Every letter is on the other hand from the one before it, which is the
  * easiest thing a keyboard ever asks — the next finger is already moving while
@@ -2568,7 +2568,7 @@ export const ALTERNATING: readonly string[] = [
 ];
 
 /**
- * Words the left hand types on its own. Lesson 47, "One hand at a time".
+ * Words the left hand types on its own. Lesson 53, "One hand at a time".
  *
  * The opposite exercise to the one above, and the harder one: the same finger
  * comes back again and again, and the hand has to stay on the home row to do
@@ -2721,9 +2721,9 @@ export const RIGHT_HAND: readonly string[] = [
 ];
 
 /**
- * First names, for lesson 33 (§5.6: "Names, and the word I").
+ * First names, for lesson 39 (§5.6: "Names, and the word I").
  *
- * Lesson 33 is a **words** lesson whose whole subject is names, which is the
+ * Lesson 39 is a **words** lesson whose whole subject is names, which is the
  * one thing `WORDS` deliberately has none of: a proper noun in the corpus is a
  * capitalised noun in every draw that is not about names, and there are two
  * thousand of those. So the names it needs are a pool of their own, reached by
@@ -2734,8 +2734,8 @@ export const RIGHT_HAND: readonly string[] = [
  * anything — every word in the corpus is lowercase but for `I` and the
  * calendar — and a name is a capital that has a reason to be there.
  *
- * Letters only. The apostrophe does not arrive until lesson 35, so no name
- * here may carry one, and every entry has to be typeable at lesson 33's
+ * Letters only. The apostrophe does not arrive until lesson 41, so no name
+ * here may carry one, and every entry has to be typeable at lesson 39's
  * alphabet — which by then is the whole board, both shifts included.
  * `lexicon.test.ts` checks both.
  *
@@ -2801,7 +2801,7 @@ export const NAMES: readonly string[] = [
  * Whole sentences, for the lessons that ask for one (§5.6: 30, 36, 37, 38, 40).
  *
  * Written as a sentence is printed — a capital at the front, a stop at the end
- * — even though lesson 30 asks for sentences a full block before either shift
+ * — even though lesson 36 asks for sentences a full block before either shift
  * is taught. That is deliberate: the pool holds English, and folding the case
  * for a lesson that has no capitals yet is the generator's job, where the
  * unlocked alphabet is already in hand. A pool of lowercase sentences would be
@@ -2814,8 +2814,8 @@ export const NAMES: readonly string[] = [
  * is what makes sure there are enough of them at every level.
  *
  * Names in a sentence are a name; names in `WORDS` would be capitalised nouns
- * skewing every ordinary draw, which is why lesson 38 reads "Ravi and Grace
- * waited at the gate" and why the bare list lesson 33 needs is `NAMES` above
+ * skewing every ordinary draw, which is why lesson 44 reads "Ravi and Grace
+ * waited at the gate" and why the bare list lesson 39 needs is `NAMES` above
  * rather than a band in the corpus.
  */
 export const SENTENCES: readonly string[] = [
@@ -2851,7 +2851,7 @@ export const SENTENCES: readonly string[] = [
   "A ladder leant against the garden wall.",
   "Our team won the match by one goal.",
 
-  // With commas. Lesson 37 is about exactly this.
+  // With commas. Lesson 43 is about exactly this.
   "We packed bread, cheese, apples and a bottle of water.",
   "After the rain, the whole street smelt of leaves.",
   "The puppy, who is only ten weeks old, sleeps all day.",
@@ -2868,7 +2868,7 @@ export const SENTENCES: readonly string[] = [
   "Because it was snowing, the school stayed closed.",
   "He counted the coins, put them in a jar and smiled.",
 
-  // Names and places. Lesson 38, once both shifts are taught. (Lesson 33 is a
+  // Names and places. Lesson 44, once both shifts are taught. (Lesson 39 is a
   // words lesson and draws from `NAMES`, not from here.)
   "Ravi and Grace waited at the gate.",
   "Sam found a lost dog on Oak Street.",
@@ -2889,7 +2889,7 @@ export const SENTENCES: readonly string[] = [
   "The bus to Oak Street leaves from the market.",
   "Ada and Ravi sang together on the stage.",
 
-  // Apostrophes, from lesson 35.
+  // Apostrophes, from lesson 41.
   "It's raining again, so we can't play outside.",
   "Don't leave your boots on the kitchen floor.",
   "I'm sure that's the path we took last summer.",
@@ -2903,7 +2903,7 @@ export const SENTENCES: readonly string[] = [
   "I've never seen so many stars.",
   "There's a robin's nest in the old hedge.",
 
-  // Questions and shouts, from lesson 61.
+  // Questions and shouts, from lesson 71.
   "Where did you put the map?",
   "Who left the gate open?",
   "How many apples are in the basket?",
@@ -2917,7 +2917,7 @@ export const SENTENCES: readonly string[] = [
   "Are these your gloves or mine?",
   "What a mess the wind has made!",
 
-  // Speech marks, from lesson 62. Lesson 76 is a whole passage of them.
+  // Speech marks, from lesson 72. Lesson 86 is a whole passage of them.
   '"Come and look at this," said Mia.',
   '"I think it is going to snow," said Grandad.',
   'Ravi shouted, "Wait for me!"',
@@ -2927,7 +2927,7 @@ export const SENTENCES: readonly string[] = [
   '"Be careful on the ice," she warned.',
   '"Look," whispered Tom, "a deer."',
 
-  // The rest of the marks, from lessons 63 to 68.
+  // The rest of the marks, from lessons 73 to 78.
   "The well-known story begins on page 4.",
   "She wrote her name in capitals: GRACE.",
   "The recipe needs two things: flour and water.",
@@ -2948,7 +2948,7 @@ export const SENTENCES: readonly string[] = [
 /**
  * Real prose, for the lessons that ask for a passage.
  *
- * From lesson 50 the ladder stops handing over words and starts handing over
+ * From lesson 58 the ladder stops handing over words and starts handing over
  * paragraphs, because a passage is the only thing that teaches the two things
  * a word list cannot: where the space bar goes without thinking, and how to
  * keep a rate up for a hundred words rather than for thirty.
@@ -2964,14 +2964,14 @@ export const SENTENCES: readonly string[] = [
  * Sorted by what they hold, like the sentences: plain prose first, then
  * speech, then numbers. Lengths run from about eighty words to about a hundred
  * and seventy, and the top end is set by the ladder rather than by taste — a
- * passage lesson asks for a whole number of words (§5.6: 100 at lesson 80, 120
- * at lesson 96, 150 at lesson 100's Ice Exam) and can only be generated from a
+ * passage lesson asks for a whole number of words (§5.6: 100 at lesson 90, 120
+ * at lesson 106, 150 at lesson 110's Ice Exam) and can only be generated from a
  * passage that reaches it. Two clear a hundred and fifty, so the exam is not
  * the same text every time; `lexicon.test.ts` counts the pool against every
  * passage lesson on the ladder rather than against a number written here,
  * which is the only version of this claim that cannot quietly go stale.
  *
- * The floor is "long enough not to be a sentence" rather than lesson 50's
+ * The floor is "long enough not to be a sentence" rather than lesson 58's
  * twenty-five words. How a passage lesson shorter than the shortest passage is
  * served — trimmed to a sentence boundary, most likely — is the generator's
  * business (LES04), and this file should not decide it on the generator's
@@ -2988,7 +2988,7 @@ export const PASSAGES: readonly string[] = [
   "Rowing on the lake at dawn is the quietest thing I know. The water is grey and completely flat, and the oars make a sound like somebody turning the page of a very large book. Mist sits on the surface in patches and moves when you go through it. Once we saw a heron standing in the reeds, so still that we had gone past it before we understood what it was. By the time the sun is properly up the wind has started, the lake has small waves on it, and the morning is over.",
 
   // The five below are the long end, and the ladder is what asks for it: 100
-  // words at lessons 80 and 94, 120 at lesson 96, 150 at lesson 100. A pool
+  // words at lessons 90 and 104, 120 at lesson 106, 150 at lesson 110. A pool
   // topping out under those is a pool the endurance lessons cannot be
   // generated from at all, which is why the length test counts against
   // LESSONS rather than against a window written into the test.

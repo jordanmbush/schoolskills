@@ -1,6 +1,16 @@
+import { readFileSync } from "node:fs";
+
 import { describe, expect, it } from "vitest";
 
-import { LESSONS, lessonById } from "./lessons";
+import { oneHanded } from "./hands";
+import { unlockedAt } from "./keys";
+import {
+  HELD_KEY_LESSONS,
+  LESSONS,
+  isHeldKeyLesson,
+  lessonById,
+  lessonNumbered,
+} from "./lessons";
 import type { Lesson } from "./lessons";
 import { strokeFor } from "../keyboard";
 
@@ -18,6 +28,11 @@ const lesson = (n: number): Lesson => {
 
 const BLOCKS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 const inBlock = (block: number) => LESSONS.filter((l) => l.block === block);
+const lastOf = (block: number): Lesson => {
+  const last = inBlock(block).at(-1);
+  if (!last) throw new Error(`block ${block} is empty`);
+  return last;
+};
 const introducesNothing = (block: number) =>
   inBlock(block).every((l) => l.introduces.length === 0);
 
@@ -25,30 +40,33 @@ const introducesNothing = (block: number) =>
 const wpmOf = (l: Lesson) => (l.pass.kind === "lesson" ? l.pass.wpm : null);
 
 describe("the shape of the ladder", () => {
-  it("is a hundred lessons", () => {
-    expect(LESSONS).toHaveLength(100);
+  it("is a hundred and ten lessons", () => {
+    expect(LESSONS).toHaveLength(110);
   });
 
-  it("numbers them 1–100 with no gaps", () => {
+  it("numbers them 1–110 with no gaps", () => {
     expect(LESSONS.map((l) => l.n)).toEqual(
-      Array.from({ length: 100 }, (_, i) => i + 1),
+      Array.from({ length: 110 }, (_, i) => i + 1),
     );
   });
 
   it("gives every lesson its own id, and never reuses one", () => {
-    expect(new Set(LESSONS.map((l) => l.id)).size).toBe(100);
+    expect(new Set(LESSONS.map((l) => l.id)).size).toBe(110);
   });
 
   /**
-   * The id is what goes into `Session.mode` as `typing:L07`, so pinning the
-   * format is pinning a promise to runs already saved: change it and a record
-   * book two years old stops being able to say what it is looking at.
+   * The id is what goes into `Session.mode` as `typing:L07`, so pinning it is
+   * pinning a promise to runs already saved: change it and a record book two
+   * years old stops being able to say what it is looking at. The hundred kept
+   * the names they had when they were the whole ladder, so the number in an
+   * id is not the rung — `L07` is lesson 9 (§5.8).
    */
-  it("writes the id as L + the number, two digits", () => {
+  it("keeps the hundred's ids where their runs were filed, whatever the rung", () => {
     expect(lesson(1).id).toBe("L01");
-    expect(lesson(7).id).toBe("L07");
-    expect(lesson(50).id).toBe("L50");
-    expect(lesson(100).id).toBe("L100");
+    expect(lesson(6).id).toBe("L06");
+    expect(lesson(9).id).toBe("L07");
+    expect(lesson(58).id).toBe("L50");
+    expect(lesson(110).id).toBe("L100");
   });
 
   /**
@@ -57,8 +75,9 @@ describe("the shape of the ladder", () => {
    * screen.
    */
   it("resolves an id back to its lesson, and anything else to null", () => {
-    expect(lessonById("L07")).toBe(lesson(7));
-    expect(lessonById("L100")).toBe(lesson(100));
+    expect(lessonById("L07")).toBe(lesson(9));
+    expect(lessonById("L100")).toBe(lesson(110));
+    expect(lessonById("H01")).toBe(lesson(7));
     // A free-play config, which simply has no lesson id.
     expect(lessonById(undefined)).toBeNull();
     // A level id, which shares the `typing:` prefix and is not on the ladder.
@@ -67,25 +86,95 @@ describe("the shape of the ladder", () => {
     expect(lessonById("L101")).toBeNull();
   });
 
-  it("puts ten lessons in each of ten blocks", () => {
-    for (const block of BLOCKS) expect(inBlock(block)).toHaveLength(10);
+  /** Ten blocks cut at the checkpoints; twelve long where a pair is woven in. */
+  it("cuts the ladder into ten blocks at the checkpoints", () => {
+    expect(BLOCKS.map((block) => inBlock(block).length)).toEqual([
+      12, 12, 12, 10, 12, 12, 10, 10, 10, 10,
+    ]);
+    for (const block of BLOCKS)
+      for (const l of inBlock(block)) expect(l.block).toBe(block);
   });
 
-  it("counts twenty storm levels and thirty lessons that introduce keys", () => {
+  it("counts twenty storms, ten held-key lessons and thirty that introduce keys", () => {
     const storms = LESSONS.filter((l) => l.kind.type === "storm");
-    const introducing = LESSONS.filter((l) => l.introduces.length > 0);
+    const introducing = LESSONS.filter(
+      (l) => l.introduces.length > 0 && !isHeldKeyLesson(l),
+    );
     expect(storms).toHaveLength(20);
+    expect(HELD_KEY_LESSONS).toHaveLength(10);
     expect(introducing).toHaveLength(30);
-    // §5.6's closing line says thirty-five. Its own tables say thirty, and the
-    // tables are the hundred rows — five of block 4's ten are capitals, an
-    // apostrophe and a storm rather than five key lessons, and blocks 5, 8, 9
-    // and 10 introduce nothing at all. The rows are what was transcribed.
+  });
+
+  /**
+   * §5.6 is checked, not trusted, the way `storms.test.ts` checks §5.7: a
+   * hundred and ten rows in prose beside a hundred and ten in code, compared
+   * cell by cell. The id column is the half that matters most — an id
+   * mistyped in either place orphans every run already saved under it
+   * (§5.4), and nothing on screen would show it.
+   */
+  it("matches §5.6's tables in docs/typing.md, column by column", () => {
+    const doc = readFileSync("docs/typing.md", "utf8");
+    const section = doc.split("### 5.6 · ")[1].split(/\n#{2,3} /)[0];
+    const rows = [
+      ...section.matchAll(/^\|\s*(\d+)\s*\|\s*([A-Z]\d+)\s*\|(.+)\|\s*$/gm),
+    ].map((match) => [
+      match[1],
+      match[2],
+      ...match[3].split("|").map((cell) => cell.trim()),
+    ]);
+    expect(rows).toHaveLength(LESSONS.length);
+
+    const plain = (cell: string | undefined) =>
+      (cell ?? "").replace(/\*\*/g, "");
+    const printed = (cells: string[]) => {
+      const [n, id, title, keys, kind, board, words, wpm, acc] = cells.map(
+        (cell) => plain(cell),
+      );
+      return {
+        n: Number(n),
+        id,
+        title,
+        // Block 4's two rows print the shift and the hand it reaches rather
+        // than fifteen capitals apiece; §5.5 says why.
+        introduces:
+          keys === "—"
+            ? ""
+            : keys.startsWith("`⇧`")
+              ? "⇧"
+              : keys.replace(/[` ]/g, ""),
+        kind,
+        keyboard: board.replace("🔒", ""),
+        locked: board.endsWith("🔒"),
+        wordCount: Number(words),
+        wpm: wpm === "—" ? null : Number(wpm),
+        accuracy: acc === "—" ? null : Number(acc.replace("%", "")) / 100,
+      };
+    };
+    const shipped = (l: Lesson) => ({
+      n: l.n,
+      id: l.id,
+      title: l.title,
+      introduces:
+        l.introduces.length > 2 && l.introduces.every((ch) => /[A-Z]/.test(ch))
+          ? "⇧"
+          : l.introduces.join(""),
+      kind: l.kind.type,
+      keyboard: l.keyboard,
+      locked: l.keyboardLocked === true,
+      wordCount: l.wordCount,
+      wpm: wpmOf(l),
+      accuracy: l.pass.kind === "lesson" ? l.pass.accuracy : null,
+    });
+
+    expect(rows.map(printed)).toEqual(LESSONS.map(shipped));
   });
 });
 
 describe("checkpoints", () => {
   it("puts one at the end of every block, and nowhere else", () => {
-    for (const l of LESSONS) expect(l.checkpoint ?? false).toBe(l.n % 10 === 0);
+    for (const block of BLOCKS)
+      for (const l of inBlock(block))
+        expect(l.checkpoint ?? false, l.id).toBe(l === lastOf(block));
     expect(LESSONS.filter((l) => l.checkpoint)).toHaveLength(10);
   });
 
@@ -123,8 +212,12 @@ describe("the keyboard on screen", () => {
   });
 
   it("only ever locks a lesson to `guide` or to `off`", () => {
+    // A held-key lesson is the one exception, and it locks the other way: the
+    // board is where the held key is drawn, so it may insist on `keys` (§5.8).
     for (const l of LESSONS.filter((l) => l.keyboardLocked))
-      expect(["guide", "off"]).toContain(l.keyboard);
+      expect(
+        isHeldKeyLesson(l) ? ["guide", "keys"] : ["guide", "off"],
+      ).toContain(l.keyboard);
   });
 
   it("shows the guide on every lesson that introduces keys", () => {
@@ -148,7 +241,7 @@ describe("the keys, and the order they arrive in", () => {
 
   it("has the whole alphabet unlocked by the end of block 3", () => {
     const unlocked = new Set(
-      LESSONS.filter((l) => l.n <= 30).flatMap((l) => l.introduces),
+      LESSONS.filter((l) => l.block <= 3).flatMap((l) => l.introduces),
     );
     for (const ch of "abcdefghijklmnopqrstuvwxyz")
       expect(unlocked.has(ch)).toBe(true);
@@ -157,11 +250,12 @@ describe("the keys, and the order they arrive in", () => {
   /**
    * Mirrored pairs, one per hand, through the three letter blocks (§5.5):
    * `f`/`j`, then `d`/`k`, `s`/`l`, `a`/`;` walking outward — the same finger
-   * on each hand, every time.
+   * on each hand, every time. The held-key pairs hand a row over again, five
+   * to a hand (§5.8), and are held to their own rule below.
    */
   it("hands the letters over one finger at a time, both hands at once", () => {
     const letterBlocks = LESSONS.filter(
-      (l) => l.block <= 3 && l.introduces.length > 0,
+      (l) => l.block <= 3 && l.introduces.length > 0 && !isHeldKeyLesson(l),
     );
     expect(letterBlocks).toHaveLength(15);
 
@@ -182,7 +276,9 @@ describe("the keys, and the order they arrive in", () => {
    * the standard assignment, not a slip.
    */
   it("walks the number row outward from the middle of the board", () => {
-    const digits = LESSONS.filter((l) => l.block === 6 && l.introduces.length);
+    const digits = LESSONS.filter(
+      (l) => l.block === 6 && l.introduces.length && !isHeldKeyLesson(l),
+    );
     expect(digits).toHaveLength(5);
     for (const l of digits) {
       expect(l.introduces).toHaveLength(2);
@@ -236,10 +332,10 @@ describe("the speed bar", () => {
    * The wpm column does not climb smoothly — it drops every time a key arrives
    * and climbs back over the review lessons after it (§6.3, decision 11). So
    * the non-decreasing claim is about BLOCKS, and only the four that introduce
-   * nothing; per lesson it would be false even inside those, since 44 is
-   * harder material than 43 and 97 is the accuracy run.
+   * nothing; per lesson it would be false even inside those, since 50 is
+   * harder material than 49 and 107 is the accuracy run.
    */
-  const checkpointWpm = (block: number) => wpmOf(lesson(block * 10)) ?? 0;
+  const checkpointWpm = (block: number) => wpmOf(lastOf(block)) ?? 0;
 
   it("never lowers the bar in a block that introduces nothing", () => {
     const quiet = BLOCKS.filter(introducesNothing);
@@ -277,7 +373,120 @@ describe("the speed bar", () => {
       const asked = wpmOf(l) ?? 0;
       expect(asked, l.id).toBeLessThan(checkpointWpm(l.block));
     }
-    expect(wpmOf(lesson(50))).toBe(25);
-    expect(wpmOf(lesson(51))).toBe(16);
+    expect(wpmOf(lesson(58))).toBe(25);
+    expect(wpmOf(lesson(59))).toBe(16);
+  });
+});
+
+describe("the held-key lessons", () => {
+  /** The five pairs, in ladder order: right hand, then left, side by side. */
+  const PAIRS = HELD_KEY_LESSONS.filter((_, i) => i % 2 === 0).map(
+    (right) => [right, lesson(right.n + 1)] as const,
+  );
+
+  it("is ten, on the ladder, with ids of its own", () => {
+    expect(HELD_KEY_LESSONS).toHaveLength(10);
+    for (const l of HELD_KEY_LESSONS) {
+      expect(l.id).toMatch(/^H\d\d$/);
+      expect(LESSONS).toContain(l);
+      expect(lessonNumbered(l.n)).toBe(l);
+      expect(lessonById(l.id)).toBe(l);
+    }
+    expect(isHeldKeyLesson(lessonById("L01"))).toBe(false);
+    expect(isHeldKeyLesson(null)).toBe(false);
+  });
+
+  /**
+   * Where §5.8 puts them: five pairs, each straight after the lesson that
+   * finishes the row of keys it drills — and never after a storm or the other
+   * pair, so the rung that opens a pair is an ordinary lesson.
+   */
+  it("sits in five pairs after the lesson that finishes a row", () => {
+    expect(HELD_KEY_LESSONS.map((l) => l.n)).toEqual([
+      7, 8, 20, 21, 31, 32, 54, 55, 65, 66,
+    ]);
+    for (const [right, left] of PAIRS) {
+      expect(isHeldKeyLesson(left)).toBe(true);
+      const before = lesson(right.n - 1);
+      expect(before.kind.type, right.id).not.toBe("storm");
+      expect(isHeldKeyLesson(before), right.id).toBe(false);
+    }
+  });
+
+  /** Decision 75: the two keys with a bump, and the index finger's home. */
+  it("holds f for the right hand and j for the left, right hand first", () => {
+    for (const [right, left] of PAIRS) {
+      expect(right.hold).toBe("f");
+      expect(left.hold).toBe("j");
+    }
+  });
+
+  /** The hand in the title is the hand that types, and it says which key. */
+  it("titles every lesson by the hand that types, then what the pair is about", () => {
+    for (const [right, left] of PAIRS) {
+      expect(right.title.startsWith("Right hand · "), right.id).toBe(true);
+      expect(left.title.startsWith("Left hand · "), left.id).toBe(true);
+      expect(right.title.split(" · ")[1]).toBe(left.title.split(" · ")[1]);
+    }
+  });
+
+  /**
+   * §5.8's own invariant, on the keys the gate is about: each is on the free
+   * hand, and the ladder taught it before the pair arrived. A key on the
+   * pinned hand could never be struck, and the gate would then never open.
+   */
+  it("drills only keys the free hand has, and the ladder had taught", () => {
+    for (const [right] of PAIRS)
+      for (const l of [right, lesson(right.n + 1)])
+        for (const ch of l.introduces) {
+          expect(oneHanded(ch, l.hold ?? ""), `${l.id} ${ch}`).toBe(true);
+          expect(unlockedAt(right.n - 1).has(ch), `${l.id} ${ch}`).toBe(true);
+        }
+  });
+
+  it("drills keys as a drill and words as words", () => {
+    for (const l of HELD_KEY_LESSONS) {
+      if (l.kind.type === "keys")
+        expect(l.introduces.length).toBeGreaterThan(0);
+      else expect(l.introduces).toEqual([]);
+    }
+  });
+
+  /** The board is where the held key is drawn, so it cannot be turned off. */
+  it("keeps the board on, and does not let the player hide it", () => {
+    for (const l of HELD_KEY_LESSONS) {
+      expect(l.keyboard, l.id).not.toBe("off");
+      expect(l.keyboardLocked, l.id).toBe(true);
+    }
+  });
+
+  it("marks three bars, with the gate sized to fit", () => {
+    for (const l of HELD_KEY_LESSONS) {
+      expect(l.pass.kind).toBe("lesson");
+      if (l.pass.kind !== "lesson") continue;
+      expect(l.pass.accuracy).toBe(0.95);
+      if (l.introduces.length === 0) continue;
+      expect(l.pass.keyStrikes).toBeGreaterThanOrEqual(2);
+      const demanded = l.pass.keyStrikes * l.introduces.length;
+      expect(demanded).toBeLessThanOrEqual(l.wordCount * 5 * 0.35);
+    }
+  });
+
+  /** One hand doing the work of two is slower, and the bar says so. */
+  it("asks for less speed than the lesson the pair follows", () => {
+    for (const [right, left] of PAIRS) {
+      const before = lesson(right.n - 1).pass;
+      expect(before.kind).toBe("lesson");
+      if (before.kind !== "lesson") continue;
+      for (const l of [right, left])
+        expect(wpmOf(l) ?? 0, l.id).toBeLessThan(before.wpm);
+    }
+  });
+
+  it("is never a checkpoint and never holds a wave", () => {
+    for (const l of HELD_KEY_LESSONS) {
+      expect(l.checkpoint).toBeUndefined();
+      expect(l.kind.type).not.toBe("storm");
+    }
   });
 });

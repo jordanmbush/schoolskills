@@ -85,7 +85,7 @@
 }
 
 /* The keys as keys, on one line with their label. They are what the child is
-   about to go looking for, and fifteen of them at lesson 31 is a row rather
+   about to go looking for, and fifteen of them at lesson 37 is a row rather
    than a sentence. */
 .brief__new {
   display: flex;
@@ -142,6 +142,25 @@
 
 .brief__asks b {
   color: var(--chalk);
+}
+
+/* What a held-key lesson asks of the hand that is not typing (docs/typing.md
+   §5.8), said before the keys because it is the part a child has not met. */
+.brief__hold {
+  margin: 0;
+  font-size: var(--step--1);
+  color: var(--chalk);
+  line-height: 1.45;
+  text-wrap: pretty;
+}
+
+/* The same keycap `.brief__new` draws, sat inside a sentence: the cap is a
+   grid so its legend centres, and a grid is block-level unless told
+   otherwise — left as is, "Hold f down" broke into three lines. */
+.brief__hold .brief__key {
+  display: inline-grid;
+  vertical-align: -0.2em;
+  margin-inline: 0.1rem;
 }
 
 .brief__best {
@@ -346,6 +365,116 @@
   font-size: var(--step--2);
   color: var(--chalk-soft);
   text-align: center;
+}
+
+/* The one time the line under the field is an instruction rather than a
+   reminder: a held-key lesson whose key is up (docs/typing.md §5.8). The
+   field above it is closed until the key goes down, so this has to be the
+   thing on the screen a child reads. In `--accent`, matching the ring the
+   board draws round the key it is naming. */
+.typefield__hint.is-loud {
+  font-size: var(--step--1);
+  font-weight: 700;
+  color: var(--accent);
+}
+
+/* ── Typing: hold to begin ───────────────────────────────────────────────
+   The screen a held-key lesson opens on (docs/typing.md §5.8). It stands
+   where the 3·2·1 stands and is drawn by the same overlay, because it is the
+   same moment — the hands going down — with one of them told where.       */
+
+.hold {
+  gap: 0.6rem;
+  padding-inline: 1rem;
+  text-align: center;
+}
+
+.hold__eyebrow {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--chalk-dim);
+}
+
+.hold__head {
+  max-width: 22ch;
+  margin: 0;
+  font-size: var(--step-2);
+  line-height: 1.15;
+  color: var(--chalk);
+  text-wrap: balance;
+}
+
+/* The key, drawn as a cap in the sentence and in `--accent`, which is the
+   ring the board draws round the same key below the overlay. */
+.hold__key {
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.4em;
+  padding: 0 0.3em;
+  border: 2px solid var(--accent);
+  border-radius: 0.25em;
+  vertical-align: -0.08em;
+  color: var(--accent);
+}
+
+.hold__note {
+  max-width: 40ch;
+  margin: 0;
+  font-size: var(--step--1);
+  line-height: 1.45;
+  color: var(--chalk-soft);
+  text-wrap: pretty;
+}
+
+.hold__meter {
+  width: min(18rem, 70vw);
+  height: 0.5rem;
+  margin-top: 0.4rem;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 10%);
+  overflow: hidden;
+}
+
+.hold__fill {
+  display: block;
+  width: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent);
+}
+
+/* Fills over exactly the time the run waits for — `--hold-ms`, set by the
+   component from the same constant its timer runs on. The span is keyed on
+   the hold in the markup, so a release and a fresh press is a fresh node and
+   the fill starts from empty rather than from wherever the last one got to.
+   Under `prefers-reduced-motion` base.css clamps the animation to one pass,
+   so the bar reads as full while the key is down and empty when it is not,
+   and the line under it still says which. */
+.hold__fill[data-held] {
+  animation: hold-fill var(--hold-ms, 1s) linear forwards;
+}
+
+@keyframes hold-fill {
+  to {
+    width: 100%;
+  }
+}
+
+/* The instruction, drawn as the storm's "press any key" is: small mono caps
+   in a quiet box, a thing to do said under the sentence that matters. */
+.hold__go {
+  margin: 0;
+  padding: 0.45em 1em;
+  border: 1px solid var(--hairline);
+  border-radius: 0.5rem;
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--chalk-dim);
 }
 
 .results__note {

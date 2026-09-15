@@ -38,6 +38,7 @@ export function Keyboard({
   down = NONE,
   wrong = NONE,
   next = null,
+  hold = null,
 }: {
   /** Codes lit right now — `useKeyEcho`'s `down`. */
   down?: ReadonlySet<string>;
@@ -50,6 +51,13 @@ export function Keyboard({
    * run has finished, or the mode is "keys" and nothing is being pointed at.
    */
   next?: string | null;
+  /**
+   * The key a held-key lesson holds down, and whether it is down (§5.8).
+   * `null` on every other run. Two states rather than one, because "hold
+   * this" and "you are holding it" are the two things a child glancing at the
+   * board needs to tell apart.
+   */
+  hold?: { code: string; held: boolean } | null;
 }) {
   /**
    * The keys the hint lights: the character's own key, and — for a capital or
@@ -79,6 +87,7 @@ export function Keyboard({
             const isNext =
               hint !== null &&
               (key.code === hint.code || key.code === hint.shift);
+            const isHold = hold !== null && key.code === hold.code;
             return (
               <span
                 key={key.code}
@@ -96,6 +105,10 @@ export function Keyboard({
                   isNext && "is-next",
                   down.has(key.code) && "is-down",
                   wrong.has(key.code) && "is-wrong",
+                  // Never both: the echo is told to leave this code alone
+                  // (`useKeyEcho.ignore`), so a held key wears one of these
+                  // and neither of the two above.
+                  isHold && (hold.held ? "is-held" : "is-hold"),
                 ]
                   .filter(Boolean)
                   .join(" ")}
