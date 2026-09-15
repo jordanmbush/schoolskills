@@ -680,9 +680,12 @@
   box-sizing: border-box;
 }
 
+/* The bracket itself. Heavier than the grid's hairlines and the take-away
+   rules, so the symbol still reads as the symbol once the squares are drawn
+   round it. */
 .sheet__dividend {
-  border-top: 0.75pt solid currentcolor;
-  border-left: 0.75pt solid currentcolor;
+  border-top: 1.5pt solid currentcolor;
+  border-left: 1.5pt solid currentcolor;
 }
 
 .sheet__square {
