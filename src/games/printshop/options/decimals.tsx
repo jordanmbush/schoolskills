@@ -6,11 +6,14 @@
  * places, so stacking them right-aligned puts the points in a column — which is
  * the one thing a child lining up a decimal sum has to get right.
  *
- * Division shows three controls the other operations never see, and hides two
- * of its own as they stop meaning anything: "In columns" goes when the divisor
- * is a decimal, because that sheet is rewritten before it is worked and is
- * only ever written along a line, and the work-space box goes when the
- * divisions are in the bracket, whose squares are the working space.
+ * Each style shows only the controls that change it. Division has three of its
+ * own and hides two as they stop meaning anything: "In columns" goes when the
+ * divisor is a decimal, because that sheet is rewritten before it is worked and
+ * is only ever written along a line, and the work-space box goes when the
+ * divisions are in the bracket, whose squares are the working space. Rounding
+ * swaps the places stepper for the place rounded to, since its values are one
+ * place past that; ordering loses the work-space box, since the ruled line
+ * under each set is the working space.
  */
 import { Checkbox, FieldSet, NumberStepper } from "@/components/ui/kit";
 import type {
@@ -18,6 +21,7 @@ import type {
   DecimalForm,
   DecimalOperation,
   DecimalStyle,
+  RoundTo,
 } from "@/engine/sheets/types";
 
 import {
@@ -34,6 +38,11 @@ const STYLES = [
   opt<DecimalStyle>("standard", "Arithmetic"),
   opt<DecimalStyle>("percent", "Percentages"),
   opt<DecimalStyle>("convert", "Convert"),
+  opt<DecimalStyle>("place", "Place value"),
+  opt<DecimalStyle>("compare", "Compare"),
+  opt<DecimalStyle>("order", "Order"),
+  opt<DecimalStyle>("round", "Round"),
+  opt<DecimalStyle>("powers", "Multiply and divide by 10, 100, 1000"),
 ];
 
 const OPERATIONS = [
@@ -49,19 +58,27 @@ const FORMS = [
   opt<DecimalForm>("vertical", "In columns"),
 ];
 
-type DividingBy = NonNullable<DecimalConfig["by"]>;
+type By = NonNullable<DecimalConfig["by"]>;
 
-const DIVIDING_BY = [
-  opt<DividingBy>("whole", "A whole number"),
-  opt<DividingBy>("decimal", "A decimal"),
+const BY = [
+  opt<By>("whole", "A whole number"),
+  opt<By>("decimal", "A decimal"),
+];
+
+const ROUND_TO = [
+  opt<RoundTo>("whole", "Whole number"),
+  opt<RoundTo>("tenth", "Tenth"),
+  opt<RoundTo>("hundredth", "Hundredth"),
 ];
 
 /** What a division divides by until the panel is told otherwise. */
 const DIVISOR = { min: 2, max: 9 };
 
 export function DecimalsPanel({ config, set }: PanelProps<DecimalConfig>) {
-  const dividing = config.style === "standard" && config.operation === "divide";
-  const byDecimal = dividing && config.by === "decimal";
+  const standard = config.style === "standard";
+  const dividing = standard && config.operation === "divide";
+  const multiplying = standard && config.operation === "multiply";
+  const byDecimal = config.by === "decimal";
   const bracketed = dividing && !byDecimal && config.form === "vertical";
 
   return (
@@ -72,7 +89,7 @@ export function DecimalsPanel({ config, set }: PanelProps<DecimalConfig>) {
         onChange={(style) => set({ style })}
         options={STYLES}
       />
-      {config.style === "standard" && (
+      {standard && (
         <>
           <Choice
             label="Operation"
@@ -80,7 +97,7 @@ export function DecimalsPanel({ config, set }: PanelProps<DecimalConfig>) {
             onChange={(operation) => set({ operation })}
             options={OPERATIONS}
           />
-          {!byDecimal && (
+          {!(dividing && byDecimal) && (
             <Choice
               label="Written"
               value={config.form}
@@ -90,17 +107,27 @@ export function DecimalsPanel({ config, set }: PanelProps<DecimalConfig>) {
           )}
         </>
       )}
+      {(dividing || multiplying) && (
+        <Choice
+          label={dividing ? "Dividing by" : "Multiplying by"}
+          value={config.by ?? "whole"}
+          onChange={(by) =>
+            set(
+              dividing && by === "decimal"
+                ? { by, form: "horizontal" }
+                : { by },
+            )
+          }
+          options={BY}
+          hint={
+            dividing
+              ? "Dividing by a decimal is rewritten first — 8.4 ÷ 0.2 is 84 ÷ 2 — so it is always written along a line."
+              : "A decimal times a decimal — 3.7 × 2.4. The answer has as many places as the two numbers together, so the places are counted rather than lined up."
+          }
+        />
+      )}
       {dividing && (
         <>
-          <Choice
-            label="Dividing by"
-            value={config.by ?? "whole"}
-            onChange={(by) =>
-              set(by === "decimal" ? { by, form: "horizontal" } : { by })
-            }
-            options={DIVIDING_BY}
-            hint="Dividing by a decimal is rewritten first — 8.4 ÷ 0.2 is 84 ÷ 2 — so it is always written along a line."
-          />
           <Span
             label="Divisors"
             value={config.divisor ?? DIVISOR}
@@ -128,18 +155,28 @@ export function DecimalsPanel({ config, set }: PanelProps<DecimalConfig>) {
           )}
         </>
       )}
-      <FieldSet
-        legend="Decimal places"
-        hint="How many digits after the point — the whole of what makes one of these easy or hard."
-      >
-        <NumberStepper
-          label="Decimal places"
-          value={config.places}
-          min={1}
-          max={3}
-          onChange={(places) => set({ places })}
+      {config.style === "round" ? (
+        <Choice
+          label="Round to the nearest"
+          value={config.to ?? "whole"}
+          onChange={(to) => set({ to })}
+          options={ROUND_TO}
+          hint="The numbers carry one place more than this — 2.97 to the nearest tenth — so the last digit is the one that decides."
         />
-      </FieldSet>
+      ) : (
+        <FieldSet
+          legend="Decimal places"
+          hint="How many digits after the point — the whole of what makes one of these easy or hard."
+        >
+          <NumberStepper
+            label="Decimal places"
+            value={config.places}
+            min={1}
+            max={3}
+            onChange={(places) => set({ places })}
+          />
+        </FieldSet>
+      )}
       <Span
         label="Whole numbers"
         value={config.range}
@@ -158,7 +195,7 @@ export function DecimalsPanel({ config, set }: PanelProps<DecimalConfig>) {
         onCount={(count) => set({ count })}
         onColumns={(columns) => set({ columns })}
       />
-      {!bracketed && (
+      {!bracketed && config.style !== "order" && (
         <Checkbox
           label="Work space under every problem"
           checked={config.workspace === true}

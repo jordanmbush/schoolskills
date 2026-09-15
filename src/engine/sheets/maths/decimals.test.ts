@@ -11,7 +11,8 @@ import type {
   Problem,
 } from "../types";
 
-import { DECIMALS_SHEET, decimalLayout, decimalTableau } from "./decimals";
+import { decimalTableau } from "./decimal-division";
+import { DECIMALS_SHEET, decimalLayout } from "./decimals";
 import { bracketHeight } from "./long";
 import { divisionTableau } from "./tableau";
 
@@ -33,7 +34,12 @@ import { divisionTableau } from "./tableau";
  * - a percent is checked by **cross-multiplication too**: `p% of w` is `x`
  *   exactly when `x × 100` is `p × w`. No number read off a sheet is divided
  *   anywhere in this file, bounds included — which is the point, because
- *   division is where a float would get in.
+ *   division is where a float would get in;
+ * - the number-sense styles are read the same way: a comparison is
+ *   cross-multiplied, an ordering is the printed texts sorted by
+ *   cross-multiplication, a rounding is held within half a unit, and a
+ *   digit's worth is built from the text with no arithmetic at all.
+ *   `decimal-sense.test.ts` holds each of those styles to its own promises.
  *
  * And every printed number is held to its *shape* as well as its value. A sheet
  * set at two places whose key says `0.5`, or `0.30000000000000004`, has printed
@@ -127,6 +133,31 @@ const EVERY_SHAPE: Array<Partial<DecimalConfig>> = [
     range: { min: 1, max: 20 },
   },
   { operation: "divide", wholeDividend: true, places: 3, form: "vertical" },
+  // Decimal × decimal, and the five number-sense styles (§22), at each place
+  // count they change shape at.
+  { operation: "multiply", by: "decimal" },
+  { operation: "multiply", by: "decimal", form: "vertical", places: 1 },
+  {
+    operation: "multiply",
+    by: "decimal",
+    places: 3,
+    range: { min: 0, max: 5 },
+  },
+  { style: "powers" },
+  { style: "powers", places: 1 },
+  { style: "powers", places: 3, range: { min: 0, max: 5 } },
+  { style: "compare" },
+  { style: "compare", places: 1 },
+  { style: "compare", places: 3 },
+  { style: "order" },
+  { style: "order", places: 1, columns: 1 },
+  { style: "order", places: 3 },
+  { style: "round" },
+  { style: "round", to: "tenth" },
+  { style: "round", to: "hundredth", range: { min: 1, max: 9 } },
+  { style: "place" },
+  { style: "place", places: 1 },
+  { style: "place", places: 3, range: { min: 0, max: 99 } },
 ];
 
 const SEEDS = [0, 1, 2, 7, 4242];
@@ -210,10 +241,14 @@ const OPERATIONS: Record<string, (a: Value, b: Value) => Value> = {
 /**
  * The problem, written out in full with its answer put where it belongs.
  *
- * Four shapes reduce to one sentence: a sum along a line, a stack of numbers in
- * column form, a division in the bracket, and a blank inside the sentence.
+ * Five shapes reduce to one sentence: a sum along a line, a stack of numbers in
+ * column form, a division in the bracket, a blank inside the sentence, and a
+ * set with its answer on the line under it, written here with an arrow.
  */
 function sentence(problem: Problem): string {
+  if (problem.answers) {
+    return `${problem.prompt} → ${problem.answer}`;
+  }
   if (problem.bracket) {
     const { dividend, divisor } = problem.bracket;
     return `${dividend} ÷ ${divisor} = ${problem.answer}`;
@@ -257,8 +292,60 @@ function holds(written: string): boolean {
     );
   }
 
+  // "3.4 < 3.40": the sign a cross-multiplied comparison gives.
+  const compared = /^(\S+) ([<>=]) (\S+)$/.exec(written.trim());
+  if (compared && compared[2] !== "=") {
+    const [, left, sign, right] = compared;
+    const a = readNumber(left);
+    const b = readNumber(right);
+    return sign === "<" ? a.n * b.d < b.n * a.d : a.n * b.d > b.n * a.d;
+  }
+
+  // "3.4, 3.04, 3.5 → 3.04, 3.4, 3.5": the same texts, sorted.
+  const ordered = /^(.+) → (.+)$/.exec(written.trim());
+  if (ordered) {
+    const asked = ordered[1].split(", ");
+    const answered = ordered[2].split(", ");
+    const sorted = [...asked].sort((a, b) => {
+      const x = readNumber(a);
+      const y = readNumber(b);
+      return x.n * y.d - y.n * x.d;
+    });
+    return sorted.join(", ") === answered.join(", ");
+  }
+
+  // "2.97 ≈ 3.0": within half a unit of the answer's place, cross-multiplied,
+  // and up on exactly a half.
+  const rounded = /^(\S+) ≈ (\S+)$/.exec(written.trim());
+  if (rounded) {
+    const value = readNumber(rounded[1]);
+    const answer = readNumber(rounded[2]);
+    const gap = value.n * answer.d - answer.n * value.d;
+    if (2 * Math.abs(gap) > value.d) return false;
+    return 2 * Math.abs(gap) < value.d || gap < 0;
+  }
+
+  // "What is the 5 in 3.75 worth? 0.05": the worth built from the text alone
+  // — the digit and a zero for every column to the units, or `0.` and a zero
+  // for every column from the point.
+  const place = /^What is the (\d) in (\S+) worth\? (\S+)$/.exec(
+    written.trim(),
+  );
+  if (place) {
+    const [, digit, number, answer] = place;
+    const at = number.indexOf(digit);
+    const point = number.indexOf(".");
+    if (number.lastIndexOf(digit) !== at) return false;
+    const worth =
+      at < point
+        ? digit + "0".repeat(point - 1 - at)
+        : `0.${"0".repeat(at - point - 1)}${digit}`;
+    return answer === worth;
+  }
+
   // A conversion: two ways of writing one number, either of which may be a
-  // percent, a fraction or a decimal.
+  // percent, a fraction or a decimal — and "3.4 = 3.40", which is the same
+  // claim.
   const equal = /^(\S+) = (\S+)$/.exec(written.trim());
   if (!equal) throw new Error(`not a number sentence: "${written}"`);
   return same(readForm(equal[1]), readForm(equal[2]));
@@ -276,7 +363,7 @@ function readForm(text: string): Value {
 /** Every decimal printed on a problem, prompt and answer alike. */
 function decimalsOn(problem: Problem): string[] {
   return sentence(problem)
-    .split(/[\s=+−×÷]+/)
+    .split(/[\s=+−×÷<>,→≈?]+/)
     .filter((word) => /^\d+\.\d+$/.test(word));
 }
 
@@ -752,11 +839,18 @@ describe("the answer key", () => {
     // would print — so every number on the page is held to the shape a decimal
     // has, digit for digit, as well as to its value.
     for (const shape of EVERY_SHAPE) {
+      // A decimal times a decimal has as many places as the two together,
+      // and that is the one shape whose answers run past three.
+      const most =
+        shape.operation === "multiply" && shape.by === "decimal"
+          ? 2 * (shape.places ?? 2)
+          : 3;
+      const decimal = new RegExp(`^\\d+\\.\\d{1,${most}}$`);
       for (const seed of SEEDS) {
         for (const problem of problemsOf(shape, seed)) {
-          for (const word of sentence(problem).split(/[\s=+−×÷]+/)) {
+          for (const word of sentence(problem).split(/[\s=+−×÷<>,→≈?]+/)) {
             if (word.includes(".")) {
-              expect(word, JSON.stringify(shape)).toMatch(/^\d+\.\d{1,3}$/);
+              expect(word, JSON.stringify(shape)).toMatch(decimal);
             }
           }
         }

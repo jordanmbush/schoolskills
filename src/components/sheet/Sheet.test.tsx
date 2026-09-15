@@ -8,7 +8,7 @@ import { describe, expect, it } from "vitest";
 import { answerKey, buildSheet } from "@/engine/sheets";
 import { printedBlockBox } from "@/engine/sheets/chrome";
 import { figureInk } from "@/engine/sheets/figure";
-import { decimalTableau } from "@/engine/sheets/maths/decimals";
+import { decimalTableau } from "@/engine/sheets/maths/decimal-division";
 import { divisionLines } from "@/engine/sheets/maths/long";
 import { divisionTableau } from "@/engine/sheets/maths/tableau";
 import { ticks } from "@/engine/sheets/numberline";
@@ -1255,6 +1255,70 @@ describe("a rendered decimal division", () => {
       tableau.rows.reduce((sum, row) => sum + row.text.length, 0);
     expect(tableau.quotient.text).toBe("023");
     expect(count(item, "<rect")).toBe(written);
+  });
+});
+
+/* ── Decimals with no sum in them ──────────────────────────────────────────
+   The number-sense styles (§22) print through the same three answer places
+   as everything else: a slot at the end, a slot in the gap, or ruled lines
+   under the sentence. What is checked is that each style gets exactly one,
+   and that the ordering's line is the height the family reserved.        */
+
+describe("a rendered number-sense sheet", () => {
+  const STYLES = ["powers", "compare", "order", "round", "place"] as const;
+  const sense = (style: (typeof STYLES)[number]) =>
+    decimals({ style, operation: "add", form: "horizontal", count: 6 });
+
+  it("gives every problem exactly one place to write the answer", () => {
+    for (const style of STYLES) {
+      for (const answers of [false, true]) {
+        const config = sense(style);
+        const built = answers
+          ? answerKey(config, SEED)
+          : buildSheet(config, SEED);
+        const items = problems(render(built as Sheet));
+        expect(items.length, style).toBeGreaterThan(0);
+        for (const item of items) {
+          const places =
+            count(item, 'class="sheet__slot') +
+            count(item, 'class="sheet__total') +
+            count(item, 'class="sheet__answers"');
+          expect(places, `${style}: ${item}`).toBe(1);
+        }
+      }
+    }
+  });
+
+  it("rules one line under an ordering, at the height the family reserved", () => {
+    const items = itemsOf(sense("order"));
+    const sheet = problems(render(buildSheet(sense("order"), SEED) as Sheet));
+    const key = problems(render(answerKey(sense("order"), SEED) as Sheet));
+    expect(items.length).toBeGreaterThan(0);
+    items.forEach((problem, index) => {
+      expect(count(sheet[index], 'class="sheet__answer-line"')).toBe(1);
+      expect(sheet[index]).toContain("height:0.25in");
+      expect(sheet[index]).not.toContain(problem.answer);
+      expect(key[index]).toContain(
+        `sheet__answer-line sheet__answer-line--answered" style="height:0.25in">${problem.answer}<`,
+      );
+      // The sentence itself prints no slot: the line is the answer place.
+      expect(sheet[index]).not.toContain("sheet__slot");
+    });
+  });
+
+  it("puts a comparison's sign in the gap, and a digit's worth on the end", () => {
+    const [compared] = problems(
+      render(answerKey(sense("compare"), SEED) as Sheet),
+    );
+    const prompt = compared.indexOf('<span class="sheet__prompt">');
+    const slot = compared.indexOf('<span class="sheet__slot');
+    expect(slot).toBeGreaterThan(prompt);
+    // Inside the sentence — nothing closes the prompt before the slot opens.
+    expect(compared.slice(prompt, slot)).not.toContain("</span>");
+    expect(compared).toMatch(/sheet__slot sheet__slot--answered">[<>=]</);
+
+    const [placed] = problems(render(answerKey(sense("place"), SEED) as Sheet));
+    expect(placed).toMatch(/worth\?<\/span><span class="sheet__slot/);
   });
 });
 

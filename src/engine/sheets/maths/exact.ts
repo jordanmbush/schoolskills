@@ -165,6 +165,48 @@ export const timesWhole = (value: Fixed, by: number): Fixed =>
   fixed(value.units * Math.round(by), value.places);
 
 /**
+ * A decimal multiplied by a decimal — 3.7 × 2.4 is 8.88.
+ *
+ * The units multiply and the places add, which is the rule a child is taught
+ * and the reason `timesWhole` exists beside this: an answer with more places
+ * than either number that made it is right, and it is only wanted on the sheet
+ * that says so.
+ */
+export const timesFixed = (a: Fixed, b: Fixed): Fixed =>
+  fixed(a.units * b.units, a.places + b.places);
+
+/**
+ * Negative, zero or positive, as `compare` answers for fractions.
+ *
+ * Both sides are scaled up to the more places of the two and the units
+ * compared as whole numbers — never divided — so `3.4` against `3.40` is 340
+ * against 340, which is the whole of what "the same number" means here.
+ */
+export function compareFixed(a: Fixed, b: Fixed): number {
+  const places = Math.max(a.places, b.places);
+  return (
+    a.units * scale(places - a.places) - b.units * scale(places - b.places)
+  );
+}
+
+/**
+ * The same digits moved `by` places to the left — multiplied by ten that many
+ * times — or to the right when `by` is negative.
+ *
+ * Moving left runs the places down to zero and then grows the units, so 3.7
+ * × 100 is `370` and not `370.0`; moving right only ever adds places, so 48
+ * ÷ 1000 is `0.048`. Nothing is divided, which is what makes the second one
+ * safe.
+ */
+export function shifted(value: Fixed, by: number): Fixed {
+  if (by >= 0) {
+    const places = Math.max(0, value.places - by);
+    return fixed(value.units * scale(by - (value.places - places)), places);
+  }
+  return fixed(value.units, value.places - by);
+}
+
+/**
  * The number with its point written in: "3.45", "0.60", "12.000".
  *
  * Padded to the places the value carries rather than trimmed, because trailing

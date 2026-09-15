@@ -2,24 +2,26 @@
  * Decimals and percents — the same machinery as every family before it (§7,
  * §11), over numbers that are famously easy to get subtly wrong.
  *
- * **Nothing here is ever a float**, and a decimal is only ever multiplied by a
- * whole number. `maths/exact.ts` holds both shapes and the reasons. Division
- * keeps to that by running backwards: the answer is drawn and the dividend is
- * made from it, so no quotient is ever found (§22).
+ * This module is the spec: what a problem takes on the page, which draw a
+ * sheet is made of, and what the sheet is called. The draws live beside it —
+ * `decimal-draw.ts` for sums, percents and conversions, `decimal-division.ts`
+ * for the three divisions (§22), `decimal-sense.ts` for the number-sense
+ * styles — and every one of them returns the problem in each shape it can
+ * take, so choosing the shape is done here, once, from the same arithmetic the
+ * row was reserved by.
  *
- * **A percent answer is a whole number, by construction.** 15% of 80 is 12, and
- * 15% of 81 is 12.15 — a different lesson, and one that belongs on a money sheet
- * where two places are the point. So the amount is walked in steps that keep the
- * answer whole rather than rounded back to one that isn't.
+ * **Nothing here is ever a float.** `maths/exact.ts` holds the shapes and the
+ * reasons.
  */
-import { between, mulberry32 } from "@/engine/random";
+import { mulberry32 } from "@/engine/random";
 
 import type {
   DecimalConfig,
-  DecimalOperation,
+  DecimalStyle,
   DivisionHelp,
   Mil,
   Problem,
+  RoundTo,
   Sheet,
   SheetOptions,
 } from "../types";
@@ -36,23 +38,43 @@ import {
 import { inches, points } from "../paper";
 import { SHEET_CREDIT, SHEET_URL, SHEET_WORLD, type SheetSpec } from "../spec";
 import {
-  fixed,
-  fixedText,
-  gcd,
-  minusFixed,
-  plusFixed,
-  scale,
-  timesWhole,
-  type Fixed,
-} from "./exact";
+  divisionOf,
+  divisorOf,
+  drawByDecimal,
+  drawByWhole,
+  drawWholeDividend,
+  decimalTableau,
+  type Division,
+} from "./decimal-division";
+import {
+  bounds,
+  clamp,
+  drawConvert,
+  drawPercent,
+  drawStandard,
+  placesOf,
+  type Draw,
+  type Drawn,
+} from "./decimal-draw";
+import {
+  ORDER_SET,
+  drawCompare,
+  drawOrder,
+  drawPlace,
+  drawPowers,
+  drawRound,
+  roundTo,
+  roundingPlaces,
+} from "./decimal-sense";
+import { scale } from "./exact";
 import { HELP_NAME, bracketHeight, divisionHelp, divisionLines } from "./long";
-import { divisionTableau, type Tableau } from "./tableau";
 
 /* ── What a problem takes on the page ─────────────────────────────────────
    Declared, not measured (§4). Stacked it is the two numbers, the rule and the
    answer under it — the same drawing an addition sheet has, with the points
    lined up. A division in columns is the bracket instead, and its height is
-   the squares it reserves.                                                  */
+   the squares it reserves. An ordering has a ruled line under the sentence,
+   and everything else is the sentence with a slot in it.                    */
 
 const STACK_EMS = 4.4;
 
@@ -68,452 +90,39 @@ const WORKSPACE = inches(0.55);
 /** Four columns. `13.47 + 8.06 =` is twice the sentence `7 × 8 =` is. */
 const MAX_COLUMNS = 4;
 
-/** Tenths, hundredths, thousandths. Past that it is a physics sheet. */
-const MAX_PLACES = 3;
-
-/** What a decimal is multiplied by: three lots of 1.25, never seventy of it. */
-const MULTIPLIER = { min: 2, max: 9 };
-
-/** What a decimal is divided by unless the config says: the single digits. */
-const DIVISOR = { min: 2, max: 9 };
+/**
+ * Two columns for the styles written as a sentence: "What is the 7 in 13.75
+ * worth?" and a set of five decimals are three lines of a narrow column, and
+ * the row reserves two.
+ */
+const SENTENCE_COLUMNS = 2;
 
 /**
- * As far as a divisor may run. Two digits is the harder sheet a parent asks
- * for by name; three is a calculator's, and the squares it would take under
- * the bracket would not fit the column.
+ * How wide a figure is, in ems of the body type. A tabular figure in the face
+ * a sheet prints in is about six tenths of an em, and a comma and a space are
+ * narrower, so a line reserved by this is wider than the line it holds.
  */
-const MAX_DIVISOR = 99;
-
-/**
- * The percentages a sheet asks for.
- *
- * The ones a child is taught to recognise rather than every whole number
- * between 1 and 100: "37% of 200" is a calculator question, and "25% of 80" is
- * a quarter of eighty, which is the whole point of the lesson.
- */
-const PERCENTS = [5, 10, 15, 20, 25, 30, 40, 50, 60, 70, 75, 80, 90, 100];
-
-/**
- * The percentages a sheet takes *of an amount*, which is the list above without
- * the identity on it.
- *
- * "100% of 63" is 63, and a child who has read the question has already written
- * the answer. It stays in `PERCENTS` because `100% = 1.00` is a fair conversion
- * to ask for — a whole is a hundred per cent is the thing being converted — and
- * it comes out here because it is not a calculation to do.
- */
-const AMOUNT_PERCENTS = PERCENTS.filter((percent) => percent !== 100);
-
-/**
- * The denominators a conversion sheet uses.
- *
- * Only fractions that *stop* — a third is 0.333… and there is no number of
- * places at which it is exactly right. Which of these survive is decided by the
- * places the sheet is set at: eighths are exact in thousandths and not in
- * hundredths, so `scale % d` does the filtering rather than a second list.
- */
-const FRIENDLY = [2, 4, 5, 8, 10, 20, 25, 50, 100];
+const DIGIT_EM = 0.6;
 
 /** As `arithmetic.ts` — see the note there on why a budget rather than a proof. */
 const MISS_BUDGET = 500;
 
-/**
- * How far apart two percents are that a sheet at this scale can write down.
- *
- * Every percent is exact in hundredths and finer, and only the tens are exact
- * in tenths: 45% is 0.45, which a sheet set at one place cannot print. So the
- * step is one at two places and ten at one, and the draw walks in steps rather
- * than drawing and rejecting.
- */
-const percentStep = (by: number): number => 100 / gcd(100, by);
+/* ── Which draw a sheet is made of ───────────────────────────────────────── */
 
-const SIGN = { add: "+", subtract: "−", multiply: "×", divide: "÷" } as const;
-
-/* ── The numbers on the page ───────────────────────────────────────────────
-   Every bound is sanitised once, because they arrive from outside this build:
-   a config in a bookmarked URL may ask for nine places, or for a range that
-   runs backwards.                                                            */
-
-const clamp = (value: number, low: number, high: number): number =>
-  Math.max(low, Math.min(high, Math.floor(value)));
-
-const placesOf = (config: DecimalConfig): number =>
-  clamp(config.places ?? 2, 1, MAX_PLACES);
-
-function bounds(range: { min: number; max: number }): {
-  min: number;
-  max: number;
-} {
-  const min = Math.max(0, Math.floor(range?.min ?? 0));
-  return { min, max: Math.max(min, Math.floor(range?.max ?? 0)) };
-}
-
-/** The divisor span, made safe to draw from whatever a saved config says. */
-function divisorOf(config: DecimalConfig): { min: number; max: number } {
-  const asked = config.divisor ?? DIVISOR;
-  const min = clamp(asked.min ?? DIVISOR.min, DIVISOR.min, MAX_DIVISOR);
-  const max = clamp(Math.max(min, asked.max ?? min), DIVISOR.min, MAX_DIVISOR);
-  return { min, max };
-}
-
-/**
- * The three divisions a sheet can set (§22), decided once so the draw, the
- * layout and the title cannot disagree about which it is. Dividing *by* a
- * decimal wins over a whole dividend: they are two lessons rather than one
- * question with two switches on.
- */
-type Division = "byWhole" | "byDecimal" | "wholeDividend";
-
-function divisionOf(config: DecimalConfig): Division {
-  if (config.by === "decimal") return "byDecimal";
-  return config.wholeDividend === true ? "wholeDividend" : "byWhole";
-}
-
-/**
- * One value from the range, in the smallest unit the sheet counts in.
- *
- * Drawn as a whole number of hundredths rather than as a decimal rounded
- * afterwards: rounding is where a place count stops being a promise. A value of
- * nothing is rejected — `0.00 + 3.45` is not a question about decimals.
- */
-function drawValue(config: DecimalConfig, rand: () => number): Fixed | null {
-  const places = placesOf(config);
-  const by = scale(places);
-  const { min, max } = bounds(config.range);
-  const units = between(min * by, max * by, rand);
-  return units > 0 ? fixed(units, places) : null;
-}
-
-/* ── Drawing a problem ─────────────────────────────────────────────────────
-   Each style draws its own shape, and they have little in common beyond having
-   an answer. So each returns the same answers: what it reads, what the answer
-   is, how it is stacked if it is stacked, and what makes two of them the same
-   problem.                                                                   */
-
-type Drawn = {
-  key: string;
-  prompt: string;
-  answer: string;
-  operands?: string[];
-  operator?: string;
-  /** The bracket as far as the draw decides it; the layout adds the squares. */
-  bracket?: { divisor: string; dividend: string };
+const DRAW: Partial<Record<DecimalStyle, Draw>> = {
+  percent: drawPercent,
+  convert: drawConvert,
+  powers: drawPowers,
+  compare: drawCompare,
+  order: drawOrder,
+  round: drawRound,
+  place: drawPlace,
 };
 
-type Draw = (config: DecimalConfig, rand: () => number) => Drawn | null;
-
-/** Which way round an `either` sheet's problem reads. */
-function operationOf(
-  operation: DecimalOperation,
-  rand: () => number,
-): Exclude<DecimalOperation, "both"> {
-  if (operation !== "both") return operation;
-  return rand() < 0.5 ? "add" : "subtract";
-}
-
-/** A sum, a difference, or a decimal taken so many times. */
-function drawStandard(config: DecimalConfig, rand: () => number): Drawn | null {
-  const operation = operationOf(config.operation, rand);
-  const left = drawValue(config, rand);
-  if (left === null) return null;
-
-  if (operation === "multiply") {
-    const by = between(MULTIPLIER.min, MULTIPLIER.max, rand);
-    return written(
-      config,
-      operation,
-      [fixedText(left), String(by)],
-      fixedText(timesWhole(left, by)),
-    );
-  }
-
-  const right = drawValue(config, rand);
-  if (right === null) return null;
-  if (operation === "add") {
-    return written(
-      config,
-      operation,
-      [fixedText(left), fixedText(right)],
-      fixedText(plusFixed(left, right)),
-    );
-  }
-
-  // Nothing on a decimals sheet goes below zero, so the pair is turned round
-  // rather than thrown away — the same bargain the arithmetic family strikes.
-  // A difference of nothing is thrown away, because it answers itself.
-  if (left.units === right.units) return null;
-  const [top, bottom] =
-    left.units > right.units ? [left, right] : [right, left];
-  return written(
-    config,
-    operation,
-    [fixedText(top), fixedText(bottom)],
-    fixedText(minusFixed(top, bottom)),
-  );
-}
-
-/**
- * A problem written the way the config asks: along a line, or stacked.
- *
- * Column form is where the sheet earns its keep. Every value prints to the same
- * number of places, so two of them right-aligned in `tabular-nums` put their
- * points in a column without anything having to align them — which is the one
- * thing a child working a decimal sum has to get right.
- */
-function written(
-  config: DecimalConfig,
-  operation: Exclude<DecimalOperation, "both">,
-  operands: string[],
-  answer: string,
-): Drawn {
-  const sign = SIGN[operation];
-  // Addition folds — `1.4 + 0.25` and `0.25 + 1.4` are one problem — while a
-  // difference and a multiple do not.
-  const key =
-    operation === "add"
-      ? `${operation}:${[...operands].sort().join(":")}`
-      : `${operation}:${operands.join(":")}`;
-  if (config.form === "vertical") {
-    return { key, prompt: "", operands, operator: sign, answer };
-  }
-  return { key, prompt: `${operands[0]} ${sign} ${operands[1]} =`, answer };
-}
-
-/**
- * A decimal divided by a whole number: 8.46 ÷ 3.
- *
- * The quotient is drawn and the dividend made from it, so the division comes
- * out exactly and every promise the config makes holds of the answer — which
- * is the number a parent set the places and the range for.
- */
-function drawByWhole(config: DecimalConfig, rand: () => number): Drawn | null {
-  const quotient = drawValue(config, rand);
-  if (quotient === null) return null;
-  const { min, max } = divisorOf(config);
-  const divisor = between(min, max, rand);
-  const dividend = fixedText(timesWhole(quotient, divisor));
-  return divided(config, dividend, divisor, quotient);
-}
-
-/**
- * A whole number divided to a decimal answer: 7 ÷ 4 = 1.75.
- *
- * The divisor is drawn first and the quotient then walked in the steps that
- * make their product whole, for the reason `drawPercent` gives: a divisor
- * makes a whole number of one quotient in fifty at two places (2) or one in
- * twenty-five (4), so a draw that made a pair and rejected it would print the
- * friendliest divisors over and over. A divisor with no factor of ten in it —
- * 3, 7, 9 — makes a whole number of no decimal quotient at all, and is left
- * out rather than rounded in. A whole quotient is left out too, because an
- * answer that runs past the point is what this sheet promises.
- *
- * In columns the dividend prints with the zeros annexed, `7.00`, which is the
- * form a child keeps dividing into; along a line it is the whole number it is.
- */
-function drawWholeDividend(
-  config: DecimalConfig,
-  rand: () => number,
-): Drawn | null {
-  const places = placesOf(config);
-  const by = scale(places);
-  const span = divisorOf(config);
-  const divisor = between(span.min, span.max, rand);
-  const step = by / gcd(by, divisor);
-  if (step === by) return null;
-  const { min, max } = bounds(config.range);
-  const first = Math.ceil(Math.max(min * by, 1) / step);
-  const last = Math.floor((max * by) / step);
-  if (first > last) return null;
-  const units = between(first, last, rand) * step;
-  if (units % by === 0) return null;
-  const quotient = fixed(units, places);
-  const product = timesWhole(quotient, divisor);
-  const whole = String(product.units / by);
-  return divided(config, whole, divisor, quotient, fixedText(product));
-}
-
-/**
- * A decimal divided by a decimal: 8.4 ÷ 0.2.
- *
- * Drawn as the whole-number division a child rewrites it into — 84 ÷ 2 — and
- * then each side is given its places: the divisor one to `places`, and the
- * dividend at least as many, so the answer is the whole quotient with the
- * point moved back by the difference, exact by construction. Neither side
- * ends in a zero, because the two sides carry different place counts by
- * design and `8.40 ÷ 0.2` is a number written the long way for no column to
- * line up on. Along a line only: set in a bracket it would be the rewritten
- * sum rather than the question, and the rewriting is the lesson (§22).
- */
-function drawByDecimal(
-  config: DecimalConfig,
-  rand: () => number,
-): Drawn | null {
-  const places = placesOf(config);
-  const { min, max } = bounds(config.range);
-  if (max < 1) return null;
-  const quotient = between(Math.max(1, min), max, rand);
-  const span = divisorOf(config);
-  const divisor = between(span.min, span.max, rand);
-  const dividend = quotient * divisor;
-  if (dividend % 10 === 0 || divisor % 10 === 0) return null;
-  const divisorPlaces = between(1, places, rand);
-  const dividendPlaces = between(divisorPlaces, places, rand);
-  // A number divided by itself answers itself.
-  if (quotient === 1 && dividendPlaces === divisorPlaces) return null;
-  const left = fixedText(fixed(dividend, dividendPlaces));
-  const right = fixedText(fixed(divisor, divisorPlaces));
-  return {
-    key: `divide:${left}:${right}`,
-    prompt: `${left} ÷ ${right} =`,
-    answer: fixedText(fixed(quotient, dividendPlaces - divisorPlaces)),
-  };
-}
-
-/**
- * A division written the way the config asks: along a line, or in the bracket.
- *
- * `annexed` is what the bracket prints where that differs from what the
- * sentence says — `7.00` for a whole dividend, so there are zeros to divide
- * into. The key is the sentence's, so the same division is one problem in
- * either form.
- */
-function divided(
-  config: DecimalConfig,
-  dividend: string,
-  divisor: number,
-  quotient: Fixed,
-  annexed = dividend,
-): Drawn {
-  const key = `divide:${dividend}:${divisor}`;
-  const answer = fixedText(quotient);
-  if (bracketed(config)) {
-    return {
-      key,
-      prompt: "",
-      answer,
-      bracket: { divisor: String(divisor), dividend: annexed },
-    };
-  }
-  return { key, prompt: `${dividend} ÷ ${divisor} =`, answer };
-}
-
-/**
- * The working under a decimal dividend (§22).
- *
- * Computed on the digits alone — the point is not a column — and then the
- * quotient is padded back to the units column with zeros, so a quotient below
- * one is written `0.23` and never `.23`. The zeros are written digits: a child
- * writes them, and a guided sheet shades their squares.
- */
-export function decimalTableau(dividend: string, divisor: number): Tableau {
-  const point = dividend.indexOf(".");
-  const digits = dividend.replace(".", "");
-  const tableau = divisionTableau(digits, divisor);
-  const units = point < 0 ? digits.length - 1 : Math.max(0, point - 1);
-  const { text, start } = tableau.quotient;
-  if (start <= units) return tableau;
-  return {
-    ...tableau,
-    quotient: { text: "0".repeat(start - units) + text, start: units },
-  };
-}
-
-/**
- * "25% of 80 =", with the amount drawn to suit the percent.
- *
- * The percent is chosen first and the amount is then walked in the steps that
- * keep the answer whole, rather than both being drawn freely and the pair
- * rejected when it isn't. That is not a saving, it is the difference between a
- * varied page and a page of one question: a percent divides a hundred well or
- * badly, and 5% comes out whole of one number in twenty while 50% does of one
- * in two — so a rejecting draw prints the friendliest percents over and over
- * and leaves the rest of the list off the sheet almost entirely. Choosing the
- * percent first gives every one of them the same share of the page.
- */
-function drawPercent(config: DecimalConfig, rand: () => number): Drawn | null {
-  const percent = AMOUNT_PERCENTS[Math.floor(rand() * AMOUNT_PERCENTS.length)];
-  const { min, max } = bounds(config.range);
-  // How far apart the amounts are that this percent comes out whole from: every
-  // fourth number for a quarter, every second for a half, every twentieth for
-  // 5%. A range with none of them in it is a request with no answers in it, and
-  // an empty draw is the honest reply — the miss budget above ends the page.
-  const step = 100 / gcd(100, percent);
-  const first = Math.ceil(Math.max(min, 1) / step);
-  const last = Math.floor(max / step);
-  if (first > last) return null;
-  const amount = between(first, last, rand) * step;
-  return {
-    key: `percent:${percent}:${amount}`,
-    prompt: `${percent}% of ${amount} =`,
-    answer: String((percent * amount) / 100),
-  };
-}
-
-/**
- * The same number in another form: a decimal as a percent, a percent as a
- * decimal, or a fraction as a decimal.
- *
- * Three directions rather than every pair, because the blank has to say what it
- * wants without a sentence beside it: a blank with a `%` after it wants a
- * percent and every other blank wants a decimal, which is one rule a child can
- * hold. "0.75 = _" answered with a fraction would be a right answer marked
- * wrong.
- *
- * Each direction draws only from what is legal at the places the sheet is set
- * at, rather than drawing freely and rejecting. That is not an optimisation:
- * a tenths sheet has ten legal percents and a hundred illegal ones, so a
- * rejecting draw spends nine tenths of its budget on the one direction that
- * always succeeds, and prints a page of "70% = _" with two other questions
- * hiding at the bottom.
- */
-function drawConvert(config: DecimalConfig, rand: () => number): Drawn | null {
-  const places = placesOf(config);
-  const by = scale(places);
-  const direction = between(0, 2, rand);
-
-  if (direction === 0) {
-    // A decimal, as a percent — drawn as the percent and written out as the
-    // decimal, which is the same question from the end that has whole numbers
-    // in it. Values up to one whole, which is where percents are taught before
-    // anything is over a hundred of them.
-    const percent = between(1, 100 / percentStep(by), rand) * percentStep(by);
-    return {
-      key: `convert:decimal:${percent}`,
-      prompt: `${fixedText(fixed((percent * by) / 100, places))} = _%`,
-      answer: String(percent),
-    };
-  }
-
-  if (direction === 1) {
-    const usable = PERCENTS.filter((percent) => (percent * by) % 100 === 0);
-    if (usable.length === 0) return null;
-    const percent = usable[Math.floor(rand() * usable.length)];
-    return {
-      key: `convert:percent:${percent}`,
-      prompt: `${percent}% = _`,
-      answer: fixedText(fixed((percent * by) / 100, places)),
-    };
-  }
-
-  const usable = FRIENDLY.filter((d) => by % d === 0);
-  if (usable.length === 0) return null;
-  const d = usable[Math.floor(rand() * usable.length)];
-  const n = between(1, d - 1, rand);
-  // In lowest terms, so the fraction on the page is the one a child recognises:
-  // `2/4 = 0.5` teaches them to simplify first and then convert, which is two
-  // questions in one blank.
-  if (gcd(n, d) !== 1) return null;
-  return {
-    key: `convert:fraction:${n}:${d}`,
-    prompt: `${n}/${d} = _`,
-    answer: fixedText(fixed((n * by) / d, places)),
-  };
-}
-
-/** Which draw a sheet is made of. */
+/** A style this build does not know is arithmetic, as it was before it existed. */
 function drawerOf(config: DecimalConfig): Draw {
-  if (config.style === "percent") return drawPercent;
-  if (config.style === "convert") return drawConvert;
+  const draw = DRAW[config.style];
+  if (draw) return draw;
   if (config.operation !== "divide") return drawStandard;
   switch (divisionOf(config)) {
     case "byDecimal":
@@ -573,12 +182,49 @@ function rowHeight(config: DecimalConfig): Mil {
   const bracket = bracketOf(config);
   if (bracket)
     return bracketHeight(config.fontPt) + bracket.rows * bracket.cell;
+  // An ordering's answer is the ruled line under the sentence, on a line of
+  // its own; the line is its working space, so the config's is not added.
+  if (config.style === "order")
+    return writtenRow(config.fontPt) + WRAP_GAP + answerLine(config.fontPt);
   // A stack is one flex item and cannot wrap, so it is reserved for as what it
   // is: two numbers, a rule and the answer under it.
   const body = stacked(config)
     ? points(config.fontPt * STACK_EMS)
     : writtenRow(config.fontPt);
   return body + (config.workspace ? WORKSPACE : 0);
+}
+
+/**
+ * How wide the longest answer line an ordering sheet can print is: the most
+ * values a set holds, each at its longest, with ", " between them. The line
+ * cannot wrap — `.sheet__answer-line` clips instead, because a wrapped line
+ * is a row taller than was reserved — so the columns are cut to fit it.
+ */
+function orderLine(config: DecimalConfig): Mil {
+  const longest =
+    String(bounds(config.range).max).length + 1 + placesOf(config);
+  const characters = ORDER_SET.max * longest + (ORDER_SET.max - 1) * 2;
+  return characters * points(config.fontPt * DIGIT_EM);
+}
+
+/** How many columns the sheet is set in: what was asked, cut to what the style can hold. */
+function columnsOf(config: DecimalConfig, box: Box): number {
+  const asked = clamp(config.columns, 1, MAX_COLUMNS);
+  switch (config.style) {
+    case "place":
+      return Math.min(asked, SENTENCE_COLUMNS);
+    case "order":
+      return Math.max(
+        1,
+        Math.min(
+          asked,
+          SENTENCE_COLUMNS,
+          fitAcross(box.width, orderLine(config), PROBLEM_GAP.x),
+        ),
+      );
+    default:
+      return asked;
+  }
 }
 
 /** How many problems the paper holds, and how wide a column of them is (§4). */
@@ -592,7 +238,7 @@ export function decimalLayout(config: DecimalConfig): {
   // Against the header the sheet will print, not the one the config holds, and
   // `true` for the score box because a sheet of problems is marked out of them.
   const box = sheetBlockBox(headerOf(config), true);
-  const columns = clamp(config.columns, 1, MAX_COLUMNS);
+  const columns = columnsOf(config, box);
   const row = rowHeight(config);
   return {
     box,
@@ -603,9 +249,13 @@ export function decimalLayout(config: DecimalConfig): {
   };
 }
 
-/** A draw as it is printed: along a line, in a stack, or in the bracket. */
+/**
+ * A draw as it is printed: in the bracket, on a ruled line, in a stack, or
+ * along a line — decided by the layout, never by the draw.
+ */
 function problemOf(
   drawn: Drawn,
+  config: DecimalConfig,
   squares: ReturnType<typeof bracketOf>,
   extras: { workspace?: Mil },
 ): Problem {
@@ -621,14 +271,24 @@ function problemOf(
       },
     };
   }
-  return {
-    prompt: drawn.prompt,
-    answer: drawn.answer,
-    ...(drawn.operands
-      ? { operands: drawn.operands, operator: drawn.operator }
-      : {}),
-    ...extras,
-  };
+  if (drawn.answers) {
+    return {
+      prompt: drawn.prompt,
+      answer: drawn.answer,
+      answers: drawn.answers,
+      workspace: answerLine(config.fontPt),
+    };
+  }
+  if (drawn.operands && stacked(config)) {
+    return {
+      prompt: "",
+      answer: drawn.answer,
+      operands: drawn.operands,
+      operator: drawn.operator,
+      ...extras,
+    };
+  }
+  return { prompt: drawn.prompt, answer: drawn.answer, ...extras };
 }
 
 /**
@@ -660,7 +320,7 @@ export function decimalProblems(
       continue;
     }
     seen.add(drawn.key);
-    problems.push(problemOf(drawn, squares, extras));
+    problems.push(problemOf(drawn, config, squares, extras));
     misses = 0;
   }
   return problems;
@@ -683,21 +343,35 @@ const DIVISION_NAME: Record<Division, string> = {
   wholeDividend: "Division with decimal answers",
 };
 
+/** Every style but arithmetic, which is named by its operation. */
+const STYLE_NAME: Partial<Record<DecimalStyle, string>> = {
+  percent: "Percentages of amounts",
+  convert: "Fractions, decimals and percents",
+  powers: "Multiplying and dividing by 10, 100 and 1000",
+  compare: "Comparing decimals",
+  order: "Ordering decimals",
+  round: "Rounding decimals",
+  place: "Decimal place value",
+};
+
 /** What a place count is called out loud, which is how a lesson names it. */
 const PLACE_NAME = ["", "tenths", "hundredths", "thousandths"] as const;
 
+const TO_NAME: Record<RoundTo, string> = {
+  whole: "whole number",
+  tenth: "tenth",
+  hundredth: "hundredth",
+};
+
 /** "Adding decimals" — the phrase a parent says, and the one they search. */
 function titleOf(config: DecimalConfig): string {
-  switch (config.style) {
-    case "percent":
-      return "Percentages of amounts";
-    case "convert":
-      return "Fractions, decimals and percents";
-    default:
-      if (config.operation === "divide")
-        return DIVISION_NAME[divisionOf(config)];
-      return `${OPERATION_NAME[config.operation] ?? OPERATION_NAME.add} decimals`;
-  }
+  const named = STYLE_NAME[config.style];
+  if (named) return named;
+  if (config.operation === "divide") return DIVISION_NAME[divisionOf(config)];
+  const name = `${OPERATION_NAME[config.operation] ?? OPERATION_NAME.add} decimals`;
+  return config.operation === "multiply" && config.by === "decimal"
+    ? `${name} by decimals`
+    : name;
 }
 
 /**
@@ -719,6 +393,34 @@ function divisionInstruction(config: DecimalConfig): string {
   }
 }
 
+/**
+ * What a child is told on an arithmetic sheet.
+ *
+ * A stack of sums lines up on the point, because every value on the sheet is
+ * printed to the same number of places. A multiplier is not a decimal at all —
+ * `1.25 × 3` has one point in it — so "keep the points under one another"
+ * describes a column that isn't there, and a decimal multiplier is the sheet
+ * where the places are counted rather than lined up. §10 makes this sentence
+ * the whole of the guidance a child gets.
+ */
+function arithmeticInstruction(config: DecimalConfig): string {
+  if (config.operation === "divide") return divisionInstruction(config);
+  if (config.operation === "multiply" && config.by === "decimal") {
+    return stacked(config)
+      ? "Work out each answer. Line the digits up on the right and multiply as if there were no points, then count the decimal places in both numbers: the answer has that many."
+      : "Work out each answer. Multiply as if there were no points, then count the decimal places in both numbers: the answer has that many.";
+  }
+  if (!stacked(config)) return "Work out each answer.";
+  return config.operation === "multiply"
+    ? "Work out each answer. Line the digits up on the right, then put the point back in."
+    : "Work out each answer. Keep the points under one another.";
+}
+
+/**
+ * The one line of guidance on the sheet. For the number-sense styles it names
+ * the idea the sheet is for (§22), in the words the sheet wants a child to use
+ * — "the digits move", never "move the point".
+ */
 function instructionOf(config: DecimalConfig): string {
   switch (config.style) {
     case "percent":
@@ -728,17 +430,18 @@ function instructionOf(config: DecimalConfig): string {
       // fraction where a decimal was wanted has answered a question nobody
       // asked, and would be marked wrong for it.
       return "Fill in each blank. A blank with a % after it wants a percent; every other blank wants a decimal.";
+    case "powers":
+      return "Work out each answer. To multiply by 10, move every digit one place to the left; to divide by 10, move every digit one place to the right. The digits move; the point stays where it is.";
+    case "compare":
+      return "Write <, > or = in each gap. Line the points up before you decide: a longer decimal is not always a bigger one.";
+    case "order":
+      return "Write each set of decimals in order on the line under it, smallest first.";
+    case "round":
+      return `Round each decimal to the nearest ${TO_NAME[roundTo(config)]}. Look at the ${PLACE_NAME[roundingPlaces(config)]} digit: 5 or more rounds up, 4 or less leaves the number as it is.`;
+    case "place":
+      return "Write what each digit is worth. In 3.75 the 7 is worth 0.7 and the 5 is worth 0.05.";
     default:
-      if (config.operation === "divide") return divisionInstruction(config);
-      if (!stacked(config)) return "Work out each answer.";
-      // A stack of sums lines up on the point, because every value on the sheet
-      // is printed to the same number of places. A multiplier is not a decimal
-      // at all — `1.25 × 3` has one point in it — so "keep the points under one
-      // another" describes a column that isn't there, and §10 makes this
-      // sentence the whole of the guidance a child gets.
-      return config.operation === "multiply"
-        ? "Work out each answer. Line the digits up on the right, then put the point back in."
-        : "Work out each answer. Keep the points under one another.";
+      return arithmeticInstruction(config);
   }
 }
 
@@ -757,6 +460,17 @@ function headerOf(config: DecimalConfig): SheetOptions {
 }
 
 /**
+ * The places a sheet is set at, said the way its values are set: a rounding
+ * sheet's values are set by the place they round to, and a percent has none.
+ */
+function placesPart(config: DecimalConfig): string | null {
+  if (config.style === "percent") return null;
+  if (config.style === "round")
+    return `to the nearest ${TO_NAME[roundTo(config)]}`;
+  return PLACE_NAME[placesOf(config)];
+}
+
+/**
  * One line naming what the sheet holds, in the terms a parent chose it by.
  *
  * The things the title leaves off are the ones that decide whether a sheet
@@ -770,7 +484,7 @@ function describeDecimals(config: DecimalConfig): string {
   return [
     titleOf(config),
     dividing && divisorOf(config).min >= 10 ? "by two-digit numbers" : null,
-    config.style === "percent" ? null : PLACE_NAME[placesOf(config)],
+    placesPart(config),
     stacked(config) ? "in columns" : null,
     squares ? HELP_NAME[squares.help] : null,
   ]

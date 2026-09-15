@@ -1746,3 +1746,59 @@ child a form nobody writes. So the family pads the quotient back to the units
 column with zeros before the bracket sees it — in the family and not in
 `tableau.ts`, which has no point to measure from. The zeros are written digits:
 a guided sheet shades their squares, and the key writes them in.
+
+**Five more sheets, each aimed at one wrong idea.** The family's number-sense
+styles — `place`, `compare`, `order`, `round` and `powers` — have no sum in
+them. Each exists because of a mistake children make reliably enough for it to
+have a name, and each is built so the mistake shows up on the page rather than
+slipping through:
+
+- **`compare` and `order`** are for _longer is larger_ and its opposite.
+  Steinle and Stacey's long study of Melbourne schoolchildren found two rules
+  doing most of the damage: 0.45 read as more than 0.5 because 45 is more than
+  5, which most children grow out of, and 0.5 read as more than 0.55 because
+  tenths are bigger than hundredths, which persists into secondary school. So
+  half of a comparing sheet is pairs with one whole part and different place
+  counts, where the longer number is bigger only half the time; a quarter is
+  the same number written to two place counts, 3.4 and 3.40; and the rest is
+  two numbers at the sheet's places. An ordering set shares a whole part and
+  mixes place counts, so the sorting happens after the point. A tenths sheet
+  has one place count and therefore none of these pairs, which is honest
+  rather than a gap. The ordering answer is the whole set rewritten, so it
+  travels as a ruled line (`Problem.answers`) rather than a slot; the family
+  reserves the line's height and cuts the columns to what the longest line can
+  hold, because `.sheet__answer-line` clips rather than wraps.
+- **`round`** is for "add one to the last digit", which is what most children
+  hold rounding to be and which fails at a 9: 2.97 to the nearest tenth is 3.0,
+  not 2.10. The values carry one place more than the target, so the deciding
+  digit is always the last one and rounding is that digit cut off and the rest
+  carried up when it was five or more — whole numbers throughout. A quarter of
+  the draws are built to carry through a 9, because a free draw sets that case
+  once a page or not at all. The answer keeps the target's places, 3.0 and not
+  3, since the zero is what says "to the nearest tenth".
+- **`place`** asks what one digit is worth, answered as a number: the 5 in
+  3.75 is 0.05. The digit appears once in its number, so the question names
+  one column; it is never a zero; and one time in three it sits before the
+  point, since a child who assumes the answer is always small has not read the
+  column.
+- **`powers`** multiplies and divides by 10, 100 and 1000, and the instruction
+  says _the digits move; the point stays where it is_ — the DfE and NCETM
+  wording, chosen over "move the point" because it keeps a child saying what
+  each digit is now worth. The two pictures are one motion seen from either
+  side, and Foster (2017) makes the fair case that calling either a
+  misconception is unjustified; so the sheet teaches the digits-move picture
+  and never says the other is wrong. A third of the values are whole numbers,
+  because 48 ÷ 1000 is the question a child who has only ever slid a point
+  along a decimal cannot start. Answers stop at three places, no value ends in
+  a zero, and the shift is `shifted` in `exact.ts`: the places run down to
+  zero and then the units grow, so 3.7 × 100 is `370` and not `370.0`.
+
+**And a decimal times a decimal**, which is `multiply` with `by: "decimal"`.
+It stacks with the digits on the right rather than the points, because that is
+the method: multiply as if there were no points, then count the places in both
+numbers into the answer. `timesFixed` multiplies the units and adds the places.
+Neither number ends in a zero, so the count of places in the question is the
+count that is true — `3.70 × 2.4` would show three and mean two — and the
+answer keeps every place the count gives, `0.90` rather than `0.9`. The
+multiplier is under ten with one to `places` places, so the count varies down
+the page and is a thing to do rather than a number to remember.

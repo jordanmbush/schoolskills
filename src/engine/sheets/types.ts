@@ -125,8 +125,8 @@ export type Problem = {
   /** Text even when it's a number — "56", not 56, as `Card.answer` is. */
   answer: string;
   /**
-   * The answer as more than one thing to write, one ruled line each — a fact
-   * family's four number sentences.
+   * The answer as things to write on ruled lines, one line each — a fact
+   * family's four number sentences, or an ordering's one sorted set.
    *
    * When it is here it *is* the answer place: the prompt prints no slot, and
    * `workspace` becomes the height those lines share. One slot instead would
@@ -1199,7 +1199,23 @@ export type FractionConfig = SheetOptions & {
 
 /* ── Decimals, percents and money ──────────────────────────────────────── */
 
-export type DecimalStyle = "standard" | "percent" | "convert";
+/**
+ * `standard` is the four operations; `percent` and `convert` are the two ways
+ * a decimal is another number; the last five are number sense, each aimed at
+ * one wrong idea a child has about decimals (§22).
+ */
+export type DecimalStyle =
+  | "standard"
+  | "percent"
+  | "convert"
+  | "powers"
+  | "compare"
+  | "order"
+  | "round"
+  | "place";
+
+/** What a rounding sheet rounds to. */
+export type RoundTo = "whole" | "tenth" | "hundredth";
 
 /** `both` shuffles addition and subtraction, as it does on an arithmetic sheet. */
 export type DecimalOperation =
@@ -1230,11 +1246,19 @@ export type DecimalConfig = SheetOptions & {
    */
   divisor?: { min: number; max: number };
   /**
-   * Dividing only. `decimal` divides by a decimal — 8.4 ÷ 0.2 — which a child
-   * first rewrites as a whole-number division, so it is written along a line
-   * and never set in the bracket (§22). Absent is `whole`.
+   * Dividing and multiplying: what the second number is. Absent is `whole`.
+   *
+   * Dividing by a decimal — 8.4 ÷ 0.2 — is a sum a child first rewrites as a
+   * whole-number division, so it is written along a line and never set in the
+   * bracket (§22). Multiplying by one — 3.7 × 2.4 — is set in columns like any
+   * other, and the answer has as many places as the two numbers together.
    */
   by?: "whole" | "decimal";
+  /**
+   * Rounding only: the place rounded to. The values carry one place more than
+   * it, which is where the digit that decides sits. Absent is `whole`.
+   */
+  to?: RoundTo;
   /**
    * Dividing only: the number divided is whole and the answer runs past the
    * point — 7 ÷ 4 = 1.75. In columns the dividend prints with `places` zeros
