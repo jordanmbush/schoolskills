@@ -38,7 +38,8 @@ export function CountersView({ counters }: { counters: Counters }) {
         role="img"
         // The picture is the question, so saying what is in it gives nothing
         // away — a child who cannot see it is told what a child who can is
-        // looking at. What the groups add up to is never said.
+        // looking at. The answer — how many in each ring, or how many rings —
+        // is never said.
         aria-label={describe(counters, groups, left)}
       >
         {rings.map((ring, index) => (

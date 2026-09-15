@@ -227,7 +227,7 @@ const decimalDivision: Topic = {
     note(page, {
       aside: true,
       text: [
-        "For the grown-up: before they start, ask 'about how big will it be?' Then divide as if there were no point, and keep the point in line.",
+        "For the grown-up: before they start, ask ‘about how big will it be?’ Then divide as if there were no point, and keep the point in line.",
       ],
     }),
   ],
@@ -286,7 +286,7 @@ const dividingByDecimals: Topic = {
   columns: 2,
   lesson: (page) => [
     note(page, {
-      heading: "You can't share between 0.2 of a person",
+      heading: "You can’t share between 0.2 of a person",
       text: [
         "But you can ask: how many 0.2s make 8.4? Think of ribbon. How many 0.2 m pieces can you cut from 8.4 m? Ask it in centimetres — how many 20 cm pieces from 840 cm — and it is the same question with easier numbers. Scale both numbers up by the same amount until the divisor is whole. The answer does not change.",
       ],
@@ -320,7 +320,7 @@ const dividingByDecimals: Topic = {
     note(page, {
       aside: true,
       text: [
-        "For the grown-up: say it as 'how many 0.2s make 8.4?' It is a grouping question, so a big answer is the right kind of answer.",
+        "For the grown-up: say it as ‘how many 0.2s make 8.4?’ It is a grouping question, so a big answer is the right kind of answer.",
       ],
     }),
   ],

@@ -1,20 +1,9 @@
 /**
  * The number-sense sheets: five decimal questions with no sum in them, each
- * aimed at one wrong idea a child holds about decimals (§22).
- *
- * - `compare` and `order` are for "longer is bigger" and its opposite — 0.45
- *   read as more than 0.5 because 45 is more than 5, and 0.5 read as more than
- *   0.55 because tenths are bigger than hundredths. So the pairs and the sets
- *   are built to differ in their place counts, not only in their digits.
- * - `round` is for "add one to the last digit": a share of the values round up
- *   through a 9, where that rule gives 2.10 for 2.97.
- * - `place` is for reading a digit's worth off its column rather than off the
- *   digit: the 5 in 3.75 is 0.05.
- * - `powers` is for "move the point": the digits move, and the point stays.
- *
- * Every answer is exact, as it is everywhere in the family: a comparison is
- * two whole numbers compared, a rounding is a whole number of the next place
- * cut off, and a shift is `shifted` in `exact.ts`.
+ * aimed at one wrong idea a child holds (§22 names them and says how each is
+ * built to catch it). Every answer is exact, as everywhere in the family: a
+ * comparison is two whole numbers compared, a rounding is the next place cut
+ * off, a shift is `shifted`.
  */
 import { between } from "@/engine/random";
 
@@ -40,9 +29,8 @@ import {
 /* ── Multiplying and dividing by 10, 100 and 1000 ───────────────────────── */
 
 /**
- * How much of the page is whole numbers: `48 ÷ 1000` is the question a child
- * who has only ever shifted a decimal cannot do, and the one that shows the
- * point was never what moved.
+ * How much of the page is whole numbers — `48 ÷ 1000`, the question §22 says
+ * a child who has only ever slid a point cannot start.
  */
 const WHOLE_SHARE = 1 / 3;
 
@@ -52,11 +40,9 @@ export function drawPowers(
 ): Drawn | null {
   const power = between(1, 3, rand);
   const multiply = rand() < 0.5;
-  // Dividing moves the digits right, so the value is drawn with fewer places
-  // to leave the answer room to stop inside `MAX_PLACES`: at three places, ÷
-  // 10 is asked of hundredths and ÷ 1000 of a whole number. Drawn at the full
-  // places and rejected afterwards, every decimal division on a thousandths
-  // sheet was thrown away and the page taught dividing on whole numbers only.
+  // Drawn with fewer places when dividing, so the answer stops inside
+  // `MAX_PLACES` (§22): drawn at the full places and rejected, a thousandths
+  // sheet taught dividing on whole numbers only.
   const places = multiply
     ? placesOf(config)
     : Math.min(placesOf(config), MAX_PLACES - power);
@@ -90,14 +76,9 @@ function drawWhole(config: DecimalConfig, rand: () => number): Fixed | null {
 /* ── Comparing ─────────────────────────────────────────────────────────── */
 
 /**
- * Two decimals with `<`, `>` or `=` to write between them.
- *
- * Three kinds of pair, and two of them are the misconception: half the page
- * is two numbers with one whole part and different place counts (0.5 and
- * 0.45), where the longer one is bigger only half the time; a quarter is the
- * same number written to two place counts (3.4 and 3.40); and a quarter is
- * two numbers at the sheet's places, which is the comparison everyone can do.
- * A tenths sheet has one place count, so it is all of the last kind.
+ * Two decimals with `<`, `>` or `=` to write between them. `kind` 0 is
+ * `sameValue`, 1 and 2 are `sameWhole`, 3 is `freePair` — the shares §22
+ * gives — and a tenths sheet, with one place count, is all `freePair`.
  */
 export function drawCompare(
   config: DecimalConfig,
@@ -243,11 +224,9 @@ export const roundingPlaces = (config: DecimalConfig): number =>
 const CARRY_SHARE = 1 / 4;
 
 /**
- * A decimal with one place more than the target, and the value it rounds to.
- *
- * The deciding digit is the last one, so rounding is that digit cut off and
- * the rest carried up when it was five or more — whole numbers throughout. A
- * value whose last digit is a zero has nothing to round and is left out.
+ * One place past the target, so the last digit decides and the rounding is
+ * whole-number arithmetic (§22). A value whose last digit is a zero has
+ * nothing to round and is left out.
  */
 export function drawRound(
   config: DecimalConfig,
@@ -293,17 +272,17 @@ function drawCarry(
 
 /* ── Place value ───────────────────────────────────────────────────────── */
 
+/** How often the digit asked about is one after the point. */
+const AFTER_SHARE = 2 / 3;
+
 /**
  * "What is the 5 in 3.75 worth?" — answered as the number, 0.05.
  *
  * The digit is one that appears once in the number, so the question names one
- * column, and never a zero, whose worth is nothing to write. Two times in
- * three it is a digit after the point, because those are what the sheet is
- * about — but the whole-part digits stay in, since a child who assumes the
- * answer is always small has not read the column.
+ * column, and never a zero, whose worth is nothing to write. The whole-part
+ * digits stay in, since a child who assumes the answer is always small has
+ * not read the column.
  */
-const AFTER_SHARE = 2 / 3;
-
 export function drawPlace(
   config: DecimalConfig,
   rand: () => number,

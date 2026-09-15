@@ -1,17 +1,8 @@
 /**
  * What happens when it does not share out, and the two written methods
  * (§23): remainders, then chunking, then the compact algorithm chunking
- * abbreviates.
- *
- * Chunking comes before long division on purpose, though the compact method
- * is the one a parent asks for by name. Every line of a chunked division says
- * what it means — ten twelves taken away, then three more — where the
- * compact form writes a 2 over the 6 and leaves the reader to know it is two
- * hundreds; the research §23 cites found children who reached the algorithm
- * by way of chunking made fewer of the errors that come from following steps
- * without a reason. So the long-division page says the four words a child
- * will meet at school, but prints each beside what it means in place-value
- * language, and its worked example is the guided bracket (§21) with every
+ * abbreviates. Chunking comes first on purpose; §23 says why. The
+ * long-division page's worked example is the guided bracket (§21) with every
  * written square shaded.
  */
 import { shuffled } from "@/engine/random";
@@ -42,10 +33,10 @@ const REMAINDERS: Array<[total: number, between: number]> = [
 ];
 
 /**
- * The one story on the page, and it is a story on purpose: the research
- * behind §23 found children who could divide 1,128 by 36 perfectly well and
- * still answered "31 remainder 12" when asked how many buses were needed. The
- * answer is the number of tables, not the division.
+ * The one story on the page, and it is a story on purpose: Carpenter et al.
+ * (1983), in §23's sources, found children who could divide 1,128 by 36
+ * perfectly well and still answered "31 remainder 12" when asked how many
+ * buses were needed. The answer is the number of tables, not the division.
  */
 const TABLES: Problem = {
   prompt: "9 children sit 4 to a table. How many tables?",
@@ -70,7 +61,7 @@ const remainders: Topic = {
   columns: 2,
   lesson: (page) => [
     note(page, {
-      heading: "Sometimes it doesn't share out evenly",
+      heading: "Sometimes it doesn’t share out evenly",
       text: [
         "14 ÷ 4 means 14 sweets shared between 4 children. Deal them out and 2 are left in the bag — not enough for everyone to get one more. What is left over is the remainder.",
       ],
@@ -103,7 +94,7 @@ const remainders: Topic = {
     note(page, {
       aside: true,
       text: [
-        "For the grown-up: when they can't give everyone one more, stop — what's in the bag is the remainder. Then ask what the leftover means in the story.",
+        "For the grown-up: when they can’t give everyone one more, stop — what’s in the bag is the remainder. Then ask what the leftover means in the story.",
       ],
     }),
   ],
@@ -167,9 +158,8 @@ const chunking: Topic = {
     chunkLine(page, 156, [120, 36]),
     // The side column, as it is written by hand: the number, what was taken,
     // what is left, what was taken, nothing — and the lumps beside each
-    // take. A note rather than a stacked sum, because a stack's working
-    // lines are blank on the sheet and hold one number each, with no room
-    // for "ten 12s" beside it.
+    // take. A note rather than a stacked sum, whose working lines hold one
+    // number each (§23).
     note(page, {
       heading: "Written down the page",
       text: [
@@ -183,7 +173,7 @@ const chunking: Topic = {
     note(page, {
       heading: "156 ÷ 12, step by step",
       items: [
-        "How many 12s in 156? I don't know — but I know 10 twelves is 120.",
+        "How many 12s in 156? I don’t know — but I know 10 twelves is 120.",
         "Take 120 away: 156 − 120 = 36. Write 10 in the side column.",
         "How many 12s in 36? 3. Take 36 away: 36 − 36 = 0. Write 3.",
         "Add the side column: 10 + 3 = 13. Check: 13 × 12 = 156.",
@@ -200,7 +190,7 @@ const chunking: Topic = {
     note(page, {
       aside: true,
       text: [
-        "For the grown-up: ask 'what's ten lots?' first. Write down every lump you take, and add the lumps at the end.",
+        "For the grown-up: ask ‘what’s ten lots?’ first. Write down every lump you take, and add the lumps at the end.",
       ],
     }),
   ],
@@ -216,7 +206,7 @@ const chunking: Topic = {
 /**
  * The divisions to try: three digits by one, the first digit at least the
  * divisor, no remainder and no zero in the answer, so the method is met
- * clean. The first four are guided and the last two show the steps alone.
+ * clean.
  */
 const LONG: Array<[dividend: number, divisor: number]> = [
   [848, 4],
@@ -228,7 +218,6 @@ const LONG: Array<[dividend: number, divisor: number]> = [
 ];
 const GUIDED = 4;
 
-/** What is drawn under each of the six to try, in the order above. */
 const helpAt = (index: number): DivisionHelp =>
   index < GUIDED ? "guided" : "steps";
 
@@ -260,7 +249,7 @@ const longDivision: Topic = {
     note(page, {
       aside: true,
       text: [
-        "For the grown-up: make them say what each digit is worth — '6 hundreds shared by 3 is 2 hundreds' — and the steps are the same in every column.",
+        "For the grown-up: make them say what each digit is worth — ‘6 hundreds shared by 3 is 2 hundreds’ — and the steps are the same in every column.",
       ],
     }),
   ],

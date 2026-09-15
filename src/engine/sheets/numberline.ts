@@ -25,9 +25,8 @@ export const NUMBER_LINE_HEIGHT: Mil = inches(0.34);
  * What a line with hops on it adds above the axis: room for an arc a child
  * can read as a jump, and the "−3" over it, at `LABEL_SIZE` (§23).
  *
- * Added rather than carved out of `NUMBER_LINE_HEIGHT`: every family that
- * reserves for a plain line has reserved that number, and a hop drawn into the
- * height they already paid for would sit on the tick labels.
+ * Added, not carved out of `NUMBER_LINE_HEIGHT`, which every family reserving
+ * for a plain line has already paid for.
  */
 export const JUMP_ROOM: Mil = inches(0.28);
 

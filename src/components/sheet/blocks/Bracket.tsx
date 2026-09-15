@@ -15,9 +15,7 @@ import { inch } from "../units";
  * what puts a quotient digit directly over the dividend digit it belongs to,
  * whether or not a square is drawn round either: nothing here is aligned by
  * text, only by columns. The rows are the height the family reserved, so the
- * house is exactly as tall as the layout arithmetic said. A decimal point is
- * not a column: it is drawn on the boundary between two squares, and the
- * quotient's point goes on the same boundary (§22).
+ * house is exactly as tall as the layout arithmetic said.
  *
  * The bar and the upright are borders rather than a drawing, for the reason
  * everything else on a sheet is (§5) — they are foreground paint and always
@@ -81,9 +79,9 @@ export function Bracket({
                   text={answers ? digit : undefined}
                   answered={answers && digit !== undefined}
                 />
-                {/* On the sheet, the point above the bar is part of the
-                    scaffold the squares draw; a bare bracket leaves placing
-                    it to the child. The key always writes it. */}
+                {/* Above the bar the point is part of the scaffold, so it
+                    prints wherever squares do; a bare bracket leaves placing
+                    it to the child (§22). The key always writes it. */}
                 {column + 1 === point && (answers || ruled) && <Point />}
               </Fragment>
             );
@@ -219,10 +217,7 @@ function written(quotient: Span, rows: TableauRow[]): Cell[] {
 /** A twelfth of the ink: a digit written over it is still black on near-white. */
 const SHADE = 0.12;
 
-/**
- * The shaded squares of a guided division, placed from the same cell and
- * gutter widths the squares are laid out with, so the two cannot come apart.
- */
+/** The shaded squares of a guided division, placed from the widths the squares are (§21). */
 function Shading({
   cells,
   cell,

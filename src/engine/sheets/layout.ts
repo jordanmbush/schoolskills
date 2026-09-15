@@ -120,8 +120,8 @@ export const NOTE_RULE: Mil = points(0.75);
  * type is set — the body size, or `ASIDE_EM` of it.
  *
  * `Note.tsx` draws the box exactly this tall and a lesson reserves exactly
- * this, so an estimate of the lines that came out a line short shows as text
- * over the bottom border rather than as a page that quietly grew (§4).
+ * this. A short estimate shows as text over the border; a box that grew would
+ * push the last block onto page two (§23).
  */
 export const noteHeight = (lines: number, pt: number): Mil =>
   Math.round(Math.max(1, lines) * points(pt * NOTE_LINE_EMS)) +

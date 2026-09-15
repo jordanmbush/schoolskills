@@ -235,6 +235,13 @@ renderer then honours that layout rather than discovering it. The consequence
 is that a problem cell has a **declared** size, not a measured one — which is
 a real constraint on the design of each family, and the right one.
 
+A page that comes up short — fewer problems than were asked for, because the
+paper had no room for them or the draw could make no more — says so on the
+paper, in the instruction line (`shortfall` in `chrome.ts`), rather than
+printing a title, a score box and a silence. The family then lays the page out
+again under that header: a longer instruction line can take a row from the
+problems it is about, and a page laid out for the shorter line would run over.
+
 ---
 
 ### More than a page
@@ -493,6 +500,20 @@ whole units" and "built around the number that solves it" true of the key as
 well as of the page. Where an answer is a drawing rather than a number the same
 rule holds through the renderer: a time sheet's key is the same faces with their
 hands put on, drawn from `sheet.answers`.
+
+**A key prints only the pages that differ.** A lesson (§23) whose first page
+is the lesson alone — the notes, the picture, worked examples that print
+their answers on the sheet itself — would print that page again, identically,
+in its key, and a two-page lesson would come out of the printer as four pages
+with the third the same as the first. So `LESSON_SHEET.key` is still the same
+build with `answers` switched on, and it then drops the leading pages on which
+nothing changes: pages whose every block either has no answer to reveal or is
+a worked example. The page numbers in the foot are counted from what is left,
+so a one-page key says 1 of 1. A key on which no page differs — a lesson
+printed without its problems — is the sheet itself, as it is on every family
+with nothing to reveal. The contract (§20) allows exactly this and no more: a
+key may be its sheet with whole leading pages removed, and only pages that
+would print the same either way.
 
 The seed is shown, in small type, in the footer. A parent who wants the _same_
 sheet again next week can have it.
@@ -1636,7 +1657,13 @@ right after the upright and lightly spaced, and the quotient's digits sit
 directly over the dividend's, column for column, whether or not any square is
 drawn. The bracket's own height is two cells, which is what `bracketHeight`
 declares and the row height is built from; a constant in ems was short at
-small type, where a quarter-inch line is taller than three ems.
+small type, where a quarter-inch line is taller than three ems. Its width is
+`bracketWidth` beside it — the divisor's squares and the dividend's, and room
+for `r` and a remainder where one may be written — and both families that set
+a bracket cut their columns to it, because a bracket is a fixed drawing in
+squares that does not wrap to its column the way a sentence does, and a
+bracket wider than its column prints over the problem beside it with nothing
+to measure that before paper.
 
 **Help under the bracket comes in four steps, and each includes the one
 before it**, because they are the same scaffold being taken away a piece at a
@@ -1663,8 +1690,11 @@ over, one row per line of working with the column its last digit sits under,
 and the remainder. The renderer places digits in squares from those numbers
 and never divides anything, which is what keeps §7 true of the tableau as it
 is of every other answer: the key writes the working that was computed when
-the problem was built. It is also what `steps` and `guided` are drawn from on
-the blank sheet — which rows are take-away rows and how wide their rule is
+the problem was built, and it writes it at every help level, `none` included
+— the squares are there at every level and only their borders differ, and a
+parent marking from the key wants the working whether or not the sheet drew
+a grid for it. It is also what `steps` and `guided` are drawn from on the
+blank sheet — which rows are take-away rows and how wide their rule is
 depends on the numbers, even when the numbers are not printed. Rows are two
 per quotient digit, and a quotient can be no longer than `into − by + 1`
 digits, which is why `divisionLines` can reserve the space before any
@@ -1696,20 +1726,28 @@ was made from. The alternative — draw a dividend, divide it, hope the answer
 stops — either prints a rounded key or throws most of its draws away.
 
 - **Divided by a whole number**: the plainest case, and the one the range and
-  the places describe directly, because they describe the answer.
+  the places describe directly, because they describe the answer. A quotient
+  whose last digit is a zero is thrown away: `20.50 ÷ 5 = 4.10` is `20.5 ÷ 5`
+  written to two places, an exercise nobody sets, with a tableau of nothing
+  rows. The dividend may still end in one — `4.15 × 2` is `8.30`, and that is
+  a real exercise.
 - **A whole dividend**: the divisor is drawn first and the quotient walked in
   the steps that make their product whole — every twenty-fifth hundredth for
   4, every fiftieth for 2 — for the reason the percent draw walks rather than
   rejects: a rejecting draw prints the friendliest divisors over and over. A
   divisor with no factor of ten in it, 3 or 7 or 9, has no decimal quotient
-  that stops and is left out rather than rounded in; a whole quotient is left
-  out because an answer past the point is the promise. The answer prints to
-  the sheet's places like every answer on the family, so `6 ÷ 4` at two places
-  is `1.50` — the last annexed zero divided into and found empty, which is part
-  of the lesson. In columns the dividend prints with `places` zeros
-  **annexed**, `7.00`, because that is the form a child keeps dividing into;
-  along a line it is the whole number it is, and the instruction says to write
-  the zeros in.
+  that stops and is left out rather than rounded in: the draw takes only from
+  the divisors in the span that can stop (`stoppingDivisors`), so a span that
+  holds none — 3 alone, or 7 — makes nothing, the page says which divisor
+  rather than that nothing could be made, and the builder greys the box. A
+  whole quotient is left out because an answer past the point is the promise.
+  The answer prints to the sheet's places like every answer on the family, so
+  `6 ÷ 4` at two places is `1.50` — the last annexed zero divided into and
+  found empty, which is part of the lesson, and the one place on the family a
+  quotient may end in a zero. In columns the dividend prints with `places`
+  zeros **annexed**, `7.00`, because that is the form a child keeps dividing
+  into; along a line it is the whole number it is, and the instruction says
+  to write the zeros in.
 - **Divided by a decimal**: drawn as the whole-number division a child rewrites
   it into — `84 ÷ 2` — and then each side is given its places, the divisor one
   to `places` and the dividend at least as many, so the answer is the whole
@@ -1789,9 +1827,15 @@ slipping through:
   misconception is unjustified; so the sheet teaches the digits-move picture
   and never says the other is wrong. A third of the values are whole numbers,
   because 48 ÷ 1000 is the question a child who has only ever slid a point
-  along a decimal cannot start. Answers stop at three places, no value ends in
-  a zero, and the shift is `shifted` in `exact.ts`: the places run down to
-  zero and then the units grow, so 3.7 × 100 is `370` and not `370.0`.
+  along a decimal cannot start. Answers stop at three places, and a division
+  is drawn to fit that cap rather than drawn and rejected: dividing moves the
+  digits right, so the value is drawn with fewer places to leave the answer
+  room — on a thousandths sheet, ÷ 10 is asked of hundredths and ÷ 1000 of a
+  whole number. Drawn at the full places and thrown away afterwards, every
+  decimal division on that sheet was thrown away, and the page taught
+  dividing on whole numbers only. No value ends in a zero, and the shift is
+  `shifted` in `exact.ts`: the places run down to zero and then the units
+  grow, so 3.7 × 100 is `370` and not `370.0`.
 
 **And a decimal times a decimal**, which is `multiply` with `by: "decimal"`.
 It stacks with the digits on the right rather than the points, because that is
@@ -1856,18 +1900,31 @@ pictures are the three that show the structure of division and nothing else:
 
 **Every height is declared, and this is the family where that costs
 something.** A lesson is mostly prose, and prose wraps. A note (`note` block,
-`Note.tsx`) reserves its lines by counting characters at the face's declared
-advance across the box's width — the mean over capitals and numerals wherever
-the text has either, so the count comes out long before it comes out short —
-and the renderer draws the box exactly that tall. An estimate a line short
-shows as text over the bottom rule, which a reader can see; a box that grew to
-fit would push the last block onto a second sheet, which they cannot. The page
-is then cut where the sum of those heights says it is full, block by block,
+`Note.tsx`) reserves its lines by counting characters across the box's width
+at the face's declared advance (`fittedCharacters`) — the wider of its
+small-letter and capital advances wherever the text has a capital or a
+numeral, so the count comes out long before it comes out short — and the
+renderer draws the box exactly that tall. An estimate a line short shows as
+text over the bottom rule, which a reader can see; a box that grew to fit
+would push the last block onto a second sheet, which they cannot. The page is
+then cut where the sum of those heights says it is full, block by block,
 never through one. The two lessons written for six-year-olds fit one Letter
 page at 14pt, and the suite holds them to it; the arrays lesson does not — five
 arrays with two ruled lines under each are taller than what is left under the
 lesson — so its problems go on to page two whole, and the lesson is not cut to
 make them fit.
+
+At a type size where the six problems to try stand taller than a whole page,
+they are cut one row to a block, each block numbered on from the last
+(`Block.start`), because a row is the smallest piece the renderer prints
+whole and a block taller than the page would run off the foot of it. A lone
+block that cannot be cut — a paragraph, a picture, a chart, one row — gets a
+page to itself and runs over the foot, which is the honest answer to paper
+that cannot hold one paragraph; at 24pt and above on Letter the long-division
+steps note does, and one row of arrays. Every line a lesson draws hops on
+ends on the dividend with every landing on a tick (`hopLine` chooses the
+spacing), so a child sent to jump back in threes from 21 is never handed a
+line to 22 with no 21 on it.
 
 **The sequence, and why each page comes where it does.** Sharing first,
 because it is the model of division children arrive at school holding

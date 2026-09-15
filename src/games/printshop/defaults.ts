@@ -315,7 +315,6 @@ const DEFAULTS: Record<string, SheetConfig> = {
   lesson: {
     ...BASE,
     kind: "lesson",
-    // The first lesson in the sequence — the one a child meets first (§23).
     topic: "division-sharing",
     practice: true,
     // Larger than the shop's default type, because the reader is six.

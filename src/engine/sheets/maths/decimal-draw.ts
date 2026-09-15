@@ -204,14 +204,9 @@ export function drawStandard(
 }
 
 /**
- * A decimal multiplied by a decimal: 3.7 × 2.4.
- *
- * The multiplier is under ten, as the whole one is, and carries one to
- * `places` places, so the answer's place count varies down the page and
- * "count the places in both numbers" is a thing to do rather than a number to
- * remember. Neither number ends in a zero: `3.70 × 2.4` has three places in
- * the question and two in its digits, and the count the sheet asks for has to
- * be the count that is true.
+ * A decimal multiplied by a decimal: 3.7 × 2.4. The multiplier is under ten
+ * with one to `places` places, and neither number ends in a zero, so the
+ * places counted in the question are the places the answer has (§22).
  */
 function timesDecimal(
   config: DecimalConfig,

@@ -202,10 +202,8 @@
   flex-grow: 1;
 }
 
-/* A block of nothing but worked examples keeps the height it was given. It is
-   a lesson's, and the spare paper on that page belongs to the problems after
-   it — an example stretched across the middle of the page would leave the
-   lesson's pieces floating apart. `Problems.tsx` sets the modifier. */
+/* Set by `Problems.tsx` on a block of nothing but worked examples: it keeps
+   its declared height so the try-its after it get the spare paper. */
 .sheet__problems--worked {
   flex-grow: 0;
 }
@@ -639,9 +637,8 @@
 /* Long division (§21): the divisor in the gutter, the dividend under the bar,
    the quotient along the top and the working in squares underneath. Every row
    is the same gutter and the same run of squares, at the two widths the
-   renderer sets inline from the engine's numbers — which is what lines a
-   quotient digit up over the dividend digit it belongs to, by column and never
-   by text. The bar and the upright are borders rather than an SVG, because
+   renderer sets inline (`Bracket.tsx` says why that is what aligns place
+   value). The bar and the upright are borders rather than an SVG, because
    they are exactly a border — and because the digits inside have to stay
    selectable text (§2).
 
@@ -706,11 +703,9 @@
   white-space: nowrap;
 }
 
-/* A decimal point is not a column (§22). It sits on the boundary between two
-   squares in a box of no width, so the digits either side keep the columns
-   they would have without it and the quotient's point lands on the same
-   boundary as the dividend's. Centred in the row as the digits are, so it
-   shares their baseline. */
+/* The decimal point (§22): a box of no width on the boundary between two
+   squares, so no digit moves column. Centred in the row as the digits are, so
+   it shares their baseline. */
 .sheet__point {
   display: flex;
   flex: none;
@@ -746,8 +741,7 @@
   border-bottom: 1.25pt solid currentcolor;
 }
 
-/* The shading of a guided division, behind the squares. An SVG fill and not a
-   background, because a background is dropped by a printer's defaults (§5). */
+/* The shading of a guided division, behind the squares (§5). */
 .sheet__shading {
   position: absolute;
   top: 0;

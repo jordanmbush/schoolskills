@@ -923,11 +923,9 @@ describe("a rendered multiplication sheet", () => {
   });
 
   it("puts the quotient's digits in the dividend's columns", () => {
-    // Place value is the whole exercise, and it is kept by construction: the
-    // quotient row and the dividend row are the same number of squares at the
-    // same declared width, so the quotient's last digit is over the dividend's
-    // last digit whatever either of them measures. The width is the engine's
-    // — the line a child writes an answer on — set once on the bracket.
+    // Place value is the whole exercise, and it is kept by column, never by
+    // text (§21): both rows are the same squares at the engine's one width,
+    // set once on the bracket.
     const items = itemsOf(multiplication(LONG_DIVISION));
     const html = problems(timesKey(LONG_DIVISION));
     expect(html.length).toBe(items.length);
@@ -1207,9 +1205,8 @@ describe("a rendered multiplication sheet", () => {
 });
 
 /* ── Decimals in the bracket ──────────────────────────────────────────────
-   The point is not a column (§22): it sits on the boundary between two
-   squares, so every digit keeps its column, and the quotient's point sits on
-   the same boundary — which is the whole of the method, drawn.             */
+   (§22): the point sits between two squares, so every digit keeps its
+   column.                                                                  */
 
 const decimals = (over: Partial<DecimalConfig> = {}): DecimalConfig => ({
   kind: "decimals",
@@ -2963,8 +2960,7 @@ describe("the notebook margin line", () => {
 
 /* ── Lessons (§23) ────────────────────────────────────────────────────────
    The three renderers a lesson adds — a boxed note, counters, and hops along
-   a number line — and the one flag: a worked example prints its answers on
-   the sheet a child is handed, in every place an answer goes.              */
+   a number line — and the one flag, `worked`.                              */
 
 const lesson = (over: Partial<LessonConfig> = {}): LessonConfig => ({
   kind: "lesson",
@@ -3288,8 +3284,11 @@ describe("a rendered lesson", () => {
       expect(count(sheet, 'class="sheet__shading"'), topic).toBe(
         1 + rest.filter((item) => item.bracket?.help === "guided").length,
       );
+      // The key prints only the page that differs (§7), so the worked
+      // example on page one is not on it — the try-its are, every one
+      // written in.
       expect(count(lessonKey({ topic }), "sheet__square--answered")).toBe(
-        items.reduce((sum, item) => sum + written(item), 0),
+        rest.reduce((sum, item) => sum + written(item), 0),
       );
     }
     // The decimal example carries its point above the bar and below it.

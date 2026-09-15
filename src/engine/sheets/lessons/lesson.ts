@@ -1,19 +1,14 @@
 /**
- * Lessons: a method, explained on one page (§23).
+ * Lessons: a method, explained on one page (§23). The one family that
+ * teaches rather than drills, and authored rather than generated, as the
+ * grammar bank is. This module is the paper round a topic: the header, the
+ * paging, and the key.
  *
- * The one family that teaches rather than drills. A page is the idea in a
- * child's words, a picture, a worked example, and a few problems to try with
- * the same scaffold — authored, topic by topic, the way the grammar bank is,
- * because what to say first is a judgement and a generator has none. The
- * family here is the paper round a topic: the header, the paging, and the
- * key.
- *
- * **Every height is declared** (§4), and this is the family where that costs
- * something: a lesson is mostly prose, so a note's lines are counted from its
- * characters before it is laid out, and the page is cut where those counts
- * say it is full. A lesson that outruns the page goes on to a second one
- * rather than being trimmed — the problems to try on page two is the common
- * case at large type.
+ * Every height is declared (§4), and a lesson is mostly prose: a note's lines
+ * are counted from its characters before it is laid out, and the page is cut
+ * where those counts say it is full — before a block, never through one. A
+ * lesson that outruns the page goes on to a second one rather than being
+ * trimmed.
  */
 import { mulberry32 } from "@/engine/random";
 
@@ -68,7 +63,7 @@ export const LESSON_TOPICS = Object.keys(TOPICS) as LessonTopic[];
 const MISSING: Topic = {
   label: "A lesson this build does not have",
   title: "Lesson unavailable",
-  instructions: "This lesson isn't in this copy of the site.",
+  instructions: "This lesson isn’t in this copy of the site.",
   columns: 1,
   lesson: (page) => [
     note(page, {
@@ -139,10 +134,7 @@ export function lessonLayout(config: LessonConfig): {
 
 /**
  * The problems to try as blocks the page can hold: one block when it fits a
- * page, else one block to a row, each numbered on from the last. A row is the
- * smallest piece the renderer prints whole, and a block taller than the page
- * would run off the foot of it — which at the largest type every lesson's
- * six did.
+ * page, else one block to a row, each numbered on from the last (§23).
  */
 function tryIts(
   problems: Problem[],
@@ -165,9 +157,7 @@ function tryIts(
  *
  * Greedy, block by block, with the gap between blocks paid for: a block that
  * would cross the bottom of the page starts the next one. A block taller than
- * a whole page — a note at the largest type a config may ask for — gets a page
- * to itself and runs over it, which is the honest answer to a page that cannot
- * hold one paragraph.
+ * a whole page gets a page to itself and runs over it (§23).
  */
 function paged(blocks: Block[], heights: number[], limit: number): Block[] {
   const out: Block[] = [];
@@ -244,14 +234,57 @@ function buildLessonSheet(config: LessonConfig, seed: number): Sheet {
   };
 }
 
+/**
+ * Whether a block prints the same on the key as on the sheet: nothing on it
+ * is the child's to answer. A worked example already prints its answer, and
+ * a chart with no answers is the same picture on both.
+ */
+function sameOnKey(block: Block): boolean {
+  switch (block.kind) {
+    case "problems":
+      return block.items.every((item) => item.worked === true);
+    case "grid":
+      return (block.grid.answers?.length ?? 0) === 0;
+    case "note":
+    case "counters":
+    case "numberline":
+      return true;
+    default:
+      return false;
+  }
+}
+
+/**
+ * The blocks from the first page the key changes on (§7): whole leading pages
+ * on which nothing changes are left off. A sheet with no such page is kept
+ * entire, so its key is the sheet itself.
+ */
+function keyedBlocks(blocks: Block[]): Block[] {
+  let page = 0;
+  let changed = false;
+  for (let at = 0; at < blocks.length; at += 1) {
+    const block = blocks[at];
+    if (block.kind !== "break") {
+      if (!sameOnKey(block)) changed = true;
+    } else if (changed) {
+      return blocks.slice(page);
+    } else {
+      page = at + 1;
+    }
+  }
+  return changed ? blocks.slice(page) : blocks;
+}
+
 export const LESSON_SHEET: SheetSpec<LessonConfig> = {
   world: SHEET_WORLD,
   build: buildLessonSheet,
   // The answers were decided when the problems were dealt, and the worked
-  // examples already print theirs, so a key cannot disagree with its sheet.
+  // examples already print theirs, so a key cannot disagree with its sheet —
+  // and it prints only the pages that differ (§7).
   key: (sheet) => ({
     ...sheet,
     answers: true,
+    blocks: keyedBlocks(sheet.blocks),
     footer: { ...sheet.footer, note: "Answer key" },
   }),
   describe: describeLesson,

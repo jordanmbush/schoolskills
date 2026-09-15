@@ -6,14 +6,10 @@
  * places, so stacking them right-aligned puts the points in a column — which is
  * the one thing a child lining up a decimal sum has to get right.
  *
- * Each style shows only the controls that change it. Division has three of its
- * own and hides two as they stop meaning anything: "In columns" goes when the
- * divisor is a decimal, because that sheet is rewritten before it is worked and
- * is only ever written along a line, and the work-space box goes when the
- * divisions are in the bracket, whose squares are the working space. Rounding
- * swaps the places stepper for the place rounded to, since its values are one
- * place past that; ordering loses the work-space box, since the ruled line
- * under each set is the working space.
+ * Each style shows only the controls that change it. "In columns" goes when
+ * the divisor is a decimal, because that sheet is only ever written along a
+ * line (§22); the work-space box goes when the divisions are in the bracket,
+ * because its squares are the working space.
  */
 import { Checkbox, FieldSet, NumberStepper } from "@/components/ui/kit";
 import { stoppingDivisors } from "@/engine/sheets/maths/decimal-division";

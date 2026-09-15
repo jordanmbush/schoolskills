@@ -55,8 +55,9 @@ export type Page = {
  * halves of it.
  *
  * `lesson` is written for the page — every picture is drawn at the width it
- * has, and every note is counted at that width — and `practice` is drawn from
- * the seed so the problems to try are the same problems on the key.
+ * has, and every note is counted at that width. `practice` takes the seed so a
+ * saved sheet deals the same problems again (§7); a lesson's problems are
+ * written, and the seed only orders them.
  */
 export type Topic = {
   /** In the picker, and in the line that names a saved sheet. */
@@ -91,10 +92,10 @@ const SLOT_WIDTH: Mil = inches(0.8);
  * A boxed note, with the lines it takes counted.
  *
  * Counted rather than measured: each paragraph is its characters over what
- * fits one line inside the box, at the face's own declared advance — which is
- * the mean over capitals and numerals wherever the text has either, so the
- * count comes out long before it comes out short. A heading is one line; a
- * step is its own paragraph with room for its number.
+ * `fittedCharacters` fits in one line inside the box — the text is passed so
+ * a capital or numeral widens the advance (faces.ts says how) — and the count
+ * comes out long before it comes out short. A heading is one line; a step is
+ * its own paragraph with room for its number.
  */
 export function note(
   page: Page,

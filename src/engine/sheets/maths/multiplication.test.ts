@@ -1167,7 +1167,7 @@ describe("how much fits", () => {
   it("holds a bracket in the height it reserves, at every type size", () => {
     // The bracket is two squares tall — the quotient row over the dividend row
     // — and the square is the answer line, which is a quarter inch at small
-    // type whatever the type measures. A reservation in ems was short there.
+    // type whatever the type measures.
     for (let fontPt = 8; fontPt <= 36; fontPt += 1) {
       const over = { operation: "divide" as const, form: "vertical" as const };
       const [problem] = problemsOf({ ...over, fontPt }, 5);

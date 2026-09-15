@@ -991,11 +991,9 @@ describe("division", () => {
   });
 
   it("never ends a decimal's quotient in a zero, and lets a whole dividend's", () => {
-    // `20.50 ÷ 5 = 4.10` is `20.5 ÷ 5` written to two places — an exercise
-    // nobody sets, with a tableau of nothing rows — so a quotient ending in
-    // a zero is thrown away when the dividend is a decimal. A whole dividend
-    // keeps one: `6 ÷ 4` at two places is `1.50`, the last annexed zero
-    // divided into and found empty, which is part of that lesson (§22).
+    // `20.50 ÷ 5 = 4.10` is `20.5 ÷ 5` written to two places, an exercise
+    // nobody sets; `6 ÷ 4` at two places is `1.50`, and the last zero is
+    // part of that lesson (§22).
     for (const shape of DIVISIONS) {
       if (shape.by === "decimal" || shape.wholeDividend) continue;
       for (const seed of SEEDS) {

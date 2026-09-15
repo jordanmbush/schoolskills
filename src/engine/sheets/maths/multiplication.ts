@@ -386,8 +386,7 @@ function factDigits(config: MultiplicationConfig): LongDigits {
 
 /**
  * How wide the widest bracket on the sheet stands, or `null` when nothing is
- * set in one — the width the columns are cut to, because a bracket is a fixed
- * drawing in squares and does not wrap to its column the way a sentence does.
+ * set in one — the width the columns are cut to (§21).
  */
 function widestBracket(config: MultiplicationConfig): Mil | null {
   if (operationOf(config) === "multiply") return null;

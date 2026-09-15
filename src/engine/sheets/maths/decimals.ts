@@ -165,8 +165,7 @@ function drawerOf(config: DecimalConfig): Draw {
 
 /**
  * Whether this sheet stacks its problems. Only the arithmetic one can, and a
- * division by a decimal never is: it is rewritten before it is worked, and a
- * bracket round it would be the rewritten sum rather than the question (§22).
+ * division by a decimal is never bracketed (§22).
  */
 const stacked = (config: DecimalConfig): boolean =>
   styleOf(config) === "standard" &&
@@ -204,8 +203,7 @@ function bracketOf(
 
 /**
  * How wide the widest bracket on the sheet stands: the longest dividend and
- * the longest divisor, in squares (§21). A bracket is a fixed drawing and does
- * not wrap to its column, so the columns are cut to it.
+ * the longest divisor, in squares — the width the columns are cut to (§21).
  */
 const widestBracket = (config: DecimalConfig): Mil =>
   bracketWidth(

@@ -4,10 +4,10 @@
  * multiplications.
  *
  * Every word on these pages is for a child of six to nine and the grown-up
- * beside them. The numbers, the pictures and the step sentences follow the
- * research brief §23 cites; the try-it problems are the brief's, dealt in the
- * order the seed gives, and no total is over two dozen because that is where
- * counting on paper stops.
+ * beside them. The numbers, pictures and step sentences follow the sources
+ * §23 lists. The problems to try are written down here (`SHARES`, `GROUPS`,
+ * `ARRAYS`) and only shuffled by the seed, and no total is over two dozen,
+ * which is where counting on paper stops (`MOST_DOTS`).
  */
 import { shuffled } from "@/engine/random";
 

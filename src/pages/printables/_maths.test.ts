@@ -178,9 +178,14 @@ describe("the sheet on a catalog page", () => {
       expect(key.footer.note, sheet.slug).toBe("Answer key");
       // The same questions, not a second set of them — the key is the sheet
       // with `answers` flipped, so nothing it prints can disagree with what
-      // the child was asked.
+      // the child was asked. A lesson's key leaves off the leading pages that
+      // print the same either way (§7), so it is the sheet's blocks cut at a
+      // page break, never a different set.
+      const cut = built.blocks.length - key.blocks.length;
+      expect(cut, sheet.slug).toBeGreaterThanOrEqual(0);
+      if (cut > 0) expect(built.blocks[cut - 1].kind, sheet.slug).toBe("break");
       expect(JSON.stringify(key.blocks), sheet.slug).toBe(
-        JSON.stringify(built.blocks),
+        JSON.stringify(built.blocks.slice(cut)),
       );
       for (const problem of problemsOf(key.blocks)) {
         expect(problem.answer.length, sheet.slug).toBeGreaterThan(0);

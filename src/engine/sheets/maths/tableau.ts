@@ -1,16 +1,8 @@
 /**
- * The working of a long division, as data (§21).
- *
- * Divide, multiply, subtract, bring down — walked exactly as it is written on
- * paper, and returned as the digits that get written and the columns they get
- * written in. The renderer places those digits in squares and does no
- * arithmetic of its own, so the key shows the working that was computed when
- * the problem was built rather than a second computation that might disagree
- * with it (§7).
- *
- * Columns are counted over the dividend's digits alone. A decimal point is not
- * a column; a family that prints one records where it falls and this module
- * never sees it.
+ * The working of a long division, as data (§21). The renderer places these
+ * digits in squares and never computes one (§7). Columns are counted over
+ * the dividend's digits alone: a family that prints a point records where it
+ * falls, and this module never sees it.
  */
 
 export type TableauRow = {

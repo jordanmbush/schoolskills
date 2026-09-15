@@ -269,11 +269,8 @@ export function chromeHeight(
  * asked for, and nothing when it holds them all.
  *
  * `fit` is what the page had room for and `made` is what the draw managed
- * inside that. The paper is the one place a parent will look, so a page that
- * came out short says so on the page rather than printing a title, a score
- * box and a silence — and a family that prints the sentence lays the page out
- * again under it, because a longer instruction line can take a row from the
- * problems it is about (§4).
+ * inside that. A family that prints the sentence lays the page out again
+ * under it (§4).
  */
 export function shortfall(
   asked: number,

@@ -206,7 +206,7 @@ export type Problem = {
    */
   bracket?: {
     divisor: string;
-    /** As printed. One digit column per character. */
+    /** As printed, point and all. One column per digit; the point is not a column (§22). */
     dividend: string;
     /** The square: one digit wide, one line of working tall — `answerLine`. */
     cell: Mil;
@@ -217,7 +217,11 @@ export type Problem = {
      */
     rows: number;
     help: DivisionHelp;
-    /** Present whenever the division was built here; the key writes it in. */
+    /**
+     * Present wherever there is working to write — long divisions and
+     * bracketed decimal divisions; a fact sheet's bracket has none. The key
+     * writes it in.
+     */
     tableau?: Tableau;
   };
   /**
@@ -257,10 +261,8 @@ export type Problem = {
   workspace?: Mil;
   /**
    * A worked example: the answer is printed on the sheet as well as on the
-   * key, in every place an answer goes — the slot, the total under a stack,
-   * the quotient and the whole tableau in a bracket, the ruled lines. A
-   * worked problem carries no number, so the try-it problems after it still
-   * count from one, and it is not marked (§23).
+   * key, in every place an answer goes. It carries no number, so the try-its
+   * after it still count from one, and it is not marked (§23).
    */
   worked?: boolean;
 };
@@ -1331,10 +1333,9 @@ export type DecimalConfig = SheetOptions & {
   /**
    * Dividing and multiplying: what the second number is. Absent is `whole`.
    *
-   * Dividing by a decimal — 8.4 ÷ 0.2 — is a sum a child first rewrites as a
-   * whole-number division, so it is written along a line and never set in the
-   * bracket (§22). Multiplying by one — 3.7 × 2.4 — is set in columns like any
-   * other, and the answer has as many places as the two numbers together.
+   * Dividing by a decimal — 8.4 ÷ 0.2 — is never set in the bracket (§22).
+   * Multiplying by one — 3.7 × 2.4 — is set in columns like any other, and
+   * the answer has as many places as the two numbers together.
    */
   by?: "whole" | "decimal";
   /**
@@ -1344,8 +1345,7 @@ export type DecimalConfig = SheetOptions & {
   to?: RoundTo;
   /**
    * Dividing only: the number divided is whole and the answer runs past the
-   * point — 7 ÷ 4 = 1.75. In columns the dividend prints with `places` zeros
-   * annexed, `7.00`, so there is something to keep dividing into.
+   * point — 7 ÷ 4 = 1.75. In columns it prints as `7.00` (§22).
    */
   wholeDividend?: boolean;
   /** Dividing in columns only. Absent is `none`. */
@@ -1778,19 +1778,11 @@ export type GrammarConfig = SheetOptions & {
 /* ── Lessons ───────────────────────────────────────────────────────────── */
 
 /**
- * One idea, taught on one page: the words, a picture, a worked example and a
- * few to try (§23). Authored, as the grammar bank is — a lesson is judgement
- * about what to say first, and a generator has none.
- *
- * Three so far, in the order a child meets them. The rest of the sequence —
- * remainders, the written methods, decimals — extends this list as each is
- * written; a topic this build has never heard of prints a page saying so
- * rather than failing, for the reason `sheetSpec` never throws.
- */
-/**
  * The lessons, in the order a child meets them (§23): the three meanings of
  * division, then leftovers and the two written methods, then decimals. The
- * order is `LESSON_TOPICS` in lessons/lesson.ts; this is only the names.
+ * order is `LESSON_TOPICS` in lessons/lesson.ts; this is only the names. A
+ * topic this build has never heard of prints a page saying so (`MISSING`
+ * there).
  */
 export type LessonTopic =
   | "division-sharing"

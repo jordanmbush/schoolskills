@@ -76,8 +76,7 @@ const REMAINDER_PAD: Mil = inches(0.06);
  * gutter, then a square per digit of the dividend — and, where a remainder
  * may be written, room after the quotient for "r " and as many digits as the
  * divisor has, which the key prints and the sheet does not. The one width both
- * families cut their columns to (§21), because a bracket wider than its column
- * prints over the problem beside it and nothing measures that before paper.
+ * families cut their columns to (§21).
  */
 export function bracketWidth(
   digits: LongDigits,

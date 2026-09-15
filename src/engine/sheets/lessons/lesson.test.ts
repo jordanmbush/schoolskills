@@ -703,11 +703,9 @@ describe("the page", () => {
   };
 
   /**
-   * A lone block the family cannot cut smaller — a paragraph, a picture, a
-   * chart, or one row of problems: everything but a block of problems with
-   * more than one row in it. Taller than the page, it runs over the foot,
-   * which is the honest answer to paper that cannot hold one paragraph — and
-   * at the largest type on Letter, the only one.
+   * A lone block the family cannot cut smaller: everything but a block of
+   * problems with more than one row in it. Taller than the page, it runs
+   * over the foot (§23).
    */
   const uncuttable = (blocks: LessonBlock[]): boolean =>
     blocks.length === 1 &&
@@ -719,9 +717,8 @@ describe("the page", () => {
   it("reserves no more than the printed header and footer leave", () => {
     // Against the box the printed sheet actually has, not the one the config
     // was laid out against — the one way a family can be caught out (§4).
-    // Strict at the sizes the lessons were written for. From 24pt up one
-    // paragraph — the long-division steps — or one row of arrays is taller
-    // than a Letter page, and a page of nothing but that may run over.
+    // Strict at the sizes the lessons were written for; from 24pt up a page
+    // holding one block that cannot be cut may run over (§23).
     for (const one of EVERY_SHEET) {
       for (const fontPt of [12, 14, 18, 24, 36]) {
         const sheet = buildSheet({ ...one, fontPt }, 1);
@@ -743,10 +740,9 @@ describe("the page", () => {
   });
 
   it("cuts the problems to try into rows when the whole block is taller than the page", () => {
-    // A block taller than the page runs off the foot of it, and a row is the
-    // smallest piece the renderer prints whole — so at the largest type the
-    // six go one row to a block, numbered on from the last, and every block
-    // fits the box. At the size a lesson was written for they stay one block.
+    // At the largest type the six go one row to a block, numbered on from
+    // the last (§23), and every block fits the box. At the size a lesson was
+    // written for they stay one block.
     const asked = (blocks: Block[]) =>
       blocks.filter(
         (block): block is Block & { kind: "problems" } =>
@@ -808,6 +804,36 @@ describe("the page", () => {
       expect(pages, topic).toHaveLength(2);
       expect(pages[1], topic).toHaveLength(1);
       expect(pages[1][0].kind, topic).toBe("problems");
+    }
+  });
+
+  it("prints in its key only the pages that differ", () => {
+    // A lesson whose first page is the lesson alone would otherwise print it
+    // twice, identically, in a sheet-and-key print (§7).
+    for (const topic of ["division-arrays", "long-division-steps"] as const) {
+      const sheet = buildSheet(config({ topic }), 1);
+      const key = LESSON_SHEET.key(sheet);
+      const pages = pagesOf(sheet.blocks);
+      expect(pages, topic).toHaveLength(2);
+      expect(pagesOf(key.blocks), topic).toHaveLength(1);
+      expect(key.blocks, topic).toEqual(pages[1]);
+      expect(key.answers, topic).toBe(true);
+      // What was left off had nothing to reveal: prose, pictures and worked
+      // examples, which print their answers on the sheet itself.
+      for (const block of pages[0]) {
+        expect(
+          block.kind === "problems" && block.items.some((item) => !item.worked),
+          `${topic}: a try-it on the page the key left off`,
+        ).toBe(false);
+      }
+    }
+    // A one-page lesson's key is the sheet, and so is a lesson printed alone.
+    for (const one of [
+      config({ topic: "division-sharing" }),
+      config({ topic: "division-arrays", practice: false }),
+    ]) {
+      const sheet = buildSheet(one, 1);
+      expect(LESSON_SHEET.key(sheet).blocks, one.topic).toEqual(sheet.blocks);
     }
   });
 

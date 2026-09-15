@@ -52,8 +52,8 @@ const EDGE: Mil = 12;
 export const CAPTION_EMS = 1.15;
 
 /**
- * The most counters one picture holds. Past two dozen a child stops counting
- * and starts guessing, and the research brief behind §23 sets the same line.
+ * The most counters one picture holds: past two dozen a child stops counting
+ * and starts guessing (§23).
  */
 export const MOST_DOTS = 24;
 
@@ -114,8 +114,7 @@ function extent(geometry: Geometry): Mil {
  * like. What does not divide is one more cluster with no ring round it.
  *
  * Grouping with the rings left off is the one case that is not clusters at
- * all: the dots are spaced evenly and wrap where the width says, so nothing on
- * the sheet gives away where the child's rings should go.
+ * all: the dots are spaced evenly and wrap where the width says (§23).
  */
 export function countersGeometry(picture: Counters): Geometry {
   const { total, per, layout } = picture;

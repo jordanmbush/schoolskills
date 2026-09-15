@@ -231,7 +231,7 @@ export const MATHS_SHEETS: MathsSheet[] = [
     keyword: "What is division? A free printable first lesson",
     summary:
       "A one-page lesson that teaches division as sharing out fairly — twelve counters dealt into three rings — with a worked example, six to try, and the answers on the second page.",
-    lead: "The first division sheet in the shop is a lesson, not a drill: the idea in a child's words, a picture of 12 counters already dealt into 3 rings, the sum worked step by step, and six problems to try with the same picture beside each. Nothing to choose before it prints.",
+    lead: "The first division sheet in the shop is a lesson, not a drill: the idea in a child’s words, a picture of 12 counters already dealt into 3 rings, the sum worked step by step, and six problems to try with the same picture beside each. Nothing to choose before it prints.",
     notes: [
       "Sharing comes first because it is the meaning of division children arrive at school already holding: a five-year-old can deal sweets out fairly long before anyone shows them a ÷ sign, and the research this page follows found sharing to be the one model of division most children carry all the way into secondary school. So the page starts there — one for you, one for you, one for you — and the counters are drawn already dealt into as many rings as there are children, because that is the picture children read most easily: the rings are the children, and the count in one ring is the answer.",
       "The sentence is written three ways under the picture — 12 shared between 3 is 4 each, 12 ÷ 3 = 4, 3 × 4 = 12 — so the sign is tied to the story and to the times table from the first page, and the total is always the first number written. The next lesson, division as making groups, uses the same 12 ÷ 3 to tell the other story; the two pages are meant to be read a day or two apart, and the drill sheets after them are for the week the picture is no longer needed.",
@@ -259,14 +259,14 @@ export const MATHS_SHEETS: MathsSheet[] = [
       "The second division lesson: the same 12 ÷ 3 read as how many groups of 3, with counters ringed along a row, a number line jumped back in threes, and six to try.",
     lead: "The same sum as the sharing lesson told the other way round: 12 ÷ 3 as how many 3s make 12. Counters in a row ringed three at a time, a number line from 0 to 12 with four jumps back of 3, the steps written out, and six problems to ring or jump through.",
     notes: [
-      "A child who only ever meets division as sharing gets stuck the day the divisor stops being a number of people — you cannot share between 0.2 of a person, but you can ask how many 0.2s fit in 8.4. That second meaning is what every later sheet leans on: chunking is repeated subtraction, the number line's jumps are the same thing drawn, and dividing by a decimal is a grouping question or it is nothing. So this page names the second story with the same numbers as the first, and says out loud that both are dividing.",
+      "A child who only ever meets division as sharing gets stuck the day the divisor stops being a number of people — you cannot share between 0.2 of a person, but you can ask how many 0.2s fit in 8.4. That second meaning is what every later sheet leans on: chunking is repeated subtraction, the number line’s jumps are the same thing drawn, and dividing by a decimal is a grouping question or it is nothing. So this page names the second story with the same numbers as the first, and says out loud that both are dividing.",
       "Four of the six problems are counters in a plain row with no rings drawn, because drawing the rings is the exercise; the last two are a blank number line, for a child to jump back along in the divisor. The answer key gives the number of groups. The lesson before this one is the sharing page, and the one after is the array, which holds both stories in one picture and the two multiplications besides.",
     ],
     teaches: "Division as making equal groups",
     ages: "Ages 6–8",
     strand: "tables",
     tables: [2, 3, 4, 5, 6],
-    play: "Every fact on this page is in The Grid's division deck, for the week the picture is no longer needed.",
+    play: "Every fact on this page is in The Grid’s division deck, for the week the picture is no longer needed.",
     config: {
       ...SHEET,
       kind: "lesson",
@@ -318,7 +318,7 @@ export const MATHS_SHEETS: MathsSheet[] = [
     ages: "Ages 7–9",
     strand: "tables",
     tables: [3, 4, 5, 6],
-    play: "The Grid's division deck has no remainders in it, on purpose: once a child has this page, the exact facts are the ones to race.",
+    play: "The Grid’s division deck has no remainders in it, on purpose: once a child has this page, the exact facts are the ones to race.",
     config: {
       ...SHEET,
       kind: "lesson",
@@ -363,7 +363,7 @@ export const MATHS_SHEETS: MathsSheet[] = [
       "A one-page lesson on long division: 657 ÷ 3 worked in the bracket with every written square shaded, the four steps explained in place-value words, and six to try on the guided grid.",
     lead: "Divide, multiply, subtract, bring down — the four words a child meets at school, each printed beside what it means. The worked example is 657 ÷ 3 in the bracket with the shaded squares filled in, the steps under it say what every digit is worth, and six three-digit divisions follow: four with the squares shaded, two with the shape of the working drawn and the squares left plain.",
     notes: [
-      "The words are the abbreviation, and the page's job is the thing abbreviated. A child chanting the four steps can carry them out with no idea that the 2 they wrote is two hundreds, and that child brings the next digit down into the wrong column, which is the commonest long-division error there is. So every step here is said in place-value language — how many 3s in 6 hundreds? — and the grid under the bracket gives every digit a column of its own. Read the chunking page first if the bracket is new: this is the same method, written shorter.",
+      "The words are the abbreviation, and the page’s job is the thing abbreviated. A child chanting the four steps can carry them out with no idea that the 2 they wrote is two hundreds, and that child brings the next digit down into the wrong column, which is the commonest long-division error there is. So every step here is said in place-value language — how many 3s in 6 hundreds? — and the grid under the bracket gives every digit a column of its own. Read the chunking page first if the bracket is new: this is the same method, written shorter.",
       "The six to try are chosen so the method is met clean: three digits by one, the first digit at least the divisor, no remainder and no zero in the answer. Four are guided, with the squares that get written in shaded and the last row marked R; two show only the minus signs and the rules, for a child who no longer needs to be shown which square. The problems run on to a second page. The long-division drill pages carry on from here, with the grid, the zeros and the two-digit divisors.",
     ],
     teaches: "Long division, three digits by one, in the bracket",
@@ -930,7 +930,7 @@ export const MATHS_SHEETS: MathsSheet[] = [
       "Nine two-place decimals divided by numbers from 11 to 25, set in the bracket on a grid with the take-away rows marked, and an answer key.",
     lead: "The same bracket as the single-digit sheet with the divisor grown to two digits, from 11 to 25: dividends that run to three digits before the point, the first digit of the answer landing a column further in, and the minus sign and the rule under each take-away row drawn in before the numbers are.",
     notes: [
-      "A two-digit divisor changes one thing and it is not the arithmetic: the first digit of the answer goes a column further to the right, because 1 and then 13 are both smaller than 25 and the first number that isn't is 131. That is the mistake this sheet exists for, and the reason the take-away rows are marked — the shape of the working is on the page, and the child has only to decide which column it starts in.",
+      "A two-digit divisor changes one thing and it is not the arithmetic: the first digit of the answer goes a column further to the right, because 1 and then 13 are both smaller than 25 and the first number that isn’t is 131. That is the mistake this sheet exists for, and the reason the take-away rows are marked — the shape of the working is on the page, and the child has only to decide which column it starts in.",
       "Multiplying by 25 is not a table fact, and a child who has to guess how many 25s are in 131 will guess. Writing the first few multiples of the divisor down the margin before starting is the habit to build, and the divisors stop at 25 so that every one of those lists is short. The builder runs them to 99, and steps the help down to the bare grid or up to the shaded guided sheet.",
     ],
     teaches: "Dividing a decimal by a two-digit number",

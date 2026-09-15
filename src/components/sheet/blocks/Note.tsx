@@ -9,15 +9,11 @@ import type { BlockProps } from "./block";
  *
  * The box is a border, not a background, so it prints (§5), and it is drawn
  * exactly as tall as the family reserved — `lines` counted from the characters
- * at the column width, never measured — for the reason every row on a sheet
- * is (§4). An estimate a line short shows here as text crossing the bottom
- * rule, which is the failure a reader can see; a box that grew to fit would
- * push the last block of the page onto a second sheet, which is the one they
- * cannot.
+ * at the column width, never measured, for the reason every row on a sheet is
+ * (§4); `noteHeight` says what a wrong count looks like.
  *
- * The steps are a numbered list whose numbers are written as text, as every
- * list on a sheet writes them: `base.css` strips markers, and this stylesheet
- * has to hold on a page that never loaded it.
+ * Numbers written as text, as `Problems.tsx` writes them: `base.css` strips
+ * markers.
  */
 export function Note({ block, metrics }: BlockProps<"note">) {
   const pt = block.aside ? metrics.fontPt * ASIDE_EM : metrics.fontPt;

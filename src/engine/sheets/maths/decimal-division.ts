@@ -1,10 +1,9 @@
 /**
- * The three divisions a decimals sheet can set (§22), each built from the
- * answer outward: the quotient is drawn and the dividend made from it, so no
- * quotient is ever found and nothing can fail to terminate.
- *
- * A draw returns the sentence and the bracket both; whether the bracket is
- * printed is `decimals.ts`'s to decide from the layout it reserved.
+ * The three divisions a decimals sheet can set (§22). Every one is built from
+ * the answer outward — the quotient drawn, the dividend made from it — so
+ * nothing here divides and nothing can fail to stop. A draw returns the
+ * sentence and the bracket both; whether the bracket prints is decimals.ts's
+ * to decide from the layout it reserved.
  */
 import { between } from "@/engine/random";
 
@@ -35,11 +34,9 @@ export function divisorOf(config: DecimalConfig): { min: number; max: number } {
 }
 
 /**
- * The divisors in the span that a whole dividend divides by to an answer that
- * stops at the sheet's places: the ones sharing a factor with the power of
- * ten, which among the single digits is 2, 4, 5, 6 and 8 and never 3, 7 or 9
- * (§22). Empty when the span holds none — a page that says so, and a box the
- * builder greys out.
+ * The divisors in the span a whole dividend divides by to an answer that
+ * stops at the sheet's places: 2, 4, 5, 6 and 8 among the single digits,
+ * never 3, 7 or 9 (§22). Empty when the span holds none.
  */
 export function stoppingDivisors(config: DecimalConfig): number[] {
   const by = scale(placesOf(config));
@@ -52,10 +49,8 @@ export function stoppingDivisors(config: DecimalConfig): number[] {
 }
 
 /**
- * The three divisions, decided once so the draw, the layout and the title
- * cannot disagree about which it is. Dividing *by* a decimal wins over a whole
- * dividend: they are two lessons rather than one question with two switches
- * on.
+ * Decided once, here, so the draw, the layout and the title agree. Dividing
+ * *by* a decimal wins over a whole dividend (§22).
  */
 export type Division = "byWhole" | "byDecimal" | "wholeDividend";
 
@@ -65,14 +60,9 @@ export function divisionOf(config: DecimalConfig): Division {
 }
 
 /**
- * A decimal divided by a whole number: 8.46 ÷ 3.
- *
- * The quotient is drawn and the dividend made from it, so the division comes
- * out exactly and every promise the config makes holds of the answer — which
- * is the number a parent set the places and the range for. A quotient ending
- * in a zero is thrown away: `20.50 ÷ 5 = 4.10` is `20.5 ÷ 5` written to two
- * places, an exercise nobody sets, with a tableau of nothing rows. The
- * dividend may still end in one — `4.15 × 2` is `8.30`, and that is real.
+ * A decimal divided by a whole number: 8.46 ÷ 3. A quotient ending in a zero
+ * is thrown away — `20.5 ÷ 5` written to two places is an exercise nobody
+ * sets — though the dividend may end in one (§22).
  */
 export function drawByWhole(
   config: DecimalConfig,
@@ -89,17 +79,9 @@ export function drawByWhole(
 /**
  * A whole number divided to a decimal answer: 7 ÷ 4 = 1.75.
  *
- * The divisor is drawn first, from the ones that can stop, and the quotient
- * then walked in the steps that make their product whole, for the reason
- * `drawPercent` gives: a divisor makes a whole number of one quotient in fifty
- * at two places (2) or one in twenty-five (4), so a draw that made a pair and
- * rejected it would print the friendliest divisors over and over. A whole
- * quotient is left out, because an answer that runs past the point is what
- * this sheet promises — and its last digit may be a zero, since `1.50` is the
- * last annexed zero divided into and found empty (§22).
- *
- * In columns the dividend prints with the zeros annexed, `7.00`, which is the
- * form a child keeps dividing into; along a line it is the whole number it is.
+ * Walked in steps rather than drawn and rejected, as `drawPercent` is and for
+ * its reason (§22). Unlike `drawByWhole`, a quotient ending in a zero stays:
+ * `1.50` is the last annexed zero divided into and found empty.
  */
 export function drawWholeDividend(
   config: DecimalConfig,
@@ -116,6 +98,7 @@ export function drawWholeDividend(
   const last = Math.floor((max * by) / step);
   if (first > last) return null;
   const units = between(first, last, rand) * step;
+  // A whole quotient; this sheet promises an answer past the point.
   if (units % by === 0) return null;
   const quotient = fixed(units, places);
   const product = timesWhole(quotient, divisor);
@@ -124,17 +107,9 @@ export function drawWholeDividend(
 }
 
 /**
- * A decimal divided by a decimal: 8.4 ÷ 0.2.
- *
- * Drawn as the whole-number division a child rewrites it into — 84 ÷ 2 — and
- * then each side is given its places: the divisor one to `places`, and the
- * dividend at least as many, so the answer is the whole quotient with the
- * point moved back by the difference, exact by construction. Neither side
- * ends in a zero, because the two sides carry different place counts by
- * design and `8.40 ÷ 0.2` is a number written the long way for no column to
- * line up on. Along a line only, so no bracket is returned: set in one it
- * would be the rewritten sum rather than the question, and the rewriting is
- * the lesson (§22).
+ * A decimal divided by a decimal: 8.4 ÷ 0.2, drawn as the whole-number
+ * division it is rewritten into and then given its places (§22). No bracket
+ * is returned — this one is only ever written along a line.
  */
 export function drawByDecimal(
   config: DecimalConfig,
@@ -147,6 +122,7 @@ export function drawByDecimal(
   const span = divisorOf(config);
   const divisor = between(span.min, span.max, rand);
   const dividend = quotient * divisor;
+  // Neither side may end in a zero: the place count is the lesson.
   if (dividend % 10 === 0 || divisor % 10 === 0) return null;
   const divisorPlaces = between(1, places, rand);
   const dividendPlaces = between(divisorPlaces, places, rand);
@@ -184,12 +160,9 @@ function divided(
 }
 
 /**
- * The working under a decimal dividend (§22).
- *
- * Computed on the digits alone — the point is not a column — and then the
- * quotient is padded back to the units column with zeros, so a quotient below
- * one is written `0.23` and never `.23`. The zeros are written digits: a child
- * writes them, and a guided sheet shades their squares.
+ * The working under a decimal dividend: `divisionTableau` over the digits
+ * alone, then the quotient padded back to the units column so 0.69 ÷ 3 reads
+ * 0.23, never .23 (§22).
  */
 export function decimalTableau(dividend: string, divisor: number): Tableau {
   const point = dividend.indexOf(".");
