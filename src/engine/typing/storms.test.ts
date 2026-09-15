@@ -51,7 +51,8 @@ const SEEDS = [
 
 /** The rungs §5.6 gives a storm, transcribed from the doc rather than derived. */
 const RUNGS = [
-  4, 9, 13, 19, 23, 29, 34, 39, 45, 49, 53, 59, 65, 69, 73, 79, 83, 89, 93, 99,
+  4, 11, 15, 23, 27, 35, 40, 45, 51, 57, 61, 69, 75, 79, 83, 89, 93, 99, 103,
+  109,
 ];
 
 /** Every wave the twenty ship with — the storms a child actually meets. */
@@ -182,9 +183,11 @@ describe("the twenty levels", () => {
    */
   it("matches §5.7's table in docs/typing.md, column by column", () => {
     const doc = readFileSync("docs/typing.md", "utf8");
-    // §5.7 alone: from its heading to the next one, so the twenty rows read
-    // here cannot quietly become §6's tables the day a section is added.
-    const table = doc.split("### 5.7 · The twenty storms")[1].split("\n## ")[0];
+    // §5.7 alone: from its heading to the next one at either depth, so the
+    // twenty rows read here cannot quietly take in §5.8's table or §6's.
+    const table = doc
+      .split("### 5.7 · The twenty storms")[1]
+      .split(/\n#{2,3} /)[0];
     const rows = [...table.matchAll(/^\|\s*(\d+)\s*\|(.+)\|\s*$/gm)].map(
       (match) => [
         Number(match[1]),
@@ -287,11 +290,11 @@ describe("a storm can only rain what the ladder has taught", () => {
 
   it("rains what its title says, without ever replacing the rest", () => {
     // A focused level is about half its own focus (`storms.ts`), which is what
-    // makes "Hailstorm · Digits" a level about the number row at lesson 53 —
+    // makes "Hailstorm · Digits" a level about the number row at lesson 61 —
     // where only `3 4 5 6` have arrived, so a fixed multiplier would have put
     // one digit in six on screen and called it a title.
     const focused = STORM_LESSONS.filter((lesson) => lesson.kind.wave.focus);
-    expect(focused.map((lesson) => lesson.n)).toEqual([34, 39, 53, 59, 65, 69]);
+    expect(focused.map((lesson) => lesson.n)).toEqual([40, 45, 61, 69, 75, 79]);
 
     for (const lesson of focused) {
       const alphabet = [...unlockedAt(lesson.n)];
@@ -376,14 +379,14 @@ describe("no zone can strobe", () => {
 });
 
 describe("the ladder's difficulty climbs", () => {
-  it("drops one letter at a time until lesson 19, with the next one queued", () => {
+  it("drops one letter at a time until lesson 23, with the next one queued", () => {
     // Pure reaction (§8.3): `gap` clears `fall`, so a letter lands before the
     // next one starts to drop and there is never a second one coming down.
     // Read off the built schedule at every seed rather than off the declared
     // range, because `MIN_FALL_MS` can raise a fall and turn a promise into an
     // overlap.
     for (const [name, lesson, wave] of SHIPPED) {
-      if (lesson.n >= 19) continue;
+      if (lesson.n >= 23) continue;
       expect(maxFalling(wave), name).toBe(1);
       for (const seed of SEEDS)
         expect(
@@ -399,17 +402,17 @@ describe("the ladder's difficulty climbs", () => {
     }
   });
 
-  it("stacks them from lesson 19 on, and four deep at the top", () => {
+  it("stacks them from lesson 23 on, and four deep at the top", () => {
     for (const [name, lesson, wave] of SHIPPED) {
-      if (lesson.n < 19) continue;
+      if (lesson.n < 23) continue;
       expect(maxFalling(wave), name).toBeGreaterThan(1);
-      if (lesson.n >= 83) expect(maxFalling(wave), name).toBeGreaterThan(3);
+      if (lesson.n >= 93) expect(maxFalling(wave), name).toBeGreaterThan(3);
     }
   });
 
   it("asks for more letters, faster, as it climbs", () => {
     // Quarter by quarter rather than row by row, because the row-to-row curve
-    // dips on purpose: lesson 53's storm eases where the number row has just
+    // dips on purpose: lesson 61's storm eases where the number row has just
     // arrived, exactly as the wpm column does (§6.3, decision 11), and lesson
     // 73 is long where 79 is dense. What may never happen is a *stretch* of
     // the ladder that does not climb.
@@ -434,13 +437,13 @@ describe("the ladder's difficulty climbs", () => {
     expect(last.kind.wave.count).toBeGreaterThan(first.kind.wave.count * 3 - 1);
   });
 
-  it("takes the repairs away at lesson 79 and never gives them back", () => {
+  it("takes the repairs away at lesson 89 and never gives them back", () => {
     // "No repairs" is the level's name and the block's turn (§5.6). Every
     // storm below it mends the weakest zone every `repairAt` clean hits; from
     // 79 up, what breaks stays broken.
     for (const [name, lesson] of SHIPPED) {
       const { repairAt } = lesson.kind.wave;
-      if (lesson.n < 79) expect(repairAt, name).toBeGreaterThan(0);
+      if (lesson.n < 89) expect(repairAt, name).toBeGreaterThan(0);
       else expect(repairAt, name).toBe(0);
     }
   });
@@ -480,10 +483,12 @@ describe("the ladder's difficulty climbs", () => {
 
 describe("each level's seed", () => {
   /**
-   * The twenty seeds are derived, not chosen (decision 58): the level's own
-   * number, or the first seed above it whose wave keeps the level's promises.
-   * Fourteen of the twenty are the lesson number itself; the other six are
-   * within six of it. The promises are the three things this file has already
+   * The twenty seeds are derived, not chosen (decision 58): the number the
+   * level had in the hundred it was tuned in — the figure in its id, since a
+   * rung moves when a lesson is woven in below it and a seed must not (§5.8)
+   * — or the first seed above that whose wave keeps the level's promises.
+   * Fourteen of the twenty are that number itself; the other six are within
+   * six of it. The promises are the three things this file has already
    * asserted about every shipped wave — the tint rate under two, at least six
    * of the eight fingers used, and no zone taking more than a third of the
    * letters.
@@ -493,10 +498,10 @@ describe("each level's seed", () => {
     tintsByZone(wave).size >= 6 &&
     busiestZone(wave) * 3 <= spec.count;
 
-  it("is the first at or above its own rung that keeps them", () => {
+  it("is the first at or above its id's number that keeps them", () => {
     for (const [name, lesson] of SHIPPED) {
       const spec = waveSpecFor(lesson);
-      let first = lesson.n;
+      let first = Number(lesson.id.slice(1));
       while (!keeps(buildWave(spec, first), spec)) first++;
       expect(lesson.kind.wave.seed, name).toBe(first);
     }
@@ -517,7 +522,7 @@ describe("each level's seed", () => {
 
   it("is the same storm on every machine and in every session", () => {
     // `buildWave` is deterministic in `(spec, seed)` and both halves come off
-    // the rung, so opening lesson 45 twice is opening the same level twice
+    // the rung, so opening lesson 51 twice is opening the same level twice
     // (decision 58).
     for (const [name, lesson, wave] of SHIPPED)
       expect(stormWave(lesson), name).toEqual(wave);

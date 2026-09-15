@@ -42,7 +42,7 @@ export type LadderProgress = {
    * **A Hailstorm level can be it** (§8.8, decision 72). Nothing waits on a
    * storm and nothing ever will, but the pointer used to be carried over one
    * to say so — which said it by never mentioning the storm at all. A child
-   * who passed lesson 44 was sent to 46, and the wave in between was not so
+   * who passed lesson 50 was sent to 52, and the wave in between was not so
    * much skipped as unseen. Optional is a choice a child makes; offering it is
    * the ladder's job.
    *
@@ -58,8 +58,8 @@ export type LadderProgress = {
   /**
    * The highest rung that can be entered, which is `next` unless a storm is
    * standing there — then it is the rung past it, because a storm never gates
-   * (§8.8, decision 24). The two open together: lesson 46 is enterable the
-   * moment 44 is cleared, whatever happens at 45, which is the whole of what
+   * (§8.8, decision 24). The two open together: lesson 52 is enterable the
+   * moment 50 is cleared, whatever happens at 51, which is the whole of what
    * "skippable" means now that the pointer no longer does the skipping.
    */
   open: number;
@@ -67,11 +67,12 @@ export type LadderProgress = {
 
 /**
  * The ladder by the string a saved run is filed under, which is what a session
- * carries: `Session.mode` is `typing:L07` for a lesson (§5.4).
+ * carries: `Session.mode` is `typing:L07`, or `typing:H03` for a held-key
+ * lesson (§5.4, §5.8).
  *
  * Keyed on the whole mode rather than on the id inside it, so the two
  * namespaces behind the `typing:` prefix cannot answer for each other. A run
- * of the `home-row` level is not lesson 7 and misses this map, which is the
+ * of the `home-row` level is not a lesson and misses this map, which is the
  * right answer rather than a case to handle: a free-play level, a drill or a
  * spelling race is simply not on the ladder.
  */
@@ -79,14 +80,14 @@ const BY_MODE = new Map(
   LESSONS.map((lesson) => [typingMode(lesson.id), lesson]),
 );
 
-/** The top of the ladder — a hundred today, and read off it rather than typed. */
+/** The top of the ladder — read off it rather than typed. */
 const LAST = LESSONS.reduce((top, lesson) => Math.max(top, lesson.n), 0);
 
 /**
  * The rung past a storm, which opens along with it.
  *
- * A Hailstorm level never gates: lesson 46 opens when 44 is cleared, whatever
- * happened at 45 (§8.8, decision 24). So the two are open at once, and what
+ * A Hailstorm level never gates: lesson 52 opens when 50 is cleared, whatever
+ * happened at 51 (§8.8, decision 24). So the two are open at once, and what
  * separates them is only which one the ladder points at.
  *
  * A loop rather than a single step, because "no two storms sit together" is a
@@ -103,14 +104,15 @@ function derive(sessions: readonly LadderRun[]): LadderProgress {
 
   for (const session of sessions) {
     const lesson = BY_MODE.get(session.mode);
+    if (!lesson) continue;
     // `verdictFor` walks every card of the run, and there is nothing to learn
     // from a second pass at a lesson already cleared — so replaying a beaten
     // lesson is free, however many times. Runs of a lesson *not* yet cleared
     // each still pay a verdict, retries included, until one clears it.
-    if (!lesson || cleared.has(lesson.n)) continue;
+    if (cleared.has(lesson.n)) continue;
     // ── A lesson is cleared by a run that says it IS that lesson ───────────
     // The mode is not enough on its own. `buildDrill` files a practice deck
-    // under the mode it came from, so the drill a child takes from lesson 41's
+    // under the mode it came from, so the drill a child takes from lesson 47's
     // results — or from the finger a storm broke (§8.5) — is also
     // `typing:L41`: ten to forty words of trouble keys that would otherwise
     // clear the lesson it was offered from without the lesson ever being run.
@@ -120,14 +122,15 @@ function derive(sessions: readonly LadderRun[]): LadderProgress {
     // changes.
     if (session.config?.kind !== "typing") continue;
     if (session.config.lessonId !== lesson.id) continue;
-    if (verdictFor(session, lesson).passed) cleared.add(lesson.n);
+    if (!verdictFor(session, lesson).passed) continue;
+    cleared.add(lesson.n);
   }
 
   // ── Unlock is `max(cleared) + 1`, not `count(cleared)` (§6.6) ─────────────
   // Counting would be brittle in a way that only shows up years in, because
   // `MAX_SESSIONS_PER_PROFILE` prunes the *oldest* sessions. Taking the
   // maximum is also what makes the placement test a line rather than a case,
-  // since passing checkpoint 40 clears 1–39 with it. Nor does the loop above
+  // since passing checkpoint 46 clears 1–45 with it. Nor does the loop above
   // ask whether a lesson was unlocked when it was run: trying one is free.
   let best = 0;
   for (const n of cleared) best = Math.max(best, n);

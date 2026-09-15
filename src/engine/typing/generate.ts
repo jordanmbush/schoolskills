@@ -1,5 +1,6 @@
 import { between, mulberry32, shuffled } from "@/engine/random";
 
+import { oneHanded } from "./hands";
 import { canType, unlockedAt } from "./keys";
 import type { Lesson } from "./lessons";
 import {
@@ -21,13 +22,15 @@ import {
  * same words in the same order, on any device, for ever. A ghost is only a
  * race if both runs saw the same cards, and determinism is also what makes a
  * saved run legible: `Session.mode` says `typing:L07`, and the seed says which
- * lesson 7 it was.
+ * lesson 9 it was.
  *
  * **Every character produced satisfies `canType(ch, n)`** (§5.2): a lesson may
  * only use keys the ladder has already taught. Each pool is filtered rather
  * than trusted, which is what lets the ladder be re-ordered by editing one
  * array — and it is the promise an editor adding a pool here would otherwise
- * break in silence, in front of a five-year-old.
+ * break in silence, in front of a five-year-old. A held-key lesson adds one
+ * more filter of the same shape (§5.8): every character is also
+ * `oneHanded(ch, hold)`, so the pinned hand is never asked for anything.
  *
  * Two more `generate.test.ts` holds: each introduced character occurs at least
  * `pass.keyStrikes` times at every seed, and new keys are 15–35% of the
@@ -36,7 +39,7 @@ import {
  * `j` and the space bar, so there is no review to be had and `keyDrill` spends
  * the whole lesson on the new keys. The test states that in derived terms — a
  * lesson with review available is 15–35% new — so a re-ordered ladder that
- * leaves lesson 40 with nothing to review is named by the test rather than
+ * leaves lesson 46 with nothing to review is named by the test rather than
  * quietly excused by it.
  *
  * A strategy per kind rather than one shuffle, because "pick words the child
@@ -57,7 +60,7 @@ import {
  * Four rather than three, so that a group plus the space after it is the five
  * characters `wordCount` is counted in — the same figure `strikesFor` sizes
  * the new-key gate against. At three the two halves of the ladder would
- * disagree about how long a lesson is, and lesson 67 would be over §5.2's
+ * disagree about how long a lesson is, and lesson 77 would be over §5.2's
  * ceiling with the generator doing nothing wrong (§5.1).
  */
 const GROUP = 4;
@@ -132,36 +135,36 @@ const MIN_BAG = 12;
  */
 type Source = (lesson: Lesson, rand: () => number) => readonly string[];
 
-/** Lesson 41, "The twenty-five", and lesson 48, "The hundred". A slice. */
+/** Lesson 47, "The twenty-five", and lesson 56, "The hundred". A slice. */
 const TOP_TWENTY_FIVE = WORDS.slice(0, 25);
 const TOP_HUNDRED = WORDS.slice(0, 100);
 
-/** Lesson 47, "One hand at a time" — both hands' lists, one after the other. */
+/** Lesson 53, "One hand at a time" — both hands' lists, one after the other. */
 const ONE_HAND = [...LEFT_HAND, ...RIGHT_HAND];
 
-/** Lesson 33, "Names, and the word I". The one capital English insists on. */
+/** Lesson 39, "Names, and the word I". The one capital English insists on. */
 const NAMES_AND_I = ["I", ...NAMES];
 
-/** Lesson 84, "Sprint · The hard pairs" — the same words lesson 44 drills. */
+/** Lesson 94, "Sprint · The hard pairs" — the same words lesson 50 drills. */
 const HARD_PAIR_WORDS = WORDS.filter((word) =>
   HARD_PAIRS.some((pair) => word.includes(pair)),
 );
 
-const POOLS = new Map<number, Source>([
-  [33, () => NAMES_AND_I],
-  [41, () => TOP_TWENTY_FIVE],
-  [46, () => ALTERNATING],
-  [47, () => ONE_HAND],
-  [48, () => TOP_HUNDRED],
+const POOLS = new Map<string, Source>([
+  ["L33", () => NAMES_AND_I],
+  ["L41", () => TOP_TWENTY_FIVE],
+  ["L46", () => ALTERNATING],
+  ["L47", () => ONE_HAND],
+  ["L48", () => TOP_HUNDRED],
   // "The sight words, again" — which is what the front of a frequency-ordered
   // corpus is. The list is not repeated anywhere; it is the same hundred.
-  [74, () => TOP_HUNDRED],
-  [82, () => ALTERNATING],
-  [84, () => HARD_PAIR_WORDS],
+  ["L74", () => TOP_HUNDRED],
+  ["L82", () => ALTERNATING],
+  ["L84", () => HARD_PAIR_WORDS],
   // "Sprint · Capitals": every name is a capital with a reason to be there.
-  [85, () => NAMES],
-  [86, (lesson, rand) => figures(lesson, rand, lesson.wordCount) ?? []],
-  [87, (lesson) => punctuated(lesson)],
+  ["L85", () => NAMES],
+  ["L86", (lesson, rand) => figures(lesson, rand, lesson.wordCount) ?? []],
+  ["L87", (lesson) => punctuated(lesson)],
 ]);
 
 // ── Bags ─────────────────────────────────────────────────────────────────────
@@ -209,7 +212,7 @@ function frequencyBag(
  * Lowercase the characters this lesson has not been given, and only those.
  *
  * The sentence pool holds English as it is printed, because it has to still be
- * English at lesson 40. Lesson 30 asks for sentences a whole block before
+ * English at lesson 46. Lesson 36 asks for sentences a whole block before
  * either shift is taught, and folding the case for it is this module's job:
  * the unlocked alphabet is in hand here and is not in the corpus.
  *
@@ -226,13 +229,36 @@ function fold(text: string, n: number): string {
 }
 
 /**
+ * Can this lesson ask for `text`? The reachability invariant (§5.2), and on a
+ * held-key lesson the one-hand invariant beside it (§5.8) — every pool below
+ * is cut by this and nothing else.
+ */
+const typable = (text: string, lesson: Lesson) =>
+  canType(text, lesson.n) &&
+  (lesson.hold === undefined || oneHanded(text, lesson.hold));
+
+/**
+ * The characters this lesson may use: the rung's alphabet, less the hand a
+ * held key pins (§5.8). A lesson with no held key is handed the shared set
+ * `unlockedAt` keeps, untouched.
+ */
+function alphabetOf(lesson: Lesson): ReadonlySet<string> {
+  const unlocked = unlockedAt(lesson.n);
+  const { hold } = lesson;
+  if (hold === undefined) return unlocked;
+  return new Set([...unlocked].filter((ch) => oneHanded(ch, hold)));
+}
+
+/**
  * A pool filtered onto a lesson's alphabet, remembered.
  *
  * The reachability test generates every lesson at many seeds, and each
  * generation would otherwise walk two thousand words character by character.
  * The ladder and the corpus are both fixed at module load, so the answer is
  * too; the `WeakMap` is keyed by the pool so a caller can hand over a slice
- * without leaking it for the life of the process.
+ * without leaking it for the life of the process. The held key is part of the
+ * key because it is part of the filter: the two word lessons of a held-key
+ * pair (§5.8) share an alphabet and keep opposite halves of the corpus.
  */
 const FILTERED = new WeakMap<
   readonly string[],
@@ -241,7 +267,7 @@ const FILTERED = new WeakMap<
 
 function filtered(
   pool: readonly string[],
-  n: number,
+  lesson: Lesson,
   prose: boolean,
 ): readonly string[] {
   let byLesson = FILTERED.get(pool);
@@ -249,24 +275,24 @@ function filtered(
     byLesson = new Map();
     FILTERED.set(pool, byLesson);
   }
-  const key = `${n}:${prose ? "p" : "w"}`;
+  const key = `${lesson.n}:${lesson.hold ?? ""}:${prose ? "p" : "w"}`;
   const cached = byLesson.get(key);
   if (cached) return cached;
 
-  const usable = (prose ? pool.map((text) => fold(text, n)) : pool).filter(
-    (text) => canType(text, n),
-  );
+  const usable = (
+    prose ? pool.map((text) => fold(text, lesson.n)) : pool
+  ).filter((text) => typable(text, lesson));
   byLesson.set(key, usable);
   return usable;
 }
 
-/** Words a child at lesson `n` can spell, exactly as the corpus writes them. */
-const spellable = (pool: readonly string[], n: number) =>
-  filtered(pool, n, false);
+/** Words this lesson can spell, exactly as the corpus writes them. */
+const spellable = (pool: readonly string[], lesson: Lesson) =>
+  filtered(pool, lesson, false);
 
-/** Prose a child at lesson `n` can type, once its case has been folded. */
-const readable = (pool: readonly string[], n: number) =>
-  filtered(pool, n, true);
+/** Prose this lesson can type, once its case has been folded. */
+const readable = (pool: readonly string[], lesson: Lesson) =>
+  filtered(pool, lesson, true);
 
 // ── keys · letter groups in a drill rhythm ───────────────────────────────────
 
@@ -286,7 +312,7 @@ const readable = (pool: readonly string[], n: number) =>
  * where a child will meet them first.
  */
 function keyDrill(lesson: Lesson, rand: () => number): string[] {
-  const alphabet = unlockedAt(lesson.n);
+  const alphabet = alphabetOf(lesson);
   // Through the alphabet rather than straight off the row: a character its own
   // lesson cannot strike — a capital before either shift is taught — must not
   // reach the text, and the `keyStrikes` test is what reports it.
@@ -303,7 +329,9 @@ function keyDrill(lesson: Lesson, rand: () => number): string[] {
     fresh.length * strikes,
   );
   // Nothing to review is not an error, it is lesson 1: the whole drill is the
-  // two keys it hands over, because the alphabet is those two keys.
+  // two keys it hands over, because the alphabet is those two keys. The two
+  // held-key lessons at rung 6 are the same case with a hand taken away —
+  // one hand's half of the home row is exactly the five keys they drill.
   const target =
     fresh.length === 0
       ? 0
@@ -370,8 +398,11 @@ function drawWords(
  * frequency weighting: which words are in the bag, and which is drawn first.
  */
 function wordRun(lesson: Lesson, rand: () => number): string[] | null {
-  const source = POOLS.get(lesson.n);
-  const pool = spellable(source ? source(lesson, rand) : WORDS, lesson.n);
+  // A held-key lesson draws from the one-hand list and from no pool §5.6
+  // gave a rung (§5.8); `spellable` then keeps the free hand's half.
+  const source =
+    lesson.hold !== undefined ? () => ONE_HAND : POOLS.get(lesson.id);
+  const pool = spellable(source ? source(lesson, rand) : WORDS, lesson);
   const window = source
     ? pool
     : pool.slice(0, Math.max(WINDOW_MIN, lesson.wordCount * WINDOW_PER_WORD));
@@ -383,7 +414,7 @@ function wordRun(lesson: Lesson, rand: () => number): string[] | null {
  *
  * Round-robin over the sequences rather than one pooled bag, so each gets an
  * equal share of the lesson however many words the corpus offers for it.
- * Lesson 8 is the case that shapes this: at nine letters unlocked, `ss` has
+ * Lesson 10 is the case that shapes this: at nine letters unlocked, `ss` has
  * exactly one word in the whole corpus, and a pooled draw would spend the
  * lesson on `ll` and never drill the pair a child is there for.
  */
@@ -396,7 +427,7 @@ function bigramRun(
     .map((pair) =>
       spellable(
         WORDS.filter((word) => word.includes(pair)),
-        lesson.n,
+        lesson,
       ),
     )
     .filter((pool) => pool.length > 0)
@@ -410,13 +441,13 @@ function bigramRun(
 /**
  * Short, common words at pace.
  *
- * The length filter is a preference, not a rule: lesson 85 sprints names and
- * lesson 82 the alternating list, and a pool that the filter cuts below a
+ * The length filter is a preference, not a rule: lesson 95 sprints names and
+ * lesson 92 the alternating list, and a pool that the filter cuts below a
  * bagful is used whole rather than turned into a loop of six words.
  */
 function sprintRun(lesson: Lesson, rand: () => number): string[] | null {
-  const source = POOLS.get(lesson.n);
-  const pool = spellable(source ? source(lesson, rand) : WORDS, lesson.n);
+  const source = POOLS.get(lesson.id);
+  const pool = spellable(source ? source(lesson, rand) : WORDS, lesson);
   const short = pool.filter((word) => word.length <= SPRINT_MAX_LEN);
   const window = short.length >= MIN_BAG ? short : pool;
   return drawWords(
@@ -427,18 +458,18 @@ function sprintRun(lesson: Lesson, rand: () => number): string[] | null {
 }
 
 /**
- * Lesson 87, "Sprint · Punctuation" — short words wearing the marks.
+ * Lesson 97, "Sprint · Punctuation" — short words wearing the marks.
  *
  * The marks are whatever the ladder has taught by then, which is all of them
- * at lesson 87 and would be a comma and a full stop at lesson 30. Nothing is
+ * at lesson 97 and would be a comma and a full stop at lesson 36. Nothing is
  * invented: the words are the corpus's and the marks are the alphabet's, so
  * the pool cannot outrun the reachability invariant.
  */
 function punctuated(lesson: Lesson): readonly string[] {
-  const alphabet = unlockedAt(lesson.n);
+  const alphabet = alphabetOf(lesson);
   const marks = [...".,?!;:"].filter((mark) => alphabet.has(mark));
   if (marks.length === 0) return [];
-  const short = spellable(WORDS, lesson.n)
+  const short = spellable(WORDS, lesson)
     .filter((word) => word.length <= SPRINT_MAX_LEN)
     .slice(0, WINDOW_MIN);
   return short.map((word, i) => word + marks[i % marks.length]);
@@ -460,7 +491,7 @@ function proseRun(
   pool: readonly string[],
   rand: () => number,
 ): string[] | null {
-  const usable = readable(pool, lesson.n);
+  const usable = readable(pool, lesson);
   if (usable.length === 0) return null;
   const draw = bag(usable, rand);
   const words: string[] = [];
@@ -473,11 +504,11 @@ function proseRun(
 /**
  * The figures a lesson can be built out of, and what each one costs.
  *
- * Ages, dates, scores and prices (§5.6, lesson 57) rather than digits at
+ * Ages, dates, scores and prices (§5.6, lesson 67) rather than digits at
  * random: a date has a shape, and `14/6/2019` teaches the number row *and* the
  * reach to the slash. `needs` is the punctuation the shape cannot be written
  * without, checked against the unlocked alphabet before the shape is offered —
- * which is why a score is absent until the hyphen arrives at lesson 63 rather
+ * which is why a score is absent until the hyphen arrives at lesson 73 rather
  * than being quietly rewritten as two separate numbers.
  */
 const FIGURES: { needs: string; make: (rand: () => number) => string }[] = [
@@ -524,7 +555,7 @@ function figures(
   rand: () => number,
   count: number,
 ): string[] | null {
-  const alphabet = unlockedAt(lesson.n);
+  const alphabet = alphabetOf(lesson);
   const usable = FIGURES.filter((figure) =>
     [...figure.needs].every((ch) => alphabet.has(ch)),
   );
@@ -533,7 +564,7 @@ function figures(
   const out: string[] = [];
   for (let tries = 0; out.length < count && tries < count * 8; tries++) {
     const token = usable[Math.floor(rand() * usable.length)].make(rand);
-    if (canType(token, lesson.n)) out.push(token);
+    if (typable(token, lesson)) out.push(token);
   }
   return out.length >= count ? out : null;
 }
@@ -553,9 +584,9 @@ const NUMERIC_SENTENCES = SENTENCES.filter((text) => /[0-9]/.test(text));
 const PLAIN_SENTENCES = SENTENCES.filter((text) => !/[0-9]/.test(text));
 
 function mixedRun(lesson: Lesson, rand: () => number): string[] | null {
-  const plain = readable(PLAIN_SENTENCES, lesson.n);
+  const plain = readable(PLAIN_SENTENCES, lesson);
   if (plain.length === 0) return null;
-  const numeric = readable(NUMERIC_SENTENCES, lesson.n);
+  const numeric = readable(NUMERIC_SENTENCES, lesson);
   const drawPlain = bag(plain, rand);
   const drawNumeric = numeric.length > 0 ? bag(numeric, rand) : null;
 

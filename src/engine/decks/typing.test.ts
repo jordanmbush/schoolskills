@@ -281,7 +281,7 @@ describe("configKey", () => {
   });
 
   it("keys a lesson on the lesson and not on its passage", () => {
-    // Lesson 7 generates its own words every time it is run, so a key that
+    // Lesson 9 generates its own words every time it is run, so a key that
     // folded them in would file every attempt in a bucket of one — a child
     // would run the lesson twenty times and never be shown their own best.
     const monday = config({
@@ -327,8 +327,8 @@ describe("the deck registry", () => {
   it("names the lesson a ladder run was played at", () => {
     // What a record book two years from now reads, long after the ladder has
     // been re-tuned: the lesson by number and title, not "Typing".
-    expect(deckSpec("typing:L07").label).toBe("Lesson 7 · Home-row words");
-    expect(deckSpec("typing:L100").label).toBe("Lesson 100 · The Ice Exam");
+    expect(deckSpec("typing:L07").label).toBe("Lesson 9 · Home-row words");
+    expect(deckSpec("typing:L100").label).toBe("Lesson 110 · The Ice Exam");
   });
 
   it("files a lesson run under its lesson id, not its level", () => {

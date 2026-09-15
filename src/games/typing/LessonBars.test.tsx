@@ -19,7 +19,7 @@ import { LessonBars } from "./LessonBars";
 
 /** Lesson 1: `f` and `j`, at 95% accuracy, 8 wpm, and 12 strikes a key. */
 const L01 = lessonById("L01")!;
-/** Lesson 7: the first words, and it introduces nothing — so no key bar. */
+/** Lesson 9: the first words, and it introduces nothing — so no key bar. */
 const L07 = lessonById("L07")!;
 
 const config: TypingConfig = {

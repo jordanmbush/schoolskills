@@ -29,9 +29,9 @@ const storm = (id: string): StormLesson => {
 
 /** Lesson 4 — the first storm, six keys, repairs on. */
 const L04 = storm("L04");
-/** Lesson 59 — digits, mid-ladder, repairs on. */
+/** Lesson 69 — digits, mid-ladder, repairs on. */
 const L59 = storm("L59");
-/** Lesson 79 — "No repairs", the level the block turns on. */
+/** Lesson 89 — "No repairs", the level the block turns on. */
 const L79 = storm("L79");
 
 /** A profile that has never run anything: everything above rung 1 is locked. */
@@ -45,7 +45,7 @@ const at = (best: number, next: number, open = next): LadderProgress => ({
   open,
 });
 
-const render = (lesson: StormLesson, progress: LadderProgress = at(99, 100)) =>
+const render = (lesson: StormLesson, progress: LadderProgress = at(109, 110)) =>
   renderToStaticMarkup(
     <StormBrief
       lesson={lesson}
@@ -103,7 +103,7 @@ describe("StormBrief", () => {
   it("names the shift on every storm that can rain a capital", () => {
     /*
      * Decision 70. Asked of the pool and not of `focus`: capitals are
-     * unlocked at lesson 34 and are in every wave's pool from there up
+     * unlocked at lesson 40 and are in every wave's pool from there up
      * (§5.6), so "Pairs" rains them without being about them and needs the
      * sentence exactly as much.
      */
@@ -122,7 +122,7 @@ describe("StormBrief", () => {
   it("promises that nothing on the ladder waits on it", () => {
     expect(words(L04)).toContain("worth playing, never required");
     expect(words(L04)).toContain("Lesson 5 opens whether you play this or not");
-    expect(words(storm("L99"))).toContain("Lesson 100 opens");
+    expect(words(storm("L99"))).toContain("Lesson 110 opens");
   });
 
   /** Lesson 3 cleared points at the storm at 4, with lesson 5 open beside it. */

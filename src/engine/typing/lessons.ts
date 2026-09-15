@@ -2,7 +2,8 @@ import type { KeyboardMode } from "@/engine/types";
 import type { WaveSpec } from "./storm";
 
 /**
- * The hundred lessons of Frost Keys, as data (docs/typing.md §5).
+ * The ladder of Frost Keys, as data (docs/typing.md §5): a hundred and ten
+ * lessons in ten blocks, ten of them held-key lessons (§5.8).
  *
  * A lesson declares what it is *for* and its text is generated from that
  * (§5.1). The unlocked alphabet at lesson n is computed from `introduces`
@@ -10,7 +11,7 @@ import type { WaveSpec } from "./storm";
  * a lesson carry its words with it when it moves.
  *
  * This is the one module in `engine/typing/` the deck layer may import, so
- * that `deckSpec("typing:L07")` can name lesson 7 in a record book years from
+ * that `deckSpec("typing:L07")` can name a lesson in a record book years from
  * now. It therefore holds titles, key sets and pass criteria and not one word
  * a child ever types: neither `lexicon.ts` nor `generate.ts` may ever become
  * reachable from here (§5.3, decision 7).
@@ -110,13 +111,30 @@ export type PassCriteria =
     };
 
 export type Lesson = {
-  /** 1–100. */
+  /**
+   * The rung: where the lesson sits on the ladder, 1 to the top, and the
+   * number a child knows it by. It moves when a lesson is woven in below it;
+   * `id` does not.
+   */
   n: number;
-  /** "L07". Stable forever — it is in `Session.mode`. */
+  /**
+   * "L07", or "H03" for a held-key lesson. Stable forever — it is in
+   * `Session.mode` — which is why it is written on the row rather than read
+   * off `n`: the hundred were named when they were the whole ladder, and the
+   * ten woven in since (§5.8) moved their numbers and not their names, so
+   * `L07` is lesson 9.
+   */
   id: string;
   block: number;
   title: string;
-  /** Characters this lesson introduces. Empty on review, game, checkpoint. */
+  /**
+   * Characters this lesson introduces. Empty on review, game, checkpoint.
+   *
+   * On a held-key lesson, the keys it drills: nothing here is new to the
+   * child, but the new-key gate (§6.4) is the right gate for "each of these,
+   * struck by the right hand, often enough to be sure" — the same bargain
+   * block 7 makes when it says `;` a second time.
+   */
   introduces: string[];
   kind: LessonKind;
   wordCount: number;
@@ -124,6 +142,14 @@ export type Lesson = {
   keyboardLocked?: boolean;
   pass: PassCriteria;
   checkpoint?: true;
+  /**
+   * The key held down for the whole run, as the character it types (§5.8).
+   *
+   * Holding it pins that hand, so every character of the lesson is the other
+   * hand's — `hands.ts` says which those are, and the generator draws from
+   * nothing else. Absent on every other lesson.
+   */
+  hold?: string;
 };
 
 // ── The numbers behind the pass criteria ─────────────────────────────────────
@@ -158,13 +184,14 @@ const STORM_ACCURACY = NEW_KEY_ACCURACY;
  * How many strikes of each new character the gate waits for.
  *
  * Twelve (§6.4) wherever twelve fits, which is every lesson that arrives two
- * keys at a time. Four hand over more at once — 31, 32, 67 and 68 — and three
- * of those cannot also ask twelve of each: lesson 31's fifteen capitals would
- * want 180 strikes in 150 characters, so there the demand is divided between
- * them instead of being made unreachable. Lesson 68's four keys still fit
- * twelve apiece inside its 175, which is why the ceiling is a `min` against
- * the room rather than a rule about how many keys arrived. Two is the floor:
- * below it the gate cannot tell a typist from a lucky guess.
+ * keys at a time. Four hand over more at once — 37, 38, 77 and 78 — and the
+ * eight held-key drills ask five each (§5.8); most of those cannot also ask
+ * twelve of every key: lesson 37's fifteen capitals would want 180 strikes in
+ * 150 characters, so there the demand is divided between them instead of
+ * being made unreachable. Lesson 78's four keys still fit twelve apiece
+ * inside its 175, which is why the ceiling is a `min` against the room rather
+ * than a rule about how many keys arrived. Two is the floor: below it the
+ * gate cannot tell a typist from a lucky guess.
  */
 function strikesFor(introduces: string[], wordCount: number): number {
   if (introduces.length === 0) return NEW_KEY_STRIKES;
@@ -180,20 +207,23 @@ function strikesFor(introduces: string[], wordCount: number): number {
  * §5.6; the other two are named by description there, and "the hard pairs" is
  * not a spec:
  *
- *   - **8 · Pairs that repeat** — the doubled letters, and at lesson 8 the
+ *   - **10 · Pairs that repeat** — the doubled letters, and at lesson 10 the
  *     alphabet is still `a s d f g h j k l ;`, so `ll`, `ss` and `dd` are all
  *     of them there are.
- *   - **44 · The hard pairs** — the *same-finger* bigrams, which is what makes
+ *   - **50 · The hard pairs** — the *same-finger* bigrams, which is what makes
  *     a pair hard rather than which letters it uses: `ed` is both the left
  *     middle finger, `ju` both the right index.
+ *
+ * By id rather than by rung, like every side table here: a rung moves when a
+ * lesson is woven in below it, and an id does not.
  */
-const BIGRAMS: Record<number, string[]> = {
-  8: ["ll", "ss", "dd"],
-  18: ["th", "he", "er", "re"],
-  28: ["an", "in", "on", "nd", "nt"],
-  42: ["th", "he", "in", "er"],
-  43: ["an", "re", "on", "at", "en"],
-  44: ["ed", "ce", "un", "ny", "ju", "ki", "lo", "gr"],
+const BIGRAMS: Record<string, string[]> = {
+  L08: ["ll", "ss", "dd"],
+  L18: ["th", "he", "er", "re"],
+  L28: ["an", "in", "on", "nd", "nt"],
+  L42: ["th", "he", "in", "er"],
+  L43: ["an", "re", "on", "at", "en"],
+  L44: ["ed", "ce", "un", "ny", "ju", "ki", "lo", "gr"],
 };
 
 // ── The table ────────────────────────────────────────────────────────────────
@@ -208,20 +238,18 @@ type RowKind = LessonKind["type"];
 type Keyboard = KeyboardMode | `${KeyboardMode}!`;
 
 /**
- * One row of §5.6, in the doc's own column order: number, title, new keys,
- * kind, keyboard, words, wpm, accuracy.
+ * One row of §5.6, in the doc's own column order: id, title, new keys, kind,
+ * keyboard, words, wpm, accuracy. The number is the row's position and is not
+ * written down (`LESSONS` counts), because a number that could disagree with
+ * its own position is one that will.
  *
  * A tuple rather than an object because this is read as a table: a hundred
- * rows of `{ n: 7, title: "…", wordCount: 25 }` is the same data with ten
- * times the punctuation, and a column that has drifted out of line is
+ * rows of `{ id: "L07", title: "…", wordCount: 25 }` is the same data with
+ * ten times the punctuation, and a column that has drifted out of line is
  * invisible in it.
- *
- * `n` is data rather than the array index on purpose: it is half of the id
- * that goes into `Session.mode` and outlives any re-ordering, so "1–100 with
- * no gaps" has to be a thing the tests can actually catch us getting wrong.
  */
 type LessonRow = readonly [
-  n: number,
+  id: string,
   title: string,
   /** The new keys as their own characters. "" where the doc prints —. */
   introduces: string,
@@ -244,7 +272,7 @@ type LessonRow = readonly [
  * above.
  */
 type StormRow = readonly [
-  n: number,
+  id: string,
   title: string,
   introduces: "",
   kind: "storm",
@@ -254,7 +282,7 @@ type StormRow = readonly [
 type Row = LessonRow | StormRow;
 
 /**
- * The hundred, transcribed from docs/typing.md §5.6. Three things an editor
+ * The ladder, transcribed from docs/typing.md §5.6. Four things an editor
  * needs before touching a column:
  *
  *   - **The wpm column drops every time keys arrive** and climbs back over the
@@ -264,147 +292,204 @@ type Row = LessonRow | StormRow;
  *     outward from the centre of the *board* instead, so `4 5` are both the
  *     left index's and `9 0` are the right ring and pinky. That is the
  *     standard finger assignment, not a slip.
- *   - **The tenth of every block is a checkpoint**, always `off` and always
- *     locked (§4.2). Lesson 1 is locked the other way, to `guide`, because a
- *     child who has never seen a keyboard cannot be asked to guess.
+ *   - **The last of every block is a checkpoint**, named in `CHECKPOINTS`,
+ *     always `off` and always locked (§4.2). Lesson 1 is locked the other
+ *     way, to `guide`, because a child who has never seen a keyboard cannot
+ *     be asked to guess.
+ *   - **A held-key pair follows the lesson that finishes the row of keys it
+ *     drills** (§5.8), right hand first — so each opens off the rung before
+ *     it like any other, and the pair's second opens off its first. The key
+ *     each one holds is in `HELD`, and nothing else about the row is special.
  */
 const ROWS: readonly Row[] = [
   // ── Block 1 · Home row ─────────────────────────────────────────────────────
-  [1, "Two keys", "fj", "keys", "guide!", 20, 8, 95],
-  [2, "Four keys", "dk", "keys", "guide!", 20, 8, 95],
-  [3, "Six keys", "sl", "keys", "guide!", 24, 9, 95],
-  [4, "Hailstorm · First ice", "", "storm", "guide!"],
-  [5, "Both pinkies", "a;", "keys", "guide!", 24, 9, 95],
-  [6, "The inside reach", "gh", "keys", "guide!", 24, 10, 95],
-  [7, "Home-row words", "", "words", "guide", 25, 11, 95],
-  [8, "Pairs that repeat", "", "bigrams", "guide", 25, 11, 95],
-  [9, "Hailstorm · Home row", "", "storm", "guide"],
-  [10, "Checkpoint · Home row", "", "words", "off!", 30, 12, 97],
+  ["L01", "Two keys", "fj", "keys", "guide!", 20, 8, 95],
+  ["L02", "Four keys", "dk", "keys", "guide!", 20, 8, 95],
+  ["L03", "Six keys", "sl", "keys", "guide!", 24, 9, 95],
+  ["L04", "Hailstorm · First ice", "", "storm", "guide!"],
+  ["L05", "Both pinkies", "a;", "keys", "guide!", 24, 9, 95],
+  ["L06", "The inside reach", "gh", "keys", "guide!", 24, 10, 95],
+  ["H01", "Right hand · Home row", "hjkl;", "keys", "guide!", 24, 8, 95],
+  ["H02", "Left hand · Home row", "asdfg", "keys", "guide!", 24, 8, 95],
+  ["L07", "Home-row words", "", "words", "guide", 25, 11, 95],
+  ["L08", "Pairs that repeat", "", "bigrams", "guide", 25, 11, 95],
+  ["L09", "Hailstorm · Home row", "", "storm", "guide"],
+  ["L10", "Checkpoint · Home row", "", "words", "off!", 30, 12, 97],
 
   // ── Block 2 · Reaching up ──────────────────────────────────────────────────
-  [11, "Up to e and i", "ei", "keys", "guide!", 24, 9, 95],
-  [12, "Up to r and u", "ru", "keys", "guide!", 24, 9, 95],
-  [13, "Hailstorm · Eight lanes", "", "storm", "guide"],
-  [14, "The long reach", "ty", "keys", "guide!", 24, 10, 95],
-  [15, "Up to w and o", "wo", "keys", "guide!", 26, 10, 95],
-  [16, "Real words at last", "", "words", "guide", 30, 12, 95],
-  [17, "The corners", "qp", "keys", "guide!", 26, 10, 95],
-  [18, "th · he · er · re", "", "bigrams", "guide", 30, 13, 95],
-  [19, "Hailstorm · Two rows", "", "storm", "keys"],
-  [20, "Checkpoint · Two rows", "", "words", "off!", 35, 15, 97],
+  ["L11", "Up to e and i", "ei", "keys", "guide!", 24, 9, 95],
+  ["L12", "Up to r and u", "ru", "keys", "guide!", 24, 9, 95],
+  ["L13", "Hailstorm · Eight lanes", "", "storm", "guide"],
+  ["L14", "The long reach", "ty", "keys", "guide!", 24, 10, 95],
+  ["L15", "Up to w and o", "wo", "keys", "guide!", 26, 10, 95],
+  ["L16", "Real words at last", "", "words", "guide", 30, 12, 95],
+  ["L17", "The corners", "qp", "keys", "guide!", 26, 10, 95],
+  ["H03", "Right hand · Reaching up", "yuiop", "keys", "guide!", 26, 9, 95],
+  ["H04", "Left hand · Reaching up", "qwert", "keys", "guide!", 26, 9, 95],
+  ["L18", "th · he · er · re", "", "bigrams", "guide", 30, 13, 95],
+  ["L19", "Hailstorm · Two rows", "", "storm", "keys"],
+  ["L20", "Checkpoint · Two rows", "", "words", "off!", 35, 15, 97],
 
   // ── Block 3 · Reaching down ────────────────────────────────────────────────
-  [21, "Down to v and m", "vm", "keys", "guide!", 26, 11, 95],
-  [22, "c, and the comma", "c,", "keys", "guide!", 26, 11, 95],
-  [23, "Hailstorm · Down low", "", "storm", "guide"],
-  [24, "x, and the full stop", "x.", "keys", "guide!", 26, 12, 95],
-  [25, "The last corner", "z/", "keys", "guide!", 26, 12, 95],
-  [26, "The last two", "bn", "keys", "guide!", 28, 12, 95],
-  [27, "Every letter", "", "words", "guide", 35, 14, 95],
-  [28, "an · in · on · nd · nt", "", "bigrams", "keys", 35, 15, 95],
-  [29, "Hailstorm · Whole alphabet", "", "storm", "keys"],
-  [30, "Checkpoint · Every letter", "", "sentences", "off!", 40, 18, 97],
+  ["L21", "Down to v and m", "vm", "keys", "guide!", 26, 11, 95],
+  ["L22", "c, and the comma", "c,", "keys", "guide!", 26, 11, 95],
+  ["L23", "Hailstorm · Down low", "", "storm", "guide"],
+  ["L24", "x, and the full stop", "x.", "keys", "guide!", 26, 12, 95],
+  ["L25", "The last corner", "z/", "keys", "guide!", 26, 12, 95],
+  ["L26", "The last two", "bn", "keys", "guide!", 28, 12, 95],
+  ["H05", "Right hand · Reaching down", "nm,./", "keys", "guide!", 28, 10, 95],
+  ["H06", "Left hand · Reaching down", "zxcvb", "keys", "guide!", 28, 10, 95],
+  ["L27", "Every letter", "", "words", "guide", 35, 14, 95],
+  ["L28", "an · in · on · nd · nt", "", "bigrams", "keys", 35, 15, 95],
+  ["L29", "Hailstorm · Whole alphabet", "", "storm", "keys"],
+  ["L30", "Checkpoint · Every letter", "", "sentences", "off!", 40, 18, 97],
 
   // ── Block 4 · Capitals ─────────────────────────────────────────────────────
   // A shift is not a character, so what these two lessons introduce is the set
   // of capitals each one *reaches* — the right shift capitalises the left
   // hand's letters and the left shift the right hand's. `keys.ts` reads the
   // shifts back out of these two rows; there is nowhere else they are written.
-  [31, "The right shift", "QWERTASDFGZXCVB", "keys", "guide!", 30, 13, 95],
-  [32, "The left shift", "YUIOPHJKLNM", "keys", "guide!", 30, 13, 95],
-  [33, "Names, and the word I", "", "words", "guide", 35, 15, 95],
-  [34, "Hailstorm · Capitals", "", "storm", "keys"],
-  [35, "The apostrophe", "'", "keys", "guide!", 30, 14, 95],
-  [36, "First sentences", "", "sentences", "keys", 35, 16, 95],
-  [37, "Where the comma goes", "", "sentences", "keys", 40, 17, 95],
-  [38, "Places and people", "", "sentences", "keys", 40, 18, 95],
-  [39, "Hailstorm · Shift under fire", "", "storm", "off"],
-  [40, "Checkpoint · Real sentences", "", "sentences", "off!", 45, 20, 97],
+  ["L31", "The right shift", "QWERTASDFGZXCVB", "keys", "guide!", 30, 13, 95],
+  ["L32", "The left shift", "YUIOPHJKLNM", "keys", "guide!", 30, 13, 95],
+  ["L33", "Names, and the word I", "", "words", "guide", 35, 15, 95],
+  ["L34", "Hailstorm · Capitals", "", "storm", "keys"],
+  ["L35", "The apostrophe", "'", "keys", "guide!", 30, 14, 95],
+  ["L36", "First sentences", "", "sentences", "keys", 35, 16, 95],
+  ["L37", "Where the comma goes", "", "sentences", "keys", 40, 17, 95],
+  ["L38", "Places and people", "", "sentences", "keys", 40, 18, 95],
+  ["L39", "Hailstorm · Shift under fire", "", "storm", "off"],
+  ["L40", "Checkpoint · Real sentences", "", "sentences", "off!", 45, 20, 97],
 
   // ── Block 5 · Fluency ──────────────────────────────────────────────────────
-  // The bar climbs fastest here (§6.3) but not *monotonically*: 44 and 47 ask
+  // The bar climbs fastest here (§6.3) but not *monotonically*: 50 and 53 ask
   // for less than the lesson before them because harder material is the point
   // of them, not because the column slipped.
-  [41, "The twenty-five", "", "words", "keys", 40, 18, 95],
-  [42, "th · he · in · er", "", "bigrams", "keys", 40, 19, 95],
-  [43, "an · re · on · at · en", "", "bigrams", "keys", 40, 20, 95],
-  [44, "The hard pairs", "", "bigrams", "keys", 40, 19, 95],
-  [45, "Hailstorm · Pairs", "", "storm", "keys"],
-  [46, "Hands that take turns", "", "words", "off", 45, 22, 95],
-  [47, "One hand at a time", "", "words", "keys", 40, 20, 95],
-  [48, "The hundred", "", "words", "off", 50, 24, 95],
-  [49, "Hailstorm · Whole words", "", "storm", "off"],
-  [50, "Checkpoint · Fluent", "", "passage", "off!", 60, 25, 97],
+  ["L41", "The twenty-five", "", "words", "keys", 40, 18, 95],
+  ["L42", "th · he · in · er", "", "bigrams", "keys", 40, 19, 95],
+  ["L43", "an · re · on · at · en", "", "bigrams", "keys", 40, 20, 95],
+  ["L44", "The hard pairs", "", "bigrams", "keys", 40, 19, 95],
+  ["L45", "Hailstorm · Pairs", "", "storm", "keys"],
+  ["L46", "Hands that take turns", "", "words", "off", 45, 22, 95],
+  ["L47", "One hand at a time", "", "words", "keys", 40, 20, 95],
+  ["H07", "Right hand · Words", "", "words", "keys!", 30, 14, 95],
+  ["H08", "Left hand · Words", "", "words", "keys!", 30, 14, 95],
+  ["L48", "The hundred", "", "words", "off", 50, 24, 95],
+  ["L49", "Hailstorm · Whole words", "", "storm", "off"],
+  ["L50", "Checkpoint · Fluent", "", "passage", "off!", 60, 25, 97],
 
   // ── Block 6 · Numbers ──────────────────────────────────────────────────────
-  [51, "Four and five", "45", "keys", "guide!", 30, 16, 95],
-  [52, "Three and six", "36", "keys", "guide!", 30, 16, 95],
-  [53, "Hailstorm · Digits", "", "storm", "guide"],
-  [54, "Two and seven", "27", "keys", "guide!", 30, 17, 95],
-  [55, "One and eight", "18", "keys", "guide!", 30, 17, 95],
-  [56, "Nine and nought", "90", "keys", "guide!", 30, 18, 95],
-  [57, "Ages, dates and scores", "", "numbers", "keys", 40, 19, 95],
-  [58, "Words and numbers together", "", "mixed", "keys", 45, 20, 95],
-  [59, "Hailstorm · Numbers falling", "", "storm", "keys"],
-  [60, "Checkpoint · Numbers", "", "mixed", "off!", 50, 22, 97],
+  ["L51", "Four and five", "45", "keys", "guide!", 30, 16, 95],
+  ["L52", "Three and six", "36", "keys", "guide!", 30, 16, 95],
+  ["L53", "Hailstorm · Digits", "", "storm", "guide"],
+  ["L54", "Two and seven", "27", "keys", "guide!", 30, 17, 95],
+  ["L55", "One and eight", "18", "keys", "guide!", 30, 17, 95],
+  ["L56", "Nine and nought", "90", "keys", "guide!", 30, 18, 95],
+  ["H09", "Right hand · Numbers", "67890", "keys", "guide!", 30, 15, 95],
+  ["H10", "Left hand · Numbers", "12345", "keys", "guide!", 30, 15, 95],
+  ["L57", "Ages, dates and scores", "", "numbers", "keys", 40, 19, 95],
+  ["L58", "Words and numbers together", "", "mixed", "keys", 45, 20, 95],
+  ["L59", "Hailstorm · Numbers falling", "", "storm", "keys"],
+  ["L60", "Checkpoint · Numbers", "", "mixed", "off!", 50, 22, 97],
 
   // ── Block 7 · Punctuation ──────────────────────────────────────────────────
   // Two rows re-introduce a character the ladder already unlocked — `;` from
-  // lesson 5, `/` from lesson 25 — in their punctuation role. The unlocked
+  // lesson 5, `/` from lesson 29 — in their punctuation role. The unlocked
   // alphabet is a union, so saying it twice changes nothing about what a child
   // may type; what it does is put the character back under the new-key gate.
-  [61, "Asking and shouting", "?!", "keys", "guide!", 35, 18, 95],
-  [62, "Speech marks", '"', "keys", "guide!", 35, 18, 95],
-  [63, "Hyphen and underscore", "-_", "keys", "guide!", 35, 19, 95],
-  [64, "Colon and semicolon", ":;", "keys", "guide!", 35, 19, 95],
-  [65, "Hailstorm · Punctuation", "", "storm", "keys"],
-  [66, "Brackets", "()", "keys", "guide!", 35, 19, 95],
-  [67, "Above the numbers", "@#$%&*", "keys", "guide!", 35, 18, 95],
-  [68, "Slash, plus, equals", "/\\+=", "keys", "guide!", 35, 19, 95],
-  [69, "Hailstorm · Symbols", "", "storm", "off"],
-  [70, "Checkpoint · Punctuated", "", "passage", "off!", 55, 24, 97],
+  ["L61", "Asking and shouting", "?!", "keys", "guide!", 35, 18, 95],
+  ["L62", "Speech marks", '"', "keys", "guide!", 35, 18, 95],
+  ["L63", "Hyphen and underscore", "-_", "keys", "guide!", 35, 19, 95],
+  ["L64", "Colon and semicolon", ":;", "keys", "guide!", 35, 19, 95],
+  ["L65", "Hailstorm · Punctuation", "", "storm", "keys"],
+  ["L66", "Brackets", "()", "keys", "guide!", 35, 19, 95],
+  ["L67", "Above the numbers", "@#$%&*", "keys", "guide!", 35, 18, 95],
+  ["L68", "Slash, plus, equals", "/\\+=", "keys", "guide!", 35, 19, 95],
+  ["L69", "Hailstorm · Symbols", "", "storm", "off"],
+  ["L70", "Checkpoint · Punctuated", "", "passage", "off!", 55, 24, 97],
 
   // ── Block 8 · Endurance ────────────────────────────────────────────────────
   // The accuracy bar moves to 96% here — the first of several places §6.2's
-  // flat 95/97 line bends. Block 9's checkpoint (90) bends the same way, so
-  // does block 10's prose (91–96), and lesson 97 bends the other way at 99%.
+  // flat 95/97 line bends. Block 9's checkpoint (100) bends the same way, so
+  // does block 10's prose (101–106), and lesson 107 bends the other way at
+  // 99%.
   // An accuracy column "corrected" back to a flat 95/97 would be wrong from
   // here to the end of the ladder.
-  [71, "Sixty words", "", "passage", "off", 60, 22, 96],
-  [72, "A whole paragraph", "", "passage", "off", 70, 23, 96],
-  [73, "Hailstorm · The long wave", "", "storm", "off"],
-  [74, "The sight words, again", "", "words", "off", 60, 24, 96],
-  [75, "Verses", "", "passage", "off", 70, 24, 96],
-  [76, "Someone speaking", "", "passage", "off", 70, 25, 96],
-  [77, "Eighty words", "", "passage", "off", 80, 26, 96],
-  [78, "Numbers in prose", "", "passage", "off", 80, 26, 96],
-  [79, "Hailstorm · No repairs", "", "storm", "off"],
-  [80, "Checkpoint · A hundred words", "", "passage", "off!", 100, 28, 97],
+  ["L71", "Sixty words", "", "passage", "off", 60, 22, 96],
+  ["L72", "A whole paragraph", "", "passage", "off", 70, 23, 96],
+  ["L73", "Hailstorm · The long wave", "", "storm", "off"],
+  ["L74", "The sight words, again", "", "words", "off", 60, 24, 96],
+  ["L75", "Verses", "", "passage", "off", 70, 24, 96],
+  ["L76", "Someone speaking", "", "passage", "off", 70, 25, 96],
+  ["L77", "Eighty words", "", "passage", "off", 80, 26, 96],
+  ["L78", "Numbers in prose", "", "passage", "off", 80, 26, 96],
+  ["L79", "Hailstorm · No repairs", "", "storm", "off"],
+  ["L80", "Checkpoint · A hundred words", "", "passage", "off!", 100, 28, 97],
 
   // ── Block 9 · Speed ────────────────────────────────────────────────────────
-  [81, "Sprint · Common words", "", "sprint", "off", 30, 28, 95],
-  [82, "Sprint · Alternating hands", "", "sprint", "off", 30, 30, 95],
-  [83, "Hailstorm · Hard rain", "", "storm", "off"],
-  [84, "Sprint · The hard pairs", "", "sprint", "off", 30, 28, 95],
-  [85, "Sprint · Capitals", "", "sprint", "off", 30, 29, 95],
-  [86, "Sprint · Numbers", "", "sprint", "off", 30, 26, 95],
-  [87, "Sprint · Punctuation", "", "sprint", "off", 30, 28, 95],
-  [88, "A solid minute", "", "passage", "off", 90, 32, 95],
-  [89, "Hailstorm · Whiteout", "", "storm", "off"],
-  [90, "Checkpoint · Thirty-five", "", "passage", "off!", 80, 35, 96],
+  ["L81", "Sprint · Common words", "", "sprint", "off", 30, 28, 95],
+  ["L82", "Sprint · Alternating hands", "", "sprint", "off", 30, 30, 95],
+  ["L83", "Hailstorm · Hard rain", "", "storm", "off"],
+  ["L84", "Sprint · The hard pairs", "", "sprint", "off", 30, 28, 95],
+  ["L85", "Sprint · Capitals", "", "sprint", "off", 30, 29, 95],
+  ["L86", "Sprint · Numbers", "", "sprint", "off", 30, 26, 95],
+  ["L87", "Sprint · Punctuation", "", "sprint", "off", 30, 28, 95],
+  ["L88", "A solid minute", "", "passage", "off", 90, 32, 95],
+  ["L89", "Hailstorm · Whiteout", "", "storm", "off"],
+  ["L90", "Checkpoint · Thirty-five", "", "passage", "off!", 80, 35, 96],
 
   // ── Block 10 · Everything ──────────────────────────────────────────────────
-  [91, "Mixed prose", "", "passage", "off", 90, 30, 96],
-  [92, "Prose with numbers", "", "mixed", "off", 90, 30, 96],
-  [93, "Hailstorm · Everything falls", "", "storm", "off"],
-  [94, "A long verse", "", "passage", "off", 100, 31, 96],
-  [95, "An address, a price, a date", "", "mixed", "off", 80, 30, 96],
-  [96, "A hundred and twenty", "", "passage", "off", 120, 32, 96],
-  [97, "The accuracy run", "", "passage", "off", 80, 28, 99],
-  [98, "Sprint · Everything", "", "sprint", "off", 40, 36, 95],
-  [99, "Hailstorm · The last storm", "", "storm", "off"],
-  [100, "The Ice Exam", "", "passage", "off!", 150, 38, 97],
+  ["L91", "Mixed prose", "", "passage", "off", 90, 30, 96],
+  ["L92", "Prose with numbers", "", "mixed", "off", 90, 30, 96],
+  ["L93", "Hailstorm · Everything falls", "", "storm", "off"],
+  ["L94", "A long verse", "", "passage", "off", 100, 31, 96],
+  ["L95", "An address, a price, a date", "", "mixed", "off", 80, 30, 96],
+  ["L96", "A hundred and twenty", "", "passage", "off", 120, 32, 96],
+  ["L97", "The accuracy run", "", "passage", "off", 80, 28, 99],
+  ["L98", "Sprint · Everything", "", "sprint", "off", 40, 36, 95],
+  ["L99", "Hailstorm · The last storm", "", "storm", "off"],
+  ["L100", "The Ice Exam", "", "passage", "off!", 150, 38, 97],
 ];
+
+/**
+ * The ten checkpoints, which is also where the blocks end: a block is the
+ * rows up to and including its checkpoint, so weaving a lesson into one
+ * lengthens it rather than renumbering the block after (§5.5).
+ */
+const CHECKPOINTS: ReadonlySet<string> = new Set([
+  "L10",
+  "L20",
+  "L30",
+  "L40",
+  "L50",
+  "L60",
+  "L70",
+  "L80",
+  "L90",
+  "L100",
+]);
+
+/**
+ * The key each held-key lesson holds down for the whole run (§5.8), by id.
+ *
+ * A side table like `BIGRAMS` rather than a ninth column, so the rows above
+ * stay one line each. Always `f` or `j` (decision 75): the two keys with a
+ * bump, the index finger's home, and neither opens an accent menu on a long
+ * press. `lessons.test.ts` holds every key drilled to the free hand and to
+ * the alphabet unlocked by then; a capital or a shifted mark can never be,
+ * because the shift is the pinned hand's.
+ */
+const HELD: Record<string, string> = {
+  H01: "f",
+  H02: "j",
+  H03: "f",
+  H04: "j",
+  H05: "f",
+  H06: "j",
+  H07: "f",
+  H08: "j",
+  H09: "f",
+  H10: "j",
+};
 
 /**
  * One storm, as §5.7's table writes it: the six numbers that make a level, its
@@ -416,7 +501,7 @@ const ROWS: readonly Row[] = [
  * rather than two brackets across a row.
  */
 type StormWaveRow = readonly [
-  n: number,
+  id: string,
   count: number,
   gapFrom: number,
   gapTo: number,
@@ -439,31 +524,31 @@ type StormWaveRow = readonly [
  * and re-derives every seed rather than trusting the column (decision 58).
  */
 const STORM_WAVES: readonly StormWaveRow[] = [
-  //  n  len       gap        fall  shield repair seed  focus
-  [4, 12, 1500, 1900, 900, 1200, 4, 4, 6],
-  [9, 16, 1300, 1600, 900, 1250, 3, 4, 9],
-  [13, 18, 1200, 1500, 900, 1150, 3, 4, 13],
-  [19, 20, 1000, 1300, 1000, 1500, 3, 4, 19],
-  [23, 22, 900, 1200, 1100, 1600, 3, 5, 23],
-  [29, 24, 800, 1100, 1200, 1700, 3, 5, 29],
-  [34, 26, 750, 1050, 1200, 1800, 3, 5, 34, "capitals"],
-  [39, 28, 700, 1000, 1300, 1900, 3, 5, 39, "capitals"],
-  [45, 30, 650, 950, 1300, 2000, 3, 6, 45],
-  [49, 32, 600, 900, 1400, 2000, 3, 6, 49],
-  [53, 30, 700, 1000, 1300, 1800, 3, 6, 55, "digits"],
-  [59, 34, 600, 850, 1400, 2000, 3, 6, 59, "digits"],
-  [65, 34, 600, 850, 1400, 2100, 3, 6, 66, "marks"],
-  [69, 36, 550, 800, 1500, 2100, 3, 6, 69, "marks"],
-  [73, 50, 550, 800, 1500, 2200, 3, 8, 74],
-  [79, 36, 500, 750, 1400, 2000, 3, 0, 79],
-  [83, 40, 450, 650, 1300, 1900, 3, 0, 83],
-  [89, 44, 300, 450, 1900, 2600, 3, 0, 95],
-  [93, 46, 350, 550, 1300, 1900, 2, 0, 95],
-  [99, 50, 300, 500, 1200, 1800, 2, 0, 99],
+  // id     len       gap        fall  shield repair seed  focus
+  ["L04", 12, 1500, 1900, 900, 1200, 4, 4, 6],
+  ["L09", 16, 1300, 1600, 900, 1250, 3, 4, 9],
+  ["L13", 18, 1200, 1500, 900, 1150, 3, 4, 13],
+  ["L19", 20, 1000, 1300, 1000, 1500, 3, 4, 19],
+  ["L23", 22, 900, 1200, 1100, 1600, 3, 5, 23],
+  ["L29", 24, 800, 1100, 1200, 1700, 3, 5, 29],
+  ["L34", 26, 750, 1050, 1200, 1800, 3, 5, 34, "capitals"],
+  ["L39", 28, 700, 1000, 1300, 1900, 3, 5, 39, "capitals"],
+  ["L45", 30, 650, 950, 1300, 2000, 3, 6, 45],
+  ["L49", 32, 600, 900, 1400, 2000, 3, 6, 49],
+  ["L53", 30, 700, 1000, 1300, 1800, 3, 6, 55, "digits"],
+  ["L59", 34, 600, 850, 1400, 2000, 3, 6, 59, "digits"],
+  ["L65", 34, 600, 850, 1400, 2100, 3, 6, 66, "marks"],
+  ["L69", 36, 550, 800, 1500, 2100, 3, 6, 69, "marks"],
+  ["L73", 50, 550, 800, 1500, 2200, 3, 8, 74],
+  ["L79", 36, 500, 750, 1400, 2000, 3, 0, 79],
+  ["L83", 40, 450, 650, 1300, 1900, 3, 0, 83],
+  ["L89", 44, 300, 450, 1900, 2600, 3, 0, 95],
+  ["L93", 46, 350, 550, 1300, 1900, 2, 0, 95],
+  ["L99", 50, 300, 500, 1200, 1800, 2, 0, 99],
 ];
 
 /**
- * The twenty, by the rung that hosts them.
+ * The twenty, by the id of the rung that hosts them.
  *
  * `satisfies StormShape` and not only the `Map`'s type argument, because the
  * two are not the same check: excess properties do not survive a `.map` into a
@@ -473,11 +558,11 @@ const STORM_WAVES: readonly StormWaveRow[] = [
  * what makes "a storm cannot name its own keys" (decision 56) something the
  * compiler refuses rather than something the spread order rescues.
  */
-const WAVE_BY_N = new Map<number, StormShape>(
-  STORM_WAVES.map(([n, count, gapFrom, gapTo, fallFrom, fallTo, ...rest]) => {
+const WAVE_BY_ID = new Map<string, StormShape>(
+  STORM_WAVES.map(([id, count, gapFrom, gapTo, fallFrom, fallTo, ...rest]) => {
     const [shield, repairAt, seed, focus] = rest;
     return [
-      n,
+      id,
       {
         count,
         gap: [gapFrom, gapTo],
@@ -492,12 +577,6 @@ const WAVE_BY_N = new Map<number, StormShape>(
 );
 
 // ── Table → lessons ──────────────────────────────────────────────────────────
-
-/**
- * "L07", and "L100". Two digits because that is what `Session.mode` has to
- * keep saying forever (§5.1); the hundredth simply runs over.
- */
-const idFor = (n: number) => `L${String(n).padStart(2, "0")}`;
 
 /**
  * The ⌨ cell with the lock taken off it.
@@ -522,38 +601,37 @@ const MODE_OF: Record<Keyboard, KeyboardMode> = {
  * `Exclude<RowKind, "storm">` on the parameter is what makes reaching for it
  * here a type error rather than a `{ type: "storm" }` missing its wave.
  */
-const kindFor = (n: number, kind: Exclude<RowKind, "storm">): LessonKind =>
-  kind === "bigrams" ? { type: "bigrams", focus: BIGRAMS[n] } : { type: kind };
+const kindFor = (id: string, kind: Exclude<RowKind, "storm">): LessonKind =>
+  kind === "bigrams" ? { type: "bigrams", focus: BIGRAMS[id] } : { type: kind };
 
-function toLesson(row: Row): Lesson {
-  const [n, title, introduced, , keyboard] = row;
+function toLesson(row: Row, n: number, block: number): Lesson {
+  const [id, title, introduced, , keyboard] = row;
   const locked = keyboard.endsWith("!");
   const introduces = [...introduced];
+  const hold = HELD[id];
   const base = {
     n,
-    id: idFor(n),
-    block: Math.ceil(n / 10),
+    id,
+    block,
     title,
     introduces,
     keyboard: MODE_OF[keyboard],
     // Undefined rather than false: `keyboardLocked?: true` is the shape §4.2
     // asks for, and an unlocked row is the ordinary case.
     ...(locked ? { keyboardLocked: true } : {}),
-    // Derived rather than written on the row, for the same reason `block` is:
-    // a checkpoint is a *position* in the ladder, and a row that could
-    // disagree with its own position is a row that will.
-    ...(n % 10 === 0 ? { checkpoint: true as const } : {}),
+    ...(CHECKPOINTS.has(id) ? { checkpoint: true as const } : {}),
+    ...(hold !== undefined ? { hold } : {}),
   };
 
   if (row[3] === "storm") {
-    const wave = WAVE_BY_N.get(n);
+    const wave = WAVE_BY_ID.get(id);
     // A storm row with no wave is a table that has stopped describing itself,
     // and it can only be reached by editing one of the two above without the
     // other — never by anything a child does and never by anything already
     // saved. So it is loud at module load, where `storms.test.ts` meets it on
     // its first assertion, rather than a stand-in storm nobody chose or an
     // `undefined` that reaches the field as a crash mid-run.
-    if (!wave) throw new Error(`lesson ${n} is a storm with no wave`);
+    if (!wave) throw new Error(`${id} is a storm with no wave`);
     return {
       ...base,
       kind: { type: "storm", wave },
@@ -573,23 +651,59 @@ function toLesson(row: Row): Lesson {
   const [, , , kind, , wordCount, wpm, accuracy] = row;
   return {
     ...base,
-    kind: kindFor(n, kind),
+    kind: kindFor(id, kind),
     wordCount,
-    pass: {
-      kind: "lesson",
-      accuracy: accuracy / 100,
-      wpm,
-      keyAccuracy: NEW_KEY_ACCURACY,
-      keyStrikes: strikesFor(introduces, wordCount),
-    },
+    pass: lessonPass(introduces, wordCount, wpm, accuracy),
   };
 }
 
-/** The ladder, in order. Exactly a hundred, and `LESSONS[i].n === i + 1`. */
-export const LESSONS: readonly Lesson[] = ROWS.map(toLesson);
+/** The three bars, from the last three columns of a row (§6.1). */
+const lessonPass = (
+  introduces: string[],
+  wordCount: number,
+  wpm: number,
+  accuracy: number,
+): PassCriteria => ({
+  kind: "lesson",
+  accuracy: accuracy / 100,
+  wpm,
+  keyAccuracy: NEW_KEY_ACCURACY,
+  keyStrikes: strikesFor(introduces, wordCount),
+});
 
 /**
- * The same hundred by the id a run is filed under.
+ * The ladder, in order: `LESSONS[i].n === i + 1`, and a block is the rows up
+ * to its checkpoint.
+ */
+export const LESSONS: readonly Lesson[] = (() => {
+  const lessons: Lesson[] = [];
+  let block = 1;
+  for (const row of ROWS) {
+    lessons.push(toLesson(row, lessons.length + 1, block));
+    if (CHECKPOINTS.has(row[0])) block += 1;
+  }
+  return lessons;
+})();
+
+/** A lesson with a held key, which is what every screen that pins a hand takes. */
+export type HeldKeyLesson = Lesson & { hold: string };
+
+/**
+ * Is this a held-key lesson?
+ *
+ * Takes `null` and `undefined` for the same reason `isStormLesson` does: what
+ * its callers hold is whatever `lessonById` answered.
+ */
+export const isHeldKeyLesson = (
+  lesson: Lesson | null | undefined,
+): lesson is HeldKeyLesson => typeof lesson?.hold === "string";
+
+/** The ten, in ladder order — a view of `LESSONS`, not a second table. */
+export const HELD_KEY_LESSONS: readonly HeldKeyLesson[] =
+  LESSONS.filter(isHeldKeyLesson);
+
+/**
+ * The ladder by the id a run is filed under.
  *
  * `TypingConfig.lessonId` and the half of `Session.mode` after the `typing:`
  * prefix are the same string, and this is the one place it is resolved.
@@ -608,14 +722,14 @@ const BY_ID = new Map(LESSONS.map((lesson) => [lesson.id, lesson]));
 export const lessonById = (id?: string | null): Lesson | null =>
   (id ? BY_ID.get(id) : undefined) ?? null;
 
-/** The same hundred by the number a child sees, for walking up the ladder. */
+/** The same ladder by the number a child sees, for walking up it. */
 const BY_NUMBER = new Map(LESSONS.map((lesson) => [lesson.n, lesson]));
 
 /**
  * The lesson at this rung, or `null` for a number off either end of the ladder.
  *
  * Total for the same reason `lessonById` is: the callers are screens asking
- * where a child goes next, and `best + 1` at the top of the hundred, or a rung
+ * where a child goes next, and `best + 1` at the top of the ladder, or a rung
  * a re-cut ladder no longer has, is an answer to give rather than a case to
  * throw on.
  */

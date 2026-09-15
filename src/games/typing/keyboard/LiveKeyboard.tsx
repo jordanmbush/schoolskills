@@ -29,6 +29,7 @@ import type { KeyboardMode } from "@/engine/types";
 export function LiveKeyboard({
   mode,
   next,
+  hold = null,
 }: {
   /**
    * How much board to draw. "off" is absent because that decision belongs to
@@ -40,6 +41,8 @@ export function LiveKeyboard({
    * on one — before the countdown clears, and once the run is over.
    */
   next: string | null;
+  /** The key a held-key lesson holds, and whether it is down (§5.8). */
+  hold?: { code: string; held: boolean } | null;
 }) {
   /**
    * The expectation is the real next character in BOTH modes, and only the
@@ -51,7 +54,10 @@ export function LiveKeyboard({
    * that is the rung of the ladder they are on. Passing `null` here to match
    * the hint would turn every wrong key green.
    */
-  const { down, wrong } = useKeyEcho({ expect: next });
+  const { down, wrong } = useKeyEcho({
+    expect: next,
+    ignore: hold?.code ?? null,
+  });
 
   /**
    * The board's other half of the same answer, and deliberately not handed
@@ -60,6 +66,11 @@ export function LiveKeyboard({
   useKeyClack();
 
   return (
-    <Keyboard down={down} wrong={wrong} next={mode === "guide" ? next : null} />
+    <Keyboard
+      down={down}
+      wrong={wrong}
+      next={mode === "guide" ? next : null}
+      hold={hold}
+    />
   );
 }

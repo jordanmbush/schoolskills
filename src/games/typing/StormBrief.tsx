@@ -45,10 +45,10 @@ export function StormBrief({
   /* Can anything in this storm ask for a shift?
      Asked of the pool rather than of `focus`, because the two answer different
      questions. `focus` is what a level MOSTLY rains, and it stops being the
-     whole story the moment capitals are unlocked: from lesson 34 up they are
+     whole story the moment capitals are unlocked: from lesson 40 up they are
      in every wave's pool (§5.6), so "Pairs" and "The long wave" rain them
      without being about them. A rule that only appeared on the two levels
-     named for it would leave a child losing ten points on lesson 45 with
+     named for it would leave a child losing ten points on lesson 51 with
      nothing on screen that had ever mentioned it (decision 70).
 
      `unlockedAt(n)` is the same set `stormWave` draws this level's letters

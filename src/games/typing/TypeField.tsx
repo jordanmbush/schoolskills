@@ -18,6 +18,7 @@ export function TypeField({
   value,
   index,
   disabled,
+  hint,
   onChange,
   onCommit,
 }: {
@@ -25,6 +26,12 @@ export function TypeField({
   /** Which word is live. Refocuses if focus was lost between words. */
   index: number;
   disabled: boolean;
+  /**
+   * What the line under the field says instead of how to move on, when the
+   * run has something more pressing to say — a held-key lesson whose key is
+   * up (§5.8). `loud` is that case: the field is closed until it is answered.
+   */
+  hint?: { text: string; loud?: boolean };
   onChange: (value: string) => void;
   onCommit: (typed: string) => void;
 }) {
@@ -66,8 +73,14 @@ export function TypeField({
           if (event.key === "Backspace" && value === "") event.preventDefault();
         }}
       />
-      <p className="typefield__hint">
-        Space for the next word · Enter to finish the last one
+      {/* Live, because on a held-key lesson this is the one line that says
+          why nothing is happening, and the board that says it too is hidden
+          from a screen reader (§4.4). On every other run it never changes. */}
+      <p
+        className={`typefield__hint${hint?.loud ? " is-loud" : ""}`}
+        aria-live="polite"
+      >
+        {hint?.text ?? "Space for the next word · Enter to finish the last one"}
       </p>
     </div>
   );

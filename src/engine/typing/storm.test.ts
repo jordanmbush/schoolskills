@@ -73,19 +73,19 @@ const SPECS: [name: string, spec: WaveSpec][] = [
     "first ice",
     spec({ keys: ["f", "j"], count: 12, gap: [1400, 1800], fall: [900, 1200] }),
   ],
-  // Lesson 9. The home row, still one at a time, but only just.
+  // Lesson 11. The home row, still one at a time, but only just.
   [
     "home row",
     spec({
-      keys: [...unlockedAt(13)],
+      keys: [...unlockedAt(15)],
       count: 20,
       gap: [1200, 1500],
       fall: [800, 1200],
     }),
   ],
-  // Lesson 13 onwards. Overlapping, so the child has to work bottom-up.
+  // Lesson 15 onwards. Overlapping, so the child has to work bottom-up.
   ["eight lanes", spec({ keys: HOME, count: 24 })],
-  // Lesson 34. Capitals fall too — `A` and `a` are one key and two letters.
+  // Lesson 40. Capitals fall too — `A` and `a` are one key and two letters.
   [
     "capitals",
     spec({
@@ -95,7 +95,7 @@ const SPECS: [name: string, spec: WaveSpec][] = [
       fall: [1200, 2000],
     }),
   ],
-  // Lesson 59. Digits, which live on a row of their own.
+  // Lesson 69. Digits, which live on a row of their own.
   [
     "numbers falling",
     spec({
@@ -105,12 +105,12 @@ const SPECS: [name: string, spec: WaveSpec][] = [
       fall: [1300, 1900],
     }),
   ],
-  // Lesson 93. Everything the ladder ever hands over, including the space it
+  // Lesson 103. Everything the ladder ever hands over, including the space it
   // always carries, at speed and with no repairs.
   [
     "everything falls",
     spec({
-      keys: [...unlockedAt(100)],
+      keys: [...unlockedAt(110)],
       count: 40,
       gap: [200, 400],
       fall: [1400, 2400],
@@ -118,8 +118,8 @@ const SPECS: [name: string, spec: WaveSpec][] = [
       repairAt: 6,
     }),
   ],
-  // Lesson 73. Long, so a schedule that drifts has room to show it.
-  ["the long wave", spec({ keys: [...unlockedAt(100)], count: 60 })],
+  // Lesson 83. Long, so a schedule that drifts has room to show it.
+  ["the long wave", spec({ keys: [...unlockedAt(110)], count: 60 })],
 ];
 
 /**
@@ -881,7 +881,7 @@ describe("firing resolves the lowest letter, and nothing else", () => {
     });
 
     it("holds the same for a shifted mark as for a capital", () => {
-      // Lessons 65 and 69 rain punctuation, where `?` is shift-`/` and the
+      // Lessons 75 and 79 rain punctuation, where `?` is shift-`/` and the
       // two share a lane exactly as `A` and `a` do.
       const marks = to(runOf([at("?", 0, 1000)]), 400);
       expect(marks.wave.letters[0].code).toBe("Slash");
@@ -891,7 +891,7 @@ describe("firing resolves the lowest letter, and nothing else", () => {
     });
 
     it("leaves an unshifted character alone about the shift", () => {
-      // Every level below lesson 34 rains nothing else, so the default the
+      // Every level below lesson 40 rains nothing else, so the default the
       // reducer takes when a caller says nothing is the one that plays them.
       const state = to(runOf([at("f", 0, 1000)]), 400);
       expect(state.wave.letters[0].shifted).toBe(false);
@@ -1668,7 +1668,7 @@ describe("the per-zone tally the ending is named from", () => {
 });
 
 describe("the keys a zone covers", () => {
-  const POOL = [...unlockedAt(39)];
+  const POOL = [...unlockedAt(45)];
 
   it("is every character of the wave's own pool that finger types", () => {
     const wave = buildWave(spec({ keys: POOL }), 7);
@@ -1817,7 +1817,7 @@ describe("the drill a hole earns", () => {
      * and nothing else. Same call the record book makes for the facts a child
      * keeps missing (§8.5) — the question is different, the machinery is not.
      */
-    const wave = buildWave(spec({ keys: [...unlockedAt(39)], shield: 1 }), 42);
+    const wave = buildWave(spec({ keys: [...unlockedAt(45)], shield: 1 }), 42);
     const dead = tick(startStorm(wave), 600_000);
     const keys = stormReport(dead)!.breach!.keys;
 

@@ -1,4 +1,5 @@
 import { percent } from "@/engine/format";
+import type { Hold } from "@/engine/typing/hands";
 import { lessonNumbered, type Lesson } from "@/engine/typing/lessons";
 import type { LadderProgress } from "@/engine/typing/ladder";
 import type { KeyBar, Verdict } from "@/engine/typing/verdict";
@@ -19,7 +20,7 @@ import type { KeyBar, Verdict } from "@/engine/typing/verdict";
 /**
  * The new keys, as one bar.
  *
- * A lesson introduces two characters as a rule, but fifteen at lesson 31 — and
+ * A lesson introduces two characters as a rule, but fifteen at lesson 37 — and
  * fifteen bars is a wall rather than a signal. So the bar shown is the key
  * holding you up, because the gate is every key at once (§6.4).
  *
@@ -95,7 +96,7 @@ export function missNote(lesson: Lesson, verdict: Verdict): string {
  *
  * Unlock is `max(cleared) + 1`, so the run that just cleared the frontier is
  * the one whose number `best` now IS — which is the whole test for "did this
- * open anything". A child at lesson 41 replaying lesson 3 opens nothing, and is
+ * open anything". A child at lesson 47 replaying lesson 3 opens nothing, and is
  * told where they are up to instead.
  *
  * **The rung this hands back can be a Hailstorm level** (§8.8, decision 72),
@@ -111,7 +112,7 @@ export function missNote(lesson: Lesson, verdict: Verdict): string {
  * at a door the ladder had just locked would be the worse half of a guess that
  * is only ever a guess.
  *
- * At the top of the hundred there is nothing ahead and `next` is `null`.
+ * At the top of the ladder there is nothing ahead and `next` is `null`.
  */
 export function nextNote(
   lesson: Lesson,
@@ -144,7 +145,7 @@ export function nextNote(
  * What opens a lesson that is not open yet (§6.6).
  *
  * The rung below it, skipping any Hailstorm level in between (§8.8): clearing
- * lesson 44 is what opens lesson 46, and "pass lesson 45" would send a child at
+ * lesson 50 is what opens lesson 52, and "pass lesson 51" would send a child at
  * a wave they cannot play on a tablet.
  *
  * One sentence, because it is read on a tile as well as in the brief and ninety
@@ -165,4 +166,17 @@ export function lockNote(lesson: Lesson): string {
   return below
     ? `Pass lesson ${below.n} to open this one.`
     : "This one opens as you climb.";
+}
+
+/**
+ * The line under the field on a held-key lesson (§5.8): what to hold and with
+ * which finger while the key is up, and which hand types once it is down.
+ *
+ * The first is also what the 3·2·1 says if the key is let go during it,
+ * because the count waits on the hand the way the run does.
+ */
+export function holdNote(hold: Hold, held: boolean): string {
+  return held
+    ? `Holding ${hold.key} · type with your ${hold.free} hand · Space for the next word`
+    : `Hold the ${hold.key} key down with your ${hold.finger}`;
 }

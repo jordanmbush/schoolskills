@@ -2,13 +2,17 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
 import { ladderProgress, type LadderProgress } from "@/engine/typing/ladder";
-import { LESSONS, lessonNumbered } from "@/engine/typing/lessons";
+import {
+  HELD_KEY_LESSONS,
+  LESSONS,
+  lessonNumbered,
+} from "@/engine/typing/lessons";
 
 import { LessonLadder } from "./LessonLadder";
 import { tileState } from "./LessonTile";
 
 /**
- * The map, and which of its hundred doors are open (§6.6, §9).
+ * The map, and which of its hundred-odd doors are open (§6.6, §9).
  *
  * What progress *is* is pinned next door in `ladder.test.ts`; what this file
  * is for is the half of the unlock rule that lives on the screen. `next` is a
@@ -66,6 +70,19 @@ const tiles = (progress: LadderProgress, hasKeyboard = true): Tile[] =>
       shut: /aria-disabled="true"/.test(chunk),
     }));
 
+describe("tileState on a held-key lesson", () => {
+  const [H01] = HELD_KEY_LESSONS;
+
+  /** A rung like any other (§5.8): pointed at, opened and filled by number. */
+  it("is locked, next, then cleared, like the rungs either side", () => {
+    expect(tileState(H01, FRESH)).toBe("locked");
+    expect(tileState(H01, at(5, 6))).toBe("locked");
+    expect(tileState(H01, at(6, 7))).toBe("next");
+    expect(tileState(H01, at(7, 8))).toBe("cleared");
+    expect(tileState(H01, at(24, 25))).toBe("cleared");
+  });
+});
+
 describe("tileState", () => {
   it("points at the first lesson on a profile with no runs", () => {
     expect(tileState(lessonNumbered(1)!, FRESH)).toBe("next");
@@ -83,10 +100,10 @@ describe("tileState", () => {
   });
 
   it("fills what has been cleared and lights what is next", () => {
-    const progress = at(7, 8);
-    expect(tileState(lessonNumbered(7)!, progress)).toBe("cleared");
-    expect(tileState(lessonNumbered(8)!, progress)).toBe("next");
-    expect(tileState(lessonNumbered(9)!, progress)).toBe("locked");
+    const progress = at(9, 10);
+    expect(tileState(lessonNumbered(9)!, progress)).toBe("cleared");
+    expect(tileState(lessonNumbered(10)!, progress)).toBe("next");
+    expect(tileState(lessonNumbered(11)!, progress)).toBe("locked");
   });
 
   /**
@@ -118,13 +135,13 @@ describe("tileState", () => {
   });
 
   it("counts a cleared checkpoint as cleared, not as an open one", () => {
-    // Passing checkpoint 10 clears 1–10 with it, by `max`.
-    expect(tileState(lessonNumbered(10)!, at(10, 11))).toBe("cleared");
+    // Passing checkpoint 12 clears 1–12 with it, by `max`.
+    expect(tileState(lessonNumbered(12)!, at(12, 13))).toBe("cleared");
   });
 });
 
 describe("LessonLadder", () => {
-  it("draws the hundred as ten rows of ten, named", () => {
+  it("draws every lesson in ten named rows", () => {
     const html = renderToStaticMarkup(
       <LessonLadder progress={FRESH} hasKeyboard onOpen={() => {}} />,
     );
@@ -141,19 +158,19 @@ describe("LessonLadder", () => {
    * reader, and a hundred buttons called "7" is not a map.
    */
   it("says every tile's state out loud", () => {
-    const drawn = tiles(at(7, 8));
+    const drawn = tiles(at(9, 10));
     expect(drawn[0].label).toBe("Lesson 1, Two keys. Passed.");
-    expect(drawn[7].label).toBe("Lesson 8, Pairs that repeat. Start here.");
-    expect(drawn[9].label).toBe(
-      "Lesson 10, Checkpoint · Home row. Checkpoint — always open, whatever you have passed. Open.",
+    expect(drawn[9].label).toBe("Lesson 10, Pairs that repeat. Start here.");
+    expect(drawn[11].label).toBe(
+      "Lesson 12, Checkpoint · Home row. Checkpoint — always open, whatever you have passed. Open.",
     );
     // A storm says its own sentence first and then the same state every other
     // tile says out loud — here a rung this child has not reached, so it
     // carries what would open it as well.
-    expect(drawn[8].label).toBe(
-      "Lesson 9, Hailstorm · Home row. Hailstorm — worth playing, never required. Locked. Pass lesson 8 to open this one.",
+    expect(drawn[10].label).toBe(
+      "Lesson 11, Hailstorm · Home row. Hailstorm — worth playing, never required. Locked. Pass lesson 10 to open this one.",
     );
-    // And a storm this child has played fills like any other rung: `at(7, 8)`
+    // And a storm this child has played fills like any other rung: `at(9, 10)`
     // clears the first seven, lesson 4 among them.
     expect(drawn[3].label).toBe(
       "Lesson 4, Hailstorm · First ice. Hailstorm — worth playing, never required. Passed.",
@@ -192,7 +209,7 @@ describe("LessonLadder", () => {
    * being playable.
    */
   it("draws the storms as diamonds a child can enter", () => {
-    const drawn = tiles(at(99, 100));
+    const drawn = tiles(at(109, 110));
     const storms = drawn.filter((tile) => tile.classes.includes("is-storm"));
     expect(storms).toHaveLength(STORMS.length);
     for (const storm of storms) {
@@ -203,7 +220,7 @@ describe("LessonLadder", () => {
 
   /**
    * The rung it names is never the storm's own neighbour: `lockNote` walks
-   * down past any storm in the way, so lesson 9's tile asks for lesson 8 and
+   * down past any storm in the way, so lesson 11's tile asks for lesson 10 and
    * never for a wave a tablet cannot play (§8.8).
    */
   it("locks a storm a child has not reached, and says what opens it", () => {
@@ -215,12 +232,12 @@ describe("LessonLadder", () => {
   });
 
   /**
-   * The tablet (§8.8). Every other rung being unaffected is half the claim: a
-   * passage is typed on the software keyboard like anything else, so a child
-   * on an iPad still has the whole course.
+   * The tablet (§8.8). Every other rung being unaffected is half the claim:
+   * the guess shuts the twenty and nothing else — a held-key lesson waits for
+   * its key on its own screen rather than shutting on a guess (§5.8).
    */
   it("says why a storm tile is shut on a device with no keyboard", () => {
-    const drawn = tiles(at(99, 100), false);
+    const drawn = tiles(at(109, 110), false);
     const storms = drawn.filter((tile) => tile.classes.includes("is-storm"));
 
     expect(storms).toHaveLength(STORMS.length);

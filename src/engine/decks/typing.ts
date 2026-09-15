@@ -424,7 +424,7 @@ export function buildTypingDeck(config: TypingConfig, seed: number): Card[] {
  *
  * A drill's words *are* its identity: a parent's five tricky words at twenty
  * words long is a different exercise from another five, and folding them in is
- * what keeps the two apart. A lesson's words are the opposite — lesson 7
+ * what keeps the two apart. A lesson's words are the opposite — lesson 9
  * generates a fresh passage every time it is run, so the same fold would give
  * every attempt a key of its own and a child would never be shown the best
  * they have already done. So the words are left out exactly when a lesson id

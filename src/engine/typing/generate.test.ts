@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest";
 
 import { generate } from "./generate";
+import { oneHanded } from "./hands";
 import { canType, unlockedAt } from "./keys";
-import { LESSONS } from "./lessons";
-import type { Lesson } from "./lessons";
-import { WORDS } from "./lexicon";
+import { HELD_KEY_LESSONS, LESSONS, isHeldKeyLesson } from "./lessons";
+import type { HeldKeyLesson, Lesson } from "./lessons";
+import { LEFT_HAND, RIGHT_HAND, WORDS } from "./lexicon";
 
 /**
  * The three invariants that make a hundred generated lessons safe (§5.2, §12):
@@ -13,8 +14,8 @@ import { WORDS } from "./lexicon";
  *
  * Each is asserted over all hundred lessons crossed with a spread of seeds,
  * because a generator is a distribution and one seed is an anecdote. Failures
- * are collected rather than thrown at the first one: "lessons 61, 63 and 67
- * are short of strikes" is a finding about the ladder, where "lesson 61 is" is
+ * are collected rather than thrown at the first one: "lessons 71, 73 and 77
+ * are short of strikes" is a finding about the ladder, where "lesson 71 is" is
  * a bug report you have to fix three times.
  *
  * At lesson 1 the unlocked alphabet is `f`, `j` and the space bar, so the
@@ -22,7 +23,7 @@ import { WORDS } from "./lexicon";
  * wherever the ladder has anything to review, and a stronger claim — every
  * character is a new key — where it has not. Both halves are derived from
  * `unlockedAt` rather than from a list of excused lesson numbers, so a
- * re-ordered ladder that leaves lesson 40 with nothing to review is reported
+ * re-ordered ladder that leaves lesson 46 with nothing to review is reported
  * by the same line rather than covered by it.
  */
 
@@ -51,7 +52,15 @@ const SEEDS = [
 const WITH_TEXT = LESSONS.filter((lesson) => lesson.kind.type !== "storm");
 
 /** The lessons the new-key invariants are about. */
-const INTRODUCING = WITH_TEXT.filter((lesson) => lesson.introduces.length > 0);
+/**
+ * Every lesson with new keys to strike — minus the held-key drills, whose
+ * "review" is the pinned hand's half of the alphabet and so is not review
+ * at all. They are held to the band against the free hand's alphabet in
+ * their own describe below.
+ */
+const INTRODUCING = WITH_TEXT.filter(
+  (lesson) => lesson.introduces.length > 0 && !isHeldKeyLesson(lesson),
+);
 
 /** A lesson's text as a child meets it: the words, and the spaces between. */
 const textOf = (lesson: Lesson, seed: number) =>
@@ -184,7 +193,7 @@ describe("generate", () => {
   });
 
   /**
-   * Counted across the ladder rather than asserted per lesson: lesson 8 draws
+   * Counted across the ladder rather than asserted per lesson: lesson 10 draws
    * from ten words and lesson 1 from two keys, so a handful of collisions is
    * the pool being small rather than the seed being ignored.
    */
@@ -218,7 +227,7 @@ describe("a lesson's kind decides its text", () => {
   });
 
   /**
-   * Lesson 8's focus is `ll`, `ss` and `dd` at nine unlocked letters, where
+   * Lesson 10's focus is `ll`, `ss` and `dd` at nine unlocked letters, where
    * `ss` has exactly one word in the corpus. Round-robin over the sequences is
    * what gets that word drilled at all, so the assertion is that every focus
    * turns up — not that the words are evenly spread.
@@ -246,7 +255,7 @@ describe("a lesson's kind decides its text", () => {
    * is what the first word being a sentence's first word tests for.
    */
   it("sentences · splits English rather than assembling it", () => {
-    const words = generate(kindOf(36), 11);
+    const words = generate(kindOf(42), 11);
     expect(words[0]).toMatch(/^[A-Z]/);
     const stops = words.filter((word) => /[.?!]$/.test(word));
     expect(stops.length).toBeGreaterThan(2);
@@ -254,39 +263,39 @@ describe("a lesson's kind decides its text", () => {
 
   /** Real prose from the library, long enough to be a paragraph (§5.6, 71–100). */
   it("passage · draws whole paragraphs", () => {
-    const words = generate(kindOf(100), 3);
+    const words = generate(kindOf(110), 3);
     expect(words.length).toBe(150);
     expect(words.join(" ")).toContain(". ");
   });
 
   /**
    * Ages, dates, scores and prices — figures with a shape, not digits at
-   * random. Lesson 57 is the one that asks, and the hyphen has not arrived
+   * random. Lesson 67 is the one that asks, and the hyphen has not arrived
    * yet, so a score is absent there rather than rewritten into something a
    * child cannot type.
    */
   it("numbers · gives every token a figure in it", () => {
-    for (const word of generate(kindOf(57), 5)) expect(word).toMatch(/[0-9]/);
+    for (const word of generate(kindOf(67), 5)) expect(word).toMatch(/[0-9]/);
   });
 
   /** Prose with numbers in it — both halves, in every lesson that asks. */
   it("mixed · puts figures inside sentences", () => {
-    for (const n of [58, 60, 92, 95]) {
+    for (const n of [68, 70, 102, 105]) {
       const words = generate(kindOf(n), 13);
       expect(
         words.some((word) => /[0-9]/.test(word)),
-        `L${n}`,
+        `lesson ${n}`,
       ).toBe(true);
       expect(
         words.filter((word) => /^[a-z]+$/.test(word)).length,
-        `L${n}`,
+        `lesson ${n}`,
       ).toBeGreaterThan(words.length / 3);
     }
   });
 
   /** Short words at pace (§5.6, block 9). */
   it("sprint · keeps the words short", () => {
-    const words = generate(kindOf(81), 21);
+    const words = generate(kindOf(91), 21);
     const long = words.filter((word) => word.length > 4);
     expect(long).toEqual([]);
   });
@@ -297,9 +306,9 @@ describe("a lesson's kind decides its text", () => {
    */
   it("words · uses the pool the lesson is named after", () => {
     const twentyFive = new Set(WORDS.slice(0, 25));
-    for (const word of generate(kindOf(41), 6))
+    for (const word of generate(kindOf(47), 6))
       expect(twentyFive).toContain(word);
-    for (const word of generate(kindOf(33), 6))
+    for (const word of generate(kindOf(39), 6))
       expect(word, `L33: ${word}`).toMatch(/^[A-Z]/);
   });
 });
@@ -307,25 +316,25 @@ describe("a lesson's kind decides its text", () => {
 describe("a bag is exhausted before it repeats", () => {
   /**
    * The rule the other decks follow: a run does not ask for one word four
-   * times while another never comes up. Lesson 27 draws thirty-five words from
+   * times while another never comes up. Lesson 33 draws thirty-five words from
    * a pool of hundreds, so every one of them should be different.
    */
   it("never repeats a word while the pool has one left", () => {
     const words = generate(
-      LESSONS.find((lesson) => lesson.n === 27) as Lesson,
+      LESSONS.find((lesson) => lesson.n === 33) as Lesson,
       55,
     );
     expect(new Set(words).size).toBe(words.length);
   });
 
   /**
-   * Lesson 8 is the smallest pool on the ladder: `ll`, `ss` and `dd` at nine
+   * Lesson 10 is the smallest pool on the ladder: `ll`, `ss` and `dd` at nine
    * unlocked letters is ten words in the whole corpus. Its twenty-five slots
    * therefore have to repeat, and what the bag rule buys is that every one of
    * the ten is met before any comes round a third time.
    */
   it("empties a small pool before drawing from it again", () => {
-    const lesson = LESSONS.find((l) => l.n === 8) as Lesson;
+    const lesson = LESSONS.find((l) => l.n === 10) as Lesson;
     const focus = lesson.kind.type === "bigrams" ? lesson.kind.focus : [];
     const pool = focus.flatMap((pair) =>
       WORDS.filter((word) => word.includes(pair) && canType(word, lesson.n)),
@@ -335,5 +344,111 @@ describe("a bag is exhausted before it repeats", () => {
     const words = generate(lesson, 12);
     expect(words.every((word) => /(.)\1/.test(word))).toBe(true);
     for (const word of pool) expect(words, word).toContain(word);
+  });
+});
+
+describe("a held-key lesson", () => {
+  /**
+   * The same three invariants, over the ten (§5.8), plus the one only they
+   * carry: nothing for the pinned hand. The review here is the free hand's
+   * half of the rung's alphabet, which is why `reviewAt` is not reused — a
+   * right-hand lesson at rung 6 has the whole home row unlocked and nothing on
+   * its own hand left over to review.
+   */
+  const freeReview = (lesson: HeldKeyLesson) =>
+    [...unlockedAt(lesson.n)].filter(
+      (ch) =>
+        ch !== " " &&
+        oneHanded(ch, lesson.hold) &&
+        !lesson.introduces.includes(ch),
+    );
+
+  it("never asks the pinned hand for a character", () => {
+    const offenders: string[] = [];
+    for (const lesson of HELD_KEY_LESSONS)
+      for (const seed of SEEDS) {
+        const wrongHand = new Set(
+          [...textOf(lesson, seed)].filter(
+            (ch) => ch !== " " && !oneHanded(ch, lesson.hold),
+          ),
+        );
+        for (const ch of wrongHand)
+          offenders.push(`${lesson.id} seed ${seed}: ${JSON.stringify(ch)}`);
+      }
+    expect(offenders).toEqual([]);
+  });
+
+  it("stays inside the rung's alphabet, at the length asked for", () => {
+    for (const lesson of HELD_KEY_LESSONS)
+      for (const seed of SEEDS) {
+        const words = generate(lesson, seed);
+        expect(words, `${lesson.id} seed ${seed}`).toHaveLength(
+          lesson.wordCount,
+        );
+        for (const ch of words.join(" "))
+          expect(canType(ch, lesson.n), `${lesson.id} ${ch}`).toBe(true);
+      }
+  });
+
+  it("strikes every drilled key at least as often as its gate demands", () => {
+    const offenders: string[] = [];
+    for (const lesson of HELD_KEY_LESSONS) {
+      const strikes =
+        lesson.pass.kind === "lesson" ? lesson.pass.keyStrikes : 0;
+      for (const seed of SEEDS) {
+        const text = textOf(lesson, seed);
+        for (const ch of lesson.introduces)
+          if (countOf(text, [ch]) < strikes)
+            offenders.push(`${lesson.id} seed ${seed}: ${ch}`);
+      }
+    }
+    expect(offenders).toEqual([]);
+  });
+
+  it("keeps the drilled keys inside §5.2's band wherever there is review", () => {
+    const offenders: string[] = [];
+    for (const lesson of HELD_KEY_LESSONS) {
+      if (lesson.introduces.length === 0 || freeReview(lesson).length === 0)
+        continue;
+      for (const seed of SEEDS) {
+        const text = textOf(lesson, seed);
+        const share = countOf(text, lesson.introduces) / text.length;
+        if (share < MIN_NEW_SHARE || share > MAX_NEW_SHARE)
+          offenders.push(
+            `${lesson.id} seed ${seed}: ${(share * 100).toFixed(1)}%`,
+          );
+      }
+    }
+    expect(offenders).toEqual([]);
+  });
+
+  /**
+   * The home-row pair is lesson 1's case with a hand taken away: one hand's
+   * half of the home row is exactly the five keys drilled, so there is
+   * nothing to review and the whole drill is those five.
+   */
+  it("spends the home-row pair entirely on the keys it drills", () => {
+    const nothingToReview = HELD_KEY_LESSONS.filter(
+      (lesson) => freeReview(lesson).length === 0,
+    );
+    expect(nothingToReview.map((lesson) => lesson.id)).toEqual(["H01", "H02"]);
+    for (const lesson of nothingToReview)
+      for (const seed of SEEDS) {
+        const letters = textOf(lesson, seed).replace(/ /g, "");
+        expect(countOf(letters, lesson.introduces)).toBe(letters.length);
+      }
+  });
+
+  /** The word pair draws from the one-hand list, each hand its own half. */
+  it("gives the word pair real one-hand words", () => {
+    const right = new Set(RIGHT_HAND);
+    const left = new Set(LEFT_HAND);
+    for (const lesson of HELD_KEY_LESSONS.filter(
+      (l) => l.kind.type === "words",
+    )) {
+      const pool = lesson.hold === "f" ? right : left;
+      for (const word of generate(lesson, 21))
+        expect(pool.has(word), `${lesson.id}: ${word}`).toBe(true);
+    }
   });
 });
