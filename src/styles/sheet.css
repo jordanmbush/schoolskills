@@ -643,6 +643,20 @@
   white-space: nowrap;
 }
 
+/* A decimal point is not a column (§22). It sits on the boundary between two
+   squares in a box of no width, so the digits either side keep the columns
+   they would have without it and the quotient's point lands on the same
+   boundary as the dividend's. Centred in the row as the digits are, so it
+   shares their baseline. */
+.sheet__point {
+  display: flex;
+  flex: none;
+  width: 0;
+  align-items: center;
+  justify-content: center;
+  overflow: visible;
+}
+
 /* The grid, at `grid` and above: a hairline on the right and bottom of every
    square, with the left edge closed by the first square of a row and the top
    by the quotient row — one stroke per boundary, so no line prints doubled.

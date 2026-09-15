@@ -1202,7 +1202,8 @@ export type FractionConfig = SheetOptions & {
 export type DecimalStyle = "standard" | "percent" | "convert";
 
 /** `both` shuffles addition and subtraction, as it does on an arithmetic sheet. */
-export type DecimalOperation = "add" | "subtract" | "multiply" | "both";
+export type DecimalOperation =
+  "add" | "subtract" | "multiply" | "divide" | "both";
 
 /**
  * Column form is worth more here than anywhere else: every value prints to the
@@ -1223,6 +1224,25 @@ export type DecimalConfig = SheetOptions & {
   places: number;
   /** The whole numbers the values sit between, ends included. */
   range: { min: number; max: number };
+  /**
+   * Dividing only: the whole numbers a division divides by, ends included,
+   * 2 to 99. Absent is 2 to 9; two digits is the harder sheet.
+   */
+  divisor?: { min: number; max: number };
+  /**
+   * Dividing only. `decimal` divides by a decimal — 8.4 ÷ 0.2 — which a child
+   * first rewrites as a whole-number division, so it is written along a line
+   * and never set in the bracket (§22). Absent is `whole`.
+   */
+  by?: "whole" | "decimal";
+  /**
+   * Dividing only: the number divided is whole and the answer runs past the
+   * point — 7 ÷ 4 = 1.75. In columns the dividend prints with `places` zeros
+   * annexed, `7.00`, so there is something to keep dividing into.
+   */
+  wholeDividend?: boolean;
+  /** Dividing in columns only. Absent is `none`. */
+  help?: DivisionHelp;
   count: number;
   columns: number;
   workspace?: boolean;

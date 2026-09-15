@@ -1676,3 +1676,73 @@ by most printers' defaults, and a guided sheet whose shading did not print is a
 squares, its rectangles placed from the same `cell` and gutter widths the
 squares are laid out with, at a twelfth of the ink so that a digit written
 over one is still black on nearly white.
+
+## 22 · Decimals, divided
+
+Three divisions, and they are three sheets rather than one with switches on,
+because each is a different lesson: a decimal divided by a whole number
+(`8.46 ÷ 3`), a whole number divided to a decimal answer (`7 ÷ 4 = 1.75`), and
+a decimal divided by a decimal (`8.4 ÷ 0.2`). `DecimalConfig` names them with
+`operation: "divide"`, `wholeDividend` and `by: "decimal"`, and the family
+decides which it is once — dividing _by_ a decimal wins over a whole dividend
+— so the draw, the layout and the title cannot disagree.
+
+**Every one of them is built from the answer outward**, as `long.ts` builds a
+long division (§11). The quotient is drawn as a `Fixed` at the places the sheet
+is set at, the divisor is drawn from its span, and the dividend is their
+product. Nothing is ever divided, so nothing can fail to terminate: a quotient
+of 2.82 times 3 _is_ 8.46, exactly, and the answer key is the number the sheet
+was made from. The alternative — draw a dividend, divide it, hope the answer
+stops — either prints a rounded key or throws most of its draws away.
+
+- **Divided by a whole number**: the plainest case, and the one the range and
+  the places describe directly, because they describe the answer.
+- **A whole dividend**: the divisor is drawn first and the quotient walked in
+  the steps that make their product whole — every twenty-fifth hundredth for
+  4, every fiftieth for 2 — for the reason the percent draw walks rather than
+  rejects: a rejecting draw prints the friendliest divisors over and over. A
+  divisor with no factor of ten in it, 3 or 7 or 9, has no decimal quotient
+  that stops and is left out rather than rounded in; a whole quotient is left
+  out because an answer past the point is the promise. The answer prints to
+  the sheet's places like every answer on the family, so `6 ÷ 4` at two places
+  is `1.50` — the last annexed zero divided into and found empty, which is part
+  of the lesson. In columns the dividend prints with `places` zeros
+  **annexed**, `7.00`, because that is the form a child keeps dividing into;
+  along a line it is the whole number it is, and the instruction says to write
+  the zeros in.
+- **Divided by a decimal**: drawn as the whole-number division a child rewrites
+  it into — `84 ÷ 2` — and then each side is given its places, the divisor one
+  to `places` and the dividend at least as many, so the answer is the whole
+  quotient with its point moved back by the difference. Neither side ends in a
+  zero: the two sides carry different place counts by design, and `8.40 ÷ 0.2`
+  is a number written the long way for no column to line up on.
+
+**Dividing by a decimal is never set in the bracket, deliberately.** The
+method is to rewrite the sum until the divisor is whole and then divide, so a
+bracket round `0.2)8.4` would have to show either the question — which is not
+what gets worked — or the rewritten sum `2)84`, which is not what was asked.
+Either way the paper would be doing the one step the sheet exists to teach. It
+is written along a line, the builder hides "In columns" for it, and the key
+shows the answer only.
+
+**The point in the bracket.** A dividend of `8.46` occupies three columns, not
+four: `Problem.bracket.dividend` carries the point, the columns count digits
+only, and `Bracket.tsx` draws the point as a mark on the boundary between two
+squares in a box of no width, so every digit stays in the column it would have
+without it. The quotient's point goes on the same boundary — which is the
+whole of the method, said as geometry — and it is printed above the bar
+wherever squares are drawn, because there it is part of the scaffold; a bare
+bracket leaves placing it to the child, and the key writes it either way. The
+working is computed on the digits alone (`decimalTableau` over `tableau.ts`,
+which never sees a point), and the reservation under the dividend is the same
+arithmetic as §21's, over the longest dividend the range and the divisor span
+allow.
+
+**A quotient below one is written with its leading zero**: `0.23`, never
+`.23`. The tableau starts the quotient at the first column where the digits
+read so far come to the divisor, which for `0.69 ÷ 3` is the tenths column,
+and a key that wrote `23` there with the point beside it would be showing a
+child a form nobody writes. So the family pads the quotient back to the units
+column with zeros before the bracket sees it — in the family and not in
+`tableau.ts`, which has no point to measure from. The zeros are written digits:
+a guided sheet shades their squares, and the key writes them in.

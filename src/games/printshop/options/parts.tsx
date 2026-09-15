@@ -23,7 +23,7 @@ import {
   TextArea,
   type SegmentedOption,
 } from "@/components/ui/kit";
-import type { SheetConfig } from "@/engine/sheets/types";
+import type { DivisionHelp, SheetConfig } from "@/engine/sheets/types";
 import { parseWords } from "@/services/decks";
 
 /**
@@ -44,6 +44,21 @@ export const opt = <T extends string>(
   label: string,
   hint?: string,
 ): SegmentedOption<T> => ({ value, label, hint });
+
+/**
+ * The four levels of help under a division bracket, in the order they are
+ * taken away (§21). Here because two families set the same bracket, and two
+ * lists would be two wordings of one scaffold.
+ */
+export const HELP_LEVELS = [
+  opt<DivisionHelp>("none", "None"),
+  opt<DivisionHelp>("grid", "Grid"),
+  opt<DivisionHelp>("steps", "Grid and steps"),
+  opt<DivisionHelp>("guided", "Guided"),
+];
+
+export const HELP_HINT =
+  "Each level adds to the last: a place-value grid, then the take-away rows marked, then the squares that get written in shaded.";
 
 /**
  * One choice out of several: a row of pills up to five, a dropdown beyond. Every

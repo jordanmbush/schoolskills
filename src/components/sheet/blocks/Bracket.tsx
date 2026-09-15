@@ -1,4 +1,4 @@
-import type { CSSProperties } from "react";
+import { Fragment, type CSSProperties } from "react";
 
 import type { TableauRow } from "@/engine/sheets/maths/tableau";
 import type { Problem } from "@/engine/sheets/types";
@@ -15,7 +15,9 @@ import { inch } from "../units";
  * what puts a quotient digit directly over the dividend digit it belongs to,
  * whether or not a square is drawn round either: nothing here is aligned by
  * text, only by columns. The rows are the height the family reserved, so the
- * house is exactly as tall as the layout arithmetic said.
+ * house is exactly as tall as the layout arithmetic said. A decimal point is
+ * not a column: it is drawn on the boundary between two squares, and the
+ * quotient's point goes on the same boundary (§22).
  *
  * The bar and the upright are borders rather than a drawing, for the reason
  * everything else on a sheet is (§5) — they are foreground paint and always
@@ -34,8 +36,9 @@ export function Bracket({
   if (!bracket) return null;
 
   const { cell, help, tableau } = bracket;
-  const digits = bracket.dividend.length;
-  const columns = Array.from({ length: digits }, (_, column) => column);
+  const digits = bracket.dividend.replace(".", "");
+  const point = bracket.dividend.indexOf(".");
+  const columns = Array.from({ length: digits.length }, (_, column) => column);
   const rows = Array.from(
     { length: Math.max(0, Math.floor(bracket.rows)) },
     (_, row) => tableau?.rows[row],
@@ -43,7 +46,7 @@ export function Bracket({
   const gutter = Math.max(1, bracket.divisor.length) * cell;
   const ruled = help !== "none";
   const stepped = help === "steps" || help === "guided";
-  const quotient = quotientOf(problem, digits);
+  const quotient = quotientOf(problem, digits.length);
   const last = (tableau?.rows.length ?? 0) - 1;
 
   return (
@@ -61,7 +64,7 @@ export function Bracket({
           cells={written(quotient, tableau?.rows ?? [])}
           cell={cell}
           gutter={gutter}
-          columns={digits}
+          columns={digits.length}
           rows={2 + rows.length}
         />
       )}
@@ -73,11 +76,16 @@ export function Bracket({
           {columns.map((column) => {
             const digit = digitAt(quotient, column);
             return (
-              <Square
-                key={column}
-                text={answers ? digit : undefined}
-                answered={answers && digit !== undefined}
-              />
+              <Fragment key={column}>
+                <Square
+                  text={answers ? digit : undefined}
+                  answered={answers && digit !== undefined}
+                />
+                {/* On the sheet, the point above the bar is part of the
+                    scaffold the squares draw; a bare bracket leaves placing
+                    it to the child. The key always writes it. */}
+                {column + 1 === point && (answers || ruled) && <Point />}
+              </Fragment>
             );
           })}
           {answers && quotient.remainder !== "" && (
@@ -89,7 +97,10 @@ export function Bracket({
         <span className="sheet__gutter sheet__divisor">{bracket.divisor}</span>
         <span className="sheet__dividend">
           {columns.map((column) => (
-            <Square key={column} text={bracket.dividend[column]} dividend />
+            <Fragment key={column}>
+              <Square text={digits[column]} dividend />
+              {column + 1 === point && <Point />}
+            </Fragment>
           ))}
         </span>
       </span>
@@ -152,9 +163,13 @@ function quotientOf(
       remainder: tableau.remainder > 0 ? String(tableau.remainder) : "",
     };
   }
-  const [text, remainder = ""] = problem.answer.split(" r ");
+  const [written, remainder = ""] = problem.answer.split(" r ");
+  const text = written.replace(".", "");
   return { text, start: Math.max(0, digits - text.length), remainder };
 }
+
+/** The decimal point, on the boundary between two squares (§22). */
+const Point = () => <span className="sheet__point">.</span>;
 
 function Square({
   text = "",

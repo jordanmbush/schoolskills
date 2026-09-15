@@ -10,14 +10,22 @@
  */
 import { Checkbox, FieldSet, NumberStepper } from "@/components/ui/kit";
 import type {
-  DivisionHelp,
   MultiplicationConfig,
   MultiplicationForm,
   MultiplicationOperation,
   MultiplicationStyle,
 } from "@/engine/sheets/types";
 
-import { Choice, Pool, Sizing, Span, opt, type PanelProps } from "./parts";
+import {
+  Choice,
+  HELP_HINT,
+  HELP_LEVELS,
+  Pool,
+  Sizing,
+  Span,
+  opt,
+  type PanelProps,
+} from "./parts";
 
 const TABLES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 
@@ -37,13 +45,6 @@ const STYLES = [
 const FORMS = [
   opt<MultiplicationForm>("horizontal", "Along a line"),
   opt<MultiplicationForm>("vertical", "In columns"),
-];
-
-const HELP = [
-  opt<DivisionHelp>("none", "None"),
-  opt<DivisionHelp>("grid", "Grid"),
-  opt<DivisionHelp>("steps", "Grid and steps"),
-  opt<DivisionHelp>("guided", "Guided"),
 ];
 
 export function MultiplicationPanel({
@@ -139,8 +140,8 @@ export function MultiplicationPanel({
             label="Help under the bracket"
             value={config.help ?? "none"}
             onChange={(help) => set({ help })}
-            options={HELP}
-            hint="Each level adds to the last: a place-value grid, then the take-away rows marked, then the squares that get written in shaded."
+            options={HELP_LEVELS}
+            hint={HELP_HINT}
           />
         </>
       )}

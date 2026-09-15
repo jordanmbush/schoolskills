@@ -8,6 +8,7 @@ import { describe, expect, it } from "vitest";
 import { answerKey, buildSheet } from "@/engine/sheets";
 import { printedBlockBox } from "@/engine/sheets/chrome";
 import { figureInk } from "@/engine/sheets/figure";
+import { decimalTableau } from "@/engine/sheets/maths/decimals";
 import { divisionLines } from "@/engine/sheets/maths/long";
 import { divisionTableau } from "@/engine/sheets/maths/tableau";
 import { ticks } from "@/engine/sheets/numberline";
@@ -17,6 +18,8 @@ import type {
   ArithmeticConfig,
   Block,
   ChartConfig,
+  DecimalConfig,
+  DivisionHelp,
   FractionArt,
   FractionConfig,
   GeometryConfig,
@@ -1106,6 +1109,152 @@ describe("a rendered multiplication sheet", () => {
       }
       expect(found, where).toBeGreaterThan(0);
     }
+  });
+});
+
+/* ── Decimals in the bracket ──────────────────────────────────────────────
+   The point is not a column (§22): it sits on the boundary between two
+   squares, so every digit keeps its column, and the quotient's point sits on
+   the same boundary — which is the whole of the method, drawn.             */
+
+const decimals = (over: Partial<DecimalConfig> = {}): DecimalConfig => ({
+  kind: "decimals",
+  paper: DEFAULT_PAPER,
+  fontPt: 12,
+  fields: ["name"],
+  style: "standard",
+  operation: "divide",
+  form: "vertical",
+  places: 2,
+  range: { min: 0, max: 9 },
+  count: 6,
+  columns: 3,
+  ...over,
+});
+
+describe("a rendered decimal division", () => {
+  /** The quotient row and the dividend row of one bracket's markup. */
+  function rowsOf(item: string): { quotient: string; dividend: string } {
+    const quotientAt = item.indexOf('class="sheet__quotient');
+    const dividendAt = item.indexOf('class="sheet__dividend"');
+    return {
+      quotient: item.slice(quotientAt, dividendAt),
+      dividend: item.slice(
+        dividendAt,
+        item.indexOf('class="sheet__bracket-row"', dividendAt),
+      ),
+    };
+  }
+
+  /** After how many squares a row's point falls, or −1 when it has none. */
+  const pointAfter = (row: string): number => {
+    const at = row.indexOf('class="sheet__point"');
+    return at < 0 ? -1 : count(row.slice(0, at), 'class="sheet__square');
+  };
+
+  it("draws the point between two squares, and the quotient's on the same boundary", () => {
+    for (const help of ["none", "grid", "guided"] as const) {
+      for (const answers of [false, true]) {
+        const config = decimals({ help });
+        const items = itemsOf(config);
+        const built = answers
+          ? answerKey(config, SEED)
+          : buildSheet(config, SEED);
+        const html = problems(render(built as Sheet));
+        expect(items.length).toBeGreaterThan(0);
+        expect(html.length).toBe(items.length);
+        items.forEach((problem, index) => {
+          const bracket = problem.bracket;
+          if (!bracket) throw new Error("no bracket");
+          const where = `${help} ${answers ? "key" : "sheet"} ${bracket.dividend}`;
+          const { quotient, dividend } = rowsOf(html[index]);
+          const digits = bracket.dividend.replace(".", "").length;
+          const point = bracket.dividend.indexOf(".");
+          // One square per digit — the point takes no column — and the point
+          // after exactly the digits that come before it.
+          expect(count(dividend, 'class="sheet__square'), where).toBe(digits);
+          expect(count(quotient, 'class="sheet__square'), where).toBe(digits);
+          expect(count(dividend, 'class="sheet__point"'), where).toBe(1);
+          expect(pointAfter(dividend), where).toBe(point);
+          // Above the bar it is on the key always, and on the sheet only where
+          // squares are drawn to place it in: a bare bracket leaves that to
+          // the child.
+          if (answers || help !== "none") {
+            expect(count(quotient, 'class="sheet__point"'), where).toBe(1);
+            expect(pointAfter(quotient), where).toBe(point);
+          } else {
+            expect(quotient, where).not.toContain("sheet__point");
+          }
+        });
+      }
+    }
+  });
+
+  /** One bracket on a page of its own, blank or keyed. */
+  const bracketed = (
+    dividend: string,
+    divisor: number,
+    answer: string,
+    answers: boolean,
+    help: DivisionHelp = "grid",
+  ) => {
+    const problem: Problem = {
+      prompt: "",
+      answer,
+      bracket: {
+        divisor: String(divisor),
+        dividend,
+        cell: 250,
+        rows: 6,
+        help,
+        tableau: decimalTableau(dividend, divisor),
+      },
+    };
+    const page = sheet({
+      answers,
+      blocks: [{ kind: "problems", columns: 1, items: [problem] }],
+    });
+    return problems(render(page))[0];
+  };
+
+  it("writes 8.46 ÷ 3 as 2.82 in the right boxes on the key, and nothing on the sheet", () => {
+    const answered = (digit: string) =>
+      `<span class="sheet__square sheet__square--answered">${digit}</span>`;
+    const point = '<span class="sheet__point">.</span>';
+    const key = rowsOf(bracketed("8.46", 3, "2.82", true));
+    expect(key.quotient).toContain(
+      `${answered("2")}${point}${answered("8")}${answered("2")}`,
+    );
+    expect(key.dividend).toContain(
+      `<span class="sheet__square sheet__square--dividend">8</span>${point}<span class="sheet__square sheet__square--dividend">4</span>`,
+    );
+    // The sheet has the same three boxes, empty, with the point already
+    // between the first and the second.
+    const blank = rowsOf(bracketed("8.46", 3, "2.82", false));
+    expect(blank.quotient).toContain(
+      `<span class="sheet__square"></span>${point}<span class="sheet__square"></span><span class="sheet__square"></span>`,
+    );
+    expect(blank.quotient).not.toContain("--answered");
+    // A quotient below one keeps its leading zero, in the units box.
+    const small = rowsOf(bracketed("0.69", 3, "0.23", true));
+    expect(small.quotient).toContain(
+      `${answered("0")}${point}${answered("2")}${answered("3")}`,
+    );
+    // And a whole dividend divides into its annexed zeros.
+    const annexed = rowsOf(bracketed("7.00", 4, "1.75", true));
+    expect(annexed.quotient).toContain(
+      `${answered("1")}${point}${answered("7")}${answered("5")}`,
+    );
+  });
+
+  it("shades the leading zero's square on a guided sheet, because a child writes it", () => {
+    const item = bracketed("0.69", 3, "0.23", false, "guided");
+    const tableau = decimalTableau("0.69", 3);
+    const written =
+      tableau.quotient.text.length +
+      tableau.rows.reduce((sum, row) => sum + row.text.length, 0);
+    expect(tableau.quotient.text).toBe("023");
+    expect(count(item, "<rect")).toBe(written);
   });
 });
 

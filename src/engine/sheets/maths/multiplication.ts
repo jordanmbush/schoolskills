@@ -49,6 +49,7 @@ import {
 import { inches, points } from "../paper";
 import { SHEET_CREDIT, SHEET_WORLD, gameUrl, type SheetSpec } from "../spec";
 import {
+  HELP_NAME,
   STACK_EMS,
   bracketHeight,
   divisionHelp,
@@ -538,13 +539,6 @@ const MIXED_NAME = {
   multiply: "Multiplication",
   divide: "Division",
   both: "Multiplication and division",
-} as const;
-
-const HELP_NAME = {
-  none: null,
-  grid: "on a grid",
-  steps: "with steps",
-  guided: "guided",
 } as const;
 
 /** "The 7 times table" — the phrase a parent says, and the one they search. */

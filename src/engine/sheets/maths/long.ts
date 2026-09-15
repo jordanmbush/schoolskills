@@ -69,11 +69,25 @@ export const bracketHeight = (fontPt: number): Mil => 2 * answerLine(fontPt);
 
 const HELP: readonly DivisionHelp[] = ["none", "grid", "steps", "guided"];
 
-/** The help level, made safe to read from whatever a saved config says. */
-export function divisionHelp(config: MultiplicationConfig): DivisionHelp {
+/**
+ * The help level, made safe to read from whatever a saved config says.
+ *
+ * Over any config that carries `help`, because the decimals family sets the
+ * same bracket with the same four levels (§22) and two readers of one field
+ * would be two answers to what an unknown level means.
+ */
+export function divisionHelp(config: { help?: DivisionHelp }): DivisionHelp {
   const asked = config.help;
   return asked !== undefined && HELP.includes(asked) ? asked : "none";
 }
+
+/** How a help level reads in the line that names a saved sheet. */
+export const HELP_NAME: Record<DivisionHelp, string | null> = {
+  none: null,
+  grid: "on a grid",
+  steps: "with steps",
+  guided: "guided",
+};
 
 /** The smallest and largest whole number with exactly this many digits. */
 function span(digits: number): { min: number; max: number } {

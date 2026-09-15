@@ -3,7 +3,9 @@
  * §11), over numbers that are famously easy to get subtly wrong.
  *
  * **Nothing here is ever a float**, and a decimal is only ever multiplied by a
- * whole number. `maths/exact.ts` holds both shapes and the reasons.
+ * whole number. `maths/exact.ts` holds both shapes and the reasons. Division
+ * keeps to that by running backwards: the answer is drawn and the dividend is
+ * made from it, so no quotient is ever found (§22).
  *
  * **A percent answer is a whole number, by construction.** 15% of 80 is 12, and
  * 15% of 81 is 12.15 — a different lesson, and one that belongs on a money sheet
@@ -15,6 +17,7 @@ import { between, mulberry32 } from "@/engine/random";
 import type {
   DecimalConfig,
   DecimalOperation,
+  DivisionHelp,
   Mil,
   Problem,
   Sheet,
@@ -42,11 +45,14 @@ import {
   timesWhole,
   type Fixed,
 } from "./exact";
+import { HELP_NAME, bracketHeight, divisionHelp, divisionLines } from "./long";
+import { divisionTableau, type Tableau } from "./tableau";
 
 /* ── What a problem takes on the page ─────────────────────────────────────
    Declared, not measured (§4). Stacked it is the two numbers, the rule and the
    answer under it — the same drawing an addition sheet has, with the points
-   lined up.                                                                  */
+   lined up. A division in columns is the bracket instead, and its height is
+   the squares it reserves.                                                  */
 
 const STACK_EMS = 4.4;
 
@@ -67,6 +73,16 @@ const MAX_PLACES = 3;
 
 /** What a decimal is multiplied by: three lots of 1.25, never seventy of it. */
 const MULTIPLIER = { min: 2, max: 9 };
+
+/** What a decimal is divided by unless the config says: the single digits. */
+const DIVISOR = { min: 2, max: 9 };
+
+/**
+ * As far as a divisor may run. Two digits is the harder sheet a parent asks
+ * for by name; three is a calculator's, and the squares it would take under
+ * the bracket would not fit the column.
+ */
+const MAX_DIVISOR = 99;
 
 /**
  * The percentages a sheet asks for.
@@ -111,15 +127,18 @@ const MISS_BUDGET = 500;
  */
 const percentStep = (by: number): number => 100 / gcd(100, by);
 
-const SIGN = { add: "+", subtract: "−", multiply: "×" } as const;
+const SIGN = { add: "+", subtract: "−", multiply: "×", divide: "÷" } as const;
 
 /* ── The numbers on the page ───────────────────────────────────────────────
-   Both bounds are sanitised once, because they arrive from outside this build:
+   Every bound is sanitised once, because they arrive from outside this build:
    a config in a bookmarked URL may ask for nine places, or for a range that
    runs backwards.                                                            */
 
+const clamp = (value: number, low: number, high: number): number =>
+  Math.max(low, Math.min(high, Math.floor(value)));
+
 const placesOf = (config: DecimalConfig): number =>
-  Math.min(MAX_PLACES, Math.max(1, Math.floor(config.places ?? 2)));
+  clamp(config.places ?? 2, 1, MAX_PLACES);
 
 function bounds(range: { min: number; max: number }): {
   min: number;
@@ -127,6 +146,27 @@ function bounds(range: { min: number; max: number }): {
 } {
   const min = Math.max(0, Math.floor(range?.min ?? 0));
   return { min, max: Math.max(min, Math.floor(range?.max ?? 0)) };
+}
+
+/** The divisor span, made safe to draw from whatever a saved config says. */
+function divisorOf(config: DecimalConfig): { min: number; max: number } {
+  const asked = config.divisor ?? DIVISOR;
+  const min = clamp(asked.min ?? DIVISOR.min, DIVISOR.min, MAX_DIVISOR);
+  const max = clamp(Math.max(min, asked.max ?? min), DIVISOR.min, MAX_DIVISOR);
+  return { min, max };
+}
+
+/**
+ * The three divisions a sheet can set (§22), decided once so the draw, the
+ * layout and the title cannot disagree about which it is. Dividing *by* a
+ * decimal wins over a whole dividend: they are two lessons rather than one
+ * question with two switches on.
+ */
+type Division = "byWhole" | "byDecimal" | "wholeDividend";
+
+function divisionOf(config: DecimalConfig): Division {
+  if (config.by === "decimal") return "byDecimal";
+  return config.wholeDividend === true ? "wholeDividend" : "byWhole";
 }
 
 /**
@@ -146,9 +186,9 @@ function drawValue(config: DecimalConfig, rand: () => number): Fixed | null {
 
 /* ── Drawing a problem ─────────────────────────────────────────────────────
    Each style draws its own shape, and they have little in common beyond having
-   an answer. So each returns the same four answers: what it reads, what the
-   answer is, how it is stacked if it is stacked, and what makes two of them the
-   same problem.                                                              */
+   an answer. So each returns the same answers: what it reads, what the answer
+   is, how it is stacked if it is stacked, and what makes two of them the same
+   problem.                                                                   */
 
 type Drawn = {
   key: string;
@@ -156,7 +196,11 @@ type Drawn = {
   answer: string;
   operands?: string[];
   operator?: string;
+  /** The bracket as far as the draw decides it; the layout adds the squares. */
+  bracket?: { divisor: string; dividend: string };
 };
+
+type Draw = (config: DecimalConfig, rand: () => number) => Drawn | null;
 
 /** Which way round an `either` sheet's problem reads. */
 function operationOf(
@@ -233,6 +277,145 @@ function written(
     return { key, prompt: "", operands, operator: sign, answer };
   }
   return { key, prompt: `${operands[0]} ${sign} ${operands[1]} =`, answer };
+}
+
+/**
+ * A decimal divided by a whole number: 8.46 ÷ 3.
+ *
+ * The quotient is drawn and the dividend made from it, so the division comes
+ * out exactly and every promise the config makes holds of the answer — which
+ * is the number a parent set the places and the range for.
+ */
+function drawByWhole(config: DecimalConfig, rand: () => number): Drawn | null {
+  const quotient = drawValue(config, rand);
+  if (quotient === null) return null;
+  const { min, max } = divisorOf(config);
+  const divisor = between(min, max, rand);
+  const dividend = fixedText(timesWhole(quotient, divisor));
+  return divided(config, dividend, divisor, quotient);
+}
+
+/**
+ * A whole number divided to a decimal answer: 7 ÷ 4 = 1.75.
+ *
+ * The divisor is drawn first and the quotient then walked in the steps that
+ * make their product whole, for the reason `drawPercent` gives: a divisor
+ * makes a whole number of one quotient in fifty at two places (2) or one in
+ * twenty-five (4), so a draw that made a pair and rejected it would print the
+ * friendliest divisors over and over. A divisor with no factor of ten in it —
+ * 3, 7, 9 — makes a whole number of no decimal quotient at all, and is left
+ * out rather than rounded in. A whole quotient is left out too, because an
+ * answer that runs past the point is what this sheet promises.
+ *
+ * In columns the dividend prints with the zeros annexed, `7.00`, which is the
+ * form a child keeps dividing into; along a line it is the whole number it is.
+ */
+function drawWholeDividend(
+  config: DecimalConfig,
+  rand: () => number,
+): Drawn | null {
+  const places = placesOf(config);
+  const by = scale(places);
+  const span = divisorOf(config);
+  const divisor = between(span.min, span.max, rand);
+  const step = by / gcd(by, divisor);
+  if (step === by) return null;
+  const { min, max } = bounds(config.range);
+  const first = Math.ceil(Math.max(min * by, 1) / step);
+  const last = Math.floor((max * by) / step);
+  if (first > last) return null;
+  const units = between(first, last, rand) * step;
+  if (units % by === 0) return null;
+  const quotient = fixed(units, places);
+  const product = timesWhole(quotient, divisor);
+  const whole = String(product.units / by);
+  return divided(config, whole, divisor, quotient, fixedText(product));
+}
+
+/**
+ * A decimal divided by a decimal: 8.4 ÷ 0.2.
+ *
+ * Drawn as the whole-number division a child rewrites it into — 84 ÷ 2 — and
+ * then each side is given its places: the divisor one to `places`, and the
+ * dividend at least as many, so the answer is the whole quotient with the
+ * point moved back by the difference, exact by construction. Neither side
+ * ends in a zero, because the two sides carry different place counts by
+ * design and `8.40 ÷ 0.2` is a number written the long way for no column to
+ * line up on. Along a line only: set in a bracket it would be the rewritten
+ * sum rather than the question, and the rewriting is the lesson (§22).
+ */
+function drawByDecimal(
+  config: DecimalConfig,
+  rand: () => number,
+): Drawn | null {
+  const places = placesOf(config);
+  const { min, max } = bounds(config.range);
+  if (max < 1) return null;
+  const quotient = between(Math.max(1, min), max, rand);
+  const span = divisorOf(config);
+  const divisor = between(span.min, span.max, rand);
+  const dividend = quotient * divisor;
+  if (dividend % 10 === 0 || divisor % 10 === 0) return null;
+  const divisorPlaces = between(1, places, rand);
+  const dividendPlaces = between(divisorPlaces, places, rand);
+  // A number divided by itself answers itself.
+  if (quotient === 1 && dividendPlaces === divisorPlaces) return null;
+  const left = fixedText(fixed(dividend, dividendPlaces));
+  const right = fixedText(fixed(divisor, divisorPlaces));
+  return {
+    key: `divide:${left}:${right}`,
+    prompt: `${left} ÷ ${right} =`,
+    answer: fixedText(fixed(quotient, dividendPlaces - divisorPlaces)),
+  };
+}
+
+/**
+ * A division written the way the config asks: along a line, or in the bracket.
+ *
+ * `annexed` is what the bracket prints where that differs from what the
+ * sentence says — `7.00` for a whole dividend, so there are zeros to divide
+ * into. The key is the sentence's, so the same division is one problem in
+ * either form.
+ */
+function divided(
+  config: DecimalConfig,
+  dividend: string,
+  divisor: number,
+  quotient: Fixed,
+  annexed = dividend,
+): Drawn {
+  const key = `divide:${dividend}:${divisor}`;
+  const answer = fixedText(quotient);
+  if (bracketed(config)) {
+    return {
+      key,
+      prompt: "",
+      answer,
+      bracket: { divisor: String(divisor), dividend: annexed },
+    };
+  }
+  return { key, prompt: `${dividend} ÷ ${divisor} =`, answer };
+}
+
+/**
+ * The working under a decimal dividend (§22).
+ *
+ * Computed on the digits alone — the point is not a column — and then the
+ * quotient is padded back to the units column with zeros, so a quotient below
+ * one is written `0.23` and never `.23`. The zeros are written digits: a child
+ * writes them, and a guided sheet shades their squares.
+ */
+export function decimalTableau(dividend: string, divisor: number): Tableau {
+  const point = dividend.indexOf(".");
+  const digits = dividend.replace(".", "");
+  const tableau = divisionTableau(digits, divisor);
+  const units = point < 0 ? digits.length - 1 : Math.max(0, point - 1);
+  const { text, start } = tableau.quotient;
+  if (start <= units) return tableau;
+  return {
+    ...tableau,
+    quotient: { text: "0".repeat(start - units) + text, start: units },
+  };
 }
 
 /**
@@ -327,17 +510,69 @@ function drawConvert(config: DecimalConfig, rand: () => number): Drawn | null {
   };
 }
 
+/** Which draw a sheet is made of. */
+function drawerOf(config: DecimalConfig): Draw {
+  if (config.style === "percent") return drawPercent;
+  if (config.style === "convert") return drawConvert;
+  if (config.operation !== "divide") return drawStandard;
+  switch (divisionOf(config)) {
+    case "byDecimal":
+      return drawByDecimal;
+    case "wholeDividend":
+      return drawWholeDividend;
+    default:
+      return drawByWhole;
+  }
+}
+
 /* ── The page ──────────────────────────────────────────────────────────── */
 
-const clamp = (value: number, low: number, high: number): number =>
-  Math.max(low, Math.min(high, Math.floor(value)));
-
-/** Whether this sheet stacks its problems. Only the arithmetic one can. */
+/**
+ * Whether this sheet stacks its problems. Only the arithmetic one can, and a
+ * division by a decimal never is: it is rewritten before it is worked, and a
+ * bracket round it would be the rewritten sum rather than the question (§22).
+ */
 const stacked = (config: DecimalConfig): boolean =>
-  config.style === "standard" && config.form === "vertical";
+  config.style === "standard" &&
+  config.form === "vertical" &&
+  !(config.operation === "divide" && divisionOf(config) === "byDecimal");
+
+/** Whether its divisions are set in the bracket. */
+const bracketed = (config: DecimalConfig): boolean =>
+  stacked(config) && config.operation === "divide";
+
+/**
+ * How many digits the longest dividend on the sheet can have, the point aside:
+ * the largest quotient the range allows times the largest divisor. A bound
+ * rather than a measurement, so the squares can be reserved before a division
+ * is drawn — the same reason `divisionLines` takes digit counts.
+ */
+function dividendDigits(config: DecimalConfig): number {
+  const { max } = bounds(config.range);
+  const largest = Math.max(1, max) * scale(placesOf(config));
+  return String(largest * divisorOf(config).max).length;
+}
+
+/** The squares reserved under every bracket, or `null` when nothing is bracketed. */
+function bracketOf(
+  config: DecimalConfig,
+): { cell: Mil; rows: number; help: DivisionHelp } | null {
+  if (!bracketed(config)) return null;
+  const by = String(divisorOf(config).min).length;
+  return {
+    cell: answerLine(config.fontPt),
+    rows: divisionLines({ into: dividendDigits(config), by }),
+    help: divisionHelp(config),
+  };
+}
 
 /** How tall one problem stands, working space and all. */
 function rowHeight(config: DecimalConfig): Mil {
+  // A bracket spends its reservation on the squares under the dividend and
+  // takes no blank paper besides, as a long division does.
+  const bracket = bracketOf(config);
+  if (bracket)
+    return bracketHeight(config.fontPt) + bracket.rows * bracket.cell;
   // A stack is one flex item and cannot wrap, so it is reserved for as what it
   // is: two numbers, a rule and the answer under it.
   const body = stacked(config)
@@ -368,6 +603,34 @@ export function decimalLayout(config: DecimalConfig): {
   };
 }
 
+/** A draw as it is printed: along a line, in a stack, or in the bracket. */
+function problemOf(
+  drawn: Drawn,
+  squares: ReturnType<typeof bracketOf>,
+  extras: { workspace?: Mil },
+): Problem {
+  if (drawn.bracket && squares) {
+    const { dividend, divisor } = drawn.bracket;
+    return {
+      prompt: "",
+      answer: drawn.answer,
+      bracket: {
+        ...drawn.bracket,
+        ...squares,
+        tableau: decimalTableau(dividend, Number(divisor)),
+      },
+    };
+  }
+  return {
+    prompt: drawn.prompt,
+    answer: drawn.answer,
+    ...(drawn.operands
+      ? { operands: drawn.operands, operator: drawn.operator }
+      : {}),
+    ...extras,
+  };
+}
+
 /**
  * Every problem on the sheet, in the order they are printed.
  *
@@ -382,6 +645,8 @@ export function decimalProblems(
   // sheet out of the printer with two problems on it.
   const wanted = clamp(config.count, 0, perPage);
 
+  const draw = drawerOf(config);
+  const squares = bracketOf(config);
   const rand = mulberry32(seed);
   const seen = new Set<string>();
   const problems: Problem[] = [];
@@ -389,25 +654,13 @@ export function decimalProblems(
 
   let misses = 0;
   while (problems.length < wanted && misses < MISS_BUDGET) {
-    const drawn =
-      config.style === "percent"
-        ? drawPercent(config, rand)
-        : config.style === "convert"
-          ? drawConvert(config, rand)
-          : drawStandard(config, rand);
+    const drawn = draw(config, rand);
     if (drawn === null || seen.has(drawn.key)) {
       misses += 1;
       continue;
     }
     seen.add(drawn.key);
-    problems.push({
-      prompt: drawn.prompt,
-      answer: drawn.answer,
-      ...(drawn.operands
-        ? { operands: drawn.operands, operator: drawn.operator }
-        : {}),
-      ...extras,
-    });
+    problems.push(problemOf(drawn, squares, extras));
     misses = 0;
   }
   return problems;
@@ -419,8 +672,16 @@ const OPERATION_NAME = {
   add: "Adding",
   subtract: "Subtracting",
   multiply: "Multiplying",
+  divide: "Dividing",
   both: "Adding and subtracting",
 } as const;
+
+/** The three divisions, named by what makes each a different lesson (§22). */
+const DIVISION_NAME: Record<Division, string> = {
+  byWhole: "Dividing decimals",
+  byDecimal: "Dividing by a decimal",
+  wholeDividend: "Division with decimal answers",
+};
 
 /** What a place count is called out loud, which is how a lesson names it. */
 const PLACE_NAME = ["", "tenths", "hundredths", "thousandths"] as const;
@@ -433,7 +694,28 @@ function titleOf(config: DecimalConfig): string {
     case "convert":
       return "Fractions, decimals and percents";
     default:
+      if (config.operation === "divide")
+        return DIVISION_NAME[divisionOf(config)];
       return `${OPERATION_NAME[config.operation] ?? OPERATION_NAME.add} decimals`;
+  }
+}
+
+/**
+ * What a child is told on a division sheet, which is the one sentence the
+ * method turns on: where the point goes, or that the sum is rewritten first.
+ */
+function divisionInstruction(config: DecimalConfig): string {
+  switch (divisionOf(config)) {
+    case "byDecimal":
+      return "Work out each answer. Multiply both numbers by 10, or by 100, until you are dividing by a whole number, then divide.";
+    case "wholeDividend":
+      return stacked(config)
+        ? "Work out each answer. Keep dividing into the zeros after the point, and put the point in the answer straight above the point in the number."
+        : "Work out each answer. Keep dividing past the point, writing zeros after it if you need them.";
+    default:
+      return stacked(config)
+        ? "Work out each answer. Put the point in the answer straight above the point in the number."
+        : "Work out each answer.";
   }
 }
 
@@ -447,6 +729,7 @@ function instructionOf(config: DecimalConfig): string {
       // asked, and would be marked wrong for it.
       return "Fill in each blank. A blank with a % after it wants a percent; every other blank wants a decimal.";
     default:
+      if (config.operation === "divide") return divisionInstruction(config);
       if (!stacked(config)) return "Work out each answer.";
       // A stack of sums lines up on the point, because every value on the sheet
       // is printed to the same number of places. A multiplier is not a decimal
@@ -476,15 +759,20 @@ function headerOf(config: DecimalConfig): SheetOptions {
 /**
  * One line naming what the sheet holds, in the terms a parent chose it by.
  *
- * The two things the title leaves off are the two that decide whether a sheet
- * matches the lesson: how far past the point the numbers go, and whether the
- * sum is written along a line or worked in columns.
+ * The things the title leaves off are the ones that decide whether a sheet
+ * matches the lesson: how big the divisors are, how far past the point the
+ * numbers go, whether the sum is written along a line or worked in columns,
+ * and how much help is drawn under the bracket.
  */
 function describeDecimals(config: DecimalConfig): string {
+  const dividing = config.style === "standard" && config.operation === "divide";
+  const squares = bracketOf(config);
   return [
     titleOf(config),
+    dividing && divisorOf(config).min >= 10 ? "by two-digit numbers" : null,
     config.style === "percent" ? null : PLACE_NAME[placesOf(config)],
     stacked(config) ? "in columns" : null,
+    squares ? HELP_NAME[squares.help] : null,
   ]
     .filter((part): part is string => part !== null)
     .join(" — ");
