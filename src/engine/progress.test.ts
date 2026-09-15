@@ -201,9 +201,9 @@ const FROZEN = [
     "Clear a drill of your tricky facts with no mistakes",
   ],
   // ── The typing course's five (LES12, §6.7) ─────────────────────────────────
-  ["home-keys", "Home Keys", "🏠", "Clear checkpoint 10"],
-  ["touch-typist", "Touch Typist", "✋", "Clear checkpoint 50"],
-  ["ice-exam", "Ice Exam", "🧊", "Clear lesson 100"],
+  ["home-keys", "Home Keys", "🏠", "Clear checkpoint 12"],
+  ["touch-typist", "Touch Typist", "✋", "Clear checkpoint 58"],
+  ["ice-exam", "Ice Exam", "🧊", "Clear lesson 110"],
   ["eyes-up", "Eyes Up", "👀", "Pass a lesson with the keyboard hidden"],
   [
     "unbroken",
@@ -292,20 +292,20 @@ describe("the badges that shipped before the typing course", () => {
 /* ── The three ladder badges ─────────────────────────────────────────────── */
 
 describe("clearing the course", () => {
-  it("gives Home Keys the moment checkpoint 10 goes down", () => {
-    expect(badgesFor(passing(lesson(10)))).toContain("home-keys");
+  it("gives Home Keys the moment checkpoint 12 goes down", () => {
+    expect(badgesFor(passing(lesson(12)))).toContain("home-keys");
   });
 
   it("gives it for the run that cleared it, not the run after", () => {
     // The run has not been saved when badges are evaluated, so a reader that
     // asked only the history would hold the badge back until the child's next
     // race — and show it on a results screen for a lesson they were not on.
-    const before = badgesFor(failing(lesson(10)));
+    const before = badgesFor(failing(lesson(12)));
     expect(before).not.toContain("home-keys");
   });
 
   it("does not give it for a checkpoint that was missed", () => {
-    const history = [asSaved(failing(lesson(10)))];
+    const history = [asSaved(failing(lesson(12)))];
     expect(badgesFor(race([card("2", "2")]), history)).not.toContain(
       "home-keys",
     );
@@ -313,37 +313,37 @@ describe("clearing the course", () => {
 
   /**
    * The placement test, as a shelf (§6.6). Unlock is `max(cleared) + 1`, so a
-   * nine-year-old who opens checkpoint 50 cold has cleared 1–49 with it. A
+   * nine-year-old who opens checkpoint 58 cold has cleared 1–57 with it. A
    * Touch Typist without Home Keys would be a badge shelf disagreeing with the
    * ladder next to it about the same child.
    */
   it("carries the lower checkpoints with the higher one", () => {
-    const badges = badgesFor(passing(lesson(50)));
+    const badges = badgesFor(passing(lesson(58)));
     expect(badges).toContain("home-keys");
     expect(badges).toContain("touch-typist");
     expect(badges).not.toContain("ice-exam");
   });
 
-  it("gives Ice Exam for lesson 100, and the two below it", () => {
-    const badges = badgesFor(passing(lesson(100)));
+  it("gives Ice Exam for lesson 110, and the two below it", () => {
+    const badges = badgesFor(passing(lesson(110)));
     expect(badges).toContain("ice-exam");
     expect(badges).toContain("touch-typist");
     expect(badges).toContain("home-keys");
   });
 
   /**
-   * A child who cleared checkpoint 10 months before this story shipped has the
+   * A child who cleared checkpoint 12 months before this story shipped has the
    * runs and not the badge. `evaluateBadges` returns what is true rather than
    * what is new, so the next run of anything at all hands it over.
    */
   it("is awarded retroactively, on a race that is not a lesson", () => {
-    const history = [asSaved(passing(lesson(10)))];
+    const history = [asSaved(passing(lesson(12)))];
     expect(badgesFor(race([card("2", "2")]), history)).toContain("home-keys");
   });
 
   it("is not awarded for runs that are not on the ladder", () => {
     const notALesson = asSaved({
-      ...passing(lesson(10)),
+      ...passing(lesson(12)),
       mode: "typing:home-row",
     });
     expect(badgesFor(race([card("2", "2")]), [notALesson])).not.toContain(
@@ -355,7 +355,7 @@ describe("clearing the course", () => {
 /* ── Eyes Up ─────────────────────────────────────────────────────────────── */
 
 /**
- * Lesson 41 is the shape this badge is for: an ordinary rung, `keyboard: keys`
+ * Lesson 47 is the shape this badge is for: an ordinary rung, `keyboard: keys`
  * and no lock on it, so the brief's control is live and the run records the
  * mode it was actually typed under.
  *
@@ -367,23 +367,23 @@ describe("clearing the course", () => {
  */
 describe("Eyes Up", () => {
   it("is given for a lesson passed with the board turned off", () => {
-    expect(badgesFor(passing(lesson(41), "off"))).toContain("eyes-up");
+    expect(badgesFor(passing(lesson(47), "off"))).toContain("eyes-up");
   });
 
   it("is not given when the board was on", () => {
-    expect(badgesFor(passing(lesson(41), "keys"))).not.toContain("eyes-up");
-    expect(badgesFor(passing(lesson(41), "guide"))).not.toContain("eyes-up");
+    expect(badgesFor(passing(lesson(47), "keys"))).not.toContain("eyes-up");
+    expect(badgesFor(passing(lesson(47), "guide"))).not.toContain("eyes-up");
   });
 
   it("is not given when the run recorded no board at all", () => {
     // No `keyboard` on the config is the ordinary case for free play and for
     // any route that starts a run without a brief in front of it. Absent is
     // not evidence that the board was hidden, and hidden is what this reads.
-    expect(badgesFor(passing(lesson(41)))).not.toContain("eyes-up");
+    expect(badgesFor(passing(lesson(47)))).not.toContain("eyes-up");
   });
 
   it("is not given for a lesson that was not passed", () => {
-    expect(badgesFor(failing(lesson(41), "off"))).not.toContain("eyes-up");
+    expect(badgesFor(failing(lesson(47), "off"))).not.toContain("eyes-up");
   });
 
   /**
@@ -398,7 +398,7 @@ describe("Eyes Up", () => {
    * it, and a run that could not have been typed any other way proves nothing.
    */
   it("is refused on a checkpoint, which forces the board off anyway", () => {
-    const badges = badgesFor(passing(lesson(10), "off"));
+    const badges = badgesFor(passing(lesson(12), "off"));
     expect(badges).toContain("home-keys");
     expect(badges).not.toContain("eyes-up");
   });
@@ -505,6 +505,6 @@ describe("Unbroken", () => {
   });
 
   it("is not awarded for a flawless run of an ordinary lesson", () => {
-    expect(badgesFor(passing(lesson(41), "off"))).not.toContain("unbroken");
+    expect(badgesFor(passing(lesson(47), "off"))).not.toContain("unbroken");
   });
 });

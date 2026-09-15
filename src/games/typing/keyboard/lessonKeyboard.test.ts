@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { LESSONS, lessonById } from "@/engine/typing/lessons";
+import { HELD_KEY_LESSONS, LESSONS, lessonById } from "@/engine/typing/lessons";
 
 import { keyboardFor, keyboardLock } from "./lessonKeyboard";
 
@@ -19,9 +19,9 @@ import { keyboardFor, keyboardLock } from "./lessonKeyboard";
 
 /** Lesson 1: `guide`, locked — a child who has never seen a keyboard. */
 const L01 = lessonById("L01")!;
-/** Lesson 7: `guide`, and only suggesting it. */
+/** Lesson 9: `guide`, and only suggesting it. */
 const L07 = lessonById("L07")!;
-/** Checkpoint 10: `off`, locked — reading the answers measures nothing. */
+/** Checkpoint 12: `off`, locked — reading the answers measures nothing. */
 const L10 = lessonById("L10")!;
 
 describe("keyboardFor", () => {
@@ -77,5 +77,13 @@ describe("keyboardLock", () => {
   it("has a reason for every lesson that insists", () => {
     for (const lesson of LESSONS.filter((l) => l.keyboardLocked))
       expect(keyboardLock(lesson)).toBeTruthy();
+  });
+
+  /** The board is where the held key is drawn, whichever mode the row names. */
+  it("gives a held-key lesson its own reason, in either mode", () => {
+    for (const lesson of HELD_KEY_LESSONS) {
+      expect(keyboardLock(lesson)).toContain("key you are holding");
+      expect(keyboardFor(lesson, "off", "off")).toBe(lesson.keyboard);
+    }
   });
 });

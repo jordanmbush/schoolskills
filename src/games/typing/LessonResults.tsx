@@ -115,7 +115,7 @@ export default function LessonResults({
    * What the child chose in the brief, if they chose anything (§4.2).
    *
    * Carried onto "Try again" and onto nothing else. A retry is the same lesson
-   * with fresh words, and a child who turned the guide off to sit lesson 40
+   * with fresh words, and a child who turned the guide off to sit lesson 46
    * properly should not have it switched back on by the button that means
    * "again" — but the lesson after it is a different lesson, and it gets to
    * make its own suggestion. Read through the deck registry's own guard, for

@@ -17,7 +17,7 @@ Three things get built, in this order:
 |            |                                                           |             |
 | ---------- | --------------------------------------------------------- | ----------- |
 | **KEY**    | The keyboard — a model in the engine, a picture on screen | `docs` §3–4 |
-| **LESSON** | A hundred lessons, gated, with a real pass mark           | §5–7        |
+| **LESSON** | A hundred and ten lessons, gated, with a real pass mark   | §5–7        |
 | **STORM**  | Hailstorm — the falling-letter game                       | §8          |
 
 The order is not arbitrary: the lessons need the keyboard because half of them
@@ -207,7 +207,7 @@ exclude from the Scripture pool.
 
 US ANSI QWERTY, and nothing else. The site is `en` and the games mark
 punctuation exactly, so a UK keyboard — where `"` is shift-`2` and `@` is
-shift-`'` — would fail lessons 62 and 67 for a child who is doing everything
+shift-`'` — would fail lessons 72 and 77 for a child who is doing everything
 right.
 
 That is a real limitation and it should be written down rather than
@@ -269,8 +269,8 @@ screen measures nothing.
 
 **A lesson's mode seeds the run; it does not overrule the player** (#145).
 Read as a plain override the line above is a trap, and the ladder walks
-straight into it: **every one of the hundred names a mode**, so the `??` never
-falls through, the player's setting is beaten on all hundred rungs, and
+straight into it: **every one of the hundred and ten names a mode**, so the
+`??` never falls through, the player's setting is beaten on every rung, and
 `keyboardLocked` marks no difference between the lessons that insist and the
 ninety-odd that were only suggesting. So the lesson's mode is what the brief's
 control **opens on**; an unlocked lesson may be changed before Start and the
@@ -341,7 +341,9 @@ whole point.
 
 Hailstorm is the exception that cannot be papered over: it needs raw key
 events, it draws no board of its own (decision 64), and there is no software
-keyboard on screen during it either. See §8.8.
+keyboard on screen during it either. See §8.8. The course itself assumes a
+real keyboard: the held-key lessons (§5.8) have nothing to hold on a software
+one, and they gate the ladder from lesson 7.
 
 ### 4.6 · Colour
 
@@ -514,9 +516,9 @@ export type LessonKind =
   | { type: "storm"; wave: WaveSpec }; // §8
 
 export type Lesson = {
-  /** 1–100. */
+  /** The rung, 1–110. Moves when a lesson is woven in below; `id` does not. */
   n: number;
-  /** "L07". Stable forever — it is in `Session.mode`. */
+  /** "L07", or "H03". Stable forever — it is in `Session.mode`. */
   id: string;
   block: number;
   title: string;
@@ -528,6 +530,8 @@ export type Lesson = {
   keyboardLocked?: boolean;
   pass: PassCriteria;
   checkpoint?: true;
+  /** The key held down for the whole run. Only on a held-key lesson (§5.8). */
+  hold?: string;
 };
 ```
 
@@ -540,7 +544,7 @@ than taste: four plus the space that follows it is five, which is the
 words-per-minute convention `wordCount` is counted in, so a `keys` lesson runs
 to `wordCount × 5` characters like every other kind. That is the same figure
 `strikesFor` sizes the new-key gate against, and at three the two would
-disagree. Lesson 67 hands over six symbols and asks ten strikes of each: 60
+disagree. Lesson 77 hands over six symbols and asks ten strikes of each: 60
 new characters out of the 174 that 35 groups of four and their spaces come to
 is 34%, inside §5.2's 15–35% band; out of the 139 that groups of three would
 leave, it is 43%, above the band with the generator blameless.
@@ -550,7 +554,7 @@ leave, it is 43%, above the band with the generator blameless.
 > Every character of every word a lesson can generate must be producible from
 > the keys unlocked at that lesson.
 
-One test, over all hundred lessons, over a large sample of seeds, asserting
+One test, over every lesson, over a large sample of seeds, asserting
 `strokeFor(ch) !== null && unlocked(n).has(ch)` for every character produced.
 It is the reason the layout is in the engine and it is the reason this ladder
 can be re-ordered by editing one array.
@@ -570,7 +574,7 @@ concession by the generator: at lesson 1 the unlocked alphabet is `f`, `j` and
 the space bar, so there is no review to be had and the whole drill is the two
 new keys — which is exactly what §5.5 asks for there. So the test states the
 band in derived terms: a lesson **with review available** is 15–35% new. A
-re-ordered ladder that left lesson 40 with nothing to review would then be
+re-ordered ladder that left lesson 46 with nothing to review would then be
 named by the test rather than quietly excused by it.
 
 ### 5.3 · The lexicon, and the 222 KB lesson
@@ -599,7 +603,7 @@ The way out is already in the type. `TypingConfig.words` exists, and
   drill today, and never imports `generate.ts` or `lexicon.ts`.
 - `lessons.ts` stays small (titles and criteria, no text) and _is_ importable
   from the deck layer, which is how `deckSpec("typing:L07")` can label a run
-  "Lesson 7 · Reaching up" in a record book two years from now.
+  "Lesson 9 · Reaching up" in a record book two years from now.
 
 A lint rule is cheap and is the only thing that will stop this happening a
 third time. What it pins is _reachability_, not the one import: banning
@@ -615,7 +619,7 @@ the words — and it does not need a new entry each time the engine grows a file
 ### 5.4 · Ghost identity is the lesson, not the passage
 
 `typingConfigKey` folds `config.words` into the key today, which is right for a
-parent-authored drill and wrong for a lesson: every run of lesson 7 generates a
+parent-authored drill and wrong for a lesson: every run of lesson 9 generates a
 different passage, so every run would land in a bucket of one and a child would
 never see their own best.
 
@@ -636,21 +640,22 @@ to the same string and is not read.
 
 ### 5.5 · The ten blocks
 
-Each block is ten lessons ending in a checkpoint. Roughly five introduce keys,
-two consolidate, two are Hailstorm, one is the checkpoint.
+Each block ends in a checkpoint. Five are ten lessons; the other five carry a
+pair of held-key lessons (§5.8) and are twelve. Roughly five introduce keys, two
+consolidate, two are Hailstorm, one is the checkpoint.
 
-| Block             | Lessons | What arrives                                           |
-| ----------------- | ------- | ------------------------------------------------------ |
-| 1 · Home          | 1–10    | `f j` `d k` `s l` `a ;` `g h`                          |
-| 2 · Reaching up   | 11–20   | `e i` `r u` `t y` `w o` `q p`                          |
-| 3 · Reaching down | 21–30   | `v m` `c ,` `x .` `z /` `b n`                          |
-| 4 · Capitals      | 31–40   | both shifts, `'`                                       |
-| 5 · Fluency       | 41–50   | nothing — the common bigrams and the top hundred words |
-| 6 · Numbers       | 51–60   | `4 5` `3 6` `2 7` `1 8` `9 0`                          |
-| 7 · Punctuation   | 61–70   | `? !` `"` `- _` `: ;` `( )` `@ # $ % & *` `/ \ + =`    |
-| 8 · Endurance     | 71–80   | nothing — length                                       |
-| 9 · Speed         | 81–90   | nothing — pace                                         |
-| 10 · Everything   | 91–100  | nothing — all of it at once                            |
+| Block             | Lessons | What arrives                                                                        |
+| ----------------- | ------- | ----------------------------------------------------------------------------------- |
+| 1 · Home          | 1–12    | `f j` `d k` `s l` `a ;` `g h`, then each hand alone                                 |
+| 2 · Reaching up   | 13–24   | `e i` `r u` `t y` `w o` `q p`, then each hand alone                                 |
+| 3 · Reaching down | 25–36   | `v m` `c ,` `x .` `z /` `b n`, then each hand alone                                 |
+| 4 · Capitals      | 37–46   | both shifts, `'`                                                                    |
+| 5 · Fluency       | 47–58   | nothing — the common bigrams, the top hundred words, and words one hand types alone |
+| 6 · Numbers       | 59–70   | `4 5` `3 6` `2 7` `1 8` `9 0`, then each hand alone                                 |
+| 7 · Punctuation   | 71–80   | `? !` `"` `- _` `: ;` `( )` `@ # $ % & *` `/ \ + =`                                 |
+| 8 · Endurance     | 81–90   | nothing — length                                                                    |
+| 9 · Speed         | 91–100  | nothing — pace                                                                      |
+| 10 · Everything   | 101–110 | nothing — all of it at once                                                         |
 
 Three things about that order are deliberate:
 
@@ -669,7 +674,7 @@ Three things about that order are deliberate:
 Two rows in that table are not what they look like:
 
 - **Block 4 introduces capitals, not shifts.** A shift is not a character, and
-  the unit of this curriculum is a character — so what lessons 31 and 32 hand
+  the unit of this curriculum is a character — so what lessons 37 and 38 hand
   over is the set of capitals each shift _reaches_. The right shift is held by
   the right pinky and capitalises the left hand's letters; the left shift the
   right hand's. Two lessons, twenty-six characters, and the opposite-hand rule
@@ -677,172 +682,185 @@ Two rows in that table are not what they look like:
   shifts back out of those two rows, and there is nowhere else they are
   written down.
 - **Block 7 re-introduces two characters the ladder already unlocked.** `;`
-  arrived at lesson 5 as a home key and `/` at lesson 25 as a bottom-row reach,
+  arrived at lesson 5 as a home key and `/` at lesson 29 as a bottom-row reach,
   and both come back here in their punctuation role. The unlocked alphabet is a
   union, so saying it twice changes nothing about what a child may type; what
   it does is put the character back under the new-key gate (§6.4), which is the
   point. Knowing where `;` is and knowing what it is for are two lessons.
 
-### 5.6 · The hundred
+### 5.6 · The hundred and ten
 
 `⌨` = keyboard mode, `🔒` = the lesson insists. `wpm` is gross words per
-minute; `acc` is the whole-lesson accuracy bar.
+minute; `acc` is the whole-lesson accuracy bar. The id is what a saved run
+carries (§5.4) and never changes; the number is the rung, and moves when a
+lesson is woven in below it (§5.8).
 
 **Block 1 · Home row**
 
-|   # | Title                     | New   | Kind    | ⌨       | Words | wpm | acc |
-| --: | ------------------------- | ----- | ------- | ------- | ----: | --: | --: |
-|   1 | Two keys                  | `f j` | keys    | guide🔒 |    20 |   8 | 95% |
-|   2 | Four keys                 | `d k` | keys    | guide🔒 |    20 |   8 | 95% |
-|   3 | Six keys                  | `s l` | keys    | guide🔒 |    24 |   9 | 95% |
-|   4 | Hailstorm · First ice     | —     | storm   | guide🔒 |    12 |   — |   — |
-|   5 | Both pinkies              | `a ;` | keys    | guide🔒 |    24 |   9 | 95% |
-|   6 | The inside reach          | `g h` | keys    | guide🔒 |    24 |  10 | 95% |
-|   7 | Home-row words            | —     | words   | guide   |    25 |  11 | 95% |
-|   8 | Pairs that repeat         | —     | bigrams | guide   |    25 |  11 | 95% |
-|   9 | Hailstorm · Home row      | —     | storm   | guide   |    16 |   — |   — |
-|  10 | **Checkpoint · Home row** | —     | words   | off🔒   |    30 |  12 | 97% |
+|   # | id  | Title                     | New         | Kind    | ⌨       | Words | wpm | acc |
+| --: | --- | ------------------------- | ----------- | ------- | ------- | ----: | --: | --: |
+|   1 | L01 | Two keys                  | `f j`       | keys    | guide🔒 |    20 |   8 | 95% |
+|   2 | L02 | Four keys                 | `d k`       | keys    | guide🔒 |    20 |   8 | 95% |
+|   3 | L03 | Six keys                  | `s l`       | keys    | guide🔒 |    24 |   9 | 95% |
+|   4 | L04 | Hailstorm · First ice     | —           | storm   | guide🔒 |    12 |   — |   — |
+|   5 | L05 | Both pinkies              | `a ;`       | keys    | guide🔒 |    24 |   9 | 95% |
+|   6 | L06 | The inside reach          | `g h`       | keys    | guide🔒 |    24 |  10 | 95% |
+|   7 | H01 | Right hand · Home row     | `h j k l ;` | keys    | guide🔒 |    24 |   8 | 95% |
+|   8 | H02 | Left hand · Home row      | `a s d f g` | keys    | guide🔒 |    24 |   8 | 95% |
+|   9 | L07 | Home-row words            | —           | words   | guide   |    25 |  11 | 95% |
+|  10 | L08 | Pairs that repeat         | —           | bigrams | guide   |    25 |  11 | 95% |
+|  11 | L09 | Hailstorm · Home row      | —           | storm   | guide   |    16 |   — |   — |
+|  12 | L10 | **Checkpoint · Home row** | —           | words   | off🔒   |    30 |  12 | 97% |
 
 **Block 2 · Reaching up**
 
-|   # | Title                     | New   | Kind    | ⌨       | Words | wpm | acc |
-| --: | ------------------------- | ----- | ------- | ------- | ----: | --: | --: |
-|  11 | Up to e and i             | `e i` | keys    | guide🔒 |    24 |   9 | 95% |
-|  12 | Up to r and u             | `r u` | keys    | guide🔒 |    24 |   9 | 95% |
-|  13 | Hailstorm · Eight lanes   | —     | storm   | guide   |    18 |   — |   — |
-|  14 | The long reach            | `t y` | keys    | guide🔒 |    24 |  10 | 95% |
-|  15 | Up to w and o             | `w o` | keys    | guide🔒 |    26 |  10 | 95% |
-|  16 | Real words at last        | —     | words   | guide   |    30 |  12 | 95% |
-|  17 | The corners               | `q p` | keys    | guide🔒 |    26 |  10 | 95% |
-|  18 | th · he · er · re         | —     | bigrams | guide   |    30 |  13 | 95% |
-|  19 | Hailstorm · Two rows      | —     | storm   | keys    |    20 |   — |   — |
-|  20 | **Checkpoint · Two rows** | —     | words   | off🔒   |    35 |  15 | 97% |
+|   # | id  | Title                     | New         | Kind    | ⌨       | Words | wpm | acc |
+| --: | --- | ------------------------- | ----------- | ------- | ------- | ----: | --: | --: |
+|  13 | L11 | Up to e and i             | `e i`       | keys    | guide🔒 |    24 |   9 | 95% |
+|  14 | L12 | Up to r and u             | `r u`       | keys    | guide🔒 |    24 |   9 | 95% |
+|  15 | L13 | Hailstorm · Eight lanes   | —           | storm   | guide   |    18 |   — |   — |
+|  16 | L14 | The long reach            | `t y`       | keys    | guide🔒 |    24 |  10 | 95% |
+|  17 | L15 | Up to w and o             | `w o`       | keys    | guide🔒 |    26 |  10 | 95% |
+|  18 | L16 | Real words at last        | —           | words   | guide   |    30 |  12 | 95% |
+|  19 | L17 | The corners               | `q p`       | keys    | guide🔒 |    26 |  10 | 95% |
+|  20 | H03 | Right hand · Reaching up  | `y u i o p` | keys    | guide🔒 |    26 |   9 | 95% |
+|  21 | H04 | Left hand · Reaching up   | `q w e r t` | keys    | guide🔒 |    26 |   9 | 95% |
+|  22 | L18 | th · he · er · re         | —           | bigrams | guide   |    30 |  13 | 95% |
+|  23 | L19 | Hailstorm · Two rows      | —           | storm   | keys    |    20 |   — |   — |
+|  24 | L20 | **Checkpoint · Two rows** | —           | words   | off🔒   |    35 |  15 | 97% |
 
 **Block 3 · Reaching down**
 
-|   # | Title                         | New   | Kind      | ⌨       | Words | wpm | acc |
-| --: | ----------------------------- | ----- | --------- | ------- | ----: | --: | --: |
-|  21 | Down to v and m               | `v m` | keys      | guide🔒 |    26 |  11 | 95% |
-|  22 | c, and the comma              | `c ,` | keys      | guide🔒 |    26 |  11 | 95% |
-|  23 | Hailstorm · Down low          | —     | storm     | guide   |    22 |   — |   — |
-|  24 | x, and the full stop          | `x .` | keys      | guide🔒 |    26 |  12 | 95% |
-|  25 | The last corner               | `z /` | keys      | guide🔒 |    26 |  12 | 95% |
-|  26 | The last two                  | `b n` | keys      | guide🔒 |    28 |  12 | 95% |
-|  27 | Every letter                  | —     | words     | guide   |    35 |  14 | 95% |
-|  28 | an · in · on · nd · nt        | —     | bigrams   | keys    |    35 |  15 | 95% |
-|  29 | Hailstorm · Whole alphabet    | —     | storm     | keys    |    24 |   — |   — |
-|  30 | **Checkpoint · Every letter** | —     | sentences | off🔒   |    40 |  18 | 97% |
+|   # | id  | Title                         | New         | Kind      | ⌨       | Words | wpm | acc |
+| --: | --- | ----------------------------- | ----------- | --------- | ------- | ----: | --: | --: |
+|  25 | L21 | Down to v and m               | `v m`       | keys      | guide🔒 |    26 |  11 | 95% |
+|  26 | L22 | c, and the comma              | `c ,`       | keys      | guide🔒 |    26 |  11 | 95% |
+|  27 | L23 | Hailstorm · Down low          | —           | storm     | guide   |    22 |   — |   — |
+|  28 | L24 | x, and the full stop          | `x .`       | keys      | guide🔒 |    26 |  12 | 95% |
+|  29 | L25 | The last corner               | `z /`       | keys      | guide🔒 |    26 |  12 | 95% |
+|  30 | L26 | The last two                  | `b n`       | keys      | guide🔒 |    28 |  12 | 95% |
+|  31 | H05 | Right hand · Reaching down    | `n m , . /` | keys      | guide🔒 |    28 |  10 | 95% |
+|  32 | H06 | Left hand · Reaching down     | `z x c v b` | keys      | guide🔒 |    28 |  10 | 95% |
+|  33 | L27 | Every letter                  | —           | words     | guide   |    35 |  14 | 95% |
+|  34 | L28 | an · in · on · nd · nt        | —           | bigrams   | keys    |    35 |  15 | 95% |
+|  35 | L29 | Hailstorm · Whole alphabet    | —           | storm     | keys    |    24 |   — |   — |
+|  36 | L30 | **Checkpoint · Every letter** | —           | sentences | off🔒   |    40 |  18 | 97% |
 
 **Block 4 · Capitals**
 
-|   # | Title                           | New               | Kind      | ⌨       | Words | wpm | acc |
-| --: | ------------------------------- | ----------------- | --------- | ------- | ----: | --: | --: |
-|  31 | The right shift                 | `⇧`→left letters  | keys      | guide🔒 |    30 |  13 | 95% |
-|  32 | The left shift                  | `⇧`→right letters | keys      | guide🔒 |    30 |  13 | 95% |
-|  33 | Names, and the word I           | —                 | words     | guide   |    35 |  15 | 95% |
-|  34 | Hailstorm · Capitals            | —                 | storm     | keys    |    26 |   — |   — |
-|  35 | The apostrophe                  | `'`               | keys      | guide🔒 |    30 |  14 | 95% |
-|  36 | First sentences                 | —                 | sentences | keys    |    35 |  16 | 95% |
-|  37 | Where the comma goes            | —                 | sentences | keys    |    40 |  17 | 95% |
-|  38 | Places and people               | —                 | sentences | keys    |    40 |  18 | 95% |
-|  39 | Hailstorm · Shift under fire    | —                 | storm     | off     |    28 |   — |   — |
-|  40 | **Checkpoint · Real sentences** | —                 | sentences | off🔒   |    45 |  20 | 97% |
+|   # | id  | Title                           | New               | Kind      | ⌨       | Words | wpm | acc |
+| --: | --- | ------------------------------- | ----------------- | --------- | ------- | ----: | --: | --: |
+|  37 | L31 | The right shift                 | `⇧`→left letters  | keys      | guide🔒 |    30 |  13 | 95% |
+|  38 | L32 | The left shift                  | `⇧`→right letters | keys      | guide🔒 |    30 |  13 | 95% |
+|  39 | L33 | Names, and the word I           | —                 | words     | guide   |    35 |  15 | 95% |
+|  40 | L34 | Hailstorm · Capitals            | —                 | storm     | keys    |    26 |   — |   — |
+|  41 | L35 | The apostrophe                  | `'`               | keys      | guide🔒 |    30 |  14 | 95% |
+|  42 | L36 | First sentences                 | —                 | sentences | keys    |    35 |  16 | 95% |
+|  43 | L37 | Where the comma goes            | —                 | sentences | keys    |    40 |  17 | 95% |
+|  44 | L38 | Places and people               | —                 | sentences | keys    |    40 |  18 | 95% |
+|  45 | L39 | Hailstorm · Shift under fire    | —                 | storm     | off     |    28 |   — |   — |
+|  46 | L40 | **Checkpoint · Real sentences** | —                 | sentences | off🔒   |    45 |  20 | 97% |
 
 **Block 5 · Fluency**
 
-|   # | Title                   | New | Kind    | ⌨     | Words | wpm | acc |
-| --: | ----------------------- | --- | ------- | ----- | ----: | --: | --: |
-|  41 | The twenty-five         | —   | words   | keys  |    40 |  18 | 95% |
-|  42 | th · he · in · er       | —   | bigrams | keys  |    40 |  19 | 95% |
-|  43 | an · re · on · at · en  | —   | bigrams | keys  |    40 |  20 | 95% |
-|  44 | The hard pairs          | —   | bigrams | keys  |    40 |  19 | 95% |
-|  45 | Hailstorm · Pairs       | —   | storm   | keys  |    30 |   — |   — |
-|  46 | Hands that take turns   | —   | words   | off   |    45 |  22 | 95% |
-|  47 | One hand at a time      | —   | words   | keys  |    40 |  20 | 95% |
-|  48 | The hundred             | —   | words   | off   |    50 |  24 | 95% |
-|  49 | Hailstorm · Whole words | —   | storm   | off   |    32 |   — |   — |
-|  50 | **Checkpoint · Fluent** | —   | passage | off🔒 |    60 |  25 | 97% |
+|   # | id  | Title                   | New | Kind    | ⌨      | Words | wpm | acc |
+| --: | --- | ----------------------- | --- | ------- | ------ | ----: | --: | --: |
+|  47 | L41 | The twenty-five         | —   | words   | keys   |    40 |  18 | 95% |
+|  48 | L42 | th · he · in · er       | —   | bigrams | keys   |    40 |  19 | 95% |
+|  49 | L43 | an · re · on · at · en  | —   | bigrams | keys   |    40 |  20 | 95% |
+|  50 | L44 | The hard pairs          | —   | bigrams | keys   |    40 |  19 | 95% |
+|  51 | L45 | Hailstorm · Pairs       | —   | storm   | keys   |    30 |   — |   — |
+|  52 | L46 | Hands that take turns   | —   | words   | off    |    45 |  22 | 95% |
+|  53 | L47 | One hand at a time      | —   | words   | keys   |    40 |  20 | 95% |
+|  54 | H07 | Right hand · Words      | —   | words   | keys🔒 |    30 |  14 | 95% |
+|  55 | H08 | Left hand · Words       | —   | words   | keys🔒 |    30 |  14 | 95% |
+|  56 | L48 | The hundred             | —   | words   | off    |    50 |  24 | 95% |
+|  57 | L49 | Hailstorm · Whole words | —   | storm   | off    |    32 |   — |   — |
+|  58 | L50 | **Checkpoint · Fluent** | —   | passage | off🔒  |    60 |  25 | 97% |
 
 **Block 6 · Numbers**
 
-|   # | Title                       | New   | Kind    | ⌨       | Words | wpm | acc |
-| --: | --------------------------- | ----- | ------- | ------- | ----: | --: | --: |
-|  51 | Four and five               | `4 5` | keys    | guide🔒 |    30 |  16 | 95% |
-|  52 | Three and six               | `3 6` | keys    | guide🔒 |    30 |  16 | 95% |
-|  53 | Hailstorm · Digits          | —     | storm   | guide   |    30 |   — |   — |
-|  54 | Two and seven               | `2 7` | keys    | guide🔒 |    30 |  17 | 95% |
-|  55 | One and eight               | `1 8` | keys    | guide🔒 |    30 |  17 | 95% |
-|  56 | Nine and nought             | `9 0` | keys    | guide🔒 |    30 |  18 | 95% |
-|  57 | Ages, dates and scores      | —     | numbers | keys    |    40 |  19 | 95% |
-|  58 | Words and numbers together  | —     | mixed   | keys    |    45 |  20 | 95% |
-|  59 | Hailstorm · Numbers falling | —     | storm   | keys    |    34 |   — |   — |
-|  60 | **Checkpoint · Numbers**    | —     | mixed   | off🔒   |    50 |  22 | 97% |
+|   # | id  | Title                       | New         | Kind    | ⌨       | Words | wpm | acc |
+| --: | --- | --------------------------- | ----------- | ------- | ------- | ----: | --: | --: |
+|  59 | L51 | Four and five               | `4 5`       | keys    | guide🔒 |    30 |  16 | 95% |
+|  60 | L52 | Three and six               | `3 6`       | keys    | guide🔒 |    30 |  16 | 95% |
+|  61 | L53 | Hailstorm · Digits          | —           | storm   | guide   |    30 |   — |   — |
+|  62 | L54 | Two and seven               | `2 7`       | keys    | guide🔒 |    30 |  17 | 95% |
+|  63 | L55 | One and eight               | `1 8`       | keys    | guide🔒 |    30 |  17 | 95% |
+|  64 | L56 | Nine and nought             | `9 0`       | keys    | guide🔒 |    30 |  18 | 95% |
+|  65 | H09 | Right hand · Numbers        | `6 7 8 9 0` | keys    | guide🔒 |    30 |  15 | 95% |
+|  66 | H10 | Left hand · Numbers         | `1 2 3 4 5` | keys    | guide🔒 |    30 |  15 | 95% |
+|  67 | L57 | Ages, dates and scores      | —           | numbers | keys    |    40 |  19 | 95% |
+|  68 | L58 | Words and numbers together  | —           | mixed   | keys    |    45 |  20 | 95% |
+|  69 | L59 | Hailstorm · Numbers falling | —           | storm   | keys    |    34 |   — |   — |
+|  70 | L60 | **Checkpoint · Numbers**    | —           | mixed   | off🔒   |    50 |  22 | 97% |
 
 **Block 7 · Punctuation**
 
-|   # | Title                       | New           | Kind    | ⌨       | Words | wpm | acc |
-| --: | --------------------------- | ------------- | ------- | ------- | ----: | --: | --: |
-|  61 | Asking and shouting         | `? !`         | keys    | guide🔒 |    35 |  18 | 95% |
-|  62 | Speech marks                | `"`           | keys    | guide🔒 |    35 |  18 | 95% |
-|  63 | Hyphen and underscore       | `- _`         | keys    | guide🔒 |    35 |  19 | 95% |
-|  64 | Colon and semicolon         | `: ;`         | keys    | guide🔒 |    35 |  19 | 95% |
-|  65 | Hailstorm · Punctuation     | —             | storm   | keys    |    34 |   — |   — |
-|  66 | Brackets                    | `( )`         | keys    | guide🔒 |    35 |  19 | 95% |
-|  67 | Above the numbers           | `@ # $ % & *` | keys    | guide🔒 |    35 |  18 | 95% |
-|  68 | Slash, plus, equals         | `/ \ + =`     | keys    | guide🔒 |    35 |  19 | 95% |
-|  69 | Hailstorm · Symbols         | —             | storm   | off     |    36 |   — |   — |
-|  70 | **Checkpoint · Punctuated** | —             | passage | off🔒   |    55 |  24 | 97% |
+|   # | id  | Title                       | New           | Kind    | ⌨       | Words | wpm | acc |
+| --: | --- | --------------------------- | ------------- | ------- | ------- | ----: | --: | --: |
+|  71 | L61 | Asking and shouting         | `? !`         | keys    | guide🔒 |    35 |  18 | 95% |
+|  72 | L62 | Speech marks                | `"`           | keys    | guide🔒 |    35 |  18 | 95% |
+|  73 | L63 | Hyphen and underscore       | `- _`         | keys    | guide🔒 |    35 |  19 | 95% |
+|  74 | L64 | Colon and semicolon         | `: ;`         | keys    | guide🔒 |    35 |  19 | 95% |
+|  75 | L65 | Hailstorm · Punctuation     | —             | storm   | keys    |    34 |   — |   — |
+|  76 | L66 | Brackets                    | `( )`         | keys    | guide🔒 |    35 |  19 | 95% |
+|  77 | L67 | Above the numbers           | `@ # $ % & *` | keys    | guide🔒 |    35 |  18 | 95% |
+|  78 | L68 | Slash, plus, equals         | `/ \ + =`     | keys    | guide🔒 |    35 |  19 | 95% |
+|  79 | L69 | Hailstorm · Symbols         | —             | storm   | off     |    36 |   — |   — |
+|  80 | L70 | **Checkpoint · Punctuated** | —             | passage | off🔒   |    55 |  24 | 97% |
 
 **Block 8 · Endurance**
 
-|   # | Title                            | New | Kind    | ⌨     | Words | wpm | acc |
-| --: | -------------------------------- | --- | ------- | ----- | ----: | --: | --: |
-|  71 | Sixty words                      | —   | passage | off   |    60 |  22 | 96% |
-|  72 | A whole paragraph                | —   | passage | off   |    70 |  23 | 96% |
-|  73 | Hailstorm · The long wave        | —   | storm   | off   |    50 |   — |   — |
-|  74 | The sight words, again           | —   | words   | off   |    60 |  24 | 96% |
-|  75 | Verses                           | —   | passage | off   |    70 |  24 | 96% |
-|  76 | Someone speaking                 | —   | passage | off   |    70 |  25 | 96% |
-|  77 | Eighty words                     | —   | passage | off   |    80 |  26 | 96% |
-|  78 | Numbers in prose                 | —   | passage | off   |    80 |  26 | 96% |
-|  79 | Hailstorm · No repairs           | —   | storm   | off   |    36 |   — |   — |
-|  80 | **Checkpoint · A hundred words** | —   | passage | off🔒 |   100 |  28 | 97% |
+|   # | id  | Title                            | New | Kind    | ⌨     | Words | wpm | acc |
+| --: | --- | -------------------------------- | --- | ------- | ----- | ----: | --: | --: |
+|  81 | L71 | Sixty words                      | —   | passage | off   |    60 |  22 | 96% |
+|  82 | L72 | A whole paragraph                | —   | passage | off   |    70 |  23 | 96% |
+|  83 | L73 | Hailstorm · The long wave        | —   | storm   | off   |    50 |   — |   — |
+|  84 | L74 | The sight words, again           | —   | words   | off   |    60 |  24 | 96% |
+|  85 | L75 | Verses                           | —   | passage | off   |    70 |  24 | 96% |
+|  86 | L76 | Someone speaking                 | —   | passage | off   |    70 |  25 | 96% |
+|  87 | L77 | Eighty words                     | —   | passage | off   |    80 |  26 | 96% |
+|  88 | L78 | Numbers in prose                 | —   | passage | off   |    80 |  26 | 96% |
+|  89 | L79 | Hailstorm · No repairs           | —   | storm   | off   |    36 |   — |   — |
+|  90 | L80 | **Checkpoint · A hundred words** | —   | passage | off🔒 |   100 |  28 | 97% |
 
 **Block 9 · Speed**
 
-|   # | Title                        | New | Kind    | ⌨     | Words | wpm | acc |
-| --: | ---------------------------- | --- | ------- | ----- | ----: | --: | --: |
-|  81 | Sprint · Common words        | —   | sprint  | off   |    30 |  28 | 95% |
-|  82 | Sprint · Alternating hands   | —   | sprint  | off   |    30 |  30 | 95% |
-|  83 | Hailstorm · Hard rain        | —   | storm   | off   |    40 |   — |   — |
-|  84 | Sprint · The hard pairs      | —   | sprint  | off   |    30 |  28 | 95% |
-|  85 | Sprint · Capitals            | —   | sprint  | off   |    30 |  29 | 95% |
-|  86 | Sprint · Numbers             | —   | sprint  | off   |    30 |  26 | 95% |
-|  87 | Sprint · Punctuation         | —   | sprint  | off   |    30 |  28 | 95% |
-|  88 | A solid minute               | —   | passage | off   |    90 |  32 | 95% |
-|  89 | Hailstorm · Whiteout         | —   | storm   | off   |    44 |   — |   — |
-|  90 | **Checkpoint · Thirty-five** | —   | passage | off🔒 |    80 |  35 | 96% |
+|   # | id  | Title                        | New | Kind    | ⌨     | Words | wpm | acc |
+| --: | --- | ---------------------------- | --- | ------- | ----- | ----: | --: | --: |
+|  91 | L81 | Sprint · Common words        | —   | sprint  | off   |    30 |  28 | 95% |
+|  92 | L82 | Sprint · Alternating hands   | —   | sprint  | off   |    30 |  30 | 95% |
+|  93 | L83 | Hailstorm · Hard rain        | —   | storm   | off   |    40 |   — |   — |
+|  94 | L84 | Sprint · The hard pairs      | —   | sprint  | off   |    30 |  28 | 95% |
+|  95 | L85 | Sprint · Capitals            | —   | sprint  | off   |    30 |  29 | 95% |
+|  96 | L86 | Sprint · Numbers             | —   | sprint  | off   |    30 |  26 | 95% |
+|  97 | L87 | Sprint · Punctuation         | —   | sprint  | off   |    30 |  28 | 95% |
+|  98 | L88 | A solid minute               | —   | passage | off   |    90 |  32 | 95% |
+|  99 | L89 | Hailstorm · Whiteout         | —   | storm   | off   |    44 |   — |   — |
+| 100 | L90 | **Checkpoint · Thirty-five** | —   | passage | off🔒 |    80 |  35 | 96% |
 
 **Block 10 · Everything**
 
-|   # | Title                        | New | Kind    | ⌨     | Words | wpm |     acc |
-| --: | ---------------------------- | --- | ------- | ----- | ----: | --: | ------: |
-|  91 | Mixed prose                  | —   | passage | off   |    90 |  30 |     96% |
-|  92 | Prose with numbers           | —   | mixed   | off   |    90 |  30 |     96% |
-|  93 | Hailstorm · Everything falls | —   | storm   | off   |    46 |   — |       — |
-|  94 | A long verse                 | —   | passage | off   |   100 |  31 |     96% |
-|  95 | An address, a price, a date  | —   | mixed   | off   |    80 |  30 |     96% |
-|  96 | A hundred and twenty         | —   | passage | off   |   120 |  32 |     96% |
-|  97 | The accuracy run             | —   | passage | off   |    80 |  28 | **99%** |
-|  98 | Sprint · Everything          | —   | sprint  | off   |    40 |  36 |     95% |
-|  99 | Hailstorm · The last storm   | —   | storm   | off   |    50 |   — |       — |
-| 100 | **The Ice Exam**             | —   | passage | off🔒 |   150 |  38 |     97% |
+|   # | id   | Title                        | New | Kind    | ⌨     | Words | wpm |     acc |
+| --: | ---- | ---------------------------- | --- | ------- | ----- | ----: | --: | ------: |
+| 101 | L91  | Mixed prose                  | —   | passage | off   |    90 |  30 |     96% |
+| 102 | L92  | Prose with numbers           | —   | mixed   | off   |    90 |  30 |     96% |
+| 103 | L93  | Hailstorm · Everything falls | —   | storm   | off   |    46 |   — |       — |
+| 104 | L94  | A long verse                 | —   | passage | off   |   100 |  31 |     96% |
+| 105 | L95  | An address, a price, a date  | —   | mixed   | off   |    80 |  30 |     96% |
+| 106 | L96  | A hundred and twenty         | —   | passage | off   |   120 |  32 |     96% |
+| 107 | L97  | The accuracy run             | —   | passage | off   |    80 |  28 | **99%** |
+| 108 | L98  | Sprint · Everything          | —   | sprint  | off   |    40 |  36 |     95% |
+| 109 | L99  | Hailstorm · The last storm   | —   | storm   | off   |    50 |   — |       — |
+| 110 | L100 | **The Ice Exam**             | —   | passage | off🔒 |   150 |  38 |     97% |
 
-Twenty Hailstorm levels, ten checkpoints, thirty that introduce keys.
+Twenty Hailstorm levels, ten checkpoints, ten held-key lessons, and thirty
+that introduce keys.
 
 Read the wpm column down the page and it does not climb smoothly — it **drops
 every time a key arrives** and climbs back on the review lessons after it.
-Lesson 50 asks for 25 wpm and lesson 51 asks for 16. That is not a bug in the
+Lesson 58 asks for 25 wpm and lesson 59 asks for 16. That is not a bug in the
 table. It is the truth about learning a new key, written into the pass mark so
 that a child who has just met the number row is not measured against the person
 they were yesterday. See §6.3.
@@ -862,32 +880,32 @@ combo that repairs the weakest zone, and `—` is none.
 |   # | Title            | Len |       gap |      fall | shield | mends | Rains    | seed |
 | --: | ---------------- | --: | --------: | --------: | -----: | ----: | -------- | ---: |
 |   4 | First ice        |  12 | 1500–1900 |  900–1200 |      4 |     4 | —        |    6 |
-|   9 | Home row         |  16 | 1300–1600 |  900–1250 |      3 |     4 | —        |    9 |
-|  13 | Eight lanes      |  18 | 1200–1500 |  900–1150 |      3 |     4 | —        |   13 |
-|  19 | Two rows         |  20 | 1000–1300 | 1000–1500 |      3 |     4 | —        |   19 |
-|  23 | Down low         |  22 |  900–1200 | 1100–1600 |      3 |     5 | —        |   23 |
-|  29 | Whole alphabet   |  24 |  800–1100 | 1200–1700 |      3 |     5 | —        |   29 |
-|  34 | Capitals         |  26 |  750–1050 | 1200–1800 |      3 |     5 | capitals |   34 |
-|  39 | Shift under fire |  28 |  700–1000 | 1300–1900 |      3 |     5 | capitals |   39 |
-|  45 | Pairs            |  30 |   650–950 | 1300–2000 |      3 |     6 | —        |   45 |
-|  49 | Whole words      |  32 |   600–900 | 1400–2000 |      3 |     6 | —        |   49 |
-|  53 | Digits           |  30 |  700–1000 | 1300–1800 |      3 |     6 | digits   |   55 |
-|  59 | Numbers falling  |  34 |   600–850 | 1400–2000 |      3 |     6 | digits   |   59 |
-|  65 | Punctuation      |  34 |   600–850 | 1400–2100 |      3 |     6 | marks    |   66 |
-|  69 | Symbols          |  36 |   550–800 | 1500–2100 |      3 |     6 | marks    |   69 |
-|  73 | The long wave    |  50 |   550–800 | 1500–2200 |      3 |     8 | —        |   74 |
-|  79 | No repairs       |  36 |   500–750 | 1400–2000 |      3 |     — | —        |   79 |
-|  83 | Hard rain        |  40 |   450–650 | 1300–1900 |      3 |     — | —        |   83 |
-|  89 | Whiteout         |  44 |   300–450 | 1900–2600 |      3 |     — | —        |   95 |
-|  93 | Everything falls |  46 |   350–550 | 1300–1900 |      2 |     — | —        |   95 |
-|  99 | The last storm   |  50 |   300–500 | 1200–1800 |      2 |     — | —        |   99 |
+|  11 | Home row         |  16 | 1300–1600 |  900–1250 |      3 |     4 | —        |    9 |
+|  15 | Eight lanes      |  18 | 1200–1500 |  900–1150 |      3 |     4 | —        |   13 |
+|  23 | Two rows         |  20 | 1000–1300 | 1000–1500 |      3 |     4 | —        |   19 |
+|  27 | Down low         |  22 |  900–1200 | 1100–1600 |      3 |     5 | —        |   23 |
+|  35 | Whole alphabet   |  24 |  800–1100 | 1200–1700 |      3 |     5 | —        |   29 |
+|  40 | Capitals         |  26 |  750–1050 | 1200–1800 |      3 |     5 | capitals |   34 |
+|  45 | Shift under fire |  28 |  700–1000 | 1300–1900 |      3 |     5 | capitals |   39 |
+|  51 | Pairs            |  30 |   650–950 | 1300–2000 |      3 |     6 | —        |   45 |
+|  57 | Whole words      |  32 |   600–900 | 1400–2000 |      3 |     6 | —        |   49 |
+|  61 | Digits           |  30 |  700–1000 | 1300–1800 |      3 |     6 | digits   |   55 |
+|  69 | Numbers falling  |  34 |   600–850 | 1400–2000 |      3 |     6 | digits   |   59 |
+|  75 | Punctuation      |  34 |   600–850 | 1400–2100 |      3 |     6 | marks    |   66 |
+|  79 | Symbols          |  36 |   550–800 | 1500–2100 |      3 |     6 | marks    |   69 |
+|  83 | The long wave    |  50 |   550–800 | 1500–2200 |      3 |     8 | —        |   74 |
+|  89 | No repairs       |  36 |   500–750 | 1400–2000 |      3 |     — | —        |   79 |
+|  93 | Hard rain        |  40 |   450–650 | 1300–1900 |      3 |     — | —        |   83 |
+|  99 | Whiteout         |  44 |   300–450 | 1900–2600 |      3 |     — | —        |   95 |
+| 103 | Everything falls |  46 |   350–550 | 1300–1900 |      2 |     — | —        |   95 |
+| 109 | The last storm   |  50 |   300–500 | 1200–1800 |      2 |     — | —        |   99 |
 
 **There is no `keys` column, and there cannot be one.** A level's pool is
 `unlockedAt(n)` — the same computed alphabet its neighbours' words come from
 (§5.2) — so a storm can never ask for a key the ladder has not taught, and
 moving a storm up the ladder moves what falls in it. "Rains" is a weighting on
 top of that pool, not a replacement for it: the named class is repeated until
-it is about half of what can fall, which is what makes lesson 53 a level about
+it is about half of what can fall, which is what makes lesson 61 a level about
 the number row when only `3 4 5 6` have arrived (`storms.ts`). `marks` is that
 module's name for everything which is neither a letter nor a digit nor the
 space — the punctuation and the symbols, stated as the complement so that a
@@ -900,27 +918,104 @@ see.
 
 Four things about the shape of the table:
 
-- **`gap` clears `fall` at lessons 4, 9 and 13** — one letter on screen at a
-  time, pure reaction (§8.3) — and overlaps from 19 on, which is reading ahead.
+- **`gap` clears `fall` at lessons 4, 11 and 15** — one letter on screen at a
+  time, pure reaction (§8.3) — and overlaps from 23 on, which is reading ahead.
   Measured in a browser at 1280×1000: lesson 4 peaks at one letter in the sky,
-  lesson 45 at three, lesson 89 at seven.
-- **It does not climb smoothly, and must not be smoothed.** Lesson 53's storm
+  lesson 51 at three, lesson 99 at seven.
+- **It does not climb smoothly, and must not be smoothed.** Lesson 61's storm
   eases where the number row has just arrived, exactly as the wpm column does
-  (§6.3, decision 11); lesson 73 is long where 79 is dense. What climbs is each
+  (§6.3, decision 11); lesson 83 is long where 89 is dense. What climbs is each
   quarter of the twenty, in both length and letters a second, and that is what
   `storms.test.ts` holds it to.
-- **The repairs stop at 79 and never come back**, which is that level's name
+- **The repairs stop at 89 and never come back**, which is that level's name
   and the block's turn: below it the weakest zone mends every `mends` clean
   hits, above it what breaks stays broken.
 - **No row asks for a fall under `MIN_FALL_MS`** (800ms, §8.10, decision 52).
   The floor is a backstop, not a knob; a row that went under it would come out
   of `fallRange` as a metronome and quietly not be what it says.
 
-The seed is the level's own number, or the first above it whose wave keeps the
-level's promises — no zone tinting more than twice a second (§8.10), six of the
+The seed is the number the level had in the hundred it was tuned in — the
+figure in its id — or the first above it whose wave keeps the level's promises — no zone tinting more than twice a second (§8.10), six of the
 eight fingers used, and no finger taking more than a third of the letters
-(decision 58). Six of the twenty needed the bump — lessons 4, 53, 65, 73, 89
-and 93 — and none of them by more than six.
+(decision 58). Six of the twenty needed the bump — lessons 4, 61, 75, 83, 99
+and 103 — and none of them by more than six.
+
+### 5.8 · Held-key lessons — one hand at a time
+
+Ten of the lessons, in five pairs, ask the child to hold one key down for the
+whole run — `f` with the left index finger, or `j` with the right — and to type
+with the other hand. The hand that is holding cannot reach over to help, which
+is the whole of the idea: the mistake a reach lesson cannot see is a `y` struck
+with the _left_ index finger, and no bar in §6 catches it, because the letter
+that lands is the right one. Pin the hand and the wrong finger is not
+available. The passage is then typed by the hand that owns it, or not at all.
+
+The rows are in §5.6 with everything else — lessons 7 and 8, 20 and 21, 31 and
+32, 54 and 55, 65 and 66 — and a pair sits straight after the lesson that
+finishes the row of keys it drills: the home row, the top row, the bottom row,
+the number row, and, after "One hand at a time", a pair of real one-hand words.
+Right hand first, so the hand in the title says which key is held: a right-hand
+lesson holds `f`, a left-hand one `j` (`HELD` in `lessons.ts`, which
+`lessons.test.ts` checks against the titles). Capitals and the punctuation of
+block 7 have no pair, and cannot: a shifted character needs the _other_ hand's
+shift (§3.3), and that hand is holding.
+
+**A held-key lesson is a rung like any other** (decision 74). The lesson
+before it opens it, it opens the lesson after, a checkpoint above clears it,
+and `LadderProgress` counts it by number with the rest — nothing in the
+ladder's arithmetic knows it exists. What it has of its own is an id, `H03`,
+written on the row like every id, and that is what let the ten be woven in
+without touching anything a saved run carries (§5.4): the hundred kept their
+names and moved their numbers, so `L07` is lesson 9 and `typing:L07` still
+finds it. The `Keys` column is the gate rather than news — nothing in it is
+new to the child, but §6.4's gate is exactly "each of these, struck often
+enough to be sure", which is the bargain block 7 already makes when it says
+`;` a second time. The brief calls them "Keys to drill".
+
+**The held key is always `f` or `j`** (decision 75). They are the two keys
+with a bump, so a child can find one without looking; they are the index
+finger's home, so holding one leaves the other four fingers of that hand
+resting where they belong and the whole other hand free; and neither is a key
+a long press turns into an accent menu, which a held vowel is on a Mac.
+
+**What the free hand can type is one rule**, `oneHanded` in `hands.ts`: a
+character the board cannot produce, no; one on the pinned hand, no; anything
+shifted, no, because the shift is the pinned hand's; the space bar, yes — it
+is the thumb's, and either thumb will do. The generator puts every pool
+through it in the same place it puts them through `canType`, so the one-hand
+invariant is checked the way reachability is (§5.2): every character of every
+one of the ten, at many seeds.
+
+**The run waits for the hand, and then for a second** (decision 77). A lesson
+with a key to hold does not open on the 3·2·1. It opens on a screen that says
+what to hold and with which finger (`HoldReady`), and stays there until the
+key has been down for a second without a break — a meter fills while it is
+held and empties the moment it lifts. A storm waits for a key because
+readiness is not an amount of time (§8.13, decision 71); this waits for a
+_held_ key for the same reason, and the second is not a countdown but the
+proof that the hand has settled rather than passed through on its way to the
+home row. Only then does the 3·2·1 run, and it waits too if the key lifts
+during it.
+
+**Letting go pauses; it does not penalise** (decision 76). The run watches the
+key's own `keydown` and `keyup`, and while it is up the passage is waiting on
+nothing: the field is closed and the clock stands — the same pause the quit
+sheet imposes. Nothing is marked wrong, because nothing was typed. Trusting
+`keyup` is the opposite call from the echo's (§4.3) and the opposite failure:
+a missed release leaves the run believing the key is still held, which costs a
+child nothing, and a lost window releases it anyway. The held key itself types
+nothing — its `keydown` is cancelled, first press and every auto-repeat after
+it, so no `f` ever lands in the field; the echo leaves it alone, so a child is
+not flashed red for holding the key they were told to hold; and the board
+draws it in a state of its own, asked for and then held, beside whatever the
+guide is pointing at.
+
+**It needs a keyboard**, and the course does not pretend otherwise. A software
+keyboard has nothing to hold down, and the course is for a child at a real one
+(§4.5): a held-key lesson on a device without one waits on its ready screen
+for a key that never comes. It is not shut on the guess Hailstorm's tiles are
+shut on (§8.8), because unlike a storm it gates the rung after it, and a wrong
+guess there would lock a child out of the course rather than out of a game.
 
 ---
 
@@ -984,18 +1079,18 @@ makes it teach — it says accuracy is not the thing that varies, speed is.
 
 **It bends late, and the table in §5.6 is the authority.** From block 8 the bar
 is 96% rather than 95% — for the endurance lessons and for block 10's prose
-(91–96) — because holding a rate over a hundred words is a different thing from
-holding it over thirty. Checkpoint 90 reaches the same 96% from the other side:
+(101–106) — because holding a rate over a hundred words is a different thing from
+holding it over thirty. Checkpoint 100 reaches the same 96% from the other side:
 a checkpoint asks 97%, and this one trades a point away because thirty-five
 words a minute is the whole subject of block 9, and that point is the price of
-asking for it. Lesson 97 bends the other way, asking 99% at a deliberately
+asking for it. Lesson 107 bends the other way, asking 99% at a deliberately
 modest pace, so that "slow down and get it right" is a thing the ladder has
 asked for explicitly at least once. An accuracy
 column "corrected" back to a flat 95/97 would be wrong from block 8 to the end.
 
 ### 6.3 · Speed scales, and dips
 
-The wpm target runs roughly 8 → 38 across the hundred, with two shapes on top:
+The wpm target runs roughly 8 → 38 across the ladder, with two shapes on top:
 
 - **Blocks that add nothing new climb fastest** (5, 8, 9, 10). That is where
   speed is the lesson.
@@ -1003,7 +1098,7 @@ The wpm target runs roughly 8 → 38 across the hundred, with two shapes on top:
   figure.** You have just got slower, and you should have. Pretending
   otherwise makes the ladder punish exactly the moment it should encourage.
 
-38 wpm at lesson 100 is a real, defensible target for a child who has worked
+38 wpm at lesson 110 is a real, defensible target for a child who has worked
 through this: comfortably above the ~33 wpm average adult hunt-and-peck typist,
 comfortably below anything that would need years.
 
@@ -1023,10 +1118,11 @@ lessons, and it is the one no other course on the internet has.
 
 **Twelve wherever twelve fits.** That is every lesson arriving two keys at a
 time: 24 strikes in a 24-word lesson is a fifth of the characters, comfortably
-inside §5.2's band. Four lessons hand over more than a pair at once — 31, 32,
-67 and 68 — and three of them cannot also ask twelve of each. Lesson 31's
+inside §5.2's band. Four lessons hand over more than a pair at once — 37, 38,
+77 and 78 — and the eight held-key drills five each (§5.8); most of those
+cannot also ask twelve of every key. Lesson 37's
 fifteen capitals would want 180 strikes in 150 characters, so there the demand
-is divided between the new keys rather than being made unreachable. Lesson 68's
+is divided between the new keys rather than being made unreachable. Lesson 78's
 four keys still fit twelve apiece inside its 175, which is why the ceiling is a
 `min` against the room rather than a rule about how many keys arrived. Two is
 the floor: below it the gate cannot tell a typist from a lucky guess.
@@ -1065,7 +1161,7 @@ Three things fall out of deriving it rather than storing it, and all three are
 worth more than the memoisation they cost:
 
 - **No migration, ever.** Not for this and not when the criteria change.
-- **It self-heals.** Tune lesson 40's wpm down and every child who was one wpm
+- **It self-heals.** Tune lesson 46's wpm down and every child who was one wpm
   short is now through, without a backfill.
 - **It cannot disagree with the record book.** A stored flag and a session list
   are two sources of truth for one fact, and they drift the first time a save
@@ -1083,8 +1179,8 @@ it again. Taking the maximum means losing old proof costs nothing as long as
 one later run survives.
 
 **Any checkpoint may be attempted at any time.** Lessons unlock one at a time;
-the ten checkpoints are always open. Passing checkpoint 30 sets `best` to 30
-and therefore clears 1–29 with it — which is the same `max` rule, not a special
+the ten checkpoints are always open. Passing checkpoint 36 sets `best` to 36
+and therefore clears 1–35 with it — which is the same `max` rule, not a special
 case.
 
 The one place unlocking and pointing come apart is a Hailstorm level, which is
@@ -1093,7 +1189,7 @@ offered as the next rung and gates nothing behind it (§8.8).
 That single rule does the whole job of a placement test:
 
 - A nine-year-old who already types is not made to do `fff jjj` for a week.
-  They open checkpoint 40, pass it, and start at 41.
+  They open checkpoint 46, pass it, and start at 47.
 - Nobody has to guess their own level from a description. They just try one.
 - Failing costs nothing at all, so trying one is free.
 
@@ -1108,7 +1204,7 @@ profile, so adding is safe and removing is not. Five, no more:
 | -------------- | ------------ | --------------------------------------------------- |
 | `home-keys`    | Home Keys    | 🏠 Clear checkpoint 10                              |
 | `touch-typist` | Touch Typist | ✋ Clear checkpoint 50                              |
-| `ice-exam`     | Ice Exam     | 🧊 Clear lesson 100                                 |
+| `ice-exam`     | Ice Exam     | 🧊 Clear lesson 110                                 |
 | `eyes-up`      | Eyes Up      | 👀 Pass a lesson with the keyboard hidden           |
 | `unbroken`     | Unbroken     | 🛡️ Clear a Hailstorm wave with the shield untouched |
 
@@ -1117,13 +1213,13 @@ rewards doing the work the harder way, and it exists because the whole course
 is an argument for doing that.
 
 **"Clear" means what the ladder means by it.** The three ladder badges are
-asked of `ladderProgress` and read `best`, not `cleared`: passing checkpoint 50
-clears 1–49 with it (§6.6), so a nine-year-old who takes the express lane holds
+asked of `ladderProgress` and read `best`, not `cleared`: passing checkpoint 58
+clears 1–57 with it (§6.6), so a nine-year-old who takes the express lane holds
 Home Keys as well as Touch Typist. A shelf that disagreed with the ladder next
 to it about the same child would be the stored-flag bug of §6.5 in another
 coat. They are asked on every finished run and not only on typing ones, because
 `evaluateBadges` returns what is _true_ rather than what is new — which is also
-how a child who cleared checkpoint 10 before LES12 shipped is handed the badge
+how a child who cleared checkpoint 12 before LES12 shipped is handed the badge
 by their next race, of anything.
 
 **`eyes-up` asks what the run was typed under, minus the lessons that left no
@@ -1140,7 +1236,7 @@ to draw the board and by the badge to exclude the forced ten (decision 28).
 only _seeds_ the brief's control (§4.2) and Start hands over whatever the
 control is showing, so on an unlocked lesson `config.keyboard` records the mode
 the run was actually typed under whether or not the child touched the pills —
-and twenty-three unlocked rows seed `off` themselves, so opening lesson 46,
+and twenty-three unlocked rows seed `off` themselves, so opening lesson 52,
 pressing Start and passing earns this. That is the badge working: they typed a
 lesson blind, which is what it says on the shelf ("Pass a lesson with the
 keyboard hidden"). Insisting on authorship would mean comparing the config
@@ -1381,7 +1477,7 @@ is what lets a child retry the level that beat them and meet the same storm,
 and it is what makes the rules unit-testable without a browser.
 
 **And the seed is the level's, not the visit's** (decision 58). Each of the
-twenty carries one (§5.7), so opening lesson 45 twice is opening the same level
+twenty carries one (§5.7), so opening lesson 51 twice is opening the same level
 twice — "I beat Whiteout" is a sentence about a thing rather than about a roll,
 and the twenty waves the no-strobe rule is measured on (§8.10) are the twenty a
 child actually meets rather than a sample of what a generator might produce.
@@ -1439,8 +1535,8 @@ and racing it down become two things instead of one, and a child who has
 already identified an `i` does not need it to be legible on the way past.
 
 A second is a judgement rather than a measurement, and what anchors it is that
-it is the same order as the fastest fall on the ladder (900ms, at lessons 4, 9
-and 13). Round, long enough to read an unfamiliar glyph without hurrying, and
+it is the same order as the fastest fall on the ladder (900ms, at lessons 4, 11
+and 15). Round, long enough to read an unfamiliar glyph without hurrying, and
 short enough that a level with a 300ms gap still has a queue rather than a
 crowd. What the beat is **not** is a head start on the schedule: the letters
 still arrive at the same intervals, so a child who reads fast simply gets to
@@ -1472,8 +1568,8 @@ each has left before it drops divided by how long its own fall is, which is a
 number nothing on screen shows. Floored, they tie, and a tie goes to the earlier
 spawn like every other dead heat (decision 33).
 
-**"One letter at a time" survives, as a claim about falling.** Lessons 4, 9 and
-13 promise pure reaction, and what that has always meant is that no two letters
+**"One letter at a time" survives, as a claim about falling.** Lessons 4, 11 and
+15 promise pure reaction, and what that has always meant is that no two letters
 are coming _down_ at once — which `gap[0] >= fall[1]` still buys exactly,
 because every fall is shifted by the same amount and the beat cancels out of the
 arithmetic. What is beside a falling letter on those levels is the next one
@@ -1522,10 +1618,10 @@ is** (decision 70). `A` and `a` are one key and two letters (§3.3), so a target
 is matched on `code` _and_ on whether its character is that key's shifted
 legend. Shift-`a` shoots a falling `A`; bare `a` at the same letter is a miss;
 and shift-`f` at a falling `f` is a miss too, because what that produced was an
-`F`. The same holds for every shifted mark — `?` is shift-`/`, and lessons 65
-and 69 rain them.
+`F`. The same holds for every shifted mark — `?` is shift-`/`, and lessons 75
+and 79 rain them.
 
-The storm compared the code alone to begin with, which made lessons 34 and 39 —
+The storm compared the code alone to begin with, which made lessons 40 and 45 —
 "Capitals" and "Shift under fire" — waves that never once asked for a shift,
 and credited a child with typing a character they had not typed. The passage
 lessons were always strict about it: they judge what arrived in a real
@@ -1548,7 +1644,7 @@ bookkeeping would go on demanding a shift nobody was holding.
 is not a rule a child was taught, so every storm whose wave can rain a capital
 carries "A capital needs a shift" on the screen before it starts. The
 obligation is read off the wave's **pool** rather than its `focus`: capitals
-are in every pool from lesson 34 up (§5.6), so a level like Pairs rains them
+are in every pool from lesson 40 up (§5.6), so a level like Pairs rains them
 without being about them, and a brief keyed to what the level is _for_ would
 miss exactly those.
 
@@ -1593,7 +1689,7 @@ What it concludes is decided in `stormReport(state)` and rendered in
   landed; counting the clock would over-report what got through, on the one
   screen where the number is the whole point.
 - **The keys to practise.** That finger's characters, out of `spec.keys` rather
-  than off the whole board: a child who died at lesson 13 has met perhaps two
+  than off the whole board: a child who died at lesson 15 has met perhaps two
   of the right ring finger's keys, and a drill of `9` and `(` would be a
   practice deck of keys nobody has taught them. It can never be empty for a
   finger that just breached — the letter that got through came out of that same
@@ -1829,7 +1925,7 @@ So the run says what it is. `stormConfig` writes **`storm: true`** into its
 those runs before it compares anything — one rule, at the single door every
 best on the site comes through, inherited by the screens that do not exist yet.
 The flag is on the run rather than derived from `lessonById(lessonId)` because
-a saved run outlives the ladder it was played on (§5.4): re-tune lesson 39 out
+a saved run outlives the ladder it was played on (§5.4): re-tune lesson 45 out
 of a Hailstorm and a derived rule would quietly start ranking every storm
 already in the record book. It is optional, never `false`, and inert in
 `configKey` — a storm and its lesson still key identically, which they must, or
@@ -1867,15 +1963,15 @@ a different run of the same storm.
 
 ### 8.8 · Hailstorm never gates the ladder
 
-Game levels are **skippable**. Lesson 46 unlocks when lesson 44 is cleared,
-whatever happened at 45.
+Game levels are **skippable**. Lesson 52 unlocks when lesson 50 is cleared,
+whatever happened at 51.
 
 Two reasons, and either alone is sufficient:
 
 - **A tablet has no keys to press.** Hailstorm needs raw `keydown` with a
   `code`, and there is no software keyboard on screen during it. A child on an
-  iPad can do the whole course and cannot play the game. Gating on it would
-  lock them out at lesson 4.
+  iPad can type a passage and cannot play the game. Gating on it would lock
+  them out at lesson 4.
 - **A reward that blocks you is not a reward.** The forty practice lessons are
   the ones that need a reason to keep going; a game level that a child cannot
   beat would be the exact opposite of what it was put there for.
@@ -1890,10 +1986,10 @@ down past any storm in the way, so it never asks a child to pass a wave).
 
 **Skippable is not the same as skipped** (decision 72). For a while this
 shipped as though it were: the pointer was carried over a storm, so clearing
-lesson 44 pointed at 46, and the whole promise that a wave costs nothing was
+lesson 50 pointed at 52, and the whole promise that a wave costs nothing was
 kept by never mentioning the wave. A child following the ladder's own "Start
-here", or pressing "Next lesson" on a results screen, could climb all hundred
-rungs and be shown none of the twenty. The sentence saying a storm is optional
+here", or pressing "Next lesson" on a results screen, could climb every
+rung and be shown none of the twenty. The sentence saying a storm is optional
 was on a door nobody was ever sent to.
 
 So the pointer stands on the storm and the unlock rule reaches past it, which
@@ -1904,8 +2000,8 @@ is two numbers where there was one:
 | `next` | `best + 1`, storms included            | Where "Start here" goes    |
 | `open` | `next`, or the rung past a storm at it | Which tiles can be entered |
 
-They are the same number on ninety-nine rungs in a hundred and differ by one
-exactly where a storm is standing: 45 is what the ladder points at, 46 is open
+They are the same number on every rung but a storm's, and differ by one
+exactly where a storm is standing: 51 is what the ladder points at, 52 is open
 at the same moment, and a child who reads the brief and presses "Not now" has
 lost nothing but the reading. A screen that opened tiles on `n <= next` alone
 would now turn every wave into a wall — the failure `tileState`'s docstring
@@ -1929,7 +2025,7 @@ the lowest letter can be shot, which is not guessable from watching), what
 _this_ storm is — its length, its shield, whether it repairs and what it mostly
 rains, which is what makes "First ice" and "Whiteout" different screens rather
 than one screen with different numbers behind it — and that nothing waits on
-it: **"Lesson 46 opens whether you play this or not"**, in as many words, on
+it: **"Lesson 52 opens whether you play this or not"**, in as many words, on
 the one screen with room for the sentence.
 
 **How the tile knows** (`useKeyboardPresence`, decision 53). There is no
@@ -1978,10 +2074,10 @@ nothing reloaded and the pointer still reporting a tablet.
 
 The skip rule itself is held in the unit suite rather than in the browser, and
 in two halves that meet at the tile. `ladder.test.ts` has the rule — "opens
-lesson 46 when 44 is cleared, whatever happened at 45" takes both endings a
+lesson 52 when 50 is cleared, whatever happened at 51" takes both endings a
 storm can have, "points at the storm rather than over it" is decision 72 in one
 assertion, and "is offered and stepped past at every one of the twenty rungs"
-says both are properties of the ladder rather than facts about lesson 45.
+says both are properties of the ladder rather than facts about lesson 51.
 `LessonLadder.test.tsx` has what a child sees: "points at a storm and opens the
 rung behind it", its twin "leaves a storm the child walked past open", and
 "says every tile's state out loud", where `next` is spoken as "Start here".
@@ -2141,7 +2237,7 @@ falling. What it can and must do:
   _land_ on one finger, and because `fall` is a range as well, two letters
   spawned far apart land together: `storm.test.ts`'s "capitals", at `gap`
   600–1000 ms, already lands two letters on one zone 14 ms apart. Measured on
-  its "everything falls", the lesson-93 shape: flooring its `gap` at 350 ms
+  its "everything falls", the lesson-103 shape: flooring its `gap` at 350 ms
   takes one zone from four tint starts a second to three, and flooring it at
   800 ms — which would make the top of the ladder one letter at a time and
   delete "whiteout" — still leaves three. A floor on `gap` buys a difficulty
@@ -2169,7 +2265,7 @@ falling. What it can and must do:
     a wave over the line fails loudly instead of shipping. The same twenty
     specs are also built at sixteen other seeds apiece and held under three,
     which is a **sample and not a bound**: swept far more widely, four of them
-    (lessons 83, 89, 93 and 99) do reach four or five at seeds nobody is
+    (lessons 93, 99, 103 and 109) do reach four or five at seeds nobody is
     served. Tightening those four rows so the bound held at any seed would be a
     stronger thing to have, and it is not what ships today.
 
@@ -2191,7 +2287,7 @@ falling. What it can and must do:
     wrong keys 200 ms apart cost eighty points and draw three flashes, the
     closest pair over 600 ms apart.
 
-- **Fall speeds are capped** at the top of the ladder. "Whiteout" at lesson 89
+- **Fall speeds are capped** at the top of the ladder. "Whiteout" at lesson 99
   should be hard because there are many letters, not because one is a blur.
 
   The cap is `MIN_FALL_MS` in `buildWave`, and it is there rather than in the
@@ -2199,10 +2295,10 @@ falling. What it can and must do:
   one row at a time until a level nobody can read ships (decision 52). 800ms is
   a judgement rather than a measured reaction time, and it is anchored to the
   ladder's own shapes: the fastest fall any of the twenty declares is 900ms
-  (lessons 4, 9 and 13, §5.7), so the floor sits just under the fastest the
+  (lessons 4, 11 and 15, §5.7), so the floor sits just under the fastest the
   ladder ever _means_ to be and no row is touched by it. At the 1280×1000
   viewport the smoke suite runs at, a fall crosses 615px of sky — 236px/s at
-  lesson 89's 2.6 seconds, 683px/s at lesson 13's 900ms, and 769px/s at the
+  lesson 99's 2.6 seconds, 683px/s at lesson 15's 900ms, and 769px/s at the
   floor.
 
   It is a backstop and not a difficulty knob: `fallRange(spec)` is the spec's
@@ -2452,9 +2548,15 @@ It is the screen that makes a hundred lessons feel like a map rather than a
 syllabus, and it is the one piece of UI in this epic worth spending real design
 time on.
 
+The held-key lessons (§5.8) are tiles on the ladder like any other. They open
+the same `LessonBrief`, which says which key to hold and with which finger, and
+run on the same `/go` route — where `TypingTrack` opens on `HoldReady` instead
+of the 3·2·1 until the key has been held for a second. What is different about
+the run is decided by the lesson's `hold`, not by a route or a prop.
+
 Component budget: `LessonLadder`, `LessonTile`, `LessonBrief`, `StormBrief`,
-`PassBars`, `Keyboard`, `StormRun`, `StormField`, `StormShield`, `StormReady`,
-`StormOver`.
+`PassBars`, `Keyboard`, `HoldReady`, `StormRun`, `StormField`, `StormShield`,
+`StormReady`, `StormOver`.
 All under the 300-line cap;
 the ladder is the only one that will come close, and the brief splitting out is
 why it won't. `StormRun` is the route and `StormField` is the screen it draws:
@@ -2527,7 +2629,7 @@ which is what every run saved before this is.
 | 23  | A Hailstorm run is a `Session`                                                               | Record book, XP, badges and the drill builder all work with no new code                                                                                                 |
 | 24  | Hailstorm never gates the ladder                                                             | A tablet has no keys, and a reward that blocks you is not a reward                                                                                                      |
 | 25  | DOM, not canvas                                                                              | Eleven custom properties change the whole app's biome; a canvas is a hole in that                                                                                       |
-| 26  | US ANSI only, and say so                                                                     | A UK keyboard would fail lessons 62 and 67 for a child doing everything right                                                                                           |
+| 26  | US ANSI only, and say so                                                                     | A UK keyboard would fail lessons 72 and 77 for a child doing everything right                                                                                           |
 | 27  | A lesson's keyboard seeds; it does not overrule                                              | All hundred name a mode, so an override beats the player's own setting on every rung                                                                                    |
 | 28  | `eyes-up` reads the board the run was typed under                                            | Checkpoints force it off, so the resolved mode alone awards it for the ten where it was compulsory                                                                      |
 | 29  | `unbroken` is gated on the wave having a length                                              | "The wave exists" retires itself when STM10 lands; "no screen starts one" is a line someone must delete                                                                 |
@@ -2575,6 +2677,10 @@ which is what every run saved before this is.
 | 71  | A storm waits for a key, and shows no letter until it gets one                               | It is the one run entered with the hands in the wrong place, and what is being waited on is a child being ready — which is not an amount of time a counter can spend    |
 | 72  | The ladder points at a storm; only the unlock rule steps past it                             | Carrying the pointer over one kept the promise by hiding the game — a child could climb all hundred rungs and never be shown a wave to turn down                        |
 | 73  | The ladder and free play are a switch, not two sections                                      | Stacked, free play was something you found by scrolling past a hundred tiles, and nothing on the way down said the two were alternatives                                |
+| 74  | A held-key lesson is a rung like any other, with an id of its own                            | The ladder's arithmetic stays one rule; ids are what saved runs carry, so the hundred kept their names and moved their numbers                                          |
+| 75  | The held key is always `f` or `j`                                                            | The two keys with a bump, the index finger's home, the whole other hand left free — and neither opens an accent menu on a long press                                    |
+| 76  | Letting go of the held key pauses the run rather than costing anything                       | Nothing was typed while the hand was off; a penalty would double-count a pause, and a missed `keyup` then errs in the child's favour                                    |
+| 77  | A held-key run opens on a second of holding, not on a button or a countdown                  | Readiness is not an amount of time (decision 71); the hand being down is the one thing the run cannot start without, and a second proves it has settled                 |
 
 ---
 
@@ -2601,15 +2707,23 @@ Plus the two the twenty storms brought with them, both in `storms.test.ts`:
    specs at sixteen other seeds are held under three, as a sample rather than
    as a property of the specs. Read off the built schedule, because `fall` is a
    range and the question is about landings rather than about spawns.
-6. **The doc and the specs agree.** §5.7's table is read out of
+6. **The doc and the specs agree.** §5.6's tables and §5.7's are read out of
    `docs/typing.md` and compared with the shipped rows column by column. A
    design doc that disagreed with the code would be a defect here, so it is one
-   the suite can see.
+   the suite can see — and the id column of §5.6 is the one an eye would miss.
+
+And the one the held-key lessons brought (§5.8), in `generate.test.ts` beside
+reachability:
+
+7. **The one-hand invariant.** Every character of every held-key lesson's text,
+   at many seeds, is on the free hand — nothing shifted, nothing on the hand
+   that is holding.
 
 Plus the ones that are cheap and catch the embarrassing failures: `strokeFor`
-round-trips every character in every lesson; the hundred lessons have unique
-ids and are numbered 1–100 with no gaps; every tenth is a checkpoint; the wpm
-column is non-decreasing across blocks that introduce nothing.
+round-trips every character in every lesson; the hundred and ten lessons have
+unique ids and are numbered 1–110 with no gaps; the last of every block is a
+checkpoint; the wpm column is non-decreasing across blocks that introduce
+nothing.
 
 ---
 
@@ -2626,7 +2740,7 @@ column is non-decreasing across blocks that introduce nothing.
 
 **LESSON — the ladder.** Needs KEY.
 
-7. `engine/typing/lessons.ts` — the hundred specs and their criteria.
+7. `engine/typing/lessons.ts` — the lesson specs and their criteria.
 8. `engine/typing/keys.ts` + `lexicon.ts` — unlocked sets, and the corpus.
 9. `engine/typing/generate.ts` — spec + seed → words. **The reachability test.**
 10. `TypingConfig.lessonId`, `modeOf`, `typingConfigKey`. Frozen-key test.

@@ -212,7 +212,7 @@ describe("a run that ends early", () => {
 
   it("does not pass the lesson it did not survive", () => {
     const lesson = lessonById(LESSON);
-    if (!lesson) throw new Error("lesson 39 is missing");
+    if (!lesson) throw new Error("lesson 45 is missing");
 
     const verdict = verdictFor(asSaved(died), lesson);
     expect(lesson.pass.kind).toBe("storm");
@@ -221,7 +221,7 @@ describe("a run that ends early", () => {
 
   it("passes the same lesson on a wave it cleared", () => {
     const lesson = lessonById(LESSON);
-    if (!lesson) throw new Error("lesson 39 is missing");
+    if (!lesson) throw new Error("lesson 45 is missing");
 
     // Every letter shot, so the wave is cleared and the accuracy bar is full.
     let state = drumbeat(6);
@@ -265,7 +265,7 @@ describe("what a storm files itself as", () => {
     });
     // The rung has a wave of its own and it is not twelve letters long — which
     // is the point of reading the length off the wave in hand. A saved run
-    // outlives the ladder it was played on (§5.4): re-tune lesson 39 and this
+    // outlives the ladder it was played on (§5.4): re-tune lesson 45 and this
     // is still a run of the twelve it faced.
     const rung = lessonById(LESSON);
     expect(rung?.kind.type).toBe("storm");
@@ -275,7 +275,7 @@ describe("what a storm files itself as", () => {
   it("names itself in a record book years later", () => {
     expect(modeOf(stormConfig(LESSON, drumbeat(3).wave))).toBe("typing:L39");
     expect(deckSpec(MODE).label).toBe(
-      "Lesson 39 · Hailstorm · Shift under fire",
+      "Lesson 45 · Hailstorm · Shift under fire",
     );
     expect(deckSpec(MODE).world).toBe("ice");
   });
@@ -456,7 +456,7 @@ describe("the `unbroken` badge, over a wave the reducer really played", () => {
    */
   const withWave = (count: number, body: () => void) => {
     const of = lessonById(LESSON);
-    if (!of) throw new Error("lesson 39 is missing");
+    if (!of) throw new Error("lesson 45 is missing");
     const was = of.wordCount;
     of.wordCount = count;
     try {
@@ -502,7 +502,7 @@ describe("the `unbroken` badge, over a wave the reducer really played", () => {
 
     withWave(10, () => {
       const lesson = lessonById(LESSON);
-      if (!lesson) throw new Error("lesson 39 is missing");
+      if (!lesson) throw new Error("lesson 45 is missing");
       expect(verdictFor(asSaved(holed), lesson).passed).toBe(true);
       expect(draftOf(holed).earnedBadges).not.toContain("unbroken");
     });

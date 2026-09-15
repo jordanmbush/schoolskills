@@ -4,7 +4,16 @@ import type { LadderProgress } from "@/engine/typing/ladder";
 import { lessonById, lessonNumbered } from "@/engine/typing/lessons";
 import type { Verdict } from "@/engine/typing/verdict";
 
-import { lockNote, missNote, nextNote, weakestKey } from "./lessonNotes";
+import { holdFor } from "@/engine/typing/hands";
+import { HELD_KEY_LESSONS } from "@/engine/typing/lessons";
+
+import {
+  holdNote,
+  lockNote,
+  missNote,
+  nextNote,
+  weakestKey,
+} from "./lessonNotes";
 
 /**
  * The sentence a results screen says (§6.1).
@@ -148,48 +157,48 @@ describe("nextNote", () => {
   });
 
   it("says which lesson just opened when the run cleared the frontier", () => {
-    const seven = lessonNumbered(7)!;
-    const eight = lessonNumbered(8)!;
-    const { next, text } = nextNote(seven, progress(7, 8), true);
+    const seven = lessonNumbered(9)!;
+    const eight = lessonNumbered(10)!;
+    const { next, text } = nextNote(seven, progress(9, 10), true);
 
     expect(next).toBe(eight);
-    expect(text).toBe(`Lesson 8 just opened: ${eight.title}.`);
+    expect(text).toBe(`Lesson 10 just opened: ${eight.title}.`);
   });
 
   it("points at the pointer, and claims nothing, on a replayed lesson", () => {
-    // A child at lesson 41 doing lesson 3 again opens nothing. Telling them it
+    // A child at lesson 47 doing lesson 3 again opens nothing. Telling them it
     // did would be the one thing this screen must not do.
     const three = lessonNumbered(3)!;
-    const forty = lessonNumbered(41)!;
-    const { next, text } = nextNote(three, progress(40, 41), true);
+    const forty = lessonNumbered(47)!;
+    const { next, text } = nextNote(three, progress(46, 47), true);
 
     expect(next).toBe(forty);
-    expect(text).toBe(`Next up is lesson 41: ${forty.title}.`);
+    expect(text).toBe(`Next up is lesson 47: ${forty.title}.`);
   });
 
   it("has no next lesson at the top of the ladder", () => {
     // `next` is capped at the last rung, so clearing it points at itself.
-    const hundred = lessonNumbered(100)!;
-    const { next, text } = nextNote(hundred, progress(100, 100), true);
+    const hundred = lessonNumbered(110)!;
+    const { next, text } = nextNote(hundred, progress(110, 110), true);
 
     expect(next).toBeNull();
     expect(text).toBe("That is the top of the ladder. Every lesson done.");
   });
 
   /**
-   * Decision 72. Passing lesson 8 reaches the storm at 9, and the screen that
-   * used to hand back lesson 10 without naming the wave is the reason a child
+   * Decision 72. Passing lesson 10 reaches the storm at 11, and the screen that
+   * used to hand back lesson 12 without naming the wave is the reason a child
    * could climb the whole ladder without meeting one.
    */
   it("offers the Hailstorm a pass reached, and what opens either way", () => {
-    const eight = lessonNumbered(8)!;
-    const storm = lessonNumbered(9)!;
-    const { next, text } = nextNote(eight, progress(8, 9, 10), true);
+    const eight = lessonNumbered(10)!;
+    const storm = lessonNumbered(11)!;
+    const { next, text } = nextNote(eight, progress(10, 11, 12), true);
 
     expect(storm.kind.type).toBe("storm");
     expect(next).toBe(storm);
     expect(text).toBe(
-      `Lesson 9 just opened: ${storm.title}. It is worth playing, and lesson 10 opens whether you do or not.`,
+      `Lesson 11 just opened: ${storm.title}. It is worth playing, and lesson 12 opens whether you do or not.`,
     );
   });
 
@@ -199,19 +208,19 @@ describe("nextNote", () => {
    * the ladder's own tile gives by staying shut.
    */
   it("steps past the Hailstorm where there is no keyboard to play it", () => {
-    const eight = lessonNumbered(8)!;
-    const ten = lessonNumbered(10)!;
-    const { next, text } = nextNote(eight, progress(8, 9, 10), false);
+    const eight = lessonNumbered(10)!;
+    const ten = lessonNumbered(12)!;
+    const { next, text } = nextNote(eight, progress(10, 11, 12), false);
 
     expect(next).toBe(ten);
-    expect(text).toBe(`Lesson 10 just opened: ${ten.title}.`);
+    expect(text).toBe(`Lesson 12 just opened: ${ten.title}.`);
   });
 });
 
 describe("lockNote", () => {
   it("names the rung below", () => {
-    expect(lockNote(lessonNumbered(8)!)).toBe(
-      "Pass lesson 7 to open this one.",
+    expect(lockNote(lessonNumbered(10)!)).toBe(
+      "Pass lesson 9 to open this one.",
     );
   });
 
@@ -220,9 +229,9 @@ describe("lockNote", () => {
    * and on a tablet the storm at 9 is a wave that cannot be played at all.
    */
   it("looks past a Hailstorm level to the lesson that really opens it", () => {
-    expect(lessonNumbered(9)!.kind.type).toBe("storm");
-    expect(lockNote(lessonNumbered(10)!)).toBe(
-      "Pass lesson 8 to open this one.",
+    expect(lessonNumbered(11)!.kind.type).toBe("storm");
+    expect(lockNote(lessonNumbered(12)!)).toBe(
+      "Pass lesson 10 to open this one.",
     );
     // Two storms never sit together, but the loop walks rather than steps once
     // so that a re-cut ladder cannot make this the sentence that lies.
@@ -237,5 +246,42 @@ describe("lockNote", () => {
     // is never locked. A sentence rather than a throw, because the ladder is
     // data and this is copy.
     expect(lockNote(lessonNumbered(1)!)).toBe("This one opens as you climb.");
+  });
+});
+
+describe("a held-key lesson", () => {
+  const [H01, H02] = HELD_KEY_LESSONS;
+  const nine = lessonNumbered(9)!;
+  const progress = (best: number, next: number): LadderProgress => ({
+    cleared: new Set([best]),
+    best,
+    next,
+    open: next,
+  });
+
+  /** A rung like any other (§5.8): the lesson below opens it. */
+  it("is opened by the lesson before it", () => {
+    expect(lockNote(H01)).toBe("Pass lesson 6 to open this one.");
+    expect(lockNote(H02)).toBe("Pass lesson 7 to open this one.");
+  });
+
+  it("opens the other hand next, and the ladder after that", () => {
+    const first = nextNote(H01, progress(7, 8), true);
+    expect(first.next).toBe(H02);
+    expect(first.text).toBe(`Lesson 8 just opened: ${H02.title}.`);
+
+    const second = nextNote(H02, progress(8, 9), true);
+    expect(second.next).toBe(nine);
+    expect(second.text).toBe(`Lesson 9 just opened: ${nine.title}.`);
+  });
+
+  it("says what to hold, and then which hand types", () => {
+    const hold = holdFor(H01)!;
+    expect(holdNote(hold, false)).toBe(
+      "Hold the f key down with your left index finger",
+    );
+    expect(holdNote(hold, true)).toBe(
+      "Holding f · type with your right hand · Space for the next word",
+    );
   });
 });

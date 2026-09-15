@@ -1,5 +1,9 @@
 import type { KeyboardMode } from "@/engine/types";
-import { forcedKeyboard, type Lesson } from "@/engine/typing/lessons";
+import {
+  forcedKeyboard,
+  isHeldKeyLesson,
+  type Lesson,
+} from "@/engine/typing/lessons";
 import { keyboardMode } from "./KeyboardSetting";
 
 /**
@@ -44,9 +48,10 @@ export function keyboardFor(
  *
  * Keyed on the mode the lesson insists on rather than on its number, so the
  * copy follows the table: re-cut the ladder and the checkpoints move with it.
- * The `keys` arm is unreachable today — no row is `keys!` — and is written
- * anyway, because `Keyboard` in `lessons.ts` permits it and a missing arm would
- * be an empty explanation rather than a type error.
+ * The `keys` arm is unreachable today — no row of the ladder is `keys!`, and
+ * the two held-key rows that are get their answer before the switch — and is
+ * written anyway, because `Keyboard` in `lessons.ts` permits it and a missing
+ * arm would be an empty explanation rather than a type error.
  *
  * A lock over `keyboard: null` is not a lock, and says so by handing back
  * `null` here: a lesson that names no mode is insisting on nothing, and
@@ -57,6 +62,12 @@ export function keyboardFor(
 export function keyboardLock(lesson: Lesson): string | null {
   const forced = forcedKeyboard(lesson);
   if (!forced) return null;
+
+  // Whatever mode the row names, the reason is the same: the board is where
+  // the held key is drawn (§5.8), and a child cannot be told to hold a key on
+  // a board they turned off.
+  if (isHeldKeyLesson(lesson))
+    return "The board stays up so you can see the key you are holding.";
 
   switch (forced) {
     case "off":

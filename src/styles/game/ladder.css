@@ -1,8 +1,8 @@
 /* ── Typing: the ladder ─────────────────────────────────────────────────
-   The ice world's own overworld (docs/typing.md §9). A hundred lessons as
-   ten rows of ten, so a course reads as a map rather than a syllabus: what
-   is behind you, the rung you are on, and the checkpoint at the end of the
-   row you are in, all at one glance.
+   The ice world's own overworld (docs/typing.md §9). A hundred and ten
+   lessons as ten rows, a block to a row, so a course reads as a map rather
+   than a syllabus: what is behind you, the rung you are on, and the
+   checkpoint at the end of the row you are in, all at one glance.
 
    Every colour here is a world token — `--accent` for ground already
    covered, `--go` for "press this" — so the map re-skins with `data-world`
@@ -21,9 +21,9 @@
   margin-top: var(--gap-3);
 }
 
-/* The name down the side and ten tiles across it. A fixed name column rather
-   than `auto`, so all ten rows start at the same x and the hundred read as
-   one grid instead of ten ragged rows. */
+/* The name down the side and the block's tiles across it. A fixed name
+   column rather than `auto`, so all ten rows start at the same x and the
+   ladder reads as one grid instead of ten ragged rows. */
 .ladder__block {
   display: grid;
   grid-template-columns: 8.5rem minmax(0, 1fr);
@@ -46,15 +46,20 @@
   color: var(--chalk-dim);
 }
 
+/* As many columns as the widest block has — `--ladder-cols`, which the
+   ladder sets off its own data — on every row, so a block of ten leaves its
+   last cells empty rather than drawing wider tiles: the blocks are not all
+   one length (docs/typing.md §5.5), and the rungs have to line up down the
+   page for the map to read as one. */
 .ladder__row {
   display: grid;
-  grid-template-columns: repeat(10, minmax(0, 1fr));
+  grid-template-columns: repeat(var(--ladder-cols, 10), minmax(0, 1fr));
   gap: 0.3rem;
   /* Capped, because a tile that grows with the panel stops being a map: at
-     1180px the ten would be 86px apiece and the hundred a page and a half of
-     scrolling. Held to a size a child can take in at a glance, and left to
+     1180px the twelve would be 70px apiece and the ladder a page and a half
+     of scrolling. Held to a size a child can take in at a glance, and left to
      fill the width on a phone, where the cap never binds. */
-  max-width: 32rem;
+  max-width: 38rem;
 }
 
 .ladder__tile {
@@ -62,10 +67,10 @@
   place-items: center;
   width: 100%;
   aspect-ratio: 1;
-  /* A floor under the tap target, for the widths where ten across still fits.
-     Ten 44px tiles do not fit across a 390px phone at all, and what gives
-     there is ten rather than the square — see the `560px` block at the end of
-     this section, which redraws a block as five and five. */
+  /* A floor under the tap target, for the widths where twelve across still
+     fits. Twelve 44px tiles do not fit across a 390px phone at all, and what
+     gives there is twelve rather than the square — see the `560px` block at
+     the end of this section, which redraws a block as six and six. */
   min-height: 2.1rem;
   border-radius: 9px;
   border: 1.5px solid var(--hairline);
@@ -128,7 +133,7 @@
   }
 }
 
-/* A checkpoint is a different rung, so it is a different shape: the tenth of
+/* A checkpoint is a different rung, so it is a different shape: the last of
    every block, and the only tile a child may press forty rungs above their
    own (§6.6). The ring is on it in every state, because "always open" is the
    fact about it that has to be legible from across the room. */
@@ -233,28 +238,28 @@
   }
 }
 
-/* ── The phone: five across, and the tile gets its 44px back ─────────────
-   Ten across is the shape of the ladder on a laptop and it does not survive a
-   390px phone: ten tiles across 336px of content is 31px apiece, and the
-   guidance — and CLAUDE.md, which is blunter about it, because the youngest
-   player is five — puts a tap target at 44. Growing the tiles taller than they
-   are wide bought some of that back and cost the shapes, which are the half of
-   the legend colour cannot carry: an ellipse is not a circle and a squashed
-   diamond is not a diamond.
+/* ── The phone: six across, and the tile gets its 44px back ──────────────
+   Twelve across is the shape of the ladder on a laptop and it does not
+   survive a 390px phone: twelve tiles across 336px of content is 26px
+   apiece, and the guidance — and CLAUDE.md, which is blunter about it,
+   because the youngest player is five — puts a tap target at 44. Growing the
+   tiles taller than they are wide bought some of that back and cost the
+   shapes, which are the half of the legend colour cannot carry: an ellipse
+   is not a circle and a squashed diamond is not a diamond.
 
-   So what gives at this width is TEN, not the square. A block is still ten
-   lessons; it is drawn five and five, and twenty rows of five is still a
-   ladder. The tiles come out square and around 65px, the checkpoint is a
-   circle again, and the map is taller — which on a phone is what scrolling is
-   for. `min-height` stays as a floor for the narrowest phones, where five
-   across is itself under 44. */
+   So what gives at this width is TWELVE, not the square. A block is still
+   its ten or twelve lessons; it is drawn six and six, and twenty rows of six
+   is still a ladder. The tiles come out square and around 52px, the
+   checkpoint is a circle again, and the map is taller — which on a phone is
+   what scrolling is for. `min-height` stays as a floor for the narrowest
+   phones, where six across is itself under 44. */
 @media (width < 560px) {
   .ladder {
     padding-inline: var(--gap-2);
   }
 
   .ladder__row {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(6, minmax(0, 1fr));
     gap: 0.3rem;
   }
 

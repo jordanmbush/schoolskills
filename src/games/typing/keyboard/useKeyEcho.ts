@@ -149,7 +149,20 @@ export function createKeyEcho(emit: (echo: KeyEcho) => void): KeyEchoBoard {
  * off the field, and a board that stopped echoing there would read as a
  * keyboard that had stopped working.
  */
-export function useKeyEcho({ expect }: { expect: string | null }): KeyEcho {
+export function useKeyEcho({
+  expect,
+  ignore = null,
+}: {
+  expect: string | null;
+  /**
+   * A code the board never echoes: the key a held-key lesson holds down
+   * (§5.8). It is not a stroke — it goes down once and stays — so lighting it
+   * for 120ms would be a flicker, and judging it against the passage would
+   * flash a child red for holding the key they were told to hold. The board
+   * draws it in a state of its own instead (`Keyboard.hold`).
+   */
+  ignore?: string | null;
+}): KeyEcho {
   const [echo, setEcho] = useState<KeyEcho>(SILENT);
 
   /**
@@ -167,11 +180,15 @@ export function useKeyEcho({ expect }: { expect: string | null }): KeyEcho {
    */
   const expected = useRef(expect);
   expected.current = expect;
+  const ignored = useRef(ignore);
+  ignored.current = ignore;
 
   useEffect(() => {
     const board = createKeyEcho(setEcho);
-    const onKeyDown = (event: KeyboardEvent) =>
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.code === ignored.current) return;
       board.press(event.code, expected.current);
+    };
 
     // Capture, not bubble — the third argument is load-bearing.
     //

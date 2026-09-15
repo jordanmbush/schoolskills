@@ -268,4 +268,32 @@ describe("Keyboard", () => {
     expect(html).not.toContain("is-wrong");
     expect(html).not.toContain("is-next");
   });
+
+  /**
+   * The key a held-key lesson holds wears one of two classes and never an
+   * echo's (§5.8): the echo is told to ignore the code, and the board draws
+   * "hold this" and "held" as states of its own.
+   */
+  it("draws the held key as asked for, and then as held", () => {
+    const asked = renderToStaticMarkup(
+      <Keyboard hold={{ code: "KeyF", held: false }} />,
+    );
+    expect(asked.match(/is-hold/g)).toHaveLength(1);
+    expect(asked).not.toContain("is-held");
+
+    const held = renderToStaticMarkup(
+      <Keyboard hold={{ code: "KeyF", held: true }} />,
+    );
+    expect(held.match(/is-held/g)).toHaveLength(1);
+    expect(held).not.toContain("is-hold ");
+    expect(held).toContain("is-home is-held");
+  });
+
+  it("draws the held key in the world's accent and none of the five", () => {
+    const block = game.slice(game.indexOf("/* ── Typing: the held key"));
+    expect(block).toMatch(/\.is-hold\s*{[^}]*var\(--accent\)/);
+    expect(block).toMatch(/\.is-held\s*{[^}]*var\(--accent\)/);
+    for (const name of Object.keys(TELEMETRY))
+      expect(block).not.toContain(`var(${name})`);
+  });
 });

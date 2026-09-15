@@ -3,8 +3,8 @@ import { LESSONS, type Lesson } from "@/engine/typing/lessons";
 import { STORM_NOTE, LessonTile } from "./LessonTile";
 
 /**
- * The hundred lessons, as the ice world's own overworld — ten rows of ten, the
- * blocks named down the side (§9).
+ * The ladder, as the ice world's own overworld — a row per block, the blocks
+ * named down the side (§9).
  *
  * Everything on it is **derived**: `LESSONS` for the shape of the ladder and
  * `ladderProgress` for where this child is on it (§6.5), which is why re-tuning
@@ -46,6 +46,14 @@ const BLOCKS = BLOCK_NAMES.map((name, i) => ({
   lessons: LESSONS.filter((lesson) => lesson.block === i + 1),
 }));
 
+/**
+ * How many tiles across every row is drawn, which is the widest block's
+ * count: the blocks are not all one length (§5.5), and a row that took its
+ * own width would put the rungs of a block of ten out of line with the block
+ * of twelve above it. Handed to the stylesheet as `--ladder-cols`.
+ */
+const COLUMNS = Math.max(...BLOCKS.map((block) => block.lessons.length));
+
 export function LessonLadder({
   progress,
   hasKeyboard,
@@ -76,17 +84,20 @@ export function LessonLadder({
           already type has no reason to guess that the tile forty rungs up is
           one they are allowed to press (§6.6, decision 16). */}
       <p className="muted ladder__lede">
-        A hundred lessons, ten to a block. Pass one and the next opens — and
-        every checkpoint is open from the start, so if you can already type, try
-        one. Getting it wrong costs you nothing.
+        {LESSONS.length} lessons in ten blocks. Pass one and the next opens —
+        and every checkpoint is open from the start, so if you can already type,
+        try one. Getting it wrong costs you nothing.
       </p>
 
-      <ol className="ladder__blocks">
+      <ol
+        className="ladder__blocks"
+        style={{ "--ladder-cols": COLUMNS } as React.CSSProperties}
+      >
         {BLOCKS.map((block) => (
           <li key={block.n} className="ladder__block">
             {/* A heading rather than a caption, so the ten blocks are ten
                 stops for anyone moving through the page by heading — which is
-                how a hundred tiles stay navigable without a skip link. */}
+                how a hundred-odd tiles stay navigable without a skip link. */}
             <h3 className="ladder__name">
               <span className="ladder__blocknum u-mono">{block.n}</span>
               {block.name}
@@ -130,10 +141,10 @@ export function LessonLadder({
           <span className="ladder__tile is-open is-storm" aria-hidden="true" />
           {/* The one place the keyboard is explained rather than merely
               enforced, and the one place the way out of a wrong guess is
-              offered (§8.8). Said once, here, because a hundred tiles each
-              carrying "press any key" is wallpaper rather than advice — and it
-              corrects itself the instant a key is pressed, with nothing to
-              reload. */}
+              offered (§8.8). Said once, here, because a hundred-odd tiles
+              each carrying "press any key" is wallpaper rather than advice —
+              and it corrects itself the instant a key is pressed, with
+              nothing to reload. */}
           {hasKeyboard
             ? `${STORM_NOTE} Nothing on the ladder waits on one`
             : `${STORM_NOTE} It needs a keyboard, so these stay shut here. Press any key if you have one`}

@@ -107,7 +107,7 @@ export function buildDeck(config: RaceConfig, seed: number): Card[] {
  * "house best" columns, the `previousBest` a results screen pays the
  * personal-best bonus on, and `ghostsFor`, which is where every rival a setup
  * screen offers comes from. That matters most for the consumers that do not
- * exist yet, and it is not hypothetical for the ones that do: lesson 39 has a
+ * exist yet, and it is not hypothetical for the ones that do: lesson 45 has a
  * `WaveSpec`, so `lessonKey(lesson)` is `typing|L39|28` — the same string
  * `stormConfig` writes — and every "best" that groups by key reads a storm and
  * a run of that lesson as one group.

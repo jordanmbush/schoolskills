@@ -65,8 +65,8 @@ export default function StormRun() {
      is not decoration. `StormPlay` builds its wave in a `useState` initialiser,
      which runs once per mount — so a route that stayed mounted across
      `#/…/storm/L39` → `#/…/storm/L45` (same pattern, different param, no
-     remount) would go on playing lesson 39's storm under lesson 45's name, and
-     save it under lesson 45's id. */
+     remount) would go on playing lesson 45's storm under lesson 51's name, and
+     save it under lesson 51's id. */
   return (
     <StormPlay
       key={`${lesson.id}:${attempt}`}

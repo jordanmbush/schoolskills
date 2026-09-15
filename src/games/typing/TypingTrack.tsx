@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
 import { useHub, usePlayer } from "@/components/state/HubContext";
 import { useRace } from "@/components/state/RaceContext";
@@ -11,7 +11,8 @@ import {
   cumulativeSplits,
   sessionsFor,
 } from "@/engine/records";
-import { lessonById } from "@/engine/typing/lessons";
+import { holdFor } from "@/engine/typing/hands";
+import { isHeldKeyLesson, lessonById } from "@/engine/typing/lessons";
 import {
   Hud,
   Lane,
@@ -23,11 +24,14 @@ import {
   useRaceFinish,
 } from "@/games/race";
 import { sfx } from "@/services/sound";
+import { HOLD_TO_BEGIN_MS, HoldReady } from "./HoldReady";
 import { LessonBars } from "./LessonBars";
+import { holdNote } from "./lessonNotes";
 import { Passage } from "./Passage";
 import { TypeField } from "./TypeField";
 import { keyboardFor } from "./keyboard/lessonKeyboard";
 import { LiveKeyboard } from "./keyboard/LiveKeyboard";
+import { useHeldFor, useHeldKey } from "./keyboard/useHeldKey";
 import type {
   CardResult,
   Profile,
@@ -140,6 +144,26 @@ function Track({
    * screen rather than of the four places that would each have to remember.
    */
   const ghost = lesson ? null : pending.ghost;
+
+  /**
+   * The key this run holds down, or `null` (§5.8), and whether it is down.
+   *
+   * `waiting` is the one flag the rest of the screen reads: while the key is
+   * up the passage is waiting on the hand rather than on a keystroke, so the
+   * countdown does not start, the clock stands (the quit sheet's own pause),
+   * the field is closed and the board says what to hold. Nothing is marked
+   * wrong, because nothing was typed.
+   *
+   * `armed` is the gate on the way in (decision 77): the run opens on
+   * `HoldReady` and stays there until the key has been down for a second
+   * unbroken, and only then does the 3·2·1 begin.
+   */
+  const heldKeyLesson = isHeldKeyLesson(lesson) ? lesson : null;
+  const hold = heldKeyLesson ? holdFor(heldKeyLesson) : null;
+  const held = useHeldKey(hold?.code ?? null);
+  const waiting = hold !== null && !held;
+  const armed = useHeldFor(held, HOLD_TO_BEGIN_MS);
+
   const ghostSplits = useMemo(
     () => (ghost ? cumulativeSplits(ghost.session) : null),
     [ghost],
@@ -151,9 +175,9 @@ function Track({
     bestRun(sessionsFor(sessions, profile.id, configKey(config))),
   );
 
-  const [phase, setPhase] = useState<"countdown" | "racing" | "saving">(
-    "countdown",
-  );
+  const [phase, setPhase] = useState<
+    "ready" | "countdown" | "racing" | "saving"
+  >(hold ? "ready" : "countdown");
   const [index, setIndex] = useState(0);
   const [entry, setEntry] = useState("");
   const [quitting, setQuitting] = useState(false);
@@ -172,7 +196,7 @@ function Track({
     limitMs: null,
     racing: phase === "racing",
     resolved: false,
-    quitting,
+    quitting: quitting || waiting,
     index,
     onTimeout: () => {},
   });
@@ -212,12 +236,16 @@ function Track({
   completeRef.current = complete;
 
   const countdown = useCountdown({
-    active: phase === "countdown",
+    active: phase === "countdown" && !waiting,
     onGo: useCallback(() => {
       startCard();
       setPhase("racing");
     }, [startCard]),
   });
+
+  useEffect(() => {
+    if (phase === "ready" && armed) setPhase("countdown");
+  }, [phase, armed]);
 
   /**
    * Commit the word in the buffer and move on. Called on space, and once more
@@ -277,7 +305,7 @@ function Track({
    * a disabled field that the board marked wrong would be blaming a child for
    * a keystroke the game had already thrown away.
    */
-  const live = phase === "racing" && !quitting;
+  const live = phase === "racing" && !quitting && !waiting;
   const next = live ? nextChar(deck[index]?.answer ?? "", entry) : null;
 
   /**
@@ -308,6 +336,10 @@ function Track({
       className="race typing"
       style={{ "--tint": profile.color } as React.CSSProperties}
     >
+      {phase === "ready" && heldKeyLesson && hold && (
+        <HoldReady lesson={heldKeyLesson} hold={hold} held={held} />
+      )}
+
       {phase === "countdown" && (
         <div className="countdown" aria-live="assertive">
           <span key={countdown} className="countdown__num u-display">
@@ -315,8 +347,17 @@ function Track({
           </span>
           {/* The 3·2·1 stays on a lesson, because it is the moment the hands
               go on the home row — but it is not a starting gun there, so it
-              doesn't talk like one (§7). */}
-          {lesson && <p className="countdown__note">Fingers on home row</p>}
+              doesn't talk like one (§7). On a held-key lesson one hand is
+              already down, and the count waits if it lifts (§5.8). */}
+          {lesson && (
+            <p className="countdown__note">
+              {!hold
+                ? "Fingers on home row"
+                : held
+                  ? `Keep ${hold.key} held · fingers on home row`
+                  : holdNote(hold, false)}
+            </p>
+          )}
         </div>
       )}
 
@@ -362,6 +403,7 @@ function Track({
         value={entry}
         index={index}
         disabled={!live}
+        hint={hold ? { text: holdNote(hold, held), loud: waiting } : undefined}
         onChange={setEntry}
         onCommit={commit}
       />
@@ -370,7 +412,13 @@ function Track({
           screen — the board is a map of the keyboard, so it reads last, and
           `TypeField` keeps the tab order's first and only stop. Rendered
           nothing at all on "off": see `LiveKeyboard`. */}
-      {board !== "off" && <LiveKeyboard mode={board} next={next} />}
+      {board !== "off" && (
+        <LiveKeyboard
+          mode={board}
+          next={next}
+          hold={hold ? { code: hold.code, held } : null}
+        />
+      )}
 
       {quitting && (
         <QuitSheet

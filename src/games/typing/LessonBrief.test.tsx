@@ -2,7 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
 import { ladderProgress, type LadderProgress } from "@/engine/typing/ladder";
-import { lessonById } from "@/engine/typing/lessons";
+import { HELD_KEY_LESSONS, lessonById } from "@/engine/typing/lessons";
 import type { Run } from "@/engine/typing/verdict";
 import type { CardResult, KeyboardMode } from "@/engine/types";
 
@@ -25,9 +25,9 @@ import { LessonBrief } from "./LessonBrief";
 
 /** Lesson 1: `f` and `j`, `guide` and locked. Open on a fresh profile. */
 const L01 = lessonById("L01")!;
-/** Lesson 7: home-row words, `guide` and only suggesting it. */
+/** Lesson 9: home-row words, `guide` and only suggesting it. */
 const L07 = lessonById("L07")!;
-/** Checkpoint 10: `off`, locked, and open at every value of `next`. */
+/** Checkpoint 12: `off`, locked, and open at every value of `next`. */
 const L10 = lessonById("L10")!;
 
 /** A profile that has never run anything: `{ cleared: {}, best: 0, next: 1 }`. */
@@ -155,12 +155,12 @@ describe("LessonBrief", () => {
   });
 
   it("will not start a locked lesson, and says what would open it", () => {
-    // Lesson 7 on a profile that has never run anything: locked, and the rung
-    // below it is 6 — not 5, and the storm at 4 is not in the way of either.
+    // Lesson 9 on a profile that has never run anything: locked, and the rung
+    // below it is 8 — a held-key lesson, which is a rung like any other (§5.8).
     const html = render(L07);
 
     expect(started(html)).toBe(false);
-    expect(html).toContain("Pass lesson 6 to open this one.");
+    expect(html).toContain("Pass lesson 8 to open this one.");
     expect(html).toContain("try a checkpoint");
   });
 
@@ -192,3 +192,62 @@ function run(words: number, ms: number): Run {
     durationMs: ms,
   };
 }
+
+/** Held-key lessons: the right hand's home row, and the right hand's words. */
+const [H01, , , , , , H07] = HELD_KEY_LESSONS;
+
+/** Progress with the rung below `n` behind the child, so `n` is next. */
+const reached = (n: number): LadderProgress => ({
+  cleared: new Set(Array.from({ length: n - 1 }, (_, i) => i + 1)),
+  best: n - 1,
+  next: n,
+  open: n,
+});
+
+/**
+ * The door of a held-key lesson (§5.8): what to hold and with which finger,
+ * said before the keys; the keys under an honest name; the board locked with
+ * the reason; and opened by the rung below like any other lesson.
+ */
+describe("LessonBrief on a held-key lesson", () => {
+  it("says what to hold, with which finger, and which hand types", () => {
+    const html = render(H01, { progress: reached(H01.n) });
+    expect(html).toContain(`Lesson ${H01.n}`);
+    expect(html).toContain(H01.title);
+    expect(html).toContain(">f</kbd>");
+    expect(html).toContain("with your left index finger");
+    expect(html).toContain("only your right hand can type");
+    expect(html).toContain("Holding it is what starts the lesson");
+    expect(html.indexOf("left index finger")).toBeLessThan(
+      html.indexOf("Keys to drill"),
+    );
+  });
+
+  it("calls the gated keys what they are, not new", () => {
+    const html = render(H01, { progress: reached(H01.n) });
+    expect(html).toContain("Keys to drill</span>");
+    expect(html).toContain("Keys to drill</b>");
+    expect(html).not.toContain("New keys");
+    for (const key of H01.introduces) expect(html).toContain(`>${key}</kbd>`);
+  });
+
+  it("says the word pair drills no keys", () => {
+    const html = render(H07, { progress: reached(H07.n) });
+    expect(html).toContain("No keys to drill");
+    expect(html).not.toContain("Keys to drill</b>");
+  });
+
+  it("keeps the board up, with the reason, and no pill to press", () => {
+    const html = render(H01, { progress: reached(H01.n) });
+    expect(html).toContain("key you are holding");
+    expect(pills(html).every((pill) => pill.shut)).toBe(true);
+    expect(pills(html).find((pill) => pill.on)?.value).toBe("guide");
+  });
+
+  it("is locked by the rung below, and starts once it is behind", () => {
+    const shut = render(H01);
+    expect(started(shut)).toBe(false);
+    expect(shut).toContain("Pass lesson 6 to open this one.");
+    expect(started(render(H01, { progress: reached(H01.n) }))).toBe(true);
+  });
+});

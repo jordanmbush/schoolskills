@@ -2,7 +2,12 @@ import { useId, useState } from "react";
 
 import { Button, Scrim } from "@/components/ui/kit";
 import { percent } from "@/engine/format";
-import type { Lesson } from "@/engine/typing/lessons";
+import { holdFor } from "@/engine/typing/hands";
+import {
+  isHeldKeyLesson,
+  type HeldKeyLesson,
+  type Lesson,
+} from "@/engine/typing/lessons";
 import type { LadderProgress } from "@/engine/typing/ladder";
 import { verdictFor, type Run } from "@/engine/typing/verdict";
 import type { KeyboardMode } from "@/engine/types";
@@ -83,6 +88,7 @@ export function LessonBrief({
           {lesson.title}
         </h2>
 
+        {isHeldKeyLesson(lesson) && <HoldNote lesson={lesson} />}
         <NewKeys lesson={lesson} />
         <Asks lesson={lesson} />
 
@@ -129,7 +135,7 @@ export function LessonBrief({
  * The keys this lesson is for, as keys.
  *
  * Drawn as caps rather than listed in the sentence because they are what the
- * child is about to look for: two glyphs, or fifteen at lesson 31, and a
+ * child is about to look for: two glyphs, or fifteen at lesson 37, and a
  * comma-separated list of fifteen is a paragraph. A lesson that introduces
  * nothing says so — silence would read as a missing line rather than as "no new
  * keys today".
@@ -138,14 +144,16 @@ function NewKeys({ lesson }: { lesson: Lesson }) {
   if (lesson.introduces.length === 0) {
     return (
       <p className="brief__new muted">
-        No new keys — this one is practice on what you have.
+        {isHeldKeyLesson(lesson)
+          ? "No keys to drill — real words, one hand at a time."
+          : "No new keys — this one is practice on what you have."}
       </p>
     );
   }
 
   return (
     <p className="brief__new">
-      <span className="brief__newlabel">New keys</span>
+      <span className="brief__newlabel">{keysLabel(lesson)}</span>
       {lesson.introduces.map((key) => (
         <kbd key={key} className="brief__key u-mono">
           {key}
@@ -181,8 +189,8 @@ function Asks({ lesson }: { lesson: Lesson }) {
         </li>
         {lesson.introduces.length > 0 && (
           <li>
-            <b>New keys</b> — each one right {percent(keyAccuracy)} of the time,
-            over at least {keyStrikes} goes.
+            <b>{keysLabel(lesson)}</b> — each one right {percent(keyAccuracy)}{" "}
+            of the time, over at least {keyStrikes} goes.
           </li>
         )}
         <li>
@@ -190,6 +198,30 @@ function Asks({ lesson }: { lesson: Lesson }) {
         </li>
       </ul>
     </section>
+  );
+}
+
+/**
+ * What the gated keys are called. Nothing a held-key lesson drills is new to
+ * the child (§5.8); it is the same gate under an honest name.
+ */
+const keysLabel = (lesson: Lesson) =>
+  isHeldKeyLesson(lesson) ? "Keys to drill" : "New keys";
+
+/**
+ * What to hold, with which finger, and what that leaves (§5.8). Said before
+ * the keys, because it is the thing about this lesson a child has not met.
+ */
+function HoldNote({ lesson }: { lesson: HeldKeyLesson }) {
+  const hold = holdFor(lesson);
+  if (!hold) return null;
+  return (
+    <p className="brief__hold">
+      Hold <kbd className="brief__key u-mono">{hold.key}</kbd> down with your{" "}
+      {hold.finger} for the whole lesson, so only your {hold.free} hand can
+      type. Holding it is what starts the lesson, and letting go pauses it until
+      you hold it again.
+    </p>
   );
 }
 

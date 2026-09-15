@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
-import { lessonById } from "@/engine/typing/lessons";
+import { HELD_KEY_LESSONS, lessonById } from "@/engine/typing/lessons";
 import type { Verdict } from "@/engine/typing/verdict";
 
 import { PassBars } from "./PassBars";
@@ -18,7 +18,7 @@ import { PassBars } from "./PassBars";
 
 /** Lesson 4 is a Hailstorm level: no passage, so no words per minute. */
 const STORM = lessonById("L04")!;
-/** Lesson 7 is the first words lesson, and introduces nothing. */
+/** Lesson 9 is the first words lesson, and introduces nothing. */
 const L07 = lessonById("L07")!;
 
 const labels = (verdict: Verdict, lesson = STORM) =>
@@ -55,5 +55,22 @@ describe("PassBars", () => {
     expect(
       labels({ ...deadInTheStorm, wpm: { got: 9, need: 8, ok: true } }, L07),
     ).toEqual(["Accuracy", "Speed"]);
+  });
+
+  /** Nothing a held-key lesson drills is new (§5.8), so the bar does not say so. */
+  it("names a held-key lesson's gated key without calling it new", () => {
+    const [H01] = HELD_KEY_LESSONS;
+    const drilled: Verdict = {
+      passed: false,
+      accuracy: { got: 1, need: 0.95, ok: true },
+      wpm: { got: 20, need: 8, ok: true },
+      keys: [{ key: "h", got: 0.5, need: 0.9, ok: false }],
+    };
+    expect(labels(drilled, H01)).toEqual(["Accuracy", "Key h", "Speed"]);
+    expect(labels(drilled, lessonById("L06")!)).toEqual([
+      "Accuracy",
+      "New key h",
+      "Speed",
+    ]);
   });
 });

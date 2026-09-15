@@ -213,15 +213,15 @@ export const BADGES: BadgeDef[] = [
     id: "home-keys",
     name: "Home Keys",
     icon: "🏠",
-    how: "Clear checkpoint 10",
+    how: "Clear checkpoint 12",
   },
   {
     id: "touch-typist",
     name: "Touch Typist",
     icon: "✋",
-    how: "Clear checkpoint 50",
+    how: "Clear checkpoint 58",
   },
-  { id: "ice-exam", name: "Ice Exam", icon: "🧊", how: "Clear lesson 100" },
+  { id: "ice-exam", name: "Ice Exam", icon: "🧊", how: "Clear lesson 110" },
   {
     id: "eyes-up",
     name: "Eyes Up",
@@ -316,7 +316,7 @@ export function evaluateBadges({
  *
  * Like `evaluateBadges` itself this returns what is *true*, not what is new —
  * `summariseRun` diffs against `Profile.badges` to find the ones worth
- * celebrating. That is also what backfills: a child who cleared checkpoint 10
+ * celebrating. That is also what backfills: a child who cleared checkpoint 12
  * long before the badge existed is handed it by their next run of anything.
  */
 function courseBadges(
@@ -333,9 +333,9 @@ function courseBadges(
      checkpoint cleared *by this run* has to award its badge on this run's
      results screen, not on the next one's.                                  */
   const ladder = ladderProgress([...history, session]);
-  if (ladder.best >= 10) earned.push("home-keys");
-  if (ladder.best >= 50) earned.push("touch-typist");
-  if (ladder.best >= 100) earned.push("ice-exam");
+  if (ladder.best >= 12) earned.push("home-keys");
+  if (ladder.best >= 58) earned.push("touch-typist");
+  if (ladder.best >= 110) earned.push("ice-exam");
 
   // Through the deck registry's own guard, as everywhere else: narrowing the
   // config union is `decks/index.ts`'s job. A run that is not a lesson — free

@@ -46,8 +46,8 @@ describe("unlockedAt", () => {
    * 6 left behind (§5.6).
    */
   it("is exactly the home row and the space bar at the end of block 1", () => {
-    expect(chars(unlockedAt(10))).toBe(sorted("asdfghjkl; "));
-    expect(chars(unlockedAt(6))).toBe(chars(unlockedAt(10)));
+    expect(chars(unlockedAt(12))).toBe(sorted("asdfghjkl; "));
+    expect(chars(unlockedAt(6))).toBe(chars(unlockedAt(12)));
   });
 
   /**
@@ -56,10 +56,10 @@ describe("unlockedAt", () => {
    * come back in block 7 as punctuation; a union does not double-count.
    */
   it("is every letter, and no capital, at the end of block 3", () => {
-    expect(chars(unlockedAt(30))).toBe(
+    expect(chars(unlockedAt(36))).toBe(
       sorted("abcdefghijklmnopqrstuvwxyz;,./ "),
     );
-    expect(capitalsIn(unlockedAt(30))).toEqual([]);
+    expect(capitalsIn(unlockedAt(36))).toEqual([]);
   });
 
   /**
@@ -68,18 +68,18 @@ describe("unlockedAt", () => {
    * would be missing here.
    */
   it("covers everything the hundred lessons introduce", () => {
-    expect(chars(unlockedAt(100))).toBe(chars(EVER_INTRODUCED));
-    for (const ch of unlockedAt(100)) expect(strokeFor(ch), ch).not.toBeNull();
+    expect(chars(unlockedAt(110))).toBe(chars(EVER_INTRODUCED));
+    for (const ch of unlockedAt(110)) expect(strokeFor(ch), ch).not.toBeNull();
   });
 
   /**
    * The ten legends no lesson ever teaches: the backquote, both brackets, and
    * the four shifted characters — `^ < > |` — whose base keys the ladder does
    * teach. A closure over unlocked *keys* rather than a union of introduced
-   * *characters* would hand all four over for free, `<` and `>` from lesson 31.
+   * *characters* would hand all four over for free, `<` and `>` from lesson 37.
    */
   it("never hands over a character no lesson taught", () => {
-    const untaught = [...EVERYTHING].filter((ch) => !unlockedAt(100).has(ch));
+    const untaught = [...EVERYTHING].filter((ch) => !unlockedAt(110).has(ch));
     expect(sorted(untaught.join(""))).toBe(sorted("`~[]{}|^<>"));
   });
 
@@ -99,11 +99,11 @@ describe("unlockedAt", () => {
     expect(chars(unlockedAt(0))).toBe(" ");
     expect(chars(unlockedAt(-3))).toBe(" ");
     expect(chars(unlockedAt(Number.NaN))).toBe(" ");
-    expect(chars(unlockedAt(101))).toBe(chars(unlockedAt(100)));
-    expect(chars(unlockedAt(1e6))).toBe(chars(unlockedAt(100)));
-    expect(chars(unlockedAt(10.9))).toBe(chars(unlockedAt(10)));
+    expect(chars(unlockedAt(101))).toBe(chars(unlockedAt(110)));
+    expect(chars(unlockedAt(1e6))).toBe(chars(unlockedAt(110)));
+    expect(chars(unlockedAt(10.9))).toBe(chars(unlockedAt(12)));
     expect(chars(unlockedAt(Number.POSITIVE_INFINITY))).toBe(
-      chars(unlockedAt(100)),
+      chars(unlockedAt(110)),
     );
     expect(chars(unlockedAt(Number.NEGATIVE_INFINITY))).toBe(" ");
   });
@@ -111,28 +111,28 @@ describe("unlockedAt", () => {
 
 describe("the shift rule", () => {
   /**
-   * Every letter is unlocked at lesson 26 and every capital needs one of them,
+   * Every letter is unlocked at lesson 30 and every capital needs one of them,
    * so a rule that only checked the letter would hand a child the whole of
    * block 4 four lessons early.
    */
   it("gives no capital before block 4, however old the letter is", () => {
     for (let n = 0; n <= 30; n++)
       expect(capitalsIn(unlockedAt(n)), `lesson ${n}`).toEqual([]);
-    expect(unlockedAt(30).has("a")).toBe(true);
-    expect(unlockedAt(30).has("A")).toBe(false);
+    expect(unlockedAt(36).has("a")).toBe(true);
+    expect(unlockedAt(36).has("A")).toBe(false);
   });
 
   /**
-   * Lesson 31 is the right shift, which reaches the left hand's letters and
-   * only those; `M` is a left-shift capital and waits for lesson 32.
+   * Lesson 37 is the right shift, which reaches the left hand's letters and
+   * only those; `M` is a left-shift capital and waits for lesson 38.
    */
   it("arrives one shift at a time, in the hand each shift reaches", () => {
-    expect(sorted(capitalsIn(unlockedAt(31)).join(""))).toBe(
+    expect(sorted(capitalsIn(unlockedAt(37)).join(""))).toBe(
       sorted("QWERTASDFGZXCVB"),
     );
-    for (const ch of capitalsIn(unlockedAt(31)))
+    for (const ch of capitalsIn(unlockedAt(37)))
       expect(strokeFor(ch)?.shift, ch).toBe("ShiftRight");
-    expect(sorted(capitalsIn(unlockedAt(32)).join(""))).toBe(
+    expect(sorted(capitalsIn(unlockedAt(38)).join(""))).toBe(
       sorted("ABCDEFGHIJKLMNOPQRSTUVWXYZ"),
     );
   });
@@ -162,36 +162,36 @@ describe("the shift rule", () => {
 
 describe("canType", () => {
   it("passes text a child at that lesson has every key for", () => {
-    expect(canType("a glass flask", 10)).toBe(true);
-    expect(canType("a quick fox.", 24)).toBe(true);
+    expect(canType("a glass flask", 12)).toBe(true);
+    expect(canType("a quick fox.", 28)).toBe(true);
     expect(canType("", 1)).toBe(true);
   });
 
   it("fails on a key the ladder has not reached yet", () => {
     // `w`, `e`, `m` and `t` are all block 2 or later.
-    expect(canType("glad we met", 10)).toBe(false);
-    // The full stop arrives with `x`, at lesson 24.
-    expect(canType("a quick fox.", 23)).toBe(false);
+    expect(canType("glad we met", 12)).toBe(false);
+    // The full stop arrives with `x`, at lesson 28.
+    expect(canType("a quick fox.", 27)).toBe(false);
     // Both digits are block 6, and they arrive in different lessons.
-    expect(canType("45", 51)).toBe(true);
-    expect(canType("42", 51)).toBe(false);
-    expect(canType("42", 54)).toBe(true);
+    expect(canType("45", 59)).toBe(true);
+    expect(canType("42", 59)).toBe(false);
+    expect(canType("42", 62)).toBe(true);
   });
 
   it("fails on a capital until the shift that reaches it is taught", () => {
-    expect(canType("ask", 30)).toBe(true);
-    expect(canType("Ask", 30)).toBe(false);
-    expect(canType("Ask", 31)).toBe(true);
-    // `M` is the right hand's, so it needs the left shift — lesson 32.
-    expect(canType("Man", 31)).toBe(false);
-    expect(canType("Man", 32)).toBe(true);
+    expect(canType("ask", 36)).toBe(true);
+    expect(canType("Ask", 36)).toBe(false);
+    expect(canType("Ask", 37)).toBe(true);
+    // `M` is the right hand's, so it needs the left shift — lesson 38.
+    expect(canType("Man", 37)).toBe(false);
+    expect(canType("Man", 38)).toBe(true);
   });
 
   it("fails on a character the board cannot produce, at any lesson", () => {
     // The curly quotation marks `decks/typing.ts` had to hand-exclude from the
     // Scripture pool. No lesson unlocks them because no key produces them.
-    expect(canType("“yes”", 100)).toBe(false);
-    expect(canType("café", 100)).toBe(false);
+    expect(canType("“yes”", 110)).toBe(false);
+    expect(canType("café", 110)).toBe(false);
   });
 
   /**

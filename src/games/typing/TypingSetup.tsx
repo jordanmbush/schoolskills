@@ -270,8 +270,8 @@ export default function TypingSetup() {
 
           {/* Keyed by the lesson, so a second brief is a second mount: the
               keyboard control is seeded from the lesson on mount, and a
-              component held across two openings would show lesson 12's
-              suggestion under lesson 40's title. */}
+              component held across two openings would show lesson 14's
+              suggestion under lesson 46's title. */}
           {briefing && !isStormLesson(briefing) && (
             <LessonBrief
               key={briefing.id}
