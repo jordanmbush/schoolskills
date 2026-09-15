@@ -202,6 +202,14 @@
   flex-grow: 1;
 }
 
+/* A block of nothing but worked examples keeps the height it was given. It is
+   a lesson's, and the spare paper on that page belongs to the problems after
+   it — an example stretched across the middle of the page would leave the
+   lesson's pieces floating apart. `Problems.tsx` sets the modifier. */
+.sheet__problems--worked {
+  flex-grow: 0;
+}
+
 .sheet__blanks > *,
 .sheet__questions > * {
   flex-grow: 1;
@@ -496,6 +504,59 @@
   align-items: baseline;
   gap: 0.06in;
   flex: 1 0 100%;
+}
+
+/* ── A lesson's pieces (§23) ─────────────────────────────────────────────────
+   Counters over their caption, and a boxed note. The dots are SVG fills and
+   the box is a border, so both print (§5). Every height here is one the
+   family reserved: the drawing's from `counters.ts`, the caption's as
+   `CAPTION_EMS` there, the note's from `noteHeight` in layout.ts — which is
+   why the caption's size and leading and the note's padding are the numbers
+   those modules quote. A `note` block is `.sheet__panel` here, because
+   `.sheet__note` is the footer's "Answer key".                               */
+
+.sheet__counters {
+  display: inline-flex;
+  flex-direction: column;
+  max-width: 100%;
+}
+
+.sheet__caption {
+  font-size: 0.85em;
+}
+
+.sheet__panel {
+  box-sizing: border-box;
+  padding: 0.08in;
+  border: 0.75pt solid currentcolor;
+  break-inside: avoid;
+}
+
+/* The sentence for the grown-up: set small, so a child reads past it. */
+.sheet__panel--aside {
+  font-size: 0.85em;
+}
+
+.sheet__panel-heading {
+  font-weight: 700;
+}
+
+.sheet__panel-heading,
+.sheet__panel-text,
+.sheet__panel-list {
+  margin: 0;
+}
+
+.sheet__panel-list {
+  list-style: none;
+  padding-left: 0;
+}
+
+/* The hop of a repeated subtraction along a number line: the arc is a rule,
+   the arrowhead where it lands is a dot's fill, and the "−3" over it is set
+   like a tick's number. Nothing here has a colour of its own. */
+.sheet__jump {
+  fill: none;
 }
 
 /* An answer, wherever it is written: in the slot at the end of a sum, in the

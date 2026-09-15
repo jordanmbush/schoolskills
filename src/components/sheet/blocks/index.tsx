@@ -27,11 +27,13 @@ import { Copywork } from "./Copywork";
 import { Crossword } from "./Crossword";
 import { CutCards } from "./CutCards";
 import { Cutline } from "./Cutline";
+import { Dots } from "./Dots";
 import { Form } from "./Form";
 import { Grid } from "./Grid";
 import { Line } from "./Line";
 import { Matching } from "./Matching";
 import { Net } from "./Net";
+import { Note } from "./Note";
 import { Problems } from "./Problems";
 import { Rules } from "./Rules";
 import { Shapes } from "./Shapes";
@@ -61,6 +63,10 @@ export function BlockView({
       return <Grid block={block} metrics={metrics} />;
     case "numberline":
       return <Line block={block} metrics={metrics} />;
+    case "note":
+      return <Note block={block} metrics={metrics} />;
+    case "counters":
+      return <Dots block={block} metrics={metrics} />;
     case "wordsearch":
       return <WordSearch block={block} metrics={metrics} />;
     case "crossword":

@@ -64,14 +64,17 @@ export const HEADROOM = 10 * 1024;
  *
  * Measured on b44d52d, the commit that lazy-loaded the sheet families. Two
  * thirds of every figure below is `react-runtime`, which is the same bytes in
- * all of them.
+ * all of them. The builder was re-measured when the lesson family landed: its
+ * counters, boxed note and the hops on a number line are drawn by the shared
+ * sheet renderer, which every island page loads, so the twelve kilobytes are
+ * the renderer's and not a family leaking past its loader.
  *
  * @type {Record<string, number>}
  */
 export const BASELINE = {
   "/flash-cards": 389_189,
   "/printables": 203_902,
-  "/printables/make": 340_503,
+  "/printables/make": 352_668,
   "/spelling/play": 389_189,
   "/typing": 410_445,
   [RUNTIME]: 192_242,

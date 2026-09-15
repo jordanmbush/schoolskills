@@ -1802,3 +1802,122 @@ count that is true — `3.70 × 2.4` would show three and mean two — and the
 answer keeps every place the count gives, `0.90` rather than `0.9`. The
 multiplier is under ten with one to `places` places, so the count varies down
 the page and is a thing to do rather than a number to remember.
+
+## 23 · Lessons — teaching a method on paper
+
+Every other family in the shop drills: it asks for what a child can already
+do, twenty times, and marks it. A lesson does the opposite. It is one idea,
+explained on one page, to a child who has not met it yet and to the grown-up
+sitting beside them — the idea in a child's words, a picture, the same sum
+worked step by step, a few problems to try with the same picture beside each,
+and one sentence for the grown-up set small at the foot. The family is
+`engine/sheets/lessons/`, and three things about it are decisions rather than
+defaults.
+
+**A lesson is authored, not generated.** What to say first, which picture to
+draw, which numbers to use and in what order — those are judgements, and the
+grammar bank (§11) already settled how this codebase treats a judgement: write
+it down once, tag it, and let the code print it. So a topic is data plus a
+small builder: the title, the instruction line, the blocks in order, and the
+problems to try, drawn from the seed only in the order they are dealt. Another
+seed is the same six problems in another order. The one page that _is_
+generated is the page a topic this build has never heard of prints — a saved
+sheet outlives the table, as it does everywhere else (§3).
+
+**Picture before symbols.** Every page follows concrete → pictorial → abstract
+(Bruner's three modes, as Singapore's curriculum adopted them), and a printed
+sheet can only ever be the middle step, so each page points the grown-up back
+to the first — "get 12 real things out" — and puts the picture above the sign.
+The Education Endowment Foundation's guidance is blunt that a representation
+earns its place by showing the structure, not by decorating the sum, and names
+the number line as the one with the strongest evidence behind it; so a lesson's
+pictures are the three that show the structure of division and nothing else:
+
+- **Counters** (`counters.ts`, `Counters.tsx`): dots already sorted. In rings
+  for sharing — as many rings as there are children, the answer in each,
+  because Squire and Bryant found children read a sharing picture grouped by
+  the divisor far more easily than one grouped by the answer. Ringed along a
+  row for grouping. In rows for an array. What does not divide stands outside
+  every ring, which is what a remainder looks like. Never more than two dozen,
+  because past that a child stops counting and starts guessing. On a
+  grouping problem to try, the rings are left off and the dots spaced evenly,
+  so nothing on the sheet gives away where the child's rings go.
+- **Hops along a number line** (`NumberLine.jumps`): division as repeated
+  subtraction, drawn — start at 12, jump back 3 at a time, count the jumps.
+  The line stands `JUMP_ROOM` taller to hold the arcs and their labels, added
+  rather than carved out of the plain height, because every family that
+  reserves for a plain line has reserved that number.
+- **A worked example** (`Problem.worked`): the answer printed on the sheet a
+  child is handed, in every place an answer goes — the slot, the total under a
+  stack, the quotient and the whole tableau in a bracket, the ruled lines. A
+  worked problem carries no number, so the problems to try still count from
+  one, and a block of nothing but worked examples keeps its declared height
+  rather than taking the spare paper on the page.
+
+**Every height is declared, and this is the family where that costs
+something.** A lesson is mostly prose, and prose wraps. A note (`note` block,
+`Note.tsx`) reserves its lines by counting characters at the face's declared
+advance across the box's width — the mean over capitals and numerals wherever
+the text has either, so the count comes out long before it comes out short —
+and the renderer draws the box exactly that tall. An estimate a line short
+shows as text over the bottom rule, which a reader can see; a box that grew to
+fit would push the last block onto a second sheet, which they cannot. The page
+is then cut where the sum of those heights says it is full, block by block,
+never through one. The two lessons written for six-year-olds fit one Letter
+page at 14pt, and the suite holds them to it; the arrays lesson does not — five
+arrays with two ruled lines under each are taller than what is left under the
+lesson — so its problems go on to page two whole, and the lesson is not cut to
+make them fit.
+
+**The sequence, and why each page comes where it does.** Sharing first,
+because it is the model of division children arrive at school holding
+(Fischbein found it the only intuitive one, and Correa, Nunes and Bryant found
+five-year-olds already sharing fairly). Grouping second, with the same 12 ÷ 3,
+because a child with only the sharing story is stuck the day the divisor stops
+being a number of people — Roche and Clarke found three quarters of practising
+teachers could not make sense of 8 ÷ 0.5 for that reason — and because every
+later method leans on it: chunking is repeated subtraction, and dividing by a
+decimal is a grouping question. Arrays third, because one picture holds the
+multiplication and both divisions, and "think multiplication" is the reflex
+every step of a written method later depends on. After these come remainders,
+the written methods and decimals, each a topic added to the same family.
+
+The words on a page are for the child. "Partitive" and "quotative" belong
+here, not on the paper.
+
+**Sources.** The three lessons above draw on:
+
+- Bruner, J. S. (1966). _Toward a Theory of Instruction_. Harvard University
+  Press.
+- Carpenter, T. P., Ansell, E., Franke, M. L., Fennema, E., & Weisbeck, L.
+  (1993). Models of problem solving: a study of kindergarten children's
+  problem-solving processes. _Journal for Research in Mathematics Education_,
+  24(5), 428–441.
+- Correa, J., Nunes, T., & Bryant, P. (1998). Young children's understanding
+  of division: the relationship between division terms in a noncomputational
+  task. _Journal of Educational Psychology_, 90(2), 321–329.
+- Education Endowment Foundation (2022). _Improving Mathematics in Key Stages
+  2 and 3: Guidance Report_, Recommendation 2.
+- Fischbein, E., Deri, M., Nello, M. S., & Marino, M. S. (1985). The role of
+  implicit models in solving verbal problems in multiplication and division.
+  _Journal for Research in Mathematics Education_, 16(1), 3–17.
+- Leong, Y. H., Ho, W. K., & Cheng, L. P. (2015). Concrete-Pictorial-Abstract:
+  surveying its origins and charting its future. _The Mathematics Educator_,
+  16(1), 1–18.
+- Mulligan, J. T., & Mitchelmore, M. C. (1997). Young children's intuitive
+  models of multiplication and division. _Journal for Research in Mathematics
+  Education_, 28(3), 309–330.
+- NCETM. _Structures: quotitive and partitive division_ (Primary Mastery
+  Professional Development, Year 2).
+- Nunes, T., & Bryant, P. (2009). _Key understandings in mathematics learning.
+  Paper 3: Understanding rational numbers and intensive quantities_. Nuffield
+  Foundation.
+- Roche, A., & Clarke, D. (2009). Making sense of partitive and quotitive
+  division: a snapshot of teachers' pedagogical content knowledge. In
+  _Proceedings of the 32nd MERGA conference_ (Vol. 2). MERGA.
+- Squire, S., & Bryant, P. (2002). The influence of sharing on children's
+  initial concept of division. _Journal of Experimental Child Psychology_,
+  81(1), 1–43.
+- Common Core State Standards for Mathematics, 3.OA.A.2, 3.OA.B.6 and 3.OA.C.7;
+  Department for Education (2013), _National curriculum in England: mathematics
+  programmes of study_, Years 2 to 4.

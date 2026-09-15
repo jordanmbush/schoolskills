@@ -33,9 +33,20 @@ import type { RuleStyle, SheetConfig } from "./types";
  * Six rather than five because the builder can already make a word search, a
  * crossword and a scramble; no page in the curated catalog is one yet, so the
  * chip simply isn't offered until one is (see `searchIndex`).
+ *
+ * And a seventh, *lesson*, which is not a worksheet: a page that explains a
+ * method before asking for it, with a few problems at the foot. A parent who
+ * types "how to" wants the explanation, and filing it under worksheets would
+ * hide it among a hundred pages of drill.
  */
 export type SheetType =
-  "worksheet" | "practice" | "puzzle" | "reference" | "paper" | "form";
+  | "worksheet"
+  | "lesson"
+  | "practice"
+  | "puzzle"
+  | "reference"
+  | "paper"
+  | "form";
 
 /**
  * How each is labelled on a chip. A word, because it sits in a row of them.
@@ -47,6 +58,7 @@ export type SheetType =
  */
 export const SHEET_TYPES: Array<{ id: SheetType; label: string }> = [
   { id: "worksheet", label: "Worksheets" },
+  { id: "lesson", label: "Lessons" },
   { id: "practice", label: "Practice" },
   { id: "puzzle", label: "Puzzles" },
   { id: "reference", label: "References" },
@@ -93,6 +105,7 @@ export const TYPE_OF: Record<SheetConfig["kind"], SheetType> = {
   "word-study": "worksheet",
   puzzle: "puzzle",
   grammar: "worksheet",
+  lesson: "lesson",
   handwriting: "practice",
   memory: "practice",
   phonics: "worksheet",

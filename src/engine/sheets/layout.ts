@@ -81,6 +81,36 @@ export const LIST_GAP: Mil = inches(0.16);
 export const MATCH_ROW_EMS = 2.4;
 
 /**
+ * How tall one line of a note stands, in ems of its type — the sheet's own
+ * `line-height`, which `.sheet__panel` inherits rather than restates.
+ */
+export const NOTE_LINE_EMS = 1.35;
+
+/**
+ * The share of the body size an aside is set at — the sentence for the
+ * grown-up at the foot of a lesson, `.sheet__panel--aside` in sheet.css.
+ */
+export const ASIDE_EM = 0.85;
+
+/** The air inside a note's border, each side — `.sheet__panel`'s padding. */
+export const NOTE_PAD: Mil = inches(0.08);
+
+/** The border itself, top and bottom. */
+const NOTE_RULE: Mil = points(0.75);
+
+/**
+ * How tall a note of `lines` lines stands, border and all, at the size its
+ * type is set — the body size, or `ASIDE_EM` of it.
+ *
+ * `Note.tsx` draws the box exactly this tall and a lesson reserves exactly
+ * this, so an estimate of the lines that came out a line short shows as text
+ * over the bottom border rather than as a page that quietly grew (§4).
+ */
+export const noteHeight = (lines: number, pt: number): Mil =>
+  Math.round(Math.max(1, lines) * points(pt * NOTE_LINE_EMS)) +
+  2 * (NOTE_PAD + NOTE_RULE);
+
+/**
  * The air between one block and the next.
  *
  * `.sheet__blocks` is a flex column and this is its `gap` — the one of these a

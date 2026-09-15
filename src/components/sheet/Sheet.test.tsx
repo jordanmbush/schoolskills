@@ -7,11 +7,13 @@ import { describe, expect, it } from "vitest";
 
 import { answerKey, buildSheet } from "@/engine/sheets";
 import { printedBlockBox } from "@/engine/sheets/chrome";
+import { counters, grouped } from "@/engine/sheets/counters";
 import { figureInk } from "@/engine/sheets/figure";
+import { ASIDE_EM, noteHeight } from "@/engine/sheets/layout";
 import { decimalTableau } from "@/engine/sheets/maths/decimal-division";
 import { divisionLines } from "@/engine/sheets/maths/long";
 import { divisionTableau } from "@/engine/sheets/maths/tableau";
-import { ticks } from "@/engine/sheets/numberline";
+import { jumps, lineHeight, ticks } from "@/engine/sheets/numberline";
 import { DEFAULT_PAPER, toInches } from "@/engine/sheets/paper";
 import { SCRIPTURE_CREDIT } from "@/engine/sheets/passages";
 import type {
@@ -23,6 +25,7 @@ import type {
   FractionArt,
   FractionConfig,
   GeometryConfig,
+  LessonConfig,
   MoneyConfig,
   MultiplicationConfig,
   Paper,
@@ -153,7 +156,36 @@ const EVERY_BLOCK: Block[] = [
         answer: "9:45",
         clock: { hour: 9, minute: 45, hands: false },
       },
+      // A lesson's two shapes: a worked example, whose answer prints on the
+      // sheet, and counters beside a problem.
+      { prompt: "3 × 4 =", answer: "12", worked: true },
+      {
+        prompt: "8 ÷ 2 =",
+        answer: "4",
+        counters: counters(8, 4, "share", 3600),
+      },
     ],
+  },
+  {
+    kind: "note",
+    heading: "Dividing is sharing out fairly",
+    text: ["12 ÷ 3 means 12 things shared between 3."],
+    items: ["Draw 3 rings.", "Give one to each ring."],
+    lines: 4,
+  },
+  {
+    kind: "counters",
+    counters: counters(12, 3, "group", 7500, { caption: "groups of 3" }),
+  },
+  {
+    kind: "numberline",
+    line: {
+      from: 0,
+      to: 12,
+      step: 1,
+      width: 7500,
+      jumps: { start: 12, size: 3 },
+    },
   },
   { kind: "rules", rule: { style: "hand-5-8", descender: true }, lines: 6 },
   { kind: "rules", rule: { style: "college" }, lines: 4 },
@@ -2864,5 +2896,227 @@ describe("the notebook margin line", () => {
     expect(render(sheet({ blocks: [trace] }))).not.toContain(
       "sheet__rule--margin",
     );
+  });
+});
+
+/* ── Lessons (§23) ────────────────────────────────────────────────────────
+   The three renderers a lesson adds — a boxed note, counters, and hops along
+   a number line — and the one flag: a worked example prints its answers on
+   the sheet a child is handed, in every place an answer goes.              */
+
+const lesson = (over: Partial<LessonConfig> = {}): LessonConfig => ({
+  kind: "lesson",
+  paper: DEFAULT_PAPER,
+  fontPt: 14,
+  fields: ["name"],
+  topic: "division-sharing",
+  practice: true,
+  ...over,
+});
+
+const lessonSheet = (over: Partial<LessonConfig> = {}) =>
+  render(buildSheet(lesson(over), SEED) as Sheet);
+const lessonKey = (over: Partial<LessonConfig> = {}) =>
+  render(answerKey(lesson(over), SEED) as Sheet);
+
+/** The markup of each counters drawing, one string per `<svg>`. */
+const pictures = (html: string): string[] =>
+  html.split('class="sheet__ink sheet__dots"').slice(1);
+
+/** Whether a problem carries a number — a worked one has none. */
+const numbered = (item: string): boolean =>
+  item.slice(0, item.indexOf("</li>")).includes('class="sheet__number"');
+
+/** The problems a child answers — the numbered ones. */
+const asked = (html: string): string[] => problems(html).filter(numbered);
+
+describe("a rendered lesson", () => {
+  it("boxes a note with a border, the height the family reserved, never a background", () => {
+    const built = buildSheet(lesson(), SEED);
+    const notes = built.blocks.filter(
+      (block): block is BlockOf<"note"> => block.kind === "note",
+    );
+    expect(notes.length).toBeGreaterThan(1);
+    const html = lessonSheet();
+    expect(count(html, '<div class="sheet__panel')).toBe(notes.length);
+    for (const note of notes) {
+      const pt = note.aside ? 14 * ASIDE_EM : 14;
+      expect(html).toContain(
+        `style="height:${toInches(noteHeight(note.lines, pt))}in"`,
+      );
+      if (note.heading) {
+        expect(html).toContain(
+          `<p class="sheet__panel-heading">${note.heading}</p>`,
+        );
+      }
+      note.items?.forEach((item, index) => {
+        expect(html).toContain(
+          `<span class="sheet__number">${index + 1}.</span>${item}`,
+        );
+      });
+    }
+    // The grown-up's sentence is set small and comes last.
+    expect(count(html, 'class="sheet__panel sheet__panel--aside"')).toBe(1);
+    const css = read(join(ROOT, "src/styles/sheet.css"));
+    const rule = css.slice(css.indexOf(".sheet__panel {"));
+    expect(rule.slice(0, rule.indexOf("}"))).toContain("border:");
+    expect(rule.slice(0, rule.indexOf("}"))).not.toContain("background");
+  });
+
+  it("draws every counter as a dot and every group as a ring, at the engine's size", () => {
+    const built = buildSheet(lesson(), SEED);
+    const [picture] = built.blocks.flatMap((block) =>
+      block.kind === "counters" ? [block.counters] : [],
+    );
+    const drawn = pictures(lessonSheet());
+    // The lesson's picture, then one beside each of the six to try.
+    expect(drawn).toHaveLength(7);
+    expect(count(drawn[0], '<circle class="sheet__dot"')).toBe(picture.total);
+    expect(count(drawn[0], '<rect class="sheet__shape"')).toBe(
+      grouped(picture).groups,
+    );
+    expect(drawn[0]).toContain(
+      `width="${toInches(picture.width)}in" height="${toInches(picture.height)}in"`,
+    );
+    expect(drawn[0]).toContain(
+      `<span class="sheet__caption">${picture.caption}</span>`,
+    );
+    // Filled with ink, not painted with a background (§5).
+    const css = read(join(ROOT, "src/styles/sheet.css"));
+    expect(css).toMatch(/\.sheet__dot[^{]*\{[^}]*fill: currentcolor/);
+    for (const item of asked(lessonSheet())) {
+      expect(item).not.toContain("sheet__caption");
+    }
+  });
+
+  it("leaves the grouping try-its unringed, and rings the lesson's", () => {
+    const drawn = pictures(lessonSheet({ topic: "division-grouping" }));
+    expect(drawn).toHaveLength(5);
+    expect(count(drawn[0], "<rect")).toBe(4);
+    for (const picture of drawn.slice(1))
+      expect(picture).not.toContain("<rect");
+  });
+
+  it("draws a hop for every jump back along the line, labelled with what was taken", () => {
+    const built = buildSheet(lesson({ topic: "division-grouping" }), SEED);
+    const [line] = built.blocks.flatMap((block) =>
+      block.kind === "numberline" ? [block.line] : [],
+    );
+    const hops = jumps(line);
+    expect(hops).toHaveLength(4);
+    const html = lessonSheet({ topic: "division-grouping" });
+    expect(count(html, 'class="sheet__jump"')).toBe(hops.length);
+    expect(count(html, ">−3</text>")).toBe(hops.length);
+    expect(html).toContain(`height="${toInches(lineHeight(line))}in"`);
+    // The two blank lines to try carry no hops.
+    expect(count(html, 'class="sheet__ink sheet__number-line"')).toBe(3);
+  });
+
+  it("prints a worked example's answer on the sheet, unnumbered, and numbers the rest from one", () => {
+    const html = lessonSheet();
+    const items = problems(html);
+    expect(items).toHaveLength(9);
+    for (const item of items.slice(0, 3)) {
+      expect(numbered(item)).toBe(false);
+      expect(item).toContain('class="sheet__slot sheet__slot--answered"');
+    }
+    expect(items[1]).toContain(
+      '<span class="sheet__slot sheet__slot--answered">4</span>',
+    );
+    expect(items[3]).toContain('<span class="sheet__number">1.</span>');
+    expect(items[8]).toContain('<span class="sheet__number">6.</span>');
+    // The worked block keeps its height; the try-its take the spare paper.
+    expect(count(html, 'class="sheet__problems sheet__problems--worked"')).toBe(
+      1,
+    );
+    expect(count(html, 'class="sheet__problems"')).toBe(1);
+  });
+
+  it("honours worked in every answer place", () => {
+    const tableau = divisionTableau("657", 3);
+    const items: Problem[] = [
+      { prompt: "7 × 8 =", answer: "56", worked: true },
+      {
+        prompt: "",
+        answer: "10 ÷ 2 = 5 · 10 ÷ 5 = 2",
+        answers: ["10 ÷ 2 = 5", "10 ÷ 5 = 2"],
+        worked: true,
+      },
+      {
+        prompt: "",
+        operands: ["47", "28"],
+        operator: "+",
+        answer: "75",
+        worked: true,
+      },
+      {
+        prompt: "",
+        bracket: {
+          divisor: "3",
+          dividend: "657",
+          cell: 250,
+          rows: 6,
+          help: "guided",
+          tableau,
+        },
+        answer: "219",
+        worked: true,
+      },
+    ];
+    const html = render(
+      sheet({
+        blocks: [{ kind: "problems", columns: 2, items }],
+        answers: false,
+      }),
+    );
+    expect(html).toContain(
+      '<span class="sheet__slot sheet__slot--answered">56</span>',
+    );
+    expect(
+      count(html, 'class="sheet__answer-line sheet__answer-line--answered"'),
+    ).toBe(2);
+    expect(html).toContain("10 ÷ 5 = 2");
+    expect(html).toContain(
+      '<span class="sheet__total sheet__total--answered">75</span>',
+    );
+    const written =
+      tableau.quotient.text.length +
+      tableau.rows.reduce((sum, row) => sum + row.text.length, 0);
+    expect(count(html, "sheet__square--answered")).toBe(written);
+    expect(html).not.toContain('class="sheet__number"');
+  });
+
+  it("prints nothing in a try-it's answer place until the sheet is a key", () => {
+    for (const topic of [
+      "division-sharing",
+      "division-grouping",
+      "division-arrays",
+    ] as const) {
+      const blank = asked(lessonSheet({ topic }));
+      expect(blank).toHaveLength(6);
+      for (const item of blank) {
+        expect(item, topic).not.toContain("--answered");
+        for (const [, inside] of item.matchAll(
+          /<span class="sheet__slot"[^>]*>(.*?)<\/span>/g,
+        )) {
+          expect(inside, topic).toBe("");
+        }
+        for (const [, inside] of item.matchAll(
+          /<span class="sheet__answer-line"[^>]*>(.*?)<\/span>/g,
+        )) {
+          expect(inside, topic).toBe("");
+        }
+      }
+      for (const item of asked(lessonKey({ topic }))) {
+        expect(item, topic).toContain("--answered");
+      }
+    }
+  });
+
+  it("prints the arrays' problems on a second page, with the header again", () => {
+    const html = lessonSheet({ topic: "division-arrays" });
+    expect(count(html, '<article class="sheet"')).toBe(2);
+    expect(count(html, 'class="sheet__title"')).toBe(2);
+    expect(count(lessonSheet(), '<article class="sheet"')).toBe(1);
   });
 });

@@ -97,6 +97,42 @@ export type NumberLine = {
    * them out to what fits, per `labelEvery` in numberline.ts.
    */
   label?: number;
+  /**
+   * Hops drawn back along the line, `size` at a time, from `start` down to
+   * the line's own left end — division as repeated subtraction (§23). Each
+   * hop is labelled with what was taken away. The line stands taller to hold
+   * them: `lineHeight` in numberline.ts says by how much.
+   */
+  jumps?: { start: number; size: number };
+};
+
+/**
+ * Where the dots of a counters picture stand in relation to each other: in
+ * rings of `per` (sharing), in a row ringed `per` at a time (grouping), or in
+ * rows of `per` (an array). Same dots, three stories — see `Counters`.
+ */
+export type CounterLayout = "share" | "group" | "array";
+
+/**
+ * Counters, drawn already sorted: the picture division is taught from before
+ * it is a sign (§23).
+ *
+ * `total` dots, `per` to a group, and `layout` says what a group looks like. A
+ * total that does not divide leaves `total mod per` dots outside any ring — the
+ * remainder, drawn where a child would put it. `rings` off leaves the grouping
+ * for the child to draw; the dots are then spaced evenly so nothing gives it
+ * away. The sizes are `counters.ts`'s, which is where `height` comes from, and
+ * `width` is what the drawing may wrap inside.
+ */
+export type Counters = {
+  total: number;
+  per: number;
+  layout: CounterLayout;
+  rings: boolean;
+  /** Printed under the picture: "3 rings · 4 in each". */
+  caption?: string;
+  width: Mil;
+  height: Mil;
 };
 
 /**
@@ -210,8 +246,21 @@ export type Problem = {
    */
   figure?: Figure;
   line?: NumberLine;
+  /**
+   * Counters beside the problem, already dealt into the groups the question is
+   * about. The question, so it prints on the sheet as well as on the key.
+   */
+  counters?: Counters;
   /** Blank height under the problem for working out. Absent means none. */
   workspace?: Mil;
+  /**
+   * A worked example: the answer is printed on the sheet as well as on the
+   * key, in every place an answer goes — the slot, the total under a stack,
+   * the quotient and the whole tableau in a bracket, the ruled lines. A
+   * worked problem carries no number, so the try-it problems after it still
+   * count from one, and it is not marked (§23).
+   */
+  worked?: boolean;
 };
 
 /**
@@ -628,6 +677,28 @@ export type Block =
    * same `NumberLine` a problem carries, drawn by the same renderer.
    */
   | { kind: "numberline"; line: NumberLine }
+  /**
+   * A boxed panel of short sentences: the idea a lesson is about, or the steps
+   * of a worked example, numbered (§23). Text and never a picture, for the
+   * reason the problems are (§2). `lines` is what the family reserved for it,
+   * counted from the characters at the column width; the renderer draws the
+   * box that tall and does not measure.
+   */
+  | {
+      kind: "note";
+      heading?: string;
+      text: string[];
+      items?: string[];
+      lines: number;
+      /** Set small: the sentence for the grown-up, not for the child. */
+      aside?: boolean;
+    }
+  /**
+   * Counters on their own, as the picture a lesson is about, rather than
+   * beside a problem — the same drawing `Problem.counters` carries, as
+   * `numberline` is to `Problem.line`.
+   */
+  | { kind: "counters"; counters: Counters }
   /**
    * A blank form: labelled boxes to write in, laid out across the page. Its own
    * block because there is no question here — it asks what the book was about,
@@ -1692,6 +1763,32 @@ export type GrammarConfig = SheetOptions & {
   columns: number;
 };
 
+/* ── Lessons ───────────────────────────────────────────────────────────── */
+
+/**
+ * One idea, taught on one page: the words, a picture, a worked example and a
+ * few to try (§23). Authored, as the grammar bank is — a lesson is judgement
+ * about what to say first, and a generator has none.
+ *
+ * Three so far, in the order a child meets them. The rest of the sequence —
+ * remainders, the written methods, decimals — extends this list as each is
+ * written; a topic this build has never heard of prints a page saying so
+ * rather than failing, for the reason `sheetSpec` never throws.
+ */
+export type LessonTopic =
+  "division-sharing" | "division-grouping" | "division-arrays";
+
+export type LessonConfig = SheetOptions & {
+  kind: "lesson";
+  topic: LessonTopic;
+  /**
+   * The problems to try after the lesson. Off prints the lesson alone — the
+   * page a parent pins up rather than hands over — and a sheet with nothing
+   * to answer has no score box and a key that is the sheet itself.
+   */
+  practice?: boolean;
+};
+
 /* ── Handwriting ───────────────────────────────────────────────────────── */
 
 /**
@@ -1931,6 +2028,7 @@ export type SheetConfig =
   | WordStudyConfig
   | PuzzleConfig
   | GrammarConfig
+  | LessonConfig
   | HandwritingConfig
   | MemoryConfig
   | PhonicsConfig;

@@ -21,6 +21,48 @@ import { inches } from "./paper";
 export const NUMBER_LINE_HEIGHT: Mil = inches(0.34);
 
 /**
+ * What a line with hops on it adds above the axis: room for an arc a child
+ * can read as a jump, and the "−3" over it, at `LABEL_SIZE` (§23).
+ *
+ * Added rather than carved out of `NUMBER_LINE_HEIGHT`: every family that
+ * reserves for a plain line has reserved that number, and a hop drawn into the
+ * height they already paid for would sit on the tick labels.
+ */
+export const JUMP_ROOM: Mil = inches(0.28);
+
+/** How tall a line stands — the plain height, and the hops' room if it has any. */
+export const lineHeight = (line: NumberLine): Mil =>
+  NUMBER_LINE_HEIGHT + (line.jumps ? JUMP_ROOM : 0);
+
+/**
+ * The most hops a line draws. A hop of one along a line to a hundred is a
+ * hundred arcs nobody can read, and a size a saved config got wrong must not
+ * loop.
+ */
+const MOST_JUMPS = 40;
+
+/**
+ * Every hop, largest value first: where it leaves from and where it lands.
+ *
+ * Hops stop when the next would land short of the line's own left end, so a
+ * total that does not divide leaves the last landing above it — which is the
+ * remainder, drawn. A start off the line, or a size of nothing, is no hops at
+ * all rather than a guess.
+ */
+export function jumps(line: NumberLine): Array<{ from: number; to: number }> {
+  const hop = line.jumps;
+  if (!hop || hop.size <= 0 || hop.start > line.to || hop.start < line.from)
+    return [];
+  const out: Array<{ from: number; to: number }> = [];
+  let at = hop.start;
+  while (at - hop.size >= line.from && out.length < MOST_JUMPS) {
+    out.push({ from: at, to: at - hop.size });
+    at -= hop.size;
+  }
+  return out;
+}
+
+/**
  * Room at each end for the outermost label, which is centred on its tick and
  * would otherwise be cut in half by the edge of the drawing. Enough for three
  * digits at the size below.
