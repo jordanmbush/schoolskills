@@ -316,6 +316,40 @@ export const MATHS_SHEETS: MathsSheet[] = [
       workspace: true,
     },
   },
+  {
+    slug: "long-division-grid-worksheets",
+    name: "Long division on a grid, 3-digit by 1-digit",
+    short: "Division grid",
+    heading: "Long division worksheets with grids",
+    keyword: "Free printable long division worksheets with grids",
+    summary:
+      "Nine long divisions set in the bracket on a place-value grid — a column for each digit and a square for every line of working — with no remainders.",
+    lead: "The same three-digit-by-one-digit divisions as the plain sheet, set on a grid of squares: a column for each digit of the dividend, a box for each digit of the quotient above the bar, and a square for every line of working underneath. Every answer comes out exactly.",
+    notes: [
+      "The grid is there for place value. The commonest long-division mistake is not a wrong table fact but a digit brought down into the wrong column — the working drifts a place to the left, the quotient comes out a digit short, and the child cannot see why. With a column for each digit there is only one square the brought-down digit can go in, and the quotient digit sits exactly over the digit it divided into.",
+      "The grid is the first of three levels of help. The builder can add the minus signs and the rules under each take-away row, so the shape of the method is on the page before the numbers are; and beyond that it can shade the squares a division actually writes in and label the last row R, which is the sheet for the first week. Take the help away a level at a time as the columns start to hold themselves.",
+    ],
+    teaches: "Long division on a place-value grid",
+    ages: "Ages 9–12",
+    strand: "tables",
+    tables: [2, 3, 4, 5, 6, 7, 8, 9],
+    play: "A long division is a stack of table facts with subtraction in between, and the grid only holds the columns. The Grid drills the facts themselves.",
+    config: {
+      ...SHEET,
+      kind: "multiplication",
+      operation: "divide",
+      style: "long",
+      form: "vertical",
+      tables: ALL_TABLES,
+      factors: { min: 1, max: 12 },
+      digits: { into: 3, by: 1 },
+      remainders: false,
+      help: "grid",
+      count: 9,
+      columns: 3,
+      workspace: true,
+    },
+  },
 
   /* ── Parts of a number ──────────────────────────────────────────────── */
   {

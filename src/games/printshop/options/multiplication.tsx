@@ -10,6 +10,7 @@
  */
 import { Checkbox, FieldSet, NumberStepper } from "@/components/ui/kit";
 import type {
+  DivisionHelp,
   MultiplicationConfig,
   MultiplicationForm,
   MultiplicationOperation,
@@ -36,6 +37,13 @@ const STYLES = [
 const FORMS = [
   opt<MultiplicationForm>("horizontal", "Along a line"),
   opt<MultiplicationForm>("vertical", "In columns"),
+];
+
+const HELP = [
+  opt<DivisionHelp>("none", "None"),
+  opt<DivisionHelp>("grid", "Grid"),
+  opt<DivisionHelp>("steps", "Grid and steps"),
+  opt<DivisionHelp>("guided", "Guided"),
 ];
 
 export function MultiplicationPanel({
@@ -120,12 +128,21 @@ export function MultiplicationPanel({
       />
 
       {long && config.operation !== "multiply" && (
-        <Checkbox
-          label="Divisions may leave a remainder"
-          hint="Off unless asked for — a remainder is a different question, not a harder one."
-          checked={config.remainders === true}
-          onChange={(remainders) => set({ remainders })}
-        />
+        <>
+          <Checkbox
+            label="Divisions may leave a remainder"
+            hint="Off unless asked for — a remainder is a different question, not a harder one."
+            checked={config.remainders === true}
+            onChange={(remainders) => set({ remainders })}
+          />
+          <Choice
+            label="Help under the bracket"
+            value={config.help ?? "none"}
+            onChange={(help) => set({ help })}
+            options={HELP}
+            hint="Each level adds to the last: a place-value grid, then the take-away rows marked, then the squares that get written in shaded."
+          />
+        </>
       )}
       <Checkbox
         label="Work space under every problem"

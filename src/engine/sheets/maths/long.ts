@@ -22,10 +22,17 @@
  */
 import { between } from "@/engine/random";
 
-import type { LongDigits, Mil, MultiplicationConfig, Problem } from "../types";
+import type {
+  DivisionHelp,
+  LongDigits,
+  Mil,
+  MultiplicationConfig,
+  Problem,
+} from "../types";
 
 import { answerLine } from "../layout";
 import { points } from "../paper";
+import { divisionTableau } from "./tableau";
 
 /**
  * How many digits a long form may be asked for.
@@ -40,21 +47,33 @@ const MAX_DIGITS = 5;
 export const DEFAULT_DIGITS: LongDigits = { into: 3, by: 2 };
 
 /**
- * The two shapes a problem worked on paper takes, in ems of the body type and
- * trailing sheet.css the way every declared height here does.
+ * The column stack, in ems of the body type, trailing sheet.css the way every
+ * declared height here does.
  *
- * Exported because the fact styles print the same two drawings without any
- * working in them — a column form times-table sheet is this stack and nothing
- * else — and a second copy of either number would be a second thing to keep in
- * step with `.sheet__column` and `.sheet__bracket`.
+ * Exported because the fact styles print the same drawing without any working
+ * in it — a column form times-table sheet is this stack and nothing else — and
+ * a second copy of the number would be a second thing to keep in step with
+ * `.sheet__column`.
  */
 export const STACK_EMS = 4.4;
-/* The bracket is two lines of body type, the bar between them and the padding
-   either side of it — which comes to a shade over three ems at every size the
-   sheet is set at, and is rounded up rather than down. Reserving a tenth of an
-   inch too much costs one problem at the bottom of the page; reserving too
-   little puts that problem on a second sheet of paper. */
-export const BRACKET_EMS = 3.1;
+
+/**
+ * How tall the bracket stands: the quotient row over the dividend row, each a
+ * square tall, with the bar inside the dividend row's own height (§21).
+ *
+ * From the same line the working squares are built on rather than from the
+ * body type, so the two cannot come apart. A constant in ems was short at
+ * small type, where a quarter-inch line is taller than three ems of it.
+ */
+export const bracketHeight = (fontPt: number): Mil => 2 * answerLine(fontPt);
+
+const HELP: readonly DivisionHelp[] = ["none", "grid", "steps", "guided"];
+
+/** The help level, made safe to read from whatever a saved config says. */
+export function divisionHelp(config: MultiplicationConfig): DivisionHelp {
+  const asked = config.help;
+  return asked !== undefined && HELP.includes(asked) ? asked : "none";
+}
 
 /** The smallest and largest whole number with exactly this many digits. */
 function span(digits: number): { min: number; max: number } {
@@ -240,7 +259,7 @@ export function longRow(config: MultiplicationConfig, fontPt: number): Mil {
   const line = answerLine(fontPt);
   const multiplication =
     points(fontPt * STACK_EMS) + partialLines(digits) * line;
-  const division = points(fontPt * BRACKET_EMS) + divisionLines(digits) * line;
+  const division = bracketHeight(fontPt) + divisionLines(digits) * line;
   switch (config.operation) {
     case "multiply":
       return multiplication;
@@ -293,9 +312,20 @@ export function longProblem(
     };
   }
 
+  const dividend = String(form.dividend);
   return {
     prompt: "",
-    bracket: { divisor: String(form.divisor), dividend: String(form.dividend) },
+    bracket: {
+      divisor: String(form.divisor),
+      dividend,
+      cell: line,
+      // The reservation the layout made, as squares rather than blank paper:
+      // what the page was measured for governs, not what this draw happened
+      // to need, so a shorter tableau leaves blank squares under it.
+      rows: divisionLines(digits),
+      help: divisionHelp(config),
+      tableau: divisionTableau(dividend, form.divisor),
+    },
     // "234 r 2" — the way it is written on paper, and the way a child is asked
     // to write it. A remainder of nothing is not written at all rather than
     // written as "r 0", which is a different (and wrong) sentence.
@@ -303,6 +333,5 @@ export function longProblem(
       form.remainder > 0
         ? `${form.quotient} r ${form.remainder}`
         : String(form.quotient),
-    workspace: divisionLines(digits) * line,
   };
 }

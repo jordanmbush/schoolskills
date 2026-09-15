@@ -3,7 +3,6 @@ import { describe, expect, it } from "vitest";
 import { answerKey, buildSheet, describeSheet } from "../index";
 import { describeSheetFamily } from "../contract";
 import { PROBLEM_GAP, answerLine } from "../layout";
-import { points } from "../paper";
 import type {
   GridSpec,
   MarginSize,
@@ -13,7 +12,7 @@ import type {
   Problem,
 } from "../types";
 
-import { BRACKET_EMS, divisionLines, longDigits, partialLines } from "./long";
+import { bracketHeight, divisionLines, longDigits, partialLines } from "./long";
 import {
   MULTIPLICATION_SHEET,
   multiplicationGrid,
@@ -275,6 +274,31 @@ describe("the multiplication family", () => {
     expect(describeSheet(config({ style: "grid" }))).toBe(
       "Multiplication grid to 12",
     );
+    // The help level is in the line because it changes what a saved sheet is:
+    // a guided division and a bare one are two different weeks' work.
+    const divided = {
+      style: "long" as const,
+      operation: "divide" as const,
+      digits: { into: 3, by: 1 },
+    };
+    expect(describeSheet(config(divided))).toBe(
+      "Long division — 3-digit by 1-digit",
+    );
+    expect(describeSheet(config({ ...divided, help: "grid" }))).toBe(
+      "Long division — 3-digit by 1-digit — on a grid",
+    );
+    expect(describeSheet(config({ ...divided, help: "steps" }))).toBe(
+      "Long division — 3-digit by 1-digit — with steps",
+    );
+    expect(
+      describeSheet(config({ ...divided, help: "guided", remainders: true })),
+    ).toBe("Long division with remainders — 3-digit by 1-digit — guided");
+    // Nothing to help with on a long multiplication, so nothing is said.
+    expect(
+      describeSheet(
+        config({ style: "long", digits: { into: 3, by: 2 }, help: "grid" }),
+      ),
+    ).toBe("Long multiplication — 3-digit by 2-digit");
     expect(
       describeSheet(config({ style: "long", digits: { into: 3, by: 2 } })),
     ).toBe("Long multiplication — 3-digit by 2-digit");
@@ -385,6 +409,45 @@ describe("the answer key", () => {
         });
         // And they come to the answer on the total line.
         expect(total).toBe(Number(problem.answer));
+      }
+    }
+  });
+
+  it("carries the working of a long division, and it agrees with the answer", () => {
+    // The tableau is what the key writes into the squares, and the answer is
+    // what it writes over the bar. Built together, so this is the check that
+    // they are one division: the quotient the tableau wrote, digit for digit,
+    // and the remainder it ended on, read back against "234 r 2".
+    for (const digits of [
+      { into: 3, by: 1 },
+      { into: 4, by: 2 },
+      { into: 3, by: 3 },
+    ]) {
+      for (const remainders of [false, true]) {
+        const over = {
+          style: "long" as const,
+          operation: "divide" as const,
+          digits,
+          remainders,
+          count: 6,
+        };
+        const where = JSON.stringify(over);
+        const problems = problemsOf(over, 11);
+        expect(problems.length, where).toBeGreaterThan(0);
+        for (const problem of problems) {
+          const bracket = problem.bracket;
+          if (!bracket?.tableau) throw new Error(`${where}: no tableau`);
+          const [quotient, remainder = "0"] = problem.answer.split(" r ");
+          expect(bracket.tableau.quotient.text, where).toBe(quotient);
+          expect(bracket.tableau.remainder, where).toBe(Number(remainder));
+          expect(bracket.tableau.quotient.start + quotient.length, where).toBe(
+            bracket.dividend.length,
+          );
+          // Never taller than the squares reserved for it.
+          expect(bracket.tableau.rows.length, where) //
+            .toBeLessThanOrEqual(bracket.rows);
+          expect(bracket.help, where).toBe("none");
+        }
       }
     }
   });
@@ -731,11 +794,11 @@ describe("(config, seed)", () => {
           count: 3,
         },
         7,
-      ).map((p) => [p.bracket, p.answer]),
+      ).map((p) => [p.bracket?.divisor, p.bracket?.dividend, p.answer]),
     ).toEqual([
-      [{ divisor: "2", dividend: "979" }, "489 r 1"],
-      [{ divisor: "7", dividend: "466" }, "66 r 4"],
-      [{ divisor: "5", dividend: "596" }, "119 r 1"],
+      ["2", "979", "489 r 1"],
+      ["7", "466", "66 r 4"],
+      ["5", "596", "119 r 1"],
     ]);
   });
 
@@ -850,9 +913,9 @@ describe("how much fits", () => {
         expect(problem.working?.length ?? 0).toBe(partialLines(digits));
       }
 
-      // A division attaches no lines — its reservation is blank paper under
-      // the bracket — so "the two agree" has to be checked against the number
-      // itself rather than against a count of what was written.
+      // A division attaches no lines — its reservation is squares under the
+      // bracket, and nothing else — so "the two agree" is checked against the
+      // squares' own height rather than against a count of what was written.
       for (const remainders of [false, true]) {
         const divided = { ...over, operation: "divide" as const, remainders };
         const where = JSON.stringify(divided);
@@ -863,12 +926,15 @@ describe("how much fits", () => {
 
         for (const problem of divisions) {
           expect(problem.working, where).toBeUndefined();
-          expect(problem.workspace, where).toBe(reserved);
+          expect(problem.workspace, where).toBeUndefined();
+          const bracket = problem.bracket;
+          if (!bracket) throw new Error(`${where}: no bracket`);
+          expect(bracket.rows * bracket.cell, where).toBe(reserved);
           // And the row the layout hands the renderer is the bracket plus that
           // space, so the working a child is promised is inside the cell it is
           // printed in rather than over the problem below.
           expect(multiplicationLayout(config(divided)).row, where) //
-            .toBeGreaterThanOrEqual(points(fontPt * BRACKET_EMS) + reserved);
+            .toBeGreaterThanOrEqual(bracketHeight(fontPt) + reserved);
           // The reservation is two ruled lines per digit of the quotient, on
           // the bound that a quotient can be no longer than `into − by + 1`
           // digits — a bound `divisionLines` computes before any division has
@@ -880,6 +946,71 @@ describe("how much fits", () => {
         }
       }
     }
+  });
+
+  it("sets a fact-sheet bracket with no working under it", () => {
+    // The same drawing as a long division's bracket, minus the squares: the
+    // quotient row over the dividend, and blank paper only if it was asked
+    // for — which is `workspace`, as it is on every other fact.
+    for (const workspace of [false, true]) {
+      const over = {
+        operation: "divide" as const,
+        form: "vertical" as const,
+        workspace,
+      };
+      const problems = problemsOf(over, 5);
+      expect(problems.length).toBeGreaterThan(0);
+      for (const problem of problems) {
+        expect(problem.bracket).toMatchObject({
+          cell: answerLine(config(over).fontPt),
+          rows: 0,
+          help: "none",
+        });
+        expect(problem.bracket?.tableau).toBeUndefined();
+        expect(problem.workspace !== undefined).toBe(workspace);
+      }
+    }
+  });
+
+  it("holds a bracket in the height it reserves, at every type size", () => {
+    // The bracket is two squares tall — the quotient row over the dividend row
+    // — and the square is the answer line, which is a quarter inch at small
+    // type whatever the type measures. A reservation in ems was short there.
+    for (let fontPt = 8; fontPt <= 36; fontPt += 1) {
+      const over = { operation: "divide" as const, form: "vertical" as const };
+      const [problem] = problemsOf({ ...over, fontPt }, 5);
+      const cell = problem.bracket?.cell ?? 0;
+      expect(cell).toBe(answerLine(fontPt));
+      expect(bracketHeight(fontPt)).toBe(2 * cell);
+      expect(multiplicationLayout(config({ ...over, fontPt })).row) //
+        .toBeGreaterThanOrEqual(2 * cell);
+    }
+  });
+
+  it("reads a saved config's help level back safely", () => {
+    // `help` arrives from outside this build like `digits` does, and an
+    // unknown level is the plain bracket rather than a thrown page.
+    const divided = {
+      style: "long" as const,
+      operation: "divide" as const,
+      digits: { into: 3, by: 1 },
+      count: 3,
+    };
+    for (const help of ["none", "grid", "steps", "guided"] as const) {
+      for (const problem of problemsOf({ ...divided, help }, 5)) {
+        expect(problem.bracket?.help).toBe(help);
+      }
+    }
+    const stray = { ...divided, help: "pink" as unknown as "grid" };
+    for (const problem of problemsOf(stray, 5)) {
+      expect(problem.bracket?.help).toBe("none");
+    }
+    // And the level changes nothing about which problems are drawn: a parent
+    // stepping the help down should get the same sheet with less on it.
+    const plain = problemsOf(divided, 5).map((problem) => problem.answer);
+    const helped = problemsOf({ ...divided, help: "guided" }, 5) //
+      .map((problem) => problem.answer);
+    expect(helped).toEqual(plain);
   });
 
   it("reads a saved config's digit counts back safely", () => {

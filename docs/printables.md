@@ -1610,3 +1610,69 @@ The engine is pure, so most of this is cheap and worth having:
   change in either direction. The closure and not the entry chunk, for the
   reason in §3. It is the half that catches a leak the import graph above
   can't see, because the module that grew was somewhere else.
+
+---
+
+## 21 · Long division on the page
+
+The bracket is the one arithmetic form whose answer is written _above_ the
+problem and whose working goes _under_ it, and both of those are set by place
+value: the quotient's last digit belongs over the dividend's last digit, and
+every line of working under the dividend is a number whose digits belong in
+particular columns. The first version drew the bracket as two right-aligned
+boxes over a blank band, and a three-digit dividend floated most of an inch to
+the right of the upright, because the house had a minimum width and nothing
+tied the digits to it.
+
+**The rule now: the house is a grid of squares, and a digit is always in a
+square.** One column per digit of the dividend, each `cell` wide, where `cell`
+is `answerLine(fontPt)` — the line a child writes an answer on, which is also
+one digit wide and one line of working tall. A gutter column on the left holds
+the divisor. The rows are the quotient, the dividend, and then `rows` lines of
+working, each `cell` tall, where `rows` is `divisionLines(digits)` — the
+reservation `long.ts` was already making as blank paper, now spent on squares
+instead. So `7)105` reads as it does in a textbook, with the digits starting
+right after the upright and lightly spaced, and the quotient's digits sit
+directly over the dividend's, column for column, whether or not any square is
+drawn. The bracket's own height is two cells, which is what `bracketHeight`
+declares and the row height is built from; a constant in ems was short at
+small type, where a quarter-inch line is taller than three ems.
+
+**Help under the bracket comes in four steps, and each includes the one
+before it**, because they are the same scaffold being taken away a piece at a
+time as a child needs less of it:
+
+| `help`   | What is drawn                                                                                         |
+| -------- | ----------------------------------------------------------------------------------------------------- |
+| `none`   | The bracket and blank paper under it. Absent means this.                                              |
+| `grid`   | Every square gets a hairline border, the quotient boxes above the bar included. Nothing else.         |
+| `steps`  | The grid, plus a minus sign in the gutter beside each take-away row and a heavier rule under it.      |
+| `guided` | Steps, plus the squares that actually get written in are shaded, and the last row's gutter reads `R`. |
+
+The grid alone fixes the commonest long-division error, which is a digit
+brought down into the wrong column. The steps show the shape of the algorithm
+— take away, bring down, take away — without its numbers. Guided shows _which_
+squares the numbers go in, and is the sheet for the first week; a child who
+can already fill the shaded squares is ready for `steps`, and one who can find
+the columns unaided is ready for the plain grid.
+
+**The working is engine data.** `maths/tableau.ts` walks the standard
+algorithm exactly as it is written on paper — divide, multiply, subtract,
+bring down — and returns the quotient with the column its first digit sits
+over, one row per line of working with the column its last digit sits under,
+and the remainder. The renderer places digits in squares from those numbers
+and never divides anything, which is what keeps §7 true of the tableau as it
+is of every other answer: the key writes the working that was computed when
+the problem was built. It is also what `steps` and `guided` are drawn from on
+the blank sheet — which rows are take-away rows and how wide their rule is
+depends on the numbers, even when the numbers are not printed. Rows are two
+per quotient digit, and a quotient can be no longer than `into − by + 1`
+digits, which is why `divisionLines` can reserve the space before any
+division has been drawn.
+
+**The shading is an SVG fill, not a background** (§5). A background is dropped
+by most printers' defaults, and a guided sheet whose shading did not print is a
+`steps` sheet that was promised something else. One `<svg>` sits behind the
+squares, its rectangles placed from the same `cell` and gutter widths the
+squares are laid out with, at a twelfth of the ink so that a digit written
+over one is still black on nearly white.

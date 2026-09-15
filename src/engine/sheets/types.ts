@@ -7,6 +7,7 @@
  * are on the sheet from the moment it is built, so a key is `answers: true`
  * and nothing else and cannot disagree with the sheet it belongs to.
  */
+import type { Tableau } from "./maths/tableau";
 import type { Inventory } from "./phonics/inventory";
 import type { TranslationId } from "./passages/types";
 
@@ -157,14 +158,30 @@ export type Problem = {
    */
   working?: string[];
   /**
-   * Long division's tableau: the divisor outside the bracket, the dividend
-   * under the bar, the quotient along the top.
+   * Long division's bracket: the divisor in the gutter, the dividend under the
+   * bar, the quotient along the top, and the working in squares under the
+   * dividend (§21).
    *
    * Not a stack with a different sign — it is the one arithmetic form whose
    * working happens under the dividend and whose answer is written above the
    * problem. `answer` is the quotient, remainder and all ("234 r 2").
    */
-  bracket?: { divisor: string; dividend: string };
+  bracket?: {
+    divisor: string;
+    /** As printed. One digit column per character. */
+    dividend: string;
+    /** The square: one digit wide, one line of working tall — `answerLine`. */
+    cell: Mil;
+    /**
+     * Squares of working reserved under the dividend. This is the whole of a
+     * long division's reservation — the problem carries no `workspace` besides
+     * it — and it is zero on a fact sheet, whose bracket has no working.
+     */
+    rows: number;
+    help: DivisionHelp;
+    /** Present whenever the division was built here; the key writes it in. */
+    tableau?: Tableau;
+  };
   /**
    * Which fact this exercises, in the vocabulary the race already uses ("7:8")
    * — what lets the record book hand over fact ids and a family turn them into
@@ -1083,6 +1100,14 @@ export type MultiplicationForm = "horizontal" | "vertical";
  */
 export type LongDigits = { into: number; by: number };
 
+/**
+ * What is drawn under a long division's bracket (§21). Each level includes
+ * the one before it: a place-value grid; then the minus signs and rules of the
+ * take-away rows; then the squares that get written in shaded, and the last
+ * row labelled R.
+ */
+export type DivisionHelp = "none" | "grid" | "steps" | "guided";
+
 export type MultiplicationConfig = SheetOptions & {
   kind: "multiplication";
   operation: MultiplicationOperation;
@@ -1118,6 +1143,8 @@ export type MultiplicationConfig = SheetOptions & {
    * not been taught them has been set an impossible problem.
    */
   remainders?: boolean;
+  /** Long division only. Absent is `none`. */
+  help?: DivisionHelp;
   workspace?: boolean;
 };
 

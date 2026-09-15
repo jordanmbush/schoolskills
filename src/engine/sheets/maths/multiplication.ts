@@ -39,12 +39,19 @@ import type {
 } from "../types";
 
 import { sheetBlockBox } from "../chrome";
-import { PROBLEM_GAP, columnWidth, fitAcross, type Box } from "../layout";
+import {
+  PROBLEM_GAP,
+  answerLine,
+  columnWidth,
+  fitAcross,
+  type Box,
+} from "../layout";
 import { inches, points } from "../paper";
 import { SHEET_CREDIT, SHEET_WORLD, gameUrl, type SheetSpec } from "../spec";
 import {
-  BRACKET_EMS,
   STACK_EMS,
+  bracketHeight,
+  divisionHelp,
   drawLong,
   longDigits,
   longKey,
@@ -293,7 +300,16 @@ function problemOf(
         }
       : {
           prompt: "",
-          bracket: { divisor: String(right), dividend: String(left) },
+          bracket: {
+            divisor: String(right),
+            dividend: String(left),
+            cell: answerLine(config.fontPt),
+            // No working under a fact: the bracket is the quotient row over
+            // the dividend and nothing else, and blank paper, if asked for,
+            // is `extras` like everywhere else.
+            rows: 0,
+            help: "none",
+          },
           answer: String(result),
           factId,
           ...extras,
@@ -318,14 +334,21 @@ function rowHeight(config: MultiplicationConfig): Mil {
   if (config.style === "long") return longRow(config, config.fontPt);
 
   const worked = config.style === "standard" && config.form === "vertical";
-  // A mixed sheet reserves for the taller of the two drawings, because the row
-  // height is one number for the whole grid of them.
-  const ems = !worked
-    ? ROW_EMS.horizontal
-    : config.operation === "divide"
-      ? BRACKET_EMS
-      : STACK_EMS;
-  return points(config.fontPt * ems) + (config.workspace ? WORKSPACE : 0);
+  const extra = config.workspace ? WORKSPACE : 0;
+  if (!worked) return points(config.fontPt * ROW_EMS.horizontal) + extra;
+
+  const stack = points(config.fontPt * STACK_EMS);
+  const bracket = bracketHeight(config.fontPt);
+  switch (config.operation) {
+    case "multiply":
+      return stack + extra;
+    case "divide":
+      return bracket + extra;
+    // A mixed sheet reserves for the taller of the two drawings, because the
+    // row height is one number for the whole grid of them.
+    default:
+      return Math.max(stack, bracket) + extra;
+  }
 }
 
 /** How many problems the paper holds, and how wide a column of them is (§4). */
@@ -517,6 +540,13 @@ const MIXED_NAME = {
   both: "Multiplication and division",
 } as const;
 
+const HELP_NAME = {
+  none: null,
+  grid: "on a grid",
+  steps: "with steps",
+  guided: "guided",
+} as const;
+
 /** "The 7 times table" — the phrase a parent says, and the one they search. */
 function titleOf(config: MultiplicationConfig): string {
   if (config.style === "long") {
@@ -601,6 +631,9 @@ function describeMultiplication(config: MultiplicationConfig): string {
     titleOf(config),
     config.style === "long"
       ? `${digits.into}-digit by ${digits.by}-digit`
+      : null,
+    config.style === "long" && config.operation !== "multiply"
+      ? HELP_NAME[divisionHelp(config)]
       : null,
     config.style === "standard" && config.form === "vertical"
       ? "worked in columns"

@@ -8,6 +8,8 @@ import { describe, expect, it } from "vitest";
 import { answerKey, buildSheet } from "@/engine/sheets";
 import { printedBlockBox } from "@/engine/sheets/chrome";
 import { figureInk } from "@/engine/sheets/figure";
+import { divisionLines } from "@/engine/sheets/maths/long";
+import { divisionTableau } from "@/engine/sheets/maths/tableau";
 import { ticks } from "@/engine/sheets/numberline";
 import { DEFAULT_PAPER, toInches } from "@/engine/sheets/paper";
 import { SCRIPTURE_CREDIT } from "@/engine/sheets/passages";
@@ -90,9 +92,15 @@ const EVERY_BLOCK: Block[] = [
       },
       {
         prompt: "",
-        bracket: { divisor: "4", dividend: "938" },
+        bracket: {
+          divisor: "4",
+          dividend: "938",
+          cell: 250,
+          rows: 6,
+          help: "guided",
+          tableau: divisionTableau("938", 4),
+        },
         answer: "234 r 2",
-        workspace: 1500,
       },
       // And the one problem whose question is a picture: a whole cut into equal
       // parts with some of them shaded, which prints on the blank sheet as well
@@ -420,27 +428,6 @@ function filesUnder(dir: string, endings: string[]): string[] {
 }
 
 const read = (path: string) => readFileSync(path, "utf8");
-
-/**
- * How far a rule holds its text off the right edge of its own box, as written.
- *
- * Compared as the source string rather than as a length, because that is all
- * this can honestly claim without a browser: two rules that declare `0.06in`
- * agree, and two that declare different things are a question for whoever
- * changed one of them. Both the longhand and the three-value shorthand are
- * read, since the two rules this compares are written each way.
- */
-function rightInset(css: string, rule: string): string {
-  const block = css.slice(css.indexOf(rule));
-  const body = block.slice(0, block.indexOf("}"));
-  const longhand = /padding-right:\s*([^;]+);/.exec(body);
-  if (longhand) return longhand[1].trim();
-  const shorthand = /padding:\s*([^;]+);/.exec(body);
-  if (!shorthand) throw new Error(`${rule} declares no padding at all`);
-  // top | right-and-left | bottom, and the one-value form besides.
-  const parts = shorthand[1].trim().split(/\s+/);
-  return parts.length === 1 ? parts[0] : parts[1];
-}
 
 /**
  * The landmarks a page puts around a sheet: its sections, its page header, and
@@ -859,20 +846,71 @@ describe("a rendered multiplication sheet", () => {
 
   it("sets a long division in a bracket, with the answer on top of the bar", () => {
     const [item] = problems(timesKey(LONG_DIVISION));
-    const divisor = item.indexOf('class="sheet__divisor"');
     const quotient = item.indexOf('class="sheet__quotient');
+    const divisor = item.indexOf("sheet__divisor");
     const dividend = item.indexOf('class="sheet__dividend"');
-    // The divisor is outside the bracket, the quotient is written along the
-    // top of the bar, and the dividend is under it. In that order, because
-    // that is the order they are on paper and there is only one of it.
-    expect(divisor).toBeGreaterThanOrEqual(0);
-    expect(quotient).toBeGreaterThan(divisor);
-    expect(dividend).toBeGreaterThan(quotient);
-    expect(item).toMatch(
-      /class="sheet__quotient sheet__quotient--answered">\d+ r \d+</,
+    // The quotient is written along the top of the bar, the divisor is outside
+    // the bracket beside the dividend, and the dividend is under the bar. In
+    // that order, because that is the order they are read on paper.
+    expect(quotient).toBeGreaterThanOrEqual(0);
+    expect(divisor).toBeGreaterThan(quotient);
+    expect(dividend).toBeGreaterThan(divisor);
+    // The key writes each quotient digit into its own square and the
+    // remainder after the row, the way a child is asked to write it.
+    const [problem] = itemsOf(multiplication(LONG_DIVISION));
+    const [digits, remainder] = problem.answer.split(" r ");
+    for (const digit of digits) {
+      expect(item).toContain(
+        `<span class="sheet__square sheet__square--answered">${digit}</span>`,
+      );
+    }
+    expect(item).toContain(
+      `<span class="sheet__remainder">r ${remainder}</span>`,
     );
-    expect(problems(timesTable(LONG_DIVISION))[0]).toContain(
-      '<span class="sheet__quotient"></span>',
+    // And the sheet writes nothing there: every square over the bar is empty.
+    const blank = problems(timesTable(LONG_DIVISION))[0];
+    expect(blank).not.toContain("sheet__remainder");
+    expect(count(blank, '<span class="sheet__square"></span>')).toBe(
+      count(blank, 'class="sheet__square"'),
+    );
+  });
+
+  it("puts the quotient's digits in the dividend's columns", () => {
+    // Place value is the whole exercise, and it is kept by construction: the
+    // quotient row and the dividend row are the same number of squares at the
+    // same declared width, so the quotient's last digit is over the dividend's
+    // last digit whatever either of them measures. The width is the engine's
+    // — the line a child writes an answer on — set once on the bracket.
+    const items = itemsOf(multiplication(LONG_DIVISION));
+    const html = problems(timesKey(LONG_DIVISION));
+    expect(html.length).toBe(items.length);
+    items.forEach((problem, index) => {
+      const item = html[index];
+      const bracket = problem.bracket;
+      if (!bracket) throw new Error("no bracket");
+      expect(item).toContain(`style="--sheet-cell:${toInches(bracket.cell)}in`);
+      const quotient = item.slice(
+        item.indexOf('class="sheet__quotient'),
+        item.indexOf('class="sheet__dividend"'),
+      );
+      const dividend = item.slice(
+        item.indexOf('class="sheet__dividend"'),
+        item.indexOf(
+          'class="sheet__bracket-row"',
+          item.indexOf('class="sheet__dividend"'),
+        ),
+      );
+      expect(count(quotient, 'class="sheet__square')).toBe(
+        bracket.dividend.length,
+      );
+      expect(count(dividend, 'class="sheet__square')).toBe(
+        bracket.dividend.length,
+      );
+    });
+    const css = read(join(ROOT, "src/styles/sheet.css"));
+    const square = css.slice(css.indexOf(".sheet__square {"));
+    expect(square.slice(0, square.indexOf("}"))).toContain(
+      "width: var(--sheet-cell)",
     );
   });
 
@@ -906,10 +944,14 @@ describe("a rendered multiplication sheet", () => {
       expect(item).toContain("height:0.25in");
       expect(count(item, 'class="sheet__workspace"')).toBe(0);
     }
-    // Long division does take blank paper under the bracket, which is where a
-    // child works it: the two forms spend the same reservation differently.
+    // Long division spends its reservation on rows of squares inside the
+    // house, one per line of working, and takes no blank paper besides: the
+    // two forms spend the same reservation differently.
     for (const item of problems(timesTable(LONG_DIVISION))) {
-      expect(count(item, 'class="sheet__workspace"')).toBe(1);
+      expect(count(item, 'class="sheet__workspace"')).toBe(0);
+      expect(count(item, 'class="sheet__bracket-row"')).toBe(
+        2 + divisionLines(LONG_DIVISION.digits),
+      );
     }
 
     const key = timesKey(LONG_MULTIPLICATION);
@@ -926,15 +968,102 @@ describe("a rendered multiplication sheet", () => {
         "font-variant-numeric: tabular-nums",
       );
     }
+  });
 
-    // Tabular figures only line a quotient up with its dividend while the two
-    // boxes hold their digits the same distance off their shared right edge. A
-    // padding added to one and not the other slides the whole quotient across
-    // by a fraction of a digit — invisible in review, and the one thing the
-    // sheet exists to teach. Asserted rather than trusted.
-    expect(rightInset(css, ".sheet__quotient {")).toBe(
-      rightInset(css, ".sheet__dividend {"),
-    );
+  /**
+   * The problems of a long-division sheet beside the markup of each, so a
+   * test can compare what was drawn against the tableau it was drawn from.
+   */
+  function divisions(help: MultiplicationConfig["help"], answers: boolean) {
+    const over = { ...LONG_DIVISION, help };
+    const items = itemsOf(multiplication(over));
+    const html = problems(answers ? timesKey(over) : timesTable(over));
+    expect(items.length).toBeGreaterThan(0);
+    expect(html.length).toBe(items.length);
+    return items.map((problem, index) => {
+      const bracket = problem.bracket;
+      if (!bracket?.tableau) throw new Error("no tableau");
+      return { bracket, tableau: bracket.tableau, item: html[index] };
+    });
+  }
+
+  it("draws no squares under a bracket unless help was asked for", () => {
+    for (const answers of [false, true]) {
+      for (const { item } of divisions(undefined, answers)) {
+        expect(item).not.toContain("sheet__bracket--ruled");
+        expect(item).not.toContain("sheet__square--take");
+        expect(item).not.toContain("sheet__shading");
+        expect(item).not.toContain(">−<");
+        expect(item).not.toContain(">R<");
+      }
+    }
+  });
+
+  it("rules a square for every digit of every line of working on a grid", () => {
+    for (const { bracket, item } of divisions("grid", false)) {
+      expect(item).toContain("sheet__bracket--ruled");
+      // The quotient boxes, the dividend, and one row of squares per line of
+      // working reserved — no more, whatever this division needed.
+      expect(count(item, 'class="sheet__square')).toBe(
+        bracket.dividend.length * (2 + bracket.rows),
+      );
+      expect(item).not.toContain("sheet__square--take");
+      expect(item).not.toContain("sheet__shading");
+    }
+  });
+
+  it("marks the take-away rows with steps, and shades the written squares when guided", () => {
+    for (const { tableau, item } of divisions("steps", false)) {
+      const takes = tableau.rows.filter((row) => row.role === "take");
+      expect(count(item, ">−<")).toBe(takes.length);
+      // The heavier rule runs under the columns the row was written in.
+      expect(count(item, "sheet__square--take")).toBe(
+        takes.reduce((sum, row) => sum + row.text.length, 0),
+      );
+      expect(item).not.toContain("sheet__shading");
+      expect(item).not.toContain(">R<");
+    }
+    for (const { tableau, item } of divisions("guided", false)) {
+      const written =
+        tableau.quotient.text.length +
+        tableau.rows.reduce((sum, row) => sum + row.text.length, 0);
+      expect(count(item, "<rect")).toBe(written);
+      // As a fill that prints, never a background (§5).
+      expect(item).toContain('fill="currentColor"');
+      expect(item).not.toContain("background");
+      expect(count(item, ">R<")).toBe(1);
+    }
+  });
+
+  it("writes the whole tableau on the key of a grid, and none of it on the sheet", () => {
+    for (const help of ["grid", "steps", "guided"] as const) {
+      for (const { tableau, item } of divisions(help, true)) {
+        const written =
+          tableau.quotient.text.length +
+          tableau.rows.reduce((sum, row) => sum + row.text.length, 0);
+        expect(count(item, "sheet__square--answered")).toBe(written);
+        for (const row of tableau.rows) {
+          for (const digit of row.text) {
+            // Bold, in a square, and on a take-away row under the heavier rule.
+            expect(item).toMatch(
+              new RegExp(
+                `<span class="sheet__square sheet__square--answered( sheet__square--take)?">${digit}</span>`,
+              ),
+            );
+          }
+        }
+      }
+      for (const { item } of divisions(help, false)) {
+        expect(item).not.toContain("--answered");
+      }
+    }
+    // Without a grid there is nowhere to write the working, so the key shows
+    // the quotient and the remainder as it always has.
+    for (const { tableau, item } of divisions(undefined, true)) {
+      expect(count(item, "sheet__square--answered")).toBe(
+        tableau.quotient.text.length,
+      );
+    }
   });
 
   it("fills a multiplication grid in only on the key", () => {
@@ -959,7 +1088,9 @@ describe("a rendered multiplication sheet", () => {
     const PLACES = [
       /<span class="sheet__slot"[^>]*>(.*?)<\/span>/g,
       /<span class="sheet__total"[^>]*>(.*?)<\/span>/g,
-      /<span class="sheet__quotient"[^>]*>(.*?)<\/span>/g,
+      // The dividend's squares carry a modifier and hold the question, so a
+      // bare square is an answer place: the quotient's or the working's.
+      /<span class="sheet__square"[^>]*>(.*?)<\/span>/g,
       /<span class="sheet__work-line"[^>]*>(.*?)<\/span>/g,
     ];
     for (const shape of SHAPES) {

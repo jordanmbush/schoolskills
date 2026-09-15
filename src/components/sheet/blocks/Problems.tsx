@@ -7,6 +7,7 @@ import { FigureView } from "../Figure";
 import { FractionArtView } from "../FractionArt";
 import { NumberLineView } from "../NumberLine";
 import { inch } from "../units";
+import { Bracket } from "./Bracket";
 import type { BlockProps } from "./block";
 
 /**
@@ -153,7 +154,9 @@ function Written({ problem, answers }: Part) {
  *
  * A long multiplication has spent it too. Its working goes *inside* the stack,
  * between the rule and the total, because a partial product written anywhere
- * else is the mistake the sheet exists to practise out of a child.
+ * else is the mistake the sheet exists to practise out of a child. A long
+ * division never has one: its reservation is the squares under the bracket
+ * (`bracket.rows`), which the bracket draws itself.
  */
 function Below({ problem, answers }: Part) {
   if (ruled(problem)) return <Ruled problem={problem} answers={answers} />;
@@ -243,37 +246,6 @@ function Stacked({ problem, answers }: Part) {
         className={`sheet__total${answers ? " sheet__total--answered" : ""}`}
       >
         {answers ? problem.answer : ""}
-      </span>
-    </span>
-  );
-}
-
-/**
- * Long division, in the one shape it has ever been written in: the divisor
- * outside the bracket, the dividend under the bar, and the quotient along the
- * top of it.
- *
- * The bar and the upright are borders rather than a drawing, for the reason
- * everything else on a sheet is (§5) — they are foreground paint and always
- * print. The quotient is right-aligned over the dividend and not centred,
- * because the two are aligned by place value: the last digit of a quotient
- * always belongs over the last digit of the dividend, whatever either of them
- * measures. That is the whole reason for `tabular-nums` here, and it is the
- * same reason a column sum has it.
- */
-function Bracket({ problem, answers }: Part) {
-  const bracket = problem.bracket;
-  if (!bracket) return null;
-  return (
-    <span className="sheet__bracket">
-      <span className="sheet__divisor">{bracket.divisor}</span>
-      <span className="sheet__house">
-        <span
-          className={`sheet__quotient${answers ? " sheet__quotient--answered" : ""}`}
-        >
-          {answers ? problem.answer : ""}
-        </span>
-        <span className="sheet__dividend">{bracket.dividend}</span>
       </span>
     </span>
   );
