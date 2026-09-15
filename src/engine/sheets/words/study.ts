@@ -31,6 +31,8 @@ import {
   PROBLEM_GAP,
   columnWidth,
   fitAcross,
+  problemPages,
+  wantedOf,
   type Box,
 } from "../layout";
 import { inches, own, points } from "../paper";
@@ -390,22 +392,37 @@ export function studyLayout(config: WordStudyConfig): {
 }
 
 /**
+ * How many questions this sheet draws: what was asked for, or the whole bank,
+ * and never more than the bank holds.
+ *
+ * A written sheet runs on to another page (§4). The other two are still cut
+ * to the page: a `choice` block numbers from one with no `start` to continue
+ * from, and a matching column is shuffled as one whole.
+ */
+function studyWanted(config: WordStudyConfig, perPage: number): number {
+  const { questions } = topicOf(config.topic);
+  const wanted = Math.min(
+    questions.length,
+    wantedOf(config.count ?? questions.length, perPage),
+  );
+  return styleOf(config) === "write" ? wanted : Math.min(wanted, perPage);
+}
+
+/**
  * The questions this sheet prints, drawn from the topic's bank by the seed.
  *
  * Shuffled rather than taken in order, because the bank is written in teaching
  * order — every plain `-s` plural first — and a sheet of the first twelve would
- * be a sheet of the easy half. Never more than the bank holds and never more
- * than the page holds, so the count is a request rather than a promise.
+ * be a sheet of the easy half.
  */
 export function studyQuestions(
   config: WordStudyConfig,
   seed: number,
+  perPage: number,
 ): Question[] {
   const { questions } = topicOf(config.topic);
-  const { perPage } = studyLayout(config);
-  const room = Math.min(perPage, questions.length);
-  const wanted = clamp(config.count ?? room, 0, room);
-  return shuffled(questions, mulberry32(seed)).slice(0, wanted);
+  return shuffled(questions, mulberry32(seed)) //
+    .slice(0, studyWanted(config, perPage));
 }
 
 /** A prompt and a ruled slot — the shape of every `write` sheet. */
@@ -449,7 +466,8 @@ function bodyOf(
   seed: number,
 ): { blocks: Block[]; outOf: number } {
   const topic = topicOf(config.topic);
-  const drawn = studyQuestions(config, seed);
+  const { columns, perPage } = studyLayout(config);
+  const drawn = studyQuestions(config, seed, perPage);
   const outOf = drawn.length;
   const style = styleOf(config);
   // A second generator off the same seed — `studyQuestions` made its own for
@@ -486,9 +504,8 @@ function bodyOf(
     };
   }
 
-  const { columns } = studyLayout(config);
   return {
-    blocks: [{ kind: "problems", columns, items: drawn.map(written) }],
+    blocks: problemPages(drawn.map(written), columns, perPage),
     outOf,
   };
 }
@@ -525,10 +542,9 @@ function headerOf(config: WordStudyConfig): SheetOptions {
 function describeStudy(config: WordStudyConfig): string {
   const topic = topicOf(config.topic);
   // What the sheet will print rather than what was asked for, and by the same
-  // arithmetic the build uses — a line that promised twenty over a page of
+  // arithmetic the build uses — a line that promised twenty over a bank of
   // fourteen would be wrong in the record book and in the picker at once.
-  const room = Math.min(studyLayout(config).perPage, topic.questions.length);
-  const asked = clamp(config.count ?? room, 0, room);
+  const asked = studyWanted(config, studyLayout(config).perPage);
   return [
     topic.label,
     `${asked} ${asked === 1 ? "question" : "questions"}`,

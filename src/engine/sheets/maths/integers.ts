@@ -43,6 +43,8 @@ import {
   answerLine,
   columnWidth,
   fitAcross,
+  problemPages,
+  wantedOf,
   type Box,
 } from "../layout";
 import { inches } from "../paper";
@@ -551,9 +553,7 @@ export function integerProblems(
   seed: number,
 ): Problem[] {
   const { perPage } = integerLayout(config);
-  // The count is a request, not a promise: a count that overruns is a second
-  // sheet out of the printer with two problems on it.
-  const wanted = clamp(config.count, 0, perPage);
+  const wanted = wantedOf(config.count, perPage);
 
   const rand = mulberry32(seed);
   const seen = new Set<string>();
@@ -662,7 +662,7 @@ function describeIntegers(config: IntegerConfig): string {
 
 function buildIntegerSheet(config: IntegerConfig, seed: number): Sheet {
   const items = integerProblems(config, seed);
-  const { columns } = integerLayout(config);
+  const { columns, perPage } = integerLayout(config);
   const head = headerOf(config);
 
   return {
@@ -674,7 +674,7 @@ function buildIntegerSheet(config: IntegerConfig, seed: number): Sheet {
       fields: head.fields,
       score: { outOf: items.length },
     },
-    blocks: [{ kind: "problems", columns, items }],
+    blocks: problemPages(items, columns, perPage),
     footer: { credit: SHEET_CREDIT, url: SHEET_URL, seed },
     answers: false,
   };

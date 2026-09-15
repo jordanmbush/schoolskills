@@ -653,16 +653,19 @@ export type Block =
       /** `answer[i]` is the index in `right` that `left[i]` pairs with. */
       answer: number[];
     }
-  | { kind: "blanks"; sentences: Blank[] }
-  | { kind: "choice"; questions: Choice[] }
+  /** `start` as on `problems`: the number the first sentence carries. */
+  | { kind: "blanks"; sentences: Blank[]; start?: number }
+  /** `start` as on `problems`: the number the first question carries. */
+  | { kind: "choice"; questions: Choice[]; start?: number }
   /**
    * Words as the outline their letters make, one row of boxes each.
    *
    * Not a `problems` item with a drawing on it, because the boxes *are* the
    * answer place — and a problem may have exactly one of those, so a row of
    * eight boxes with a ruled slot on the end is a sheet a child answers twice.
+   * `start` as on `problems`: the number the first word carries.
    */
-  | { kind: "wordshapes"; columns: number; words: WordShape[] }
+  | { kind: "wordshapes"; columns: number; words: WordShape[]; start?: number }
   /**
    * Cards: a spelling over the word it is in, or a sentence on a strip. Its own
    * block because there is no answer place on it at all — a card is read, cut

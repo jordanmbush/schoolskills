@@ -2,9 +2,11 @@ import { describe, expect, it } from "vitest";
 
 import { WORD_LISTS, listWords } from "@/engine/decks/wordlists";
 
-import { buildSheet, describeSheet } from "../index";
+import { answerKey, buildSheet, describeSheet } from "../index";
+import { printedBlockBox } from "../chrome";
 import { describeSheetFamily } from "../contract";
-import type { Block, Paper, PuzzleConfig } from "../types";
+import { PROBLEM_GAP } from "../layout";
+import type { Block, Paper, PuzzleConfig, Sheet } from "../types";
 
 import { SEARCH_CELL, searchCell } from "./metrics";
 import { findWord, searchSteps } from "./search";
@@ -17,6 +19,7 @@ import {
   letterHint,
   puzzleWords,
   scramble,
+  scrambleLayout,
   searchLayout,
 } from "./puzzles";
 
@@ -66,6 +69,29 @@ function blockOf<K extends Block["kind"]>(
   if (block.kind !== kind)
     throw new Error(`expected ${kind}, got ${block.kind}`);
   return block as Extract<Block, { kind: K }>;
+}
+
+/**
+ * The problems block of each page of a scramble sheet, in order. A scramble
+ * prints one such block a page and nothing else, so anything else on a page
+ * is a failure here rather than a page silently skipped.
+ */
+function pagesOf(sheet: Sheet): Array<Extract<Block, { kind: "problems" }>> {
+  const pages: Array<Extract<Block, { kind: "problems" }>> = [];
+  let open = false;
+  for (const block of sheet.blocks) {
+    if (block.kind === "break") {
+      expect(open, "a break with no page before it").toBe(true);
+      open = false;
+      continue;
+    }
+    if (block.kind !== "problems")
+      throw new Error(`expected problems, got ${block.kind}`);
+    expect(open, "two problems blocks on one page").toBe(false);
+    pages.push(block);
+    open = true;
+  }
+  return pages;
 }
 
 describeSheetFamily("puzzle", {
@@ -317,17 +343,72 @@ describe("what fits on the paper", () => {
     }
   });
 
-  it("never prints more scrambles than the page holds", () => {
+  it("runs a long scramble list on to another page rather than cutting it", () => {
+    // Thirty words at the largest type, one to a line, are several pages and
+    // not one page of the first few (§4). The numbering carries on, the score
+    // box counts every page, and the key runs on page for page.
     const many = listWords(WORD_LISTS[2]).slice(0, 30);
-    const block = blockOf("problems", {
-      style: "scramble",
+    const over = {
+      style: "scramble" as const,
       words: many,
       count: 30,
       fontPt: 36,
       columns: 1,
-    });
-    expect(block.items.length).toBeGreaterThan(0);
-    expect(block.items.length).toBeLessThan(many.length);
+    };
+    const { perPage } = scrambleLayout(config(over));
+    const sheet = buildSheet(config(over), 1);
+    const pages = pagesOf(sheet);
+    expect(pages.length).toBeGreaterThan(1);
+    expect(pages.length).toBe(Math.ceil(many.length / perPage));
+    expect(pages[0].items.length).toBe(perPage);
+    expect(pages[1].start).toBe(perPage + 1);
+    expect(pages.flatMap((page) => page.items).map((item) => item.answer)) //
+      .toEqual(many);
+    expect(sheet.header.score).toEqual({ outOf: many.length });
+    expect(pagesOf(answerKey(config(over), 1)).map((page) => page.items.length)) //
+      .toEqual(pages.map((page) => page.items.length));
+  });
+
+  it("never prints more scrambles on a page than the paper holds", () => {
+    // Against the box the printed header leaves rather than the config's,
+    // and every page but the last full: a page cut short of what fits would
+    // be a sheet of paper for nothing.
+    const many = listWords(WORD_LISTS[2]).slice(0, 30);
+    for (const size of ["letter", "a4", "legal"] as const) {
+      for (const margin of ["narrow", "normal", "wide"] as const) {
+        for (const fontPt of [8, 12, 18, 24, 36]) {
+          const over = {
+            style: "scramble" as const,
+            words: many,
+            count: 30,
+            paper: paper({ size, margin }),
+            fontPt,
+          };
+          const where = `${size}/${margin}/${fontPt}pt`;
+          const sheet = buildSheet(config(over), 1);
+          const pages = pagesOf(sheet);
+          expect(pages.length, where).toBeGreaterThan(0);
+          const { row, perPage } = scrambleLayout(config(over));
+          for (const [at, page] of pages.entries()) {
+            const rows = Math.ceil(page.items.length / page.columns);
+            const used = rows * row + Math.max(0, rows - 1) * PROBLEM_GAP.y;
+            expect(used, `${where}, page ${at + 1}`).toBeLessThanOrEqual(
+              printedBlockBox(sheet).height,
+            );
+            if (at < pages.length - 1)
+              expect(page.items.length, `${where}, page ${at + 1}`).toBe(
+                pages[0].items.length,
+              );
+          }
+          // A row taller than the page holds nothing at all.
+          if (perPage === 0)
+            expect(
+              pages.map((page) => page.items),
+              where,
+            ).toEqual([[]]);
+        }
+      }
+    }
   });
 });
 

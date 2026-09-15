@@ -137,16 +137,25 @@ describe("the sheet on a catalog page", () => {
     }
   });
 
-  it("asks for no more than the paper holds", () => {
-    // A count is a request, not a promise: the families cap it at what fits.
-    // A page that asked for thirty and got twenty-nine is fine; the failure
-    // this catches is prose that says "thirty" over a sheet of nine. A lesson
-    // has no count to ask with, so its prose is held to the six it says.
+  it("asks for what one sheet of paper holds, and gets it", () => {
+    // A count past the page runs on rather than being cut (§4), so the
+    // failure this catches is not a short page but a long one: a catalog
+    // page is curated to one sheet of paper, and prose that says "twenty"
+    // over two sheets is a count somebody raised without reading the page.
+    // A lesson has no count to ask with, so its prose is held to the six it
+    // says — and a lesson may run on, because its problems go on to page two
+    // whole rather than being cut to fit under the teaching (§23).
     for (const sheet of MATHS_SHEETS) {
       const built = buildSheet(sheet.config, MATHS_SEED);
       const problems = problemsOf(built.blocks);
       const asked = "count" in sheet.config ? sheet.config.count : 0;
-      if (asked > 0) expect(problems.length, sheet.slug).toBe(asked);
+      if (asked > 0) {
+        expect(problems.length, sheet.slug).toBe(asked);
+        expect(
+          built.blocks.some((block) => block.kind === "break"),
+          `${sheet.slug}: ${asked} problems run on to a second page`,
+        ).toBe(false);
+      }
       const prose = [sheet.summary, sheet.lead, ...sheet.notes].join(" ");
       if (sheet.config.kind === "lesson" && /\bsix\b/i.test(prose)) {
         expect(built.header.score?.outOf, sheet.slug).toBe(6);

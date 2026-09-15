@@ -9,7 +9,7 @@ import { FractionArtView } from "../FractionArt";
 import { NumberLineView } from "../NumberLine";
 import { inch } from "../units";
 import { Bracket } from "./Bracket";
-import type { BlockProps } from "./block";
+import { startOf, type BlockProps } from "./block";
 
 /**
  * Numbered problems in columns.
@@ -33,7 +33,7 @@ export function Problems({ block, metrics }: BlockProps<"problems">) {
   // Worked examples carry no number, so the problems a child answers still
   // count from one — or from where the block before this one left off —
   // however many examples stand before them.
-  let counted = Math.max(1, Math.floor(block.start ?? 1) || 1) - 1;
+  let counted = startOf(block.start) - 1;
   const numbers = block.items.map((problem) => {
     if (problem.worked) return null;
     counted += 1;

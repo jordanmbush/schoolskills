@@ -1,8 +1,16 @@
 import { describe, expect, it } from "vitest";
 
-import { buildSheet, describeSheet } from "../index";
+import { answerKey, buildSheet, describeSheet } from "../index";
+import { printedBlockBox } from "../chrome";
 import { describeSheetFamily } from "../contract";
-import type { Block, Paper, WordStudyConfig, WordStudyStyle } from "../types";
+import { MAX_COUNT, PROBLEM_GAP } from "../layout";
+import type {
+  Block,
+  Paper,
+  Sheet,
+  WordStudyConfig,
+  WordStudyStyle,
+} from "../types";
 
 import {
   CONTRACTIONS,
@@ -68,6 +76,36 @@ const where = (one: WordStudyConfig) => `${one.topic}/${one.style}`;
 
 const blockOf = (one: WordStudyConfig, seed = 1): Block =>
   buildSheet(one, seed).blocks[0];
+
+/**
+ * The problems block of each page, in order. A written sheet prints one such
+ * block a page and nothing else, so anything else on a page is a failure
+ * here rather than a page silently skipped.
+ */
+function pagesOf(sheet: Sheet): Array<Extract<Block, { kind: "problems" }>> {
+  const pages: Array<Extract<Block, { kind: "problems" }>> = [];
+  let open = false;
+  for (const block of sheet.blocks) {
+    if (block.kind === "break") {
+      expect(open, "a break with no page before it").toBe(true);
+      open = false;
+      continue;
+    }
+    if (block.kind !== "problems")
+      throw new Error(`expected problems, got ${block.kind}`);
+    expect(open, "two problems blocks on one page").toBe(false);
+    pages.push(block);
+    open = true;
+  }
+  return pages;
+}
+
+/** Every question a sheet put on paper, whichever pages it took. */
+const printedOf = (sheet: Sheet): number =>
+  sheet.blocks.reduce(
+    (total, block) => total + (block.kind === "break" ? 0 : countOf(block)),
+    0,
+  );
 
 /* ── The bank ──────────────────────────────────────────────────────────── */
 
@@ -167,7 +205,7 @@ describe("the word-study family", () => {
       expect(sheet.header.title, where(one)).not.toBe("");
       expect(sheet.header.instructions, where(one)).toBeTruthy();
       expect(sheet.header.score?.outOf, where(one)).toBe(12);
-      expect(sheet.blocks, where(one)).toHaveLength(1);
+      expect(printedOf(sheet), where(one)).toBe(12);
     }
   });
 
@@ -176,6 +214,12 @@ describe("the word-study family", () => {
       .toBe("Plurals — 10 questions — written in");
     expect(describeSheet(config({ topic: "synonyms", style: "match" }))) //
       .toBe("Synonyms — 10 questions — joined up");
+    // A count past the bank names the bank, not the page: a written sheet
+    // runs on to another page rather than stopping at the paper.
+    const plurals = topicOf("plurals").questions.length;
+    expect(
+      describeSheet(config({ topic: "plurals", style: "write", count: 200 })),
+    ).toBe(`Plurals — ${plurals} questions — written in`);
   });
 
   it("falls back to a style the topic has rather than throwing", () => {
@@ -197,19 +241,98 @@ describe("the word-study family", () => {
     }
   });
 
-  it("never prints more questions than the paper holds", () => {
+  it("runs a written sheet on to another page, and cuts the other two to it", () => {
+    // A written sheet asked for more than a page holds is more pages; a list
+    // of choices numbers from one with no `start` to continue from, and a
+    // matching column is shuffled as one whole, so those two stay one page.
+    // Neither ever prints more than the bank has: a page with room for forty
+    // rhymes still only has fourteen families.
     for (const size of ["letter", "a4"] as const) {
       for (const fontPt of [10, 12, 18]) {
         for (const one of EVERY_SHEET) {
           const big = { ...one, paper: { ...paper, size }, fontPt, count: 200 };
+          const label = `${where(one)} ${size}@${fontPt}`;
           const { perPage } = studyLayout(big);
-          const printed = countOf(blockOf(big));
-          expect(printed, `${where(one)} ${size}@${fontPt}`) //
-            .toBeLessThanOrEqual(perPage);
-          // And never more than the bank has, which is the other cap: a page
-          // with room for forty rhymes still only has fourteen families.
-          expect(printed, where(one)) //
-            .toBeLessThanOrEqual(topicOf(one.topic).questions.length);
+          const bank = Math.min(topicOf(one.topic).questions.length, MAX_COUNT);
+          const sheet = buildSheet(big, 1);
+          if (one.style === "write") {
+            const pages = pagesOf(sheet);
+            expect(pages.length, label).toBe(Math.ceil(bank / perPage));
+            expect(printedOf(sheet), label).toBe(bank);
+            for (const [at, page] of pages.entries())
+              if (at < pages.length - 1)
+                expect(page.items.length, `${label}, page ${at + 1}`) //
+                  .toBe(perPage);
+          } else {
+            expect(sheet.blocks, label).toHaveLength(1);
+            expect(printedOf(sheet), label).toBe(Math.min(perPage, bank));
+          }
+        }
+      }
+    }
+  });
+
+  it("runs on to another page rather than cutting the count to the paper", () => {
+    // Every word family at 18pt is several pages, not one page of the first
+    // twenty-odd (§4). The numbering carries on, the score box counts every
+    // page, and the key runs on page for page.
+    const one = config({
+      topic: "families",
+      style: "write",
+      count: 200,
+      fontPt: 18,
+    });
+    const { perPage } = studyLayout(one);
+    const bank = Math.min(topicOf("families").questions.length, MAX_COUNT);
+    const sheet = buildSheet(one, 3);
+    const pages = pagesOf(sheet);
+    expect(pages.length).toBeGreaterThan(1);
+    expect(pages.length).toBe(Math.ceil(bank / perPage));
+    expect(pages[0].items.length).toBe(perPage);
+    expect(pages[1].start).toBe(perPage + 1);
+    expect(sheet.header.score?.outOf).toBe(bank);
+    expect(pagesOf(answerKey(one, 3)).map((page) => page.items.length)) //
+      .toEqual(pages.map((page) => page.items.length));
+  });
+
+  it("never prints more questions on a page than the paper holds", () => {
+    // Against the box the printed header leaves rather than the config's,
+    // and every page but the last full: a page cut short of what fits would
+    // be a sheet of paper for nothing.
+    for (const size of ["letter", "a4", "legal"] as const) {
+      for (const margin of ["narrow", "normal", "wide"] as const) {
+        for (const fontPt of [8, 12, 18, 24, 36]) {
+          for (const one of EVERY_SHEET) {
+            if (one.style !== "write") continue;
+            const big = {
+              ...one,
+              paper: { ...paper, size, margin },
+              fontPt,
+              count: 200,
+            };
+            const label = `${where(one)} ${size}/${margin}/${fontPt}pt`;
+            const sheet = buildSheet(big, 8);
+            const pages = pagesOf(sheet);
+            expect(pages.length, label).toBeGreaterThan(0);
+            const { row, perPage } = studyLayout(big);
+            for (const [at, page] of pages.entries()) {
+              const rows = Math.ceil(page.items.length / page.columns);
+              const used = rows * row + Math.max(0, rows - 1) * PROBLEM_GAP.y;
+              expect(used, `${label}, page ${at + 1}`).toBeLessThanOrEqual(
+                printedBlockBox(sheet).height,
+              );
+              if (at < pages.length - 1)
+                expect(page.items.length, `${label}, page ${at + 1}`).toBe(
+                  pages[0].items.length,
+                );
+            }
+            // A row taller than the page holds nothing at all.
+            if (perPage === 0)
+              expect(
+                pages.map((page) => page.items),
+                label,
+              ).toEqual([[]]);
+          }
         }
       }
     }
@@ -232,12 +355,13 @@ describe("writing the answer", () => {
     // correct answers attached to the wrong prompts.
     for (const topic of STUDY_TOPICS) {
       if (!studyStyles(topic).includes("write")) continue;
-      const block = blockOf(config({ topic, style: "write", count: 12 }));
-      if (block.kind !== "problems") throw new Error("expected problems");
+      const items = pagesOf(
+        buildSheet(config({ topic, style: "write", count: 12 }), 1),
+      ).flatMap((page) => page.items);
       const bank = new Map(
         topicOf(topic).questions.map((one) => [one.ask, one.answer]),
       );
-      for (const item of block.items) {
+      for (const item of items) {
         expect(bank.get(item.prompt), item.prompt).toBe(item.answer);
       }
     }

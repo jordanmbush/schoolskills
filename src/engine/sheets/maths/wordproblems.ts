@@ -45,6 +45,8 @@ import {
   answerLine,
   columnWidth,
   fitAcross,
+  problemPages,
+  wantedOf,
   type Box,
 } from "../layout";
 import { inches, points } from "../paper";
@@ -573,9 +575,7 @@ export function wordStories(
   seed: number,
 ): WordStory[] {
   const { perPage } = wordLayout(config);
-  // The count is a request, not a promise: a count that overruns is a second
-  // sheet out of the printer with two problems on it.
-  const wanted = clamp(config.count, 0, perPage);
+  const wanted = wantedOf(config.count, perPage);
 
   const rand = mulberry32(seed);
   const pool = TEMPLATES.filter((template) =>
@@ -703,7 +703,7 @@ function describeWordProblems(config: WordProblemConfig): string {
 
 function buildWordProblemSheet(config: WordProblemConfig, seed: number): Sheet {
   const items = wordProblems(config, seed);
-  const { columns } = wordLayout(config);
+  const { columns, perPage } = wordLayout(config);
   const head = headerOf(config);
 
   return {
@@ -715,7 +715,7 @@ function buildWordProblemSheet(config: WordProblemConfig, seed: number): Sheet {
       fields: head.fields,
       score: { outOf: items.length },
     },
-    blocks: [{ kind: "problems", columns, items }],
+    blocks: problemPages(items, columns, perPage),
     footer: { credit: SHEET_CREDIT, url: SHEET_URL, seed },
     answers: false,
   };

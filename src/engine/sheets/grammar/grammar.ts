@@ -32,6 +32,8 @@ import {
   answerLine,
   columnWidth,
   fitAcross,
+  problemPages,
+  wantedOf,
   type Box,
 } from "../layout";
 import { inches, own, points } from "../paper";
@@ -384,36 +386,51 @@ export function grammarLayout(config: GrammarConfig): {
 }
 
 /**
+ * How many sentences this sheet draws: what was asked for, or the whole bank,
+ * and never more than the bank holds.
+ *
+ * A written sheet runs on to another page (§4). A circled one is still cut to
+ * the page: a `choice` block numbers from one with no `start` to continue
+ * from.
+ */
+function grammarWanted(config: GrammarConfig, perPage: number): number {
+  const { questions } = topicOf(config.topic);
+  const wanted = Math.min(
+    questions.length,
+    wantedOf(config.count ?? questions.length, perPage),
+  );
+  return styleOf(config) === "write" ? wanted : Math.min(wanted, perPage);
+}
+
+/**
  * The sentences this sheet asks about, drawn from the topic by the seed.
  *
  * Shuffled rather than taken in order, because the bank is written in kind
  * order — every statement first — and a sentence-types sheet of the first
- * twelve would be a sheet with one answer on it. Never more than the bank holds
- * and never more than the page holds, so the count is a request.
+ * twelve would be a sheet with one answer on it.
  *
  * **The scale is covered rather than hoped for.** A shuffle-and-slice is fair
- * over many pages and says nothing about any one of them: a sentence-types
- * sheet drawn at random comes up with no command about one page in six, on the
- * page whose whole exercise is telling a command from a statement. Every item
- * on such a page is still correct, which is what makes it the worse bug. So
- * where the topic answers to a closed list and there is room for one of each,
- * one of each is drawn first, off the same stream; the rest of the page is
- * filled from what is left and the whole is shuffled again, so the guaranteed
- * items are not the first `options.length` rows every time.
+ * over many sheets and says nothing about any one of them: a sentence-types
+ * sheet drawn at random comes up with no command about one sheet in six, on
+ * the sheet whose whole exercise is telling a command from a statement. Every
+ * item on such a sheet is still correct, which is what makes it the worse bug.
+ * So where the topic answers to a closed list and there is room for one of
+ * each, one of each is drawn first, off the same stream; the rest is filled
+ * from what is left and the whole is shuffled again, so the guaranteed items
+ * are not the first `options.length` rows every time.
  */
 export function grammarQuestions(
   config: GrammarConfig,
   seed: number,
+  perPage: number,
 ): Question[] {
   const { questions, options } = topicOf(config.topic);
-  const { perPage } = grammarLayout(config);
-  const room = Math.min(perPage, questions.length);
-  const wanted = clamp(config.count ?? room, 0, room);
+  const wanted = grammarWanted(config, perPage);
 
   const rand = mulberry32(seed);
   const pool = shuffled(questions, rand);
-  // Too small a page to hold the scale: a four-question sheet cannot show five
-  // parts of speech, and pretending otherwise would be dropping a question.
+  // Too few to hold the scale: a four-question sheet cannot show five parts
+  // of speech, and pretending otherwise would be dropping a question.
   if (!options || wanted < options.length) return pool.slice(0, wanted);
 
   const covered = new Set<string>();
@@ -464,7 +481,8 @@ function bodyOf(
   seed: number,
 ): { blocks: Block[]; outOf: number } {
   const topic = topicOf(config.topic);
-  const drawn = grammarQuestions(config, seed);
+  const { columns, perPage } = grammarLayout(config);
+  const drawn = grammarQuestions(config, seed, perPage);
   const outOf = drawn.length;
 
   if (styleOf(config) === "choose") {
@@ -479,15 +497,12 @@ function bodyOf(
     };
   }
 
-  const { columns } = grammarLayout(config);
   return {
-    blocks: [
-      {
-        kind: "problems",
-        columns,
-        items: drawn.map((question) => written(question, config)),
-      },
-    ],
+    blocks: problemPages(
+      drawn.map((question) => written(question, config)),
+      columns,
+      perPage,
+    ),
     outOf,
   };
 }
@@ -521,10 +536,9 @@ function headerOf(config: GrammarConfig): SheetOptions {
 function describeGrammar(config: GrammarConfig): string {
   const topic = topicOf(config.topic);
   // What the sheet will print rather than what was asked for, and by the same
-  // arithmetic the build uses — a line that promised twenty over a page of
+  // arithmetic the build uses — a line that promised twenty over a bank of
   // fourteen would be wrong in the record book and in the picker at once.
-  const room = Math.min(grammarLayout(config).perPage, topic.questions.length);
-  const asked = clamp(config.count ?? room, 0, room);
+  const asked = grammarWanted(config, grammarLayout(config).perPage);
   return [
     topic.label,
     `${asked} ${asked === 1 ? "sentence" : "sentences"}`,

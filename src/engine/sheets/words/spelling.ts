@@ -30,6 +30,8 @@ import {
   answerLine,
   columnWidth,
   fitAcross,
+  problemPages,
+  wantedOf,
   type Box,
 } from "../layout";
 import { points } from "../paper";
@@ -165,6 +167,16 @@ const gapsOf = (config: WordsConfig): string => {
  */
 const DOWN_THE_PAGE = new Set<WordsConfig["style"]>(["missing", "find"]);
 
+/**
+ * The styles still cut to one page.
+ *
+ * The four printed as `problems` run on to another page (§4). These three
+ * print through `blanks`, `choice` and `wordshapes`, which number their items
+ * from one and carry no `start` to continue from — so a second page of any of
+ * them would begin at 1 again, and a list cut short is the lesser wrong.
+ */
+const ONE_PAGE = new Set<WordsConfig["style"]>(["missing", "find", "shapes"]);
+
 /** How tall one word stands, the lines it is written on included. */
 function rowHeight(config: WordsConfig): Mil {
   const em = (rows: number): Mil => points(config.fontPt * rows);
@@ -219,15 +231,17 @@ export function wordsLayout(config: WordsConfig): {
  *
  * A spelling list is often taught in order and a list of missed words arrives
  * ranked worst-first, so *which* words are printed is the first `count` of them
- * rather than a draw. The count is a request rather than a promise, the same as
- * everywhere else: what does not fit is not printed, because print is the whole
- * of the output path (§10). The one style that shuffles is `abcItems`, where
- * the order is the exercise.
+ * rather than a draw. What one page has no room for runs on to the next (§4),
+ * except on the styles `ONE_PAGE` names. The one style that shuffles is
+ * `abcItems`, where the order is the exercise.
  */
-export function sheetWords(config: WordsConfig): string[] {
-  const { perPage } = wordsLayout(config);
+export function sheetWords(config: WordsConfig, perPage: number): string[] {
   const words = wordsOf(config);
-  return words.slice(0, clamp(config.count ?? words.length, 0, perPage));
+  const wanted = wantedOf(config.count ?? words.length, perPage);
+  return words.slice(
+    0,
+    ONE_PAGE.has(config.style) ? Math.min(wanted, perPage) : wanted,
+  );
 }
 
 /** One word, as the style asks for it. */
@@ -316,8 +330,8 @@ function bodyOf(
   config: WordsConfig,
   seed: number,
 ): { blocks: Block[]; outOf: number } {
-  const words = sheetWords(config);
-  const { columns } = wordsLayout(config);
+  const { columns, perPage } = wordsLayout(config);
+  const words = sheetWords(config, perPage);
   const outOf = words.length;
 
   if (config.style === "missing") {
@@ -345,7 +359,7 @@ function bodyOf(
     config.style === "abc"
       ? abcItems(words, mulberry32(seed))
       : words.map((word) => problemOf(word, config));
-  return { blocks: [{ kind: "problems", columns, items }], outOf };
+  return { blocks: problemPages(items, columns, perPage), outOf };
 }
 
 /* ── What it is called ─────────────────────────────────────────────────── */

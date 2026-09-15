@@ -3253,6 +3253,37 @@ describe("a rendered lesson", () => {
     ).toEqual(["1", "2", "3", "4", "5", "6"]);
   });
 
+  it("numbers sentences, questions and word shapes on from `start` too", () => {
+    // The three other numbered lists a counted sheet prints through, so a
+    // spelling test that runs to two pages does not start again at 1.
+    const html = render(
+      sheet({
+        blocks: [
+          {
+            kind: "blanks",
+            sentences: [{ text: "The __ sat.", answers: ["cat"] }],
+            start: 7,
+          },
+          {
+            kind: "choice",
+            questions: [{ prompt: "Legs?", options: ["two"], answer: 0 }],
+            start: 8,
+          },
+          {
+            kind: "wordshapes",
+            columns: 1,
+            words: [{ word: "big", letters: ["tall", "small", "tail"] }],
+            start: 9,
+          },
+        ],
+      }),
+    );
+    for (const number of [7, 8, 9]) {
+      expect(html).toContain(`<span class="sheet__number">${number}.</span>`);
+    }
+    expect(html).not.toContain('<span class="sheet__number">1.</span>');
+  });
+
   it("draws a chunked line's hops at their own sizes", () => {
     const html = lessonSheet({ topic: "division-chunking" });
     expect(count(html, 'class="sheet__jump"')).toBe(2);

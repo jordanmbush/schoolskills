@@ -33,6 +33,8 @@ import {
   PROBLEM_GAP,
   columnWidth,
   fitAcross,
+  problemPages,
+  wantedOf,
   type Box,
 } from "../layout";
 import { points } from "../paper";
@@ -220,6 +222,9 @@ const MARKED = new Set<PhonicsStyle>([
 /** Whether this style's answer key says anything its sheet doesn't. */
 export const phonicsKeyed = (style: PhonicsStyle): boolean => MARKED.has(style);
 
+/** The styles printed as numbered problems, which run on to another page (§4). */
+const PAGED = new Set<PhonicsStyle>(["blending", "families", "dictation"]);
+
 /**
  * How many lines the longest sentence in the bank wraps onto.
  *
@@ -321,13 +326,16 @@ export function phonicsSupply(config: PhonicsConfig): number {
   }
 }
 
-/** How many items this sheet will hold: what was asked for, or what fits. */
-const wantedOf = (config: PhonicsConfig): number =>
-  clamp(
-    config.count ?? Number.MAX_SAFE_INTEGER,
-    0,
-    Math.min(phonicsLayout(config).perPage, phonicsSupply(config)),
-  );
+/**
+ * How many items this sheet draws: what was asked for, or all the style has
+ * to offer. A `PAGED` style runs on; a sheet of cards and a matching column
+ * are one block each, still cut to the page.
+ */
+function phonicsWanted(config: PhonicsConfig, perPage: number): number {
+  const supply = phonicsSupply(config);
+  const wanted = Math.min(supply, wantedOf(config.count ?? supply, perPage));
+  return PAGED.has(styleOf(config)) ? wanted : Math.min(wanted, perPage);
+}
 
 /* ── What goes on it ───────────────────────────────────────────────────── */
 
@@ -514,9 +522,9 @@ function bodyOf(
 ): { blocks: Block[]; outOf: number } {
   const inventory = inventoryOf(config);
   const marking = markingOf(config);
-  const { columns } = phonicsLayout(config);
+  const { columns, perPage } = phonicsLayout(config);
   const style = styleOf(config);
-  const wanted = wantedOf(config);
+  const wanted = phonicsWanted(config, perPage);
 
   if (CARDED.has(style)) {
     const cards =
@@ -580,7 +588,7 @@ function bodyOf(
       }
     const items = pool.slice(0, wanted).map(familyOf);
     return {
-      blocks: [{ kind: "problems", columns, items }],
+      blocks: problemPages(items, columns, perPage),
       outOf: items.length,
     };
   }
@@ -589,7 +597,7 @@ function bodyOf(
     .slice(0, wanted)
     .map(style === "dictation" ? dictationOf : blendingOf);
   return {
-    blocks: [{ kind: "problems", columns, items }],
+    blocks: problemPages(items, columns, perPage),
     outOf: items.length,
   };
 }
@@ -662,7 +670,7 @@ function headerOf(config: PhonicsConfig): SheetOptions {
 function describePhonics(config: PhonicsConfig): string {
   const style = styleOf(config);
   const [one, many] = THINGS[style];
-  const asked = wantedOf(config);
+  const asked = phonicsWanted(config, phonicsLayout(config).perPage);
   const sounds = inventoryOf(config).sounds.length;
   return [
     TITLE[style],

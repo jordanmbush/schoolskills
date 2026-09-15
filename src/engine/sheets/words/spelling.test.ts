@@ -1,13 +1,18 @@
 import { describe, expect, it } from "vitest";
 
-import { buildSheet, describeSheet } from "../index";
+import { answerKey, buildSheet, describeSheet } from "../index";
+import { printedBlockBox } from "../chrome";
 import { describeSheetFamily } from "../contract";
-import { answerLine } from "../layout";
+import { PROBLEM_GAP, answerLine } from "../layout";
 import type {
   Blank,
+  Block,
   Choice,
+  MarginSize,
   Paper,
+  PaperSize,
   Problem,
+  Sheet,
   WordSheetStyle,
   WordShape,
   WordsConfig,
@@ -61,10 +66,30 @@ const config = (over: Partial<WordsConfig> = {}): WordsConfig => ({
 });
 
 function problemsOf(over: Partial<WordsConfig>, seed = 1): Problem[] {
-  const block = buildSheet(config(over), seed).blocks[0];
-  if (block.kind !== "problems")
-    throw new Error(`expected problems, got ${block.kind}`);
-  return block.items;
+  return pagesOf(buildSheet(config(over), seed)).flatMap((page) => page.items);
+}
+
+/**
+ * The problems block of each page, in order. The four written styles print
+ * one such block a page and nothing else, so anything else on a page is a
+ * failure here rather than a page silently skipped.
+ */
+function pagesOf(sheet: Sheet): Array<Extract<Block, { kind: "problems" }>> {
+  const pages: Array<Extract<Block, { kind: "problems" }>> = [];
+  let open = false;
+  for (const block of sheet.blocks) {
+    if (block.kind === "break") {
+      expect(open, "a break with no page before it").toBe(true);
+      open = false;
+      continue;
+    }
+    if (block.kind !== "problems")
+      throw new Error(`expected problems, got ${block.kind}`);
+    expect(open, "two problems blocks on one page").toBe(false);
+    pages.push(block);
+    open = true;
+  }
+  return pages;
 }
 
 function blanksOf(over: Partial<WordsConfig>, seed = 1): Blank[] {
@@ -368,6 +393,11 @@ describe("finding the word", () => {
 
 /* ── The list ──────────────────────────────────────────────────────────── */
 
+/** The four styles printed as `problems`, which run on past the page. */
+const WRITTEN = ["copy", "test", "abc", "sentence"] as const;
+const SIZES: PaperSize[] = ["letter", "a4", "legal"];
+const MARGINS: MarginSize[] = ["narrow", "normal", "wide"];
+
 describe("the list itself", () => {
   it("reads a saved list back safely", () => {
     // The config comes through the same doors a deck does — a paste, a saved
@@ -384,33 +414,100 @@ describe("the list itself", () => {
     expect(wordsOf(config())).toEqual(WORDS);
   });
 
-  it("never prints more words than the paper holds", () => {
+  it("runs a long list on to another page rather than cutting it", () => {
+    // Two hundred words are however many pages that takes, not one page of
+    // the first few (§4). The numbering carries on, the score box counts
+    // every page, and the key runs on page for page.
     const many = Array.from({ length: 200 }, (_, i) => `word${i}`);
-    for (const style of [
-      "copy",
-      "missing",
-      "test",
-      "abc",
-      "shapes",
-      "sentence",
-      "find",
-    ] as const) {
+    for (const style of WRITTEN) {
       const over = { style, words: many, count: many.length };
       const { perPage } = wordsLayout(config(over));
       const sheet = buildSheet(config(over), 1);
+      const pages = pagesOf(sheet);
+      expect(pages.length, style).toBe(Math.ceil(many.length / perPage));
+      expect(pages[0].items.length, style).toBe(perPage);
+      expect(pages[1].start, style).toBe(perPage + 1);
+      expect(sheet.header.score, style).toEqual({ outOf: many.length });
+      const printed = pages.flatMap((page) => page.items);
+      expect(printed.length, style).toBe(many.length);
+      // In list order, on the styles that keep it — a test sheet has nothing
+      // to read, so its word is the answer.
+      if (style !== "abc")
+        expect(
+          printed.map((item) => (style === "test" ? item.answer : item.prompt)),
+          style,
+        ).toEqual(many);
+      expect(
+        pagesOf(answerKey(config(over), 1)).map((page) => page.items.length),
+        style,
+      ).toEqual(pages.map((page) => page.items.length));
+    }
+  });
+
+  it("still cuts the three one-block styles to the page", () => {
+    // `blanks`, `choice` and `wordshapes` number from one and carry no
+    // `start` to continue from, so a second page of them would begin at 1.
+    const many = Array.from({ length: 200 }, (_, i) => `word${i}`);
+    for (const style of ["missing", "find", "shapes"] as const) {
+      const over = { style, words: many, count: many.length };
+      const { perPage } = wordsLayout(config(over));
+      const sheet = buildSheet(config(over), 1);
+      expect(sheet.blocks, style).toHaveLength(1);
       const block = sheet.blocks[0];
       const printed =
         block.kind === "blanks"
           ? block.sentences.length //
-          : block.kind === "problems"
-            ? block.items.length
-            : block.kind === "choice"
-              ? block.questions.length
-              : block.kind === "wordshapes"
-                ? block.words.length
-                : 0;
+          : block.kind === "choice"
+            ? block.questions.length
+            : block.kind === "wordshapes"
+              ? block.words.length
+              : 0;
       expect(printed, style).toBe(perPage);
-      expect(sheet.header.score).toEqual({ outOf: perPage });
+      expect(sheet.header.score, style).toEqual({ outOf: perPage });
+    }
+  });
+
+  it("never prints more words on a page than the paper holds", () => {
+    // Against the box the printed header leaves rather than the config's,
+    // and every page but the last full: a page cut short of what fits would
+    // be a sheet of paper for nothing.
+    const many = Array.from({ length: 200 }, (_, i) => `word${i}`);
+    for (const size of SIZES) {
+      for (const margin of MARGINS) {
+        for (const fontPt of [8, 12, 18, 24, 36]) {
+          for (const style of WRITTEN) {
+            const over = {
+              style,
+              words: many,
+              count: many.length,
+              paper: paper({ size, margin }),
+              fontPt,
+            };
+            const where = `${style} ${size}/${margin}/${fontPt}pt`;
+            const sheet = buildSheet(config(over), 1);
+            const pages = pagesOf(sheet);
+            expect(pages.length, where).toBeGreaterThan(0);
+            const { row, perPage } = wordsLayout(config(over));
+            for (const [at, page] of pages.entries()) {
+              const rows = Math.ceil(page.items.length / page.columns);
+              const used = rows * row + Math.max(0, rows - 1) * PROBLEM_GAP.y;
+              expect(used, `${where}, page ${at + 1}`).toBeLessThanOrEqual(
+                printedBlockBox(sheet).height,
+              );
+              if (at < pages.length - 1)
+                expect(page.items.length, `${where}, page ${at + 1}`).toBe(
+                  pages[0].items.length,
+                );
+            }
+            // A row taller than the page holds nothing at all.
+            if (perPage === 0)
+              expect(
+                pages.map((page) => page.items),
+                where,
+              ).toEqual([[]]);
+          }
+        }
+      }
     }
   });
 

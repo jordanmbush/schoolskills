@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 import { answerKey, buildSheet } from "@/engine/sheets";
+import { printedBlockBox } from "@/engine/sheets/chrome";
 import { describeSheetFamily } from "@/engine/sheets/contract";
+import { MAX_COUNT, PROBLEM_GAP } from "@/engine/sheets/layout";
 import { DEFAULT_FONT_PT, DEFAULT_PAPER } from "@/engine/sheets/paper";
 import type {
   Block,
@@ -147,6 +149,32 @@ const only = (sheet: Sheet): Block => {
   return sheet.blocks[0];
 };
 
+/** The three styles printed as numbered problems, which run on past the page. */
+const PAGED: PhonicsStyle[] = ["blending", "families", "dictation"];
+
+/**
+ * The problems block of each page, in order. A `PAGED` style prints one such
+ * block a page and nothing else, so anything else on a page is a failure
+ * here rather than a page silently skipped.
+ */
+function pagesOf(sheet: Sheet): Array<Extract<Block, { kind: "problems" }>> {
+  const pages: Array<Extract<Block, { kind: "problems" }>> = [];
+  let open = false;
+  for (const block of sheet.blocks) {
+    if (block.kind === "break") {
+      expect(open, "a break with no page before it").toBe(true);
+      open = false;
+      continue;
+    }
+    if (block.kind !== "problems")
+      throw new Error(`expected problems, got ${block.kind}`);
+    expect(open, "two problems blocks on one page").toBe(false);
+    pages.push(block);
+    open = true;
+  }
+  return pages;
+}
+
 /**
  * A blending prompt put back together into the word it cuts up.
  *
@@ -169,20 +197,21 @@ function blended(prompt: string): string {
   return [...head, ...tail].join("");
 }
 
-/** Every whole word this sheet prints, whichever block it printed it in. */
+/** Every whole word this sheet prints, whichever block or page it is on. */
 function wordsOn(sheet: Sheet): string[] {
-  const block = only(sheet);
-  if (block.kind === "problems")
-    return block.items.map((item) => item.answer).filter(Boolean);
-  if (block.kind === "matching") return block.right;
-  if (block.kind === "cards")
-    return block.cards.flatMap((card) =>
-      markedText(card.big)
-        .toLowerCase()
-        .split(/[^a-z]+/)
-        .filter(Boolean),
-    );
-  return [];
+  return sheet.blocks.flatMap((block) => {
+    if (block.kind === "problems")
+      return block.items.map((item) => item.answer).filter(Boolean);
+    if (block.kind === "matching") return block.right;
+    if (block.kind === "cards")
+      return block.cards.flatMap((card) =>
+        markedText(card.big)
+          .toLowerCase()
+          .split(/[^a-z]+/)
+          .filter(Boolean),
+      );
+    return [];
+  });
 }
 
 /**
@@ -579,21 +608,92 @@ describe("the sheet as a whole", () => {
     }
   });
 
-  it("never puts on more than the paper was measured for", () => {
+  it("runs a list of problems on to another page, and cuts the rest to it", () => {
+    // Blending, families and dictation are numbered problems and run on for
+    // as many pages as the supply takes; a sheet of cards and a matching
+    // column are one block each, still cut to the page.
     for (const style of PHONICS_STYLES) {
       const asked = config(style, EVERYTHING, { count: 200 });
       const { perPage } = phonicsLayout(asked);
-      const block = only(buildSheet(asked, 1));
+      const sheet = buildSheet(asked, 1);
+      if (PAGED.includes(style)) {
+        const supply = Math.min(phonicsSupply(asked), MAX_COUNT);
+        const pages = pagesOf(sheet);
+        expect(pages.length, style).toBe(Math.ceil(supply / perPage));
+        expect(pages.flatMap((page) => page.items).length, style).toBe(supply);
+        for (const [at, page] of pages.entries())
+          if (at < pages.length - 1)
+            expect(page.items.length, `${style}, page ${at + 1}`).toBe(perPage);
+        continue;
+      }
+      const block = only(sheet);
       const items =
-        block.kind === "problems"
-          ? block.items.length
-          : block.kind === "cards"
-            ? block.cards.length
-            : block.kind === "matching"
-              ? block.left.length
-              : 0;
+        block.kind === "cards"
+          ? block.cards.length
+          : block.kind === "matching"
+            ? block.left.length
+            : 0;
       expect(items, style).toBeGreaterThan(0);
       expect(items, style).toBeLessThanOrEqual(perPage);
+    }
+  });
+
+  it("runs on to another page rather than cutting the count to the paper", () => {
+    // Every word the digraphs unlock, read out at 18pt, is several pages and
+    // not one page of the first few (§4). The numbering carries on, the score
+    // box counts every page, and the key runs on page for page.
+    const asked = config("dictation", DIGRAPHS, { count: 200, fontPt: 18 });
+    const { perPage } = phonicsLayout(asked);
+    const supply = Math.min(phonicsSupply(asked), MAX_COUNT);
+    const sheet = buildSheet(asked, 3);
+    const pages = pagesOf(sheet);
+    expect(pages.length).toBeGreaterThan(1);
+    expect(pages.length).toBe(Math.ceil(supply / perPage));
+    expect(pages[0].items.length).toBe(perPage);
+    expect(pages[1].start).toBe(perPage + 1);
+    expect(sheet.header.score?.outOf).toBe(supply);
+    expect(pagesOf(answerKey(asked, 3)).map((page) => page.items.length)) //
+      .toEqual(pages.map((page) => page.items.length));
+  });
+
+  it("never prints more problems on a page than the paper holds", () => {
+    // Against the box the printed header leaves rather than the config's,
+    // and every page but the last full: a page cut short of what fits would
+    // be a sheet of paper for nothing.
+    for (const size of ["letter", "a4", "legal"] as const) {
+      for (const margin of ["narrow", "normal", "wide"] as const) {
+        for (const fontPt of [8, 12, 18, 24, 36]) {
+          for (const style of PAGED) {
+            const asked = config(style, EVERYTHING, {
+              count: 200,
+              paper: { ...DEFAULT_PAPER, size, margin },
+              fontPt,
+            });
+            const where = `${style} ${size}/${margin}/${fontPt}pt`;
+            const sheet = buildSheet(asked, 8);
+            const pages = pagesOf(sheet);
+            expect(pages.length, where).toBeGreaterThan(0);
+            const { row, perPage } = phonicsLayout(asked);
+            for (const [at, page] of pages.entries()) {
+              const rows = Math.ceil(page.items.length / page.columns);
+              const used = rows * row + Math.max(0, rows - 1) * PROBLEM_GAP.y;
+              expect(used, `${where}, page ${at + 1}`).toBeLessThanOrEqual(
+                printedBlockBox(sheet).height,
+              );
+              if (at < pages.length - 1)
+                expect(page.items.length, `${where}, page ${at + 1}`).toBe(
+                  pages[0].items.length,
+                );
+            }
+            // A row taller than the page holds nothing at all.
+            if (perPage === 0)
+              expect(
+                pages.map((page) => page.items),
+                where,
+              ).toEqual([[]]);
+          }
+        }
+      }
     }
   });
 

@@ -21,7 +21,14 @@ import type {
 } from "../types";
 
 import { declaredWidth, packRows, sheetBlockBox } from "../chrome";
-import { PROBLEM_GAP, columnWidth, fitAcross, type Box } from "../layout";
+import {
+  PROBLEM_GAP,
+  columnWidth,
+  fitAcross,
+  problemPages,
+  wantedOf,
+  type Box,
+} from "../layout";
 import { inches, points } from "../paper";
 import { SHEET_CREDIT, SHEET_WORLD, gameUrl, type SheetSpec } from "../spec";
 import { buildCrossword, type Clued } from "./crossword";
@@ -93,7 +100,8 @@ export const MAX_GRID = 20;
  *
  * Well under the two hundred a list may hold, and the cap is about the child
  * rather than the paper: thirty words in one grid is not a harder puzzle, it is
- * an afternoon. What the page holds caps it again below this.
+ * an afternoon. A grid trims it again to what its page holds and names the
+ * rest; a scramble runs on to another page instead (§4).
  */
 export const MAX_PUZZLE_WORDS = 30;
 
@@ -616,12 +624,14 @@ function scrambleBlocks(
   const rand = mulberry32(seed);
   const { columns, perPage } = scrambleLayout(config);
   const { words } = puzzleWords(config);
-  const items: Problem[] = words.slice(0, perPage).map(({ given }) => ({
-    prompt: spaced(scramble(given, rand)),
-    answer: given,
-  }));
+  const items: Problem[] = words
+    .slice(0, wantedOf(words.length, perPage))
+    .map(({ given }) => ({
+      prompt: spaced(scramble(given, rand)),
+      answer: given,
+    }));
   return {
-    blocks: [{ kind: "problems", columns, items }],
+    blocks: problemPages(items, columns, perPage),
     outOf: items.length,
   };
 }

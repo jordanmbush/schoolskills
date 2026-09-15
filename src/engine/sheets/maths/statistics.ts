@@ -39,6 +39,8 @@ import {
   answerLine,
   columnWidth,
   fitAcross,
+  problemPages,
+  wantedOf,
   type Box,
 } from "../layout";
 import { inches } from "../paper";
@@ -320,20 +322,12 @@ export function statisticsLayout(config: StatisticsConfig): {
   };
 }
 
-/**
- * Every problem on the sheet, in the order they are printed.
- *
- * Exported because it is the whole of what a test has to check.
- */
-export function statisticsProblems(
+/** Up to `wanted` problems, in the order they are printed. */
+function drawProblems(
   config: StatisticsConfig,
   seed: number,
+  wanted: number,
 ): Problem[] {
-  const { perPage } = statisticsLayout(config);
-  // The count is a request, not a promise: a count that overruns is a second
-  // sheet out of the printer with two problems on it.
-  const wanted = clamp(config.count, 0, perPage);
-
   const rand = mulberry32(seed);
   const seen = new Set<string>();
   const problems: Problem[] = [];
@@ -420,8 +414,8 @@ function describeStatistics(config: StatisticsConfig): string {
 }
 
 function buildStatisticsSheet(config: StatisticsConfig, seed: number): Sheet {
-  const items = statisticsProblems(config, seed);
-  const { columns } = statisticsLayout(config);
+  const { columns, perPage } = statisticsLayout(config);
+  const items = drawProblems(config, seed, wantedOf(config.count, perPage));
   const head = headerOf(config);
 
   return {
@@ -433,7 +427,7 @@ function buildStatisticsSheet(config: StatisticsConfig, seed: number): Sheet {
       fields: head.fields,
       score: { outOf: items.length },
     },
-    blocks: [{ kind: "problems", columns, items }],
+    blocks: problemPages(items, columns, perPage),
     footer: { credit: SHEET_CREDIT, url: SHEET_URL, seed },
     answers: false,
   };
