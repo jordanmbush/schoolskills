@@ -189,12 +189,25 @@ export type StrokeInk = {
  * hair. Dots and dashes are shares of it, as a face's are.
  */
 export function strokeInk(writing: Mil): StrokeInk {
-  const width = Math.round(
-    Math.min(points(2.5), Math.max(points(1), writing * 0.045)),
+  return inkOf(
+    Math.round(Math.min(points(2.5), Math.max(points(1), writing * 0.045))),
   );
-  return {
-    width,
-    dotted: `0 ${Math.round(width * 2.2)}`,
-    dashed: `${Math.round(width * 2.5)} ${Math.round(width * 1.5)}`,
-  };
 }
+
+/**
+ * The same line for a letter of a hand (§25), at a little over half the
+ * weight. A pattern is one wave across a line with air on every side; a
+ * letter has counters, and a bowl drawn at the pattern's weight on a ⅜ rule
+ * closes up. The floor is what a printer still resolves as a dotted line.
+ */
+export function letterInk(writing: Mil): StrokeInk {
+  return inkOf(
+    Math.round(Math.min(points(1.5), Math.max(points(0.5), writing * 0.026))),
+  );
+}
+
+const inkOf = (width: Mil): StrokeInk => ({
+  width,
+  dotted: `0 ${Math.round(width * 2.2)}`,
+  dashed: `${Math.round(width * 2.5)} ${Math.round(width * 1.5)}`,
+});

@@ -73,17 +73,14 @@ describe("walking a stroke", () => {
 });
 
 describe("arrowhead", () => {
-  it("is an open chevron with its point at the tip", () => {
-    const d = arrowhead(10, 0, 0, 4);
-    const numbers = d.match(/-?\d+(?:\.\d+)?/g)?.map(Number) ?? [];
-    expect(d.startsWith("M")).toBe(true);
-    expect(d).not.toContain("Z");
-    // Three points: two wings behind the tip, and the tip itself.
-    expect(numbers).toHaveLength(6);
-    expect(numbers[2]).toBe(10);
-    expect(numbers[3]).toBe(0);
-    expect(numbers[0]).toBeLessThan(10);
-    expect(numbers[4]).toBeLessThan(10);
-    expect(numbers[1]).toBeCloseTo(-numbers[5]);
+  it("is a closed triangle with its point at the tip", () => {
+    const d = arrowhead(10, 0, 0, 4, 3);
+    expect(d).toBe("M 10 0 L 6 -1.5 L 6 1.5 Z");
+    // Pointing down the page: the base is above the tip.
+    const down = arrowhead(0, 10, Math.PI / 2, 4, 3);
+    const numbers = down.match(/-?\d+(?:\.\d+)?/g)?.map(Number) ?? [];
+    expect(numbers[3]).toBeCloseTo(6);
+    expect(numbers[5]).toBeCloseTo(6);
+    expect(numbers[2]).toBeCloseTo(-numbers[4]);
   });
 });

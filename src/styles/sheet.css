@@ -450,18 +450,16 @@
 }
 
 /* ── Hands (§25) ────────────────────────────────────────────────────────────
-   The guides on a model letter: a filled start dot, an open arrowhead, and
-   a stroke number in the site's own face rather than the sheet's, so it
-   reads as a label on the letter and not as part of it. */
+   The guides on a model letter: a filled start dot, a filled arrowhead on
+   the line, and a stroke number in the site's own face rather than the
+   sheet's, so it reads as a label on the letter and not as part of it. */
 .sheet__guide {
   fill: currentcolor;
 }
 
 .sheet__guide-arrow {
-  fill: none;
-  stroke: currentcolor;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+  fill: currentcolor;
+  stroke: none;
 }
 
 .sheet__guide-number {

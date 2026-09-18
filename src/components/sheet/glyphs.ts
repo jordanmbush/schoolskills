@@ -146,19 +146,25 @@ export const strokeLength = (segments: Segment[]): number => {
 };
 
 /**
- * An arrowhead: a chevron `size` long at `x, y`, pointing along `angle`.
- * Open, so it reads as a direction on the line rather than a blot.
+ * An arrowhead: a filled triangle with its point at `x, y`, `length` long
+ * behind it and `width` across its base, pointing along `angle`. Filled and
+ * several line-widths wide, because it sits on the line it points along and
+ * has to read against it at a glance.
  */
 export function arrowhead(
   x: number,
   y: number,
   angle: number,
-  size: number,
+  length: number,
+  width: number,
 ): string {
-  const wing = (turn: number) => {
-    const a = angle + turn;
-    return `${tenth(x - size * Math.cos(a))} ${tenth(y - size * Math.sin(a))}`;
-  };
-  const spread = Math.PI / 5;
-  return `M ${wing(-spread)} L ${tenth(x)} ${tenth(y)} L ${wing(spread)}`;
+  const backX = x - length * Math.cos(angle);
+  const backY = y - length * Math.sin(angle);
+  const dx = (width / 2) * Math.sin(angle);
+  const dy = (width / 2) * Math.cos(angle);
+  return (
+    `M ${tenth(x)} ${tenth(y)} ` +
+    `L ${tenth(backX + dx)} ${tenth(backY - dy)} ` +
+    `L ${tenth(backX - dx)} ${tenth(backY + dy)} Z`
+  );
 }

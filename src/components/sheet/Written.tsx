@@ -32,9 +32,10 @@ import {
   pathOf,
   placeStroke,
   strokeLength,
+  type Segment,
 } from "./glyphs";
 import type { SheetMetrics } from "./metrics";
-import { strokeInk, type StrokeInk } from "./strokes";
+import { letterInk, type StrokeInk } from "./strokes";
 import { inch } from "./units";
 
 export type WrittenCell = {
@@ -45,7 +46,24 @@ export type WrittenCell = {
 };
 
 /** How far along a stroke its arrow sits, as a share of the writing space. */
-const ARROW_AT = 0.22;
+const ARROW_AT = 0.3;
+
+/** The middle of a letter's ink, for placing its stroke numbers outside it. */
+function centreOf(strokes: Segment[][]): { x: number; y: number } {
+  const points = strokes.flat().flatMap((segment) => {
+    const out: Array<[number, number]> = [];
+    for (let i = 0; i < segment.points.length; i += 2) {
+      out.push([segment.points[i], segment.points[i + 1]]);
+    }
+    return out;
+  });
+  const xs = points.map((p) => p[0]);
+  const ys = points.map((p) => p[1]);
+  return {
+    x: (Math.min(...xs) + Math.max(...xs)) / 2,
+    y: (Math.min(...ys) + Math.max(...ys)) / 2,
+  };
+}
 
 function Guides({
   strokes,
@@ -56,35 +74,64 @@ function Guides({
   ink: StrokeInk;
   writing: number;
 }) {
-  const dot = ink.width * 1.4;
-  const size = ink.width * 3;
+  const dot = ink.width * 1.3;
+  const head = { length: ink.width * 4.5, width: ink.width * 4 };
   const numeral = Math.round(writing * 0.16);
+  // Already on the paper: these are the placed paths, in mil.
+  const parsed = strokes.map(parseStroke);
+  const centre = centreOf(parsed);
+  // The number sits on the far side of the dot from the letter's middle:
+  // outside the letter, where there is no ink for it to land on. Two strokes
+  // that start close together — the bowl and the stem of an `a` — would put
+  // their numbers on top of each other, so a number that lands within a
+  // numeral of an earlier one, or of any stroke's start dot, is pushed a
+  // numeral further out.
+  const starts = parsed.map((segments) => along(segments, 0));
+  const numbers: Array<{ x: number; y: number }> = [];
+  for (const start of starts) {
+    const away = Math.atan2(start.y - centre.y, start.x - centre.x);
+    let back = numeral * 0.8;
+    let at = { x: 0, y: 0 };
+    for (let tries = 0; tries < 4; tries += 1) {
+      at = {
+        x: start.x + back * Math.cos(away),
+        y: start.y + back * Math.sin(away),
+      };
+      const clear = [...numbers, ...starts.filter((s) => s !== start)].every(
+        (other) => Math.hypot(other.x - at.x, other.y - at.y) >= numeral * 0.8,
+      );
+      if (clear) break;
+      back += numeral * 0.8;
+    }
+    numbers.push(at);
+  }
   return (
     <>
-      {strokes.map((stroke, index) => {
-        // Already on the paper: these are the placed paths, in mil.
-        const segments = parseStroke(stroke);
+      {parsed.map((segments, index) => {
         const start = along(segments, 0);
+        // The head sits a little way in from the start, clear of the dot; a
+        // stroke too short to hold both gets the dot alone.
         const reach = Math.min(
           writing * ARROW_AT,
-          strokeLength(segments) * 0.5,
+          strokeLength(segments) * 0.45,
         );
         const tip = along(segments, reach);
         return (
           <g key={index} className="sheet__guide">
             <circle cx={start.x} cy={start.y} r={dot} />
-            {reach > dot * 2 && (
+            {reach >= dot + head.length && (
               <path
                 className="sheet__guide-arrow"
-                d={arrowhead(tip.x, tip.y, tip.angle, size)}
-                strokeWidth={ink.width * 0.8}
+                d={arrowhead(tip.x, tip.y, tip.angle, head.length, head.width)}
               />
             )}
             <text
               className="sheet__guide-number"
-              x={start.x - numeral * 0.9}
-              y={start.y - numeral * 0.35}
+              x={numbers[index].x}
+              y={numbers[index].y}
               fontSize={numeral}
+              textAnchor="middle"
+              dominantBaseline="central"
             >
               {index + 1}
             </text>
@@ -115,7 +162,7 @@ export function WrittenRow({
     pitch;
   const writing = writingSpace(rule);
   const scale = writing / hand.ascent;
-  const ink = strokeInk(writing);
+  const ink = letterInk(writing);
   const cell = cells.length > 0 ? Math.floor(width / cells.length) : width;
   const inset = ink.width * 2;
 
