@@ -62,11 +62,10 @@ const letterRow = (text: string): WrittenCell[] => [
   { text: "", style: "none" as const },
 ];
 
+// Three to a row, because a guided model is set wide and needs the room.
 const wordRow = (text: string): WrittenCell[] => [
   { text, style: "solid", guides: true },
   { text, style: "dotted" },
-  { text, style: "dashed" },
-  { text, style: "hollow" },
   { text: "", style: "none" },
 ];
 ---

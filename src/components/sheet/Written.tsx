@@ -25,10 +25,10 @@ import { rulePitch, writingSpace } from "@/engine/sheets/paper";
 import type { Rule, TraceStyle } from "@/engine/sheets/types";
 
 import { Ruling } from "./Ruling";
-import { parseStroke, pathOf, placeStroke } from "./glyphs";
-import { guidesOf } from "./guides";
+import { pathOf, placeStroke, type Segment } from "./glyphs";
+import { wordGuides, type GuideSet } from "./guides";
 import type { SheetMetrics } from "./metrics";
-import { letterInk, type StrokeInk } from "./strokes";
+import { letterInk } from "./strokes";
 import { inch } from "./units";
 
 export type WrittenCell = {
@@ -38,17 +38,7 @@ export type WrittenCell = {
   guides?: boolean;
 };
 
-function Guides({
-  strokes,
-  ink,
-  writing,
-}: {
-  strokes: string[];
-  ink: StrokeInk;
-  writing: number;
-}) {
-  // Already on the paper: these are the placed paths, in mil.
-  const set = guidesOf(strokes.map(parseStroke), writing, ink);
+function Guides({ set }: { set: GuideSet }) {
   return (
     <>
       {set.guides.map((guide, index) => (
@@ -107,7 +97,7 @@ export function WrittenRow({
   // A model with guides needs room beside its ink for an arrow and a number;
   // any other cell only needs its letters off the cell's edge.
   const insetOf = (entry: WrittenCell) =>
-    entry.guides ? Math.max(ink.width * 2, writing * 0.22) : ink.width * 2;
+    entry.guides ? Math.max(ink.width * 2, writing * 0.26) : ink.width * 2;
 
   const said = [...new Set(cells.map((entry) => entry.text))]
     .filter((text) => text !== "")
@@ -127,8 +117,15 @@ export function WrittenRow({
         if (entry.style === "none" || entry.text === "") return null;
         const units = measure(hand, entry.text);
         const inset = insetOf(entry);
-        const fitted =
-          units > 0 ? Math.min(scale, (cell - 2 * inset) / units) : scale;
+        const room = cell - 2 * inset;
+        const fitted = units > 0 ? Math.min(scale, room / units) : scale;
+        // A guided word is set as wide as the cell's spare room allows, so
+        // one letter's marks are not the next letter's problem — but only
+        // from the spare room: a word is never shrunk to make it.
+        const gaps = Math.max(1, entry.text.length - 1);
+        const tracking = entry.guides
+          ? Math.max(0, Math.min(writing * 0.3, (room - units * fitted) / gaps))
+          : 0;
         let x = index * cell + inset;
         const dash =
           entry.style === "dotted"
@@ -137,34 +134,33 @@ export function WrittenRow({
               ? ink.dashed
               : undefined;
         const weight = entry.style === "hollow" ? ink.width / 2 : ink.width;
+        // Every letter is placed before any guide is laid out, because a
+        // letter's guides keep off its neighbours' ink as well as its own.
+        const letters: Segment[][][] = [...entry.text].map((character) => {
+          const glyph = glyphOf(hand, character);
+          const origin = x;
+          x += (glyph?.advance ?? hand.space) * fitted + tracking;
+          return (glyph?.strokes ?? []).map((stroke) =>
+            placeStroke(stroke, origin, baseline, fitted),
+          );
+        });
+        const sets = entry.guides ? wordGuides(letters, writing, ink) : [];
         return (
           <g key={`${index}-${entry.text}`}>
-            {[...entry.text].map((character, at) => {
-              const glyph = glyphOf(hand, character);
-              const origin = x;
-              x += (glyph?.advance ?? hand.space) * fitted;
-              if (glyph === undefined || glyph.strokes.length === 0)
-                return null;
-              const placed = glyph.strokes.map((stroke) =>
-                pathOf(placeStroke(stroke, origin, baseline, fitted)),
-              );
-              return (
-                <g key={at}>
-                  {placed.map((d, stroke) => (
-                    <path
-                      key={stroke}
-                      className={`sheet__stroke sheet__stroke--${entry.style}`}
-                      d={d}
-                      strokeWidth={weight}
-                      strokeDasharray={dash}
-                    />
-                  ))}
-                  {entry.guides && (
-                    <Guides strokes={placed} ink={ink} writing={writing} />
-                  )}
-                </g>
-              );
-            })}
+            {letters.map((placed, at) => (
+              <g key={at}>
+                {placed.map((segments, stroke) => (
+                  <path
+                    key={stroke}
+                    className={`sheet__stroke sheet__stroke--${entry.style}`}
+                    d={pathOf(segments)}
+                    strokeWidth={weight}
+                    strokeDasharray={dash}
+                  />
+                ))}
+                {sets[at] && <Guides set={sets[at]} />}
+              </g>
+            ))}
           </g>
         );
       })}

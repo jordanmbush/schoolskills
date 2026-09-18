@@ -2283,6 +2283,49 @@ same meaning. `glyphs.ts` beside it moves a stroke from hand units onto the
 paper in mil — the only change of coordinates — and walks a curve for the
 arrow.
 
+### The guides on a model
+
+A model cell carries three marks per stroke: a dot where the pen goes down,
+an arrow for the way it sets off, and the stroke's number. `guides.ts` lays
+them out; it takes placed paths in mil and returns positions, so the layout
+is tested without rendering.
+
+The arrow runs _beside_ the stroke, a gap off it, following its shape for
+about a quarter of the writing space, with a small filled head and a shaft
+that stops where the head begins. An arrow drawn on the stroke was tried
+first and rejected: a head on the line it points along is one more mark on a
+letter a child is trying to read, and on a bowl it looks like a bump in the
+curve. Beside the stroke it is what a teacher draws next to a letter on the
+board.
+
+The number sits against the arrow's tail, near enough to read as the arrow's
+own — `1 →`. The earlier layout put the number by the dot and the arrow
+some way along the stroke, and on a `t`, where both strokes start in one
+corner, nobody could say which number was whose.
+
+Where the arrow runs, on which side, and which spot the number takes is
+chosen by cost, because no rule survives the alphabet: a stem that a
+crossbar cuts, a bowl whose start is under the next stroke's dot, a bar that
+is one stroke with the arc it turns into. Every candidate — at the start of
+the stroke or slid further along, full length or cut short for a corner,
+either side, the number behind the tail or turned out of the way or by the
+dot — is scored on what it runs into, and the cheapest wins. The unit is one
+sample of ink under a mark. An arrow's two ends weigh double, because a tail
+or a head against another stroke says the arrow starts or ends there; along
+the shaft, ink crossed at right angles is half the price of ink run
+alongside; a number is scored as its box, against ink sampled finely enough
+that a curve grazing its corner is seen. With everything clear, the outside
+of the letter and the start of the stroke win, so a plain stem gets the
+arrow a teacher would draw. The weights are judgements, and the specimen
+page is where they are checked: change one and look at every letter.
+
+A word set as a model is laid out letter by letter, each keeping off its
+neighbours' ink and the earlier letters' marks, and the row tracks the
+letters out into whatever spare room the cell has, never shrinking the word
+to make it. That is enough for a short word on a wide cell; a guided word is
+a stress test of the layout rather than something a sheet is expected to
+print.
+
 ### How a hand is drawn
 
 The drawings are the source and the data module is generated from them.

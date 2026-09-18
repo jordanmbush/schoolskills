@@ -69,6 +69,9 @@ export const pathOf = (segments: Segment[]): string =>
 
 export type Point = { x: number; y: number };
 
+export const distance = (a: Point, b: Point): number =>
+  Math.hypot(a.x - b.x, a.y - b.y);
+
 const lerp = (a: Point, b: Point, t: number): Point => ({
   x: a.x + (b.x - a.x) * t,
   y: a.y + (b.y - a.y) * t,
@@ -168,6 +171,50 @@ export function beside(
       x: tenth(at.x - side * gap * Math.sin(at.angle)),
       y: tenth(at.y + side * gap * Math.cos(at.angle)),
     });
+  }
+  return out;
+}
+
+/**
+ * The distance from a point to the nearest piece of a polyline, and which
+ * way that piece runs.
+ */
+export function nearest(
+  p: Point,
+  line: Point[],
+): { d: number; heading: number } {
+  if (line.length === 0) return { d: Infinity, heading: 0 };
+  let best = { d: distance(p, line[0]), heading: 0 };
+  for (let i = 1; i < line.length; i += 1) {
+    const a = line[i - 1];
+    const b = line[i];
+    const dx = b.x - a.x;
+    const dy = b.y - a.y;
+    const span = dx * dx + dy * dy;
+    const t =
+      span === 0
+        ? 0
+        : Math.min(
+            Math.max(((p.x - a.x) * dx + (p.y - a.y) * dy) / span, 0),
+            1,
+          );
+    const d = distance(p, { x: a.x + t * dx, y: a.y + t * dy });
+    if (d < best.d) best = { d, heading: Math.atan2(dy, dx) };
+  }
+  return best;
+}
+
+/** The polyline with a point at least every `step` along it. */
+export function resample(line: Point[], step: number): Point[] {
+  const out: Point[] = line.slice(0, 1);
+  for (let i = 1; i < line.length; i += 1) {
+    const pieces = Math.max(
+      1,
+      Math.ceil(distance(line[i - 1], line[i]) / step),
+    );
+    for (let k = 1; k <= pieces; k += 1) {
+      out.push(lerp(line[i - 1], line[i], k / pieces));
+    }
   }
   return out;
 }
