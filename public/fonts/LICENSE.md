@@ -74,6 +74,19 @@ f007004af3cda5d8076e57c943f8cc8d00a0da25988b1ae1048683d60e7cac1a  opendyslexic-l
 font swapped for a different cut of the same family fails the suite rather than
 quietly invalidating this page.
 
+## The hands
+
+Not fonts, and not in this directory, but derived from one of them and so
+recorded here. `src/engine/sheets/hands/print.ts` is a set of letters stored as
+pen strokes — single lines down the middle of each stroke, for tracing — and
+those lines were traced over the outlines in Andika's published sources
+(`Andika-Regular.ufo` at https://github.com/silnrsi/font-andika, OFL 1.1). The
+shapes are therefore a Modified Version of Andika under the OFL: the data is
+offered under the same licence, it carries the notice in its own header, and it
+is called "School Skills Print", which is nobody's Reserved Font Name. The
+drawings themselves are in `art/hands/print/`; `docs/printables.md` §25 says
+how one becomes the other.
+
 ## Notices
 
 The OFL asks that the copyright notice travel with the files. `OFL.txt` carries

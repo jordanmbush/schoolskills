@@ -1,0 +1,145 @@
+---
+import Content from "@/layouts/Content.astro";
+import type { SheetMetrics } from "@/components/sheet/metrics";
+import { TracedRow } from "@/components/sheet/Traced";
+import { inch, pt } from "@/components/sheet/units";
+import { WrittenRow, type WrittenCell } from "@/components/sheet/Written";
+import { PRINT } from "@/engine/sheets/hands/print";
+import { contentBox } from "@/engine/sheets/layout";
+import { DEFAULT_PAPER, marginOf, pageSize } from "@/engine/sheets/paper";
+import type { Rule, TraceStyle } from "@/engine/sheets/types";
+import "@/styles/sheet.css";
+
+/**
+ * The specimen of a hand: every glyph it has, in every style, on every
+ * ruling, with the outline face's dotted row under it for the eye to compare
+ * (docs/printables.md §25).
+ *
+ * A development page and nothing else. It exists so a letter can be judged
+ * on the paper it will print on before the next one is drawn, and a
+ * production build has no paths for it, so it is never a route, never in the
+ * sitemap and never crawled.
+ */
+export function getStaticPaths() {
+  return import.meta.env.PROD ? [] : [{ params: { hand: "print" } }];
+}
+
+const hand = PRINT;
+const page = pageSize(DEFAULT_PAPER);
+const metrics: SheetMetrics = {
+  box: contentBox(DEFAULT_PAPER),
+  fontPt: 12,
+  font: "print",
+  answers: false,
+};
+
+const rules: Array<{ label: string; rule: Rule }> = [
+  {
+    label: "¾ inch, with a tail space",
+    rule: { style: "hand-3-4", midline: "dashed", descender: true },
+  },
+  {
+    label: "⅝ inch, with a tail space",
+    rule: { style: "hand-5-8", midline: "dashed", descender: true },
+  },
+  {
+    label: "½ inch, with a tail space",
+    rule: { style: "hand-1-2", midline: "dashed", descender: true },
+  },
+  {
+    label: "⅜ inch, no tail space",
+    rule: { style: "hand-3-8", midline: "dashed" },
+  },
+  { label: "Wide ruled", rule: { style: "wide" } },
+];
+
+const letters = Object.keys(hand.glyphs);
+const styles: TraceStyle[] = ["solid", "dim", "hollow", "dotted", "dashed"];
+const words = ["gate", "tale"];
+
+const letterRow = (text: string): WrittenCell[] => [
+  ...styles.map((style) => ({ text, style, guides: style === "solid" })),
+  { text: "", style: "none" as const },
+];
+
+const wordRow = (text: string): WrittenCell[] => [
+  { text, style: "solid", guides: true },
+  { text, style: "dotted" },
+  { text, style: "dashed" },
+  { text, style: "hollow" },
+  { text: "", style: "none" },
+];
+---
+
+<Content
+  title={`Specimen: ${hand.name}`}
+  description="Every glyph of a hand in every style on every ruling."
+  world="paper"
+  noindex
+>
+  <header class="hero wrap no-print">
+    <p class="hero__eyebrow">
+      <span class="hero__world">The Print Shop</span>
+      Specimen
+    </p>
+    <h1 class="hero__title">{hand.name}</h1>
+    <p class="hero__lead">
+      {letters.length} glyph{letters.length === 1 ? "" : "s"}: {
+        letters.join(" ")
+      }. Each row is one letter in the five drawn styles and an empty place; the
+      model carries its start dots, arrows and stroke numbers. Under the words,
+      the same words in the outline face, dotted, for comparison.
+    </p>
+  </header>
+
+  <div class="sheet-frame">
+    <article
+      class="sheet"
+      data-font="print"
+      style={`--sheet-w:${inch(page.width)};--sheet-h:auto;--sheet-margin:${inch(marginOf(DEFAULT_PAPER))};--sheet-pt:${pt(12)}`}
+    >
+      {
+        rules.map(({ label, rule }) => (
+          <div class="specimen">
+            <h2 class="specimen__label">{label}</h2>
+            {letters.map((letter) => (
+              <WrittenRow
+                rule={rule}
+                metrics={metrics}
+                hand={hand}
+                cells={letterRow(letter)}
+              />
+            ))}
+            {words.map((word) => (
+              <WrittenRow
+                rule={rule}
+                metrics={metrics}
+                hand={hand}
+                cells={wordRow(word)}
+              />
+            ))}
+            <TracedRow
+              rule={rule}
+              metrics={metrics}
+              cells={[
+                ...words.map((text) => ({ text, style: "solid" as const })),
+                ...words.map((text) => ({ text, style: "dotted" as const })),
+                { text: "", style: "none" as const },
+              ]}
+            />
+          </div>
+        ))
+      }
+    </article>
+  </div>
+</Content>
+
+<style>
+  .specimen {
+    margin-bottom: 0.4in;
+  }
+  .specimen__label {
+    font: 600 11pt var(--font-body, system-ui, sans-serif);
+    margin: 0 0 0.1in;
+  }
+</style>

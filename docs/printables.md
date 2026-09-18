@@ -72,6 +72,7 @@ src/engine/sheets/
   layout.ts        how many problems fit on a page (pure arithmetic, no DOM)
   maths/*.ts       arithmetic, fractions, geometry, pre-algebra …
   writing/*.ts     tracing, copywork, cursive joins, penmanship
+  hands/*.ts       letters as strokes: the shape, and a generated hand each (§25)
   words/*.ts       spelling sheets, word search, ABC order, scrambles
   grammar/*.ts     the tagged sentence bank, and five views of its tags
   phonics/*.ts     sound inventories, constrained word generation, the seven
@@ -346,6 +347,8 @@ Start dots and directional arrows are the one thing this _can't_ derive — thos
 need per-glyph authored data (where the pen starts, which way it goes). That is
 real work for a real payoff and belongs in a later phase. Note that stroke
 order differs between teaching models, so it is per-font data, not per-letter.
+§25 is that later phase: a hand stores the strokes themselves, and the dot and
+the arrow fall out of the drawing.
 
 ### The fonts
 
@@ -2216,3 +2219,143 @@ added to the table is on the page.
   Educational Psychology_, 91(1), 44–49.
 - Santangelo, T., & Graham, S. (2016). A comprehensive meta-analysis of
   handwriting instruction. _Educational Psychology Review_, 28(2), 225–265.
+
+---
+
+## 25 · Hands — letters as strokes, not outlines
+
+§6 gets five appearances out of one ordinary font by stroking the glyph
+instead of filling it, and it says in its own second paragraph what that
+cannot do: a dash pattern on stroked text runs **along the outline**, so a
+dotted stem is two dotted lines a stem apart, and a start dot or an arrow
+needs data no font carries. That was the right trade in PRINT15. It stops
+being one the moment the sheet is judged against what a tracing worksheet
+actually looks like — one thin broken line down the middle of every stroke —
+because no amount of tuning the outline weight gets there. The outline is
+the wrong shape.
+
+A **hand** is the other shape: each letter stored as the strokes a pen makes,
+open paths in writing order, in units of the hand's own em. The renderer
+strokes them, so the same drawing is the solid model at one weight, the thin
+`hollow` line at half of it, and the dotted or dashed trace with a dash array
+— exactly as the stroke patterns of §24 already are, because a letter _is_
+two or three of those patterns joined. What the drawing knows that an outline
+never did is where the pen goes down and which way it sets off: the first
+point of the first stroke is the start dot, the tangent a little way along is
+the arrow, and the index is the stroke number. §6 called those "a later
+phase". They are the free half of this one.
+
+### Why not a font
+
+Every font format a browser draws is closed outlines. The single-line fonts
+that exist for plotters and engravers say so on their own pages: browsers
+cannot render them, and the closed-outline builds they ship for the web are
+the outline problem again. The one way a font can print a thin dashed
+letter is to bake each dash in as its own tiny contour — a font per style per
+hand, twelve files for the site as it stands, the dash pitch frozen into the
+em, and still no start dot. A hand is one drawing per letter and every style
+from it, and if a real font is ever wanted (a heading set in the hand, say),
+it is a script over the same data: stroke-expand the paths into outlines.
+That direction is cheap. The other one, outlines back to centrelines, is
+the thing this section exists to avoid doing by hand twice.
+
+### What a hand is
+
+`src/engine/sheets/hands/hand.ts` states the shape and `hands/print.ts` is
+the first one. Three numbers set the geometry and they are chosen, not
+measured: the tallest letter reaches `ascent` (1000), a small letter reaches
+`xHeight` (500) and a tail reaches `descent` (−500). That is a ruling, not a
+paragraph — the handwriting rule puts its midline at exactly half the
+writing space and its tail space at half again (§5) — so when a row sets
+`ascent` on the top line, the midline and the tail line land exactly too.
+§6 spends a paragraph on the overshoot every outline face shows against the
+midline; a hand drawn to the ruling has none.
+
+Every glyph carries an `advance` and its `strokes`, and each stroke is
+absolute path data in `M`, `L`, `C` and `Q` and nothing else. Four commands
+is a reader a test can cover whole (`glyphs.test.ts`), and it is the ingest's
+job to get there from whatever a drawing tool saved.
+
+A row of a hand is `WrittenRow` (`src/components/sheet/Written.tsx`), the
+third row a sheet writes on beside `TracedRow` and `StrokedRow`: same width,
+same one-repeat height, same `Ruling` under it, the same six styles with the
+same meaning. `glyphs.ts` beside it moves a stroke from hand units onto the
+paper in mil — the only change of coordinates — and walks a curve for the
+arrow.
+
+### How a hand is drawn
+
+The drawings are the source and the data module is generated from them.
+
+1. **`scripts/hand-template.mjs`** writes one SVG per glyph into
+   `art/hands/<hand>/`: the ruling, the outline of the face the hand is
+   traced over in two scales, a note, and an empty `strokes` layer to draw
+   in. Everything else is locked. Two outlines because the face was drawn to
+   a paragraph and the hand to a ruling: scaled so its x-height meets the
+   midline, the face's `l` stops short of the top line and its `g` short of
+   the tail line. So the body outline says what shape the letter is, and the
+   reach outline — the same outline with only its part above the midline or
+   below the baseline stretched — says how far the tall or hanging stroke
+   goes. A template is never rewritten over a drawing.
+2. **Draw**, in Inkscape or anything that saves SVG: one open path per pen
+   stroke, in the order the pen makes them, in that layer. Where on the
+   template the letter sits does not matter.
+3. **`scripts/hand-ingest.mjs`** reads every drawing in the directory into
+   `src/engine/sheets/hands/<hand>.ts`. Relative, shorthand and implicit
+   path forms become the four commands; layer and group transforms are
+   applied; y is turned over; the ink is moved so it starts one side bearing
+   in from the origin and the advance is its far edge plus the other. So
+   every letter in a hand is spaced by one rule and none by where it was
+   drawn. A closed path or an arc stops the run rather than being converted,
+   because each means a shape tool was used where the pen tool was meant. A
+   letter that does not reach about where its kind of letter should — the
+   top line for an ascender, the midline for a small letter — is a warning,
+   not a failure, since the drawing may be right and the table wrong.
+
+File names follow the UFO convention — `A_.svg` for a capital, `five.svg`
+for a numeral — because `a.svg` and `A.svg` are one file on a Mac
+(`scripts/hand/names.mjs`). The specimen at `/dev/<hand>` shows every glyph
+in every style on every ruling, with the outline face's dotted row under it,
+and is a development route only: a production build has no paths for it.
+
+### Provenance
+
+The print hand is traced over Andika's published UFO sources — the shapes
+are its shapes, made single-stroke — which makes the data a modified version
+of that face under the OFL. The generated module says so in its header, the
+hand carries its own name rather than a reserved one, and
+`public/fonts/LICENSE.md` records it beside the fonts. The cursive hands to
+come will be traced over Playwrite's sources the same way, which is what
+makes them the researched models rather than a guess at them.
+
+### What this costs
+
+Two things the outline faces gave for nothing.
+
+**Joins.** §6 makes a point of never deciding which cursive letters join —
+the font's `calt` table sees the pair and the repo does not. A cursive hand
+will decide: each small letter records where it exits and at what height,
+and the round letters get a second entry form for after a midline exit. The
+`breaks` family in `joins.ts` stops being the font's answer and becomes this
+repo's. That is real, and it is the price of a join drawn as one line.
+
+**Coverage.** A face has every character; a hand has the ones somebody drew.
+`drawable(hand, text)` says whether a text can be written in a hand, and a
+family that sets text in one falls back to the outline row for what it
+cannot. Until the print hand has its alphabet, no sheet sets anything in it;
+the spike proves the pipeline on five letters and the specimen is where the
+next one is judged.
+
+### Phases
+
+| Phase | What                                                       | Where it lands                       |
+| ----- | ---------------------------------------------------------- | ------------------------------------ |
+| 0     | Template, ingest, renderer, five print letters, specimen   | this section                         |
+| 1     | The print alphabet, numerals and the six punctuation marks | `hands/print.ts`, handwriting family |
+| 2     | The looped cursive small letters, with joins               | `hands/cursive.ts`, `joins.ts`       |
+| 3     | Its capitals                                               |                                      |
+| 4     | The other two cursive models                               |                                      |
+| 5     | A font generated from the data, if one is ever wanted      | a script, not a design               |
+
+A face without a hand keeps the outline row, so print ships before any
+cursive is drawn and nothing waits on the whole table.

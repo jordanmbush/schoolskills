@@ -449,6 +449,26 @@
   opacity: 28%;
 }
 
+/* ── Hands (§25) ────────────────────────────────────────────────────────────
+   The guides on a model letter: a filled start dot, an open arrowhead, and
+   a stroke number in the site's own face rather than the sheet's, so it
+   reads as a label on the letter and not as part of it. */
+.sheet__guide {
+  fill: currentcolor;
+}
+
+.sheet__guide-arrow {
+  fill: none;
+  stroke: currentcolor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.sheet__guide-number {
+  font-family: var(--font-body, system-ui, sans-serif);
+  font-weight: 700;
+}
+
 /* ── Problems ───────────────────────────────────────────────────────────────
    `break-inside: avoid` here and on every other row-shaped thing below is not
    a nicety. Print is the whole of the output path (§10), so the preview has to
