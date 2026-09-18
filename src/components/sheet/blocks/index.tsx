@@ -38,6 +38,7 @@ import { Problems } from "./Problems";
 import { Rules } from "./Rules";
 import { Shapes } from "./Shapes";
 import { Spacer } from "./Spacer";
+import { Strokes } from "./Strokes";
 import { Table } from "./Table";
 import { Trace } from "./Trace";
 import { WordSearch } from "./WordSearch";
@@ -57,6 +58,8 @@ export function BlockView({
       return <Rules block={block} metrics={metrics} />;
     case "trace":
       return <Trace block={block} metrics={metrics} />;
+    case "strokes":
+      return <Strokes block={block} metrics={metrics} />;
     case "copywork":
       return <Copywork block={block} metrics={metrics} />;
     case "grid":

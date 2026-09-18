@@ -27,15 +27,17 @@ import type {
 
 import { MAX_TEXT, copyworkSource } from "./copywork";
 import {
-  DEFAULT_HAND_RULE,
   HANDWRITING_SHEET,
-  MAX_REPEATS,
   fontOf,
   handwritingLayout,
   instructionOf,
+} from "./handwriting";
+import {
+  DEFAULT_HAND_RULE,
+  MAX_REPEATS,
   traceStyles,
   wrapPassage,
-} from "./handwriting";
+} from "./rows";
 import { JOIN_FAMILIES, joinPairs } from "./joins";
 
 /**

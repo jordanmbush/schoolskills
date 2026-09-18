@@ -170,6 +170,11 @@ export const SHEET_FAMILIES: readonly SheetFamily[] = [
       import("./writing/handwriting").then((m) => m.HANDWRITING_SHEET),
   },
   {
+    id: "penmanship",
+    label: "Penmanship",
+    load: () => import("./writing/penmanship").then((m) => m.PENMANSHIP_SHEET),
+  },
+  {
     id: "memory",
     label: "Memory verse",
     load: () => import("./writing/memory").then((m) => m.MEMORY_SHEET),

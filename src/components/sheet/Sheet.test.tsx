@@ -46,6 +46,7 @@ import type {
   SheetConfig,
   SheetFont,
   TimeConfig,
+  StrokePattern,
   TraceStyle,
   WordsConfig,
 } from "@/engine/sheets/types";
@@ -2341,6 +2342,68 @@ describe("trace styles", () => {
     expect(styles).toContain(".sheet__glyph--dotted");
     expect(styles.slice(0, styles.indexOf("── Problems"))) //
       .not.toContain("background");
+  });
+});
+
+/* ── Stroke rows (§24) ─────────────────────────────────────────────────────
+   A pattern rather than a letterform on the ruling: one path per cell that
+   is drawn, in the same five appearances, and nothing where the child is on
+   their own.                                                                */
+
+describe("stroke rows", () => {
+  const strokedIn = (cells: TraceStyle[], pattern: StrokePattern = "loops") =>
+    render(
+      sheet({
+        blocks: [
+          {
+            kind: "strokes",
+            rule: { style: "hand-5-8", midline: "dashed", descender: true },
+            rows: [{ pattern, cells }],
+          },
+        ],
+      }),
+    );
+
+  const paths = (html: string) =>
+    [
+      ...html.matchAll(
+        /<path class="sheet__stroke sheet__stroke--(\w+)"([^>]*)>/g,
+      ),
+    ].map((match) => ({ style: match[1], attrs: match[2] }));
+
+  it("draws one path per cell, and none where the child is on their own", () => {
+    const drawn = paths(strokedIn(["solid", "dotted", "none"]));
+    expect(drawn.map((path) => path.style)).toEqual(["solid", "dotted"]);
+    // The dotted cell starts where the solid one ended: a third of the way
+    // along, on the baseline the loops begin on.
+    const starts = drawn.map((path) => /d="M([\d.]+),(\d+)/.exec(path.attrs));
+    expect(Number(starts[0]?.[1])).toBe(0);
+    expect(Number(starts[1]?.[1])).toBeGreaterThan(0);
+    expect(starts[0]?.[2]).toBe(starts[1]?.[2]);
+  });
+
+  it("is five appearances of one line, as the letterforms are", () => {
+    const looks = new Map(
+      paths(strokedIn(["solid", "dim", "hollow", "dotted", "dashed"])).map(
+        (path) => [path.style, path.attrs],
+      ),
+    );
+    expect(looks.size).toBe(5);
+    expect(looks.get("dotted")).toMatch(/stroke-dasharray="0 \d+"/);
+    expect(looks.get("dashed")).toMatch(/stroke-dasharray="[1-9]\d* \d+"/);
+    expect(looks.get("solid")).not.toContain("stroke-dasharray");
+    // Thin is the same line at half the weight.
+    const weight = (style: string) =>
+      Number(/stroke-width="([\d.]+)"/.exec(looks.get(style) ?? "")?.[1]);
+    expect(weight("hollow")).toBeCloseTo(weight("solid") / 2, 5);
+  });
+
+  it("draws the ruling under an empty row and says what the row is for", () => {
+    const html = strokedIn(["none"], "humps");
+    expect(paths(html)).toHaveLength(0);
+    expect(html).toContain("sheet__rule--base");
+    expect(html).toContain('aria-label="Humps: a line to carry on"');
+    expect(strokedIn(["solid"], "humps")).toContain('aria-label="Humps"');
   });
 });
 

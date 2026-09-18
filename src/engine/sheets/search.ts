@@ -107,6 +107,7 @@ export const TYPE_OF: Record<SheetConfig["kind"], SheetType> = {
   grammar: "worksheet",
   lesson: "lesson",
   handwriting: "practice",
+  penmanship: "practice",
   memory: "practice",
   phonics: "worksheet",
 };

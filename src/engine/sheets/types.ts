@@ -289,6 +289,31 @@ export type WordShape = { word: string; letters: LetterShape[] };
 /** One place on a tracing row: what is written there, and how it is drawn. */
 export type TraceCell = { text: string; style: TraceStyle };
 
+/**
+ * The strokes a letter is built from, drawn as a pattern across a ruling
+ * rather than as a letter (§24). Geometry, not text: the same row in every
+ * face, and the sheet a child does before there are letters to trace.
+ */
+export type StrokePattern =
+  | "lines"
+  | "slants"
+  | "circles"
+  | "zigzag"
+  | "waves"
+  | "humps"
+  | "cups"
+  | "loops"
+  | "tails";
+
+/**
+ * One row of a stroke drill: a pattern across one repeat of the ruling, cut
+ * into cells that walk the progression a tracing row walks — a solid model,
+ * then the pattern in the trace style, then empty ruling. The pattern's
+ * phase carries across the cells, so the row reads as one continuous line
+ * whose drawing changes as it goes.
+ */
+export type StrokeRow = { pattern: StrokePattern; cells: TraceStyle[] };
+
 export type TraceRow = {
   /**
    * The cells across one row, left to right: `A` in `["solid", "dotted",
@@ -603,6 +628,7 @@ export type Block =
     }
   | { kind: "rules"; rule: Rule; lines: number }
   | { kind: "trace"; rule: Rule; rows: TraceRow[] }
+  | { kind: "strokes"; rule: Rule; rows: StrokeRow[] }
   | { kind: "copywork"; text: string; rule: Rule; mode: TraceStyle }
   | { kind: "grid"; grid: GridSpec }
   | {
@@ -1920,6 +1946,76 @@ export type HandwritingConfig = SheetOptions & {
   translation?: TranslationId;
 };
 
+/* ── Penmanship ────────────────────────────────────────────────────────── */
+
+/**
+ * What a penmanship sheet works on (§24).
+ *
+ * A handwriting sheet teaches a letter. These take a child who can already
+ * form one and work on what makes a page of them readable: the strokes the
+ * letters are made of, the family a letter belongs to, how tall it stands
+ * against its neighbours, the space between words, judging their own work,
+ * and writing quickly without the writing coming apart.
+ */
+export type PenmanshipStyle =
+  "strokes" | "families" | "sizes" | "spacing" | "check" | "fluency";
+
+/**
+ * The letters that share a first stroke — see `writing/letterfamilies.ts`.
+ * Named for the stroke rather than for the letters in it, so the ids hold for
+ * capitals as well as small letters and for a joined hand as well as print;
+ * which letters fall into each is the hand's answer. Five names for four
+ * families a hand, because print has no loop and a joined hand has no
+ * straight slant.
+ */
+export type LetterFamily = "round" | "line" | "arch" | "slant" | "loop";
+
+/**
+ * What a timed sheet asks for: the alphabet in order from memory, which is the
+ * task the research measures fluency with, or a sentence copied over and over.
+ */
+export type FluencyTask = "alphabet" | "sentence";
+
+export type PenmanshipConfig = SheetOptions & {
+  kind: "penmanship";
+  style: PenmanshipStyle;
+  /** As `HandwritingConfig.rule`: any ruling with a pitch, blank resolved. */
+  rule: Rule;
+  /** As `HandwritingConfig.trace`. Never drawn on a check or fluency sheet. */
+  trace: TraceStyle;
+  /**
+   * As `HandwritingConfig.repeats`. On a check sheet it is the model and the
+   * tries after it, because there the child judges the tries against it.
+   */
+  repeats: number;
+  progression?: boolean;
+  /**
+   * `strokes` only: how many rows each pattern gets. The first walks the
+   * progression; the rest are the child's own. Absent is one.
+   */
+  lines?: number;
+  /** `strokes` only. Absent is every pattern, in the order they are taught. */
+  patterns?: StrokePattern[];
+  /** `families` only. Absent is every family, one after another. */
+  family?: LetterFamily;
+  /**
+   * `families` and `check`. A family is a set of one case, so `both` is read
+   * as small letters there; a check sheet writes the pair.
+   */
+  letters?: LetterCase;
+  /** `check` only: a parent's own words in place of the alphabet. */
+  words?: string[];
+  /**
+   * `spacing` and `fluency`: the parent's own sentences, one a line. A
+   * spacing sheet sets every line; a timed sheet copies the first.
+   */
+  text?: string;
+  /** `fluency` only. Absent is the alphabet. */
+  task?: FluencyTask;
+  /** `fluency` only: how long the timer runs, in whole minutes. */
+  minutes?: number;
+};
+
 /* ── Memory work ───────────────────────────────────────────────────────── */
 
 /**
@@ -2050,6 +2146,7 @@ export type SheetConfig =
   | GrammarConfig
   | LessonConfig
   | HandwritingConfig
+  | PenmanshipConfig
   | MemoryConfig
   | PhonicsConfig;
 

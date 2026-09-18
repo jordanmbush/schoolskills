@@ -356,6 +356,18 @@ const DEFAULTS: Record<string, SheetConfig> = {
     passage: COPYWORK_PASSAGE,
     text: PASSAGE,
   },
+  penmanship: {
+    ...BASE,
+    kind: "penmanship",
+    // The strokes, because they are the sheet for the widest range of ages,
+    // and every pattern in teaching order with a second line to carry each on.
+    style: "strokes",
+    rule: { style: "hand-5-8", midline: "dashed", descender: true },
+    trace: "dotted",
+    repeats: 3,
+    lines: 2,
+    letters: "lower",
+  },
   memory: {
     ...BASE,
     kind: "memory",

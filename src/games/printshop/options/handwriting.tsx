@@ -18,7 +18,7 @@
  * page's presentation, and a joins sheet resolves one for itself whatever is
  * picked there (`fontOf`).
  */
-import { MAX_REPEATS } from "@/engine/sheets/writing/handwriting";
+import { MAX_REPEATS } from "@/engine/sheets/writing/rows";
 import { JOIN_FAMILIES } from "@/engine/sheets/writing/joins";
 import type {
   HandwritingConfig,

@@ -71,7 +71,7 @@ src/engine/sheets/
   paper.ts         page sizes, margins, ruling geometry — all in real units
   layout.ts        how many problems fit on a page (pure arithmetic, no DOM)
   maths/*.ts       arithmetic, fractions, geometry, pre-algebra …
-  writing/*.ts     tracing, copywork, cursive joins
+  writing/*.ts     tracing, copywork, cursive joins, penmanship
   words/*.ts       spelling sheets, word search, ABC order, scrambles
   grammar/*.ts     the tagged sentence bank, and five views of its tags
   phonics/*.ts     sound inventories, constrained word generation, the seven
@@ -565,7 +565,7 @@ reasoning in `Base.astro` shows this codebase already knows why that's a
 liability. Curate the slugs; generate the sheets.
 
 **What shipped (PRINT28), and the one decision inside it.** Ten year pages,
-Pre-K through 8th, over the nine subject hubs that were already there. The
+Pre-K through 8th, over the ten subject hubs that were already there. The
 decision that made them possible without inventing anything: **a grade is read
 off the sheets, never written onto them.** Every catalog entry already stated
 the ages it was drawn for — `Ages 8–11` on the division worksheet — so a year
@@ -591,7 +591,7 @@ thousand of them, each a near-duplicate of a page that is already indexed —
 this section's doorway-page rule arrived at from the other direction. A
 fragment is never sent anywhere, so a search is still shareable and
 bookmarkable while the indexable set stays exactly the nineteen curated pages:
-nine subject hubs and ten school years. The hub itself is unchanged HTML, so a
+ten subject hubs and ten school years. The hub itself is unchanged HTML, so a
 crawler and a visitor with no JavaScript get the whole catalog and no dead
 search box. `scripts/search-index-guard.mjs` fails the build if a row points at
 a page `dist/` doesn't have, or if a page `dist/` has is reachable from
@@ -788,6 +788,10 @@ problems from templates.
 **Handwriting.** Letter tracing, upper and lower, print and cursive · the
 trace → copy → independent progression on one sheet · words · sentences ·
 passages · cursive joins · number formation.
+
+**Penmanship** (§24). Pre-writing strokes and warm-up patterns, drawn rather
+than set in a font · letter families · tall, small and tail · finger spaces ·
+circle your best one · the alphabet against the clock.
 
 **Words.** Spelling: write it three times, ABC order, missing letters, word
 shapes, unscramble, word search, crossword, use it in a sentence · sight-word
@@ -2064,3 +2068,151 @@ decimal lessons — draw besides on:
   5.NBT.B.7, 6.NS.B.2 and 6.NS.B.3; Department for Education (2013),
   _National curriculum in England: mathematics programmes of study_, Years 4
   to 6.
+
+---
+
+## 24 · Penmanship — the page after the letters
+
+The handwriting family teaches a letter: trace it, copy it, write it. A child
+who can do that and still hands in a page nobody can read has a different
+problem, and the shelf that answers it is `engine/sheets/writing/penmanship.ts`,
+with its catalog at `/printables/penmanship`. It is a family of its own rather
+than five more handwriting styles because what a parent types is different —
+"pre-writing strokes", "finger spaces", "handwriting speed" — and because
+what is on the paper is chosen for a different reason. Handwriting asks what a
+letter looks like; penmanship asks what makes a page of them readable, and
+every scheme lists the same four answers: the shape of the letters, their
+size against each other, the space between words, and a consistent slant.
+Three of those are styles here. The fourth is not, for a reason given below.
+
+**Same row, shared once.** Every style writes on the trace → copy → write row
+the handwriting sheets use, so the row was moved out of handwriting.ts into
+`writing/rows.ts` — the progression, the packing, the cell that is empty
+where the child is on their own, the paging. Not for tidiness: handwriting.ts
+reaches the passage library through copywork, and every family is its own
+chunk (§3), so a penmanship module that imported it to draw a row of loops
+would have fetched Psalm 23 to do so.
+
+**What the evidence says, and what each style takes from it.** Handwriting
+instruction improves legibility and fluency, and improves the length and
+quality of what children write (Santangelo & Graham 2016); the finding that
+matters most here is that fluency is the lever. When forming a letter takes
+attention there is none left for the sentence, and how automatically a child
+writes the alphabet predicts how well they write a paragraph (Jones &
+Christensen 1999; Graham 2010). So the shelf is built for the child whose
+writing is neat only when it is slow, and each style is one thing that
+evidence names:
+
+- **Strokes** (`strokes`). The nine patterns every letter is built from — lines,
+  slants, circles, zigzags, waves, humps, cups, loops and tail loops — one to
+  a row, in the order a child can copy them: a vertical line at about two, a
+  circle at three, a diagonal only after four (Beery & Beery 2010). Two
+  things this sheet is and one it is not. It is the pre-writing page for a
+  child with no letters yet, and it is the warm-up penmanship copybooks
+  opened every lesson with, because a stroke drawn evenly to the end of a
+  line at speed is what control at speed looks like. It is not the lesson:
+  the meta-analysis found that motor practice on its own did not move
+  legibility, so a strokes page is what comes before a letter page and never
+  instead of one. The patterns are geometry rather than text
+  (`components/sheet/strokes.ts`), which is what a pre-writing stroke has to
+  be — the same in every face — and what lets a row be cut into cells that
+  change from solid to dotted to nothing without the line breaking: each
+  continuous pattern ends every repeat on the line it began on, so a cell
+  that starts at the edge of the last one continues it in phase. The engine
+  knows one thing about the geometry, which is that a tail loop drops into
+  the descender space: on a ruling with no tail room it is left off rather
+  than drawn through the row below (`strokePatterns`). A pattern gets
+  `lines` rows, the first walking the progression and the rest the child's
+  own, and the ink is a pencil line clamped at both ends rather than a glyph
+  outline, because there is no fill for the stroke to be the edge of.
+- **Families** (`families`). The alphabet grouped by the stroke a letter
+  starts with, a family to a row, because a child who can make that one
+  stroke well has every letter that starts with it, and because `b` and `d`
+  are confused less when each is met beside the letters it is built like.
+  The grouping is the hand's answer, not ours (`writing/letterfamilies.ts`):
+  print small letters fall into the four groups most primary schemes teach —
+  the letters that start like a `c`, the ones that start with a line down,
+  the ones that go down, back up and over, and the four made of slants —
+  while a joined hand goes by the stroke the pen enters with, and has a loop
+  family print lacks and no straight slant at all. Hence five ids for four
+  families a hand, and a family this hand has not got prints every family it
+  has rather than a title over nothing. Cursive capitals use the print
+  groups: no scheme groups them, and a capital is a capital.
+- **Sizes** (`sizes`). Tall, small and tail letters, a zone to a row, then six
+  words with more than one height in each (`ZONE_WORDS`), because the place
+  a letter's size goes wrong is inside a word rather than on a row of one
+  letter. `f` is tall: on a printed sheet it is, and its tail in a joined
+  hand is the one exception a parent can see for themselves.
+- **Spacing** (`spacing`). Sentences of short words, each written down the
+  page as a model, a trace and an empty line, with a middle dot in the model
+  where every space is — the finger a teacher puts between two words, drawn.
+  The dot stands _in place of_ the space rather than beside it so the model
+  is exactly as long as the rows it is traced on and sets at the same size,
+  and it is on the solid model only: a child tracing a dotted sentence would
+  trace the dot too, and a dot between every word is not the habit being
+  taught. The five default sentences are all eighteen characters or under,
+  which is what a ⅝ rule holds on Letter paper; a sentence about spaces has
+  to sit on one line, or the break at the margin is the widest space on the
+  page.
+- **Check** (`check`). A model, then the child's own tries, then a
+  judgement: "circle the one that looks most like the model". Self-evaluation
+  is the step that turns repetition into practice — it was in the lessons
+  that moved first-graders' handwriting and their composition with it
+  (Graham, Harris & Fink 2000), and writing from a studied model rather than
+  over one is the condition that transferred best in the treatment study
+  before it (Berninger et al. 1997). So this style ignores the trace setting:
+  the tries are never dotted, never fewer than one, and the instruction
+  counts them.
+- **Fluency** (`fluency`). The alphabet in order from memory against a timer,
+  which is the task the research measures handwriting automaticity with
+  (Berninger, Mizokawa & Bragg 1991), or a sentence copied over and over.
+  The model once at the top, empty ruling to the foot, and a box for the
+  count. One page and never more, which is the one place this shelf departs
+  from §4's rule that content runs on: the page _is_ the task, "as many as
+  you can" is measured against the paper in front of the child, and a second
+  sheet would be a second go. The count box is a `note` the layout took off
+  the height before it counted rows, so the last row and the box cannot both
+  claim the same inch.
+
+**Why there is no slant.** The fourth key is a consistent slant, and
+copybooks rule slant guides for it. The guides would have to match the model
+above them, and the five faces here all declare an italic angle of zero in
+their own `post` tables — which for the three cursive models is metadata
+rather than measurement, since the looped hand visibly leans. Guides at a
+guessed angle under a model drawn at another would teach the wrong one, so
+there are none until the lean is measured off the outlines the way the
+heights in `faces.ts` were. Until then the hub says the models are upright,
+which is true of the print face and honest about the rest.
+
+**The catalog.** Eight pages in three groups — pencil control, shape and
+size, the whole line — on both stocks, because the ruling is a measurement
+(§8). The slugs are the queries: pre-writing strokes, a handwriting warm-up,
+cursive loops and ovals, letter families, tall small and tail, finger spaces,
+circle your best letter, handwriting speed. The hub quotes the nine patterns
+from `STROKE_PATTERNS` the way the cursive hub quotes the joins, so a pattern
+added to the table is on the page.
+
+**Sources.**
+
+- Beery, K. E., & Beery, N. A. (2010). _The Beery-Buktenica Developmental
+  Test of Visual-Motor Integration_ (6th ed.). Pearson.
+- Berninger, V. W., Mizokawa, D. T., & Bragg, R. (1991). Theory-based
+  diagnosis and remediation of writing disabilities. _Journal of School
+  Psychology_, 29(1), 57–79.
+- Berninger, V. W., Vaughan, K. B., Abbott, R. D., Abbott, S. P., Rogan,
+  L. W., Brooks, A., Reed, E., & Graham, S. (1997). Treatment of handwriting
+  problems in beginning writers: transfer from handwriting to composition.
+  _Journal of Educational Psychology_, 89(4), 652–666.
+- Feder, K. P., & Majnemer, A. (2007). Handwriting development, competency,
+  and intervention. _Developmental Medicine & Child Neurology_, 49(4),
+  312–317.
+- Graham, S. (2010). Want to improve children's writing? Don't neglect their
+  handwriting. _American Educator_, 33(4), 20–27, 40.
+- Graham, S., Harris, K. R., & Fink, B. (2000). Is handwriting causally
+  related to learning to write? Treatment of handwriting problems in
+  beginning writers. _Journal of Educational Psychology_, 92(4), 620–633.
+- Jones, D., & Christensen, C. A. (1999). Relationship between automaticity
+  in handwriting and students' ability to generate written text. _Journal of
+  Educational Psychology_, 91(1), 44–49.
+- Santangelo, T., & Graham, S. (2016). A comprehensive meta-analysis of
+  handwriting instruction. _Educational Psychology Review_, 28(2), 225–265.

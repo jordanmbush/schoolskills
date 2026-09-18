@@ -432,6 +432,23 @@
   stroke: currentcolor;
 }
 
+/* ── Stroke patterns (§24) ──────────────────────────────────────────────────
+   A pattern is a path rather than text, so its appearances are stroke
+   properties. The weight and the dashes are attributes in mil (`units.ts`
+   says why); what is left for the stylesheet is the ink, the round ends that
+   make a zero-length dash a dot, and the one style that is a lighter shade. */
+
+.sheet__stroke {
+  fill: none;
+  stroke: currentcolor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.sheet__stroke--dim {
+  opacity: 28%;
+}
+
 /* ── Problems ───────────────────────────────────────────────────────────────
    `break-inside: avoid` here and on every other row-shaped thing below is not
    a nicety. Print is the whole of the output path (§10), so the preview has to

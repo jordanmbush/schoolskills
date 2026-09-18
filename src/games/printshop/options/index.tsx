@@ -80,6 +80,7 @@ const PANELS: Record<string, FamilyPanel> = {
   handwriting: panel(
     async () => (await import("./handwriting")).HandwritingPanel,
   ),
+  penmanship: panel(async () => (await import("./penmanship")).PenmanshipPanel),
   memory: panel(async () => (await import("./memory")).MemoryPanel),
 };
 

@@ -15,11 +15,8 @@ import type {
   TraceRow,
   TraceStyle,
 } from "@/engine/sheets/types";
-import {
-  MODELLED,
-  fontOf,
-  handwritingLayout,
-} from "@/engine/sheets/writing/handwriting";
+import { fontOf, handwritingLayout } from "@/engine/sheets/writing/handwriting";
+import { MODELLED } from "@/engine/sheets/writing/rows";
 import { JOIN_FAMILIES, joinPairs } from "@/engine/sheets/writing/joins";
 
 import { PAPER_SHEETS, STOCKS, pathFor as paperPath } from "./_catalog";

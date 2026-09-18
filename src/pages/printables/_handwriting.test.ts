@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 
 import { answerKey, buildSheet } from "@/engine/sheets";
 import type { HandwritingConfig, TraceRow } from "@/engine/sheets/types";
-import { MODELLED } from "@/engine/sheets/writing/handwriting";
+import { MODELLED } from "@/engine/sheets/writing/rows";
 
 import { PAPER_SHEETS, STOCKS, pathFor as paperPath } from "./_catalog";
 import { MATHS_SHEETS, pathFor as mathsPath } from "./_maths";
