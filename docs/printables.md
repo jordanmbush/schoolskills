@@ -2291,8 +2291,9 @@ them out; it takes placed paths in mil and returns positions, so the layout
 is tested without rendering.
 
 The arrow runs _beside_ the stroke, a gap off it, following its shape for
-about a quarter of the writing space, with a small filled head and a shaft
-that stops where the head begins. An arrow drawn on the stroke was tried
+about a quarter of the writing space — or the whole of a stroke shorter than
+that, so a crossbar gets one arrow along all of it rather than a stub — with
+a small filled head and a shaft that stops where the head begins. An arrow drawn on the stroke was tried
 first and rejected: a head on the line it points along is one more mark on a
 letter a child is trying to read, and on a bowl it looks like a bump in the
 curve. Beside the stroke it is what a teacher draws next to a letter on the

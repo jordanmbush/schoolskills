@@ -241,7 +241,9 @@ export function guidesOf(
   strokes.forEach((segments, index) => {
     const start = starts[index];
     const length = strokeLength(segments);
-    const span = Math.min(writing * ARROW.span, length * 0.5);
+    // A stroke shorter than the arrow gets an arrow its whole length — a
+    // crossbar with an arrow along all of it — rather than a stub.
+    const span = Math.min(writing * ARROW.span, length);
     if (span < head.length * 1.5) {
       const spots = byTheDot(start).map((at, rank) => ({
         at,
@@ -253,7 +255,7 @@ export function guidesOf(
       return;
     }
 
-    const first = Math.min(writing * ARROW.from, length * 0.25);
+    const first = Math.min(writing * ARROW.from, length - span);
     const farness = (line: Point[]) =>
       line.reduce((sum, p) => sum + distance(p, centre), 0) / line.length;
 
