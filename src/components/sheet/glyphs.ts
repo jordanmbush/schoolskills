@@ -67,7 +67,7 @@ export const pathOf = (segments: Segment[]): string =>
     .map((segment) => `${segment.type} ${segment.points.join(" ")}`)
     .join(" ");
 
-type Point = { x: number; y: number };
+export type Point = { x: number; y: number };
 
 const lerp = (a: Point, b: Point, t: number): Point => ({
   x: a.x + (b.x - a.x) * t,
@@ -138,6 +138,38 @@ export function along(
   const t = span === 0 ? 0 : (wanted - a.at) / span;
   const point = lerp(a, b, t);
   return { ...point, angle: Math.atan2(b.y - a.y, b.x - a.x) };
+}
+
+/**
+ * A run of points alongside the stroke: the stretch from `from` to `to`
+ * along it, moved `gap` to one side. `side` is which — the two are mirror
+ * images, and which one is "outside" a letter is the caller's question.
+ * What a direction arrow is drawn from (§25).
+ */
+export function beside(
+  segments: Segment[],
+  from: number,
+  to: number,
+  gap: number,
+  side: 1 | -1,
+  samples = 12,
+): Point[] {
+  const total = strokeLength(segments);
+  if (total <= 0) return [];
+  const a = Math.min(Math.max(from, 0), total);
+  const b = Math.min(Math.max(to, a), total);
+  // A stretch of no length is one point, which is what a caller asking for
+  // "the spot beside the stroke at `from`" wants.
+  const count = b > a ? samples : 0;
+  const out: Point[] = [];
+  for (let i = 0; i <= count; i += 1) {
+    const at = along(segments, a + (count === 0 ? 0 : ((b - a) * i) / count));
+    out.push({
+      x: tenth(at.x - side * gap * Math.sin(at.angle)),
+      y: tenth(at.y + side * gap * Math.cos(at.angle)),
+    });
+  }
+  return out;
 }
 
 export const strokeLength = (segments: Segment[]): number => {

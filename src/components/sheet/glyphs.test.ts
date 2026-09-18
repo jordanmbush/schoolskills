@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   along,
   arrowhead,
+  beside,
   flatten,
   parseStroke,
   pathOf,
@@ -69,6 +70,40 @@ describe("walking a stroke", () => {
     expect(along(segments, 99)).toEqual({ x: 10, y: 0, angle: 0 });
     expect(along(segments, -5)).toEqual({ x: 0, y: 0, angle: 0 });
     expect(along(parseStroke("M 5 5"), 3)).toEqual({ x: 5, y: 5, angle: 0 });
+  });
+});
+
+describe("beside", () => {
+  it("runs parallel to a straight stroke, one gap off it", () => {
+    const line = parseStroke("M 0 0 L 100 0");
+    const right = beside(line, 20, 60, 5, 1, 4);
+    expect(right).toEqual([
+      { x: 20, y: 5 },
+      { x: 30, y: 5 },
+      { x: 40, y: 5 },
+      { x: 50, y: 5 },
+      { x: 60, y: 5 },
+    ]);
+    const left = beside(line, 20, 60, 5, -1, 4);
+    expect(left.every((p) => p.y === -5)).toBe(true);
+  });
+
+  it("clamps the stretch to the stroke and gives nothing for no length", () => {
+    const line = parseStroke("M 0 0 L 10 0");
+    expect(beside(line, -5, 50, 1, 1, 2).map((p) => p.x)).toEqual([0, 5, 10]);
+    // A stretch of no length is the one spot beside the stroke there.
+    expect(beside(line, 8, 4, 1, 1)).toEqual([{ x: 8, y: 1 }]);
+    expect(beside(parseStroke("M 3 3"), 0, 1, 1, 1)).toEqual([]);
+  });
+
+  it("follows a curve", () => {
+    // A quarter circle of radius 100 from (100, 0) round to (0, 100): the
+    // outside is further from the origin than the curve, the inside nearer.
+    const arc = parseStroke("M 100 0 C 100 55.2 55.2 100 0 100");
+    const outside = beside(arc, 0, 157, 10, -1, 6);
+    const inside = beside(arc, 0, 157, 10, 1, 6);
+    for (const p of outside) expect(Math.hypot(p.x, p.y)).toBeGreaterThan(105);
+    for (const p of inside) expect(Math.hypot(p.x, p.y)).toBeLessThan(95);
   });
 });
 

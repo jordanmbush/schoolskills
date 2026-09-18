@@ -84,6 +84,9 @@ describe("WrittenRow", () => {
     );
     expect(model).toContain(">1</text>");
     expect(model).toContain(">2</text>");
+    // The stem is long enough for an arrow beside it; so is the crossbar.
+    expect(model.match(/sheet__guide-line/g)).toHaveLength(2);
+    expect(model.match(/sheet__guide-arrow/g)).toHaveLength(2);
     expect(render([{ text: "t", style: "dotted" }])).not.toContain("<circle");
   });
 

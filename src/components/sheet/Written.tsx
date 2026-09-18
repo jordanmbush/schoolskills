@@ -25,15 +25,8 @@ import { rulePitch, writingSpace } from "@/engine/sheets/paper";
 import type { Rule, TraceStyle } from "@/engine/sheets/types";
 
 import { Ruling } from "./Ruling";
-import {
-  along,
-  arrowhead,
-  parseStroke,
-  pathOf,
-  placeStroke,
-  strokeLength,
-  type Segment,
-} from "./glyphs";
+import { parseStroke, pathOf, placeStroke } from "./glyphs";
+import { guidesOf } from "./guides";
 import type { SheetMetrics } from "./metrics";
 import { letterInk, type StrokeInk } from "./strokes";
 import { inch } from "./units";
@@ -45,26 +38,6 @@ export type WrittenCell = {
   guides?: boolean;
 };
 
-/** How far along a stroke its arrow sits, as a share of the writing space. */
-const ARROW_AT = 0.3;
-
-/** The middle of a letter's ink, for placing its stroke numbers outside it. */
-function centreOf(strokes: Segment[][]): { x: number; y: number } {
-  const points = strokes.flat().flatMap((segment) => {
-    const out: Array<[number, number]> = [];
-    for (let i = 0; i < segment.points.length; i += 2) {
-      out.push([segment.points[i], segment.points[i + 1]]);
-    }
-    return out;
-  });
-  const xs = points.map((p) => p[0]);
-  const ys = points.map((p) => p[1]);
-  return {
-    x: (Math.min(...xs) + Math.max(...xs)) / 2,
-    y: (Math.min(...ys) + Math.max(...ys)) / 2,
-  };
-}
-
 function Guides({
   strokes,
   ink,
@@ -74,70 +47,37 @@ function Guides({
   ink: StrokeInk;
   writing: number;
 }) {
-  const dot = ink.width * 1.3;
-  const head = { length: ink.width * 4.5, width: ink.width * 4 };
-  const numeral = Math.round(writing * 0.16);
   // Already on the paper: these are the placed paths, in mil.
-  const parsed = strokes.map(parseStroke);
-  const centre = centreOf(parsed);
-  // The number sits on the far side of the dot from the letter's middle:
-  // outside the letter, where there is no ink for it to land on. Two strokes
-  // that start close together — the bowl and the stem of an `a` — would put
-  // their numbers on top of each other, so a number that lands within a
-  // numeral of an earlier one, or of any stroke's start dot, is pushed a
-  // numeral further out.
-  const starts = parsed.map((segments) => along(segments, 0));
-  const numbers: Array<{ x: number; y: number }> = [];
-  for (const start of starts) {
-    const away = Math.atan2(start.y - centre.y, start.x - centre.x);
-    let back = numeral * 0.8;
-    let at = { x: 0, y: 0 };
-    for (let tries = 0; tries < 4; tries += 1) {
-      at = {
-        x: start.x + back * Math.cos(away),
-        y: start.y + back * Math.sin(away),
-      };
-      const clear = [...numbers, ...starts.filter((s) => s !== start)].every(
-        (other) => Math.hypot(other.x - at.x, other.y - at.y) >= numeral * 0.8,
-      );
-      if (clear) break;
-      back += numeral * 0.8;
-    }
-    numbers.push(at);
-  }
+  const set = guidesOf(strokes.map(parseStroke), writing, ink);
   return (
     <>
-      {parsed.map((segments, index) => {
-        const start = along(segments, 0);
-        // The head sits a little way in from the start, clear of the dot; a
-        // stroke too short to hold both gets the dot alone.
-        const reach = Math.min(
-          writing * ARROW_AT,
-          strokeLength(segments) * 0.45,
-        );
-        const tip = along(segments, reach);
-        return (
-          <g key={index} className="sheet__guide">
-            <circle cx={start.x} cy={start.y} r={dot} />
-            {reach >= dot + head.length && (
+      {set.guides.map((guide, index) => (
+        <g key={index} className="sheet__guide">
+          <circle cx={guide.start.x} cy={guide.start.y} r={set.dot} />
+          {guide.head !== null && (
+            <>
               <path
-                className="sheet__guide-arrow"
-                d={arrowhead(tip.x, tip.y, tip.angle, head.length, head.width)}
+                className="sheet__guide-line"
+                d={guide.line
+                  .map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`)
+                  .join(" ")}
+                strokeWidth={set.shaft}
               />
-            )}
-            <text
-              className="sheet__guide-number"
-              x={numbers[index].x}
-              y={numbers[index].y}
-              fontSize={numeral}
-              textAnchor="middle"
-              dominantBaseline="central"
-            >
-              {index + 1}
-            </text>
-          </g>
-        );
-      })}
+              <path className="sheet__guide-arrow" d={guide.head} />
+            </>
+          )}
+          <text
+            className="sheet__guide-number"
+            x={guide.number.x}
+            y={guide.number.y}
+            fontSize={set.numeral}
+            textAnchor="middle"
+            dominantBaseline="central"
+          >
+            {index + 1}
+          </text>
+        </g>
+      ))}
     </>
   );
 }
@@ -164,7 +104,10 @@ export function WrittenRow({
   const scale = writing / hand.ascent;
   const ink = letterInk(writing);
   const cell = cells.length > 0 ? Math.floor(width / cells.length) : width;
-  const inset = ink.width * 2;
+  // A model with guides needs room beside its ink for an arrow and a number;
+  // any other cell only needs its letters off the cell's edge.
+  const insetOf = (entry: WrittenCell) =>
+    entry.guides ? Math.max(ink.width * 2, writing * 0.22) : ink.width * 2;
 
   const said = [...new Set(cells.map((entry) => entry.text))]
     .filter((text) => text !== "")
@@ -183,6 +126,7 @@ export function WrittenRow({
       {cells.map((entry, index) => {
         if (entry.style === "none" || entry.text === "") return null;
         const units = measure(hand, entry.text);
+        const inset = insetOf(entry);
         const fitted =
           units > 0 ? Math.min(scale, (cell - 2 * inset) / units) : scale;
         let x = index * cell + inset;
