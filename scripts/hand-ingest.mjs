@@ -4,11 +4,13 @@
  *
  * Every `art/hands/<hand>/*.svg` is a template from `hand-template.mjs` with
  * strokes drawn into its `strokes` layer, and this turns the lot into one
- * generated module, `src/engine/sheets/hands/<hand>.ts`: a glyph per file,
- * a stroke per path, in the order the paths sit in the file — which is the
- * order they were drawn, and the order the pen is meant to make them. What
- * one drawing becomes is `scripts/hand/drawing.mjs`; this is the walk over
- * the directory and the write.
+ * generated module, `src/engine/sheets/hands/<hand>.ts`: a glyph per
+ * character, a stroke per path, in the order the paths sit in the file —
+ * which is the order they were drawn, and the order the pen is meant to
+ * make them. What one drawing becomes is `scripts/hand/drawing.mjs`, and
+ * how the two drawings of a letter taught two ways fold into one glyph is
+ * `scripts/hand/forms.mjs`; this is the walk over the directory and the
+ * write.
  *
  * Usage:
  *   node scripts/hand-ingest.mjs --hand print
@@ -20,6 +22,7 @@ import { fileURLToPath } from "node:url";
 import prettier from "prettier";
 
 import { readDrawing } from "./hand/drawing.mjs";
+import { assemble } from "./hand/forms.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -62,16 +65,14 @@ async function main() {
   const hand = JSON.parse(readFileSync(join(dir, "hand.json"), "utf8"));
 
   const warnings = [];
-  const glyphs = {};
   const files = readdirSync(dir)
     .filter((file) => file.endsWith(".svg"))
     .sort();
   if (files.length === 0) throw new Error(`${dir}: no drawings`);
-  for (const file of files) {
-    const svg = readFileSync(join(dir, file), "utf8");
-    const { character, glyph } = readDrawing(hand, svg, file, warnings);
-    glyphs[character] = glyph;
-  }
+  const drawings = files.map((file) =>
+    readDrawing(hand, readFileSync(join(dir, file), "utf8"), file, warnings),
+  );
+  const glyphs = assemble(hand, drawings, warnings);
 
   const target = join(ROOT, "src", "engine", "sheets", "hands", `${id}.ts`);
   const options = (await prettier.resolveConfig(target)) ?? {};
@@ -82,7 +83,8 @@ async function main() {
   writeFileSync(target, source);
 
   for (const warning of warnings) console.warn(`warning: ${warning}`);
-  const count = `${files.length} glyph${files.length === 1 ? "" : "s"}`;
+  const total = Object.keys(glyphs).length;
+  const count = `${total} glyph${total === 1 ? "" : "s"} from ${files.length} drawing${files.length === 1 ? "" : "s"}`;
   const noted = warnings.length
     ? ` (${warnings.length} warning${warnings.length === 1 ? "" : "s"})`
     : "";

@@ -138,3 +138,35 @@ describe("expectedReach", () => {
     expect(expectedReach(HAND, ".")).toBeNull();
   });
 });
+
+describe("readDrawing, for a letter drawn in more than one form", () => {
+  const hand = { ...HAND, forms: { t: ["curved", "straight"] } };
+  const stem = `    <path d="M 400 400 L 400 1150"/>`;
+
+  it("reads the form off the drawing's id", () => {
+    const { character, form } = readDrawing(
+      hand,
+      template("t.straight", stem),
+      "t.straight.svg",
+    );
+    expect(character).toBe("t");
+    expect(form).toBe("straight");
+    expect(
+      readDrawing(hand, template("l", stem), "l.svg").form,
+    ).toBeUndefined();
+  });
+
+  it("refuses a form the hand does not list, and a listed letter drawn without one", () => {
+    expect(() =>
+      readDrawing(hand, template("t.curly", stem), "t.curly.svg"),
+    ).toThrow(/t\.curly\.svg: "curly" is not a form/);
+    expect(() =>
+      readDrawing(hand, template("l.curved", stem), "l.curved.svg"),
+    ).toThrow(
+      /l\.curved\.svg: hand\.json does not list a "curved" form of "l"/,
+    );
+    expect(() => readDrawing(hand, template("t", stem), "t.svg")).toThrow(
+      /t\.svg: "t" is drawn in more than one form; name this one t\.curved\.svg/,
+    );
+  });
+});

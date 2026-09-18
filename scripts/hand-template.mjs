@@ -23,7 +23,10 @@
  *   node scripts/hand-template.mjs --hand print --ufo path/to/Andika-Regular.ufo a e g l t
  *
  * Glyphs are given as characters (`a`, `A`, `5`) or as their file stems
- * (`A_`, `five`) — see `scripts/hand/names.mjs`. With none given, every
+ * (`A_`, `five`) — see `scripts/hand/names.mjs`. A letter the hand draws in
+ * more than one form gets a template per form, named for it (`t.curved.svg`,
+ * `t.straight.svg`), each over the outline of that form where the face has
+ * one; `t.straight` alone asks for just the one. With none given, every
  * character the names table knows is written.
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -31,7 +34,8 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { fontInfo, readContents, readGlyph } from "./hand/glif.mjs";
-import { CHARACTERS, SIL_NAMES, STEMS } from "./hand/names.mjs";
+import { splitId } from "./hand/forms.mjs";
+import { CHARACTERS, SIL_FORMS, SIL_NAMES, STEMS } from "./hand/names.mjs";
 import { bounds, serialise } from "./hand/path.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -105,7 +109,7 @@ function layer(id, label, locked, body, extra = "") {
   return `  <g inkscape:groupmode="layer" id="${id}" inkscape:label="${label}"${lock}${extra}>\n${body}\n  </g>`;
 }
 
-function template({ hand, character, stem, glyph, source }) {
+function template({ hand, character, id, glyph, source }) {
   const height = hand.ascent - hand.descent + 2 * PAD;
   const originX = PAD;
   const baselineY = PAD + hand.ascent;
@@ -175,7 +179,7 @@ function template({ hand, character, stem, glyph, source }) {
   }
 
   const notes = [
-    `    <text x="${originX}" y="40" font-family="sans-serif" font-size="30" fill="#1f3a5f">${hand.name} — ${stem}</text>`,
+    `    <text x="${originX}" y="40" font-family="sans-serif" font-size="30" fill="#1f3a5f">${hand.name} — ${id}</text>`,
     `    <text x="${originX}" y="76" font-family="sans-serif" font-size="22" fill="#5b7fa6">Draw in the "strokes" layer with the pen tool: one open path per pen stroke, in the order the pen makes them. Grey is the shape; red dashes are how far the tall or hanging part goes.</text>`,
     `    <text x="${originX}" y="${height - 20}" font-family="sans-serif" font-size="22" fill="#5b7fa6">Ink starts wherever you like: the ingest sets the side bearings.</text>`,
   ].join("\n");
@@ -184,7 +188,7 @@ function template({ hand, character, stem, glyph, source }) {
     `<?xml version="1.0" encoding="UTF-8"?>`,
     `<svg xmlns="http://www.w3.org/2000/svg" xmlns:inkscape="${INKSCAPE}" xmlns:sodipodi="${SODIPODI}"`,
     `  width="${width / 2}" height="${height / 2}" viewBox="0 0 ${width} ${height}"`,
-    `  data-hand="${hand.id}" data-glyph="${stem}" data-units="${hand.units}" data-origin="${originX}" data-baseline="${baselineY}">`,
+    `  data-hand="${hand.id}" data-glyph="${id}" data-units="${hand.units}" data-origin="${originX}" data-baseline="${baselineY}">`,
     `  <sodipodi:namedview id="namedview" inkscape:current-layer="strokes" inkscape:document-units="px"/>`,
     layer("ruling", "ruling", true, `${grid.join("\n")}\n${lines}`),
     outlines +
@@ -196,6 +200,21 @@ function template({ hand, character, stem, glyph, source }) {
   ].join("\n");
 }
 
+/**
+ * What was asked for as `{ stem, form }` pairs: a bare letter the hand draws
+ * in more than one form is every form of it, and `t.straight` is that one.
+ */
+function wanted(hand, given) {
+  const ids = given.length > 0 ? given : Object.keys(CHARACTERS);
+  return ids.flatMap((one) => {
+    const { stem: named, form } = splitId(one);
+    const stem = STEMS[named] ?? named;
+    const forms = hand.forms?.[CHARACTERS[stem]];
+    if (form !== undefined || !forms) return [{ stem, form }];
+    return forms.map((each) => ({ stem, form: each }));
+  });
+}
+
 function main() {
   const { hand: id, ufo, glyphs } = args(process.argv.slice(2));
   const dir = join(ROOT, "art", "hands", id);
@@ -205,33 +224,35 @@ function main() {
   const source = ufo
     ? { contents: readContents(ufo), xHeight: fontInfo(ufo, "xHeight") }
     : null;
-  const wanted =
-    glyphs.length > 0
-      ? glyphs.map((given) => STEMS[given] ?? given)
-      : Object.keys(CHARACTERS);
 
-  for (const stem of wanted) {
+  for (const { stem, form } of wanted(hand, glyphs)) {
     const character = CHARACTERS[stem];
+    const name = form === undefined ? stem : `${stem}.${form}`;
     if (character === undefined) {
-      console.error(`skipped ${stem}: not a glyph the names table knows`);
+      console.error(`skipped ${name}: not a glyph the names table knows`);
       continue;
     }
-    const file = join(dir, `${stem}.svg`);
+    if (form !== undefined && !hand.forms?.[character]?.includes(form)) {
+      console.error(
+        `skipped ${name}: hand.json lists no "${form}" ${character}`,
+      );
+      continue;
+    }
+    const file = join(dir, `${name}.svg`);
     if (existsSync(file)) {
-      console.log(`kept    ${stem}.svg (already drawn)`);
+      console.log(`kept    ${name}.svg (already drawn)`);
       continue;
     }
     let glyph = null;
     if (source) {
-      glyph = readGlyph(ufo, SIL_NAMES[character], source.contents);
+      const outline = SIL_FORMS[`${character}.${form}`] ?? SIL_NAMES[character];
+      glyph = readGlyph(ufo, outline, source.contents);
       if (glyph === null) {
-        console.error(
-          `no outline for ${stem}: ${SIL_NAMES[character]} is not in ${ufo}`,
-        );
+        console.error(`no outline for ${name}: ${outline} is not in ${ufo}`);
       }
     }
-    writeFileSync(file, template({ hand, character, stem, glyph, source }));
-    console.log(`wrote   ${stem}.svg${glyph ? "" : " (no outline)"}`);
+    writeFileSync(file, template({ hand, character, id: name, glyph, source }));
+    console.log(`wrote   ${name}.svg${glyph ? "" : " (no outline)"}`);
   }
 }
 

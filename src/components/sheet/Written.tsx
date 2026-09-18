@@ -11,7 +11,9 @@
  * six styles the other two rows take, with the same meaning: `hollow` is
  * the thin line, as it is on a pattern. What is new is `guides`: on a model
  * cell a dot marks where each stroke starts, an arrow says which way it
- * goes, and a number says which stroke it is.
+ * goes, and a number says which stroke it is. And `forms`, which letters
+ * the row writes the other way — a double-storey `a`, a straight `t` — for
+ * every cell alike, since a sheet teaches one shape of a letter at a time.
  *
  * Sized by setting the hand's `ascent` on the writing space, so the tallest
  * letter reaches the top line and, because the hand is drawn to a ruling,
@@ -19,7 +21,12 @@
  * than the cell shrinks to fit rather than running into its neighbour, as a
  * traced cell does.
  */
-import { glyphOf, measure, type Hand } from "@/engine/sheets/hands/hand";
+import {
+  glyphOf,
+  measure,
+  type Forms,
+  type Hand,
+} from "@/engine/sheets/hands/hand";
 import { ruledLines } from "@/engine/sheets/layout";
 import { rulePitch, writingSpace } from "@/engine/sheets/paper";
 import type { Rule, TraceStyle } from "@/engine/sheets/types";
@@ -77,11 +84,13 @@ export function WrittenRow({
   metrics,
   hand,
   cells,
+  forms = {},
 }: {
   rule: Rule;
   metrics: SheetMetrics;
   hand: Hand;
   cells: WrittenCell[];
+  forms?: Forms;
 }) {
   const pitch = rulePitch(rule);
   const width = metrics.box.width;
@@ -115,7 +124,7 @@ export function WrittenRow({
       <Ruling rule={rule} box={metrics.box} sets={1} />
       {cells.map((entry, index) => {
         if (entry.style === "none" || entry.text === "") return null;
-        const units = measure(hand, entry.text);
+        const units = measure(hand, entry.text, forms);
         const inset = insetOf(entry);
         const room = cell - 2 * inset;
         const fitted = units > 0 ? Math.min(scale, room / units) : scale;
@@ -137,7 +146,7 @@ export function WrittenRow({
         // Every letter is placed before any guide is laid out, because a
         // letter's guides keep off its neighbours' ink as well as its own.
         const letters: Segment[][][] = [...entry.text].map((character) => {
-          const glyph = glyphOf(hand, character);
+          const glyph = glyphOf(hand, character, forms);
           const origin = x;
           x += (glyph?.advance ?? hand.space) * fitted + tracking;
           return (glyph?.strokes ?? []).map((stroke) =>

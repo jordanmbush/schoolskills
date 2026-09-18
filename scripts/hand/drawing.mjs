@@ -9,7 +9,7 @@
  * drawn. `hand-ingest.mjs` runs this over a directory; the functions are
  * here so a test can run them over a string.
  */
-import { CHARACTERS } from "./names.mjs";
+import { identify } from "./forms.mjs";
 import {
   absolute,
   bounds,
@@ -86,17 +86,15 @@ export function expectedReach(hand, character) {
 }
 
 /**
- * The glyph a drawing holds. Throws on a drawing that cannot be a glyph;
- * pushes onto `warnings` for one that reaches somewhere its letter should
- * not, since the drawing may be right and the table wrong.
+ * The glyph a drawing holds, and which character and form it is of. Throws
+ * on a drawing that cannot be a glyph; pushes onto `warnings` for one that
+ * reaches somewhere its letter should not, since the drawing may be right
+ * and the table wrong.
  */
 export function readDrawing(hand, svg, file, warnings = []) {
   const root = svg.match(/<svg\b[^>]*>/)?.[0] ?? "";
-  const stem = attribute(root, "data-glyph") ?? file.replace(/\.svg$/, "");
-  const character = CHARACTERS[stem];
-  if (character === undefined) {
-    throw new Error(`${file}: "${stem}" is not a glyph the names table knows`);
-  }
+  const id = attribute(root, "data-glyph") ?? file.replace(/\.svg$/, "");
+  const { character, form } = identify(hand, id, file);
   const originX = Number(attribute(root, "data-origin"));
   const baselineY = Number(attribute(root, "data-baseline"));
   if (Number.isNaN(originX) || Number.isNaN(baselineY)) {
@@ -144,5 +142,9 @@ export function readDrawing(hand, svg, file, warnings = []) {
     }
   }
 
-  return { character, glyph: { advance, strokes: placed.map(serialise) } };
+  return {
+    character,
+    form,
+    glyph: { advance, strokes: placed.map(serialise) },
+  };
 }

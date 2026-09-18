@@ -2276,6 +2276,33 @@ absolute path data in `M`, `L`, `C` and `Q` and nothing else. Four commands
 is a reader a test can cover whole (`glyphs.test.ts`), and it is the ingest's
 job to get there from whatever a drawing tool saved.
 
+### Forms — a letter taught two ways
+
+Some letters have no one shape. An `a` has one storey or two, a `g` likewise,
+and a `t` or a `q` ends in a curve or goes straight to the line; a `y`, an
+`l` and an `i` split the same way on their feet. Schemes differ on each, and
+a parent choosing a sheet has a scheme in mind — the one their child's
+school uses — so a hand that drew only one of each would be right for half
+its readers.
+
+So a glyph is the hand's own drawing of a letter and, where the hand draws
+it another way, the others by **form**: `a` as drawn, with `double` beside
+it. The forms are a fixed vocabulary of single words — `single`, `double`,
+`curved`, `straight` — shared by every hand, so that a sheet asking for a
+straight `t` asks the same thing of the print hand and of a cursive one.
+A sheet says what it wants with a `Forms` choice, one form per letter, and
+the row writes every cell in it; a letter without a choice, or asked for a
+form it has no drawing of, is the letter as drawn. That fallback is what
+lets a choice be saved into a sheet: the hand may grow or rename a form
+later, and the sheet still prints.
+
+Which form is a hand's own is a judgement written into `hand.json`, first
+in the letter's list. The print hand's are the ones a child is taught
+first: single-storey `a` and `g`, a `t` and a `q` with the curve. The
+specimen writes every letter in every form it has, and the words a second
+time with every letter switched to its other form, which is the guide
+layout's stress test on shapes the first row never shows.
+
 A row of a hand is `WrittenRow` (`src/components/sheet/Written.tsx`), the
 third row a sheet writes on beside `TracedRow` and `StrokedRow`: same width,
 same one-repeat height, same `Ruling` under it, the same six styles with the
@@ -2358,9 +2385,18 @@ The drawings are the source and the data module is generated from them.
 
 File names follow the UFO convention — `A_.svg` for a capital, `five.svg`
 for a numeral — because `a.svg` and `A.svg` are one file on a Mac
-(`scripts/hand/names.mjs`). The specimen at `/dev/<hand>` shows every glyph
-in every style on every ruling, with the outline face's dotted row under it,
-and is a development route only: a production build has no paths for it.
+(`scripts/hand/names.mjs`). A letter the hand lists under `forms` in its
+`hand.json` is one drawing per form, each named for it — `t.curved.svg`,
+`t.straight.svg`, never a bare `t.svg`, which would be a second claim to be
+the hand's own `t` — and the template writes every form of a listed letter
+at once, each over the face's own outline of that form where it has one
+(`SIL_FORMS` in `names.mjs`; a hooked `q`, which Andika lacks, is drawn over
+its straight one). The ingest folds them into one glyph (`scripts/hand/forms.mjs`),
+warns of a listed form nobody has drawn yet, and refuses a form the
+vocabulary or the hand's table does not know. The specimen at `/dev/<hand>`
+shows every glyph in every form and every style on every ruling, with the
+outline face's dotted row under it, and is a development route only: a
+production build has no paths for it.
 
 ### Provenance
 
@@ -2392,14 +2428,14 @@ next one is judged.
 
 ### Phases
 
-| Phase | What                                                       | Where it lands                       |
-| ----- | ---------------------------------------------------------- | ------------------------------------ |
-| 0     | Template, ingest, renderer, five print letters, specimen   | this section                         |
-| 1     | The print alphabet, numerals and the six punctuation marks | `hands/print.ts`, handwriting family |
-| 2     | The looped cursive small letters, with joins               | `hands/cursive.ts`, `joins.ts`       |
-| 3     | Its capitals                                               |                                      |
-| 4     | The other two cursive models                               |                                      |
-| 5     | A font generated from the data, if one is ever wanted      | a script, not a design               |
+| Phase | What                                                                 | Where it lands                       |
+| ----- | -------------------------------------------------------------------- | ------------------------------------ |
+| 0     | Template, ingest, renderer, six print letters in ten forms, specimen | this section                         |
+| 1     | The print alphabet, numerals and the six punctuation marks           | `hands/print.ts`, handwriting family |
+| 2     | The looped cursive small letters, with joins                         | `hands/cursive.ts`, `joins.ts`       |
+| 3     | Its capitals                                                         |                                      |
+| 4     | The other two cursive models                                         |                                      |
+| 5     | A font generated from the data, if one is ever wanted                | a script, not a design               |
 
 A face without a hand keeps the outline row, so print ships before any
 cursive is drawn and nothing waits on the whole table.

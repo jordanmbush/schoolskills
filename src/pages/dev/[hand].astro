@@ -4,6 +4,7 @@ import type { SheetMetrics } from "@/components/sheet/metrics";
 import { TracedRow } from "@/components/sheet/Traced";
 import { inch, pt } from "@/components/sheet/units";
 import { WrittenRow, type WrittenCell } from "@/components/sheet/Written";
+import { formsOf, type Forms } from "@/engine/sheets/hands/hand";
 import { PRINT } from "@/engine/sheets/hands/print";
 import { contentBox } from "@/engine/sheets/layout";
 import { DEFAULT_PAPER, marginOf, pageSize } from "@/engine/sheets/paper";
@@ -11,9 +12,9 @@ import type { Rule, TraceStyle } from "@/engine/sheets/types";
 import "@/styles/sheet.css";
 
 /**
- * The specimen of a hand: every glyph it has, in every style, on every
- * ruling, with the outline face's dotted row under it for the eye to compare
- * (docs/printables.md §25).
+ * The specimen of a hand: every glyph it has, in every form and every style,
+ * on every ruling, with the outline face's dotted row under it for the eye
+ * to compare (docs/printables.md §25).
  *
  * A development page and nothing else. It exists so a letter can be judged
  * on the paper it will print on before the next one is drawn, and a
@@ -55,7 +56,33 @@ const rules: Array<{ label: string; rule: Rule }> = [
 
 const letters = Object.keys(hand.glyphs);
 const styles: TraceStyle[] = ["solid", "dim", "hollow", "dotted", "dashed"];
+
+/** One row per form of a letter, the hand's own first. */
+const rows: Array<{ text: string; label: string; forms: Forms }> =
+  letters.flatMap((letter) => {
+    const forms = formsOf(hand, letter);
+    return forms.length === 0
+      ? [{ text: letter, label: letter, forms: {} }]
+      : forms.map((form) => ({
+          text: letter,
+          label: `${letter}.${form}`,
+          forms: { [letter]: form },
+        }));
+  });
+
+/**
+ * The words twice: as the hand writes them, and with every letter that has
+ * another form switched to it, which is the layout's stress test on shapes
+ * the other row never shows.
+ */
+const others: Forms = Object.fromEntries(
+  letters.flatMap((letter) => {
+    const [, other] = formsOf(hand, letter);
+    return other === undefined ? [] : [[letter, other]];
+  }),
+);
 const words = ["gate", "tale"];
+const wordRows: Array<{ forms: Forms }> = [{ forms: {} }, { forms: others }];
 
 const letterRow = (text: string): WrittenCell[] => [
   ...styles.map((style) => ({ text, style, guides: style === "solid" })),
@@ -84,10 +111,11 @@ const wordRow = (text: string): WrittenCell[] => [
     <h1 class="hero__title">{hand.name}</h1>
     <p class="hero__lead">
       {letters.length} glyph{letters.length === 1 ? "" : "s"}: {
-        letters.join(" ")
-      }. Each row is one letter in the five drawn styles and an empty place; the
-      model carries its start dots, arrows and stroke numbers. Under the words,
-      the same words in the outline face, dotted, for comparison.
+        rows.map((row) => row.label).join(" ")
+      }. Each row is one letter in one form, in the five drawn styles and an
+      empty place; the model carries its start dots, arrows and stroke numbers.
+      The words come as the hand writes them and then in the other forms, and
+      under them the same words in the outline face, dotted, for comparison.
     </p>
   </header>
 
@@ -101,22 +129,26 @@ const wordRow = (text: string): WrittenCell[] => [
         rules.map(({ label, rule }) => (
           <div class="specimen">
             <h2 class="specimen__label">{label}</h2>
-            {letters.map((letter) => (
+            {rows.map((row) => (
               <WrittenRow
                 rule={rule}
                 metrics={metrics}
                 hand={hand}
-                cells={letterRow(letter)}
+                cells={letterRow(row.text)}
+                forms={row.forms}
               />
             ))}
-            {words.map((word) => (
-              <WrittenRow
-                rule={rule}
-                metrics={metrics}
-                hand={hand}
-                cells={wordRow(word)}
-              />
-            ))}
+            {wordRows.map(({ forms }) =>
+              words.map((word) => (
+                <WrittenRow
+                  rule={rule}
+                  metrics={metrics}
+                  hand={hand}
+                  cells={wordRow(word)}
+                  forms={forms}
+                />
+              )),
+            )}
             <TracedRow
               rule={rule}
               metrics={metrics}

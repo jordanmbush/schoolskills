@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
   width="350.5" height="900" viewBox="0 0 701 1800"
-  data-hand="print" data-glyph="t" data-units="1000" data-origin="150" data-baseline="1150">
+  data-hand="print" data-glyph="t.curved" data-units="1000" data-origin="150" data-baseline="1150">
   <sodipodi:namedview id="namedview" inkscape:current-layer="strokes" inkscape:document-units="px"/>
   <g inkscape:groupmode="layer" id="ruling" inkscape:label="ruling" sodipodi:insensitive="true">
     <line x1="0" y1="1550" x2="701" y2="1550" stroke="#e3e8ee" stroke-width="1"/>
@@ -39,7 +39,7 @@
     <path d="M 515.3846153846155 1046.6346153846155 C 473.0769230769231 1070.1923076923076 438.46153846153845 1082.6923076923076 411.0576923076923 1082.6923076923076 C 367.78846153846155 1082.6923076923076 349.5192307692308 1061.5384615384614 349.5192307692308 962.5 C 349.5192307692308 913.9423076923076 349.5192307692308 679.3269230769231 349.5192307692308 400 L 260.5769230769231 400 C 260.5769230769231 698.5576923076924 260.5769230769231 962.5 260.5769230769231 1020.1923076923076 C 260.5769230769231 1131.25 321.1538461538462 1162.0192307692307 396.1538461538462 1162.0192307692307 C 429.8076923076923 1162.0192307692307 471.1538461538462 1151.923076923077 515.3846153846155 1123.5576923076924 L 515.3846153846155 1046.6346153846155 Z M 505.7692307692308 741.3461538461538 L 505.7692307692308 671.6346153846154 L 164.42307692307693 671.6346153846154 L 164.42307692307693 741.3461538461538 L 505.7692307692308 741.3461538461538 Z" fill="none" stroke="#d99a9a" stroke-width="3" stroke-dasharray="10 8" fill-rule="evenodd"/>
   </g>
   <g inkscape:groupmode="layer" id="notes" inkscape:label="notes" sodipodi:insensitive="true">
-    <text x="150" y="40" font-family="sans-serif" font-size="30" fill="#1f3a5f">School Skills Print — t</text>
+    <text x="150" y="40" font-family="sans-serif" font-size="30" fill="#1f3a5f">School Skills Print — t.curved</text>
     <text x="150" y="76" font-family="sans-serif" font-size="22" fill="#5b7fa6">Draw in the "strokes" layer with the pen tool: one open path per pen stroke, in the order the pen makes them. Grey is the shape; red dashes are how far the tall or hanging part goes.</text>
     <text x="150" y="1780" font-family="sans-serif" font-size="22" fill="#5b7fa6">Ink starts wherever you like: the ingest sets the side bearings.</text>
   </g>

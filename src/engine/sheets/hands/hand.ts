@@ -15,11 +15,30 @@
  * sizes itself by setting `ascent` on the top line, and the midline then
  * lands exactly, which no outline face here manages (§6).
  *
+ * Some letters are taught in more than one shape — an `a` with one storey
+ * or two, a `t` with a curved foot or a straight one — and a scheme picks
+ * one of each. So a glyph is the hand's own drawing of the letter plus,
+ * where the hand draws it another way, the others by form, and a sheet
+ * says which it wants with a `Forms` choice. A form the hand lacks, or a
+ * name it has never heard of, falls back to the letter as drawn: a sheet
+ * saved with a choice must still print after the choice is renamed.
+ *
  * The data modules beside this file are generated from drawings by
  * `scripts/hand-ingest.mjs` and never edited by hand.
  */
 
-export type Glyph = {
+/**
+ * The shapes a letter is taught in, one word each so a choice means the
+ * same thing in every hand: the storeys of `a` and `g`, the foot or tail of
+ * `t`, `q`, `l`, `i` and `y`. The same list as `FORMS` in
+ * `scripts/hand/names.mjs`; a generated module is typed against this one.
+ */
+export type Form = "single" | "double" | "curved" | "straight";
+
+/** Which form of each letter a sheet asks for: `{ a: "double", t: "straight" }`. */
+export type Forms = Partial<Record<string, Form>>;
+
+export type Drawing = {
   /** How far the pen moves on for the next letter, in hand units. */
   advance: number;
   /**
@@ -28,6 +47,14 @@ export type Glyph = {
    * the pen goes down.
    */
   strokes: string[];
+};
+
+export type Glyph = Drawing & {
+  /**
+   * Only on a letter the hand draws more than one way: which form the
+   * drawing above is, and the other forms, each a drawing of its own.
+   */
+  forms?: { own: Form; alternates: Partial<Record<Form, Drawing>> };
 };
 
 export type Hand = {
@@ -47,17 +74,31 @@ export type Hand = {
 const SPACE: Glyph = { advance: 0, strokes: [] };
 
 /**
- * The glyph for one character, or nothing.
+ * The drawing of one character in the form asked for, or nothing.
  *
- * A space is a glyph with no strokes and the hand's own advance. Anything
+ * A space is a drawing with no strokes and the hand's own advance. Anything
  * the hand has no drawing for is `undefined` rather than a fallback, so a
- * caller can decide between skipping it and refusing the text.
+ * caller can decide between skipping it and refusing the text. A form it
+ * has no drawing for is the letter as drawn.
  */
-export function glyphOf(hand: Hand, character: string): Glyph | undefined {
+export function glyphOf(
+  hand: Hand,
+  character: string,
+  forms: Forms = {},
+): Drawing | undefined {
   if (character === " ") return { ...SPACE, advance: hand.space };
-  return Object.hasOwn(hand.glyphs, character)
-    ? hand.glyphs[character]
-    : undefined;
+  if (!Object.hasOwn(hand.glyphs, character)) return undefined;
+  const glyph = hand.glyphs[character];
+  const wanted = forms[character];
+  if (wanted === undefined || glyph.forms === undefined) return glyph;
+  return glyph.forms.alternates[wanted] ?? glyph;
+}
+
+/** The forms a hand draws a character in, its own first; none for a letter drawn one way. */
+export function formsOf(hand: Hand, character: string): Form[] {
+  const forms = hand.glyphs[character]?.forms;
+  if (forms === undefined) return [];
+  return [forms.own, ...(Object.keys(forms.alternates) as Form[])];
 }
 
 /** Whether every character of `text` has a drawing in `hand`. */
@@ -65,16 +106,16 @@ export const drawable = (hand: Hand, text: string): boolean =>
   [...text].every((character) => glyphOf(hand, character) !== undefined);
 
 /**
- * How wide `text` is set in `hand`, in hand units.
+ * How wide `text` is set in `hand`, in hand units, in the forms asked for.
  *
  * A character with no drawing takes a space's width, so a row measured here
  * and drawn by the renderer agree about where the next letter goes even when
  * one is missing.
  */
-export function measure(hand: Hand, text: string): number {
+export function measure(hand: Hand, text: string, forms: Forms = {}): number {
   let width = 0;
   for (const character of text) {
-    width += glyphOf(hand, character)?.advance ?? hand.space;
+    width += glyphOf(hand, character, forms)?.advance ?? hand.space;
   }
   return width;
 }

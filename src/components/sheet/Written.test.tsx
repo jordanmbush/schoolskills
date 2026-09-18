@@ -6,6 +6,8 @@ import { contentBox } from "@/engine/sheets/layout";
 import { DEFAULT_PAPER, rulePitch, writingSpace } from "@/engine/sheets/paper";
 import type { Rule } from "@/engine/sheets/types";
 
+import type { Forms } from "@/engine/sheets/hands/hand";
+
 import type { SheetMetrics } from "./metrics";
 import { WrittenRow, type WrittenCell } from "./Written";
 
@@ -17,9 +19,15 @@ const metrics: SheetMetrics = {
   answers: false,
 };
 
-const render = (cells: WrittenCell[], rule: Rule = RULE) =>
+const render = (cells: WrittenCell[], rule: Rule = RULE, forms?: Forms) =>
   renderToStaticMarkup(
-    <WrittenRow rule={rule} metrics={metrics} hand={PRINT} cells={cells} />,
+    <WrittenRow
+      rule={rule}
+      metrics={metrics}
+      hand={PRINT}
+      cells={cells}
+      forms={forms}
+    />,
   );
 
 const strokes = (html: string) => [
@@ -148,6 +156,24 @@ describe("WrittenRow", () => {
       return Math.max(...xs) - Math.min(...xs);
     };
     expect(span(cramped)).toBeLessThan(span(wide));
+  });
+
+  it("writes every cell in the forms asked for", () => {
+    const own = render([{ text: "at", style: "solid" }]);
+    const other = render([{ text: "at", style: "solid" }], RULE, {
+      a: "double",
+      t: "straight",
+    });
+    // A double-storey a is one stroke where the single-storey a is two, and
+    // a straight t's stem is a line with no curve in it.
+    expect(strokes(own)).toHaveLength(4);
+    expect(strokes(other)).toHaveLength(3);
+    const stems = other.match(/d="M [\d.]+ [\d.]+ L [\d.]+ [\d.]+"/g) ?? [];
+    expect(stems).toHaveLength(2);
+    // A form the hand does not draw changes nothing.
+    expect(
+      render([{ text: "at", style: "solid" }], RULE, { e: "double" }),
+    ).toBe(own);
   });
 
   it("writes a character the hand lacks as a space, not as nothing", () => {

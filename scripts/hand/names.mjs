@@ -43,6 +43,16 @@ export const STEMS = Object.fromEntries(
   Object.entries(CHARACTERS).map(([stem, character]) => [character, stem]),
 );
 
+/**
+ * The forms a letter is taught in more than one way, as the suffix each
+ * drawing of it carries: `a.single.svg` and `a.double.svg` are the two
+ * storeys of an `a`, `t.curved.svg` and `t.straight.svg` the two feet of a
+ * `t`. One list for every hand, so a sheet asking for a straight `t` means
+ * the same thing in each; `Form` in `src/engine/sheets/hands/hand.ts` is
+ * this list again, and the type check holds a generated module to it.
+ */
+export const FORMS = ["single", "double", "curved", "straight"];
+
 const TITLE = [
   "Zero",
   "One",
@@ -78,4 +88,19 @@ export const SIL_NAMES = {
   "!": "Exclam",
   "'": "QuoteSingle",
   "-": "Hyphen",
+};
+
+/**
+ * The outline a form is traced over, where it is not the character's own:
+ * SIL draws the other storey of `a` and `g` and the other foot of `t`, `y`,
+ * `l` and `i` as alternates. A form not here — a hooked `q`, which the face
+ * lacks — is drawn over the character's outline and given its shape by hand.
+ */
+export const SIL_FORMS = {
+  "a.double": "LtnSmA",
+  "g.double": "LtnSmG",
+  "t.straight": "LtnSmT.NoTailT",
+  "y.straight": "LtnSmY.NoTailY",
+  "l.curved": "LtnSmL.TailL",
+  "i.curved": "LtnSmI.TailI",
 };
