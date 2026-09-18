@@ -29,8 +29,8 @@
 
 /**
  * The shapes a letter is taught in, one word each so a choice means the
- * same thing in every hand: the storeys of `a` and `g`, the foot or tail of
- * `t`, `q`, `l`, `i` and `y`. The same list as `FORMS` in
+ * same thing in every hand: the storeys of `a`, the foot or tail of `t`,
+ * `q`, `l`, `i` and `y`. The same list as `FORMS` in
  * `scripts/hand/names.mjs`; a generated module is typed against this one.
  */
 export type Form = "single" | "double" | "curved" | "straight";

@@ -14,7 +14,6 @@
   },
   "forms": {
     "a": ["single", "double"],
-    "g": ["single", "double"],
     "t": ["curved", "straight"],
     "q": ["curved", "straight"]
   },

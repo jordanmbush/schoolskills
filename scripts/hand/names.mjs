@@ -92,13 +92,12 @@ export const SIL_NAMES = {
 
 /**
  * The outline a form is traced over, where it is not the character's own:
- * SIL draws the other storey of `a` and `g` and the other foot of `t`, `y`,
- * `l` and `i` as alternates. A form not here — a hooked `q`, which the face
- * lacks — is drawn over the character's outline and given its shape by hand.
+ * SIL draws the other storey of `a` and the other foot of `t`, `y`, `l` and
+ * `i` as alternates. A form not here — a hooked `q`, which the face lacks —
+ * is drawn over the character's outline and given its shape by hand.
  */
 export const SIL_FORMS = {
   "a.double": "LtnSmA",
-  "g.double": "LtnSmG",
   "t.straight": "LtnSmT.NoTailT",
   "y.straight": "LtnSmY.NoTailY",
   "l.curved": "LtnSmL.TailL",

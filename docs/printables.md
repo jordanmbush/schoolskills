@@ -2278,9 +2278,9 @@ job to get there from whatever a drawing tool saved.
 
 ### Forms — a letter taught two ways
 
-Some letters have no one shape. An `a` has one storey or two, a `g` likewise,
-and a `t` or a `q` ends in a curve or goes straight to the line; a `y`, an
-`l` and an `i` split the same way on their feet. Schemes differ on each, and
+Some letters have no one shape. An `a` has one storey or two, and a `t` or
+a `q` ends in a curve or goes straight to the line; a `y`, an `l` and an
+`i` split the same way on their feet. Schemes differ on each, and
 a parent choosing a sheet has a scheme in mind — the one their child's
 school uses — so a hand that drew only one of each would be right for half
 its readers.
@@ -2298,7 +2298,7 @@ later, and the sheet still prints.
 
 Which form is a hand's own is a judgement written into `hand.json`, first
 in the letter's list. The print hand's are the ones a child is taught
-first: single-storey `a` and `g`, a `t` and a `q` with the curve. The
+first: a single-storey `a`, a `t` and a `q` with the curve. The
 specimen writes every letter in every form it has, and the words a second
 time with every letter switched to its other form, which is the guide
 layout's stress test on shapes the first row never shows.
@@ -2428,14 +2428,14 @@ next one is judged.
 
 ### Phases
 
-| Phase | What                                                                 | Where it lands                       |
-| ----- | -------------------------------------------------------------------- | ------------------------------------ |
-| 0     | Template, ingest, renderer, six print letters in ten forms, specimen | this section                         |
-| 1     | The print alphabet, numerals and the six punctuation marks           | `hands/print.ts`, handwriting family |
-| 2     | The looped cursive small letters, with joins                         | `hands/cursive.ts`, `joins.ts`       |
-| 3     | Its capitals                                                         |                                      |
-| 4     | The other two cursive models                                         |                                      |
-| 5     | A font generated from the data, if one is ever wanted                | a script, not a design               |
+| Phase | What                                                                     | Where it lands                       |
+| ----- | ------------------------------------------------------------------------ | ------------------------------------ |
+| 0     | Template, ingest, renderer, six print letters in nine drawings, specimen | this section                         |
+| 1     | The print alphabet, numerals and the six punctuation marks               | `hands/print.ts`, handwriting family |
+| 2     | The looped cursive small letters, with joins                             | `hands/cursive.ts`, `joins.ts`       |
+| 3     | Its capitals                                                             |                                      |
+| 4     | The other two cursive models                                             |                                      |
+| 5     | A font generated from the data, if one is ever wanted                    | a script, not a design               |
 
 A face without a hand keeps the outline row, so print ships before any
 cursive is drawn and nothing waits on the whole table.

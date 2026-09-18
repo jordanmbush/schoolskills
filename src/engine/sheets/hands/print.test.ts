@@ -61,9 +61,9 @@ describe("the print hand", () => {
 });
 
 describe("hand lookups", () => {
-  it("draws a, g, t and q two ways each, and names the hand's own way first", () => {
+  it("draws a, t and q two ways each, and names the hand's own way first", () => {
     expect(formsOf(PRINT, "a")).toEqual(["single", "double"]);
-    expect(formsOf(PRINT, "g")).toEqual(["single", "double"]);
+    expect(formsOf(PRINT, "g")).toEqual([]);
     expect(formsOf(PRINT, "t")).toEqual(["curved", "straight"]);
     expect(formsOf(PRINT, "q")).toEqual(["curved", "straight"]);
     expect(formsOf(PRINT, "e")).toEqual([]);
@@ -91,7 +91,7 @@ describe("hand lookups", () => {
     const double = PRINT.glyphs.a.forms?.alternates.double?.advance ?? NaN;
     expect(double).not.toBe(own);
     expect(measure(PRINT, "aa", { a: "double" })).toBe(2 * double);
-    expect(measure(PRINT, "aa", { g: "double" })).toBe(2 * own);
+    expect(measure(PRINT, "aa", { t: "straight" })).toBe(2 * own);
   });
 
   it("gives a space its own advance and nothing to draw", () => {

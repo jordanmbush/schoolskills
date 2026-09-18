@@ -164,12 +164,17 @@ describe("WrittenRow", () => {
       a: "double",
       t: "straight",
     });
-    // A double-storey a is one stroke where the single-storey a is two, and
-    // a straight t's stem is a line with no curve in it.
-    expect(strokes(own)).toHaveLength(4);
-    expect(strokes(other)).toHaveLength(3);
-    const stems = other.match(/d="M [\d.]+ [\d.]+ L [\d.]+ [\d.]+"/g) ?? [];
-    expect(stems).toHaveLength(2);
+    expect(other).not.toBe(own);
+    expect(strokes(other)).toHaveLength(4);
+    // A straight t's stem is one line, three quarters of the writing space
+    // tall, where the curved one's bends into a hook.
+    const writing = writingSpace(RULE);
+    const uprights = (html: string) =>
+      [...html.matchAll(/d="M ([\d.]+) ([\d.]+) L ([\d.]+) ([\d.]+)"/g)]
+        .map((m) => m.slice(1).map(Number))
+        .filter(([x1, y1, x2, y2]) => x1 === x2 && y2 - y1 > writing * 0.7);
+    expect(uprights(other)).toHaveLength(1);
+    expect(uprights(own)).toHaveLength(0);
     // A form the hand does not draw changes nothing.
     expect(
       render([{ text: "at", style: "solid" }], RULE, { e: "double" }),
