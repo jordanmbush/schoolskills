@@ -47,8 +47,9 @@ export type Form = (typeof FORMS)[number];
 export type Forms = Partial<Record<string, Form>>;
 
 /**
- * How a letter takes and gives a join, counted in segments of its first
- * stroke — the one the pen is still on when it reaches the next letter.
+ * How a letter takes and gives a join, counted in segments of its joining
+ * stroke — the one the pen is still on when it reaches the next letter,
+ * which is the first unless `stroke` says otherwise.
  *
  * The letter as drawn is the letter written alone, and a join replaces its
  * ends rather than needing a second drawing of it. The `lead` segments at
@@ -61,11 +62,20 @@ export type Forms = Partial<Record<string, Form>>;
  * from an `o` runs along the top of an `a` and drops into its left side,
  * where a join rising from the baseline climbs to the bowl's right and goes
  * over the top itself.
+ *
+ * A capital begins its word, so nothing joins into one: its join is
+ * `initial`, and the letter before it keeps its tail. A capital that ends
+ * on the baseline joins out with a tail like any small letter's; one that
+ * ends in a loop or at the top has no join at all.
  */
 export type Join = {
   lead: number;
   tail: number;
   top?: number;
+  /** Which stroke joins, when not the first: a `K` writes its stem before the arm that does. */
+  stroke?: number;
+  /** On a letter nothing joins into, whatever the letter before it does. */
+  initial?: boolean;
 };
 
 export type Drawing = {
@@ -139,7 +149,7 @@ export const drawable = (hand: Hand, text: string): boolean =>
 
 /** Whether the letter takes a join from the letter before it. */
 export const joinsIn = (drawing: Drawing): boolean =>
-  drawing.join !== undefined;
+  drawing.join !== undefined && drawing.join.initial !== true;
 
 /** Whether the letter joins out to the letter after it. */
 export const joinsOut = (drawing: Drawing): boolean =>

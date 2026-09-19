@@ -40,6 +40,18 @@ const o = (x: number): Placed => ({
   join: { lead: 0, tail: 1, top: 1 },
 });
 
+/**
+ * A capital `K`: a stem written first, then an arm ending in a tail, and
+ * nothing joins into it.
+ */
+const K = (x: number): Placed => ({
+  strokes: [
+    parseStroke(`M ${x} 0 L ${x} 100`),
+    parseStroke(`M ${x + 30} 0 L ${x} 50 L ${x + 30} 100 L ${x + 50} 60`),
+  ],
+  join: { lead: 0, tail: 1, stroke: 1, initial: true },
+});
+
 /** A mark with no join: a full stop. */
 const stop = (x: number): Placed => ({
   strokes: [parseStroke(`M ${x} 100 L ${x + 1} 100`)],
@@ -107,6 +119,24 @@ describe("joined", () => {
     expect(units).toHaveLength(3);
     expect(d(units[0][0])).toBe(d(i(0).strokes[0]));
     expect(d(units[2][0])).toBe(d(i(60).strokes[0]));
+  });
+
+  it("ends a run before an initial letter, whatever came before it", () => {
+    const units = joined([i(0), K(50)], BASELINE, MIDLINE);
+    expect(units).toHaveLength(2);
+    expect(d(units[0][0])).toBe(d(i(0).strokes[0]));
+    expect(d(units[1][1])).toBe(d(K(50).strokes[1]));
+  });
+
+  it("joins out of an initial letter, the stroke it wrote first ahead of the line", () => {
+    const units = joined([K(0), i(60)], BASELINE, MIDLINE);
+    expect(units).toHaveLength(1);
+    const [stem, line, dot] = units[0];
+    expect(d(stem)).toBe(d(K(0).strokes[0]));
+    expect(d(line)).toMatch(
+      /^M 30 0 L 0 50 L 30 100 C [\d. ]+ 80 50 L 80 100 L 100 60$/,
+    );
+    expect(d(dot)).toBe(d(i(60).strokes[1]));
   });
 
   it("ends a run after a letter with no tail", () => {

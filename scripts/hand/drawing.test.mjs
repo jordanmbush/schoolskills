@@ -129,6 +129,13 @@ describe("readDrawing", () => {
 });
 
 describe("expectedReach", () => {
+  it("sends a capital to the top line, and below the baseline only when the table lists it", () => {
+    expect(expectedReach(HAND, "A")).toEqual({ top: 1000, bottom: 0 });
+    const cursive = { ...HAND, reach: { ...HAND.reach, tail: "gjpqyJ" } };
+    expect(expectedReach(cursive, "J")).toEqual({ top: 1000, bottom: -500 });
+    expect(expectedReach(cursive, "A")).toEqual({ top: 1000, bottom: 0 });
+  });
+
   it("knows the four kinds of letter and says nothing of punctuation", () => {
     expect(expectedReach(HAND, "l")).toEqual({ top: 1000, bottom: 0 });
     expect(expectedReach(HAND, "t")).toEqual({ top: 750, bottom: 0 });
@@ -137,6 +144,27 @@ describe("expectedReach", () => {
     expect(expectedReach(HAND, "A")).toEqual({ top: 1000, bottom: 0 });
     expect(expectedReach(HAND, "7")).toEqual({ top: 1000, bottom: 0 });
     expect(expectedReach(HAND, ".")).toBeNull();
+  });
+});
+
+describe("readDrawing, for a letter that joins", () => {
+  const drawn = (stem, top) =>
+    template(
+      stem,
+      `    <path inkscape:label="body" d="M 150 1150 L 150 ${top} L 400 1150"/>
+    <path inkscape:label="tail" d="M 400 1150 L 500 900"/>`,
+    );
+
+  it("marks a capital's join as initial: nothing joins into one", () => {
+    expect(readDrawing(HAND, drawn("A_", 150), "A_.svg").glyph.join).toEqual({
+      lead: 0,
+      tail: 1,
+      initial: true,
+    });
+    expect(readDrawing(HAND, drawn("n", 650), "n.svg").glyph.join).toEqual({
+      lead: 0,
+      tail: 1,
+    });
   });
 });
 
@@ -223,13 +251,28 @@ describe("fused", () => {
     );
   });
 
+  it("finds the joining stroke after one written first, and says which it is", () => {
+    const { strokes, join } = fused(
+      [
+        path("stroke-1", "M 0 0 L 0 10"),
+        path("body", "M 5 10 L 0 5 L 5 0"),
+        path("tail", "M 5 0 L 8 3"),
+      ],
+      "K_.svg",
+    );
+    expect(strokes).toHaveLength(2);
+    expect(strokes[1].map((s) => s.type).join("")).toBe("MLLL");
+    expect(join).toEqual({ lead: 0, tail: 1, stroke: 1 });
+  });
+
   it("refuses a part out of order", () => {
     expect(() =>
       fused(
         [
-          path("body", "M 0 0 L 1 1"),
+          path("lead", "M 0 0 L 1 1"),
+          path("body", "M 1 1 L 2 2"),
           path("dot", "M 5 5 L 6 6"),
-          path("tail", "M 1 1 L 2 2"),
+          path("tail", "M 2 2 L 3 3"),
         ],
         "i.svg",
       ),

@@ -41,6 +41,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { expectedReach } from "./hand/drawing.mjs";
 import { fontInfo, readContents, readGlyph } from "./hand/glif.mjs";
 import { splitId } from "./hand/forms.mjs";
 import {
@@ -97,19 +98,6 @@ function sourceOf({ ufo, package: pkg, instance }) {
     };
   }
   return null;
-}
-
-/** How far a character reaches, as the hand's own share of its ruling. */
-function reachOf(hand, character) {
-  if (/[A-Z0-9]/.test(character)) return { top: hand.ascent, bottom: 0 };
-  const { tall, threeQuarter, tail } = hand.reach;
-  const top = tall.includes(character)
-    ? hand.ascent
-    : threeQuarter.includes(character)
-      ? Math.round(hand.ascent * 0.75)
-      : hand.xHeight;
-  const bottom = tail.includes(character) ? hand.descent : 0;
-  return { top, bottom };
 }
 
 /**
@@ -193,7 +181,10 @@ function template({ hand, character, id, glyph, source }) {
   let outlines = "";
   if (glyph && glyph.contours.length > 0) {
     const box = bounds(glyph.contours.flat());
-    const reach = reachOf(hand, character);
+    const reach = expectedReach(hand, character) ?? {
+      top: hand.xHeight,
+      bottom: 0,
+    };
     const above = box.maxY - source.xHeight;
     const stretch = {
       xHeight: source.xHeight,

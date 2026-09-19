@@ -25,6 +25,11 @@
  * leaves from its top, the way `o`, `v`, `w` and `b` do, and a join from
  * there covers the top of a round letter instead of climbing into it
  * (`Join.top`).
+ *
+ * A capital begins its word: its join is `initial`, so a run ends before it
+ * whatever the letter before it did. The run it starts keeps any stroke the
+ * capital writes before the one that joins — the stem of a `K` — ahead of
+ * the line, so a model's numbering is still the pen's order.
  */
 import type { Join } from "@/engine/sheets/hands/hand";
 
@@ -106,6 +111,8 @@ function walk(stroke: Segment[]): Point[] {
 type Exit = { at: Point; heading: Point; mid: boolean };
 
 type Run = {
+  /** The strokes the run's first letter writes before its joining stroke. */
+  before: Segment[][];
   line: Segment[];
   marks: Segment[][];
   tail: Segment[];
@@ -129,18 +136,21 @@ export function joined(
 
   const close = () => {
     if (run === null) return;
-    units.push([[...run.line, ...run.tail], ...run.marks]);
+    units.push([...run.before, [...run.line, ...run.tail], ...run.marks]);
     run = null;
   };
 
   for (const letter of letters) {
     const join = usable(letter);
-    const first = letter.strokes[0] ?? [];
     if (join === null) {
       close();
       if (letter.strokes.length > 0) units.push(letter.strokes);
       continue;
     }
+    const index = join.stroke ?? 0;
+    const first = letter.strokes[index] ?? [];
+    const written = letter.strokes.slice(0, index);
+    const marks = letter.strokes.slice(index + 1);
     const before = walk(first);
     const tailAt = first.length - join.tail;
     const tail = first.slice(tailAt);
@@ -154,11 +164,13 @@ export function joined(
           }
         : null;
 
+    if (join.initial) close();
     if (run === null || run.exit === null) {
       close();
       run = {
+        before: written,
         line: first.slice(0, tailAt),
-        marks: letter.strokes.slice(1),
+        marks,
         tail,
         exit,
       };
@@ -175,7 +187,7 @@ export function joined(
         : headingOut(first[skip], start);
     run.line.push(connector(run.exit.at, run.exit.heading, start, arriving));
     run.line.push(...first.slice(skip, tailAt));
-    run.marks.push(...letter.strokes.slice(1));
+    run.marks.push(...written, ...marks);
     run.tail = tail;
     run.exit = exit;
     if (exit === null) close();
@@ -187,7 +199,7 @@ export function joined(
 /** The join, or nothing for a letter whose first stroke is too short to have one. */
 function usable(letter: Placed): Join | null {
   const join = letter.join;
-  const first = letter.strokes[0];
+  const first = letter.strokes[join?.stroke ?? 0];
   if (join === undefined || first === undefined) return null;
   const kept = first.length - 1 - join.lead - join.tail - (join.top ?? 0);
   return kept >= 1 ? join : null;

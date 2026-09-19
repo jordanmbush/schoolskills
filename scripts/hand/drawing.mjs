@@ -86,36 +86,42 @@ const endOf = (segments) => segments[segments.length - 1].points.slice(-2);
 
 /**
  * The strokes of a drawing, with the parts of a joining stroke fused into
- * its first stroke and counted (`docs/printables.md` §25).
+ * one and counted (`docs/printables.md` §25).
  *
  * A hand that joins draws a letter as it is written alone and names the
  * parts a join replaces: a path called `lead` is the lead-in, `top` the top
  * of a bowl a bridge covers, and `tail` the exit stroke. They sit in the
  * layer in pen order — lead, top, the body, tail — and each must start where
- * the one before it ends, since they are one stroke drawn in pieces. What
- * comes back is the strokes as the engine stores them and, for a letter
- * with any part named, the `join` that says how many segments each is. A
- * part out of place, or one that does not meet its neighbour, is a drawing
- * error rather than a guess.
+ * the one before it ends, since they are one stroke drawn in pieces. The
+ * joining stroke is usually the first and need not be: a capital `K` writes
+ * its stem before the arm that joins, and the join then says which stroke
+ * it is on. What comes back is the strokes as the engine stores them and,
+ * for a letter with any part named, the `join` that says how many segments
+ * each is. A part out of place, or one that does not meet its neighbour, is
+ * a drawing error rather than a guess.
  */
 export function fused(paths, file) {
-  const named = paths.filter((path) => PARTS.includes(path.name));
-  if (named.length === 0) {
+  const named = (path) => PARTS.includes(path.name);
+  const first = paths.findIndex(named);
+  if (first < 0) {
     return { strokes: paths.map((path) => path.segments), join: undefined };
   }
-  const lead = paths[0]?.name === "lead" ? paths.shift() : undefined;
-  const top = paths[0]?.name === "top" ? paths.shift() : undefined;
-  const body = paths.shift();
-  if (body === undefined || PARTS.includes(body.name)) {
+  // The body is the unnamed path a lead or top comes before, or a tail after.
+  const start = paths[first].name === "tail" ? first - 1 : first;
+  let i = Math.max(start, 0);
+  const lead = paths[i]?.name === "lead" ? paths[i++] : undefined;
+  const top = paths[i]?.name === "top" ? paths[i++] : undefined;
+  const body = start < 0 ? undefined : paths[i++];
+  if (body === undefined || named(body)) {
     throw new Error(
-      `${file}: a joining stroke needs a body after its "lead" and "top"`,
+      `${file}: a joining stroke needs a body after its "lead" and "top" and before its "tail"`,
     );
   }
-  const tail = paths[0]?.name === "tail" ? paths.shift() : undefined;
-  const stray = paths.find((path) => PARTS.includes(path.name));
+  const tail = paths[i]?.name === "tail" ? paths[i++] : undefined;
+  const stray = paths.slice(i).find(named);
   if (stray !== undefined) {
     throw new Error(
-      `${file}: "${stray.name}" is out of place — the parts of a joining stroke are lead, top, the body and tail, in that order and first`,
+      `${file}: "${stray.name}" is out of place — the parts of a joining stroke are lead, top, the body and tail, in that order and together`,
     );
   }
   let stroke = [];
@@ -137,25 +143,28 @@ export function fused(paths, file) {
   const count = (part) => (part === undefined ? 0 : part.segments.length - 1);
   const join = { lead: count(lead), tail: count(tail) };
   if (top !== undefined) join.top = count(top);
-  return { strokes: [stroke, ...paths.map((path) => path.segments)], join };
+  if (start > 0) join.stroke = start;
+  const rest = (from, to) => paths.slice(from, to).map((path) => path.segments);
+  return { strokes: [...rest(0, start), stroke, ...rest(i)], join };
 }
 
 /**
  * The reach a character's kind of letter is drawn to, in hand units, or
- * null for a character the table says nothing about.
+ * null for a character the table says nothing about. A capital reaches the
+ * top line, and hangs below the baseline only where the table's `tail`
+ * lists it, as a cursive `J` does.
  */
 export function expectedReach(hand, character) {
-  if (/[A-Z0-9]/.test(character)) return { top: hand.ascent, bottom: 0 };
-  if (!/[a-z]/.test(character)) return null;
+  if (/[0-9]/.test(character)) return { top: hand.ascent, bottom: 0 };
+  if (!/[a-zA-Z]/.test(character)) return null;
   const { tall, threeQuarter, tail } = hand.reach;
-  return {
-    top: tall.includes(character)
+  const top =
+    /[A-Z]/.test(character) || tall.includes(character)
       ? hand.ascent
       : threeQuarter.includes(character)
         ? Math.round(hand.ascent * 0.75)
-        : hand.xHeight,
-    bottom: tail.includes(character) ? hand.descent : 0,
-  };
+        : hand.xHeight;
+  return { top, bottom: tail.includes(character) ? hand.descent : 0 };
 }
 
 /**
@@ -179,6 +188,8 @@ export function readDrawing(hand, svg, file, warnings = []) {
   // Template space to hand space: shift the origin, turn y over.
   const toHand = [1, 0, 0, -1, -originX, baselineY];
   const { strokes: drawn, join } = fused(pathsOf(svg, file), file);
+  // A capital begins its word: nothing joins into one.
+  if (join !== undefined && /[A-Z]/.test(character)) join.initial = true;
   const strokes = drawn.map((segments) =>
     rounded(transformed(segments, toHand)),
   );
