@@ -164,10 +164,26 @@ export const joinsOut = (drawing: Drawing): boolean =>
  * and drawn by the renderer agree about where the next letter goes even when
  * one is missing.
  */
-export function measure(hand: Hand, text: string, forms: Forms = {}): number {
+export function measure(
+  hand: Hand,
+  text: string,
+  forms: Forms = {},
+  space = hand.space,
+): number {
   let width = 0;
   for (const character of text) {
-    width += glyphOf(hand, character, forms)?.advance ?? hand.space;
+    width +=
+      character === " "
+        ? space
+        : (glyphOf(hand, character, forms)?.advance ?? hand.space);
   }
   return width;
 }
+
+/**
+ * The width of a finger laid on the line after a word, in hand units: two
+ * and a half word spaces, about a letter and a half. The gap a child is
+ * taught to leave between words, and the one the spacing family's rows set
+ * (§24).
+ */
+export const fingerSpace = (hand: Hand): number => hand.space * 2.5;

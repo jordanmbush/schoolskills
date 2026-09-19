@@ -2149,16 +2149,22 @@ evidence names:
   letter. `f` is tall: on a printed sheet it is, and its tail in a joined
   hand is the one exception a parent can see for themselves.
 - **Spacing** (`spacing`). Sentences of short words, each written down the
-  page as a model, a trace and an empty line, with a middle dot in the model
-  where every space is — the finger a teacher puts between two words, drawn.
-  The dot stands _in place of_ the space rather than beside it so the model
-  is exactly as long as the rows it is traced on and sets at the same size,
-  and it is on the solid model only: a child tracing a dotted sentence would
-  trace the dot too, and a dot between every word is not the habit being
-  taught. The five default sentences are all eighteen characters or under,
-  which is what a ⅝ rule holds on Letter paper; a sentence about spaces has
-  to sit on one line, or the break at the margin is the widest space on the
-  page.
+  page as a model, a trace and an empty line, with a small circle in the
+  model where every space is — the finger a teacher puts between two words,
+  drawn. Every row of the three sets its spaces a finger wide (`fingerSpace`,
+  two and a half word spaces), so the model and the rows traced under it
+  line up word for word, and the circle sits in the middle of the gap at
+  half the small letters' height: a ring rather than a dot, so it is not
+  read as a full stop. The mark is on the solid model only: a child tracing a
+  dotted sentence would trace it too, and a mark between every word is not
+  the habit being taught. In a face with no hand the mark is a middle dot
+  in place of the space, which is about as wide as a font's space, so those
+  rows line up as well. The five default sentences are all eighteen
+  characters or under, which is what a ⅝ rule holds on Letter paper; a
+  sentence about spaces has to sit on one line, or the break at the margin
+  is the widest space on the page. The wrap counts a finger space as one
+  character, and a line the wider gaps make too wide shrinks to fit, model
+  and trace alike.
 - **Check** (`check`). A model, then the child's own tries, then a
   judgement: "circle the one that looks most like the model". Self-evaluation
   is the step that turns repetition into practice — it was in the lessons

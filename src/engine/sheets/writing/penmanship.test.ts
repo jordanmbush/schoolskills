@@ -29,7 +29,6 @@ import {
   MAX_LINES,
   MAX_MINUTES,
   PENMANSHIP_SHEET,
-  SPACE_MARK,
   instructionOf,
   penmanshipLayout,
 } from "./penmanship";
@@ -318,15 +317,13 @@ describe("a finger spaces sheet", () => {
     ]);
   });
 
-  it("marks the spaces on the model and nowhere else", () => {
-    const [model, trace] = traceRows({ style: "spacing" });
-    expect(model.cells[0].text).toBe(
-      SPACING_SENTENCES[0].replaceAll(" ", SPACE_MARK),
-    );
+  it("sets a finger space on every row, and marks them on the model and nowhere else", () => {
+    const [model, trace, empty] = traceRows({ style: "spacing" });
+    expect(model.cells[0].text).toBe(SPACING_SENTENCES[0]);
+    expect(model.cells[0].spaces).toBe("marked");
     expect(trace.cells[0].text).toBe(SPACING_SENTENCES[0]);
-    // The mark stands in for the space, so the model is as long as the trace
-    // under it and sets at the same size.
-    expect(model.cells[0].text).toHaveLength(trace.cells[0].text.length);
+    expect(trace.cells[0].spaces).toBe("finger");
+    expect(empty.cells[0].spaces).toBe("finger");
   });
 
   it("sets the sentences a parent typed, one a line, blank lines dropped", () => {
@@ -334,7 +331,7 @@ describe("a finger spaces sheet", () => {
     const models = traceRows({ style: "spacing", text })
       .filter((row) => row.cells[0].style === "solid")
       .map((row) => row.cells[0].text);
-    expect(models).toEqual([`One${SPACE_MARK}two.`, `Three${SPACE_MARK}four.`]);
+    expect(models).toEqual(["One two.", "Three four."]);
   });
 
   it("keeps a sentence and its copies on one page", () => {

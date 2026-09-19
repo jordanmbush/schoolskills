@@ -25,8 +25,15 @@
  * In a hand that joins, the letters of a word are one line for as long as
  * they join (`joined.ts`), so a dotted word is dotted through its joins and
  * a joined pair on a model carries one start dot, not two.
+ *
+ * A cell that sets finger spaces sets every space at `fingerSpace` instead
+ * of the hand's own, and a marked one draws a small circle in the middle of
+ * each gap, at the middle of the small letters' height — where a finger
+ * goes, drawn as a ring rather than a dot so it is not mistaken for a full
+ * stop.
  */
 import {
+  fingerSpace,
   glyphOf,
   measure,
   type Forms,
@@ -34,7 +41,7 @@ import {
 } from "@/engine/sheets/hands/hand";
 import { ruledLines } from "@/engine/sheets/layout";
 import { rulePitch, writingSpace } from "@/engine/sheets/paper";
-import type { Rule, TraceStyle } from "@/engine/sheets/types";
+import type { Rule, TraceCell, TraceStyle } from "@/engine/sheets/types";
 
 import { Ruling } from "./Ruling";
 import { pathOf, placeStroke, type Placing } from "./glyphs";
@@ -49,6 +56,7 @@ export type WrittenCell = {
   style: TraceStyle;
   /** Start dots, arrows and stroke numbers — for the model, not the trace. */
   guides?: boolean;
+  spaces?: TraceCell["spaces"];
 };
 
 function Guides({ set }: { set: GuideSet }) {
@@ -143,7 +151,8 @@ export function WrittenRow({
       <Ruling rule={rule} box={metrics.box} sets={1} />
       {cells.map((entry, index) => {
         if (entry.style === "none" || entry.text === "") return null;
-        const units = measure(hand, entry.text, forms);
+        const space = entry.spaces ? fingerSpace(hand) : hand.space;
+        const units = measure(hand, entry.text, forms, space);
         const inset = insetOf(entry);
         const room = cell - 2 * inset;
         const fitted = units > 0 ? Math.min(scale, room / units) : scale;
@@ -170,10 +179,19 @@ export function WrittenRow({
         // Every letter is placed before any join is drawn or any guide laid
         // out: a join needs both its letters on the paper, and a letter's
         // guides keep off its neighbours' ink as well as its own.
+        const marks: { x: number; y: number }[] = [];
         const placed: Placed[] = [...entry.text].map((character) => {
           const glyph = glyphOf(hand, character, forms);
           const origin = x;
-          x += (glyph?.advance ?? hand.space) * fitted + tracking;
+          const advance =
+            character === " " ? space : (glyph?.advance ?? hand.space);
+          if (character === " " && entry.spaces === "marked") {
+            marks.push({
+              x: origin + (advance * fitted) / 2,
+              y: floor - (hand.xHeight / 2) * placing.up,
+            });
+          }
+          x += advance * fitted + tracking;
           return {
             strokes: (glyph?.strokes ?? []).map((stroke) =>
               placeStroke(stroke, origin, floor, placing),
@@ -202,6 +220,16 @@ export function WrittenRow({
                 ))}
                 {sets[at] && <Guides set={sets[at]} />}
               </g>
+            ))}
+            {marks.map((mark, at) => (
+              <circle
+                key={`mark-${at}`}
+                className={`sheet__stroke sheet__stroke--${entry.style}`}
+                cx={mark.x}
+                cy={mark.y}
+                r={hand.xHeight * 0.13 * fitted}
+                strokeWidth={weight}
+              />
             ))}
           </g>
         );

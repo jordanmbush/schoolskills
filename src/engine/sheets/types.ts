@@ -287,8 +287,20 @@ export type LetterShape = "tall" | "small" | "tail" | "gap";
  */
 export type WordShape = { word: string; letters: LetterShape[] };
 
-/** One place on a tracing row: what is written there, and how it is drawn. */
-export type TraceCell = { text: string; style: TraceStyle };
+/**
+ * One place on a tracing row: what is written there, and how it is drawn.
+ *
+ * `spaces` is how the spaces in it are set. Absent is a word space. `finger`
+ * is the width a finger laid on the line takes, which the spacing family's
+ * rows set so that a model and the rows traced under it line up; `marked` is
+ * that with a small circle in each gap, the model's way of showing where the
+ * finger goes (§24).
+ */
+export type TraceCell = {
+  text: string;
+  style: TraceStyle;
+  spaces?: "finger" | "marked";
+};
 
 /**
  * The strokes a letter is built from, drawn as a pattern across a ruling

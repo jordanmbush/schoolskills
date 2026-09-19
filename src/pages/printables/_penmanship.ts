@@ -239,10 +239,10 @@ export const PENMANSHIP_SHEETS: PenmanshipSheet[] = [
     heading: "Finger spaces worksheets",
     keyword: "Free printable finger spaces worksheets",
     summary:
-      "Five short sentences on half-inch paper, each printed with a dot where every finger space goes, then dotted to trace with the dots gone, then an empty line to write it with the spaces and nothing else.",
-    lead: "Five sentences of short words, so that a line is as many spaces as it can be. Each one is printed three times down the page: a model with a dot between every word, a dotted copy to trace over, and an empty line to write it on — with a space after every word and nothing on the paper to mark it.",
+      "Five short sentences on half-inch paper, each printed with a small circle where every finger space goes, then dotted to trace with the circles gone, then an empty line to write it with the spaces and nothing else.",
+    lead: "Five sentences of short words, so that a line is as many spaces as it can be. Each one is printed three times down the page: a model with a small circle in the gap after every word, a dotted copy to trace over with the same gaps and nothing in them, and an empty line to write it on.",
     notes: [
-      "The dot is where a finger goes. A child writing a first sentence runs the words together not because they don't know there are spaces but because the pencil is at the end of one word and the next is already coming, and a finger laid on the line after the word is a physical thing to write around. The model carries the dot so the spaces can be seen before they are written; the traced line and the empty line do not, because a dot between every word is not the habit being taught.",
+      "The circle is where a finger goes, and the gap it sits in is a finger wide. A child writing a first sentence runs the words together not because they don't know there are spaces but because the pencil is at the end of one word and the next is already coming, and a finger laid on the line after the word is a physical thing to write around. The model carries the circle so the spaces can be seen before they are written; the traced line keeps the gaps and drops the circles, because a mark between every word is not the habit being taught.",
       "Every sentence sits on one line of the page, with no word long enough to make the line about anything else — the, dog, ran, sat, mat — and all five are short enough that the break at the margin never becomes the widest space on the page. Half an inch is the ruling a child of this age writes on, and fifteen rows of it is two pages on either stock. The sentences are the shop's; the builder takes a parent's own, one to a line, and prints the same sheet.",
     ],
     teaches: "Spacing between words",

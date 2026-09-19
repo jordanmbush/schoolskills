@@ -97,6 +97,28 @@ describe("WrittenRow", () => {
     expect(Math.max(...tail)).toBeCloseTo(pitch - inset, 0);
   });
 
+  it("sets a finger space between words on every row asked for one, and rings the model's", () => {
+    const xs = (html: string) =>
+      [...html.matchAll(/<path class="sheet__stroke[^"]*" d="([^"]*)"/g)]
+        .flatMap((match) => match[1].match(/-?[\d.]+/g) ?? [])
+        .map(Number)
+        .filter((_, i) => i % 2 === 0);
+    const plain = render([{ text: "a b", style: "solid" }]);
+    const model = render([{ text: "a b", style: "solid", spaces: "marked" }]);
+    const trace = render([{ text: "a b", style: "dotted", spaces: "finger" }]);
+    // The `b` after a finger space sits a space and a half further along,
+    // and in the same place on the model as on the trace under it.
+    const scale = writingSpace(RULE) / PRINT.ascent;
+    expect(Math.max(...xs(model)) - Math.max(...xs(plain))).toBeCloseTo(
+      PRINT.space * 1.5 * scale,
+      0,
+    );
+    expect(Math.max(...xs(trace))).toBe(Math.max(...xs(model)));
+    expect(model.match(/<circle class="sheet__stroke/g)).toHaveLength(1);
+    expect(trace).not.toContain("<circle");
+    expect(plain).not.toContain("<circle");
+  });
+
   it("carries guides on a model and on nothing else", () => {
     const model = render([{ text: "t", style: "solid", guides: true }]);
     expect(model.match(/<circle/g)).toHaveLength(PRINT.glyphs.t.strokes.length);

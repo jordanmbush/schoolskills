@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { drawable, formsOf, glyphOf, measure, type Drawing } from "./hand";
+import {
+  drawable,
+  fingerSpace,
+  formsOf,
+  glyphOf,
+  measure,
+  type Drawing,
+} from "./hand";
 import { PRINT } from "./print";
 
 /**
@@ -99,6 +106,14 @@ describe("hand lookups", () => {
 
   it("gives a space its own advance and nothing to draw", () => {
     expect(glyphOf(PRINT, " ")).toEqual({ advance: PRINT.space, strokes: [] });
+  });
+
+  it("measures a space at the hand's own width, or at the width it is given", () => {
+    const a = PRINT.glyphs.a.advance;
+    expect(measure(PRINT, "a a")).toBe(2 * a + PRINT.space);
+    expect(measure(PRINT, "a a", {}, 800)).toBe(2 * a + 800);
+    // A finger space is two and a half word spaces.
+    expect(fingerSpace(PRINT)).toBe(PRINT.space * 2.5);
   });
 
   it("says which text it can write, and measures what it cannot as spaces", () => {

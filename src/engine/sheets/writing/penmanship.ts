@@ -345,19 +345,13 @@ function zoneRows(config: PenmanshipConfig): Block[] {
 }
 
 /**
- * The mark the model puts between two words, in place of the space. A middle
- * dot rather than a wider gap, so the model row is exactly as long as the rows
- * it is traced on and sets at the same size.
- */
-export const SPACE_MARK = "·";
-
-const spaced = (line: string): string => line.replace(/ /g, SPACE_MARK);
-
-/**
- * Sentences down the page, once per style, with the model showing where the
- * spaces are. Only the solid model carries the mark: a child tracing over a
- * dotted sentence would trace the dot too, and a dot between every word is
- * not the habit being taught.
+ * Sentences down the page, once per style, every row with a finger space
+ * between its words so the model and the rows traced under it line up. Only
+ * the solid model marks the spaces: a child tracing over a dotted sentence
+ * would trace the marks too, and a mark between every word is not the habit
+ * being taught. The wrap counts a finger space as one character, as it does
+ * a space; a line the wider gaps make too wide shrinks to fit, model and
+ * trace alike, so the two still line up.
  */
 function spacingRows(config: PenmanshipConfig): Block[] {
   const { box, em, face, perPage, rule } = penmanshipLayout(config, 1);
@@ -368,7 +362,12 @@ function spacingRows(config: PenmanshipConfig): Block[] {
   );
   const drawn: TraceRow[] = lines.flatMap((line) =>
     styles.map((style) => ({
-      cells: [cellOf(style === "solid" ? spaced(line) : line, style)],
+      cells: [
+        {
+          ...cellOf(line, style),
+          spaces: style === "solid" ? ("marked" as const) : ("finger" as const),
+        },
+      ],
     })),
   );
   return tracePages(rule, drawn, perPage * styles.length);
@@ -513,7 +512,7 @@ export function instructionOf(config: PenmanshipConfig): string {
     case "sizes":
       return `Tall letters touch the top line, small letters stop at the midline, and tails hang below it. ${ask(styles, "one", "on your own")}`;
     case "spacing":
-      return `The dot in the model shows where a finger space goes. ${ask(styles, "sentence", "on the line below, with a space after every word")}`;
+      return `The mark between the words shows where a finger space goes. ${ask(styles, "sentence", "on the line below, with a space after every word")}`;
     case "check": {
       const tries = styles.length - 1;
       const noun =

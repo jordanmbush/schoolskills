@@ -10,7 +10,6 @@ import type {
   TraceStyle,
 } from "@/engine/sheets/types";
 import { SPACING_SENTENCES } from "@/engine/sheets/writing/letterfamilies";
-import { SPACE_MARK } from "@/engine/sheets/writing/penmanship";
 import { LOWER, MODELLED } from "@/engine/sheets/writing/rows";
 import { STROKE_PATTERNS } from "@/engine/sheets/writing/strokes";
 
@@ -223,14 +222,13 @@ describe("the sheet on a catalog page", () => {
   });
 
   it("prints every word of every sentence on the spacing page", () => {
-    // The model row carries a dot in place of each space, so it is split on
-    // the dot as well as on whitespace — every word has to be there in both
-    // the row with the dots and the row without them.
+    // Every word has to be there in both the marked model row and the row
+    // traced under it.
     for (const sheet of bySlug("spacing")) {
       for (const stock of STOCKS) {
         const words = new Set(
           printed(configFor(sheet, stock.id)).flatMap((line) =>
-            line.split(new RegExp(`[${SPACE_MARK}\\s]+`)),
+            line.split(/\s+/),
           ),
         );
         for (const sentence of SPACING_SENTENCES) {
