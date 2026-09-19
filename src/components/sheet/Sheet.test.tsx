@@ -2407,10 +2407,26 @@ describe("rows written in a hand", () => {
 
   it("keeps a face with no hand on the outline row", () => {
     const html = tracing([{ text: "gate", style: "solid" }], {
-      font: "cursive",
+      font: "cursive-modern",
     });
     expect(outlined(html)).toBe(true);
     expect(strokes(html)).toHaveLength(0);
+  });
+
+  it("writes the looped cursive face in its hand, joined, and falls back where it has no capital yet", () => {
+    const joined = tracing(
+      [
+        { text: "gate", style: "solid" },
+        { text: "gate", style: "dotted" },
+      ],
+      { font: "cursive" },
+    );
+    expect(outlined(joined)).toBe(false);
+    // One line for the word and one for the t's crossbar, in each cell.
+    expect(strokes(joined)).toHaveLength(4);
+    const pair = tracing([{ text: "Aa", style: "solid" }], { font: "cursive" });
+    expect(outlined(pair)).toBe(true);
+    expect(strokes(pair)).toHaveLength(0);
   });
 
   it("writes the letter shapes the sheet asks for", () => {

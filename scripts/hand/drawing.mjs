@@ -30,9 +30,11 @@ function attribute(tag, name) {
 
 /**
  * The paths inside the `strokes` layer, in document order, each with the
- * matrix of every group above it composed in.
+ * matrix of every group above it composed in and the name it was given —
+ * its Inkscape label, or failing that its id — which is how a drawing marks
+ * the parts of a joining stroke (`fused`).
  */
-export function strokesOf(svg, file) {
+export function pathsOf(svg, file) {
   const open = svg.match(/<g\b[^>]*inkscape:label="strokes"[^>]*>/);
   if (!open) throw new Error(`${file}: no "strokes" layer`);
   const stack = [parseTransform(attribute(open[0], "transform"))];
@@ -62,9 +64,80 @@ export function strokesOf(svg, file) {
       stack[stack.length - 1],
       parseTransform(attribute(attrs, "transform")),
     );
-    paths.push(transformed(absolute(d), matrix));
+    paths.push({
+      name: attribute(attrs, "inkscape:label") ?? attribute(attrs, "id"),
+      segments: transformed(absolute(d), matrix),
+    });
   }
   return paths;
+}
+
+/** The paths of the `strokes` layer as segments alone. */
+export const strokesOf = (svg, file) =>
+  pathsOf(svg, file).map((path) => path.segments);
+
+/** The names a path may carry, and the order the parts of a joining stroke come in. */
+const PARTS = ["lead", "top", "tail"];
+
+/** How far apart two ends of one stroke may be drawn and still be one stroke. */
+const GAP = 4;
+
+const endOf = (segments) => segments[segments.length - 1].points.slice(-2);
+
+/**
+ * The strokes of a drawing, with the parts of a joining stroke fused into
+ * its first stroke and counted (`docs/printables.md` §25).
+ *
+ * A hand that joins draws a letter as it is written alone and names the
+ * parts a join replaces: a path called `lead` is the lead-in, `top` the top
+ * of a bowl a bridge covers, and `tail` the exit stroke. They sit in the
+ * layer in pen order — lead, top, the body, tail — and each must start where
+ * the one before it ends, since they are one stroke drawn in pieces. What
+ * comes back is the strokes as the engine stores them and, for a letter
+ * with any part named, the `join` that says how many segments each is. A
+ * part out of place, or one that does not meet its neighbour, is a drawing
+ * error rather than a guess.
+ */
+export function fused(paths, file) {
+  const named = paths.filter((path) => PARTS.includes(path.name));
+  if (named.length === 0) {
+    return { strokes: paths.map((path) => path.segments), join: undefined };
+  }
+  const lead = paths[0]?.name === "lead" ? paths.shift() : undefined;
+  const top = paths[0]?.name === "top" ? paths.shift() : undefined;
+  const body = paths.shift();
+  if (body === undefined || PARTS.includes(body.name)) {
+    throw new Error(
+      `${file}: a joining stroke needs a body after its "lead" and "top"`,
+    );
+  }
+  const tail = paths[0]?.name === "tail" ? paths.shift() : undefined;
+  const stray = paths.find((path) => PARTS.includes(path.name));
+  if (stray !== undefined) {
+    throw new Error(
+      `${file}: "${stray.name}" is out of place — the parts of a joining stroke are lead, top, the body and tail, in that order and first`,
+    );
+  }
+  let stroke = [];
+  for (const part of [lead, top, body, tail]) {
+    if (part === undefined) continue;
+    if (stroke.length === 0) {
+      stroke = [...part.segments];
+      continue;
+    }
+    const [x, y] = endOf(stroke);
+    const [px, py] = part.segments[0].points;
+    if (Math.abs(x - px) > GAP || Math.abs(y - py) > GAP) {
+      throw new Error(
+        `${file}: "${part.name ?? "the body"}" starts at ${px},${py} but the part before it ends at ${x},${y}`,
+      );
+    }
+    stroke.push(...part.segments.slice(1));
+  }
+  const count = (part) => (part === undefined ? 0 : part.segments.length - 1);
+  const join = { lead: count(lead), tail: count(tail) };
+  if (top !== undefined) join.top = count(top);
+  return { strokes: [stroke, ...paths.map((path) => path.segments)], join };
 }
 
 /**
@@ -105,7 +178,8 @@ export function readDrawing(hand, svg, file, warnings = []) {
 
   // Template space to hand space: shift the origin, turn y over.
   const toHand = [1, 0, 0, -1, -originX, baselineY];
-  const strokes = strokesOf(svg, file).map((segments) =>
+  const { strokes: drawn, join } = fused(pathsOf(svg, file), file);
+  const strokes = drawn.map((segments) =>
     rounded(transformed(segments, toHand)),
   );
   if (strokes.length === 0) throw new Error(`${file}: nothing drawn`);
@@ -145,6 +219,10 @@ export function readDrawing(hand, svg, file, warnings = []) {
   return {
     character,
     form,
-    glyph: { advance, strokes: placed.map(serialise) },
+    glyph: {
+      advance,
+      strokes: placed.map(serialise),
+      ...(join === undefined ? {} : { join }),
+    },
   };
 }

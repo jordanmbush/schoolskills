@@ -23,6 +23,11 @@
  * name it has never heard of, falls back to the letter as drawn: a sheet
  * saved with a choice must still print after the choice is renamed.
  *
+ * A cursive hand joins its letters, and a join is drawn by the renderer as
+ * one line from the way one letter leaves to the way the next arrives
+ * (`src/components/sheet/joined.ts`). What the hand stores is which ends of
+ * a letter a join replaces: see `Join`.
+ *
  * The data modules beside this file are generated from drawings by
  * `scripts/hand-ingest.mjs` and never edited by hand.
  */
@@ -41,6 +46,28 @@ export type Form = (typeof FORMS)[number];
 /** Which form of each letter a sheet asks for: `{ a: "double", t: "straight" }`. */
 export type Forms = Partial<Record<string, Form>>;
 
+/**
+ * How a letter takes and gives a join, counted in segments of its first
+ * stroke — the one the pen is still on when it reaches the next letter.
+ *
+ * The letter as drawn is the letter written alone, and a join replaces its
+ * ends rather than needing a second drawing of it. The `lead` segments at
+ * the start are the lead-in that a join from the letter before replaces;
+ * the `tail` segments at the end are the exit stroke that a join into the
+ * letter after replaces, and a letter with no tail does not join out — the
+ * unlooped models lift the pencil after some letters, and that is how they
+ * say so. `top` follows the lead-in: the further segments a join arriving at
+ * the midline covers, which is the top of a round letter's bowl. A bridge
+ * from an `o` runs along the top of an `a` and drops into its left side,
+ * where a join rising from the baseline climbs to the bowl's right and goes
+ * over the top itself.
+ */
+export type Join = {
+  lead: number;
+  tail: number;
+  top?: number;
+};
+
 export type Drawing = {
   /** How far the pen moves on for the next letter, in hand units. */
   advance: number;
@@ -50,6 +77,8 @@ export type Drawing = {
    * the pen goes down.
    */
   strokes: string[];
+  /** Only on a letter of a hand that joins: which of its ends a join replaces. */
+  join?: Join;
 };
 
 export type Glyph = Drawing & {
@@ -107,6 +136,14 @@ export function formsOf(hand: Hand, character: string): Form[] {
 /** Whether every character of `text` has a drawing in `hand`. */
 export const drawable = (hand: Hand, text: string): boolean =>
   [...text].every((character) => glyphOf(hand, character) !== undefined);
+
+/** Whether the letter takes a join from the letter before it. */
+export const joinsIn = (drawing: Drawing): boolean =>
+  drawing.join !== undefined;
+
+/** Whether the letter joins out to the letter after it. */
+export const joinsOut = (drawing: Drawing): boolean =>
+  (drawing.join?.tail ?? 0) > 0;
 
 /**
  * How wide `text` is set in `hand`, in hand units, in the forms asked for.

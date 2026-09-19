@@ -402,9 +402,11 @@ the other two (ascents 1.019, 0.957 and 0.894, so one shared ratio would print
 two of them through the rule), and only the looped one hangs its descender over
 the tail space.
 
-Which letters join is read out of the font and never written down here: a cell
-is one `<text>` element, so the face's own contextual alternates see the pair
-either side of every join and draw the form that belongs there. That is what
+On an outline row, which letters join is read out of the font and never
+written down here: a cell is one `<text>` element, so the face's own
+contextual alternates see the pair either side of every join and draw the form
+that belongs there. (A row written in a hand joins by the hand's own drawings
+instead — §25.) That is what
 makes the `joins` style honest in all three models — the same sheet separates
 `ba` in one hand and joins it in another, and both are right — and it is why
 that style resolves its own face rather than trusting a config that says
@@ -2274,7 +2276,10 @@ midline; a hand drawn to the ruling has none.
 Every glyph carries an `advance` and its `strokes`, and each stroke is
 absolute path data in `M`, `L`, `C` and `Q` and nothing else. Four commands
 is a reader a test can cover whole (`glyphs.test.ts`), and it is the ingest's
-job to get there from whatever a drawing tool saved.
+job to get there from whatever a drawing tool saved. A letter of a hand that
+joins carries a `join` as well — which ends of its first stroke a join
+replaces — and that is the whole of what joining adds to the data (see
+_Joins_ below).
 
 ### Forms — a letter taught two ways
 
@@ -2368,10 +2373,22 @@ The drawings are the source and the data module is generated from them.
    the tail line. So the body outline says what shape the letter is, and the
    reach outline — the same outline with only its part above the midline or
    below the baseline stretched — says how far the tall or hanging stroke
-   goes. A template is never rewritten over a drawing.
+   goes. A template is never rewritten over a drawing. The outline comes
+   from a UFO (`scripts/hand/glif.mjs`) or from a Glyphs package at one
+   point between its masters (`scripts/hand/glyphspkg.mjs`), which is how
+   Playwrite publishes: one source, and each model a choice of alternates
+   at an instance. Which glyph a character is traced over is SIL's naming
+   for Andika and the `tracedOver.glyphs` table in `hand.json` for a face
+   that names its own — for the cursive hand that table is the record of
+   which alternates make the US Trad model.
 2. **Draw**, in Inkscape or anything that saves SVG: one open path per pen
    stroke, in the order the pen makes them, in that layer. Where on the
-   template the letter sits does not matter.
+   template the letter sits does not matter. In a hand that joins, the
+   first stroke is drawn in named parts — a path labelled `lead` for the
+   lead-in, `top` for the top of a bowl, `tail` for the exit stroke, and
+   the body between them — each starting where the one before ends; the
+   ingest fuses them into one stroke and records how many segments each
+   was, which is the letter's `join`.
 3. **`scripts/hand-ingest.mjs`** reads every drawing in the directory into
    `src/engine/sheets/hands/<hand>.ts`. Relative, shorthand and implicit
    path forms become the four commands; layer and group transforms are
@@ -2405,20 +2422,60 @@ The print hand is traced over Andika's published UFO sources — the shapes
 are its shapes, made single-stroke — which makes the data a modified version
 of that face under the OFL. The generated module says so in its header, the
 hand carries its own name rather than a reserved one, and
-`public/fonts/LICENSE.md` records it beside the fonts. The cursive hands to
-come will be traced over Playwrite's sources the same way, which is what
-makes them the researched models rather than a guess at them.
+`public/fonts/LICENSE.md` records it beside the fonts. The cursive hand is
+traced over Playwrite's sources the same way, at the instance and with the
+alternates that are the US Trad model, which is what makes it the researched
+model rather than a guess at one; the other two cursive hands will follow it.
+
+### Joins — one line through a word
+
+§6 makes a point of never deciding which cursive letters join: the font's
+`calt` table sees the pair and the repo does not. A cursive hand has to
+decide, and this is how it does without a second drawing of any letter.
+
+Every small letter is drawn as it is written alone — with its lead-in, a
+rise from the baseline where the letter starts with one, and its exit
+stroke, the tail every letter of the looped model finishes with — and its
+`join` says how many segments of the first stroke each of those is. Two
+letters that join are the first without its tail, one curve, and the second
+without its lead-in, and a run carries on for as long as each letter joins
+out and the next joins in (`src/components/sheet/joined.ts`). The curve is a
+cubic from the point the first letter's body ends, heading the way its tail
+set off, to the point the second letter's body begins, heading the way its
+lead-in arrived, with both handles the same share of the distance between
+them. That one rule draws every family in `joins.ts`: a tail leaving the
+baseline flat and a lead-in arriving steep is the diagonal join; the same
+tail into a loop's top is the climb into a tall letter; a check leaving the
+top of an `o` heading right and down is the horizontal join, dipping and
+climbing into whatever comes next. Whether a join sets off from the midline
+is read off the letter rather than stored — a body that ends nearer the
+midline than the baseline leaves from its top, as `o`, `v`, `w` and `b` do —
+and a join from there does one more thing: it runs along the top of a round
+letter instead of climbing into it. That is `top`, the further segments of
+`a`, `c`, `d`, `e`, `g`, `o` and `q` a bridge covers, so `oa` drops into the
+left side of the `a` where `ea` comes up its right and over.
+
+What a run becomes is one path for the line the pen never lifts from, then
+the strokes it comes back for — the dots and crossbars — in the order the
+letters sit. So a dotted word is dotted through its joins, and the guide
+layout sees a joined pair as one stroke and numbers it so, which is what a
+joins sheet is teaching. A letter with no tail does not join out; that is
+how the unlooped models, which lift the pencil after some letters, will say
+so, and it is the `breaks` family becoming the hand's answer rather than
+the font's. A mark, a space or a character the hand lacks ends a run.
+
+The handle share and the halfway rule are judgements, and the specimen
+writes every pair of the joins sheet so they can be checked against the
+outline face's dotted row under them.
 
 ### What this costs
 
 Two things the outline faces gave for nothing.
 
-**Joins.** §6 makes a point of never deciding which cursive letters join —
-the font's `calt` table sees the pair and the repo does not. A cursive hand
-will decide: each small letter records where it exits and at what height,
-and the round letters get a second entry form for after a midline exit. The
-`breaks` family in `joins.ts` stops being the font's answer and becomes this
-repo's. That is real, and it is the price of a join drawn as one line.
+**Joining decided here.** The outline row still leaves every join to the
+font. A written row decides them by the section above, so a cursive hand
+that draws a letter without a tail has taken a position §6 refused to, and
+the drawing is where that position is written down.
 
 **Coverage.** A face has every character; a hand has the ones somebody drew.
 `drawable(hand, text)` says whether a text can be written in a hand, and the
@@ -2429,7 +2486,10 @@ word in one shape and half in another. The print hand has the two
 alphabets, the numerals, and the seven marks a copied sentence needs — full
 stop, comma, question and exclamation marks, apostrophe, hyphen and the
 middle dot the spacing sheet marks a space with — so on a print sheet the
-fallback is reached only by a character outside those, an accent say. A
+fallback is reached only by a character outside those, an accent say. The
+cursive hand has the small letters and the same marks, so a cursive sheet
+of small letters, joins or words is written in it and one with a capital
+or a numeral on the row is the outline face until those are drawn. A
 model of a letter or of a pair carries its guides; a model of a word does
 not. Which shape of each letter is `SheetOptions.forms`, picked under Face
 in the builder, carried onto the `Sheet` by `present()` exactly as the face
@@ -2442,7 +2502,7 @@ vocabulary knows.
 | ----- | --------------------------------------------------------------------------- | ------------------------------------------------- |
 | 0     | Template, ingest, renderer, six print letters in nine drawings, specimen    | this section                                      |
 | 1     | The print alphabets, numerals and marks, the letter shapes, every trace row | `hands/print.ts`, `blocks/Trace.tsx`, the builder |
-| 2     | The looped cursive small letters, with joins                                | `hands/cursive.ts`, `joins.ts`                    |
+| 2     | The looped cursive small letters, with joins                                | `hands/cursive.ts`, `joined.ts`                   |
 | 3     | Its capitals                                                                |                                                   |
 | 4     | The other two cursive models                                                |                                                   |
 | 5     | A font generated from the data, if one is ever wanted                       | a script, not a design                            |

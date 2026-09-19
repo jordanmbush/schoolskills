@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { expectedReach, readDrawing, strokesOf } from "./drawing.mjs";
+import { expectedReach, fused, readDrawing, strokesOf } from "./drawing.mjs";
+import { absolute } from "./path.mjs";
 
 const HAND = {
   id: "test",
@@ -168,5 +169,76 @@ describe("readDrawing, for a letter drawn in more than one form", () => {
     expect(() => readDrawing(hand, template("t", stem), "t.svg")).toThrow(
       /t\.svg: "t" is drawn in more than one form; name this one t\.curved\.svg/,
     );
+  });
+});
+
+describe("fused", () => {
+  const path = (name, d) => ({ name, segments: absolute(d) });
+
+  it("leaves a drawing with no named part alone", () => {
+    const paths = [
+      path(undefined, "M 0 0 L 1 1"),
+      path("path2", "M 2 2 L 3 3"),
+    ];
+    const { strokes, join } = fused(paths, "l.svg");
+    expect(strokes).toHaveLength(2);
+    expect(join).toBeUndefined();
+  });
+
+  it("fuses lead, top, body and tail into the first stroke and counts them", () => {
+    const paths = [
+      path("lead", "M 0 0 L 10 10"),
+      path("top", "M 10 10 C 11 11 12 12 13 13"),
+      path("body", "M 13 13 L 20 20 L 30 30"),
+      path("tail", "M 30 30 L 40 40"),
+      path("dot", "M 5 50 L 6 50"),
+    ];
+    const { strokes, join } = fused(paths, "a.svg");
+    expect(strokes).toHaveLength(2);
+    expect(strokes[0].map((s) => s.type).join("")).toBe("MLCLLL");
+    expect(join).toEqual({ lead: 1, top: 1, tail: 1 });
+  });
+
+  it("counts a missing lead-in or tail as none", () => {
+    const { join } = fused(
+      [path("body", "M 0 0 L 1 1"), path("tail", "M 1 1 L 2 2 L 3 3")],
+      "n.svg",
+    );
+    expect(join).toEqual({ lead: 0, tail: 2 });
+    const { join: noTail } = fused(
+      [path("lead", "M 0 0 L 1 1"), path(undefined, "M 1 1 L 2 2")],
+      "b.svg",
+    );
+    expect(noTail).toEqual({ lead: 1, tail: 0 });
+  });
+
+  it("refuses a part that does not meet the one before it", () => {
+    expect(() =>
+      fused(
+        [path("lead", "M 0 0 L 10 10"), path(undefined, "M 20 10 L 30 30")],
+        "i.svg",
+      ),
+    ).toThrow(
+      /i\.svg: "the body" starts at 20,10 but the part before it ends at 10,10/,
+    );
+  });
+
+  it("refuses a part out of order", () => {
+    expect(() =>
+      fused(
+        [
+          path("body", "M 0 0 L 1 1"),
+          path("dot", "M 5 5 L 6 6"),
+          path("tail", "M 1 1 L 2 2"),
+        ],
+        "i.svg",
+      ),
+    ).toThrow(/"tail" is out of place/);
+    expect(() =>
+      fused(
+        [path("lead", "M 0 0 L 1 1"), path("tail", "M 1 1 L 2 2")],
+        "i.svg",
+      ),
+    ).toThrow(/needs a body/);
   });
 });

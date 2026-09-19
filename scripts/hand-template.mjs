@@ -21,6 +21,14 @@
  *
  * Usage:
  *   node scripts/hand-template.mjs --hand print --ufo path/to/Andika-Regular.ufo a e g l t
+ *   node scripts/hand-template.mjs --hand cursive --glyphs path/to/Playwrite_MM.glyphspackage --instance m008,m016,0.2 a
+ *
+ * The outline comes from a UFO or from a Glyphs package at one instance
+ * (`scripts/hand/glyphspkg.mjs`). Which glyph of the source a character is
+ * traced over is SIL's naming for Andika, or the `tracedOver.glyphs` table
+ * in the hand's `hand.json` where the source names its own — a cursive
+ * model is one choice of alternates out of many, and that table is where
+ * the choice is written down.
  *
  * Glyphs are given as characters (`a`, `A`, `5`) or as their file stems
  * (`A_`, `five`) — see `scripts/hand/names.mjs`. A letter the hand draws in
@@ -35,6 +43,11 @@ import { fileURLToPath } from "node:url";
 
 import { fontInfo, readContents, readGlyph } from "./hand/glif.mjs";
 import { splitId } from "./hand/forms.mjs";
+import {
+  packageXHeight,
+  parseInstance,
+  readPackageGlyph,
+} from "./hand/glyphspkg.mjs";
 import { CHARACTERS, SIL_FORMS, SIL_NAMES, STEMS } from "./hand/names.mjs";
 import { bounds, serialise } from "./hand/path.mjs";
 
@@ -51,10 +64,39 @@ function args(argv) {
   for (let i = 0; i < argv.length; i += 1) {
     if (argv[i] === "--hand") out.hand = argv[++i];
     else if (argv[i] === "--ufo") out.ufo = argv[++i];
+    else if (argv[i] === "--glyphs") out.package = argv[++i];
+    else if (argv[i] === "--instance") out.instance = argv[++i];
     else out.glyphs.push(argv[i]);
   }
   if (!out.hand) throw new Error("--hand is required");
+  if (out.package && !out.instance) {
+    throw new Error("--glyphs needs --instance: two master ids and a share");
+  }
   return out;
+}
+
+/**
+ * Where the outlines come from, behind one `read(name)`: a UFO, or a Glyphs
+ * package at an instance. Nothing, when no source was given.
+ */
+function sourceOf({ ufo, package: pkg, instance }) {
+  if (ufo) {
+    const contents = readContents(ufo);
+    return {
+      xHeight: fontInfo(ufo, "xHeight"),
+      read: (name) => readGlyph(ufo, name, contents),
+      where: ufo,
+    };
+  }
+  if (pkg) {
+    const at = parseInstance(instance);
+    return {
+      xHeight: packageXHeight(pkg, at),
+      read: (name) => readPackageGlyph(pkg, name, at),
+      where: pkg,
+    };
+  }
+  return null;
 }
 
 /** How far a character reaches, as the hand's own share of its ruling. */
@@ -216,14 +258,14 @@ function wanted(hand, given) {
 }
 
 function main() {
-  const { hand: id, ufo, glyphs } = args(process.argv.slice(2));
+  const parsed = args(process.argv.slice(2));
+  const { hand: id, glyphs } = parsed;
   const dir = join(ROOT, "art", "hands", id);
   const hand = JSON.parse(readFileSync(join(dir, "hand.json"), "utf8"));
   mkdirSync(dir, { recursive: true });
 
-  const source = ufo
-    ? { contents: readContents(ufo), xHeight: fontInfo(ufo, "xHeight") }
-    : null;
+  const source = sourceOf(parsed);
+  const named = hand.tracedOver?.glyphs ?? {};
 
   for (const { stem, form } of wanted(hand, glyphs)) {
     const character = CHARACTERS[stem];
@@ -245,10 +287,16 @@ function main() {
     }
     let glyph = null;
     if (source) {
-      const outline = SIL_FORMS[`${character}.${form}`] ?? SIL_NAMES[character];
-      glyph = readGlyph(ufo, outline, source.contents);
+      const outline =
+        named[`${character}.${form}`] ??
+        named[character] ??
+        SIL_FORMS[`${character}.${form}`] ??
+        SIL_NAMES[character];
+      glyph = source.read(outline);
       if (glyph === null) {
-        console.error(`no outline for ${name}: ${outline} is not in ${ufo}`);
+        console.error(
+          `no outline for ${name}: ${outline} is not in ${source.where}`,
+        );
       }
     }
     writeFileSync(file, template({ hand, character, id: name, glyph, source }));

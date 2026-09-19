@@ -1,6 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
+import { CURSIVE } from "@/engine/sheets/hands/cursive";
 import { PRINT } from "@/engine/sheets/hands/print";
 import { contentBox } from "@/engine/sheets/layout";
 import { DEFAULT_PAPER, rulePitch, writingSpace } from "@/engine/sheets/paper";
@@ -27,6 +28,16 @@ const render = (cells: WrittenCell[], rule: Rule = RULE, forms?: Forms) =>
       hand={PRINT}
       cells={cells}
       forms={forms}
+    />,
+  );
+
+const renderCursive = (cells: WrittenCell[]) =>
+  renderToStaticMarkup(
+    <WrittenRow
+      rule={RULE}
+      metrics={{ ...metrics, font: "cursive" }}
+      hand={CURSIVE}
+      cells={cells}
     />,
   );
 
@@ -184,5 +195,50 @@ describe("WrittenRow", () => {
   it("writes a character the hand lacks as a space, not as nothing", () => {
     const html = render([{ text: "a@", style: "solid" }]);
     expect(strokes(html)).toHaveLength(PRINT.glyphs.a.strokes.length);
+  });
+});
+
+describe("WrittenRow in a hand that joins", () => {
+  it("writes a word as one line, then the dots and crossbars in order", () => {
+    const html = renderCursive([{ text: "quit", style: "dotted" }]);
+    const drawn = strokes(html);
+    // One path for the joined line, one for the i's dot, one for the t's bar.
+    expect(drawn).toHaveLength(3);
+    const line = html.match(
+      /<path class="sheet__stroke[^"]*" d="([^"]*)"/,
+    )?.[1];
+    // A join is one cubic between the letters, so the line never moves the
+    // pen: one M, and nothing after it but the four drawing commands.
+    expect(line?.match(/M /g)).toHaveLength(1);
+  });
+
+  it("writes a letter alone with its lead-in and its tail", () => {
+    const html = renderCursive([{ text: "i", style: "solid" }]);
+    const line = html.match(
+      /<path class="sheet__stroke[^"]*" d="([^"]*)"/,
+    )?.[1];
+    const alone = CURSIVE.glyphs.i.strokes[0];
+    expect((line?.match(/ [LCQ] /g) ?? []).length).toBe(
+      (alone.match(/ [LCQ] /g) ?? []).length,
+    );
+  });
+
+  it("numbers a joined pair as one stroke and its marks", () => {
+    const html = renderCursive([{ text: "in", style: "solid", guides: true }]);
+    expect(html.match(/<circle/g)).toHaveLength(2);
+    expect(html).toContain(">1</text>");
+    expect(html).toContain(">2</text>");
+    expect(html).not.toContain(">3</text>");
+  });
+
+  it("lifts the pen at a mark and at a space", () => {
+    const marked = renderCursive([{ text: "a.b", style: "solid" }]);
+    // a alone, the stop, b alone: three units, four paths with none joined.
+    expect(strokes(marked)).toHaveLength(3);
+    const spaced = renderCursive([{ text: "a b", style: "solid" }]);
+    expect(strokes(spaced)).toHaveLength(2);
+    expect(
+      strokes(renderCursive([{ text: "ab", style: "solid" }])),
+    ).toHaveLength(1);
   });
 });

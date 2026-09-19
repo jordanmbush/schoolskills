@@ -20,6 +20,10 @@
  * the small letters reach the midline as well. A cell whose text is wider
  * than the cell shrinks to fit rather than running into its neighbour, as a
  * traced cell does.
+ *
+ * In a hand that joins, the letters of a word are one line for as long as
+ * they join (`joined.ts`), so a dotted word is dotted through its joins and
+ * a joined pair on a model carries one start dot, not two.
  */
 import {
   glyphOf,
@@ -32,8 +36,9 @@ import { rulePitch, writingSpace } from "@/engine/sheets/paper";
 import type { Rule, TraceStyle } from "@/engine/sheets/types";
 
 import { Ruling } from "./Ruling";
-import { pathOf, placeStroke, type Segment } from "./glyphs";
+import { pathOf, placeStroke } from "./glyphs";
 import { wordGuides, type GuideSet } from "./guides";
+import { joined, type Placed } from "./joined";
 import type { SheetMetrics } from "./metrics";
 import { letterInk } from "./strokes";
 import { inch } from "./units";
@@ -143,16 +148,25 @@ export function WrittenRow({
               ? ink.dashed
               : undefined;
         const weight = entry.style === "hollow" ? ink.width / 2 : ink.width;
-        // Every letter is placed before any guide is laid out, because a
-        // letter's guides keep off its neighbours' ink as well as its own.
-        const letters: Segment[][][] = [...entry.text].map((character) => {
+        // Every letter is placed before any join is drawn or any guide laid
+        // out: a join needs both its letters on the paper, and a letter's
+        // guides keep off its neighbours' ink as well as its own.
+        const placed: Placed[] = [...entry.text].map((character) => {
           const glyph = glyphOf(hand, character, forms);
           const origin = x;
           x += (glyph?.advance ?? hand.space) * fitted + tracking;
-          return (glyph?.strokes ?? []).map((stroke) =>
-            placeStroke(stroke, origin, baseline, fitted),
-          );
+          return {
+            strokes: (glyph?.strokes ?? []).map((stroke) =>
+              placeStroke(stroke, origin, baseline, fitted),
+            ),
+            join: glyph?.join,
+          };
         });
+        const letters = joined(
+          placed,
+          baseline,
+          baseline - hand.xHeight * fitted,
+        );
         const sets = entry.guides ? wordGuides(letters, writing, ink) : [];
         return (
           <g key={`${index}-${entry.text}`}>
