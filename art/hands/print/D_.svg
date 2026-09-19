@@ -47,6 +47,6 @@
   </g>
   <g inkscape:groupmode="layer" id="strokes" inkscape:label="strokes">
     <path id="stroke-1" d="M 210 150 L 210 1150" fill="none" stroke="#111" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
-    <path id="stroke-2" d="M 210 150 C 508.2 150 750 373.9 750 650 C 750 926.1 508.2 1150 210 1150" fill="none" stroke="#111" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
+    <path id="stroke-2" d="M 210 150 L 250 150 C 526.1 150 750 373.9 750 650 C 750 926.1 526.1 1150 250 1150 L 210 1150" fill="none" stroke="#111" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
   </g>
 </svg>
