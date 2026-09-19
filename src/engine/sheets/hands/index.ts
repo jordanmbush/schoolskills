@@ -10,12 +10,16 @@ import { faceOf } from "../faces";
 import type { SheetFont } from "../types";
 
 import { CURSIVE } from "./cursive";
+import { CURSIVE_MODERN } from "./cursive-modern";
+import { CURSIVE_UK } from "./cursive-uk";
 import type { Hand } from "./hand";
 import { PRINT } from "./print";
 
 const HANDS: Partial<Record<SheetFont, Hand>> = {
   print: PRINT,
   cursive: CURSIVE,
+  "cursive-modern": CURSIVE_MODERN,
+  "cursive-uk": CURSIVE_UK,
 };
 
 /** The hand a face is written in, or nothing: a face without one keeps the outline row. */

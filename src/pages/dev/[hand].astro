@@ -5,6 +5,8 @@ import { TracedRow } from "@/components/sheet/Traced";
 import { inch, pt } from "@/components/sheet/units";
 import { WrittenRow, type WrittenCell } from "@/components/sheet/Written";
 import { CURSIVE } from "@/engine/sheets/hands/cursive";
+import { CURSIVE_MODERN } from "@/engine/sheets/hands/cursive-modern";
+import { CURSIVE_UK } from "@/engine/sheets/hands/cursive-uk";
 import {
   formsOf,
   joinsIn,
@@ -33,6 +35,8 @@ import "@/styles/sheet.css";
 const HANDS: Record<string, { hand: Hand; font: SheetFont }> = {
   print: { hand: PRINT, font: "print" },
   cursive: { hand: CURSIVE, font: "cursive" },
+  "cursive-modern": { hand: CURSIVE_MODERN, font: "cursive-modern" },
+  "cursive-uk": { hand: CURSIVE_UK, font: "cursive-uk" },
 };
 
 // Astro runs this apart from the rest of the frontmatter, so the ids are
@@ -40,7 +44,9 @@ const HANDS: Record<string, { hand: Hand; font: SheetFont }> = {
 export function getStaticPaths() {
   return import.meta.env.PROD
     ? []
-    : ["print", "cursive"].map((hand) => ({ params: { hand } }));
+    : ["print", "cursive", "cursive-modern", "cursive-uk"].map((hand) => ({
+        params: { hand },
+      }));
 }
 
 const { hand, font } = HANDS[Astro.params.hand ?? "print"];

@@ -2407,7 +2407,7 @@ describe("rows written in a hand", () => {
 
   it("keeps a face with no hand on the outline row", () => {
     const html = tracing([{ text: "gate", style: "solid" }], {
-      font: "cursive-modern",
+      font: "dyslexic",
     });
     expect(outlined(html)).toBe(true);
     expect(strokes(html)).toHaveLength(0);
@@ -2437,6 +2437,20 @@ describe("rows written in a hand", () => {
     });
     expect(outlined(numbered)).toBe(true);
     expect(strokes(numbered)).toHaveLength(0);
+  });
+
+  it("writes the other two cursive models in their own hands: one lifts after a b, the other joins through it", () => {
+    const lifted = tracing([{ text: "bat", style: "solid" }], {
+      font: "cursive-modern",
+    });
+    expect(outlined(lifted)).toBe(false);
+    // The b alone, then "at" as one line, then the t's crossbar.
+    expect(strokes(lifted)).toHaveLength(3);
+    const joined = tracing([{ text: "bat", style: "solid" }], {
+      font: "cursive-uk",
+    });
+    expect(outlined(joined)).toBe(false);
+    expect(strokes(joined)).toHaveLength(2);
   });
 
   it("writes the letter shapes the sheet asks for", () => {

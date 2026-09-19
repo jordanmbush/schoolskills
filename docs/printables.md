@@ -2388,9 +2388,12 @@ The drawings are the source and the data module is generated from them.
    lead-in, `top` for the top of a bowl, `tail` for the exit stroke, and
    the body between them — each starting where the one before ends; the
    ingest fuses them into one stroke and records how many segments each
-   was, which is the letter's `join`. That stroke is the first unless the
-   letter writes another before it, as a capital `K` writes its stem
-   before the arm that joins, and the ingest records which it was.
+   was, which is the letter's `join`. The body is labelled `body` where
+   nothing else marks the stroke as a joining one: a letter the unlooped
+   American model lifts the pencil after has neither lead-in nor tail, and
+   joins in all the same. That stroke is the first unless the letter writes
+   another before it, as a capital `K` writes its stem before the arm that
+   joins, and the ingest records which it was.
 3. **`scripts/hand-ingest.mjs`** reads every drawing in the directory into
    `src/engine/sheets/hands/<hand>.ts`. Relative, shorthand and implicit
    path forms become the four commands; layer and group transforms are
@@ -2424,10 +2427,10 @@ The print hand is traced over Andika's published UFO sources — the shapes
 are its shapes, made single-stroke — which makes the data a modified version
 of that face under the OFL. The generated module says so in its header, the
 hand carries its own name rather than a reserved one, and
-`public/fonts/LICENSE.md` records it beside the fonts. The cursive hand is
-traced over Playwrite's sources the same way, at the instance and with the
-alternates that are the US Trad model, which is what makes it the researched
-model rather than a guess at one; the other two cursive hands will follow it.
+`public/fonts/LICENSE.md` records it beside the fonts. The three cursive
+hands are traced over Playwrite's sources the same way, each at the instance
+and with the alternates that are its model — US Trad, US Modern and GB J —
+which is what makes each the researched model rather than a guess at one.
 
 ### Joins — one line through a word
 
@@ -2462,9 +2465,9 @@ the strokes it comes back for — the dots and crossbars — in the order the
 letters sit. So a dotted word is dotted through its joins, and the guide
 layout sees a joined pair as one stroke and numbers it so, which is what a
 joins sheet is teaching. A letter with no tail does not join out; that is
-how the unlooped models, which lift the pencil after some letters, will say
-so, and it is the `breaks` family becoming the hand's answer rather than
-the font's. A mark, a space or a character the hand lacks ends a run.
+how the unlooped American model, which lifts the pencil after some letters,
+says so, and it is the `breaks` family becoming the hand's answer rather
+than the font's. A mark, a space or a character the hand lacks ends a run.
 
 A capital begins its word, and the model settles which capitals connect to
 the letter after them: the fifteen that finish on the baseline — `A`, `C`,
@@ -2476,6 +2479,26 @@ and starts again at the `K`. Where a capital writes a stroke before the
 one that joins, as the `K` writes its stem, the join says which stroke it
 is on, and the run keeps that stroke ahead of its line so a model's
 numbering is still the pen's order.
+
+The two unlooped hands are the same rules applied to models that draw no
+lead-in. Every small letter of both is written from where a print letter
+starts, and the entry stroke a child sees on every letter of a British
+joined word is the join itself arriving. So the run decides how a join
+arrives at a letter with nothing to replace, by which way the letter sets
+off. Over the top of a bowl or along the bar of an `e`, the join arrives
+heading that way and the curve flows into the letter. Down a stem — every
+`i`, `t`, `n` and `b` of both models — it arrives along the straight line
+from where it left, the way a pen goes to the top of a stem and turns
+there; arriving the way the stem sets off would swing the join up over the
+top of the stem and back down into it. The one entry stroke that is drawn
+rather than decided is the American model's `m`, `n` and `r`, which
+written alone start with a short rise from the left, and that is a lead-in
+like any other. Which letters join out was read off Playwrite's own
+connection classes, as the capitals' joins were: the British model carries
+a tail on every letter, the American one on none of `b`, `f`, `g`, `j`,
+`p`, `q`, `s` and `y`, so a run ends at those and the letter after starts
+as it would alone — which is how `Zebra` in that model gets the rise on
+its `r`. Both models' capitals are print, and none joins.
 
 The handle share and the halfway rule are judgements, and the specimen
 writes every pair of the joins sheet so they can be checked against the
@@ -2500,9 +2523,10 @@ alphabets, the numerals, and the seven marks a copied sentence needs — full
 stop, comma, question and exclamation marks, apostrophe, hyphen and the
 middle dot the spacing sheet marks a space with — so on a print sheet the
 fallback is reached only by a character outside those, an accent say. The
-cursive hand has both alphabets and the same marks, so a cursive sheet of
-letters, joins, words or copywork is written in it and a row with a
-numeral on it is the outline face until those are drawn. A
+three cursive hands have both alphabets and the same marks, so a cursive
+sheet of letters, joins, words or copywork in any model is written in its
+hand, and a row with a numeral on it is the outline face until those are
+drawn. A
 model of a letter or of a pair carries its guides; a model of a word does
 not. Which shape of each letter is `SheetOptions.forms`, picked under Face
 in the builder, carried onto the `Sheet` by `present()` exactly as the face
@@ -2517,7 +2541,7 @@ vocabulary knows.
 | 1     | The print alphabets, numerals and marks, the letter shapes, every trace row  | `hands/print.ts`, `blocks/Trace.tsx`, the builder |
 | 2     | The looped cursive small letters, with joins                                 | `hands/cursive.ts`, `joined.ts`                   |
 | 3     | Its capitals, and the capital that writes its stem before its joining stroke | `hands/cursive.ts`, `joined.ts`                   |
-| 4     | The other two cursive models                                                 |                                                   |
+| 4     | The other two cursive models, and the join into a letter with no lead-in     | `hands/cursive-modern.ts`, `hands/cursive-uk.ts`  |
 | 5     | A font generated from the data, if one is ever wanted                        | a script, not a design                            |
 
 A face without a hand keeps the outline row, so print ships before any
