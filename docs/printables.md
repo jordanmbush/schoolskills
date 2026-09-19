@@ -2370,12 +2370,22 @@ of the letter and the start of the stroke win, so a plain stem gets the
 arrow a teacher would draw. The weights are judgements, and the specimen
 page is where they are checked: change one and look at every letter.
 
+Which models carry them is the sheet's choice: `guides` on a trace block,
+and on the two writing families' configs. The usual, `letters`, is a single
+letter, numeral or `Aa` pair and not a word, because the marks between a
+word's letters crowd the row. `all` guides every model, a parent's own words
+and sentences included, and `none` leaves them all bare. The builder asks it
+as one three-way choice on both panels, and only in a face with a hand — the
+outline row has no strokes to mark.
+
 A word set as a model is laid out letter by letter, each keeping off its
 neighbours' ink and the earlier letters' marks, and the row tracks the
 letters out into whatever spare room the cell has, never shrinking the word
-to make it. That is enough for a short word on a wide cell; a guided word is
-a stress test of the layout rather than something a sheet is expected to
-print.
+to make it. In a block set to `all`, every cell gets that room — the wider
+inset and the spread — whether or not it draws the marks. A sentence whose
+model was tracked out and whose trace was not would put every dotted letter a
+little to the left of its solid one, which on the finger-spaces sheet is the
+misalignment §24 exists to avoid.
 
 ### How a hand is drawn
 

@@ -133,6 +133,27 @@ describe("WrittenRow", () => {
     expect(render([{ text: "t", style: "dotted" }])).not.toContain("<circle");
   });
 
+  it("sets a plain cell with a guided cell's room when the row says so", () => {
+    const at = (html: string) =>
+      Number(html.match(/<path class="sheet__stroke[^"]*" d="M ([\d.]+)/)?.[1]);
+    const model = render([{ text: "cat", style: "solid", guides: true }]);
+    const trace = render([{ text: "cat", style: "dotted" }]);
+    const roomy = renderToStaticMarkup(
+      <WrittenRow
+        rule={RULE}
+        metrics={metrics}
+        hand={PRINT}
+        cells={[{ text: "cat", style: "dotted" }]}
+        guided
+      />,
+    );
+    // A guided model starts further in, to leave room for its marks; a trace
+    // under it does the same only when told, and still draws no marks.
+    expect(at(trace)).toBeLessThan(at(model));
+    expect(at(roomy)).toBe(at(model));
+    expect(roomy).not.toContain("<circle");
+  });
+
   it("puts the start dot on the stroke's first point", () => {
     const html = render([{ text: "l", style: "solid", guides: true }]);
     const d = html.match(

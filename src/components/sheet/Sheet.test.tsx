@@ -17,6 +17,7 @@ import {
   noteHeight,
 } from "@/engine/sheets/layout";
 import { decimalTableau } from "@/engine/sheets/maths/decimal-division";
+import { PRINT } from "@/engine/sheets/hands/print";
 import { divisionLines } from "@/engine/sheets/maths/long";
 import { divisionTableau } from "@/engine/sheets/maths/tableau";
 import { LESSON_TOPICS } from "@/engine/sheets/lessons/lesson";
@@ -38,6 +39,7 @@ import type {
   FractionConfig,
   GeometryConfig,
   LessonConfig,
+  ModelGuides,
   MoneyConfig,
   MultiplicationConfig,
   Paper,
@@ -2392,6 +2394,70 @@ describe("rows written in a hand", () => {
     ]);
     expect(strokes(html).length).toBeGreaterThan(0);
     expect(outlined(html)).toBe(false);
+  });
+
+  it("guides the models the block says to: a letter or pair unless told, every model on all, none on none", () => {
+    const numbered = (cells: TraceCell[], guides?: ModelGuides) =>
+      render(
+        sheet({
+          blocks: [
+            {
+              kind: "trace",
+              rule: { style: "hand-5-8", midline: "dashed", descender: true },
+              rows: [{ cells }],
+              ...(guides ? { guides } : {}),
+            },
+          ],
+        }),
+      ).match(/sheet__guide-number/g)?.length ?? 0;
+    const strokesIn = (text: string) =>
+      [...text].reduce((n, c) => n + PRINT.glyphs[c].strokes.length, 0);
+    const pair: TraceCell[] = [
+      { text: "Aa", style: "solid" },
+      { text: "Aa", style: "dotted" },
+    ];
+    const word: TraceCell[] = [
+      { text: "gate", style: "solid" },
+      { text: "gate", style: "dotted" },
+    ];
+    expect(numbered(pair)).toBe(strokesIn("Aa"));
+    expect(numbered(word)).toBe(0);
+    expect(numbered(word, "all")).toBe(strokesIn("gate"));
+    expect(numbered(pair, "none")).toBe(0);
+  });
+
+  it("gives every row of a block guided on all the model's spacing, so a trace lines up under it", () => {
+    const starts = (guides?: ModelGuides) =>
+      [
+        ...render(
+          sheet({
+            blocks: [
+              {
+                kind: "trace",
+                rule: { style: "hand-5-8", midline: "dashed", descender: true },
+                rows: [
+                  { cells: [{ text: "The dog", style: "solid" }] },
+                  { cells: [{ text: "The dog", style: "dotted" }] },
+                ],
+                ...(guides ? { guides } : {}),
+              },
+            ],
+          }),
+        ).matchAll(
+          /<path class="sheet__stroke sheet__stroke--(\w+)" d="M ([\d.]+)/g,
+        ),
+      ].map((match) => ({ style: match[1], x: Number(match[2]) }));
+    const guided = starts("all");
+    const solid = guided.filter((s) => s.style === "solid").map((s) => s.x);
+    const dotted = guided.filter((s) => s.style === "dotted").map((s) => s.x);
+    expect(solid.length).toBeGreaterThan(0);
+    expect(dotted).toEqual(solid);
+    // And both are spread out from where the same rows sit unguided, which
+    // is the room the marks need.
+    const plain = starts()
+      .filter((s) => s.style === "solid")
+      .map((s) => s.x);
+    expect(solid[solid.length - 1]).toBeGreaterThan(plain[plain.length - 1]);
   });
 
   it("sets a row the hand cannot write whole in the outline face", () => {

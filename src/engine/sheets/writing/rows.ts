@@ -15,6 +15,7 @@ import type {
   Block,
   LetterCase,
   Mil,
+  ModelGuides,
   Rule,
   TraceCell,
   TraceRow,
@@ -248,5 +249,11 @@ export const tracePages = (
   rule: Rule,
   rows: TraceRow[],
   perPage: number,
+  guides?: ModelGuides,
 ): Block[] =>
-  paged(rows, perPage, (page) => ({ kind: "trace", rule, rows: page }));
+  paged(rows, perPage, (page) => ({
+    kind: "trace",
+    rule,
+    rows: page,
+    ...(guides ? { guides } : {}),
+  }));

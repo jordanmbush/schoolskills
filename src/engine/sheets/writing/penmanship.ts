@@ -323,7 +323,7 @@ function groupedRows(config: PenmanshipConfig, groups: string[][]): Block[] {
   );
   const styles = stylesOf(config);
   const drawn = groups.flatMap((group) => rowsAcross(group, styles, perRow));
-  return tracePages(rule, drawn, rows);
+  return tracePages(rule, drawn, rows, config.guides);
 }
 
 /**
@@ -341,7 +341,7 @@ function zoneRows(config: PenmanshipConfig): Block[] {
     ),
     ...rowsAcross(ZONE_WORDS, styles, words.perRow),
   ];
-  return tracePages(letters.rule, drawn, letters.rows);
+  return tracePages(letters.rule, drawn, letters.rows, config.guides);
 }
 
 /**
@@ -370,7 +370,7 @@ function spacingRows(config: PenmanshipConfig): Block[] {
       ],
     })),
   );
-  return tracePages(rule, drawn, perPage * styles.length);
+  return tracePages(rule, drawn, perPage * styles.length, config.guides);
 }
 
 /** A string cut into pieces of at most `width` characters. */
@@ -430,7 +430,12 @@ function fluencyRows(config: PenmanshipConfig): Block[] {
     })),
   ];
   return [
-    { kind: "trace", rule, rows: drawn },
+    {
+      kind: "trace",
+      rule,
+      rows: drawn,
+      ...(config.guides ? { guides: config.guides } : {}),
+    },
     {
       kind: "note",
       text: [countText(config)],

@@ -122,6 +122,7 @@ describeSheetFamily("penmanship", {
     { style: "check", words: ["cat", "dog"] },
     { style: "fluency" },
     { style: "fluency", task: "sentence", text: "One line." },
+    { style: "spacing", guides: "all" },
   ],
   keyed: () => false,
 });
@@ -324,6 +325,22 @@ describe("a finger spaces sheet", () => {
     expect(trace.cells[0].text).toBe(SPACING_SENTENCES[0]);
     expect(trace.cells[0].spaces).toBe("finger");
     expect(empty.cells[0].spaces).toBe("finger");
+  });
+
+  it("carries the guides choice on to the block, as every style with letters does", () => {
+    const guidesOf = (over: Partial<PenmanshipConfig>) =>
+      build(over).blocks.flatMap((block) =>
+        block.kind === "trace" ? [block.guides] : [],
+      );
+    expect(guidesOf({ style: "spacing", text: "One two." })).toEqual([
+      undefined,
+    ]);
+    expect(guidesOf({ style: "spacing", text: "One two.", guides: "all" })) //
+      .toEqual(["all"]);
+    expect(guidesOf({ style: "check", words: ["cat"], guides: "all" })) //
+      .toEqual(["all"]);
+    expect(guidesOf({ style: "fluency", task: "sentence", guides: "none" })) //
+      .toEqual(["none"]);
   });
 
   it("sets the sentences a parent typed, one a line, blank lines dropped", () => {

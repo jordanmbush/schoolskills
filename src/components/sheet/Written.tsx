@@ -98,12 +98,20 @@ export function WrittenRow({
   hand,
   cells,
   forms = {},
+  guided = false,
 }: {
   rule: Rule;
   metrics: SheetMetrics;
   hand: Hand;
   cells: WrittenCell[];
   forms?: Forms;
+  /**
+   * Set every cell with a guided cell's room — the wider inset and the
+   * spread between letters — whether or not it draws the marks, so a model
+   * and the rows traced under it line up. On for a block whose every model
+   * is guided (§25).
+   */
+  guided?: boolean;
 }) {
   const pitch = rulePitch(rule);
   const width = metrics.box.width;
@@ -131,8 +139,9 @@ export function WrittenRow({
   const cell = cells.length > 0 ? Math.floor(width / cells.length) : width;
   // A model with guides needs room beside its ink for an arrow and a number;
   // any other cell only needs its letters off the cell's edge.
+  const roomy = (entry: WrittenCell) => guided || entry.guides === true;
   const insetOf = (entry: WrittenCell) =>
-    entry.guides ? Math.max(ink.width * 2, writing * 0.26) : ink.width * 2;
+    roomy(entry) ? Math.max(ink.width * 2, writing * 0.26) : ink.width * 2;
 
   const said = [...new Set(cells.map((entry) => entry.text))]
     .filter((text) => text !== "")
@@ -159,7 +168,7 @@ export function WrittenRow({
         // one letter's marks are not the next letter's problem — but only
         // from the spare room: a word is never shrunk to make it.
         const gaps = Math.max(1, entry.text.length - 1);
-        const tracking = entry.guides
+        const tracking = roomy(entry)
           ? Math.max(0, Math.min(writing * 0.3, (room - units * fitted) / gaps))
           : 0;
         let x = index * cell + inset;

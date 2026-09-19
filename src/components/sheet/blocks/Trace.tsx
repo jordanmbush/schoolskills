@@ -1,6 +1,6 @@
 import { handOf } from "@/engine/sheets/hands";
 import { drawable } from "@/engine/sheets/hands/hand";
-import type { TraceCell } from "@/engine/sheets/types";
+import type { ModelGuides, TraceCell } from "@/engine/sheets/types";
 
 import { TracedRow } from "../Traced";
 import { WrittenRow, type WrittenCell } from "../Written";
@@ -24,6 +24,7 @@ import type { BlockProps } from "./block";
  */
 export function Trace({ block, metrics }: BlockProps<"trace">) {
   const hand = handOf(metrics.font);
+  const guides = block.guides ?? "letters";
   return (
     <div className="sheet__block">
       {block.rows.map((row, index) => (
@@ -36,8 +37,9 @@ export function Trace({ block, metrics }: BlockProps<"trace">) {
               rule={block.rule}
               metrics={metrics}
               hand={hand}
-              cells={row.cells.map(written)}
+              cells={row.cells.map((cell) => written(cell, guides))}
               forms={metrics.forms}
+              guided={guides === "all"}
             />
           ) : (
             <TracedRow rule={block.rule} metrics={metrics} cells={row.cells} />
@@ -49,11 +51,16 @@ export function Trace({ block, metrics }: BlockProps<"trace">) {
 }
 
 /**
- * A model of a letter, a numeral or an `Aa` pair carries its guides; a model
- * of a word does not. The marks between a word's letters crowd the row, and
- * the row never shrinks a word to make room for them (§25).
+ * Which models carry their guides (§25). The usual is a letter, a numeral or
+ * an `Aa` pair and not a word: the marks between a word's letters crowd the
+ * row, and the row never shrinks a word to make room for them. A block set
+ * to `all` guides every model, and every cell in it is then set with a
+ * guided cell's room, drawn or not, so a sentence and the rows traced under
+ * it line up. A value this build has never heard of is read as the usual.
  */
-const written = (cell: TraceCell): WrittenCell => ({
+const written = (cell: TraceCell, guides: ModelGuides): WrittenCell => ({
   ...cell,
-  guides: cell.style === "solid" && cell.text.length <= 2,
+  guides:
+    cell.style === "solid" &&
+    (guides === "all" || (guides !== "none" && cell.text.length <= 2)),
 });

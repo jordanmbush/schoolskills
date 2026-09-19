@@ -190,12 +190,22 @@ function bodyOf(config: HandwritingConfig): Block[] {
     const { box, em, face, perPage, rule } = handwritingLayout(config, 1);
     const { text } = copyworkSource(config);
     const lines = wrapPassage(text, fittedCharacters(box.width, em, face));
-    return tracePages(rule, rowsDown(lines, styles), perPage * styles.length);
+    return tracePages(
+      rule,
+      rowsDown(lines, styles),
+      perPage * styles.length,
+      config.guides,
+    );
   }
 
   const things = contentOf(config);
   const { rows, perRow, rule } = handwritingLayout(config, longestOf(things));
-  return tracePages(rule, rowsAcross(things, styles, perRow), rows);
+  return tracePages(
+    rule,
+    rowsAcross(things, styles, perRow),
+    rows,
+    config.guides,
+  );
 }
 
 /* ── What it is called ─────────────────────────────────────────────────── */

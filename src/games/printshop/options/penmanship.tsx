@@ -35,6 +35,7 @@ import {
 import { Checkbox, FieldSet, NumberStepper } from "@/components/ui/kit";
 import { parseWords } from "@/services/decks";
 
+import { GuidesControl } from "./guides";
 import {
   Choice,
   Pool,
@@ -222,6 +223,14 @@ export function PenmanshipPanel({ config, set }: PanelProps<PenmanshipConfig>) {
           value={config.trace}
           onChange={(trace) => set({ trace })}
           options={TRACES}
+        />
+      )}
+
+      {style !== "strokes" && (
+        <GuidesControl
+          font={config.font}
+          value={config.guides}
+          onChange={(guides) => set({ guides })}
         />
       )}
 

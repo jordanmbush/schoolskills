@@ -86,6 +86,14 @@ export type Rule = {
 export type TraceStyle =
   "solid" | "dim" | "hollow" | "dotted" | "dashed" | "none";
 
+/**
+ * Which models on a tracing row carry their guides — the start dot, the
+ * arrow and the number on each stroke (§25). `letters` is a single letter,
+ * numeral or pair and not a word; `all` is every model, words and sentences
+ * included; `none` is no marks at all.
+ */
+export type ModelGuides = "letters" | "all" | "none";
+
 /** A line to count along, under a problem — or, on its own, the whole sheet. */
 export type NumberLine = {
   from: number;
@@ -640,7 +648,13 @@ export type Block =
       start?: number;
     }
   | { kind: "rules"; rule: Rule; lines: number }
-  | { kind: "trace"; rule: Rule; rows: TraceRow[] }
+  | {
+      kind: "trace";
+      rule: Rule;
+      rows: TraceRow[];
+      /** Which models carry their guides. Absent is `letters` (§25). */
+      guides?: ModelGuides;
+    }
   | { kind: "strokes"; rule: Rule; rows: StrokeRow[] }
   | { kind: "copywork"; text: string; rule: Rule; mode: TraceStyle }
   | { kind: "grid"; grid: GridSpec }
@@ -1932,6 +1946,14 @@ export type HandwritingConfig = SheetOptions & {
    * way, which is the sheet for a child not yet ready to be left alone.
    */
   progression?: boolean;
+  /**
+   * Which models carry the guides — the dot, arrow and number on each stroke
+   * (§25). Absent is `letters`: a single letter or pair has them and a word
+   * does not, which is what a letter sheet has always printed. `all` puts
+   * them on the model of a word or a sentence too, the parent's own included;
+   * `none` leaves every model bare.
+   */
+  guides?: ModelGuides;
   /** `letters` only. Absent is both cases, which is how letters are taught. */
   letters?: LetterCase;
   /**
@@ -2010,6 +2032,8 @@ export type PenmanshipConfig = SheetOptions & {
    */
   repeats: number;
   progression?: boolean;
+  /** As `HandwritingConfig.guides`. Nothing on a strokes sheet, which has no letters. */
+  guides?: ModelGuides;
   /**
    * `strokes` only: how many rows each pattern gets. The first walks the
    * progression; the rest are the child's own. Absent is one.
