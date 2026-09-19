@@ -26,6 +26,16 @@
  * there covers the top of a round letter instead of climbing into it
  * (`Join.top`).
  *
+ * A letter with no lead-in is entered where it starts, and how the join
+ * arrives depends on which way the letter sets off. Over the top of a bowl
+ * or along the bar of an `e`, the join arrives heading that way and the
+ * curve flows into the letter. Down a stem — the unlooped models draw every
+ * `i`, `t`, `n` and `b` from the top, with nothing for a join to replace —
+ * the join arrives along the straight line from where it left, since a pen
+ * with no lead-in to trace goes to the top of the stem directly and turns
+ * there. Arriving the way the stem sets off would swing the join up over the
+ * top of the stem and back down into it.
+ *
  * A capital begins its word: its join is `initial`, so a run ends before it
  * whatever the letter before it did. The run it starts keeps any stroke the
  * capital writes before the one that joins — the stem of a `K` — ahead of
@@ -80,6 +90,15 @@ function unit(from: Point, to: Point): Point {
   const dy = to.y - from.y;
   const length = Math.hypot(dx, dy);
   return length === 0 ? { x: 1, y: 0 } : { x: dx / length, y: dy / length };
+}
+
+/**
+ * How a join arrives at a letter with no lead-in: the way the letter sets
+ * off, unless that is downward, when it is the straight line in from where
+ * the join left. `from` and `to` are on the sheet, y down.
+ */
+function entering(from: Point, to: Point, setsOff: Point): Point {
+  return setsOff.y > 0 ? unit(from, to) : setsOff;
 }
 
 function connector(from: Point, out: Point, to: Point, into: Point): Segment {
@@ -184,7 +203,7 @@ export function joined(
     const arriving =
       skip > 1
         ? headingIn(first[skip - 1], before[skip - 1])
-        : headingOut(first[skip], start);
+        : entering(run.exit.at, start, headingOut(first[skip], start));
     run.line.push(connector(run.exit.at, run.exit.heading, start, arriving));
     run.line.push(...first.slice(skip, tailAt));
     run.marks.push(...written, ...marks);

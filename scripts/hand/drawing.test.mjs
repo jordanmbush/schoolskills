@@ -240,6 +240,27 @@ describe("fused", () => {
     expect(noTail).toEqual({ lead: 1, tail: 0 });
   });
 
+  it("reads a body named alone as a joining stroke with neither: joined into, never out of", () => {
+    const { strokes, join } = fused(
+      [
+        path("body", "M 0 10 L 0 0 C 1 0 2 1 2 2"),
+        path("dot", "M 0 12 L 0 13"),
+      ],
+      "b.svg",
+    );
+    expect(strokes).toHaveLength(2);
+    expect(join).toEqual({ lead: 0, tail: 0 });
+  });
+
+  it("takes an unnamed stroke beside a body for what it is, not a second body", () => {
+    expect(() =>
+      fused(
+        [path("lead", "M 0 0 L 1 1"), path("lead", "M 1 1 L 2 2")],
+        "x.svg",
+      ),
+    ).toThrow(/needs a body/);
+  });
+
   it("refuses a part that does not meet the one before it", () => {
     expect(() =>
       fused(

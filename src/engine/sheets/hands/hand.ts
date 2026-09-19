@@ -56,8 +56,10 @@ export type Forms = Partial<Record<string, Form>>;
  * the start are the lead-in that a join from the letter before replaces;
  * the `tail` segments at the end are the exit stroke that a join into the
  * letter after replaces, and a letter with no tail does not join out — the
- * unlooped models lift the pencil after some letters, and that is how they
- * say so. `top` follows the lead-in: the further segments a join arriving at
+ * unlooped American model lifts the pencil after eight letters, and that is
+ * how it says so. A letter with no lead-in is entered where it starts, and
+ * the renderer decides how the join arrives there from which way the
+ * letter sets off. `top` follows the lead-in: the further segments a join arriving at
  * the midline covers, which is the top of a round letter's bowl. A bridge
  * from an `o` runs along the top of an `a` and drops into its left side,
  * where a join rising from the baseline climbs to the bowl's right and goes

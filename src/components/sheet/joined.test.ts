@@ -52,6 +52,25 @@ const K = (x: number): Placed => ({
   join: { lead: 0, tail: 1, stroke: 1, initial: true },
 });
 
+/**
+ * An `n` of an unlooped model: no lead-in, a stem drawn down from the
+ * midline, an arch, and a tail.
+ */
+const n = (x: number): Placed => ({
+  strokes: [
+    parseStroke(
+      `M ${x} 50 L ${x} 100 L ${x} 60 L ${x + 20} 60 L ${x + 20} 100 L ${x + 40} 60`,
+    ),
+  ],
+  join: { lead: 0, tail: 1 },
+});
+
+/** A `b` of the unlooped American model: joined into, with no tail to join out of. */
+const b = (x: number): Placed => ({
+  strokes: [parseStroke(`M ${x} 0 L ${x} 100 L ${x + 20} 50`)],
+  join: { lead: 0, tail: 0 },
+});
+
 /** A mark with no join: a full stop. */
 const stop = (x: number): Placed => ({
   strokes: [parseStroke(`M ${x} 100 L ${x + 1} 100`)],
@@ -137,6 +156,27 @@ describe("joined", () => {
       /^M 30 0 L 0 50 L 30 100 C [\d. ]+ 80 50 L 80 100 L 100 60$/,
     );
     expect(d(dot)).toBe(d(i(60).strokes[1]));
+  });
+
+  it("enters a letter that starts down a stem along the line in from where it left", () => {
+    const [unit] = joined([i(0), n(50)], BASELINE, MIDLINE);
+    const [, , , connector] = unit[0];
+    // The i's body ends at (20,100) and the n starts at (50,50): the second
+    // handle sits on that line, below the top of the stem, where arriving the
+    // way the stem sets off would have put it above.
+    expect(connector.type).toBe("C");
+    const [, , hx, hy] = connector.points;
+    expect(hy).toBeGreaterThan(50);
+    expect((hx - 20) / (hy - 100)).toBeCloseTo((50 - 20) / (50 - 100), 1);
+  });
+
+  it("joins into a letter with no tail and ends the run there", () => {
+    const units = joined([i(0), b(50), i(100)], BASELINE, MIDLINE);
+    expect(units).toHaveLength(2);
+    const line = d(units[0][0]);
+    expect(line.startsWith(d(i(0).strokes[0].slice(0, 3)))).toBe(true);
+    expect(line.endsWith("L 50 100 L 70 50")).toBe(true);
+    expect(d(units[1][0])).toBe(d(i(100).strokes[0]));
   });
 
   it("ends a run after a letter with no tail", () => {

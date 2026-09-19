@@ -48,6 +48,6 @@
     <text x="150" y="1780" font-family="sans-serif" font-size="22" fill="#5b7fa6">Ink starts wherever you like: the ingest sets the side bearings.</text>
   </g>
   <g inkscape:groupmode="layer" id="strokes" inkscape:label="strokes">
-    <path id="body" inkscape:label="body" d="M 153.9 430 C 276.2 300 408.4 170 474.9 150 L 150 1150 L 474.9 150 C 802.1 150 998.6 261.9 953.7 400 C 908.8 538.1 639.6 650 352.5 650 C 335.8 655 319.2 660 307.6 665" fill="none" stroke="#111" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
+    <path id="stroke-1" inkscape:label="stroke-1" d="M 153.9 430 C 276.2 300 408.4 170 474.9 150 L 150 1150 L 474.9 150 C 802.1 150 998.6 261.9 953.7 400 C 908.8 538.1 639.6 650 352.5 650 C 335.8 655 319.2 660 307.6 665" fill="none" stroke="#111" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
   </g>
 </svg>

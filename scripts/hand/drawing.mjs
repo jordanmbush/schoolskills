@@ -77,7 +77,7 @@ export const strokesOf = (svg, file) =>
   pathsOf(svg, file).map((path) => path.segments);
 
 /** The names a path may carry, and the order the parts of a joining stroke come in. */
-const PARTS = ["lead", "top", "tail"];
+const PARTS = ["lead", "top", "body", "tail"];
 
 /** How far apart two ends of one stroke may be drawn and still be one stroke. */
 const GAP = 4;
@@ -90,15 +90,18 @@ const endOf = (segments) => segments[segments.length - 1].points.slice(-2);
  *
  * A hand that joins draws a letter as it is written alone and names the
  * parts a join replaces: a path called `lead` is the lead-in, `top` the top
- * of a bowl a bridge covers, and `tail` the exit stroke. They sit in the
- * layer in pen order — lead, top, the body, tail — and each must start where
- * the one before it ends, since they are one stroke drawn in pieces. The
- * joining stroke is usually the first and need not be: a capital `K` writes
- * its stem before the arm that joins, and the join then says which stroke
- * it is on. What comes back is the strokes as the engine stores them and,
- * for a letter with any part named, the `join` that says how many segments
- * each is. A part out of place, or one that does not meet its neighbour, is
- * a drawing error rather than a guess.
+ * of a bowl a bridge covers, and `tail` the exit stroke, with `body` between
+ * them — the body may go unnamed where another part says which stroke it
+ * belongs to, and must be named where nothing else does, since a letter the
+ * unlooped models lift the pencil after joins in with no tail and no lead-in
+ * to say so. They sit in the layer in pen order — lead, top, body, tail —
+ * and each must start where the one before it ends, since they are one
+ * stroke drawn in pieces. The joining stroke is usually the first and need
+ * not be: a capital `K` writes its stem before the arm that joins, and the
+ * join then says which stroke it is on. What comes back is the strokes as
+ * the engine stores them and, for a letter with any part named, the `join`
+ * that says how many segments each is. A part out of place, or one that
+ * does not meet its neighbour, is a drawing error rather than a guess.
  */
 export function fused(paths, file) {
   const named = (path) => PARTS.includes(path.name);
@@ -106,13 +109,14 @@ export function fused(paths, file) {
   if (first < 0) {
     return { strokes: paths.map((path) => path.segments), join: undefined };
   }
-  // The body is the unnamed path a lead or top comes before, or a tail after.
+  // The body is the path called so, or the unnamed one a lead or top comes
+  // before or a tail after.
   const start = paths[first].name === "tail" ? first - 1 : first;
   let i = Math.max(start, 0);
   const lead = paths[i]?.name === "lead" ? paths[i++] : undefined;
   const top = paths[i]?.name === "top" ? paths[i++] : undefined;
   const body = start < 0 ? undefined : paths[i++];
-  if (body === undefined || named(body)) {
+  if (body === undefined || (named(body) && body.name !== "body")) {
     throw new Error(
       `${file}: a joining stroke needs a body after its "lead" and "top" and before its "tail"`,
     );
@@ -121,7 +125,7 @@ export function fused(paths, file) {
   const stray = paths.slice(i).find(named);
   if (stray !== undefined) {
     throw new Error(
-      `${file}: "${stray.name}" is out of place — the parts of a joining stroke are lead, top, the body and tail, in that order and together`,
+      `${file}: "${stray.name}" is out of place — the parts of a joining stroke are lead, top, body and tail, in that order and together`,
     );
   }
   let stroke = [];
