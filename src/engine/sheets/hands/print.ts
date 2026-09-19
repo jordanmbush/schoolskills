@@ -150,7 +150,7 @@ export const PRINT: Hand = {
     },
     M: {
       advance: 820,
-      strokes: ["M 60 1000 L 60 0", "M 60 1000 L 410 0 L 760 1000 L 760 0"],
+      strokes: ["M 60 1000 L 60 0", "M 60 1000 L 410 500 L 760 1000 L 760 0"],
     },
     N: {
       advance: 650,
@@ -205,7 +205,7 @@ export const PRINT: Hand = {
     },
     W: {
       advance: 1020,
-      strokes: ["M 60 1000 L 285 0 L 510 1000 L 735 0 L 960 1000"],
+      strokes: ["M 60 1000 L 285 0 L 510 500 L 735 0 L 960 1000"],
     },
     X: {
       advance: 740,
