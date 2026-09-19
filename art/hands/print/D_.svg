@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+  width="495" height="900" viewBox="0 0 990 1800"
+  data-hand="print" data-glyph="D_" data-units="1000" data-origin="150" data-baseline="1150">
+  <sodipodi:namedview id="namedview" inkscape:current-layer="strokes" inkscape:document-units="px"/>
+  <g inkscape:groupmode="layer" id="ruling" inkscape:label="ruling" sodipodi:insensitive="true">
+    <line x1="0" y1="1550" x2="990" y2="1550" stroke="#e3e8ee" stroke-width="1"/>
+    <line x1="0" y1="1450" x2="990" y2="1450" stroke="#e3e8ee" stroke-width="1"/>
+    <line x1="0" y1="1350" x2="990" y2="1350" stroke="#e3e8ee" stroke-width="1"/>
+    <line x1="0" y1="1250" x2="990" y2="1250" stroke="#e3e8ee" stroke-width="1"/>
+    <line x1="0" y1="1050" x2="990" y2="1050" stroke="#e3e8ee" stroke-width="1"/>
+    <line x1="0" y1="950" x2="990" y2="950" stroke="#e3e8ee" stroke-width="1"/>
+    <line x1="0" y1="850" x2="990" y2="850" stroke="#e3e8ee" stroke-width="1"/>
+    <line x1="0" y1="750" x2="990" y2="750" stroke="#e3e8ee" stroke-width="1"/>
+    <line x1="0" y1="550" x2="990" y2="550" stroke="#e3e8ee" stroke-width="1"/>
+    <line x1="0" y1="450" x2="990" y2="450" stroke="#e3e8ee" stroke-width="1"/>
+    <line x1="0" y1="350" x2="990" y2="350" stroke="#e3e8ee" stroke-width="1"/>
+    <line x1="0" y1="250" x2="990" y2="250" stroke="#e3e8ee" stroke-width="1"/>
+    <line x1="150" y1="0" x2="150" y2="1800" stroke="#e3e8ee" stroke-width="1"/>
+    <line x1="250" y1="0" x2="250" y2="1800" stroke="#e3e8ee" stroke-width="1"/>
+    <line x1="350" y1="0" x2="350" y2="1800" stroke="#e3e8ee" stroke-width="1"/>
+    <line x1="450" y1="0" x2="450" y2="1800" stroke="#e3e8ee" stroke-width="1"/>
+    <line x1="550" y1="0" x2="550" y2="1800" stroke="#e3e8ee" stroke-width="1"/>
+    <line x1="650" y1="0" x2="650" y2="1800" stroke="#e3e8ee" stroke-width="1"/>
+    <line x1="750" y1="0" x2="750" y2="1800" stroke="#e3e8ee" stroke-width="1"/>
+    <line x1="150" y1="0" x2="150" y2="1800" stroke="#9aa8b8" stroke-width="2"/>
+    <line x1="840" y1="0" x2="840" y2="1800" stroke="#9aa8b8" stroke-width="2" stroke-dasharray="12 12"/>
+    <line x1="0" y1="150" x2="990" y2="150" stroke="#5b7fa6" stroke-width="2"/>
+    <text x="8" y="142" font-family="sans-serif" font-size="28" fill="#5b7fa6">top 1000</text>
+    <line x1="0" y1="650" x2="990" y2="650" stroke="#5b7fa6" stroke-width="2" stroke-dasharray="24 16"/>
+    <text x="8" y="642" font-family="sans-serif" font-size="28" fill="#5b7fa6">mid 500</text>
+    <line x1="0" y1="1150" x2="990" y2="1150" stroke="#1f3a5f" stroke-width="2"/>
+    <text x="8" y="1142" font-family="sans-serif" font-size="28" fill="#1f3a5f">base 0</text>
+    <line x1="0" y1="1650" x2="990" y2="1650" stroke="#9aa8b8" stroke-width="2"/>
+    <text x="8" y="1642" font-family="sans-serif" font-size="28" fill="#9aa8b8">tail -500</text>
+  </g>
+  <g inkscape:groupmode="layer" id="outline-body" inkscape:label="outline (body)" sodipodi:insensitive="true">
+    <path d="M 234.1346153846154 931.25 C 234.1346153846154 1026.4423076923076 234.1346153846154 1111.5384615384614 226.9230769230769 1150 C 290.38461538461536 1151.923076923077 391.3461538461538 1154.8076923076924 436.0576923076923 1154.8076923076924 C 576.9230769230769 1154.8076923076924 782.2115384615385 1080.2884615384614 782.2115384615385 794.2307692307693 C 782.2115384615385 479.80769230769226 548.5576923076924 443.2692307692307 445.6730769230769 443.2692307692307 C 380.7692307692308 443.2692307692307 267.78846153846155 445.1923076923076 226.9230769230769 448.0769230769231 C 234.1346153846154 486.53846153846155 234.1346153846154 575 234.1346153846154 669.2307692307693 L 234.1346153846154 931.25 Z M 325.4807692307692 522.5961538461538 C 349.5192307692308 521.6346153846154 401.9230769230769 520.1923076923076 433.6538461538462 520.1923076923076 C 572.1153846153846 520.1923076923076 688.4615384615385 588.9423076923076 688.4615384615385 803.8461538461538 C 688.4615384615385 1001.9230769230769 560.0961538461538 1075.4807692307693 431.25 1075.4807692307693 C 385.5769230769231 1075.4807692307693 348.0769230769231 1072.5961538461538 325.4807692307692 1070.673076923077 L 325.4807692307692 522.5961538461538 Z" fill="#c9d3df" fill-rule="evenodd"/>
+  </g>
+  <g inkscape:groupmode="layer" id="outline-reach" inkscape:label="outline (reach)" sodipodi:insensitive="true">
+    <path d="M 234.1346153846154 931.25 C 234.1346153846154 1026.4423076923076 234.1346153846154 1111.5384615384614 226.9230769230769 1150 C 290.38461538461536 1151.923076923077 391.3461538461538 1154.8076923076924 436.0576923076923 1154.8076923076924 C 576.9230769230769 1154.8076923076924 782.2115384615385 1080.2884615384614 782.2115384615385 794.2307692307693 C 782.2115384615385 238.37209302325573 548.5576923076924 150 445.6730769230769 150 C 380.7692307692308 150 267.78846153846155 154.65116279069764 226.9230769230769 161.62790697674416 C 234.1346153846154 254.65116279069764 234.1346153846154 468.6046511627907 234.1346153846154 669.2307692307693 L 234.1346153846154 931.25 Z M 325.4807692307692 341.8604651162791 C 349.5192307692308 339.5348837209302 401.9230769230769 336.04651162790697 433.6538461538462 336.04651162790697 C 572.1153846153846 336.04651162790697 688.4615384615385 502.32558139534876 688.4615384615385 803.8461538461538 C 688.4615384615385 1001.9230769230769 560.0961538461538 1075.4807692307693 431.25 1075.4807692307693 C 385.5769230769231 1075.4807692307693 348.0769230769231 1072.5961538461538 325.4807692307692 1070.673076923077 L 325.4807692307692 341.8604651162791 Z" fill="none" stroke="#d99a9a" stroke-width="3" stroke-dasharray="10 8" fill-rule="evenodd"/>
+  </g>
+  <g inkscape:groupmode="layer" id="notes" inkscape:label="notes" sodipodi:insensitive="true">
+    <text x="150" y="40" font-family="sans-serif" font-size="30" fill="#1f3a5f">School Skills Print — D_</text>
+    <text x="150" y="76" font-family="sans-serif" font-size="22" fill="#5b7fa6">Draw in the "strokes" layer with the pen tool: one open path per pen stroke, in the order the pen makes them. Grey is the shape; red dashes are how far the tall or hanging part goes.</text>
+    <text x="150" y="1780" font-family="sans-serif" font-size="22" fill="#5b7fa6">Ink starts wherever you like: the ingest sets the side bearings.</text>
+  </g>
+  <g inkscape:groupmode="layer" id="strokes" inkscape:label="strokes">
+    <path id="stroke-1" d="M 210 150 L 210 1150" fill="none" stroke="#111" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
+    <path id="stroke-2" d="M 210 150 C 508.2 150 750 373.9 750 650 C 750 926.1 508.2 1150 210 1150" fill="none" stroke="#111" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

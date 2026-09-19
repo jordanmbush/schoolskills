@@ -36,6 +36,7 @@ export const CHARACTERS = {
   exclam: "!",
   quotesingle: "'",
   hyphen: "-",
+  periodcentered: "·",
 };
 
 /** The character → its drawing file stem. */
@@ -82,12 +83,13 @@ export const SIL_NAMES = {
   ...Object.fromEntries(
     TITLE.map((name, digit) => [String(digit), `Digit${name}`]),
   ),
-  ".": "Period",
+  ".": "FullStop",
   ",": "Comma",
-  "?": "Question",
-  "!": "Exclam",
-  "'": "QuoteSingle",
-  "-": "Hyphen",
+  "?": "QstnMrk",
+  "!": "ExclamationMrk",
+  "'": "Apos",
+  "-": "HyphenMinus",
+  "·": "MiddleDot",
 };
 
 /**

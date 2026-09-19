@@ -9,13 +9,16 @@
   "space": 320,
   "reach": {
     "tall": "bdfhkl",
-    "threeQuarter": "t",
+    "threeQuarter": "tij",
     "tail": "gjpqy"
   },
   "forms": {
     "a": ["single", "double"],
     "t": ["curved", "straight"],
-    "q": ["curved", "straight"]
+    "q": ["curved", "straight"],
+    "l": ["straight", "curved"],
+    "i": ["straight", "curved"],
+    "y": ["curved", "straight"]
   },
   "tracedOver": {
     "family": "Andika",

@@ -61,11 +61,14 @@ describe("the print hand", () => {
 });
 
 describe("hand lookups", () => {
-  it("draws a, t and q two ways each, and names the hand's own way first", () => {
+  it("draws six letters two ways each, and names the hand's own way first", () => {
     expect(formsOf(PRINT, "a")).toEqual(["single", "double"]);
     expect(formsOf(PRINT, "g")).toEqual([]);
     expect(formsOf(PRINT, "t")).toEqual(["curved", "straight"]);
     expect(formsOf(PRINT, "q")).toEqual(["curved", "straight"]);
+    expect(formsOf(PRINT, "i")).toEqual(["straight", "curved"]);
+    expect(formsOf(PRINT, "l")).toEqual(["straight", "curved"]);
+    expect(formsOf(PRINT, "y")).toEqual(["curved", "straight"]);
     expect(formsOf(PRINT, "e")).toEqual([]);
     expect(formsOf(PRINT, "z")).toEqual([]);
   });
@@ -100,10 +103,10 @@ describe("hand lookups", () => {
 
   it("says which text it can write, and measures what it cannot as spaces", () => {
     expect(drawable(PRINT, "gate")).toBe(true);
-    expect(drawable(PRINT, "gaze")).toBe(false);
+    expect(drawable(PRINT, "g@te")).toBe(false);
     expect(measure(PRINT, "a a")).toBe(
       2 * PRINT.glyphs.a.advance + PRINT.space,
     );
-    expect(measure(PRINT, "z")).toBe(PRINT.space);
+    expect(measure(PRINT, "@")).toBe(PRINT.space);
   });
 });
