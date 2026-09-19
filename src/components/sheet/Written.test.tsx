@@ -3,13 +3,15 @@ import { describe, expect, it } from "vitest";
 
 import { CURSIVE } from "@/engine/sheets/hands/cursive";
 import { PRINT } from "@/engine/sheets/hands/print";
-import { contentBox } from "@/engine/sheets/layout";
+import { contentBox, ruledLines } from "@/engine/sheets/layout";
 import { DEFAULT_PAPER, rulePitch, writingSpace } from "@/engine/sheets/paper";
 import type { Rule } from "@/engine/sheets/types";
 
 import type { Forms } from "@/engine/sheets/hands/hand";
 
 import type { SheetMetrics } from "./metrics";
+import { letterInk } from "./strokes";
+import { RULE as RULE_WIDTH } from "./units";
 import { WrittenRow, type WrittenCell } from "./Written";
 
 const RULE: Rule = { style: "hand-5-8", midline: "dashed", descender: true };
@@ -73,26 +75,26 @@ describe("WrittenRow", () => {
     expect(dashed).toMatch(/stroke-dasharray="\d+ \d+"/);
   });
 
-  it("puts the tallest letter on the top line and a tail below the baseline", () => {
-    const html = render([{ text: "l", style: "solid" }]);
-    const d = html.match(/<path class="sheet__stroke[^"]*" d="([^"]*)"/)?.[1];
-    const ys = (d?.match(/-?[\d.]+/g) ?? [])
-      .map(Number)
-      .filter((_, i) => i % 2);
+  it("sets the tallest letter against the top line and the baseline, ink touching each and lying on neither", () => {
+    const ys = (html: string) =>
+      [...html.matchAll(/<path class="sheet__stroke[^"]*" d="([^"]*)"/g)]
+        .flatMap((match) => match[1].match(/-?[\d.]+/g) ?? [])
+        .map(Number)
+        .filter((_, i) => i % 2);
     const pitch = rulePitch(RULE);
     const writing = writingSpace(RULE);
-    // The ⅝ rule with a tail: top line at the tail-less pitch's start.
-    expect(Math.min(...ys)).toBeCloseTo(pitch - writing - writing / 2, -1);
-    expect(Math.max(...ys)).toBeCloseTo(pitch - writing / 2, -1);
+    const lines = ruledLines({ x: 0, y: 0, width: 1000, height: pitch }, RULE);
+    const top = lines.find((line) => line.role === "top")!.y;
+    const baseline = lines.find((line) => line.role === "base")!.y;
+    const inset = (RULE_WIDTH + letterInk(writing).width) / 2;
 
-    const tail = render([{ text: "g", style: "solid" }]);
-    const tailD = tail.match(
-      /<path class="sheet__stroke[^"]*" d="([^"]*)"/g,
-    )?.[1];
-    const tailYs = (tailD?.match(/-?[\d.]+/g) ?? [])
-      .map(Number)
-      .filter((_, i) => i % 2);
-    expect(Math.max(...tailYs)).toBeGreaterThan(pitch - writing / 2);
+    const stem = ys(render([{ text: "l", style: "solid" }]));
+    expect(Math.min(...stem)).toBeCloseTo(top + inset, 0);
+    expect(Math.max(...stem)).toBeCloseTo(baseline - inset, 0);
+
+    // A tail keeps its full length and bumps the line under the tail space.
+    const tail = ys(render([{ text: "p", style: "solid" }]));
+    expect(Math.max(...tail)).toBeCloseTo(pitch - inset, 0);
   });
 
   it("carries guides on a model and on nothing else", () => {

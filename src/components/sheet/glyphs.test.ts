@@ -42,6 +42,15 @@ describe("placeStroke", () => {
     expect(placed[1].points).toEqual([0, 1050]);
   });
 
+  it("takes a placing: one scale across, one up from the baseline, one down", () => {
+    const placed = placeStroke("M 0 1000 L 0 0 L 0 -500", 0, 800, {
+      across: 1,
+      up: 0.4,
+      down: 0.5,
+    });
+    expect(pathOf(placed)).toBe("M 0 400 L 0 800 L 0 1050");
+  });
+
   it("writes tenths, not long fractions", () => {
     expect(pathOf(placeStroke("M 1 1", 0, 0, 0.3333))).toBe("M 0.3 -0.3");
   });

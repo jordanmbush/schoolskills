@@ -2273,6 +2273,17 @@ writing space and its tail space at half again (§5) — so when a row sets
 §6 spends a paragraph on the overshoot every outline face shows against the
 midline; a hand drawn to the ruling has none.
 
+One thing is not set exactly on the line, and that is the ink. A stroke
+centred on a line lies half on it, and a bar along the top line or the
+baseline — the top and bottom of an `E` — disappears into it. So the row
+sets a letter with its ink just inside the lines it reaches: a stroke on
+the top line, the baseline or the line under the tail space is centred a
+rule's half-width and an ink's half-width off it, so the two touch and
+neither covers the other. The writing space is that much shorter for the
+letter; the tail space is not, so a tail keeps its length and bumps the line
+below; and the midline, which is dashed, is left where it is, so a crossbar
+sits on it.
+
 Every glyph carries an `advance` and its `strokes`, and each stroke is
 absolute path data in `M`, `L`, `C` and `Q` and nothing else. Four commands
 is a reader a test can cover whole (`glyphs.test.ts`), and it is the ingest's

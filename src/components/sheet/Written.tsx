@@ -15,7 +15,8 @@
  * the row writes the other way — a double-storey `a`, a straight `t` — for
  * every cell alike, since a sheet teaches one shape of a letter at a time.
  *
- * Sized by setting the hand's `ascent` on the writing space, so the tallest
+ * Sized by setting the hand's `ascent` on the writing space, less the room
+ * its ink needs to touch a line rather than lie on it, so the tallest
  * letter reaches the top line and, because the hand is drawn to a ruling,
  * the small letters reach the midline as well. A cell whose text is wider
  * than the cell shrinks to fit rather than running into its neighbour, as a
@@ -36,12 +37,12 @@ import { rulePitch, writingSpace } from "@/engine/sheets/paper";
 import type { Rule, TraceStyle } from "@/engine/sheets/types";
 
 import { Ruling } from "./Ruling";
-import { pathOf, placeStroke } from "./glyphs";
+import { pathOf, placeStroke, type Placing } from "./glyphs";
 import { wordGuides, type GuideSet } from "./guides";
 import { joined, type Placed } from "./joined";
 import type { SheetMetrics } from "./metrics";
 import { letterInk } from "./strokes";
-import { inch } from "./units";
+import { inch, RULE } from "./units";
 
 export type WrittenCell = {
   text: string;
@@ -107,6 +108,19 @@ export function WrittenRow({
   const writing = writingSpace(rule);
   const scale = writing / hand.ascent;
   const ink = letterInk(writing);
+  // A stroke lying along a line would be lost in it, so a letter is set with
+  // its ink just inside the lines it reaches: a stroke on the top line, the
+  // baseline or the line under the tail space is centred a rule's half-width
+  // and an ink's half-width off it, and the two touch. The midline is dashed
+  // and left where it is, so a crossbar still sits on it (§25).
+  const inset = (RULE + ink.width) / 2;
+  const floor = baseline - inset;
+  const shortened = 1 - (2 * inset) / writing;
+  const tailSpace = pitch - baseline;
+  const stretched =
+    tailSpace > 0
+      ? (tailSpace * hand.ascent) / (-hand.descent * writing)
+      : shortened;
   const cell = cells.length > 0 ? Math.floor(width / cells.length) : width;
   // A model with guides needs room beside its ink for an arrow and a number;
   // any other cell only needs its letters off the cell's edge.
@@ -148,6 +162,11 @@ export function WrittenRow({
               ? ink.dashed
               : undefined;
         const weight = entry.style === "hollow" ? ink.width / 2 : ink.width;
+        const placing: Placing = {
+          across: fitted,
+          up: fitted * shortened,
+          down: fitted * stretched,
+        };
         // Every letter is placed before any join is drawn or any guide laid
         // out: a join needs both its letters on the paper, and a letter's
         // guides keep off its neighbours' ink as well as its own.
@@ -157,15 +176,15 @@ export function WrittenRow({
           x += (glyph?.advance ?? hand.space) * fitted + tracking;
           return {
             strokes: (glyph?.strokes ?? []).map((stroke) =>
-              placeStroke(stroke, origin, baseline, fitted),
+              placeStroke(stroke, origin, floor, placing),
             ),
             join: glyph?.join,
           };
         });
         const letters = joined(
           placed,
-          baseline,
-          baseline - hand.xHeight * fitted,
+          floor,
+          floor - hand.xHeight * placing.up,
         );
         const sets = entry.guides ? wordGuides(letters, writing, ink) : [];
         return (

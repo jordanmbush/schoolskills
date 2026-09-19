@@ -43,21 +43,35 @@ export function parseStroke(d: string): Segment[] {
 const tenth = (value: number): number => Math.round(value * 10) / 10;
 
 /**
+ * How far one hand unit goes on the paper: `across` mil along the line, and
+ * `up` mil above the baseline or `down` below it. Two vertical numbers,
+ * because a row sets a letter with its ink just inside the lines it reaches
+ * (`Written.tsx`), which shortens the writing space a little and the tail
+ * space not at all.
+ */
+export type Placing = { across: number; up: number; down: number };
+
+/**
  * A stroke moved onto the sheet: its origin at `x` on `baseline`, one hand
- * unit drawn as `scale` mil, y turned over.
+ * unit drawn as `scale` mil — one number for every direction, or a
+ * `Placing` — and y turned over.
  */
 export function placeStroke(
   d: string,
   x: Mil,
   baseline: Mil,
-  scale: number,
+  scale: number | Placing,
 ): Segment[] {
+  const placing =
+    typeof scale === "number"
+      ? { across: scale, up: scale, down: scale }
+      : scale;
   return parseStroke(d).map((segment) => ({
     type: segment.type,
     points: segment.points.map((value, index) =>
       index % 2 === 0
-        ? tenth(x + value * scale)
-        : tenth(baseline - value * scale),
+        ? tenth(x + value * placing.across)
+        : tenth(baseline - value * (value < 0 ? placing.down : placing.up)),
     ),
   }));
 }
