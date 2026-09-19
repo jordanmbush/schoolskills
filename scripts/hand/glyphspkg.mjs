@@ -110,12 +110,19 @@ function masterLayer(glyph, id) {
 }
 
 /**
+ * The file a glyph is kept in: every capital letter of its name is followed
+ * by an underscore, so `A.cur` and `a.cur` are two files on a Mac — the
+ * same reason a hand's own drawings are named `A_.svg` (`names.mjs`).
+ */
+const fileStem = (name) => name.replace(/[A-Z]/g, "$&_");
+
+/**
  * The glyph's outline at the instance, as contours of nodes in the file's
  * own form — `[x, y, type]`, with `o` an off-curve point — components
  * followed. A glyph the package lacks is `null`.
  */
 function nodesOf(pkg, name, instance, seen = new Set()) {
-  const file = join(pkg, "glyphs", `${name}.glyph`);
+  const file = join(pkg, "glyphs", `${fileStem(name)}.glyph`);
   if (!existsSync(file) || seen.has(name)) return null;
   seen.add(name);
   const glyph = parsePlist(readFileSync(file, "utf8"));

@@ -10,7 +10,7 @@
   "reach": {
     "tall": "bdfhkl",
     "threeQuarter": "tij",
-    "tail": "fgjpqyz"
+    "tail": "fgjpqyzJYZ"
   },
   "tracedOver": {
     "family": "Playwrite US Trad",
@@ -43,7 +43,33 @@
       "w": "w.ful",
       "x": "x.ful",
       "y": "y.jmc",
-      "z": "z.cnt"
+      "z": "z.cnt",
+      "A": "A.cur_locl",
+      "B": "B.dec",
+      "C": "C.cur",
+      "D": "D.dec",
+      "E": "E.cur",
+      "F": "F.dec",
+      "G": "G.dec",
+      "H": "H.dec",
+      "I": "I.cur",
+      "J": "J.cur",
+      "K": "K.dec",
+      "L": "L.dec",
+      "M": "M.cur",
+      "N": "N.cur",
+      "O": "O.dec",
+      "P": "P.dec",
+      "Q": "Q.cur",
+      "R": "R.dec",
+      "S": "S.cur",
+      "T": "T.dec",
+      "U": "U.cur",
+      "V": "V.cur",
+      "W": "W.cur",
+      "X": "X.cur",
+      "Y": "Y.cur",
+      "Z": "Z.cur"
     }
   }
 }

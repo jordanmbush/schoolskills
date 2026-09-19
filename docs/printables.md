@@ -2277,7 +2277,7 @@ Every glyph carries an `advance` and its `strokes`, and each stroke is
 absolute path data in `M`, `L`, `C` and `Q` and nothing else. Four commands
 is a reader a test can cover whole (`glyphs.test.ts`), and it is the ingest's
 job to get there from whatever a drawing tool saved. A letter of a hand that
-joins carries a `join` as well — which ends of its first stroke a join
+joins carries a `join` as well — which ends of its joining stroke a join
 replaces — and that is the whole of what joining adds to the data (see
 _Joins_ below).
 
@@ -2384,11 +2384,13 @@ The drawings are the source and the data module is generated from them.
 2. **Draw**, in Inkscape or anything that saves SVG: one open path per pen
    stroke, in the order the pen makes them, in that layer. Where on the
    template the letter sits does not matter. In a hand that joins, the
-   first stroke is drawn in named parts — a path labelled `lead` for the
+   joining stroke is drawn in named parts — a path labelled `lead` for the
    lead-in, `top` for the top of a bowl, `tail` for the exit stroke, and
    the body between them — each starting where the one before ends; the
    ingest fuses them into one stroke and records how many segments each
-   was, which is the letter's `join`.
+   was, which is the letter's `join`. That stroke is the first unless the
+   letter writes another before it, as a capital `K` writes its stem
+   before the arm that joins, and the ingest records which it was.
 3. **`scripts/hand-ingest.mjs`** reads every drawing in the directory into
    `src/engine/sheets/hands/<hand>.ts`. Relative, shorthand and implicit
    path forms become the four commands; layer and group transforms are
@@ -2464,6 +2466,17 @@ how the unlooped models, which lift the pencil after some letters, will say
 so, and it is the `breaks` family becoming the hand's answer rather than
 the font's. A mark, a space or a character the hand lacks ends a run.
 
+A capital begins its word, and the model settles which capitals connect to
+the letter after them: the fifteen that finish on the baseline — `A`, `C`,
+`E`, `I`, `J`, `K`, `L`, `M`, `N`, `Q`, `R`, `U`, `X`, `Y` and `Z` — carry
+a tail like any small letter's, and the rest end in a loop or at the top
+and the pencil lifts. Nothing joins into a capital whatever comes before
+it: its `join` is `initial`, so a name like McKenna keeps the `c`'s tail
+and starts again at the `K`. Where a capital writes a stroke before the
+one that joins, as the `K` writes its stem, the join says which stroke it
+is on, and the run keeps that stroke ahead of its line so a model's
+numbering is still the pen's order.
+
 The handle share and the halfway rule are judgements, and the specimen
 writes every pair of the joins sheet so they can be checked against the
 outline face's dotted row under them.
@@ -2487,9 +2500,9 @@ alphabets, the numerals, and the seven marks a copied sentence needs — full
 stop, comma, question and exclamation marks, apostrophe, hyphen and the
 middle dot the spacing sheet marks a space with — so on a print sheet the
 fallback is reached only by a character outside those, an accent say. The
-cursive hand has the small letters and the same marks, so a cursive sheet
-of small letters, joins or words is written in it and one with a capital
-or a numeral on the row is the outline face until those are drawn. A
+cursive hand has both alphabets and the same marks, so a cursive sheet of
+letters, joins, words or copywork is written in it and a row with a
+numeral on it is the outline face until those are drawn. A
 model of a letter or of a pair carries its guides; a model of a word does
 not. Which shape of each letter is `SheetOptions.forms`, picked under Face
 in the builder, carried onto the `Sheet` by `present()` exactly as the face
@@ -2498,14 +2511,14 @@ vocabulary knows.
 
 ### Phases
 
-| Phase | What                                                                        | Where it lands                                    |
-| ----- | --------------------------------------------------------------------------- | ------------------------------------------------- |
-| 0     | Template, ingest, renderer, six print letters in nine drawings, specimen    | this section                                      |
-| 1     | The print alphabets, numerals and marks, the letter shapes, every trace row | `hands/print.ts`, `blocks/Trace.tsx`, the builder |
-| 2     | The looped cursive small letters, with joins                                | `hands/cursive.ts`, `joined.ts`                   |
-| 3     | Its capitals                                                                |                                                   |
-| 4     | The other two cursive models                                                |                                                   |
-| 5     | A font generated from the data, if one is ever wanted                       | a script, not a design                            |
+| Phase | What                                                                         | Where it lands                                    |
+| ----- | ---------------------------------------------------------------------------- | ------------------------------------------------- |
+| 0     | Template, ingest, renderer, six print letters in nine drawings, specimen     | this section                                      |
+| 1     | The print alphabets, numerals and marks, the letter shapes, every trace row  | `hands/print.ts`, `blocks/Trace.tsx`, the builder |
+| 2     | The looped cursive small letters, with joins                                 | `hands/cursive.ts`, `joined.ts`                   |
+| 3     | Its capitals, and the capital that writes its stem before its joining stroke | `hands/cursive.ts`, `joined.ts`                   |
+| 4     | The other two cursive models                                                 |                                                   |
+| 5     | A font generated from the data, if one is ever wanted                        | a script, not a design                            |
 
 A face without a hand keeps the outline row, so print ships before any
 cursive is drawn and nothing waits on the whole table.

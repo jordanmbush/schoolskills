@@ -100,14 +100,30 @@ const others: Forms = Object.fromEntries(
   }),
 );
 const joins = Object.values(hand.glyphs).some(joinsIn);
-const words = joins ? ["gate", "tale", "minimum", "quiz"] : ["gate", "tale"];
+const words = joins
+  ? ["gate", "tale", "minimum", "quiz", "Monday", "Zebra"]
+  : ["gate", "tale"];
 const wordRows: Array<{ forms: Forms }> = [{ forms: {} }, { forms: others }];
 
-/** The joins sheet's pairs, six to a row, for a hand that joins. */
+const sixes = (pairs: string[]): string[][] =>
+  Array.from({ length: Math.ceil(pairs.length / 6) }, (_, row) =>
+    pairs.slice(row * 6, row * 6 + 6),
+  );
+
+/**
+ * The joins sheet's pairs and then every capital with its small letter,
+ * six to a row, for a hand that joins: the join out of a capital, or the
+ * lift after one, is only right in the company of both.
+ */
 const pairRows: string[][] = joins
-  ? Array.from({ length: 5 }, (_, row) =>
-      joinPairs().slice(row * 6, row * 6 + 6),
-    )
+  ? [
+      ...sixes(joinPairs()),
+      ...sixes(
+        letters
+          .filter((letter) => /[A-Z]/.test(letter))
+          .map((letter) => `${letter}${letter.toLowerCase()}`),
+      ),
+    ]
   : [];
 
 const letterRow = (text: string): WrittenCell[] => [

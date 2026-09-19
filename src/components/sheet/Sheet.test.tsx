@@ -2413,7 +2413,7 @@ describe("rows written in a hand", () => {
     expect(strokes(html)).toHaveLength(0);
   });
 
-  it("writes the looped cursive face in its hand, joined, and falls back where it has no capital yet", () => {
+  it("writes the looped cursive face in its hand, joined, and falls back where it has no numeral yet", () => {
     const joined = tracing(
       [
         { text: "gate", style: "solid" },
@@ -2424,9 +2424,19 @@ describe("rows written in a hand", () => {
     expect(outlined(joined)).toBe(false);
     // One line for the word and one for the t's crossbar, in each cell.
     expect(strokes(joined)).toHaveLength(4);
+    // A capital that ends on the baseline joins its small letter: one line.
     const pair = tracing([{ text: "Aa", style: "solid" }], { font: "cursive" });
-    expect(outlined(pair)).toBe(true);
-    expect(strokes(pair)).toHaveLength(0);
+    expect(outlined(pair)).toBe(false);
+    expect(strokes(pair)).toHaveLength(1);
+    const lifted = tracing([{ text: "Bb", style: "solid" }], {
+      font: "cursive",
+    });
+    expect(strokes(lifted)).toHaveLength(2);
+    const numbered = tracing([{ text: "A1", style: "solid" }], {
+      font: "cursive",
+    });
+    expect(outlined(numbered)).toBe(true);
+    expect(strokes(numbered)).toHaveLength(0);
   });
 
   it("writes the letter shapes the sheet asks for", () => {

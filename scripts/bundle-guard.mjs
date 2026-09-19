@@ -72,14 +72,14 @@ export const HEADROOM = 10 * 1024;
  * strokes at build time and in the preview alike, so its drawings ride in
  * the renderer's chunk rather than behind a family's loader, and the
  * twenty-seven kilobytes are the alphabet. The cursive hand's small letters
- * added seven more, for the same reason.
+ * added seven more, for the same reason, and its capitals six.
  *
  * @type {Record<string, number>}
  */
 export const BASELINE = {
   "/flash-cards": 389_189,
   "/printables": 203_902,
-  "/printables/make": 387_362,
+  "/printables/make": 393_677,
   "/spelling/play": 389_189,
   "/typing": 410_445,
   [RUNTIME]: 192_242,
