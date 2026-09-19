@@ -76,16 +76,24 @@ quietly invalidating this page.
 
 ## The hands
 
-Not fonts, and not in this directory, but derived from one of them and so
-recorded here. `src/engine/sheets/hands/print.ts` is a set of letters stored as
-pen strokes — single lines down the middle of each stroke, for tracing — and
-those lines were traced over the outlines in Andika's published sources
-(`Andika-Regular.ufo` at https://github.com/silnrsi/font-andika, OFL 1.1). The
-shapes are therefore a Modified Version of Andika under the OFL: the data is
-offered under the same licence, it carries the notice in its own header, and it
-is called "School Skills Print", which is nobody's Reserved Font Name. The
-drawings themselves are in `art/hands/print/`; `docs/printables.md` §25 says
-how one becomes the other.
+Not fonts, and not in this directory, but derived from two of them and so
+recorded here. `src/engine/sheets/hands/print.ts` and `hands/cursive.ts` are
+sets of letters stored as pen strokes — single lines down the middle of each
+stroke, for tracing — and those lines were traced over the outlines in the
+faces' published sources:
+
+- the print hand over Andika's (`Andika-Regular.ufo` at
+  https://github.com/silnrsi/font-andika, OFL 1.1);
+- the cursive hand over Playwrite's (`Playwrite_MM.glyphspackage` at
+  https://github.com/TypeTogether/Playwrite, OFL 1.1), at the point between its
+  masters that is the US Trad model, with the alternates that model chooses —
+  the `tracedOver` table in `art/hands/cursive/hand.json` names each one.
+
+The shapes are therefore Modified Versions of those faces under the OFL: the
+data is offered under the same licence, each module carries the notice in its
+own header, and they are called "School Skills Print" and "School Skills
+Cursive", which are nobody's Reserved Font Names. The drawings themselves are
+in `art/hands/`; `docs/printables.md` §25 says how one becomes the other.
 
 ## Notices
 

@@ -1,0 +1,49 @@
+{
+  "id": "cursive",
+  "name": "School Skills Cursive",
+  "units": 1000,
+  "ascent": 1000,
+  "xHeight": 500,
+  "descent": -500,
+  "bearing": 60,
+  "space": 320,
+  "reach": {
+    "tall": "bdfhkl",
+    "threeQuarter": "tij",
+    "tail": "fgjpqyz"
+  },
+  "tracedOver": {
+    "family": "Playwrite US Trad",
+    "master": "Playwrite_MM.glyphspackage, a fifth of the way from the Rg 18 Short Fast master to Rg 18 Long Fast",
+    "licence": "OFL-1.1",
+    "source": "https://github.com/TypeTogether/Playwrite",
+    "glyphs": {
+      "a": "a.mod",
+      "b": "b.lop",
+      "c": "c.mod",
+      "d": "d.mod",
+      "e": "e.ful",
+      "f": "f.mrr",
+      "g": "g.jmc",
+      "h": "h.lop",
+      "i": "i.mod",
+      "j": "j.jmc",
+      "k": "k.lop",
+      "l": "l.lop",
+      "m": "m.cnt",
+      "n": "n.cnt",
+      "o": "o.mod",
+      "p": "p.mrr_ca",
+      "q": "q.mrr",
+      "r": "r.ful",
+      "s": "s.ful",
+      "t": "t.mod",
+      "u": "u.mod",
+      "v": "v.cnt",
+      "w": "w.ful",
+      "x": "x.ful",
+      "y": "y.jmc",
+      "z": "z.cnt"
+    }
+  }
+}

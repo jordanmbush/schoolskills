@@ -4,33 +4,51 @@ import type { SheetMetrics } from "@/components/sheet/metrics";
 import { TracedRow } from "@/components/sheet/Traced";
 import { inch, pt } from "@/components/sheet/units";
 import { WrittenRow, type WrittenCell } from "@/components/sheet/Written";
-import { formsOf, type Forms } from "@/engine/sheets/hands/hand";
+import { CURSIVE } from "@/engine/sheets/hands/cursive";
+import {
+  formsOf,
+  joinsIn,
+  type Forms,
+  type Hand,
+} from "@/engine/sheets/hands/hand";
 import { PRINT } from "@/engine/sheets/hands/print";
+import { joinPairs } from "@/engine/sheets/writing/joins";
 import { contentBox } from "@/engine/sheets/layout";
 import { DEFAULT_PAPER, marginOf, pageSize } from "@/engine/sheets/paper";
-import type { Rule, TraceStyle } from "@/engine/sheets/types";
+import type { Rule, SheetFont, TraceStyle } from "@/engine/sheets/types";
 import "@/styles/sheet.css";
 
 /**
  * The specimen of a hand: every glyph it has, in every form and every style,
  * on every ruling, with the outline face's dotted row under it for the eye
- * to compare (docs/printables.md §25).
+ * to compare (docs/printables.md §25). A hand that joins shows the joins
+ * sheet's pairs as well, since a join is only right in the company of its
+ * two letters.
  *
  * A development page and nothing else. It exists so a letter can be judged
  * on the paper it will print on before the next one is drawn, and a
  * production build has no paths for it, so it is never a route, never in the
  * sitemap and never crawled.
  */
+const HANDS: Record<string, { hand: Hand; font: SheetFont }> = {
+  print: { hand: PRINT, font: "print" },
+  cursive: { hand: CURSIVE, font: "cursive" },
+};
+
+// Astro runs this apart from the rest of the frontmatter, so the ids are
+// spelt out here rather than read off the table above.
 export function getStaticPaths() {
-  return import.meta.env.PROD ? [] : [{ params: { hand: "print" } }];
+  return import.meta.env.PROD
+    ? []
+    : ["print", "cursive"].map((hand) => ({ params: { hand } }));
 }
 
-const hand = PRINT;
+const { hand, font } = HANDS[Astro.params.hand ?? "print"];
 const page = pageSize(DEFAULT_PAPER);
 const metrics: SheetMetrics = {
   box: contentBox(DEFAULT_PAPER),
   fontPt: 12,
-  font: "print",
+  font,
   answers: false,
 };
 
@@ -81,8 +99,16 @@ const others: Forms = Object.fromEntries(
     return other === undefined ? [] : [[letter, other]];
   }),
 );
-const words = ["gate", "tale"];
+const joins = Object.values(hand.glyphs).some(joinsIn);
+const words = joins ? ["gate", "tale", "minimum", "quiz"] : ["gate", "tale"];
 const wordRows: Array<{ forms: Forms }> = [{ forms: {} }, { forms: others }];
+
+/** The joins sheet's pairs, six to a row, for a hand that joins. */
+const pairRows: string[][] = joins
+  ? Array.from({ length: 5 }, (_, row) =>
+      joinPairs().slice(row * 6, row * 6 + 6),
+    )
+  : [];
 
 const letterRow = (text: string): WrittenCell[] => [
   ...styles.map((style) => ({ text, style, guides: style === "solid" })),
@@ -114,15 +140,16 @@ const wordRow = (text: string): WrittenCell[] => [
         rows.map((row) => row.label).join(" ")
       }. Each row is one letter in one form, in the five drawn styles and an
       empty place; the model carries its start dots, arrows and stroke numbers.
-      The words come as the hand writes them and then in the other forms, and
-      under them the same words in the outline face, dotted, for comparison.
+      The words come as the hand writes them and then in the other forms,
+      {joins ? "then the joins sheet's pairs, " : ""}and under them the same
+      words in the outline face, dotted, for comparison.
     </p>
   </header>
 
   <div class="sheet-frame">
     <article
       class="sheet"
-      data-font="print"
+      data-font={font}
       style={`--sheet-w:${inch(page.width)};--sheet-h:auto;--sheet-margin:${inch(marginOf(DEFAULT_PAPER))};--sheet-pt:${pt(12)}`}
     >
       {
@@ -149,6 +176,18 @@ const wordRow = (text: string): WrittenCell[] => [
                 />
               )),
             )}
+            {pairRows.map((pairs) => (
+              <WrittenRow
+                rule={rule}
+                metrics={metrics}
+                hand={hand}
+                cells={pairs.map((text) => ({
+                  text,
+                  style: "solid" as const,
+                  guides: true,
+                }))}
+              />
+            ))}
             <TracedRow
               rule={rule}
               metrics={metrics}

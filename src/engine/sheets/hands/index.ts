@@ -9,10 +9,14 @@
 import { faceOf } from "../faces";
 import type { SheetFont } from "../types";
 
+import { CURSIVE } from "./cursive";
 import type { Hand } from "./hand";
 import { PRINT } from "./print";
 
-const HANDS: Partial<Record<SheetFont, Hand>> = { print: PRINT };
+const HANDS: Partial<Record<SheetFont, Hand>> = {
+  print: PRINT,
+  cursive: CURSIVE,
+};
 
 /** The hand a face is written in, or nothing: a face without one keeps the outline row. */
 export function handOf(font: SheetFont | undefined): Hand | undefined {
