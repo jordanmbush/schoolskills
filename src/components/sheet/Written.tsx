@@ -27,10 +27,9 @@
  * a joined pair on a model carries one start dot, not two.
  *
  * A cell that sets finger spaces sets every space at `fingerSpace` instead
- * of the hand's own, and a marked one draws a small circle in the middle of
+ * of the hand's own, and a marked one draws a filled dot in the middle of
  * each gap, at the middle of the small letters' height — where a finger
- * goes, drawn as a ring rather than a dot so it is not mistaken for a full
- * stop.
+ * goes, and well above where a full stop sits.
  */
 import {
   fingerSpace,
@@ -224,11 +223,10 @@ export function WrittenRow({
             {marks.map((mark, at) => (
               <circle
                 key={`mark-${at}`}
-                className={`sheet__stroke sheet__stroke--${entry.style}`}
+                className="sheet__mark"
                 cx={mark.x}
                 cy={mark.y}
                 r={hand.xHeight * 0.13 * fitted}
-                strokeWidth={weight}
               />
             ))}
           </g>

@@ -449,6 +449,12 @@
   opacity: 28%;
 }
 
+/* The filled dot a model puts in a finger space (§24). */
+.sheet__mark {
+  fill: currentcolor;
+  stroke: none;
+}
+
 /* ── Hands (§25) ────────────────────────────────────────────────────────────
    The guides on a model letter: a filled start dot, a thin arrow running
    beside the stroke with a filled head, and a stroke number in the site's

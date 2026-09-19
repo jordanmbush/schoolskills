@@ -97,7 +97,7 @@ describe("WrittenRow", () => {
     expect(Math.max(...tail)).toBeCloseTo(pitch - inset, 0);
   });
 
-  it("sets a finger space between words on every row asked for one, and rings the model's", () => {
+  it("sets a finger space between words on every row asked for one, and dots the model's", () => {
     const xs = (html: string) =>
       [...html.matchAll(/<path class="sheet__stroke[^"]*" d="([^"]*)"/g)]
         .flatMap((match) => match[1].match(/-?[\d.]+/g) ?? [])
@@ -114,7 +114,7 @@ describe("WrittenRow", () => {
       0,
     );
     expect(Math.max(...xs(trace))).toBe(Math.max(...xs(model)));
-    expect(model.match(/<circle class="sheet__stroke/g)).toHaveLength(1);
+    expect(model.match(/<circle class="sheet__mark"/g)).toHaveLength(1);
     expect(trace).not.toContain("<circle");
     expect(plain).not.toContain("<circle");
   });

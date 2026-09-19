@@ -2149,13 +2149,13 @@ evidence names:
   letter. `f` is tall: on a printed sheet it is, and its tail in a joined
   hand is the one exception a parent can see for themselves.
 - **Spacing** (`spacing`). Sentences of short words, each written down the
-  page as a model, a trace and an empty line, with a small circle in the
-  model where every space is — the finger a teacher puts between two words,
-  drawn. Every row of the three sets its spaces a finger wide (`fingerSpace`,
-  two and a half word spaces), so the model and the rows traced under it
-  line up word for word, and the circle sits in the middle of the gap at
-  half the small letters' height: a ring rather than a dot, so it is not
-  read as a full stop. The mark is on the solid model only: a child tracing a
+  page as a model, a trace and an empty line, with a filled dot in the model
+  where every space is — the finger a teacher puts between two words, drawn.
+  Every row of the three sets its spaces a finger wide (`fingerSpace`, two
+  and a half word spaces), so the model and the rows traced under it line up
+  word for word, and the dot sits in the middle of the gap at half the small
+  letters' height, well above a full stop on the baseline. The mark is on
+  the solid model only: a child tracing a
   dotted sentence would trace it too, and a mark between every word is not
   the habit being taught. In a face with no hand the mark is a middle dot
   in place of the space, which is about as wide as a font's space, so those
