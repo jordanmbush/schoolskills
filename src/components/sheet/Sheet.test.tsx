@@ -47,6 +47,7 @@ import type {
   SheetFont,
   TimeConfig,
   StrokePattern,
+  TraceCell,
   TraceStyle,
   WordsConfig,
 } from "@/engine/sheets/types";
@@ -2222,6 +2223,14 @@ describe("ruled blocks", () => {
    pattern runs along the glyph outline. Every one of them is fill or stroke —
    foreground paint — so they survive a printer with background graphics off. */
 
+/**
+ * A word the outline face keeps. A row the print hand can write whole is
+ * drawn as strokes instead (§25, the describe after this one), and no hand
+ * draws an `@` — `scripts/hand/names.mjs` lists what one can — so these rows
+ * stay on `<text>` whichever letters get drawn next.
+ */
+const OUTLINED = "c@t";
+
 describe("trace styles", () => {
   const tracedIn = (style: TraceStyle, font?: SheetFont) =>
     render(
@@ -2231,7 +2240,7 @@ describe("trace styles", () => {
           {
             kind: "trace",
             rule: { style: "hand-5-8", midline: "dashed", descender: true },
-            rows: [{ cells: [{ text: "cat", style }] }],
+            rows: [{ cells: [{ text: OUTLINED, style }] }],
           },
         ],
       }),
@@ -2305,7 +2314,7 @@ describe("trace styles", () => {
           {
             kind: "trace",
             rule: { style: "isometric" },
-            rows: [{ cells: [{ text: "gg", style: "dotted" }] }],
+            rows: [{ cells: [{ text: "g@", style: "dotted" }] }],
           },
         ],
       }),
@@ -2342,6 +2351,87 @@ describe("trace styles", () => {
     expect(styles).toContain(".sheet__glyph--dotted");
     expect(styles.slice(0, styles.indexOf("── Problems"))) //
       .not.toContain("background");
+  });
+});
+
+/* ── Rows written in a hand (§25) ──────────────────────────────────────────
+   A tracing row set in a face that has a hand is drawn as the strokes of its
+   letters — one path per pen stroke — wherever the hand has every character
+   on the row, and is the outline face's `<text>` for a row it cannot write
+   whole. Only letters the hand already has are written here, and `@` is the
+   one character asserted missing: the hand is still growing.               */
+
+describe("rows written in a hand", () => {
+  const tracing = (cells: TraceCell[], over: Partial<Sheet> = {}) =>
+    render(
+      sheet({
+        ...over,
+        blocks: [
+          {
+            kind: "trace",
+            rule: { style: "hand-5-8", midline: "dashed", descender: true },
+            rows: [{ cells }],
+          },
+        ],
+      }),
+    );
+
+  /** The path data of every pen stroke a row drew. */
+  const strokes = (html: string) =>
+    [...html.matchAll(/<path class="sheet__stroke[^"]*" d="([^"]*)"/g)].map(
+      (match) => match[1],
+    );
+
+  const outlined = (html: string) => html.includes('class="sheet__glyph');
+
+  it("writes a row the hand can write whole as strokes, not as text", () => {
+    const html = tracing([
+      { text: "gate", style: "solid" },
+      { text: "gate", style: "dotted" },
+      { text: "", style: "none" },
+    ]);
+    expect(strokes(html).length).toBeGreaterThan(0);
+    expect(outlined(html)).toBe(false);
+  });
+
+  it("sets a row the hand cannot write whole in the outline face", () => {
+    // Row by row: half a word in one shape and half in the other on one line
+    // is a worse model than the outline face whole.
+    const html = tracing([
+      { text: "gate", style: "solid" },
+      { text: "g@te", style: "dotted" },
+    ]);
+    expect(outlined(html)).toBe(true);
+    expect(strokes(html)).toHaveLength(0);
+  });
+
+  it("keeps a face with no hand on the outline row", () => {
+    const html = tracing([{ text: "gate", style: "solid" }], {
+      font: "cursive",
+    });
+    expect(outlined(html)).toBe(true);
+    expect(strokes(html)).toHaveLength(0);
+  });
+
+  it("writes the letter shapes the sheet asks for", () => {
+    const own = strokes(tracing([{ text: "a", style: "solid" }]));
+    const other = strokes(
+      tracing([{ text: "a", style: "solid" }], { forms: { a: "double" } }),
+    );
+    expect(own.length).toBeGreaterThan(0);
+    expect(other).not.toEqual(own);
+  });
+
+  it("guides a model of a letter and not a model of a word", () => {
+    // A word's marks would crowd the row, and the row never shrinks a word to
+    // make room for them; a trace is not a model at all.
+    expect(tracing([{ text: "a", style: "solid" }])).toContain("sheet__guide");
+    expect(tracing([{ text: "gate", style: "solid" }])).not.toContain(
+      "sheet__guide",
+    );
+    expect(tracing([{ text: "a", style: "dotted" }])).not.toContain(
+      "sheet__guide",
+    );
   });
 });
 

@@ -67,14 +67,18 @@ export const HEADROOM = 10 * 1024;
  * all of them. The builder was re-measured when the lesson family landed: its
  * counters, boxed note and the hops on a number line are drawn by the shared
  * sheet renderer, which every island page loads, so the twelve kilobytes are
- * the renderer's and not a family leaking past its loader.
+ * the renderer's and not a family leaking past its loader. It was re-measured
+ * again when the print hand landed (docs/printables.md §25): a tracing row draws the hand's
+ * strokes at build time and in the preview alike, so its drawings ride in
+ * the renderer's chunk rather than behind a family's loader, and the
+ * twenty-seven kilobytes are the alphabet.
  *
  * @type {Record<string, number>}
  */
 export const BASELINE = {
   "/flash-cards": 389_189,
   "/printables": 203_902,
-  "/printables/make": 352_668,
+  "/printables/make": 379_847,
   "/spelling/play": 389_189,
   "/typing": 410_445,
   [RUNTIME]: 192_242,

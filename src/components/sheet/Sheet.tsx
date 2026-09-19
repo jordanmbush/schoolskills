@@ -83,6 +83,7 @@ function SheetPage({
     box: contentBox(sheet.paper),
     fontPt: sheet.fontPt,
     font: sheet.font,
+    forms: sheet.forms,
     answers: sheet.answers,
   };
 

@@ -2298,10 +2298,11 @@ later, and the sheet still prints.
 
 Which form is a hand's own is a judgement written into `hand.json`, first
 in the letter's list. The print hand's are the ones a child is taught
-first: a single-storey `a`, a `t` and a `q` with the curve. The
-specimen writes every letter in every form it has, and the words a second
-time with every letter switched to its other form, which is the guide
-layout's stress test on shapes the first row never shows.
+first: a single-storey `a`, a `t`, a `q` and a `y` with the curve, and a
+plain `l` and `i`; the other of each is drawn beside it. The specimen
+writes every letter in every form it has, and the words a second time with
+every letter switched to its other form, which is the guide layout's stress
+test on shapes the first row never shows.
 
 A row of a hand is `WrittenRow` (`src/components/sheet/Written.tsx`), the
 third row a sheet writes on beside `TracedRow` and `StrokedRow`: same width,
@@ -2420,22 +2421,31 @@ and the round letters get a second entry form for after a midline exit. The
 repo's. That is real, and it is the price of a join drawn as one line.
 
 **Coverage.** A face has every character; a hand has the ones somebody drew.
-`drawable(hand, text)` says whether a text can be written in a hand, and a
-family that sets text in one falls back to the outline row for what it
-cannot. Until the print hand has its alphabet, no sheet sets anything in it;
-the spike proves the pipeline on five letters and the specimen is where the
-next one is judged.
+`drawable(hand, text)` says whether a text can be written in a hand, and the
+tracing block (`blocks/Trace.tsx`) reads it row by row: a row set in the
+print face is written in the hand wherever the hand has every character on
+the row, and is the outline face otherwise, so a child never sees half a
+word in one shape and half in another. The print hand has the two
+alphabets, the numerals, and the seven marks a copied sentence needs — full
+stop, comma, question and exclamation marks, apostrophe, hyphen and the
+middle dot the spacing sheet marks a space with — so on a print sheet the
+fallback is reached only by a character outside those, an accent say. A
+model of a letter or of a pair carries its guides; a model of a word does
+not. Which shape of each letter is `SheetOptions.forms`, picked under Face
+in the builder, carried onto the `Sheet` by `present()` exactly as the face
+is, and into a share URL — where `share.ts` keeps only the forms the
+vocabulary knows.
 
 ### Phases
 
-| Phase | What                                                                     | Where it lands                       |
-| ----- | ------------------------------------------------------------------------ | ------------------------------------ |
-| 0     | Template, ingest, renderer, six print letters in nine drawings, specimen | this section                         |
-| 1     | The print alphabet, numerals and the six punctuation marks               | `hands/print.ts`, handwriting family |
-| 2     | The looped cursive small letters, with joins                             | `hands/cursive.ts`, `joins.ts`       |
-| 3     | Its capitals                                                             |                                      |
-| 4     | The other two cursive models                                             |                                      |
-| 5     | A font generated from the data, if one is ever wanted                    | a script, not a design               |
+| Phase | What                                                                        | Where it lands                                    |
+| ----- | --------------------------------------------------------------------------- | ------------------------------------------------- |
+| 0     | Template, ingest, renderer, six print letters in nine drawings, specimen    | this section                                      |
+| 1     | The print alphabets, numerals and marks, the letter shapes, every trace row | `hands/print.ts`, `blocks/Trace.tsx`, the builder |
+| 2     | The looped cursive small letters, with joins                                | `hands/cursive.ts`, `joins.ts`                    |
+| 3     | Its capitals                                                                |                                                   |
+| 4     | The other two cursive models                                                |                                                   |
+| 5     | A font generated from the data, if one is ever wanted                       | a script, not a design                            |
 
 A face without a hand keeps the outline row, so print ships before any
 cursive is drawn and nothing waits on the whole table.

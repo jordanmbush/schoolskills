@@ -124,6 +124,15 @@ describe("buildSheet", () => {
     );
   });
 
+  it("carries the letter shapes onto the sheet, the way it carries the face", () => {
+    // A renderer is handed a Sheet and nothing else, so a choice made in the
+    // builder has to arrive on it. A sheet nobody chose shapes for carries
+    // none, rather than an empty set.
+    const forms = { a: "double", t: "straight" } as const;
+    expect(buildSheet(config({ forms }), 1).forms).toEqual(forms);
+    expect(buildSheet(config(), 1).forms).toBeUndefined();
+  });
+
   it("credits the site on every sheet, including the retired one", () => {
     // §19: the credit is a constant in the engine and prints on every sheet,
     // and §16 makes the URL the way back from paper to the games.

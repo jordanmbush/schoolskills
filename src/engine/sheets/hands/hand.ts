@@ -31,9 +31,12 @@
  * The shapes a letter is taught in, one word each so a choice means the
  * same thing in every hand: the storeys of `a`, the foot or tail of `t`,
  * `q`, `l`, `i` and `y`. The same list as `FORMS` in
- * `scripts/hand/names.mjs`; a generated module is typed against this one.
+ * `scripts/hand/names.mjs`; a generated module is typed against this one,
+ * and a form arriving from a URL is checked against it.
  */
-export type Form = "single" | "double" | "curved" | "straight";
+export const FORMS = ["single", "double", "curved", "straight"] as const;
+
+export type Form = (typeof FORMS)[number];
 
 /** Which form of each letter a sheet asks for: `{ a: "double", t: "straight" }`. */
 export type Forms = Partial<Record<string, Form>>;

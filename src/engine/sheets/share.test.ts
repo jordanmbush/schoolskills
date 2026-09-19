@@ -162,6 +162,40 @@ describe("reading a shared sheet back", () => {
     expect(shared?.config.fields).toEqual(["name", "class"]);
   });
 
+  it("carries the letter shapes a parent chose", () => {
+    const shaped = { ...config, forms: { a: "double" as const } };
+    expect(
+      decodeSharedSheet(encodeSharedSheet({ config: shaped, seed: 1 }))?.config,
+    ).toEqual(shaped);
+  });
+
+  it("keeps only the shapes the vocabulary knows, on single characters", () => {
+    // The renderer indexes into this by character, so what comes out has to
+    // be a form per letter whatever the payload said.
+    const shared = decodeSharedSheet(
+      encoded({
+        config: {
+          ...config,
+          forms: { a: "double", zz: "double", t: 7, q: "bogus" },
+        },
+        seed: 1,
+      }),
+    );
+    expect(shared?.config.forms).toEqual({ a: "double" });
+  });
+
+  it("carries no shapes at all rather than an empty set of them", () => {
+    // Absent is what "as the hand draws it" already means, and a link must not
+    // grow a `"forms":{}` each time it is opened and sent on. Nor may the junk
+    // ride through with the family's own fields.
+    for (const forms of [{ zz: "double", q: "bogus" }, "double", 7, null, []]) {
+      const shared = decodeSharedSheet(
+        encoded({ config: { ...config, forms }, seed: 1 }),
+      );
+      expect(shared?.config, JSON.stringify(forms)).not.toHaveProperty("forms");
+    }
+  });
+
   it("clips a title long enough to be an essay", () => {
     const shared = decodeSharedSheet(
       encoded({ config: { ...config, title: "x".repeat(500) }, seed: 1 }),

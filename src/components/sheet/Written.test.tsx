@@ -182,7 +182,7 @@ describe("WrittenRow", () => {
   });
 
   it("writes a character the hand lacks as a space, not as nothing", () => {
-    const html = render([{ text: "az", style: "solid" }]);
+    const html = render([{ text: "a@", style: "solid" }]);
     expect(strokes(html)).toHaveLength(PRINT.glyphs.a.strokes.length);
   });
 });

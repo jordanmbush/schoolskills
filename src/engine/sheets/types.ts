@@ -7,6 +7,7 @@
  * are on the sheet from the moment it is built, so a key is `answers: true`
  * and nothing else and cannot disagree with the sheet it belongs to.
  */
+import type { Forms } from "./hands/hand";
 import type { Tableau } from "./maths/tableau";
 import type { Inventory } from "./phonics/inventory";
 import type { TranslationId } from "./passages/types";
@@ -876,15 +877,17 @@ export type Sheet = {
    */
   fontPt: number;
   /**
-   * The three below are the presentation half of `SheetOptions`, carried here
+   * The four below are the presentation half of `SheetOptions`, carried here
    * for the reason `fontPt` is — a `Sheet` is the whole hand-off, and a renderer
    * holding one must not also need the config it came from.
    *
    * No family sets them. `buildSheet` copies them on at the front door, the same
-   * bargain `chrome.ts` struck: otherwise every family writes the same three
+   * bargain `chrome.ts` struck: otherwise every family writes the same four
    * lines and the next one added is the one that forgets.
    */
   font?: SheetFont;
+  /** Which shape of each letter the hand writes — see `SheetOptions.forms`. */
+  forms?: Forms;
   /** A box round the answer place rather than a rule under it. */
   answerBox?: boolean;
   /** Dashed guides across the page, for a sheet that gets cut up. */
@@ -922,6 +925,12 @@ export type SheetOptions = {
   fields: HeaderField[];
   /** Absent is the print face, which is what a worksheet is set in. */
   font?: SheetFont;
+  /**
+   * Which shape of each letter the sheet teaches, where the face has a hand
+   * (§25): `{ a: "double", t: "straight" }`. Absent is each letter as the hand
+   * draws it, and a form the hand lacks falls back the same way.
+   */
+  forms?: Forms;
   /**
    * A box round the answer place instead of a rule under it. The same slot
    * either way — this decides how it is drawn, not where — which is why it can

@@ -8,14 +8,24 @@
  * across a family change (see `setFamily`) — somebody who has chosen A4 has
  * chosen it about their printer, not about long division.
  */
+import { Fragment } from "react";
+
 import {
   Checkbox,
   Field,
   FieldSet,
   Input,
   NumberStepper,
+  SegmentedControl,
   TextArea,
 } from "@/components/ui/kit";
+import { handOf } from "@/engine/sheets/hands";
+import {
+  formsOf,
+  type Form,
+  type Forms,
+  type Hand,
+} from "@/engine/sheets/hands/hand";
 import { FONT_PT } from "@/engine/sheets/paper";
 import { MAX_INSTRUCTIONS, MAX_TITLE } from "@/engine/sheets/share";
 import type {
@@ -72,6 +82,17 @@ const FONTS = [
   opt<SheetFont>("dyslexic", "Dyslexia", "weighted letters that can't mirror"),
 ];
 
+/**
+ * The forms of §25 as a parent reads them — a shape, never the name of the
+ * scheme that teaches it, for the reason `FONTS` gives.
+ */
+const FORM_LABELS: Record<Form, string> = {
+  single: "Single storey",
+  double: "Double storey",
+  curved: "Curved",
+  straight: "Straight",
+};
+
 /** The three blanks a worksheet asks for, and the order they are printed in. */
 const FIELDS: Array<{ id: HeaderField; label: string }> = [
   { id: "name", label: "Name" },
@@ -80,6 +101,7 @@ const FIELDS: Array<{ id: HeaderField; label: string }> = [
 ];
 
 export function PageOptions({ config, set }: PanelProps) {
+  const hand = handOf(config.font);
   const paper = (patch: Partial<typeof config.paper>) =>
     set({ paper: { ...config.paper, ...patch } });
 
@@ -134,6 +156,13 @@ export function PageOptions({ config, set }: PanelProps) {
         options={FONTS}
         hint="Print is a single-storey a and g, the three cursive models are the joined hands different countries teach, and the dyslexia-friendly face has weighted letters that can't be mirrored. All five come with the sheet."
       />
+      {hand && (
+        <LetterShapes
+          hand={hand}
+          forms={config.forms}
+          onChange={(forms) => set({ forms })}
+        />
+      )}
 
       <Field label="Title">
         <Input
@@ -185,5 +214,65 @@ export function PageOptions({ config, set }: PanelProps) {
         onChange={(cutLines) => set({ cutLines })}
       />
     </>
+  );
+}
+
+/**
+ * One row per letter the hand draws more than one way, in the hand's own
+ * order, with the hand's own shape offered first.
+ *
+ * A choice of the hand's own shape is written as no entry, and a sheet with no
+ * entries left carries no `forms` at all: absent already means "as the hand
+ * draws it" (§25), so writing the default down would only lengthen every share
+ * URL. A saved form the hand does not draw for that letter shows as the hand's
+ * own, which is what the row prints.
+ */
+function LetterShapes({
+  hand,
+  forms = {},
+  onChange,
+}: {
+  hand: Hand;
+  forms?: Forms;
+  onChange: (forms: Forms | undefined) => void;
+}) {
+  const lettered = Object.keys(hand.glyphs).filter(
+    (letter) => formsOf(hand, letter).length > 0,
+  );
+  if (lettered.length === 0) return null;
+
+  const choose = (letter: string, form: Form) => {
+    const next: Forms = { ...forms };
+    if (form === formsOf(hand, letter)[0]) delete next[letter];
+    else next[letter] = form;
+    onChange(Object.keys(next).length > 0 ? next : undefined);
+  };
+
+  return (
+    <FieldSet
+      legend="Letter shapes"
+      hint="The shapes schools differ on. Pick the ones your child is taught."
+    >
+      <div className="shapes">
+        {lettered.map((letter) => {
+          const offered = formsOf(hand, letter);
+          const chosen = forms[letter];
+          return (
+            <Fragment key={letter}>
+              <span className="shapes__letter" aria-hidden="true">
+                {letter}
+              </span>
+              <SegmentedControl
+                label={letter}
+                value={chosen && offered.includes(chosen) ? chosen : offered[0]}
+                onChange={(form) => choose(letter, form)}
+                options={offered.map((form) => opt(form, FORM_LABELS[form]))}
+                slim
+              />
+            </Fragment>
+          );
+        })}
+      </div>
+    </FieldSet>
   );
 }
