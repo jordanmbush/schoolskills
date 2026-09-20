@@ -47,6 +47,6 @@
     <path id="lead" inkscape:label="lead" d="M 0 1150 C 115.3 1112 267.8 1046 335.2 980 C 422.9 895 513.6 785 496.1 725" fill="none" stroke="#111" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
     <path id="top" inkscape:label="top" d="M 496.1 725 C 486.1 691 461 670 421 670 C 381 670 290.2 740 264.2 820" fill="none" stroke="#111" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
     <path id="body" inkscape:label="body" d="M 264.2 820 C 199.2 1020 257.3 1143 413.4 1124" fill="none" stroke="#111" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
-    <path id="tail" inkscape:label="tail" d="M 413.4 1124 C 499.4 1113.5 583 1008.5 631.7 914" fill="none" stroke="#111" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
+    <path id="tail" inkscape:label="tail" d="M 413.4 1124 C 499.2 1113.6 583 1008.5 631.7 914" fill="none" stroke="#111" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
   </g>
 </svg>

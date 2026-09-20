@@ -48,6 +48,6 @@
   <g inkscape:groupmode="layer" id="strokes" inkscape:label="strokes">
     <path id="lead" inkscape:label="lead" d="M -50 1150 C 61.6 1145 274.2 860 363.3 755 C 452.5 650 722.5 379 715.3 209.2" fill="none" stroke="#111" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
     <path id="body" inkscape:label="body" d="M 715.3 209.2 C 713.9 173.7 687.8 150 649.9 150 C 600.2 150 546.8 190.3 530.7 240 L 235 1150 L 300 950 C 341.7 821.5 592.5 650 639.5 650 C 686.5 650 729.7 680 700.5 770 L 616 1030 C 594.5 1096.3 606.1 1150 642 1150" fill="none" stroke="#111" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
-    <path id="tail" inkscape:label="tail" d="M 642 1150 C 728.6 1137.5 818.7 1012.5 873.2 900" fill="none" stroke="#111" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
+    <path id="tail" inkscape:label="tail" d="M 642 1150 C 725 1150 818.7 1012.5 873.2 900" fill="none" stroke="#111" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
   </g>
 </svg>

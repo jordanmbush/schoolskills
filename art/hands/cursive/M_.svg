@@ -55,6 +55,6 @@
   </g>
   <g inkscape:groupmode="layer" id="strokes" inkscape:label="strokes">
     <path id="body" inkscape:label="body" d="M 605.1 365 C 526.9 390 431.8 375 416.1 325 C 400.3 275 514.9 150 599.9 150 C 664.9 150 676.5 185 655.4 250 L 363 1150 L 509.2 700 C 574.2 500 798.4 170 968.4 170 C 1068.4 170 1113.3 195 1071.1 325 L 803 1150 L 949.2 700 C 1014.2 500 1231.9 190 1401.9 190 C 1501.9 190 1546.8 215 1504.6 345 L 1272.2 1060 C 1256.1 1109.7 1281.1 1150 1328 1150" fill="none" stroke="#111" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
-    <path id="tail" inkscape:label="tail" d="M 1328 1150 C 1414.6 1137.5 1504.7 1012.5 1559.2 900" fill="none" stroke="#111" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
+    <path id="tail" inkscape:label="tail" d="M 1328 1150 C 1411 1150 1504.7 1012.5 1559.2 900" fill="none" stroke="#111" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
   </g>
 </svg>
