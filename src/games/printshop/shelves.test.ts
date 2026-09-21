@@ -22,7 +22,7 @@ describe("the chooser's shelves", () => {
   });
 
   it("find a family's shelf, and fall back to the first for a stranger", () => {
-    expect(shelfOf("arithmetic").label).toBe("Maths");
+    expect(shelfOf("arithmetic").label).toBe("Math");
     expect(shelfOf("handwriting").label).toBe("Handwriting");
     expect(shelfOf("no-such-family")).toBe(SHELVES[0]);
   });

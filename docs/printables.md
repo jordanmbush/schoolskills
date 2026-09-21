@@ -1407,17 +1407,17 @@ of the 300-line cap — which is the right pressure for a screen like this.
 src/games/printshop/
   App.tsx            mount, and what goes where
   useBuilder.ts      the config, the seed, and the URL they live in
-  defaults.ts        what the bench opens on, per family
+  defaults.ts        what a family opens on
   shelves.ts         the chooser's shelves, and what each family's tab is called
   Rail.tsx           the rail's numbered steps, each with the line that says what is set
   summary.ts         those lines, for the paper, the lettering and the heading
-  Chooser.tsx        choose a family (the catalog, in-app), and the three doors
+  Chooser.tsx        choose a family (the catalog, in-app), and the doors on its shelf
   PageOptions.tsx    the options every sheet has, in three sections
   Preview.tsx        the sheet, scaled, on the press-room ground
   PrintBar.tsx       another draw · the link · copies · answer key · print
   Caption.tsx        under the paper: the seed, and where a file comes from
   SavedSheets.tsx    My Sheets, through services/sheets.ts
-  Bootstrap.tsx      the three doors — what they missed, a saved list, a paste
+  Bootstrap.tsx      the doors, by shelf — what they missed; a saved list, a paste
   Missed.tsx         practice what they missed, through services/practice.ts
   options/index.tsx  the registry — the one place `kind` is narrowed
   options/parts.tsx  choice · range · sizing · pool · word list
@@ -1444,9 +1444,15 @@ accordion that collapsed to a heading. Every tray ends in "Next: Paper →", a
 descriptive next rather than a bare one, so a parent who only ever presses it
 walks the order and ends at Print, while any step can be opened at any time —
 Material's non-linear stepper, and GOV.UK's "allow users to complete tasks in
-any order". And a stranger opens on step one, with one line saying to start
-there; a sheet that arrived by link or out of My sheets has its kind chosen
-already and lands on its own options instead. There is no tour, because
+any order". And a stranger opens on step one and nothing else: no kind is
+chosen, no pill is pressed, and the later steps, the print row and the paper
+are not on the page until one is. A default sheet stood there at first, and
+it hid the first question — a parent who arrived on a finished page of sums
+did not know they were meant to pick one — so now the only thing on the bench
+is the choice, which is progressive disclosure at its plainest: the one
+decision that comes first, and the rest once it is made. A sheet that arrived
+by link or out of My sheets has its kind chosen already and lands on its own
+options instead. There is no tour, because
 NN/g's testing found people who read one were no more successful and rated
 the task harder, and no ticks, because every step holds a good value from the
 first second and a tick on all five would say nothing.
@@ -1456,9 +1462,11 @@ words, a ruling — because the one heading that had to be true of every family
 ("what is on it") read as the site talking to itself. `shelves.ts` holds those
 names beside the five shelves the chooser groups the families on, cut coarser
 than the catalog's because five is what fits across a chooser. The bootstraps
-below are the chooser's lower half rather than a section of their own: "start
-from" asked a question the bench had already answered, since it opens on a
-finished sheet.
+below are the chooser's lower half rather than a section of their own, and
+each sits on the shelf whose sheets it makes: the record book's facts under
+Math; a list, a paste and the record book's spellings under Spelling; nothing
+under the rest. Shown under every shelf, a word-list door beside the times
+tables answered a question nobody on that shelf was asking.
 
 Built as it stands, with two names moved from this sketch: the per-family panel
 is `options/*.tsx` alone (there is no `Editor` wrapping it), and what was going
@@ -1466,9 +1474,9 @@ to be `Editor.tsx` turned out to be `PageOptions.tsx` — the options that belon
 to no family. The reading half of `#s=` lives in `engine/sheets/share.ts` beside
 the encoder rather than in the builder, because the two are one format.
 
-**The bench opens on a finished sheet, never on an empty form.** `defaults.ts`
+**A family opens on a finished sheet, never on an empty form.** `defaults.ts`
 holds one config per family and each is a worksheet somebody would print
-unchanged, so switching family produces paper before a single option has been
+unchanged, so choosing a family produces paper before a single option has been
 touched — the bargain a catalog page strikes, reached from inside the builder.
 Where a family has several styles the default is the one a parent recognizes
 across the room and would name if asked: the reading log among the nine forms,

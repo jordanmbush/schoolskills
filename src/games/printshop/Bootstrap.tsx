@@ -1,13 +1,14 @@
 /**
- * The three ways into a sheet that is already about something (§14) — the
- * lower half of the chooser.
+ * The doors into a sheet that is already about something (§14) — the lower
+ * half of the chooser, on whichever shelf each belongs to.
  *
- * None of them is a new kind of sheet: all three end at `onOpen(config, seed)`
+ * None of them is a new kind of sheet: each ends at `onOpen(config, seed)`
  * with a config the rail and the trays can then tune, which is what makes a
- * door a way to start rather than a mode to be in. They sit under the shelves
- * rather than above them because they are the second answer to the chooser's
- * one question — the bench already opens on a finished sheet, so nobody has
- * to start from anything.
+ * door a way to start rather than a mode to be in. A door sits on the shelf
+ * whose sheets it makes — the record book's facts under Math; a list, a paste
+ * and the record book's spellings under Spelling — because a word-list door
+ * under the times tables answered a question nobody on that shelf was asking.
+ * The other shelves have no doors, and show none.
  */
 import { useEffect, useState } from "react";
 
@@ -23,18 +24,38 @@ import { WordList } from "./options/parts";
 
 type Open = (config: SheetConfig, seed: number) => void;
 
-export function Bootstrap({ onOpen }: { onOpen: Open }) {
-  return (
-    <div className="doors">
-      <p className="doors__lead">
-        Or make a sheet from something of yours. Each one opens here, so the
-        paper and the lettering are still yours to change.
-      </p>
-      <Missed onOpen={onOpen} />
-      <FromWordList onOpen={onOpen} />
-      <FromPaste onOpen={onOpen} />
-    </div>
-  );
+export function Bootstrap({
+  shelf,
+  onOpen,
+}: {
+  /** The shelf the chooser is showing, by its id in `shelves.ts`. */
+  shelf: string;
+  onOpen: Open;
+}) {
+  if (shelf === "maths") {
+    return (
+      <div className="doors">
+        <p className="doors__lead">
+          Or start from the facts a child keeps getting wrong in the games.
+        </p>
+        <Missed shelf={shelf} onOpen={onOpen} />
+      </div>
+    );
+  }
+  if (shelf === "words") {
+    return (
+      <div className="doors">
+        <p className="doors__lead">
+          Or start from words of your own: a list, a paste, or the spellings a
+          child keeps missing in the games.
+        </p>
+        <FromWordList onOpen={onOpen} />
+        <FromPaste onOpen={onOpen} />
+        <Missed shelf={shelf} onOpen={onOpen} />
+      </div>
+    );
+  }
+  return null;
 }
 
 /** A list to print, whoever wrote it: the id, how it reads, and the words. */
@@ -59,7 +80,7 @@ function FromWordList({ onOpen }: { onOpen: Open }) {
     let live = true;
     deckService
       .all()
-      // Silent on failure, unlike the missed-facts panel above: a browser with
+      // Silent on failure, unlike the missed-facts door: a browser with
       // no storage simply offers the shipped lists rather than explaining
       // itself twice on one screen.
       .then((loaded) => live && setDecks(loaded))

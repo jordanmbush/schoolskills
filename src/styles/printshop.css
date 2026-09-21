@@ -3,7 +3,7 @@
    tray that opens under it, the chooser and the option grids inside that, and
    the frame the paper is looked at in below.
 
-   Not one colour is written down here. Every surface reads `--ink-*`,
+   Not one color is written down here. Every surface reads `--ink-*`,
    `--chalk-*`, `--accent` and `--hairline`, which is what makes the whole
    screen The Print Shop's warm graphite rather than a fifth palette — the
    `[data-world="paper"]` block in worlds.css is the only place those are said,
@@ -227,6 +227,13 @@
 
 .tray[hidden] {
   display: none;
+}
+
+/* Before a kind is chosen the tray is the whole bench, so it takes whatever
+   height the chooser needs rather than scrolling inside a page with nothing
+   under it. */
+.bench--choosing .tray {
+  max-height: none;
 }
 
 /* `dense` so a cell that spans two columns and does not fit at the end of a

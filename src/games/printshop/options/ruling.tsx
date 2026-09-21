@@ -46,7 +46,7 @@ const MIDLINES = [
   opt<Midline>("none", "None", "oldest"),
 ];
 
-/** The squares of §5, labelled the way the paper is sold. */
+/** The squares of §5, labeled the way the paper is sold. */
 const SQUARES = [
   opt("quarter-inch", "¼ in"),
   opt("fifth-inch", "⅕ in"),
@@ -87,7 +87,7 @@ export function RulingControls({
   rule: Rule;
   /** A patch onto the rule, merged by the family that owns it. */
   onChange: (patch: Partial<Rule>) => void;
-  /** Which rulings this family can honour. Every one of them, unless said. */
+  /** Which rulings this family can honor. Every one of them, unless said. */
   options?: SegmentedOption<RuleStyle>[];
 }) {
   const ruling = rulingOf(rule);

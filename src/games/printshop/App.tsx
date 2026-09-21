@@ -8,10 +8,13 @@
  * seed)` is a pure function of the state this island holds, so the sheet is
  * not a rendering of the settings, it *is* them.
  *
- * The steps have an order and no gate. Every one holds a good value from the
- * first second, so a parent who only ever presses "Next" walks the order and
- * ends at Print, and one who knows what they want opens any step directly
- * (§14).
+ * Until a kind of sheet is chosen there is no sheet, and the bench is step one
+ * and nothing else — no later steps, no print row, no paper. The rest appears
+ * the moment a kind is picked, which is what makes the first move the only
+ * one on offer (§14). From then on the steps have an order and no gate: every
+ * one holds a good value, so a parent who only ever presses "Next" walks the
+ * order and ends at Print, and one who knows what they want opens any step
+ * directly.
  *
  * Why an island can keep the site's chrome around it here, where a race cannot,
  * is in make.astro.
@@ -19,13 +22,14 @@
 import { useMemo, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/kit";
-import { buildWith, keyWith } from "@/engine/sheets/spec";
+import { buildWith, keyWith, type SheetSpec } from "@/engine/sheets/spec";
 import type { Sheet, SheetConfig } from "@/engine/sheets/types";
 import "@/styles/printshop.css";
 
 import { Caption } from "./Caption";
 import { Chooser } from "./Chooser";
 import { FamilyOptions } from "./options";
+import type { PanelProps } from "./options/parts";
 import {
   AnswerBoxes,
   HeadingOptions,
@@ -42,7 +46,6 @@ import {
   type Step,
 } from "./Rail";
 import { SavedSheets } from "./SavedSheets";
-import { FIRST_SHEET } from "./defaults";
 import { labelOf, tabOf } from "./shelves";
 import { headingLine, letteringLine, paperLine } from "./summary";
 import {
@@ -54,30 +57,62 @@ import {
 import { useFamily } from "./useFamily";
 
 /**
- * The wait for the family the bench opens on, and nothing else.
+ * The wait for the family a link names, and nothing else.
  *
- * A family is a chunk of its own now (§3), and the bench builds paper as it
- * mounts — `useBuilder` test-builds whatever the fragment held before it trusts
- * it — so there is nothing to render until that one module is here. Every
- * family chosen afterwards is fetched underneath a bench that stays on screen.
+ * A family is a chunk of its own (§3), and `useBuilder` test-builds whatever
+ * the fragment held before it trusts it, so a sheet that arrived by link has
+ * nothing to render until its one module is here. An empty address bar waits
+ * for nothing: the bench opens on the chooser, and every family chosen from
+ * it is fetched underneath a bench that stays on screen.
  */
 export default function PrintShopApp() {
   const [opening] = useState(openingSheet);
-  const first = useFamily(opening?.config.kind ?? FIRST_SHEET);
+  const first = useFamily(opening?.config.kind);
 
-  return first ? <Bench opening={opening} /> : null;
+  return opening && !first ? null : <Bench opening={opening} />;
 }
 
 /** The step a sheet lands on when it arrives: its own options, if it has any. */
 const landing = (kind: string): Section | null =>
   tabOf(kind) ? "family" : null;
 
+/**
+ * The rail's steps for what is on the bench: the first alone until a kind is
+ * chosen, then all of them, each with the line that says what is set in it.
+ */
+function stepsFor(
+  sheet: SharedSheet | null,
+  spec: SheetSpec | undefined,
+): Step[] {
+  if (!sheet) {
+    return [{ id: "sheet", name: "Sheet type", value: "Not chosen yet" }];
+  }
+  const { config } = sheet;
+  const tab = tabOf(config.kind);
+  return [
+    { id: "sheet", name: "Sheet type", value: labelOf(config.kind) },
+    ...(tab
+      ? [
+          {
+            id: "family" as const,
+            name: tab,
+            value: spec ? spec.describe(config) : "",
+          },
+        ]
+      : []),
+    { id: "paper", name: "Paper", value: paperLine(config) },
+    { id: "lettering", name: "Lettering", value: letteringLine(config) },
+    { id: "heading", name: "Heading", value: headingLine(config) },
+  ];
+}
+
 function Bench({ opening }: { opening: SharedSheet | null }) {
   const bench = useBuilder(opening);
+  const { sheet } = bench;
   // A stranger starts at step one. A sheet that arrived by link or out of My
   // sheets has its kind chosen already, so it lands on that kind's own options.
   const [open, setOpen] = useState<Section | null>(() =>
-    opening ? landing(bench.config.kind) : "sheet",
+    sheet ? landing(sheet.config.kind) : "sheet",
   );
   const rail = useRef<HTMLDivElement>(null);
   const print = useRef<HTMLButtonElement>(null);
@@ -87,13 +122,14 @@ function Bench({ opening }: { opening: SharedSheet | null }) {
   // every render would make a new object, the timer would restart on the render
   // the timer itself caused, and the preview would rebuild forever.
   const live = useMemo(
-    () => ({
-      config: bench.config,
-      seed: bench.seed,
-      variants: bench.variants,
-      answers: bench.answers,
-    }),
-    [bench.config, bench.seed, bench.variants, bench.answers],
+    () =>
+      sheet && {
+        config: sheet.config,
+        seed: sheet.seed,
+        variants: bench.variants,
+        answers: bench.answers,
+      },
+    [sheet, bench.variants, bench.answers],
   );
 
   const settled = useDebounced(live);
@@ -103,11 +139,11 @@ function Bench({ opening }: { opening: SharedSheet | null }) {
   // family except in the moment after a switch — and that is exactly when the
   // difference pays, because asking for the live one starts its download while
   // the preview is still holding the old sheet.
-  const chosen = useFamily(bench.config.kind);
-  const printing = useFamily(settled.config.kind);
+  const chosen = useFamily(sheet?.config.kind);
+  const printing = useFamily(settled?.config.kind);
 
   const sheets = useMemo<Sheet[]>(() => {
-    if (!printing) return [];
+    if (!printing || !settled) return [];
     const pages: Sheet[] = [];
     for (let copy = 0; copy < settled.variants; copy++) {
       // Variants are `seed + n` and nothing more elaborate (§7), so each one is
@@ -119,25 +155,10 @@ function Bench({ opening }: { opening: SharedSheet | null }) {
     return pages;
   }, [printing, settled]);
 
-  const kind = bench.config.kind;
-  const tab = tabOf(kind);
-  const steps: Step[] = [
-    { id: "sheet", name: "Sheet type", value: labelOf(kind) },
-    ...(tab
-      ? [
-          {
-            id: "family" as const,
-            name: tab,
-            value: chosen ? chosen.describe(bench.config) : "",
-          },
-        ]
-      : []),
-    { id: "paper", name: "Paper", value: paperLine(bench.config) },
-    { id: "lettering", name: "Lettering", value: letteringLine(bench.config) },
-    { id: "heading", name: "Heading", value: headingLine(bench.config) },
-  ];
+  const steps = stepsFor(sheet, chosen);
   const after = steps[steps.findIndex((step) => step.id === open) + 1];
-  const isStep = open !== null && open !== "mine";
+  // The numbered step in the tray, if the tray holds one rather than My sheets.
+  const step = open !== null && open !== "mine" ? open : null;
 
   const toggle = (section: Section) =>
     setOpen((current) => (current === section ? null : section));
@@ -160,53 +181,33 @@ function Bench({ opening }: { opening: SharedSheet | null }) {
     print.current?.focus();
   };
 
-  const panel = { config: bench.config, set: bench.set };
-
   return (
-    <div className="bench">
+    <div className={sheet ? "bench" : "bench bench--choosing"}>
       <div className="bench__rail no-print" ref={rail}>
-        <PrintBar
-          variants={bench.variants}
-          answers={bench.answers}
-          onVariants={bench.setVariants}
-          onAnswers={bench.setAnswers}
-          onReroll={bench.reroll}
-          printRef={print}
-        />
+        {sheet && (
+          <PrintBar
+            variants={bench.variants}
+            answers={bench.answers}
+            onVariants={bench.setVariants}
+            onAnswers={bench.setAnswers}
+            onReroll={bench.reroll}
+            printRef={print}
+          />
+        )}
         <Rail steps={steps} open={open} onToggle={toggle} />
         <div className="tray" id={TRAY_ID} hidden={open === null}>
           {open === "sheet" && (
-            <Chooser kind={kind} onFamily={choose} onOpen={openSheet} />
-          )}
-          {open === "family" && (
-            <div className="tray__grid wrap">
-              <FamilyOptions {...panel} />
-              <AnswerBoxes {...panel} />
-            </div>
-          )}
-          {open === "paper" && (
-            <div className="tray__grid wrap">
-              <PaperOptions {...panel} />
-            </div>
-          )}
-          {open === "lettering" && (
-            <div className="tray__grid tray__grid--wide wrap">
-              <LetteringOptions {...panel} />
-            </div>
-          )}
-          {open === "heading" && (
-            <div className="tray__grid tray__grid--wide wrap">
-              <HeadingOptions {...panel} />
-            </div>
-          )}
-          {open === "mine" && (
-            <SavedSheets
-              config={bench.config}
-              seed={bench.seed}
+            <Chooser
+              kind={sheet?.config.kind ?? null}
+              onFamily={choose}
               onOpen={openSheet}
             />
           )}
-          {isStep && (
+          {open === "mine" && <SavedSheets sheet={sheet} onOpen={openSheet} />}
+          {sheet && step && step !== "sheet" && (
+            <Options section={step} config={sheet.config} set={bench.set} />
+          )}
+          {sheet && step && (
             <div className="tray__next wrap">
               {after ? (
                 <Button variant="accent" onClick={() => setOpen(after.id)}>
@@ -222,16 +223,56 @@ function Bench({ opening }: { opening: SharedSheet | null }) {
         </div>
       </div>
 
-      {/* `.no-print` on the frame and not only on the two things inside it:
-          both children already carry it, but a frame emptied by `display: none`
-          on its contents still has its padding, and the print copy below would
-          lay out under it rather than at the top of the paper. */}
-      <div className="bench__paper wrap no-print">
-        <Preview sheets={sheets} />
-        <Caption seed={bench.seed} />
-      </div>
-
-      <PrintCopy sheets={sheets} />
+      {sheet && (
+        <>
+          {/* `.no-print` on the frame and not only on the two things inside
+              it: both children already carry it, but a frame emptied by
+              `display: none` on its contents still has its padding, and the
+              print copy below would lay out under it rather than at the top
+              of the paper. */}
+          <div className="bench__paper wrap no-print">
+            <Preview sheets={sheets} />
+            <Caption seed={sheet.seed} />
+          </div>
+          <PrintCopy sheets={sheets} />
+        </>
+      )}
     </div>
   );
+}
+
+/**
+ * The tray for a tuning step: the family's own options, or one of the three
+ * sections every sheet has (`PageOptions.tsx`).
+ */
+function Options({ section, ...panel }: { section: Section } & PanelProps) {
+  switch (section) {
+    case "family":
+      return (
+        <div className="tray__grid wrap">
+          <FamilyOptions {...panel} />
+          <AnswerBoxes {...panel} />
+        </div>
+      );
+    case "paper":
+      return (
+        <div className="tray__grid wrap">
+          <PaperOptions {...panel} />
+        </div>
+      );
+    case "lettering":
+      return (
+        <div className="tray__grid tray__grid--wide wrap">
+          <LetteringOptions {...panel} />
+        </div>
+      );
+    case "heading":
+      return (
+        <div className="tray__grid tray__grid--wide wrap">
+          <HeadingOptions {...panel} />
+        </div>
+      );
+    default:
+      return null;
+  }
 }

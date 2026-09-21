@@ -65,10 +65,10 @@ export function Preview({ sheets }: { sheets: Sheet[] }) {
   // a preview that lies in the other direction.
   const scale = box.width > 0 ? Math.min(1, box.room / box.width) : 1;
 
-  // Centred by hand, about the top-left corner, rather than with `margin: auto`
+  // Centered by hand, about the top-left corner, rather than with `margin: auto`
   // about the middle: a stack wider than the room — every landscape sheet — is
   // already hanging out of the right of the frame before the scale is applied,
-  // and scaled about its own centre it shrinks towards a point that was never
+  // and scaled about its own center it shrinks towards a point that was never
   // in view, leaving the right edge of the paper cut off.
   const inset = Math.max(0, (box.room - box.width * scale) / 2);
 

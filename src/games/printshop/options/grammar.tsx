@@ -4,7 +4,7 @@
  * The same two controls the word-study panel has, and the second depends on the
  * first for the same reason: a topic states which shapes it can honestly be
  * asked in (`grammarStyles`). Three of the five topics have no closed list of
- * answers to circle — an end mark, a capitalised word and a sentence cut in half
+ * answers to circle — an end mark, a capitalized word and a sentence cut in half
  * are none of them a multiple choice — so those three show no shape control.
  *
  * Switching to a topic that cannot do the style already chosen sets the style as
