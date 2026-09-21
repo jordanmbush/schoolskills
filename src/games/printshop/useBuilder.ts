@@ -1,10 +1,16 @@
 /**
- * Everything the bench holds: a config, a seed, and how many copies of it.
+ * Everything the bench holds: the sheet, if there is one yet, how many copies
+ * of it, and whether the answer key comes too.
  *
- * Five values, and everything else on the screen is derived from them.
- * `buildSheet(config, seed)` is deterministic (§7), so the preview, the answer
- * key, the variants and the shareable URL are all functions of the same five
- * rather than four things kept in step.
+ * Everything else on the screen is derived from those. `buildSheet(config,
+ * seed)` is deterministic (§7), so the preview, the answer key, the variants
+ * and the shareable URL are all functions of the same few values rather than
+ * four things kept in step.
+ *
+ * There is no sheet until a family is chosen or a link names one. A default
+ * sheet used to fill that gap, and it answered the first question before a
+ * stranger knew it was being asked (§14): the bench now holds nothing, and
+ * shows nothing, until the choice is made.
  *
  * The config lives in the URL (§14), and every change rewrites `#s=` with
  * `replaceState` rather than `pushState` — a builder that pushed a history entry
@@ -17,7 +23,7 @@ import { decodeSharedSheet, encodeSharedSheet } from "@/engine/sheets/share";
 import { buildWith } from "@/engine/sheets/spec";
 import type { SheetConfig } from "@/engine/sheets/types";
 
-import { defaultConfig, FIRST_SHEET } from "./defaults";
+import { defaultConfig } from "./defaults";
 
 /** How long the preview waits after the last press before it redraws. */
 export const REDRAW_DELAY = 160;
@@ -26,14 +32,17 @@ export const REDRAW_DELAY = 160;
 export const MAX_VARIANTS = 5;
 
 export type Builder = {
-  config: SheetConfig;
-  seed: number;
+  /** What is on the bench, or nothing until a family is chosen. */
+  sheet: SharedSheet | null;
   variants: number;
   /** Print the answer key after each variant. */
   answers: boolean;
-  /** Patch the current family's config. Never changes which family it is. */
+  /**
+   * Patch the current family's config. Never changes which family it is, and
+   * does nothing while there is no sheet to patch.
+   */
   set: (patch: Partial<SheetConfig>) => void;
-  /** Swap family, opening on that family's own starting sheet. */
+  /** Choose a family, opening on that family's own starting sheet. */
   setFamily: (kind: string) => void;
   /** Load a whole sheet — a shared link, or one out of My Sheets. */
   open: (config: SheetConfig, seed: number) => void;
@@ -65,8 +74,9 @@ export function openingSheet(): SharedSheet | null {
  *
  * `decodeSharedSheet` rebuilds the half of a config every family shares and
  * leaves each family's own fields alone, so this is the belt to that pair of
- * braces — and the one place §14's "fall back to defaults rather than throwing"
- * is actually kept.
+ * braces — and the one place §14's "fall back rather than throwing" is
+ * actually kept. A link that fails here opens the bench on the chooser, the
+ * same as no link at all.
  *
  * Both halves, because a family reaches into its own config twice: once to make
  * the page and once to say in a line what is on it. A bench that built the paper
@@ -89,12 +99,10 @@ function survivesBuilding({ config, seed }: SharedSheet): boolean {
 }
 
 export function useBuilder(opening: SharedSheet | null): Builder {
-  // Lazily, so the very first paint is already the shared sheet rather than the
-  // default one replaced a tick later.
-  const [state, setState] = useState<SharedSheet>(() =>
-    opening && survivesBuilding(opening)
-      ? opening
-      : { config: defaultConfig(FIRST_SHEET), seed: 1 },
+  // Lazily, so the very first paint is already the shared sheet rather than
+  // the chooser replaced a tick later.
+  const [sheet, setSheet] = useState<SharedSheet | null>(() =>
+    opening && survivesBuilding(opening) ? opening : null,
   );
   const [variants, setVariants] = useState(1);
   const [answers, setAnswers] = useState(false);
@@ -105,47 +113,51 @@ export function useBuilder(opening: SharedSheet | null): Builder {
   const written = useRef<string | null>(null);
 
   useEffect(() => {
-    const payload = encodeSharedSheet({
-      config: state.config,
-      seed: state.seed,
-    });
+    if (!sheet) return;
+    const payload = encodeSharedSheet(sheet);
     if (written.current === payload) return;
     written.current = payload;
     window.history.replaceState(null, "", `#s=${payload}`);
-  }, [state]);
+  }, [sheet]);
 
   const set = useCallback((patch: Partial<SheetConfig>) => {
     // Cast at the one point a patch meets a union. The panels are each typed to
     // their own family and can only produce a patch of it; what is lost here is
     // TypeScript's ability to prove that the patch and the config are the same
     // member, which no spread of a union can express.
-    setState((current) => ({
-      ...current,
-      config: { ...current.config, ...patch } as SheetConfig,
-    }));
+    setSheet(
+      (current) =>
+        current && {
+          ...current,
+          config: { ...current.config, ...patch } as SheetConfig,
+        },
+    );
   }, []);
 
   const setFamily = useCallback((kind: string) => {
     // A fresh config rather than a merge. Sharing `count` and `columns` across
     // families looks thoughtful and prints a page of six long divisions in
-    // three columns, because the numbers mean different things in each.
-    setState((current) => ({
-      ...current,
-      config: { ...defaultConfig(kind), paper: current.config.paper },
+    // three columns, because the numbers mean different things in each. Paper
+    // is the exception: somebody who has chosen A4 has chosen it about their
+    // printer, not about long division.
+    setSheet((current) => ({
+      seed: current?.seed ?? 1,
+      config: current
+        ? { ...defaultConfig(kind), paper: current.config.paper }
+        : defaultConfig(kind),
     }));
   }, []);
 
   const open = useCallback((config: SheetConfig, seed: number) => {
-    setState({ config, seed });
+    setSheet({ config, seed });
   }, []);
 
   const reroll = useCallback(() => {
-    setState((current) => ({ ...current, seed: current.seed + 1 }));
+    setSheet((current) => current && { ...current, seed: current.seed + 1 });
   }, []);
 
   return {
-    config: state.config,
-    seed: state.seed,
+    sheet,
     variants,
     answers,
     set,

@@ -19,7 +19,7 @@ import type { PanelProps } from "./parts";
 type FamilyPanel = ComponentType<PanelProps>;
 
 /**
- * Files a family's panel under the union, which the lookup then honours — the
+ * Files a family's panel under the union, which the lookup then honors — the
  * one cast in the directory, and worth reading before it is copied.
  *
  * The assertion says "this panel will only ever be given its own family's

@@ -2,7 +2,7 @@
  * A list, and which puzzle to make out of it.
  *
  * Four of the controls are the word search's alone, and they disappear on the
- * other two styles rather than greying out: there is no grid on a scramble sheet
+ * other two styles rather than graying out: there is no grid on a scramble sheet
  * for a direction to run in. The grid stepper is a request either way —
  * `searchLayout` shrinks a grid that will not fit the paper with its word list
  * under it — which is why the hint says so.

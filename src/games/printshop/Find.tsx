@@ -96,11 +96,11 @@ export function countNote(
  *
  * Pressing the chosen one again clears it, which is what a row with no "any"
  * chip has to mean — and `aria-pressed` says so out loud rather than leaving the
- * state to the colour.
+ * state to the color.
  *
  * A chip that would find nothing alongside what is already chosen is disabled
  * rather than hidden. Hidden, the row would reshuffle under the pointer on every
- * pick; greyed, it stays where it was and says what the pick ruled out. The
+ * pick; grayed, it stays where it was and says what the pick ruled out. The
  * pressed chip is never disabled, whatever it finds, or there would be no way
  * to un-press it.
  */

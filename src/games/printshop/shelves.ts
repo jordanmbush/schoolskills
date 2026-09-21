@@ -38,7 +38,7 @@ const PROBLEMS = "Problems";
 export const SHELVES: readonly Shelf[] = [
   {
     id: "maths",
-    label: "Maths",
+    label: "Math",
     families: [
       { id: "arithmetic", tab: PROBLEMS },
       { id: "multiplication", tab: PROBLEMS },

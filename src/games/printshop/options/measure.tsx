@@ -2,7 +2,7 @@
  * Measurement.
  *
  * Two systems and no conversion between them, which is why the system is a
- * choice rather than a pool: a child converting metres into feet is doing a
+ * choice rather than a pool: a child converting meters into feet is doing a
  * different lesson — an approximate one — and everything in this family is
  * exact.
  */

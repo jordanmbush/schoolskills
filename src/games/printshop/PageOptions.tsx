@@ -67,8 +67,8 @@ const MARGINS = [
  * scheme that teaches it, for the reason `FONTS` gives.
  */
 const FORM_LABELS: Record<Form, string> = {
-  single: "Single storey",
-  double: "Double storey",
+  single: "Single story",
+  double: "Double story",
   curved: "Curved",
   straight: "Straight",
 };
@@ -137,7 +137,7 @@ export function LetteringOptions({ config, set }: PanelProps) {
         value={config.font ?? "print"}
         onChange={(font) => set({ font })}
         options={FONTS}
-        hint="Print is a single-storey a and g, the three cursive models are the joined hands different countries teach, and the dyslexia-friendly face has weighted letters that can't be mirrored. All five come with the sheet."
+        hint="Print is a single-story a and g, the three cursive models are the joined hands different countries teach, and the dyslexia-friendly face has weighted letters that can't be mirrored. All five come with the sheet."
       />
       {hand && (
         <LetterShapes

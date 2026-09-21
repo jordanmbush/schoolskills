@@ -21,7 +21,7 @@ const STYLES = [
   opt<PlannerStyle>("calendar", "Calendar"),
   opt<PlannerStyle>("week", "Weekly planner"),
   opt<PlannerStyle>("chores", "Chore chart"),
-  opt<PlannerStyle>("behaviour", "Behaviour chart"),
+  opt<PlannerStyle>("behaviour", "Behavior chart"),
   opt<PlannerStyle>("verse-week", "Verse of the week"),
 ];
 

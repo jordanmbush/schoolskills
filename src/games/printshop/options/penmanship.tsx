@@ -75,7 +75,7 @@ const TRACES = [
   opt<TraceStyle>("dotted", "Dotted", "the usual"),
   opt<TraceStyle>("dashed", "Dashed"),
   opt<TraceStyle>("hollow", "Hollow", "a thin line, on a stroke"),
-  opt<TraceStyle>("dim", "Grey"),
+  opt<TraceStyle>("dim", "Gray"),
   opt<TraceStyle>("solid", "Solid"),
   opt<TraceStyle>("none", "None", "a model, then empty lines"),
 ];

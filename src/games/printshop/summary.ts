@@ -29,7 +29,7 @@ import { opt } from "./options/parts";
  * line below is written from the same five names.
  */
 export const FONTS = [
-  opt<SheetFont>("print", "Print", "single-storey a and g"),
+  opt<SheetFont>("print", "Print", "single-story a and g"),
   opt<SheetFont>("cursive", "Cursive, looped", "the traditional joined hand"),
   opt<SheetFont>(
     "cursive-modern",
