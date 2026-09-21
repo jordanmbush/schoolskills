@@ -1409,12 +1409,13 @@ src/games/printshop/
   useBuilder.ts      the config, the seed, and the URL they live in
   defaults.ts        what the bench opens on, per family
   shelves.ts         the chooser's shelves, and what each family's tab is called
-  Rail.tsx           the rail: the sheet's name, the section tabs, the print bar
+  Rail.tsx           the rail's numbered steps, each with the line that says what is set
+  summary.ts         those lines, for the paper, the lettering and the heading
   Chooser.tsx        choose a family (the catalog, in-app), and the three doors
   PageOptions.tsx    the options every sheet has, in three sections
   Preview.tsx        the sheet, scaled, on the press-room ground
-  PrintBar.tsx       copies · answer key · print
-  Caption.tsx        under the paper: the seed, another draw, the link
+  PrintBar.tsx       another draw · the link · copies · answer key · print
+  Caption.tsx        under the paper: the seed, and where a file comes from
   SavedSheets.tsx    My Sheets, through services/sheets.ts
   Bootstrap.tsx      the three doors — what they missed, a saved list, a paste
   Missed.tsx         practise what they missed, through services/practice.ts
@@ -1423,17 +1424,34 @@ src/games/printshop/
   options/*.tsx      one panel per family
 ```
 
-**One rail, one tray.** The options first stood in a column beside the paper,
-and the column grew to five screens: a parent tuning a sheet scrolled up and
-down it looking for the one control they meant, and a landscape sheet had half
-the width it needed. Now everything that changes the paper runs across the top
-in one rail — the sheet's name, which opens the chooser; a tab per section of
-options; and copies, the key and Print — and a tab opens its section in a tray
-under the rail, laid out in columns so the whole section is on screen at once.
-The open tab closes it. The rail sticks under the masthead, and the paper takes
-the full width below.
+**One rail, one tray, and the steps are numbered.** The options first stood
+in a column beside the paper, and the column grew to five screens: a parent
+tuning a sheet scrolled up and down it looking for the one control they meant,
+and a landscape sheet had half the width it needed. Now everything that changes
+the paper runs across the top in one rail, as numbered steps in the order a
+stranger needs them — the sheet type, what is on it, the paper, the lettering,
+the heading — and a step opens its section in a tray under the rail, laid out
+in columns so the whole section is on screen at once. The row above the steps
+is what leaves the bench as paper: another draw, the link, copies, the answer
+key and Print. The rail sticks under the masthead, and the paper takes the full
+width below.
 
-The family's own tab is called what the family holds — problems, letters,
+Three things make it a way through rather than a set of tabs, and each is a
+finding rather than a taste. A closed step shows the choices made in it as one
+line (`summary.ts`), because a step that showed only its name would have to be
+opened to be checked — the fault Baymard's checkout testing found in every
+accordion that collapsed to a heading. Every tray ends in "Next: Paper →", a
+descriptive next rather than a bare one, so a parent who only ever presses it
+walks the order and ends at Print, while any step can be opened at any time —
+Material's non-linear stepper, and GOV.UK's "allow users to complete tasks in
+any order". And a stranger opens on step one, with one line saying to start
+there; a sheet that arrived by link or out of My sheets has its kind chosen
+already and lands on its own options instead. There is no tour, because
+NN/g's testing found people who read one were no more successful and rated
+the task harder, and no ticks, because every step holds a good value from the
+first second and a tick on all five would say nothing.
+
+The family's own step is called what the family holds — problems, letters,
 words, a ruling — because the one heading that had to be true of every family
 ("what is on it") read as the site talking to itself. `shelves.ts` holds those
 names beside the five shelves the chooser groups the families on, cut coarser

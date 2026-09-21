@@ -18,8 +18,12 @@
    file deals with: `.print-only`, which is the whole point of the screen, and
    `.bench` itself, which cannot be hidden because it is what holds it.       */
 
+/* `minmax(0, 1fr)` rather than the implicit `auto` track: the steps strip
+   scrolls sideways rather than shrinking, and an auto track would grow to its
+   full width and take the whole bench past the edge of a phone with it. */
 .bench {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--gap-4);
   padding-bottom: var(--gap-5);
 }
@@ -46,121 +50,30 @@
   }
 }
 
-/* Two rows: the sheet's name and the print bar, then the tabs, which sit last
-   so the open one underlines straight into the tray beneath it. One row was
-   tried and does not fit: five tabs, a family's name in display type and a
-   stepper with a button each side run past the site's column at any width. */
-.rail {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  grid-template-areas:
-    "sheet print"
-    "tabs tabs";
-  align-items: center;
-  gap: var(--gap-1) var(--gap-3);
-  padding-top: var(--gap-2);
-}
-
-.rail__sheet {
-  grid-area: sheet;
-  justify-self: start;
-  display: inline-flex;
-  align-items: center;
-  gap: var(--gap-2);
-  padding: 0.35rem 0.85rem 0.35rem 0.2rem;
-  border-radius: 999px;
-  font-family: var(--font-display);
-  font-size: var(--step-1);
-  line-height: 1;
-  color: var(--chalk);
-  white-space: nowrap;
-}
-
-.rail__sheet:hover {
-  background: rgb(255 255 255 / 6%);
-}
-
-.rail__sheet[aria-expanded="true"] {
-  background: color-mix(in oklab, var(--accent) 14%, transparent);
-}
-
-.rail__chip {
-  font-family: var(--font-mono);
-  font-size: var(--step--2);
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--accent);
-  border: 1px solid color-mix(in oklab, var(--accent) 45%, transparent);
-  border-radius: 999px;
-  padding: 0.35em 0.7em;
-}
-
-.rail__caret {
-  font-size: var(--step--1);
-  color: var(--chalk-dim);
-}
-
-.rail__tabs {
-  grid-area: tabs;
-  display: flex;
-  gap: var(--gap-1);
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-
-.rail__tab {
-  position: relative;
-  padding: 0.55rem var(--gap-2) 0.7rem;
-  font-weight: 700;
-  color: var(--chalk-soft);
-  white-space: nowrap;
-}
-
-.rail__tab:hover {
-  color: var(--chalk);
-}
-
-.rail__tab[aria-expanded="true"] {
-  color: var(--accent);
-}
-
-/* The open tab is underlined into the tray it opened, so the two read as one
-   piece rather than a highlighted word above an unrelated panel. */
-.rail__tab[aria-expanded="true"]::after {
-  content: "";
-  position: absolute;
-  left: var(--gap-2);
-  right: var(--gap-2);
-  bottom: -1px;
-  height: 3px;
-  border-radius: 3px 3px 0 0;
-  background: var(--accent);
-}
-
-/* One column under a laptop: the sheet's name, the print bar and the tabs,
-   each on a line of its own, the tabs scrolling sideways if they must. */
-@media (width < 62rem) {
-  .rail {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-areas:
-      "sheet"
-      "print"
-      "tabs";
-  }
-
-  .printbar {
-    justify-self: start;
-  }
-}
+/* Two rows: what leaves the bench as paper, then the numbered steps that
+   make it, with the open step underlined into the tray beneath. One row was
+   tried and does not fit: five steps with a value line each, a stepper with a
+   button either side and Print run past the site's column at any width.    */
 
 .printbar {
-  grid-area: print;
-  justify-self: end;
   display: flex;
-  align-items: center;
-  justify-content: flex-end;
   flex-wrap: wrap;
-  gap: var(--gap-3);
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--gap-2) var(--gap-3);
+  padding-block: var(--gap-2) var(--gap-1);
+}
+
+.printbar__sheet,
+.printbar__out {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--gap-2) var(--gap-3);
+}
+
+.printbar__out {
+  margin-left: auto;
 }
 
 .printbar__copies {
@@ -185,6 +98,118 @@
 
 .checkbox--inline .checkbox__box {
   margin-top: 0;
+}
+
+.rail {
+  display: flex;
+  align-items: stretch;
+  gap: var(--gap-3);
+}
+
+.rail__steps {
+  display: flex;
+  gap: var(--gap-1);
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+/* A step is its number, its name and the line that says what is set in it.
+   The number is the order; the line is the status, since every step holds a
+   good value from the first second and a tick on all of them would say
+   nothing. */
+.step {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-areas:
+    "num name"
+    "num value";
+  column-gap: var(--gap-1);
+  align-items: center;
+  padding: 0.5rem var(--gap-2) 0.7rem;
+  text-align: left;
+  white-space: nowrap;
+  color: var(--chalk-soft);
+}
+
+.step:hover {
+  color: var(--chalk);
+}
+
+.step__num {
+  grid-area: num;
+  display: grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  border: 1.5px solid var(--hairline);
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  font-weight: 700;
+  line-height: 1;
+  color: var(--chalk-dim);
+}
+
+.step__name {
+  grid-area: name;
+  font-weight: 700;
+}
+
+.step__value {
+  grid-area: value;
+  max-width: 14rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: var(--step--2);
+  color: var(--chalk-dim);
+}
+
+.step[aria-expanded="true"] {
+  color: var(--accent);
+}
+
+.step[aria-expanded="true"] .step__num {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+
+.step[aria-expanded="true"] .step__value {
+  color: var(--chalk-soft);
+}
+
+/* The open step is underlined into the tray it opened, so the two read as one
+   piece rather than a highlighted word above an unrelated panel. */
+.step[aria-expanded="true"]::after {
+  content: "";
+  position: absolute;
+  left: var(--gap-2);
+  right: var(--gap-2);
+  bottom: -1px;
+  height: 3px;
+  border-radius: 3px 3px 0 0;
+  background: var(--accent);
+}
+
+/* My sheets: not a step, so no number, and apart from the numbered ones. */
+.step--aside {
+  grid-template-columns: 1fr;
+  grid-template-areas:
+    "name"
+    "value";
+  margin-left: auto;
+}
+
+@media (width < 62rem) {
+  .step__value {
+    max-width: 10rem;
+  }
 }
 
 /* ── The tray ───────────────────────────────────────────────────────────────
@@ -216,6 +241,13 @@
   padding-block: var(--gap-3) var(--gap-4);
 }
 
+/* The foot of every step: the one button that says what comes next. */
+.tray__next {
+  display: flex;
+  justify-content: flex-end;
+  padding-bottom: var(--gap-3);
+}
+
 /* Sections whose controls are text — a title, a face with a line under each
    choice — get wider cells and so fewer of them. */
 .tray__grid--wide {
@@ -239,6 +271,11 @@
   display: grid;
   gap: var(--gap-3);
   padding-block: var(--gap-3) var(--gap-4);
+}
+
+.chooser__lead {
+  font-size: var(--step--1);
+  color: var(--chalk-soft);
 }
 
 /* Fourteen families in one dark pill box would read as a blob; loose pills
@@ -425,22 +462,8 @@
 }
 
 .caption {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--gap-1) var(--gap-3);
   font-size: var(--step--1);
   color: var(--chalk-dim);
-}
-
-.caption__line {
-  color: var(--chalk-soft);
-}
-
-.caption__actions {
-  display: flex;
-  gap: var(--gap-1);
-  margin-left: auto;
 }
 
 /* ── Paper, and only paper ──────────────────────────────────────────────────

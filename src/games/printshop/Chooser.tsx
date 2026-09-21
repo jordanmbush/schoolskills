@@ -41,6 +41,10 @@ export function Chooser({
 
   return (
     <div className="chooser wrap">
+      <p className="chooser__lead">
+        Pick what kind of sheet to start from. Every other step can be changed
+        afterwards, in any order.
+      </p>
       <SegmentedControl
         label="Shelf"
         value={shelf.id}
