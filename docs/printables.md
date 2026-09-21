@@ -1461,7 +1461,10 @@ The family's own step is called what the family holds — problems, letters,
 words, a ruling — because the one heading that had to be true of every family
 ("what is on it") read as the site talking to itself. `shelves.ts` holds those
 names beside the five shelves the chooser groups the families on, cut coarser
-than the catalog's because five is what fits across a chooser. The bootstraps
+than the catalog's because five is what fits across a chooser. On screen a
+shelf is a subject, the word a parent has for it and the word the search
+index already uses, and the sheet types are not offered until one is chosen,
+so a first visit asks one thing. The bootstraps
 below are the chooser's lower half rather than a section of their own, and
 each sits on the shelf whose sheets it makes: the record book's facts under
 Math; a list, a paste and the record book's spellings under Spelling; nothing

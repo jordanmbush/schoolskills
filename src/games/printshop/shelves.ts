@@ -1,6 +1,6 @@
 /**
- * How the chooser groups the families, and what each family's own tab in the
- * rail is called (§14).
+ * How the chooser groups the families — a shelf here, a subject on screen —
+ * and what each family's own tab in the rail is called (§14).
  *
  * Both are editorial rather than engineering, which is why they sit here beside
  * `defaults.ts` and not in the engine's registry: the engine says what a family
