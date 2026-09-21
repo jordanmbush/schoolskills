@@ -30,6 +30,9 @@ import {
   answerLine,
   columnWidth,
   fitAcross,
+  paged,
+  problemPages,
+  wantedOf,
   type Box,
 } from "../layout";
 import { points } from "../paper";
@@ -165,6 +168,14 @@ const gapsOf = (config: WordsConfig): string => {
  */
 const DOWN_THE_PAGE = new Set<WordsConfig["style"]>(["missing", "find"]);
 
+/**
+ * The number a page's first word carries: absent on page one, and on from
+ * where the page before stopped after that — what `problemPages` does for a
+ * `problems` block.
+ */
+const numbered = (from: number): { start?: number } =>
+  from > 0 ? { start: from + 1 } : {};
+
 /** How tall one word stands, the lines it is written on included. */
 function rowHeight(config: WordsConfig): Mil {
   const em = (rows: number): Mil => points(config.fontPt * rows);
@@ -194,6 +205,8 @@ export function wordsLayout(config: WordsConfig): {
   columns: number;
   cell: Mil;
   row: Mil;
+  /** The air between one row and the next, as the page was divided by it. */
+  gap: Mil;
   perPage: number;
 } {
   // Against the header the sheet will print rather than the one the config
@@ -210,6 +223,7 @@ export function wordsLayout(config: WordsConfig): {
     columns,
     cell: columnWidth(box, columns, PROBLEM_GAP.x),
     row,
+    gap,
     perPage: columns * fitAcross(box.height, row, gap),
   };
 }
@@ -219,15 +233,12 @@ export function wordsLayout(config: WordsConfig): {
  *
  * A spelling list is often taught in order and a list of missed words arrives
  * ranked worst-first, so *which* words are printed is the first `count` of them
- * rather than a draw. The count is a request rather than a promise, the same as
- * everywhere else: what does not fit is not printed, because print is the whole
- * of the output path (§10). The one style that shuffles is `abcItems`, where
- * the order is the exercise.
+ * rather than a draw. What one page has no room for runs on to the next (§4).
+ * The one style that shuffles is `abcItems`, where the order is the exercise.
  */
-export function sheetWords(config: WordsConfig): string[] {
-  const { perPage } = wordsLayout(config);
+export function sheetWords(config: WordsConfig, perPage: number): string[] {
   const words = wordsOf(config);
-  return words.slice(0, clamp(config.count ?? words.length, 0, perPage));
+  return words.slice(0, wantedOf(config.count ?? words.length, perPage));
 }
 
 /** One word, as the style asks for it. */
@@ -316,36 +327,58 @@ function bodyOf(
   config: WordsConfig,
   seed: number,
 ): { blocks: Block[]; outOf: number } {
-  const words = sheetWords(config);
-  const { columns } = wordsLayout(config);
+  const { columns, perPage } = wordsLayout(config);
+  const words = sheetWords(config, perPage);
   const outOf = words.length;
 
   if (config.style === "missing") {
     const rand = mulberry32(seed);
     const sentences = words.map((word) => gapped(word, config.gaps, rand));
-    return { blocks: [{ kind: "blanks", sentences }], outOf: sentences.length };
+    return {
+      blocks: paged(sentences, perPage, (page, from) => ({
+        kind: "blanks",
+        sentences: page,
+        ...numbered(from),
+      })),
+      outOf: sentences.length,
+    };
   }
 
   if (config.style === "find") {
-    // The pool is the words on the page rather than the whole list, so every
-    // near miss printed is a word the child is being taught this week — and a
-    // list too short to have three of them says so by offering fewer options
-    // rather than by borrowing from somewhere else.
+    // The pool is the words this sheet prints rather than the whole list, so
+    // every near miss printed is a word the child is being taught this week —
+    // and a list too short to have three of them says so by offering fewer
+    // options rather than by borrowing from somewhere else.
     const rand = mulberry32(seed);
     const questions = words.map((word) => findQuestion(word, words, rand));
-    return { blocks: [{ kind: "choice", questions }], outOf };
+    return {
+      blocks: paged(questions, perPage, (page, from) => ({
+        kind: "choice",
+        questions: page,
+        ...numbered(from),
+      })),
+      outOf,
+    };
   }
 
   if (config.style === "shapes") {
     const shapes: WordShape[] = words.map(wordShape);
-    return { blocks: [{ kind: "wordshapes", columns, words: shapes }], outOf };
+    return {
+      blocks: paged(shapes, perPage, (page, from) => ({
+        kind: "wordshapes",
+        columns,
+        words: page,
+        ...numbered(from),
+      })),
+      outOf,
+    };
   }
 
   const items =
     config.style === "abc"
       ? abcItems(words, mulberry32(seed))
       : words.map((word) => problemOf(word, config));
-  return { blocks: [{ kind: "problems", columns, items }], outOf };
+  return { blocks: problemPages(items, columns, perPage), outOf };
 }
 
 /* ── What it is called ─────────────────────────────────────────────────── */

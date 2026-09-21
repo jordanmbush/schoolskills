@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 import { answerKey, buildSheet } from "@/engine/sheets";
+import { printedBlockBox } from "@/engine/sheets/chrome";
 import { describeSheetFamily } from "@/engine/sheets/contract";
+import { MAX_COUNT } from "@/engine/sheets/layout";
 import { DEFAULT_FONT_PT, DEFAULT_PAPER } from "@/engine/sheets/paper";
 import type {
   Block,
@@ -142,10 +144,68 @@ describeSheetFamily("phonics", {
 
 /* ── Reading the page back ─────────────────────────────────────────────── */
 
-const only = (sheet: Sheet): Block => {
-  expect(sheet.blocks).toHaveLength(1);
-  return sheet.blocks[0];
-};
+/**
+ * One block a page, in order, with a `break` between. A phonics sheet prints
+ * nothing else, so a second block on a page is a failure here rather than a
+ * page silently skipped.
+ */
+function pagesOf(sheet: Sheet): Block[] {
+  const pages: Block[] = [];
+  let open = false;
+  for (const block of sheet.blocks) {
+    if (block.kind === "break") {
+      expect(open, "a break with no page before it").toBe(true);
+      open = false;
+      continue;
+    }
+    expect(open, "two blocks on one page").toBe(false);
+    pages.push(block);
+    open = true;
+  }
+  return pages;
+}
+
+/** The pages of a sheet, each narrowed to the block kind its style prints. */
+function pagesAs<K extends Block["kind"]>(
+  sheet: Sheet,
+  kind: K,
+): Array<Extract<Block, { kind: K }>> {
+  return pagesOf(sheet).map((block) => {
+    if (block.kind !== kind)
+      throw new Error(`expected ${kind}, got ${block.kind}`);
+    return block as Extract<Block, { kind: K }>;
+  });
+}
+
+/** Every problem on a sheet, whichever pages it took. */
+const itemsOn = (sheet: Sheet) =>
+  pagesAs(sheet, "problems").flatMap((page) => page.items);
+
+/** Every card on a sheet, whichever pages it took. */
+const cardsOn = (sheet: Sheet) =>
+  pagesAs(sheet, "cards").flatMap((page) => page.cards);
+
+/** How many items a page put on the paper, whichever block it is. */
+function countOf(block: Block): number {
+  switch (block.kind) {
+    case "problems":
+      return block.items.length;
+    case "cards":
+      return block.cards.length;
+    case "matching":
+      return block.left.length;
+    default:
+      throw new Error(`unexpected block ${block.kind}`);
+  }
+}
+
+/** The number a page's first problem carries; a card and a pair are not numbered. */
+const startOf = (block: Block): number | undefined =>
+  block.kind === "problems" ? block.start : undefined;
+
+/** How many across a page lays its items; a list down the page is one. */
+const columnsOf = (block: Block): number =>
+  block.kind === "problems" || block.kind === "cards" ? block.columns : 1;
 
 /**
  * A blending prompt put back together into the word it cuts up.
@@ -169,20 +229,21 @@ function blended(prompt: string): string {
   return [...head, ...tail].join("");
 }
 
-/** Every whole word this sheet prints, whichever block it printed it in. */
+/** Every whole word this sheet prints, whichever block or page it is on. */
 function wordsOn(sheet: Sheet): string[] {
-  const block = only(sheet);
-  if (block.kind === "problems")
-    return block.items.map((item) => item.answer).filter(Boolean);
-  if (block.kind === "matching") return block.right;
-  if (block.kind === "cards")
-    return block.cards.flatMap((card) =>
-      markedText(card.big)
-        .toLowerCase()
-        .split(/[^a-z]+/)
-        .filter(Boolean),
-    );
-  return [];
+  return sheet.blocks.flatMap((block) => {
+    if (block.kind === "problems")
+      return block.items.map((item) => item.answer).filter(Boolean);
+    if (block.kind === "matching") return block.right;
+    if (block.kind === "cards")
+      return block.cards.flatMap((card) =>
+        markedText(card.big)
+          .toLowerCase()
+          .split(/[^a-z]+/)
+          .filter(Boolean),
+      );
+    return [];
+  });
 }
 
 /**
@@ -251,16 +312,7 @@ describe("what may go on the page", () => {
   it("prints nothing at all before anything is taught", () => {
     for (const style of PHONICS_STYLES) {
       const sheet = buildSheet(config(style, { sounds: [], tricky: [] }), 1);
-      const block = only(sheet);
-      const items =
-        block.kind === "problems"
-          ? block.items.length
-          : block.kind === "cards"
-            ? block.cards.length
-            : block.kind === "matching"
-              ? block.left.length
-              : 0;
-      expect(items, style).toBe(0);
+      expect(pagesOf(sheet).map(countOf), style).toEqual([0]);
     }
   });
 
@@ -286,12 +338,9 @@ describe("what may go on the page", () => {
 describe("an answer that can be checked without the generator", () => {
   it("blends each prompt back into the word it is the answer to", () => {
     for (const [name, inventory] of INVENTORIES) {
-      const sheet = buildSheet(config("blending", inventory), 5);
-      const block = only(sheet);
-      expect(block.kind).toBe("problems");
-      if (block.kind !== "problems") return;
-      expect(block.items.length).toBeGreaterThan(0);
-      for (const item of block.items) {
+      const items = itemsOn(buildSheet(config("blending", inventory), 5));
+      expect(items.length).toBeGreaterThan(0);
+      for (const item of items) {
         expect(blended(item.prompt), `${name} · ${item.prompt}`).toBe(
           item.answer,
         );
@@ -300,12 +349,9 @@ describe("an answer that can be checked without the generator", () => {
   });
 
   it("adds up every word family sum", () => {
-    const sheet = buildSheet(config("families", DIGRAPHS), 2);
-    const block = only(sheet);
-    expect(block.kind).toBe("problems");
-    if (block.kind !== "problems") return;
-    expect(block.items.length).toBeGreaterThan(0);
-    for (const item of block.items) {
+    const items = itemsOn(buildSheet(config("families", DIGRAPHS), 2));
+    expect(items.length).toBeGreaterThan(0);
+    for (const item of items) {
       const [onset, rime] = item.prompt.replace(" =", "").split(" + ");
       expect(`${onset}${rime}`).toBe(item.answer);
       expect(WORD_BY_SPELLING.has(item.answer)).toBe(true);
@@ -322,12 +368,11 @@ describe("an answer that can be checked without the generator", () => {
       // rule can be stated under: past that a rime has to come round twice.
       const wanted = Math.min(12, familiesOf(inventory).size);
       for (let seed = 0; seed < 4; seed++) {
-        const block = only(
+        const items = itemsOn(
           buildSheet(config("families", inventory, { count: wanted }), seed),
         );
-        if (block.kind !== "problems") return;
         // Read off the paper: the ending is the second half of the sum.
-        const rimes = block.items.map(
+        const rimes = items.map(
           (item) => item.prompt.replace(" =", "").split(" + ")[1],
         );
         expect(rimes.length, `${name} · seed ${seed}`).toBeGreaterThan(0);
@@ -367,36 +412,39 @@ describe("an answer that can be checked without the generator", () => {
 
   it("pairs each spelling with a word that has it and no other on the sheet", () => {
     for (let seed = 0; seed < 6; seed++) {
-      const sheet = buildSheet(config("matching", EVERYTHING), seed);
-      const block = only(sheet);
-      expect(block.kind).toBe("matching");
-      if (block.kind !== "matching") return;
-      expect(block.left.length).toBeGreaterThan(0);
-
-      // Every spelling on the left, as the ids a word could carry — read off
-      // the table rather than off what the generator paired them with.
-      const wanted = block.left.map((letters) =>
-        CORRESPONDENCES.filter(
-          (entry) => graphemeText(entry.grapheme) === letters,
-        ).map((entry) => entry.id),
+      const pages = pagesAs(
+        buildSheet(config("matching", EVERYTHING), seed),
+        "matching",
       );
+      expect(pages.length).toBeGreaterThan(0);
+      for (const block of pages) {
+        expect(block.left.length).toBeGreaterThan(0);
 
-      block.left.forEach((letters, at) => {
-        const word = WORD_BY_SPELLING.get(block.right[block.answer[at]]);
-        expect(word, letters).toBeDefined();
-        const parts = word?.parts ?? [];
-        // In the word it is paired with…
-        expect(parts.some((part) => wanted[at].includes(part))).toBe(true);
-        // …and in none of the others, which is what makes the key unique.
-        wanted.forEach((ids, other) => {
-          if (other === at) return;
-          expect(parts.some((part) => ids.includes(part))).toBe(false);
+        // Every spelling on the left, as the ids a word could carry — read off
+        // the table rather than off what the generator paired them with.
+        const wanted = block.left.map((letters) =>
+          CORRESPONDENCES.filter(
+            (entry) => graphemeText(entry.grapheme) === letters,
+          ).map((entry) => entry.id),
+        );
+
+        block.left.forEach((letters, at) => {
+          const word = WORD_BY_SPELLING.get(block.right[block.answer[at]]);
+          expect(word, letters).toBeDefined();
+          const parts = word?.parts ?? [];
+          // In the word it is paired with…
+          expect(parts.some((part) => wanted[at].includes(part))).toBe(true);
+          // …and in none of the others, which is what makes the key unique.
+          wanted.forEach((ids, other) => {
+            if (other === at) return;
+            expect(parts.some((part) => ids.includes(part))).toBe(false);
+          });
         });
-      });
-      expect(new Set(block.right).size).toBe(block.right.length);
-      // And the same letters never appear twice down the left, which would be
-      // two identical rows a child could not tell apart.
-      expect(new Set(block.left).size).toBe(block.left.length);
+        expect(new Set(block.right).size).toBe(block.right.length);
+        // And the same letters never appear twice down the left, which would be
+        // two identical rows a child could not tell apart.
+        expect(new Set(block.left).size).toBe(block.left.length);
+      }
     }
   });
 
@@ -410,26 +458,34 @@ describe("an answer that can be checked without the generator", () => {
     // reads by the cut instead.
     for (const [name, inventory] of INVENTORIES) {
       for (let seed = 0; seed < 8; seed++) {
-        const block = only(buildSheet(config("matching", inventory), seed));
-        if (block.kind !== "matching") return;
-        expect(block.left.length, `${name} · seed ${seed}`).toBeGreaterThan(0);
+        const pages = pagesAs(
+          buildSheet(config("matching", inventory), seed),
+          "matching",
+        );
+        expect(pages.length, `${name} · seed ${seed}`).toBeGreaterThan(0);
+        for (const block of pages) {
+          expect(block.left.length, `${name} · seed ${seed}`).toBeGreaterThan(
+            0,
+          );
 
-        block.left.forEach((letters, at) => {
-          const [head, tail] = letters.split("-");
-          block.right.forEach((word, other) => {
-            if (other === block.answer[at]) return;
-            const shows = tail
-              ? (WORD_BY_SPELLING.get(word)?.parts ?? []).some(
-                  (part) =>
-                    CORRESPONDENCE_BY_ID.get(part)?.grapheme ===
-                    `${head}_${tail}`,
-                )
-              : word.includes(head);
-            expect(shows, `${name} · seed ${seed} · ${letters} → ${word}`).toBe(
-              false,
-            );
+          block.left.forEach((letters, at) => {
+            const [head, tail] = letters.split("-");
+            block.right.forEach((word, other) => {
+              if (other === block.answer[at]) return;
+              const shows = tail
+                ? (WORD_BY_SPELLING.get(word)?.parts ?? []).some(
+                    (part) =>
+                      CORRESPONDENCE_BY_ID.get(part)?.grapheme ===
+                      `${head}_${tail}`,
+                  )
+                : word.includes(head);
+              expect(
+                shows,
+                `${name} · seed ${seed} · ${letters} → ${word}`,
+              ).toBe(false);
+            });
           });
-        });
+        }
       }
     }
   });
@@ -466,11 +522,9 @@ describe("the sentences", () => {
 
   it("puts nothing on a strip a child cannot read", () => {
     for (const [name, inventory] of INVENTORIES) {
-      const sheet = buildSheet(config("sentences", inventory), 4);
-      const block = only(sheet);
-      expect(block.kind).toBe("cards");
-      if (block.kind !== "cards") return;
-      for (const card of block.cards) {
+      const cards = cardsOn(buildSheet(config("sentences", inventory), 4));
+      expect(cards.length, name).toBeGreaterThan(0);
+      for (const card of cards) {
         const printed = markedText(card.big);
         for (const word of printed
           .toLowerCase()
@@ -579,46 +633,117 @@ describe("the sheet as a whole", () => {
     }
   });
 
-  it("never puts on more than the paper was measured for", () => {
+  it("runs every style on to another page rather than cutting it", () => {
+    // Whatever the style has to offer is however many pages that takes (§4),
+    // and never more than it has. Matching pairs off the sheet's own seed and
+    // a row either way is possible, so its supply is read off the paper;
+    // every other style's is the size of its pool.
     for (const style of PHONICS_STYLES) {
       const asked = config(style, EVERYTHING, { count: 200 });
       const { perPage } = phonicsLayout(asked);
-      const block = only(buildSheet(asked, 1));
-      const items =
-        block.kind === "problems"
-          ? block.items.length
-          : block.kind === "cards"
-            ? block.cards.length
-            : block.kind === "matching"
-              ? block.left.length
-              : 0;
-      expect(items, style).toBeGreaterThan(0);
-      expect(items, style).toBeLessThanOrEqual(perPage);
+      const pages = pagesOf(buildSheet(asked, 1));
+      const printed = pages.reduce((total, page) => total + countOf(page), 0);
+      const supply =
+        style === "matching"
+          ? printed
+          : Math.min(phonicsSupply(asked), MAX_COUNT);
+      expect(printed, style).toBeGreaterThan(0);
+      expect(printed, style).toBe(supply);
+      expect(pages.length, style).toBe(Math.ceil(supply / perPage));
+      for (const [at, page] of pages.entries())
+        if (at < pages.length - 1)
+          expect(countOf(page), `${style}, page ${at + 1}`).toBe(perPage);
+    }
+  });
+
+  it("runs on to another page rather than cutting the count to the paper", () => {
+    // Every word the table unlocks read out at 18pt, every sound as a card or
+    // a row of the chart, every sentence on a strip, and every pair to join
+    // at 36pt, is several pages and not one page of the first few (§4). The
+    // numbering carries on where a block numbers, the score box counts every
+    // page where there is one, and the key runs on page for page.
+    const shapes: Array<[PhonicsStyle, Partial<PhonicsConfig>]> = [
+      ["dictation", { fontPt: 18 }],
+      ["cards", {}],
+      ["chart", {}],
+      ["sentences", {}],
+      ["matching", { fontPt: 36 }],
+    ];
+    for (const [style, extra] of shapes) {
+      const asked = config(style, EVERYTHING, { count: 200, ...extra });
+      const { perPage } = phonicsLayout(asked);
+      const sheet = buildSheet(asked, 3);
+      const pages = pagesOf(sheet);
+      const printed = pages.reduce((total, page) => total + countOf(page), 0);
+      expect(pages.length, style).toBeGreaterThan(1);
+      expect(pages.length, style).toBe(Math.ceil(printed / perPage));
+      expect(countOf(pages[0]), style).toBe(perPage);
+      if (style === "dictation")
+        expect(startOf(pages[1]), style).toBe(perPage + 1);
+      expect(sheet.header.score?.outOf, style).toBe(
+        phonicsKeyed(style) ? printed : undefined,
+      );
+      expect(pagesOf(answerKey(asked, 3)).map(countOf), style) //
+        .toEqual(pages.map(countOf));
+    }
+  });
+
+  it("never prints more items on a page than the paper holds", () => {
+    // Against the box the printed header leaves rather than the config's,
+    // and every page but the last full: a page cut short of what fits would
+    // be a sheet of paper for nothing.
+    for (const size of ["letter", "a4", "legal"] as const) {
+      for (const margin of ["narrow", "normal", "wide"] as const) {
+        for (const fontPt of [8, 12, 18, 24, 36]) {
+          for (const style of PHONICS_STYLES) {
+            const asked = config(style, EVERYTHING, {
+              count: 200,
+              paper: { ...DEFAULT_PAPER, size, margin },
+              fontPt,
+            });
+            const where = `${style} ${size}/${margin}/${fontPt}pt`;
+            const sheet = buildSheet(asked, 8);
+            const pages = pagesOf(sheet);
+            expect(pages.length, where).toBeGreaterThan(0);
+            const { row, gap, perPage } = phonicsLayout(asked);
+            for (const [at, page] of pages.entries()) {
+              const rows = Math.ceil(countOf(page) / columnsOf(page));
+              const used = rows * row + Math.max(0, rows - 1) * gap;
+              expect(used, `${where}, page ${at + 1}`).toBeLessThanOrEqual(
+                printedBlockBox(sheet).height,
+              );
+              if (at < pages.length - 1)
+                expect(countOf(page), `${where}, page ${at + 1}`).toBe(
+                  countOf(pages[0]),
+                );
+            }
+            // A row taller than the page holds nothing at all.
+            if (perPage === 0) expect(pages.map(countOf), where).toEqual([0]);
+          }
+        }
+      }
     }
   });
 
   it("marks out of what is on the page, and only where there is an answer", () => {
     for (const style of PHONICS_STYLES) {
       const sheet = buildSheet(config(style, EVERYTHING), 1);
-      const block = only(sheet);
-      const answers =
-        block.kind === "problems"
-          ? block.items.length
-          : block.kind === "matching"
-            ? block.left.length
-            : 0;
+      const answers = pagesOf(sheet).reduce(
+        (total, block) => total + (block.kind === "cards" ? 0 : countOf(block)),
+        0,
+      );
       expect(sheet.header.score?.outOf ?? 0, style).toBe(answers);
     }
   });
 
   it("lays a list down the page whatever a saved config asks for", () => {
     for (const style of PHONICS_STYLES) {
-      const block = only(
+      for (const block of pagesOf(
         buildSheet(config(style, EVERYTHING, { columns: 6 }), 1),
-      );
-      const columns =
-        block.kind === "problems" || block.kind === "cards" ? block.columns : 1;
-      expect(columns, style).toBeLessThanOrEqual(phonicsColumns(style));
+      ))
+        expect(columnsOf(block), style).toBeLessThanOrEqual(
+          phonicsColumns(style),
+        );
     }
   });
 
@@ -634,12 +759,11 @@ describe("the sheet as a whole", () => {
     // is the table's own and stays put as the inventory grows. That is the one
     // deliberate exception to "everything on the page is decodable", and it is
     // stated here so it cannot become an accident.
-    const block = only(buildSheet(config("cards", FIRST, { count: 60 }), 1));
-    if (block.kind !== "cards") return;
+    const cards = cardsOn(buildSheet(config("cards", FIRST, { count: 60 }), 1));
     const examples = new Set(
       CORRESPONDENCES.filter(isTeachable).map((entry) => entry.example),
     );
-    for (const card of block.cards) {
+    for (const card of cards) {
       expect(card.small).toBeDefined();
       expect(examples.has(markedText(card.small ?? []))).toBe(true);
     }
@@ -652,9 +776,8 @@ describe("the sheet as a whole", () => {
     for (const entry of CORRESPONDENCES) {
       expect(graphemeText(entry.grapheme)).not.toContain("_");
     }
-    const block = only(buildSheet(config("blending", EVERYTHING), 9));
-    if (block.kind !== "problems") return;
-    for (const item of block.items) expect(item.prompt).not.toContain("_");
+    for (const item of itemsOn(buildSheet(config("blending", EVERYTHING), 9)))
+      expect(item.prompt).not.toContain("_");
   });
 
   it("shows one on a card and on the chart too, an inch high", () => {
@@ -671,9 +794,9 @@ describe("the sheet as a whole", () => {
       tricky: [],
     };
     for (const style of ["cards", "chart"] as const) {
-      const block = only(buildSheet(config(style, split, { count: 5 }), 3));
-      if (block.kind !== "cards") return;
-      const printed = block.cards.map((card) => markedText(card.big));
+      const printed = cardsOn(
+        buildSheet(config(style, split, { count: 5 }), 3),
+      ).map((card) => markedText(card.big));
       expect(printed, style).toHaveLength(5);
       for (const letters of printed) expect(letters, style).not.toContain("_");
       expect(printed, style).toContain("a-e");
@@ -681,18 +804,18 @@ describe("the sheet as a whole", () => {
   });
 
   it("cuts every card out of a spelling this build still teaches", () => {
-    const block = only(buildSheet(config("chart", EVERYTHING), 1));
-    if (block.kind !== "cards") return;
-    expect(block.boxed).toBe(false);
+    const pages = pagesAs(buildSheet(config("chart", EVERYTHING), 1), "cards");
+    for (const page of pages) expect(page.boxed).toBe(false);
+    const cards = pages.flatMap((page) => page.cards);
     const taught = new Set(
       CORRESPONDENCES.filter(isTeachable).map((entry) =>
         graphemeText(entry.grapheme),
       ),
     );
-    for (const card of block.cards)
+    for (const card of cards)
       expect(taught.has(markedText(card.big))).toBe(true);
     // And nothing untickable reached it, which is what `odd` is for.
-    for (const card of block.cards) {
+    for (const card of cards) {
       const letters = markedText(card.big);
       const rows = CORRESPONDENCES.filter(
         (entry) => graphemeText(entry.grapheme) === letters,

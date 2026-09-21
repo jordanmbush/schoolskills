@@ -1,17 +1,21 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  MAX_COUNT,
   blockBox,
   capacity,
   columnWidth,
   contentBox,
+  countOf,
   fitAcross,
-  pageCount,
+  paged,
+  problemPages,
   ruleCapacity,
   ruledLines,
+  wantedOf,
 } from "./layout";
 import { MARGINS, RULINGS, inches, rulePitch, toInches } from "./paper";
-import type { MarginSize, Paper, PaperSize, Rule } from "./types";
+import type { MarginSize, Paper, PaperSize, Problem, Rule } from "./types";
 
 const MARGIN_SIZES = Object.keys(MARGINS) as MarginSize[];
 
@@ -187,11 +191,89 @@ describe("capacity", () => {
     expect(columnWidth(box, 0)).toBe(0);
   });
 
-  it("counts pages without ever dividing by zero", () => {
-    expect(pageCount(0, 20)).toBe(0);
-    expect(pageCount(20, 20)).toBe(1);
-    expect(pageCount(21, 20)).toBe(2);
-    // A page that fits nothing still has to be a page, or a sheet vanishes.
-    expect(pageCount(5, 0)).toBe(1);
+  it("reads a count as whole, never negative and never past the stepper", () => {
+    expect(countOf(20)).toBe(20);
+    expect(countOf(20.9)).toBe(20);
+    expect(countOf(-3)).toBe(0);
+    expect(countOf(Number.NaN)).toBe(0);
+    // A bookmarked URL may ask for a million; the builder never can.
+    expect(countOf(1_000_000)).toBe(MAX_COUNT);
+  });
+
+  it("draws the whole count unless not even one row fits", () => {
+    // The page is not a ceiling — what does not fit runs on — but a row
+    // taller than the paper is one no number of pages would mend.
+    expect(wantedOf(40, 6)).toBe(40);
+    expect(wantedOf(40, 0)).toBe(0);
+    expect(wantedOf(40, -1)).toBe(0);
+  });
+});
+
+describe("running on to another page", () => {
+  const problem = (n: number): Problem => ({ prompt: `${n} =`, answer: "" });
+  const twenty = Array.from({ length: 20 }, (_, i) => problem(i + 1));
+
+  it("cuts a list at perPage with a break between the pages", () => {
+    const blocks = paged(twenty, 6, (_page, from) => ({
+      kind: "spacer",
+      height: from,
+    }));
+    expect(blocks.map((block) => block.kind)).toEqual([
+      "spacer",
+      "break",
+      "spacer",
+      "break",
+      "spacer",
+      "break",
+      "spacer",
+    ]);
+    // Told where each page starts, so a family can number on from there.
+    expect(
+      blocks.flatMap((block) =>
+        block.kind === "spacer" ? [block.height] : [],
+      ),
+    ).toEqual([0, 6, 12, 18]);
+  });
+
+  it("never has fewer than one block, or more than one page with nothing on it", () => {
+    // A sheet with nothing on it still prints its header, and needs a block
+    // to be empty in — but not a break after it.
+    expect(paged([], 6, () => ({ kind: "spacer", height: 0 }))).toEqual([
+      { kind: "spacer", height: 0 },
+    ]);
+    // Exactly full is one page, not one page and an empty second.
+    expect(paged(twenty, 20, () => ({ kind: "spacer", height: 0 })).length) //
+      .toBe(1);
+  });
+
+  it("puts at least one item on a page however small perPage is", () => {
+    // A family with nothing that fits draws nothing; a list that arrives
+    // anyway is printed one to a page rather than thrown away.
+    expect(paged(twenty, 0, () => ({ kind: "spacer", height: 0 })).length) //
+      .toBe(39);
+    expect(
+      paged(twenty, Number.NaN, () => ({ kind: "spacer", height: 0 })).length,
+    ) //
+      .toBe(39);
+  });
+
+  it("numbers a page of problems on from where the page before stopped", () => {
+    const blocks = problemPages(twenty, 3, 8);
+    expect(blocks.map((block) => block.kind)).toEqual([
+      "problems",
+      "break",
+      "problems",
+      "break",
+      "problems",
+    ]);
+    const pages = blocks.flatMap((block) =>
+      block.kind === "problems" ? [block] : [],
+    );
+    expect(pages.map((page) => page.items.length)).toEqual([8, 8, 4]);
+    expect(pages.map((page) => page.columns)).toEqual([3, 3, 3]);
+    // Page one carries no `start`: absent is 1, and a block that said so
+    // would be one that a key could differ from its sheet in.
+    expect(pages.map((page) => page.start)).toEqual([undefined, 9, 17]);
+    expect(pages.flatMap((page) => page.items)).toEqual(twenty);
   });
 });

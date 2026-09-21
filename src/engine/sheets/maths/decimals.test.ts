@@ -1,17 +1,22 @@
 import { describe, expect, it } from "vitest";
 
 import { buildSheet, describeSheet } from "../index";
+import { printedBlockBox } from "../chrome";
 import { describeSheetFamily } from "../contract";
-import { PROBLEM_GAP } from "../layout";
+import { PROBLEM_GAP, answerLine, numberRoom } from "../layout";
 import type {
+  Block,
   DecimalConfig,
   MarginSize,
   Paper,
   PaperSize,
   Problem,
+  Sheet,
 } from "../types";
 
+import { decimalTableau, stoppingDivisors } from "./decimal-division";
 import { DECIMALS_SHEET, decimalLayout } from "./decimals";
+import { bracketHeight, bracketWidth } from "./long";
 
 /**
  * Decimals and percents, held to the bar the maths families set.
@@ -31,7 +36,12 @@ import { DECIMALS_SHEET, decimalLayout } from "./decimals";
  * - a percent is checked by **cross-multiplication too**: `p% of w` is `x`
  *   exactly when `x × 100` is `p × w`. No number read off a sheet is divided
  *   anywhere in this file, bounds included — which is the point, because
- *   division is where a float would get in.
+ *   division is where a float would get in;
+ * - the number-sense styles are read the same way: a comparison is
+ *   cross-multiplied, an ordering is the printed texts sorted by
+ *   cross-multiplication, a rounding is held within half a unit, and a
+ *   digit's worth is built from the text with no arithmetic at all.
+ *   `decimal-sense.test.ts` holds each of those styles to its own promises.
  *
  * And every printed number is held to its *shape* as well as its value. A sheet
  * set at two places whose key says `0.5`, or `0.30000000000000004`, has printed
@@ -93,6 +103,63 @@ const EVERY_SHAPE: Array<Partial<DecimalConfig>> = [
   { style: "convert", places: 1, count: 8 },
   { style: "convert", places: 3, count: 10 },
   { workspace: true, count: 8 },
+  // The three divisions (§22): along a line and in the bracket, at each help
+  // level and each place count, and by one- and two-digit divisors.
+  { operation: "divide" },
+  { operation: "divide", form: "vertical" },
+  { operation: "divide", form: "vertical", help: "grid" },
+  { operation: "divide", form: "vertical", help: "guided", places: 1 },
+  {
+    operation: "divide",
+    form: "vertical",
+    places: 3,
+    range: { min: 0, max: 5 },
+    count: 6,
+  },
+  {
+    operation: "divide",
+    form: "vertical",
+    divisor: { min: 11, max: 25 },
+    help: "steps",
+  },
+  { operation: "divide", by: "decimal" },
+  { operation: "divide", by: "decimal", places: 1 },
+  { operation: "divide", by: "decimal", places: 3 },
+  { operation: "divide", by: "decimal", form: "vertical" },
+  { operation: "divide", wholeDividend: true },
+  { operation: "divide", wholeDividend: true, form: "vertical", help: "grid" },
+  {
+    operation: "divide",
+    wholeDividend: true,
+    places: 1,
+    range: { min: 1, max: 20 },
+  },
+  { operation: "divide", wholeDividend: true, places: 3, form: "vertical" },
+  // Decimal × decimal, and the five number-sense styles (§22), at each place
+  // count they change shape at.
+  { operation: "multiply", by: "decimal" },
+  { operation: "multiply", by: "decimal", form: "vertical", places: 1 },
+  {
+    operation: "multiply",
+    by: "decimal",
+    places: 3,
+    range: { min: 0, max: 5 },
+  },
+  { style: "powers" },
+  { style: "powers", places: 1 },
+  { style: "powers", places: 3, range: { min: 0, max: 5 } },
+  { style: "compare" },
+  { style: "compare", places: 1 },
+  { style: "compare", places: 3 },
+  { style: "order" },
+  { style: "order", places: 1, columns: 1 },
+  { style: "order", places: 3 },
+  { style: "round" },
+  { style: "round", to: "tenth" },
+  { style: "round", to: "hundredth", range: { min: 1, max: 9 } },
+  { style: "place" },
+  { style: "place", places: 1 },
+  { style: "place", places: 3, range: { min: 0, max: 99 } },
 ];
 
 const SEEDS = [0, 1, 2, 7, 4242];
@@ -106,11 +173,32 @@ describeSheetFamily("decimals", {
 });
 
 /** The one block a decimals sheet has, narrowed for the reader. */
+/** Every problem on the sheet, page after page. */
 function problemsOf(over: Partial<DecimalConfig>, seed: number): Problem[] {
-  const block = buildSheet(config(over), seed).blocks[0];
-  if (block.kind !== "problems")
-    throw new Error(`expected problems, got ${block.kind}`);
-  return block.items;
+  return pagesOf(buildSheet(config(over), seed)).flatMap((page) => page.items);
+}
+
+/**
+ * The problems block of each page, in order. A problems family prints one
+ * such block a page and nothing else, so anything else on a page is a
+ * failure here rather than a page silently skipped.
+ */
+function pagesOf(sheet: Sheet): Array<Extract<Block, { kind: "problems" }>> {
+  const pages: Array<Extract<Block, { kind: "problems" }>> = [];
+  let open = false;
+  for (const block of sheet.blocks) {
+    if (block.kind === "break") {
+      expect(open, "a break with no page before it").toBe(true);
+      open = false;
+      continue;
+    }
+    if (block.kind !== "problems")
+      throw new Error(`expected problems, got ${block.kind}`);
+    expect(open, "two problems blocks on one page").toBe(false);
+    pages.push(block);
+    open = true;
+  }
+  return pages;
 }
 
 /* ── Reading a sheet the way a child does ────────────────────────────────── */
@@ -176,10 +264,18 @@ const OPERATIONS: Record<string, (a: Value, b: Value) => Value> = {
 /**
  * The problem, written out in full with its answer put where it belongs.
  *
- * Three shapes reduce to one sentence: a sum along a line, a stack of numbers in
- * column form, and a blank inside the sentence.
+ * Five shapes reduce to one sentence: a sum along a line, a stack of numbers in
+ * column form, a division in the bracket, a blank inside the sentence, and a
+ * set with its answer on the line under it, written here with an arrow.
  */
 function sentence(problem: Problem): string {
+  if (problem.answers) {
+    return `${problem.prompt} → ${problem.answer}`;
+  }
+  if (problem.bracket) {
+    const { dividend, divisor } = problem.bracket;
+    return `${dividend} ÷ ${divisor} = ${problem.answer}`;
+  }
   if (problem.operands) {
     return `${problem.operands.join(` ${problem.operator} `)} = ${problem.answer}`;
   }
@@ -191,9 +287,18 @@ function sentence(problem: Problem): string {
 
 /** Whether a written sentence is true. */
 function holds(written: string): boolean {
-  const worked = /^(\S+) ([+−×]) (\S+) = (\S+)$/.exec(written.trim());
+  const worked = /^(\S+) ([+−×÷]) (\S+) = (\S+)$/.exec(written.trim());
   if (worked) {
     const [, left, sign, right, answer] = worked;
+    // A division is checked backwards — the answer, taken the divisor's
+    // number of times, has to rebuild what was divided — because dividing is
+    // where a float would get in, and because that is how a child checks one.
+    if (sign === "÷") {
+      return same(
+        OPERATIONS["×"](readNumber(answer), readNumber(right)),
+        readNumber(left),
+      );
+    }
     return same(
       OPERATIONS[sign](readNumber(left), readNumber(right)),
       readNumber(answer),
@@ -210,8 +315,60 @@ function holds(written: string): boolean {
     );
   }
 
+  // "3.4 < 3.40": the sign a cross-multiplied comparison gives.
+  const compared = /^(\S+) ([<>=]) (\S+)$/.exec(written.trim());
+  if (compared && compared[2] !== "=") {
+    const [, left, sign, right] = compared;
+    const a = readNumber(left);
+    const b = readNumber(right);
+    return sign === "<" ? a.n * b.d < b.n * a.d : a.n * b.d > b.n * a.d;
+  }
+
+  // "3.4, 3.04, 3.5 → 3.04, 3.4, 3.5": the same texts, sorted.
+  const ordered = /^(.+) → (.+)$/.exec(written.trim());
+  if (ordered) {
+    const asked = ordered[1].split(", ");
+    const answered = ordered[2].split(", ");
+    const sorted = [...asked].sort((a, b) => {
+      const x = readNumber(a);
+      const y = readNumber(b);
+      return x.n * y.d - y.n * x.d;
+    });
+    return sorted.join(", ") === answered.join(", ");
+  }
+
+  // "2.97 ≈ 3.0": within half a unit of the answer's place, cross-multiplied,
+  // and up on exactly a half.
+  const rounded = /^(\S+) ≈ (\S+)$/.exec(written.trim());
+  if (rounded) {
+    const value = readNumber(rounded[1]);
+    const answer = readNumber(rounded[2]);
+    const gap = value.n * answer.d - answer.n * value.d;
+    if (2 * Math.abs(gap) > value.d) return false;
+    return 2 * Math.abs(gap) < value.d || gap < 0;
+  }
+
+  // "What is the 5 in 3.75 worth? 0.05": the worth built from the text alone
+  // — the digit and a zero for every column to the units, or `0.` and a zero
+  // for every column from the point.
+  const place = /^What is the (\d) in (\S+) worth\? (\S+)$/.exec(
+    written.trim(),
+  );
+  if (place) {
+    const [, digit, number, answer] = place;
+    const at = number.indexOf(digit);
+    const point = number.indexOf(".");
+    if (number.lastIndexOf(digit) !== at) return false;
+    const worth =
+      at < point
+        ? digit + "0".repeat(point - 1 - at)
+        : `0.${"0".repeat(at - point - 1)}${digit}`;
+    return answer === worth;
+  }
+
   // A conversion: two ways of writing one number, either of which may be a
-  // percent, a fraction or a decimal.
+  // percent, a fraction or a decimal — and "3.4 = 3.40", which is the same
+  // claim.
   const equal = /^(\S+) = (\S+)$/.exec(written.trim());
   if (!equal) throw new Error(`not a number sentence: "${written}"`);
   return same(readForm(equal[1]), readForm(equal[2]));
@@ -229,7 +386,7 @@ function readForm(text: string): Value {
 /** Every decimal printed on a problem, prompt and answer alike. */
 function decimalsOn(problem: Problem): string[] {
   return sentence(problem)
-    .split(/[\s=+−×]+/)
+    .split(/[\s=+−×÷<>,→≈?]+/)
     .filter((word) => /^\d+\.\d+$/.test(word));
 }
 
@@ -256,6 +413,111 @@ describe("the decimals family", () => {
     expect(describeSheet(config({ style: "convert" }))).toBe(
       "Fractions, decimals and percents — hundredths",
     );
+    // The three divisions (§22), with the divisor size and the help level in
+    // the line because each changes what a saved sheet is.
+    expect(describeSheet(config({ operation: "divide" }))).toBe(
+      "Dividing decimals — hundredths",
+    );
+    const inColumns = {
+      operation: "divide" as const,
+      form: "vertical" as const,
+      count: 4,
+    };
+    expect(describeSheet(config({ ...inColumns, help: "grid" }))).toBe(
+      "Dividing decimals — hundredths — in columns — on a grid",
+    );
+    expect(
+      describeSheet(
+        config({
+          ...inColumns,
+          divisor: { min: 11, max: 25 },
+          help: "steps",
+        }),
+      ),
+    ).toBe(
+      "Dividing decimals — by two-digit numbers — hundredths — in columns — with steps",
+    );
+    // Never in columns, whatever the form says, so never helped either.
+    expect(
+      describeSheet(
+        config({
+          operation: "divide",
+          by: "decimal",
+          form: "vertical",
+          help: "grid",
+        }),
+      ),
+    ).toBe("Dividing by a decimal — hundredths");
+    expect(
+      describeSheet(
+        config({
+          ...inColumns,
+          wholeDividend: true,
+          help: "guided",
+          places: 1,
+        }),
+      ),
+    ).toBe("Division with decimal answers — tenths — in columns — guided");
+    // Help is only said where there is a bracket to help under.
+    expect(describeSheet(config({ operation: "divide", help: "grid" }))).toBe(
+      "Dividing decimals — hundredths",
+    );
+    // A page that will come out short says so in its line too, as far as the
+    // line can know without a seed: a divisor nothing divides by to an
+    // answer that stops, and a row taller than the page. Not the paper — a
+    // count past one page runs on to the next.
+    expect(describeSheet(config({ ...inColumns, count: 12 }))).toBe(
+      "Dividing decimals — hundredths — in columns",
+    );
+    expect(
+      describeSheet(
+        config({
+          operation: "divide",
+          wholeDividend: true,
+          divisor: { min: 3, max: 3 },
+        }),
+      ),
+    ).toBe(
+      "Division with decimal answers — hundredths — dividing by 3 never gives an answer that stops, so there is nothing to print",
+    );
+  });
+
+  it("reads a saved config's style and operation back safely", () => {
+    // Both arrive from outside this build. An unknown style is arithmetic,
+    // as it was before the style existed; an unknown operation is addition
+    // — and never a title that says one thing over sums that do another, or
+    // a prompt with `undefined` for its sign. `toString` is the case a plain
+    // lookup gets wrong: it is in every table, as a function.
+    for (const style of ["pink", "toString", "constructor"]) {
+      const stray = { style: style as unknown as "standard" };
+      expect(buildSheet(config(stray), 1).header.title, style).toBe(
+        "Adding decimals",
+      );
+      const problems = problemsOf(stray, 1);
+      expect(problems.length, style).toBeGreaterThan(0);
+      for (const problem of problems) {
+        expect(problem.prompt, style).toMatch(/^\d+\.\d\d \+ \d+\.\d\d =$/);
+        expect(holds(sentence(problem)), style).toBe(true);
+      }
+    }
+    for (const operation of ["pink", "toString"]) {
+      const stray = { operation: operation as unknown as "add" };
+      expect(buildSheet(config(stray), 1).header.title, operation).toBe(
+        "Adding decimals",
+      );
+      expect(describeSheet(config(stray)), operation).toBe(
+        "Adding decimals — hundredths",
+      );
+      for (const problem of problemsOf(stray, 1)) {
+        expect(problem.prompt, operation).toContain(" + ");
+        expect(holds(sentence(problem)), operation).toBe(true);
+      }
+      expect(
+        buildSheet(config({ ...stray, form: "vertical" }), 1).header
+          .instructions,
+        operation,
+      ).toBe("Work out each answer. Keep the points under one another.");
+    }
   });
 
   it("gives the sheet a title and a score box it can be marked against", () => {
@@ -266,6 +528,20 @@ describe("the decimals family", () => {
     expect(block.kind === "problems" && block.items.length).toBe(
       sheet.header.score?.outOf,
     );
+    const titled = (over: Partial<DecimalConfig>) =>
+      buildSheet(config(over), 3).header.title;
+    expect(titled({ operation: "divide" })).toBe("Dividing decimals");
+    expect(titled({ operation: "divide", by: "decimal" })).toBe(
+      "Dividing by a decimal",
+    );
+    expect(titled({ operation: "divide", wholeDividend: true })).toBe(
+      "Division with decimal answers",
+    );
+    // Dividing by a decimal wins: two lessons, not one question with two
+    // switches on.
+    expect(
+      titled({ operation: "divide", by: "decimal", wholeDividend: true }),
+    ).toBe("Dividing by a decimal");
   });
 
   it("tells a child what to do with a form they have not met before", () => {
@@ -287,6 +563,486 @@ describe("the decimals family", () => {
       .toBe(
         "Fill in each blank. A blank with a % after it wants a percent; every other blank wants a decimal.",
       );
+    // Each division turns on one sentence: where the point goes, or that the
+    // sum is rewritten first.
+    const told = (over: Partial<DecimalConfig>) =>
+      buildSheet(config(over), 1).header.instructions;
+    expect(told({ operation: "divide" })).toBe("Work out each answer.");
+    expect(told({ operation: "divide", form: "vertical", count: 4 })).toBe(
+      "Work out each answer. Put the point in the answer straight above the point in the number.",
+    );
+    expect(told({ operation: "divide", by: "decimal" })).toBe(
+      "Work out each answer. Multiply both numbers by 10, or by 100, until you are dividing by a whole number, then divide.",
+    );
+    expect(told({ operation: "divide", wholeDividend: true })).toBe(
+      "Work out each answer. Keep dividing past the point, writing zeros after it if you need them.",
+    );
+    expect(
+      told({
+        operation: "divide",
+        wholeDividend: true,
+        form: "vertical",
+        count: 4,
+      }),
+    ).toBe(
+      "Work out each answer. Keep dividing into the zeros after the point, and put the point in the answer straight above the point in the number.",
+    );
+  });
+
+  it("says on the page when it came out short, and why when it can", () => {
+    // A sheet that printed a title, a score box and nothing under them said
+    // nothing about why. The paper is the one place a parent looks, so the
+    // instruction line ends with the shortfall — and with the reason, where
+    // the family can name it.
+    const told = (over: Partial<DecimalConfig>) =>
+      buildSheet(config(over), 1).header.instructions;
+    // A bracket row taller than the page: every setting here is legal in the
+    // builder, and together they reserve more squares than Letter holds.
+    const tall = {
+      operation: "divide" as const,
+      form: "vertical" as const,
+      places: 3,
+      range: { min: 0, max: 999 },
+      divisor: { min: 2, max: 99 },
+      help: "grid" as const,
+      fontPt: 24,
+    };
+    expect(decimalLayout(config(tall)).perPage).toBe(0);
+    expect(problemsOf(tall, 1)).toEqual([]);
+    expect(told(tall)).toMatch(/ Nothing fits on the page at this size\.$/);
+    // A divisor with no factor of ten in it has no decimal quotient that
+    // stops, and the page says which rather than "nothing could be made".
+    const three = {
+      operation: "divide" as const,
+      wholeDividend: true,
+      divisor: { min: 3, max: 3 },
+    };
+    expect(problemsOf(three, 1)).toEqual([]);
+    expect(told(three)).toBe(
+      "Work out each answer. Keep dividing past the point, writing zeros after it if you need them. Dividing by 3 never gives an answer that stops, so there is nothing to print.",
+    );
+    // A range of one value has no set to order and no value to round.
+    for (const style of ["order", "round", "compare"] as const) {
+      const one = { style, range: { min: 5, max: 5 } };
+      expect(problemsOf(one, 1), style).toEqual([]);
+      expect(told(one), style).toMatch(
+        / Nothing could be made with these settings\.$/,
+      );
+    }
+    // Four brackets to a page and twelve asked for is three pages, marked
+    // out of twelve, and nothing said — nothing is short.
+    const inColumns = buildSheet(
+      config({ operation: "divide", form: "vertical" }),
+      1,
+    );
+    expect(inColumns.header.instructions).toBe(
+      "Work out each answer. Put the point in the answer straight above the point in the number.",
+    );
+    expect(inColumns.header.score?.outOf).toBe(12);
+    expect(pagesOf(inColumns).map((page) => page.items.length)).toEqual([
+      4, 4, 4,
+    ]);
+    expect(pagesOf(inColumns).map((page) => page.start)).toEqual([
+      undefined,
+      5,
+      9,
+    ]);
+    // On the end of a parent's own instruction line as well as the family's.
+    expect(told({ ...three, instructions: "Do these." })).toBe(
+      "Do these. Dividing by 3 never gives an answer that stops, so there is nothing to print.",
+    );
+    // And a page that fits what it was asked for says nothing.
+    expect(told({ operation: "divide", form: "vertical", count: 4 })).toBe(
+      "Work out each answer. Put the point in the answer straight above the point in the number.",
+    );
+    // Two hundred in columns is many pages at every type size, every one of
+    // them cut under the header that prints, and all two hundred there.
+    for (const fontPt of [12, 24, 36]) {
+      const over = { form: "vertical" as const, fontPt, count: 200 };
+      const sheet = buildSheet(config(over), 3);
+      expect(sheet.header.instructions, `${fontPt}pt`).toBe(
+        "Work out each answer. Keep the points under one another.",
+      );
+      const { row } = decimalLayout(config(over));
+      const pages = pagesOf(sheet);
+      expect(pages.length, `${fontPt}pt`).toBeGreaterThan(1);
+      expect(pages.flatMap((page) => page.items).length, `${fontPt}pt`).toBe(
+        200,
+      );
+      for (const [at, page] of pages.entries()) {
+        const rows = Math.ceil(page.items.length / page.columns);
+        expect(
+          rows * row + Math.max(0, rows - 1) * PROBLEM_GAP.y,
+          `${fontPt}pt, page ${at + 1}`,
+        ).toBeLessThanOrEqual(printedBlockBox(sheet).height);
+      }
+    }
+  });
+});
+
+/* ── Division (§22) ────────────────────────────────────────────────────── */
+
+describe("division", () => {
+  const DIVISIONS = EVERY_SHAPE.filter((shape) => shape.operation === "divide");
+
+  /** What was divided, by what, and the answer — read off the paper. */
+  function readDivision(problem: Problem): {
+    dividend: string;
+    divisor: string;
+    answer: string;
+  } {
+    const match = /^(\S+) ÷ (\S+) = (\S+)$/.exec(sentence(problem));
+    if (!match) throw new Error(`not a division: "${sentence(problem)}"`);
+    return { dividend: match[1], divisor: match[2], answer: match[3] };
+  }
+
+  it("rebuilds every dividend from the answer and the divisor, in units", () => {
+    // Answer × divisor = dividend, cross-multiplied over the powers of ten each
+    // was read back as — whole numbers throughout, and never a division, so a
+    // float has nowhere to get in and a misplaced point cannot pass.
+    for (const shape of DIVISIONS) {
+      for (const seed of SEEDS) {
+        const problems = problemsOf(shape, seed);
+        expect(problems.length, JSON.stringify(shape)).toBeGreaterThan(0);
+        for (const problem of problems) {
+          const { dividend, divisor, answer } = readDivision(problem);
+          const a = readNumber(answer);
+          const d = readNumber(divisor);
+          const n = readNumber(dividend);
+          expect(a.n * d.n * n.d, sentence(problem)).toBe(n.n * a.d * d.d);
+        }
+      }
+    }
+  });
+
+  it("keeps a whole-number divisor inside its span, and the answer at the sheet's places", () => {
+    for (const shape of DIVISIONS) {
+      if (shape.by === "decimal") continue;
+      const places = shape.places ?? 2;
+      const span = shape.divisor ?? { min: 2, max: 9 };
+      for (const seed of SEEDS) {
+        for (const problem of problemsOf(shape, seed)) {
+          const { divisor, answer } = readDivision(problem);
+          expect(divisor, sentence(problem)).toMatch(/^\d+$/);
+          expect(Number(divisor)).toBeGreaterThanOrEqual(span.min);
+          expect(Number(divisor)).toBeLessThanOrEqual(span.max);
+          expect(placesOf(answer), sentence(problem)).toBe(places);
+        }
+      }
+    }
+  });
+
+  it("sets a column division in the bracket, with the point carried in the dividend", () => {
+    for (const shape of DIVISIONS) {
+      const bracketed = shape.form === "vertical" && shape.by !== "decimal";
+      const where = JSON.stringify(shape);
+      for (const problem of SEEDS.flatMap((seed) => problemsOf(shape, seed))) {
+        expect(problem.bracket !== undefined, where).toBe(bracketed);
+        expect(problem.operands, where).toBeUndefined();
+        if (!problem.bracket) {
+          expect(problem.prompt, where).toMatch(/^\S+ ÷ \S+ =$/);
+          continue;
+        }
+        // The bracket is the prompt, and its squares are the working space.
+        expect(problem.prompt).toBe("");
+        expect(problem.workspace).toBeUndefined();
+        const { dividend, tableau } = problem.bracket;
+        expect(dividend, where).toMatch(/^\d+\.\d+$/);
+        expect(problem.bracket.cell).toBe(answerLine(config(shape).fontPt));
+        expect(problem.bracket.help).toBe(shape.help ?? "none");
+        if (!tableau) throw new Error("no tableau");
+        expect(tableau.remainder).toBe(0);
+        expect(tableau.rows.length).toBeLessThanOrEqual(problem.bracket.rows);
+        // Two paths to one answer: `fixedText` of the quotient that was drawn,
+        // and the tableau walked over the dividend's digits with the point put
+        // back where the dividend's is. They have to agree, and the quotient
+        // has to reach the units column so a value under one keeps its zero.
+        const point = dividend.indexOf(".");
+        const { text, start } = tableau.quotient;
+        expect(start + text.length).toBe(dividend.length - 1);
+        expect(start).toBeLessThanOrEqual(point - 1);
+        const at = point - start;
+        expect(`${text.slice(0, at)}.${text.slice(at)}`, where).toBe(
+          problem.answer,
+        );
+      }
+    }
+  });
+
+  it("writes a quotient below one with its leading zero", () => {
+    // 0.69 ÷ 3: the tableau starts at the tenths column, and the family pads
+    // it back to the units column so the key reads 0.23 and never .23.
+    const padded = decimalTableau("0.69", 3);
+    expect(padded.quotient).toEqual({ text: "023", start: 0 });
+    expect(decimalTableau("0.06", 3).quotient).toEqual({
+      text: "002",
+      start: 0,
+    });
+    // Nothing to pad when the quotient already reaches the units column, and
+    // no point at all is no padding at all.
+    expect(decimalTableau("8.46", 3).quotient).toEqual({
+      text: "282",
+      start: 0,
+    });
+    expect(decimalTableau("12.5", 5).quotient).toEqual({
+      text: "25",
+      start: 1,
+    });
+    expect(decimalTableau("105", 7).quotient).toEqual({ text: "15", start: 1 });
+    // The rows are the digits' own: the working never sees a point, so 0.69
+    // ÷ 3 is worked as 069 ÷ 3 — nothing over the nought, then 6, then 9.
+    expect(padded.rows).toEqual([
+      { role: "take", text: "6", end: 1 },
+      { role: "left", text: "09", end: 2 },
+      { role: "take", text: "9", end: 2 },
+      { role: "left", text: "0", end: 2 },
+    ]);
+    // And it happens on a sheet, not only by hand.
+    let found = 0;
+    for (let seed = 0; seed < 20; seed += 1) {
+      const over = {
+        operation: "divide" as const,
+        form: "vertical" as const,
+        range: { min: 0, max: 1 },
+      };
+      for (const problem of problemsOf(over, seed)) {
+        if (!problem.answer.startsWith("0.")) continue;
+        found += 1;
+        expect(problem.bracket?.tableau?.quotient.start).toBe(0);
+        expect(problem.bracket?.tableau?.quotient.text.startsWith("0")).toBe(
+          true,
+        );
+      }
+    }
+    expect(found).toBeGreaterThan(0);
+  });
+
+  it("annexes exactly the sheet's places of zeros to a whole dividend, in the bracket only", () => {
+    for (const places of [1, 2, 3]) {
+      const over = {
+        operation: "divide" as const,
+        wholeDividend: true,
+        places,
+        range: { min: 1, max: 20 },
+      };
+      for (const seed of SEEDS) {
+        const columns = problemsOf({ ...over, form: "vertical" }, seed);
+        expect(columns.length).toBeGreaterThan(0);
+        for (const problem of columns) {
+          expect(problem.bracket?.dividend).toMatch(
+            new RegExp(`^[1-9]\\d*\\.0{${places}}$`),
+          );
+          // Past the point, by construction: a whole answer is a remainder
+          // sheet's, and this sheet promises otherwise.
+          expect(readNumber(problem.answer).n % 10 ** places).not.toBe(0);
+          expect(placesOf(problem.answer)).toBe(places);
+          expect(holds(sentence(problem)), sentence(problem)).toBe(true);
+        }
+        const lines = problemsOf(over, seed);
+        expect(lines.length).toBeGreaterThan(0);
+        for (const problem of lines) {
+          expect(problem.prompt).toMatch(/^[1-9]\d* ÷ \d+ =$/);
+          expect(holds(sentence(problem)), sentence(problem)).toBe(true);
+        }
+      }
+    }
+  });
+
+  it("spreads a whole-dividend page over the divisors that can stop, and leaves out the rest", () => {
+    // 3, 7 and 9 have no decimal quotient that ends; 2, 4, 5, 6 and 8 do, and
+    // a rejecting draw would have printed 5 four times as often as 2.
+    const seen = new Map<string, number>();
+    let total = 0;
+    for (let seed = 0; seed < 40; seed += 1) {
+      const over = {
+        operation: "divide" as const,
+        wholeDividend: true,
+        range: { min: 1, max: 20 },
+      };
+      for (const problem of problemsOf(over, seed)) {
+        const { divisor } = readDivision(problem);
+        seen.set(divisor, (seen.get(divisor) ?? 0) + 1);
+        total += 1;
+      }
+    }
+    expect(total).toBeGreaterThan(300);
+    expect([...seen.keys()].sort()).toEqual(["2", "4", "5", "6", "8"]);
+    for (const [divisor, count] of seen) {
+      expect(count / total, divisor).toBeLessThan(0.35);
+    }
+  });
+
+  it("divides by a decimal of one to `places` places, with the dividend carrying at least as many", () => {
+    for (const places of [1, 2, 3]) {
+      for (const seed of SEEDS) {
+        const over = {
+          operation: "divide" as const,
+          by: "decimal" as const,
+          places,
+          range: { min: 1, max: 40 },
+        };
+        const problems = problemsOf(over, seed);
+        expect(problems.length).toBeGreaterThan(0);
+        for (const problem of problems) {
+          const { dividend, divisor, answer } = readDivision(problem);
+          // Neither side ends in a zero, and the divisor is a decimal.
+          expect(divisor, sentence(problem)).toMatch(/^\d+\.\d*[1-9]$/);
+          expect(placesOf(divisor)).toBeLessThanOrEqual(places);
+          expect(dividend, sentence(problem)).toMatch(/^\d+\.\d*[1-9]$/);
+          expect(placesOf(dividend)).toBeGreaterThanOrEqual(placesOf(divisor));
+          expect(placesOf(dividend)).toBeLessThanOrEqual(places);
+          // The answer is the whole quotient with its point moved back by the
+          // difference, and a number is never divided by itself.
+          expect(placesOf(answer)).toBe(placesOf(dividend) - placesOf(divisor));
+          expect(answer).not.toBe("1");
+          expect(holds(sentence(problem)), sentence(problem)).toBe(true);
+          expect(problem.bracket).toBeUndefined();
+        }
+      }
+    }
+    // Never in the bracket, whatever the form says (§22).
+    const asked = { operation: "divide" as const, by: "decimal" as const };
+    for (const problem of problemsOf({ ...asked, form: "vertical" }, 2)) {
+      expect(problem.bracket).toBeUndefined();
+      expect(problem.operands).toBeUndefined();
+      expect(problem.prompt).toContain("÷");
+    }
+    expect(decimalLayout(config({ ...asked, form: "vertical" })).row).toBe(
+      decimalLayout(config(asked)).row,
+    );
+  });
+
+  it("reserves the squares under a bracket from the range and the divisors, before anything is drawn", () => {
+    for (const shape of DIVISIONS) {
+      if (!(shape.form === "vertical" && shape.by !== "decimal")) continue;
+      const layout = decimalLayout(config(shape));
+      const problems = problemsOf(shape, 5);
+      expect(problems.length, JSON.stringify(shape)).toBeGreaterThan(0);
+      for (const problem of problems) {
+        const bracket = problem.bracket;
+        if (!bracket) throw new Error("no bracket");
+        expect(layout.row).toBe(
+          bracketHeight(12) + bracket.rows * bracket.cell,
+        );
+      }
+    }
+    // Taller for a bigger range, because the dividends get longer. The same
+    // for a bigger divisor: the dividend gains a digit and the quotient loses
+    // one, and the squares are two per quotient digit.
+    const divided = { operation: "divide" as const, form: "vertical" as const };
+    const small = decimalLayout(
+      config({ ...divided, range: { min: 0, max: 9 } }),
+    );
+    const large = decimalLayout(
+      config({ ...divided, range: { min: 0, max: 99 } }),
+    );
+    expect(large.row).toBeGreaterThan(small.row);
+    const two = decimalLayout(
+      config({
+        ...divided,
+        range: { min: 0, max: 9 },
+        divisor: { min: 11, max: 25 },
+      }),
+    );
+    expect(two.row).toBe(small.row);
+  });
+
+  it("reads a saved config's division fields back safely", () => {
+    const divided = {
+      operation: "divide" as const,
+      form: "vertical" as const,
+      count: 4,
+    };
+    for (const help of ["none", "grid", "steps", "guided"] as const) {
+      for (const problem of problemsOf({ ...divided, help }, 5)) {
+        expect(problem.bracket?.help).toBe(help);
+      }
+    }
+    const stray = { ...divided, help: "pink" as unknown as "grid" };
+    for (const problem of problemsOf(stray, 5)) {
+      expect(problem.bracket?.help).toBe("none");
+    }
+    // The level changes nothing about which problems are drawn.
+    expect(
+      problemsOf({ ...divided, help: "guided" }, 5).map((p) => p.answer),
+    ).toEqual(problemsOf(divided, 5).map((p) => p.answer));
+    // A divisor span from outside this build is clamped to 2…99 and put the
+    // right way round rather than thrown.
+    for (const problem of problemsOf(
+      { ...divided, divisor: { min: 0, max: 1 } },
+      5,
+    )) {
+      expect(problem.bracket?.divisor).toBe("2");
+    }
+    for (const problem of problemsOf(
+      { operation: "divide", divisor: { min: 500, max: 9 } },
+      5,
+    )) {
+      expect(readDivision(problem).divisor).toBe("99");
+    }
+    // A span that is not numbers at all — from a hand-edited link — is the
+    // smallest divisor rather than a page of `NaN.NaN ÷ NaN`.
+    for (const divisor of [{ min: "abc" }, "abc", { min: null, max: [] }]) {
+      const stray = { operation: "divide" as const, divisor: divisor as never };
+      const problems = problemsOf(stray, 5);
+      expect(problems.length, JSON.stringify(divisor)).toBeGreaterThan(0);
+      for (const problem of problems) {
+        expect(readDivision(problem).divisor).toBe("2");
+        expect(holds(sentence(problem)), sentence(problem)).toBe(true);
+      }
+    }
+  });
+
+  it("prints nothing rather than a rounded answer when no divisor can stop", () => {
+    // 3 has no decimal quotient that ends, at any number of places.
+    expect(
+      problemsOf(
+        {
+          operation: "divide",
+          wholeDividend: true,
+          divisor: { min: 3, max: 3 },
+        },
+        1,
+      ),
+    ).toEqual([]);
+    // The divisors that can: the ones sharing a factor with ten, whatever the
+    // places, and none at all in a span of one odd number off the fives.
+    expect(stoppingDivisors(config({ operation: "divide" }))).toEqual([
+      2, 4, 5, 6, 8,
+    ]);
+    expect(stoppingDivisors(config({ operation: "divide", places: 1 }))) //
+      .toEqual([2, 4, 5, 6, 8]);
+    expect(
+      stoppingDivisors(
+        config({ operation: "divide", divisor: { min: 11, max: 25 } }),
+      ),
+    ).toEqual([12, 14, 15, 16, 18, 20, 22, 24, 25]);
+    for (const alone of [3, 7, 9, 21]) {
+      expect(
+        stoppingDivisors(
+          config({ operation: "divide", divisor: { min: alone, max: alone } }),
+        ),
+        `${alone}`,
+      ).toEqual([]);
+    }
+  });
+
+  it("never ends a decimal's quotient in a zero, and lets a whole dividend's", () => {
+    // `20.50 ÷ 5 = 4.10` is `20.5 ÷ 5` written to two places, an exercise
+    // nobody sets; `6 ÷ 4` at two places is `1.50`, and the last zero is
+    // part of that lesson (§22).
+    for (const shape of DIVISIONS) {
+      if (shape.by === "decimal" || shape.wholeDividend) continue;
+      for (const seed of SEEDS) {
+        for (const problem of problemsOf(shape, seed)) {
+          expect(problem.answer, sentence(problem)).toMatch(/[1-9]$/);
+        }
+      }
+    }
+    const whole = SEEDS.flatMap((seed) =>
+      problemsOf({ operation: "divide", wholeDividend: true }, seed),
+    );
+    expect(whole.some((problem) => problem.answer.endsWith("0"))).toBe(true);
   });
 });
 
@@ -313,11 +1069,18 @@ describe("the answer key", () => {
     // would print — so every number on the page is held to the shape a decimal
     // has, digit for digit, as well as to its value.
     for (const shape of EVERY_SHAPE) {
+      // A decimal times a decimal has as many places as the two together,
+      // and that is the one shape whose answers run past three.
+      const most =
+        shape.operation === "multiply" && shape.by === "decimal"
+          ? 2 * (shape.places ?? 2)
+          : 3;
+      const decimal = new RegExp(`^\\d+\\.\\d{1,${most}}$`);
       for (const seed of SEEDS) {
         for (const problem of problemsOf(shape, seed)) {
-          for (const word of sentence(problem).split(/[\s=+−×]+/)) {
+          for (const word of sentence(problem).split(/[\s=+−×÷<>,→≈?]+/)) {
             if (word.includes(".")) {
-              expect(word, JSON.stringify(shape)).toMatch(/^\d+\.\d{1,3}$/);
+              expect(word, JSON.stringify(shape)).toMatch(decimal);
             }
           }
         }
@@ -551,6 +1314,23 @@ describe("(config, seed)", () => {
         p.answer,
       ]),
     ).toEqual(GOLDEN.convert);
+
+    expect(
+      problemsOf({ operation: "divide", count: 4 }, 4242).map((p) => [
+        p.prompt,
+        p.answer,
+      ]),
+    ).toEqual(GOLDEN.divide);
+    expect(
+      problemsOf({ operation: "divide", by: "decimal", count: 4 }, 7).map(
+        (p) => [p.prompt, p.answer],
+      ),
+    ).toEqual(GOLDEN.byDecimal);
+    expect(
+      problemsOf({ operation: "divide", wholeDividend: true, count: 4 }, 7).map(
+        (p) => [p.prompt, p.answer],
+      ),
+    ).toEqual(GOLDEN.wholeDividend);
   });
 
   it("makes variants A, B and C genuinely different sets of problems", () => {
@@ -579,23 +1359,103 @@ describe("how much fits", () => {
   const SIZES: PaperSize[] = ["letter", "a4", "legal"];
   const MARGINS: MarginSize[] = ["none", "narrow", "normal", "wide"];
 
-  it("never prints more problems than the paper holds", () => {
-    for (const size of SIZES) {
-      for (const margin of MARGINS) {
-        for (const fontPt of [12, 18]) {
-          for (const shape of EVERY_SHAPE) {
-            const over = { ...shape, paper: paper({ size, margin }), fontPt };
-            const problems = problemsOf({ ...over, count: 200 }, 8);
-            const { box, columns, row } = decimalLayout(config(over));
-            const rows = Math.ceil(problems.length / columns);
-            const used = rows * row + Math.max(0, rows - 1) * PROBLEM_GAP.y;
-            expect(used, `${size}/${margin}/${fontPt}pt`).toBeLessThanOrEqual(
-              box.height,
-            );
+  // Sixty papers by every shape, two hundred problems each: under two seconds
+  // here and past the default five on a CI runner, which is a slower machine
+  // rather than a slower test — so the budget is the test's own.
+  it(
+    "never prints more problems on a page than the paper holds",
+    { timeout: 30_000 },
+    () => {
+      // Against the box the printed header leaves — which carries the sentence
+      // that says the page came out short, and may be a row shorter for it —
+      // rather than the config's. And every page but the last is full: a page
+      // cut short of what fits would be a sheet of paper for nothing.
+      for (const size of SIZES) {
+        for (const margin of MARGINS) {
+          for (const fontPt of [8, 12, 18, 24, 36]) {
+            for (const shape of EVERY_SHAPE) {
+              const over = { ...shape, paper: paper({ size, margin }), fontPt };
+              const where = `${size}/${margin}/${fontPt}pt ${JSON.stringify(shape)}`;
+              const sheet = buildSheet(config({ ...over, count: 200 }), 8);
+              const pages = pagesOf(sheet);
+              expect(pages.length, where).toBeGreaterThan(0);
+              const { row, perPage } = decimalLayout(config(over));
+              for (const [at, page] of pages.entries()) {
+                const rows = Math.ceil(page.items.length / page.columns);
+                const used = rows * row + Math.max(0, rows - 1) * PROBLEM_GAP.y;
+                expect(used, `${where}, page ${at + 1}`).toBeLessThanOrEqual(
+                  printedBlockBox(sheet).height,
+                );
+                if (at < pages.length - 1) {
+                  expect(page.items.length, `${where}, page ${at + 1}`).toBe(
+                    pages[0].items.length,
+                  );
+                }
+              }
+              // A bracket that reserves more than the box at the largest type
+              // holds nothing, and says so, rather than printing a title over
+              // blank paper.
+              if (perPage === 0) {
+                expect(
+                  pages.map((page) => page.items),
+                  where,
+                ).toEqual([[]]);
+                expect(sheet.header.instructions, where).toMatch(
+                  /Nothing fits on the page at this size\.$/,
+                );
+              }
+            }
+          }
+        }
+      }
+    },
+  );
+
+  it("cuts the columns to the widest bracket, at every type size", () => {
+    // A bracket is a fixed drawing in squares and does not wrap to its
+    // column: three places, a range to 999 and a two-digit divisor is an
+    // eight-digit dividend, which at four columns on Letter is wider than
+    // the column at any size. Read off the printed problem, with the number
+    // in front, against the column the layout gave it.
+    const SHAPES: Array<Partial<DecimalConfig>> = [
+      { operation: "divide", form: "vertical" },
+      { operation: "divide", form: "vertical", places: 3 },
+      {
+        operation: "divide",
+        form: "vertical",
+        places: 3,
+        range: { min: 0, max: 999 },
+        divisor: { min: 2, max: 99 },
+      },
+      { operation: "divide", form: "vertical", wholeDividend: true },
+    ];
+    for (const shape of SHAPES) {
+      for (const fontPt of [8, 12, 18, 24, 36]) {
+        for (const columns of [1, 2, 3, 4]) {
+          const over = { ...shape, fontPt, columns, count: 200 };
+          const where = `${JSON.stringify(shape)} ${fontPt}pt ${columns} columns`;
+          const { cell } = decimalLayout(config(over));
+          for (const problem of problemsOf(over, 8)) {
+            const bracket = problem.bracket;
+            if (!bracket) throw new Error(`${where}: no bracket`);
+            const digits = {
+              into: bracket.dividend.replace(".", "").length,
+              by: bracket.divisor.length,
+            };
+            expect(
+              bracketWidth(digits, fontPt) + numberRoom(fontPt),
+              `${where}: ${bracket.dividend} ÷ ${bracket.divisor}`,
+            ).toBeLessThanOrEqual(cell);
           }
         }
       }
     }
+    // Cut only where it has to be: the plainest sheet keeps its columns at
+    // the body size, and the widest bracket at the largest type gets one.
+    const columnsOf = (over: Partial<DecimalConfig>) =>
+      decimalLayout(config(over)).columns;
+    expect(columnsOf({ ...SHAPES[0], columns: 3 })).toBe(3);
+    expect(columnsOf({ ...SHAPES[2], columns: 4, fontPt: 36 })).toBe(1);
   });
 
   it("does not throw the page away either", () => {
@@ -657,5 +1517,23 @@ const GOLDEN = {
     ["13/25 = _", "0.52"],
     ["40% = _", "0.40"],
     ["0.56 = _%", "56"],
+  ],
+  divide: [
+    ["43.72 ÷ 4 =", "10.93"],
+    ["111.78 ÷ 6 =", "18.63"],
+    ["53.52 ÷ 4 =", "13.38"],
+    ["25.95 ÷ 5 =", "5.19"],
+  ],
+  byDecimal: [
+    ["5.5 ÷ 0.5 =", "11"],
+    ["8.4 ÷ 0.7 =", "12"],
+    ["9.6 ÷ 0.6 =", "16"],
+    ["0.36 ÷ 0.6 =", "0.6"],
+  ],
+  wholeDividend: [
+    ["3 ÷ 2 =", "1.50"],
+    ["41 ÷ 5 =", "8.20"],
+    ["24 ÷ 5 =", "4.80"],
+    ["73 ÷ 5 =", "14.60"],
   ],
 };

@@ -137,14 +137,33 @@ describe("the sheet on a catalog page", () => {
     }
   });
 
-  it("asks for no more than the paper holds", () => {
-    // A count is a request, not a promise: the families cap it at what fits.
-    // A page that asked for thirty and got twenty-nine is fine; the failure
-    // this catches is prose that says "thirty" over a sheet of nine.
+  it("asks for what one sheet of paper holds, and gets it", () => {
+    // A count past the page runs on rather than being cut (§4), so the
+    // failure this catches is not a short page but a long one: a catalog
+    // page is curated to one sheet of paper, and prose that says "twenty"
+    // over two sheets is a count somebody raised without reading the page.
+    // A lesson has no count to ask with, so its prose is held to the six it
+    // says — and a lesson may run on, because its problems go on to page two
+    // whole rather than being cut to fit under the teaching (§23).
     for (const sheet of MATHS_SHEETS) {
-      const problems = problemsOf(buildSheet(sheet.config, MATHS_SEED).blocks);
+      const built = buildSheet(sheet.config, MATHS_SEED);
+      const problems = problemsOf(built.blocks);
       const asked = "count" in sheet.config ? sheet.config.count : 0;
-      if (asked > 0) expect(problems.length, sheet.slug).toBe(asked);
+      if (asked > 0) {
+        expect(problems.length, sheet.slug).toBe(asked);
+        expect(
+          built.blocks.some((block) => block.kind === "break"),
+          `${sheet.slug}: ${asked} problems run on to a second page`,
+        ).toBe(false);
+      }
+      const prose = [sheet.summary, sheet.lead, ...sheet.notes].join(" ");
+      if (sheet.config.kind === "lesson" && /\bsix\b/i.test(prose)) {
+        expect(built.header.score?.outOf, sheet.slug).toBe(6);
+      }
+      // And never a page that had to say it came out short.
+      expect(built.header.instructions ?? "", sheet.slug).not.toMatch(
+        /asked for|Nothing (fits|could be made)/,
+      );
     }
   });
 
@@ -168,9 +187,14 @@ describe("the sheet on a catalog page", () => {
       expect(key.footer.note, sheet.slug).toBe("Answer key");
       // The same questions, not a second set of them — the key is the sheet
       // with `answers` flipped, so nothing it prints can disagree with what
-      // the child was asked.
+      // the child was asked. A lesson's key leaves off the leading pages that
+      // print the same either way (§7), so it is the sheet's blocks cut at a
+      // page break, never a different set.
+      const cut = built.blocks.length - key.blocks.length;
+      expect(cut, sheet.slug).toBeGreaterThanOrEqual(0);
+      if (cut > 0) expect(built.blocks[cut - 1].kind, sheet.slug).toBe("break");
       expect(JSON.stringify(key.blocks), sheet.slug).toBe(
-        JSON.stringify(built.blocks),
+        JSON.stringify(built.blocks.slice(cut)),
       );
       for (const problem of problemsOf(key.blocks)) {
         expect(problem.answer.length, sheet.slug).toBeGreaterThan(0);

@@ -21,6 +21,11 @@ import {
 } from "./_handwriting";
 import { MATHS_SHEETS, mathsShelf, pathFor as mathsPath } from "./_maths";
 import {
+  PENMANSHIP_SHEETS,
+  hrefFor as penmanshipHref,
+  penmanshipShelf,
+} from "./_penmanship";
+import {
   PHONICS_SHEETS,
   pathFor as phonicsPath,
   phonicsShelf,
@@ -70,6 +75,7 @@ const groups = shelf();
 const strands = mathsShelf();
 const writing = handwritingShelf();
 const joined = cursiveShelf();
+const control = penmanshipShelf();
 const scripture = bibleShelf();
 const words = spellingShelf();
 const sentences = grammarShelf();
@@ -128,12 +134,12 @@ const paperwork = templateShelf();
       Everything is completely print-ready: just open the file and hit print.
     </p>
     <p class="h2__sub">
-      You&rsquo;ll find 10 core printable collections ready to go: math
+      You&rsquo;ll find 11 core printable collections ready to go: math
       worksheets (with answer keys included), print and cursive handwriting,
-      Scripture memory work, flexible spelling and phonics sheets, blank charts,
-      and everyday homeschool planners. All lined and ruled pages are pre-scaled
-      for both US Letter and A4, so your line spacing stays the exact size you
-      intended.
+      penmanship, Scripture memory work, flexible spelling and phonics sheets,
+      blank charts, and everyday homeschool planners. All lined and ruled pages
+      are pre-scaled for both US Letter and A4, so your line spacing stays the
+      exact size you intended.
     </p>
 
     <details class="fold">
@@ -213,6 +219,35 @@ const paperwork = templateShelf();
         }
         <div class="hero__actions">
           <a class="cta" href="/printables/cursive">All the cursive sheets</a>
+        </div>
+      </div>
+    </details>
+
+    <details class="fold">
+      <summary class="fold__head">
+        <h3 class="h2">Penmanship</h3>
+      </summary>
+      <div class="fold__body">
+        <p class="h2__sub">
+          {PENMANSHIP_SHEETS.length} sheets for the child who can form every letter
+          and still hands in a page nobody can read &mdash; the strokes, the sizes,
+          the spaces, judging your own work, and the alphabet against the clock.
+        </p>
+        {
+          control.map((group) => (
+            <nav class="stones" aria-label={`Penmanship — ${group.label}`}>
+              {group.sheets.map((sheet) => (
+                <a class="stone" href={penmanshipHref(sheet, letter)}>
+                  {sheet.short}
+                </a>
+              ))}
+            </nav>
+          ))
+        }
+        <div class="hero__actions">
+          <a class="cta" href="/printables/penmanship">
+            All the penmanship sheets
+          </a>
         </div>
       </div>
     </details>
@@ -444,10 +479,10 @@ const paperwork = templateShelf();
       <p class="h2__sub">
         The Print Shop is opening a family at a time, and this page lists what
         exists rather than what is planned. Paper, maths, handwriting, cursive,
-        copywork, spelling, grammar, phonics, the blank references and the
-        paperwork &mdash; logs, planners, certificates and cards &mdash; are all
-        open, and so are the three ways of finding a sheet among them: the
-        search at the top of this page, a shelf per subject, and a page per
+        penmanship, copywork, spelling, grammar, phonics, the blank references
+        and the paperwork &mdash; logs, planners, certificates and cards &mdash;
+        are all open, and so are the three ways of finding a sheet among them:
+        the search at the top of this page, a shelf per subject, and a page per
         school year from Pre-K to eighth grade.
       </p>
       <div class="prose">
@@ -457,11 +492,12 @@ const paperwork = templateShelf();
           passages from the public domain, Scripture among them &mdash; then the
           spelling and word-study shelf, the grammar sheets beside it, the
           phonics shelf after them, then the charts and grids &mdash; the first
-          family here with nothing on it to answer &mdash; and last the
-          paperwork: reading logs, report forms, calendars, chore charts, award
+          family here with nothing on it to answer &mdash; then the paperwork:
+          reading logs, report forms, calendars, chore charts, award
           certificates, blank flashcards and a die to fold up. Those are the
           honest ones. They are supposed to be empty, so there is nothing on any
-          of them that could be wrong.
+          of them that could be wrong. Last came the penmanship shelf, for the
+          child who has the letters and not yet the page.
         </p>
         <p>
           The one it is really being built for comes with the sheet builder:

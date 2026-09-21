@@ -74,6 +74,29 @@ f007004af3cda5d8076e57c943f8cc8d00a0da25988b1ae1048683d60e7cac1a  opendyslexic-l
 font swapped for a different cut of the same family fails the suite rather than
 quietly invalidating this page.
 
+## The hands
+
+Not fonts, and not in this directory, but derived from two of them and so
+recorded here. `src/engine/sheets/hands/print.ts`, `hands/cursive.ts`,
+`hands/cursive-modern.ts` and `hands/cursive-uk.ts` are sets of letters stored
+as pen strokes — single lines down the middle of each stroke, for tracing —
+and those lines were traced over the outlines in the faces' published sources:
+
+- the print hand over Andika's (`Andika-Regular.ufo` at
+  https://github.com/silnrsi/font-andika, OFL 1.1);
+- the three cursive hands over Playwrite's (`Playwrite_MM.glyphspackage` at
+  https://github.com/TypeTogether/Playwrite, OFL 1.1), each at the point
+  between its masters that is its model and with the alternates that model
+  chooses — US Trad, US Modern and GB J — which the `tracedOver` table in each
+  hand's `hand.json` under `art/hands/` names one by one.
+
+The shapes are therefore Modified Versions of those faces under the OFL: the
+data is offered under the same licence, each module carries the notice in its
+own header, and they are called "School Skills Print", "School Skills Cursive",
+"School Skills Cursive, unlooped" and "School Skills Cursive, fully joined",
+which are nobody's Reserved Font Names. The drawings themselves are in
+`art/hands/`; `docs/printables.md` §25 says how one becomes the other.
+
 ## Notices
 
 The OFL asks that the copyright notice travel with the files. `OFL.txt` carries

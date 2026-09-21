@@ -171,8 +171,9 @@ export const MAX_OUTLINE: Mil = points(0.75);
  * `public/fonts/LICENSE.md`. The ids are the user's choice; the families are an
  * implementation detail that a saved sheet deliberately does not carry.
  *
- * Which letters join is the font file's own `calt` table and never this repo's
- * opinion; see `writing/joins.ts`.
+ * Which letters join on an outline row is the font file's own `calt` table
+ * and never this repo's opinion; see `writing/joins.ts`. A face written in a
+ * hand joins by the hand's own drawings instead (§25).
  */
 export const FACES: Record<SheetFont, Face> = {
   print: {

@@ -75,10 +75,12 @@ const PANELS: Record<string, FamilyPanel> = {
   "word-study": panel(async () => (await import("./wordstudy")).WordStudyPanel),
   puzzle: panel(async () => (await import("./puzzles")).PuzzlesPanel),
   grammar: panel(async () => (await import("./grammar")).GrammarPanel),
+  lesson: panel(async () => (await import("./lessons")).LessonsPanel),
   phonics: panel(async () => (await import("./phonics")).PhonicsPanel),
   handwriting: panel(
     async () => (await import("./handwriting")).HandwritingPanel,
   ),
+  penmanship: panel(async () => (await import("./penmanship")).PenmanshipPanel),
   memory: panel(async () => (await import("./memory")).MemoryPanel),
 };
 

@@ -71,9 +71,11 @@
                    print unless somebody says otherwise.
      Playwrite     Cursive, and three of them because the three handwriting
      US Trad       models are genuinely different rather than flavours of one
-     US Modern     (§6). Which letters join to which is in each file's `calt`
-     GB J          table, so the model decides a join and this repo never does
-                   — `engine/sheets/writing/joins.ts`. Their capitals and
+     US Modern     (§6). Which letters join to which on an outline row is in
+     GB J          each file's `calt` table, so the model decides a join and
+                   this repo never does — `engine/sheets/writing/joins.ts`;
+                   a row written in a hand joins by the hand's own drawings
+                   (§25). Their capitals and
                    ascenders stand nearly a whole em tall, because the faces
                    are drawn to a ruling rather than to a paragraph, which is
                    why the tracing arithmetic in `faces.ts` comes out exact for

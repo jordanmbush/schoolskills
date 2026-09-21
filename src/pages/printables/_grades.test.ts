@@ -19,6 +19,7 @@ import {
 import { GRAMMAR_SHEETS } from "./_grammar";
 import { HANDWRITING_SHEETS } from "./_handwriting";
 import { MATHS_SHEETS } from "./_maths";
+import { PENMANSHIP_SHEETS } from "./_penmanship";
 import { PHONICS_SHEETS } from "./_phonics";
 import { ALL_SHEETS, HUBS, SHELVES } from "./_shelves";
 import { SPELLING_SHEETS } from "./_spelling";
@@ -54,13 +55,14 @@ const bySlug = (slug: string) => {
 
 describe("the shelf registry", () => {
   it("holds every sheet in the shop, once", () => {
-    // The registry is a hand-written list of ten catalogs, which is the one
+    // The registry is a hand-written list of eleven catalogs, which is the one
     // way a shelf gets left off every grade page at once: nothing else in the
     // codebase would notice, because each catalog's own tests still pass.
     const catalogued =
       MATHS_SHEETS.length +
       HANDWRITING_SHEETS.length +
       CURSIVE_SHEETS.length +
+      PENMANSHIP_SHEETS.length +
       BIBLE_SHEETS.length +
       SPELLING_SHEETS.length +
       GRAMMAR_SHEETS.length +

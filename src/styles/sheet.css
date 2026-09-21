@@ -202,6 +202,12 @@
   flex-grow: 1;
 }
 
+/* Set by `Problems.tsx` on a block of nothing but worked examples: it keeps
+   its declared height so the try-its after it get the spare paper. */
+.sheet__problems--worked {
+  flex-grow: 0;
+}
+
 .sheet__blanks > *,
 .sheet__questions > * {
   flex-grow: 1;
@@ -426,6 +432,55 @@
   stroke: currentcolor;
 }
 
+/* ── Stroke patterns (§24) ──────────────────────────────────────────────────
+   A pattern is a path rather than text, so its appearances are stroke
+   properties. The weight and the dashes are attributes in mil (`units.ts`
+   says why); what is left for the stylesheet is the ink, the round ends that
+   make a zero-length dash a dot, and the one style that is a lighter shade. */
+
+.sheet__stroke {
+  fill: none;
+  stroke: currentcolor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.sheet__stroke--dim {
+  opacity: 28%;
+}
+
+/* The filled dot a model puts in a finger space (§24). */
+.sheet__mark {
+  fill: currentcolor;
+  stroke: none;
+}
+
+/* ── Hands (§25) ────────────────────────────────────────────────────────────
+   The guides on a model letter: a filled start dot, a thin arrow running
+   beside the stroke with a filled head, and a stroke number in the site's
+   own face rather than the sheet's, so it reads as a label on the letter
+   and not as part of it. */
+.sheet__guide {
+  fill: currentcolor;
+}
+
+.sheet__guide-line {
+  fill: none;
+  stroke: currentcolor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.sheet__guide-arrow {
+  fill: currentcolor;
+  stroke: none;
+}
+
+.sheet__guide-number {
+  font-family: var(--font-body, system-ui, sans-serif);
+  font-weight: 700;
+}
+
 /* ── Problems ───────────────────────────────────────────────────────────────
    `break-inside: avoid` here and on every other row-shaped thing below is not
    a nicety. Print is the whole of the output path (§10), so the preview has to
@@ -498,6 +553,61 @@
   flex: 1 0 100%;
 }
 
+/* ── A lesson's pieces (§23) ─────────────────────────────────────────────────
+   Counters over their caption, and a boxed note. The dots are SVG fills and
+   the box is a border, so both print (§5). Every height here is one the
+   family reserved: the drawing's from `counters.ts`, the caption's as
+   `CAPTION_EMS` there, the note's from `noteHeight` in layout.ts — which is
+   why the caption's size and leading and the note's padding are the numbers
+   those modules quote. A `note` block is `.sheet__panel` here, because
+   `.sheet__note` is the footer's "Answer key".                               */
+
+.sheet__counters {
+  display: inline-flex;
+  flex-direction: column;
+  max-width: 100%;
+}
+
+/* Scoped to the counters, because a net's and a clock's `.sheet__caption`
+   is set at 0.8em further down and a bare selector here would lose to it. */
+.sheet__counters .sheet__caption {
+  font-size: 0.85em;
+}
+
+.sheet__panel {
+  box-sizing: border-box;
+  padding: 0.08in;
+  border: 0.75pt solid currentcolor;
+  break-inside: avoid;
+}
+
+/* The sentence for the grown-up: set small, so a child reads past it. */
+.sheet__panel--aside {
+  font-size: 0.85em;
+}
+
+.sheet__panel-heading {
+  font-weight: 700;
+}
+
+.sheet__panel-heading,
+.sheet__panel-text,
+.sheet__panel-list {
+  margin: 0;
+}
+
+.sheet__panel-list {
+  list-style: none;
+  padding-left: 0;
+}
+
+/* The hop of a repeated subtraction along a number line: the arc is a rule,
+   the arrowhead where it lands is a dot's fill, and the "−3" over it is set
+   like a tick's number. Nothing here has a colour of its own. */
+.sheet__jump {
+  fill: none;
+}
+
 /* An answer, wherever it is written: in the slot at the end of a sum, in the
    gap inside one, under the rule of a column, over a division bracket, on a
    working line or in a square of a grid. One weight in one place, so a key
@@ -505,6 +615,7 @@
 .sheet__slot--answered,
 .sheet__total--answered,
 .sheet__quotient--answered,
+.sheet__square--answered,
 .sheet__work-line--answered,
 .sheet__cell--answered {
   font-weight: 700;
@@ -572,48 +683,122 @@
   padding-top: 0;
 }
 
-/* Long division: the divisor outside the bracket, the dividend under the bar,
-   and the quotient written along the top of it. The bar and the upright are
-   borders rather than an SVG, because they are exactly a border — and because
-   the digits inside have to stay selectable text (§2). */
+/* Long division (§21): the divisor in the gutter, the dividend under the bar,
+   the quotient along the top and the working in squares underneath. Every row
+   is the same gutter and the same run of squares, at the two widths the
+   renderer sets inline (`Bracket.tsx` says why that is what aligns place
+   value). The bar and the upright are borders rather than an SVG, because
+   they are exactly a border — and because the digits inside have to stay
+   selectable text (§2).
+
+   `align-self` pins the house to the top of its problem row, so the number
+   beside it sits level with the quotient whether or not a quotient has been
+   written yet; left to baseline alignment the number would move between the
+   sheet and its key. */
 .sheet__bracket {
+  position: relative;
+  z-index: 0;
   display: inline-flex;
-  align-items: flex-end;
-  font-variant-numeric: tabular-nums;
-}
-
-.sheet__divisor {
-  padding-right: 0.05in;
-  padding-bottom: 0.02in;
-}
-
-.sheet__house {
-  display: flex;
   flex-direction: column;
-  min-width: 0.7in;
+  align-self: flex-start;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
 }
 
-/* Right-aligned over the dividend, not centred: a quotient's last digit
-   belongs over the dividend's last digit, always, whatever either measures.
+/* A row is exactly one square tall, border-box, so the house stands at the
+   height the family reserved: rows × cell, with the bar inside the dividend
+   row's own height rather than added to it. */
+.sheet__bracket-row {
+  display: flex;
+  height: var(--sheet-cell);
+}
 
-   Which is why the right inset below is the dividend's own, written out again.
-   Both boxes stretch the full width of `.sheet__house`, so their right *edges*
-   already agree — but a quotient without the padding the dividend holds its
-   digits off by would put its units digit two thirds of a digit clear of the
-   one it is supposed to sit over, and place value is the entire exercise. The
-   two values are asserted equal in Sheet.test.tsx so they cannot drift. */
-.sheet__quotient {
-  min-height: 1.2em;
-  padding-right: 0.06in;
-  text-align: right;
+.sheet__gutter {
+  display: flex;
+  flex: none;
+  box-sizing: border-box;
+  width: var(--sheet-gutter);
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 0.04in;
+}
+
+.sheet__quotient,
+.sheet__dividend {
+  display: flex;
+  box-sizing: border-box;
+}
+
+/* The bracket itself. Heavier than the grid's hairlines and the take-away
+   rules, so the symbol still reads as the symbol once the squares are drawn
+   round it. */
+.sheet__dividend {
+  border-top: 1.5pt solid currentcolor;
+  border-left: 1.5pt solid currentcolor;
+}
+
+.sheet__square {
+  display: flex;
+  flex: none;
+  box-sizing: border-box;
+  width: var(--sheet-cell);
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
   white-space: nowrap;
 }
 
-.sheet__dividend {
-  border-top: 0.75pt solid currentcolor;
-  border-left: 0.75pt solid currentcolor;
-  padding: 0.03in 0.06in 0.02in;
-  text-align: right;
+.sheet__remainder {
+  display: flex;
+  align-items: center;
+  padding-left: 0.06in;
+  white-space: nowrap;
+}
+
+/* The decimal point (§22): a box of no width on the boundary between two
+   squares, so no digit moves column. Centred in the row as the digits are, so
+   it shares their baseline. */
+.sheet__point {
+  display: flex;
+  flex: none;
+  width: 0;
+  align-items: center;
+  justify-content: center;
+  overflow: visible;
+}
+
+/* The grid, at `grid` and above: a hairline on the right and bottom of every
+   square, with the left edge closed by the first square of a row and the top
+   by the quotient row — one stroke per boundary, so no line prints doubled.
+   The bar is the quotient row's bottom edge and the upright is the dividend's
+   left, so those squares give theirs up. */
+.sheet__bracket--ruled .sheet__square {
+  border-right: 0.5pt solid currentcolor;
+  border-bottom: 0.5pt solid currentcolor;
+}
+
+.sheet__bracket--ruled .sheet__gutter + .sheet__square,
+.sheet__bracket--ruled .sheet__quotient > .sheet__square:first-child {
+  border-left: 0.5pt solid currentcolor;
+}
+
+.sheet__bracket--ruled .sheet__quotient > .sheet__square {
+  border-top: 0.5pt solid currentcolor;
+  border-bottom: 0;
+}
+
+/* A take-away row, at `steps` and above: the rule under it is the heavier one,
+   across the columns it was written in and no further. */
+.sheet__bracket--ruled .sheet__square--take {
+  border-bottom: 1.25pt solid currentcolor;
+}
+
+/* The shading of a guided division, behind the squares (§5). */
+.sheet__shading {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: -1;
 }
 
 /* A number line and a workspace are both a full row of their own under the

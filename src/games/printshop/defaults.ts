@@ -312,6 +312,14 @@ const DEFAULTS: Record<string, SheetConfig> = {
     count: STARTER_WORDS.length,
     columns: 2,
   },
+  lesson: {
+    ...BASE,
+    kind: "lesson",
+    topic: "division-sharing",
+    practice: true,
+    // Larger than the shop's default type, because the reader is six.
+    fontPt: 14,
+  },
   grammar: {
     ...BASE,
     kind: "grammar",
@@ -347,6 +355,18 @@ const DEFAULTS: Record<string, SheetConfig> = {
     words: STARTER_WORDS,
     passage: COPYWORK_PASSAGE,
     text: PASSAGE,
+  },
+  penmanship: {
+    ...BASE,
+    kind: "penmanship",
+    // The strokes, because they are the sheet for the widest range of ages,
+    // and every pattern in teaching order with a second line to carry each on.
+    style: "strokes",
+    rule: { style: "hand-5-8", midline: "dashed", descender: true },
+    trace: "dotted",
+    repeats: 3,
+    lines: 2,
+    letters: "lower",
   },
   memory: {
     ...BASE,

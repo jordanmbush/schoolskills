@@ -10,7 +10,7 @@ import {
 import type { WordShape } from "@/engine/sheets/types";
 
 import { HAIRLINE, inch } from "../units";
-import type { BlockProps } from "./block";
+import { startOf, type BlockProps } from "./block";
 
 /**
  * Words as the outline their letters make, one row of boxes each.
@@ -31,6 +31,7 @@ import type { BlockProps } from "./block";
  */
 export function WordShapes({ block, metrics }: BlockProps<"wordshapes">) {
   const columns = Math.max(1, Math.floor(block.columns));
+  const from = startOf(block.start);
 
   return (
     <ol
@@ -39,7 +40,7 @@ export function WordShapes({ block, metrics }: BlockProps<"wordshapes">) {
     >
       {block.words.map((shape, index) => (
         <li className="sheet__wordshape" key={`${index}-${shape.word}`}>
-          <span className="sheet__number">{index + 1}.</span>
+          <span className="sheet__number">{from + index}.</span>
           <span className="sheet__prompt">{shape.word}</span>
           <Boxes
             shape={shape}

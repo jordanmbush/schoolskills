@@ -1,12 +1,14 @@
 /**
  * Times tables, division, and the two written methods.
  *
- * Two of the controls below are shown conditionally, and neither is a nicety.
+ * Three of the controls below are shown conditionally, and none is a nicety.
  * "Written" has nothing to decide on a multiplication square or a long form —
- * one is a grid and the other is always stacked — and the digit pair means
- * nothing at all to a fact sheet, which draws from the tables instead. An
- * option that does nothing is worse than a missing one: it teaches a parent
- * that the panel doesn't do what it says.
+ * one is a grid and the other is always stacked — the digit pair means
+ * nothing at all to a fact sheet, which draws from the tables instead, and
+ * the work-space box does nothing on a long form, whose working goes inside
+ * the drawing: between the rule and the total, or in the squares under the
+ * bracket. An option that does nothing is worse than a missing one: it
+ * teaches a parent that the panel doesn't do what it says.
  */
 import { Checkbox, FieldSet, NumberStepper } from "@/components/ui/kit";
 import type {
@@ -16,7 +18,16 @@ import type {
   MultiplicationStyle,
 } from "@/engine/sheets/types";
 
-import { Choice, Pool, Sizing, Span, opt, type PanelProps } from "./parts";
+import {
+  Choice,
+  HELP_HINT,
+  HELP_LEVELS,
+  Pool,
+  Sizing,
+  Span,
+  opt,
+  type PanelProps,
+} from "./parts";
 
 const TABLES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 
@@ -120,18 +131,29 @@ export function MultiplicationPanel({
       />
 
       {long && config.operation !== "multiply" && (
+        <>
+          <Checkbox
+            label="Divisions may leave a remainder"
+            hint="Off unless asked for — a remainder is a different question, not a harder one."
+            checked={config.remainders === true}
+            onChange={(remainders) => set({ remainders })}
+          />
+          <Choice
+            label="Help under the bracket"
+            value={config.help ?? "none"}
+            onChange={(help) => set({ help })}
+            options={HELP_LEVELS}
+            hint={HELP_HINT}
+          />
+        </>
+      )}
+      {!long && (
         <Checkbox
-          label="Divisions may leave a remainder"
-          hint="Off unless asked for — a remainder is a different question, not a harder one."
-          checked={config.remainders === true}
-          onChange={(remainders) => set({ remainders })}
+          label="Work space under every problem"
+          checked={config.workspace === true}
+          onChange={(workspace) => set({ workspace })}
         />
       )}
-      <Checkbox
-        label="Work space under every problem"
-        checked={config.workspace === true}
-        onChange={(workspace) => set({ workspace })}
-      />
     </>
   );
 }

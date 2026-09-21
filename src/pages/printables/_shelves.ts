@@ -18,6 +18,7 @@ import { CURSIVE_SHEETS, hrefFor as cursiveHref } from "./_cursive";
 import { GRAMMAR_SHEETS, pathFor as grammarPath } from "./_grammar";
 import { HANDWRITING_SHEETS, hrefFor as handwritingHref } from "./_handwriting";
 import { MATHS_SHEETS, pathFor as mathsPath } from "./_maths";
+import { PENMANSHIP_SHEETS, hrefFor as penmanshipHref } from "./_penmanship";
 import { PHONICS_SHEETS, pathFor as phonicsPath } from "./_phonics";
 import { SPELLING_SHEETS, pathFor as spellingPath } from "./_spelling";
 import { TEMPLATE_SHEETS, pathFor as templatePath } from "./_templates";
@@ -27,6 +28,7 @@ export type ShelfId =
   | "math"
   | "handwriting"
   | "cursive"
+  | "penmanship"
   | "bible"
   | "spelling"
   | "grammar"
@@ -157,6 +159,18 @@ export const SHELVES: Shelf[] = [
     blurb:
       "The same progression again in a joined hand, including the page printing never needed — the joins themselves.",
     sheets: listing(CURSIVE_SHEETS, (sheet) => cursiveHref(sheet, letter)),
+  },
+  {
+    id: "penmanship",
+    label: "Penmanship",
+    href: "/printables/penmanship",
+    hub: true,
+    all: "All the penmanship sheets",
+    blurb:
+      "For the child who can form every letter and still hands in a page nobody can read: strokes, sizes, spaces, judging your own work, and the alphabet against the clock.",
+    sheets: listing(PENMANSHIP_SHEETS, (sheet) =>
+      penmanshipHref(sheet, letter),
+    ),
   },
   {
     id: "bible",

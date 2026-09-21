@@ -7,6 +7,7 @@
  * `layout.ts` only holds while the view honours a layout instead of
  * discovering one.
  */
+import type { Forms } from "@/engine/sheets/hands/hand";
 import type { Box } from "@/engine/sheets/layout";
 import type { SheetFont } from "@/engine/sheets/types";
 
@@ -34,6 +35,11 @@ export type SheetMetrics = {
    * decides what an unknown or missing face means (`faceOf`).
    */
   font?: SheetFont;
+  /**
+   * Which shape of each letter a tracing row writes, where the face has a hand
+   * (§25). Carried through like `font`, and absent for the same reason.
+   */
+  forms?: Forms;
   /** Print the answers that were computed when the sheet was built. */
   answers: boolean;
 };

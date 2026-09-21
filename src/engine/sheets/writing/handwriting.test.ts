@@ -27,15 +27,17 @@ import type {
 
 import { MAX_TEXT, copyworkSource } from "./copywork";
 import {
-  DEFAULT_HAND_RULE,
   HANDWRITING_SHEET,
-  MAX_REPEATS,
   fontOf,
   handwritingLayout,
   instructionOf,
+} from "./handwriting";
+import {
+  DEFAULT_HAND_RULE,
+  MAX_REPEATS,
   traceStyles,
   wrapPassage,
-} from "./handwriting";
+} from "./rows";
 import { JOIN_FAMILIES, joinPairs } from "./joins";
 
 /**
@@ -107,6 +109,7 @@ describeSheetFamily("handwriting", {
     { style: "joins", font: "cursive" },
     { style: "words", words: ["cat", "dog"] },
     { style: "passage", text: "One line." },
+    { style: "words", words: ["cat", "dog"], guides: "all" },
   ],
   keyed: () => false,
 });
@@ -166,6 +169,19 @@ describe("what goes on a handwriting sheet", () => {
     expect(lines.join(" ").replace(/\s+/g, " ")).toBe(
       text.replace(/\n/g, " ").replace(/\s+/g, " "),
     );
+  });
+
+  it("carries the guides choice on to every block, and nothing when it is the usual", () => {
+    const guidesOf = (over: Partial<HandwritingConfig>) =>
+      HANDWRITING_SHEET.build(config(over), 1).blocks.flatMap((block) =>
+        block.kind === "trace" ? [block.guides] : [],
+      );
+    expect(guidesOf({ style: "words", words: ["cat"] })).toEqual([undefined]);
+    expect(guidesOf({ style: "words", words: ["cat"], guides: "all" })) //
+      .toEqual(["all"]);
+    expect(
+      guidesOf({ style: "passage", text: "The dog ran.", guides: "none" }),
+    ).toEqual(["none"]);
   });
 
   it("puts a passage on lines that fit the width it was measured against", () => {

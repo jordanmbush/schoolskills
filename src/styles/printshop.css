@@ -97,10 +97,11 @@
   color: var(--chalk-soft);
 }
 
-/* ── Two controls that only exist on this screen ────────────────────────────
-   A range is two steppers with a word between them, and a pool is a wrapped
-   row of checkboxes. Both are compositions of kit primitives rather than new
-   controls, so all that is needed here is how they sit.                     */
+/* ── Three controls that only exist on this screen ──────────────────────────
+   A range is two steppers with a word between them, a pool is a wrapped row
+   of checkboxes, and the letter shapes are a column of pill rows. All three
+   are compositions of kit primitives rather than new controls, so all that is
+   needed here is how they sit.                                              */
 
 .span {
   display: flex;
@@ -118,6 +119,22 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--gap-1) var(--gap-3);
+}
+
+/* The letter shapes under Face: a letter, then the shapes it is taught in, one
+   row each. The letter is for the eye — the control's own label says it to a
+   screen reader, so it is hidden from one or the row would be named twice. */
+.shapes {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: var(--gap-1) var(--gap-2);
+}
+
+.shapes__letter {
+  font-family: var(--font-mono);
+  font-size: var(--step-0);
+  color: var(--chalk-soft);
 }
 
 /* ── The print bar ──────────────────────────────────────────────────────── */

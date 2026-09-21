@@ -33,6 +33,9 @@ import {
   PROBLEM_GAP,
   columnWidth,
   fitAcross,
+  paged,
+  problemPages,
+  wantedOf,
   type Box,
 } from "../layout";
 import { points } from "../paper";
@@ -69,7 +72,7 @@ const MAX_COLUMNS = 6;
 /** And more than this many columns of words is a page nobody can write on. */
 const MAX_WORD_COLUMNS = 4;
 
-/** Thirty lines joined across one page is a tangle rather than an exercise. */
+/** More than a dozen lines to join is a tangle rather than an exercise. */
 const MAX_MATCHES = 12;
 
 /**
@@ -249,6 +252,8 @@ export function phonicsLayout(config: PhonicsConfig): {
   columns: number;
   cell: Mil;
   row: Mil;
+  /** The air between one row and the next, as the page was divided by it. */
+  gap: Mil;
   perPage: number;
 } {
   // Against the header the sheet will print rather than the one the config
@@ -281,6 +286,7 @@ export function phonicsLayout(config: PhonicsConfig): {
     columns,
     cell: columnWidth(box, columns, PROBLEM_GAP.x),
     row,
+    gap,
     perPage: columns * fitAcross(box.height, row, gap),
   };
 }
@@ -306,9 +312,9 @@ export function phonicsSupply(config: PhonicsConfig): number {
     case "chart":
       return taughtSounds(inventory).length;
     case "matching":
-      // Rows, not spellings — `matchingOf` drops any it cannot pair without
+      // Rows, not spellings — `matchingPairs` drops any it cannot pair without
       // making the key ambiguous, and `th` is two sounds and one row.
-      return matchingOf(inventory, MAX_MATCHES, 0).left.length;
+      return matchingPairs(inventory, MAX_MATCHES, mulberry32(0)).length;
     case "families":
       return [...familiesOf(inventory).values()].reduce(
         (total, words) => total + words.length,
@@ -321,13 +327,15 @@ export function phonicsSupply(config: PhonicsConfig): number {
   }
 }
 
-/** How many items this sheet will hold: what was asked for, or what fits. */
-const wantedOf = (config: PhonicsConfig): number =>
-  clamp(
-    config.count ?? Number.MAX_SAFE_INTEGER,
-    0,
-    Math.min(phonicsLayout(config).perPage, phonicsSupply(config)),
-  );
+/**
+ * How many items this sheet draws: what was asked for, or all the style has
+ * to offer, and never more than that. Every style runs on to another page
+ * (§4).
+ */
+function phonicsWanted(config: PhonicsConfig, perPage: number): number {
+  const supply = phonicsSupply(config);
+  return Math.min(supply, wantedOf(config.count ?? supply, perPage));
+}
 
 /* ── What goes on it ───────────────────────────────────────────────────── */
 
@@ -434,14 +442,16 @@ function wordPool(config: PhonicsConfig, seed: number): Word[] {
  *
  * All of that costs rows, which is why `phonicsSupply` counts this style by
  * running the pairing rather than by counting the spellings it could draw from.
- * A page of nine where ten were asked for is the sheet being honest.
+ * A sheet of nine where ten were asked for is the sheet being honest.
+ *
+ * Exclusive across the whole draw rather than page by page: stricter than a
+ * page needs, and what lets the supply be counted before the page is cut.
  */
-function matchingOf(
+function matchingPairs(
   inventory: Inventory,
   count: number,
-  seed: number,
-): { left: string[]; right: string[]; answer: number[] } {
-  const rand = mulberry32(seed);
+  rand: () => number,
+): MatchingPair[] {
   // Fully decodable words only. `decodable` would let a sight word through —
   // `said` is readable by a child who was taught it whole — and a word on this
   // sheet is one whose spellings are being pointed at.
@@ -494,15 +504,29 @@ function matchingOf(
     pairs.push({ grapheme, word: word.word });
   }
 
-  // The right column is shuffled and the left is not, exactly as `study.ts`
-  // does it: a matching sheet whose columns line up is a sheet a child can
-  // answer with a ruler.
+  return pairs.map((pair) => ({
+    letters: graphemeText(pair.grapheme),
+    word: pair.word,
+  }));
+}
+
+/** A spelling as it prints down the left, and the word that answers it. */
+type MatchingPair = { letters: string; word: string };
+
+/**
+ * One page of pairs as a block. The right column is shuffled and the left is
+ * not, exactly as `study.ts` does it: a matching sheet whose columns line up
+ * is a sheet a child can answer with a ruler. Shuffled within the page, so
+ * every page is its own exercise.
+ */
+function matchingBlock(pairs: MatchingPair[], rand: () => number): Block {
   const right = shuffled(
     pairs.map((pair) => pair.word),
     rand,
   );
   return {
-    left: pairs.map((pair) => graphemeText(pair.grapheme)),
+    kind: "matching",
+    left: pairs.map((pair) => pair.letters),
     right,
     answer: pairs.map((pair) => right.indexOf(pair.word)),
   };
@@ -514,9 +538,9 @@ function bodyOf(
 ): { blocks: Block[]; outOf: number } {
   const inventory = inventoryOf(config);
   const marking = markingOf(config);
-  const { columns } = phonicsLayout(config);
+  const { columns, perPage } = phonicsLayout(config);
   const style = styleOf(config);
-  const wanted = wantedOf(config);
+  const wanted = phonicsWanted(config, perPage);
 
   if (CARDED.has(style)) {
     const cards =
@@ -535,24 +559,23 @@ function bodyOf(
             .slice(0, wanted)
             .map((entry) => cardOf(entry, marking));
     return {
-      blocks: [
-        {
-          kind: "cards",
-          columns,
-          cards,
-          bigEms: style === "sentences" ? STRIP_BIG_EMS : CARD_BIG_EMS,
-          boxed: style !== "chart",
-        },
-      ],
+      blocks: paged(cards, perPage, (page) => ({
+        kind: "cards",
+        columns,
+        cards: page,
+        bigEms: style === "sentences" ? STRIP_BIG_EMS : CARD_BIG_EMS,
+        boxed: style !== "chart",
+      })),
       outOf: 0,
     };
   }
 
   if (style === "matching") {
-    const block = matchingOf(inventory, wanted, seed);
+    const rand = mulberry32(seed);
+    const pairs = matchingPairs(inventory, wanted, rand);
     return {
-      blocks: [{ kind: "matching", ...block }],
-      outOf: block.left.length,
+      blocks: paged(pairs, perPage, (page) => matchingBlock(page, rand)),
+      outOf: pairs.length,
     };
   }
 
@@ -580,7 +603,7 @@ function bodyOf(
       }
     const items = pool.slice(0, wanted).map(familyOf);
     return {
-      blocks: [{ kind: "problems", columns, items }],
+      blocks: problemPages(items, columns, perPage),
       outOf: items.length,
     };
   }
@@ -589,7 +612,7 @@ function bodyOf(
     .slice(0, wanted)
     .map(style === "dictation" ? dictationOf : blendingOf);
   return {
-    blocks: [{ kind: "problems", columns, items }],
+    blocks: problemPages(items, columns, perPage),
     outOf: items.length,
   };
 }
@@ -662,7 +685,7 @@ function headerOf(config: PhonicsConfig): SheetOptions {
 function describePhonics(config: PhonicsConfig): string {
   const style = styleOf(config);
   const [one, many] = THINGS[style];
-  const asked = wantedOf(config);
+  const asked = phonicsWanted(config, phonicsLayout(config).perPage);
   const sounds = inventoryOf(config).sounds.length;
   return [
     TITLE[style],

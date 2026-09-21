@@ -30,6 +30,7 @@ import { between, mulberry32, shuffled } from "@/engine/random";
 
 import type {
   AlgebraStyle,
+  Block,
   GridMark,
   Mil,
   PreAlgebraConfig,
@@ -46,6 +47,8 @@ import {
   answerLine,
   columnWidth,
   fitAcross,
+  problemPages,
+  wantedOf,
   type Box,
 } from "../layout";
 import { inches } from "../paper";
@@ -609,9 +612,7 @@ export function preAlgebraProblems(
   seed: number,
 ): { items: Problem[]; marks: GridMark[] } {
   const { perPage, plane } = preAlgebraLayout(config);
-  // The count is a request, not a promise: a count that overruns is a second
-  // sheet out of the printer with two problems on it.
-  const wanted = clamp(config.count, 0, perPage);
+  const wanted = wantedOf(config.count, perPage);
 
   const rand = mulberry32(seed);
   // The points come first, before any problem is drawn, because they are what
@@ -735,9 +736,35 @@ function describePreAlgebra(config: PreAlgebraConfig): string {
   ].join(" — ");
 }
 
-function buildPreAlgebraSheet(config: PreAlgebraConfig, seed: number): Sheet {
+/**
+ * The problems cut into pages, and what the sheet is marked out of. On a
+ * graph sheet every page is the plane and then the questions about it, with
+ * the same six points on each: a pair on page two is a pair of those six,
+ * and a page that sent a child back to page one for them would not stand on
+ * its own (§4). One graph a page rather than one beside every problem,
+ * because a child reads the scale once and then uses it a dozen times.
+ */
+function preAlgebraPages(
+  config: PreAlgebraConfig,
+  seed: number,
+): { blocks: Block[]; outOf: number } {
+  const { columns, perPage, plane } = preAlgebraLayout(config);
   const { items, marks } = preAlgebraProblems(config, seed);
-  const { columns, plane } = preAlgebraLayout(config);
+  const pages = problemPages(items, columns, perPage);
+  return {
+    blocks: plane
+      ? pages.flatMap((block): Block[] =>
+          block.kind === "problems"
+            ? [{ kind: "grid", grid: { ...plane.grid, marks } }, block]
+            : [block],
+        )
+      : pages,
+    outOf: items.length,
+  };
+}
+
+function buildPreAlgebraSheet(config: PreAlgebraConfig, seed: number): Sheet {
+  const { blocks, outOf } = preAlgebraPages(config, seed);
   const head = headerOf(config);
 
   return {
@@ -747,17 +774,9 @@ function buildPreAlgebraSheet(config: PreAlgebraConfig, seed: number): Sheet {
       title: head.title ?? "",
       instructions: head.instructions,
       fields: head.fields,
-      score: { outOf: items.length },
+      score: { outOf },
     },
-    blocks: [
-      // The plane, then the questions about it — one graph for the sheet rather
-      // than one beside every problem, because a child reads the scale once and
-      // then uses it a dozen times.
-      ...(plane
-        ? [{ kind: "grid" as const, grid: { ...plane.grid, marks } }]
-        : []),
-      { kind: "problems", columns, items },
-    ],
+    blocks,
     footer: { credit: SHEET_CREDIT, url: SHEET_URL, seed },
     answers: false,
   };

@@ -1,4 +1,4 @@
-import type { BlockProps } from "./block";
+import { startOf, type BlockProps } from "./block";
 
 /** A, B, C … and then numbers, so a long list never runs out of labels. */
 const label = (index: number): string =>
@@ -13,12 +13,13 @@ const label = (index: number): string =>
  * that used one would print identical to the sheet it answers.
  */
 export function Choice({ block, metrics }: BlockProps<"choice">) {
+  const from = startOf(block.start);
   return (
     <ol className="sheet__questions">
       {block.questions.map((question, index) => (
         <li className="sheet__question" key={`${index}-${question.prompt}`}>
           <p className="sheet__ask">
-            <span className="sheet__number">{index + 1}.</span>
+            <span className="sheet__number">{from + index}.</span>
             {question.prompt}
           </p>
           <ol className="sheet__options">

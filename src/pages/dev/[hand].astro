@@ -1,0 +1,237 @@
+---
+import Content from "@/layouts/Content.astro";
+import type { SheetMetrics } from "@/components/sheet/metrics";
+import { TracedRow } from "@/components/sheet/Traced";
+import { inch, pt } from "@/components/sheet/units";
+import { WrittenRow, type WrittenCell } from "@/components/sheet/Written";
+import { CURSIVE } from "@/engine/sheets/hands/cursive";
+import { CURSIVE_MODERN } from "@/engine/sheets/hands/cursive-modern";
+import { CURSIVE_UK } from "@/engine/sheets/hands/cursive-uk";
+import {
+  formsOf,
+  joinsIn,
+  type Forms,
+  type Hand,
+} from "@/engine/sheets/hands/hand";
+import { PRINT } from "@/engine/sheets/hands/print";
+import { joinPairs } from "@/engine/sheets/writing/joins";
+import { contentBox } from "@/engine/sheets/layout";
+import { DEFAULT_PAPER, marginOf, pageSize } from "@/engine/sheets/paper";
+import type { Rule, SheetFont, TraceStyle } from "@/engine/sheets/types";
+import "@/styles/sheet.css";
+
+/**
+ * The specimen of a hand: every glyph it has, in every form and every style,
+ * on every ruling, with the outline face's dotted row under it for the eye
+ * to compare (docs/printables.md §25). A hand that joins shows the joins
+ * sheet's pairs as well, since a join is only right in the company of its
+ * two letters.
+ *
+ * A development page and nothing else. It exists so a letter can be judged
+ * on the paper it will print on before the next one is drawn, and a
+ * production build has no paths for it, so it is never a route, never in the
+ * sitemap and never crawled.
+ */
+const HANDS: Record<string, { hand: Hand; font: SheetFont }> = {
+  print: { hand: PRINT, font: "print" },
+  cursive: { hand: CURSIVE, font: "cursive" },
+  "cursive-modern": { hand: CURSIVE_MODERN, font: "cursive-modern" },
+  "cursive-uk": { hand: CURSIVE_UK, font: "cursive-uk" },
+};
+
+// Astro runs this apart from the rest of the frontmatter, so the ids are
+// spelt out here rather than read off the table above.
+export function getStaticPaths() {
+  return import.meta.env.PROD
+    ? []
+    : ["print", "cursive", "cursive-modern", "cursive-uk"].map((hand) => ({
+        params: { hand },
+      }));
+}
+
+const { hand, font } = HANDS[Astro.params.hand ?? "print"];
+const page = pageSize(DEFAULT_PAPER);
+const metrics: SheetMetrics = {
+  box: contentBox(DEFAULT_PAPER),
+  fontPt: 12,
+  font,
+  answers: false,
+};
+
+const rules: Array<{ label: string; rule: Rule }> = [
+  {
+    label: "¾ inch, with a tail space",
+    rule: { style: "hand-3-4", midline: "dashed", descender: true },
+  },
+  {
+    label: "⅝ inch, with a tail space",
+    rule: { style: "hand-5-8", midline: "dashed", descender: true },
+  },
+  {
+    label: "½ inch, with a tail space",
+    rule: { style: "hand-1-2", midline: "dashed", descender: true },
+  },
+  {
+    label: "⅜ inch, no tail space",
+    rule: { style: "hand-3-8", midline: "dashed" },
+  },
+  { label: "Wide ruled", rule: { style: "wide" } },
+];
+
+const letters = Object.keys(hand.glyphs);
+const styles: TraceStyle[] = ["solid", "dim", "hollow", "dotted", "dashed"];
+
+/** One row per form of a letter, the hand's own first. */
+const rows: Array<{ text: string; label: string; forms: Forms }> =
+  letters.flatMap((letter) => {
+    const forms = formsOf(hand, letter);
+    return forms.length === 0
+      ? [{ text: letter, label: letter, forms: {} }]
+      : forms.map((form) => ({
+          text: letter,
+          label: `${letter}.${form}`,
+          forms: { [letter]: form },
+        }));
+  });
+
+/**
+ * The words twice: as the hand writes them, and with every letter that has
+ * another form switched to it, which is the layout's stress test on shapes
+ * the other row never shows.
+ */
+const others: Forms = Object.fromEntries(
+  letters.flatMap((letter) => {
+    const [, other] = formsOf(hand, letter);
+    return other === undefined ? [] : [[letter, other]];
+  }),
+);
+const joins = Object.values(hand.glyphs).some(joinsIn);
+const words = joins
+  ? ["gate", "tale", "minimum", "quiz", "Monday", "Zebra"]
+  : ["gate", "tale"];
+const wordRows: Array<{ forms: Forms }> = [{ forms: {} }, { forms: others }];
+
+const sixes = (pairs: string[]): string[][] =>
+  Array.from({ length: Math.ceil(pairs.length / 6) }, (_, row) =>
+    pairs.slice(row * 6, row * 6 + 6),
+  );
+
+/**
+ * The joins sheet's pairs and then every capital with its small letter,
+ * six to a row, for a hand that joins: the join out of a capital, or the
+ * lift after one, is only right in the company of both.
+ */
+const pairRows: string[][] = joins
+  ? [
+      ...sixes(joinPairs()),
+      ...sixes(
+        letters
+          .filter((letter) => /[A-Z]/.test(letter))
+          .map((letter) => `${letter}${letter.toLowerCase()}`),
+      ),
+    ]
+  : [];
+
+const letterRow = (text: string): WrittenCell[] => [
+  ...styles.map((style) => ({ text, style, guides: style === "solid" })),
+  { text: "", style: "none" as const },
+];
+
+// Three to a row, because a guided model is set wide and needs the room.
+const wordRow = (text: string): WrittenCell[] => [
+  { text, style: "solid", guides: true },
+  { text, style: "dotted" },
+  { text: "", style: "none" },
+];
+---
+
+<Content
+  title={`Specimen: ${hand.name}`}
+  description="Every glyph of a hand in every style on every ruling."
+  world="paper"
+  noindex
+>
+  <header class="hero wrap no-print">
+    <p class="hero__eyebrow">
+      <span class="hero__world">The Print Shop</span>
+      Specimen
+    </p>
+    <h1 class="hero__title">{hand.name}</h1>
+    <p class="hero__lead">
+      {letters.length} glyph{letters.length === 1 ? "" : "s"}: {
+        rows.map((row) => row.label).join(" ")
+      }. Each row is one letter in one form, in the five drawn styles and an
+      empty place; the model carries its start dots, arrows and stroke numbers.
+      The words come as the hand writes them and then in the other forms,
+      {joins ? "then the joins sheet's pairs, " : ""}and under them the same
+      words in the outline face, dotted, for comparison.
+    </p>
+  </header>
+
+  <div class="sheet-frame">
+    <article
+      class="sheet"
+      data-font={font}
+      style={`--sheet-w:${inch(page.width)};--sheet-h:auto;--sheet-margin:${inch(marginOf(DEFAULT_PAPER))};--sheet-pt:${pt(12)}`}
+    >
+      {
+        rules.map(({ label, rule }) => (
+          <div class="specimen">
+            <h2 class="specimen__label">{label}</h2>
+            {rows.map((row) => (
+              <WrittenRow
+                rule={rule}
+                metrics={metrics}
+                hand={hand}
+                cells={letterRow(row.text)}
+                forms={row.forms}
+              />
+            ))}
+            {wordRows.map(({ forms }) =>
+              words.map((word) => (
+                <WrittenRow
+                  rule={rule}
+                  metrics={metrics}
+                  hand={hand}
+                  cells={wordRow(word)}
+                  forms={forms}
+                />
+              )),
+            )}
+            {pairRows.map((pairs) => (
+              <WrittenRow
+                rule={rule}
+                metrics={metrics}
+                hand={hand}
+                cells={pairs.map((text) => ({
+                  text,
+                  style: "solid" as const,
+                  guides: true,
+                }))}
+              />
+            ))}
+            <TracedRow
+              rule={rule}
+              metrics={metrics}
+              cells={[
+                ...words.map((text) => ({ text, style: "solid" as const })),
+                ...words.map((text) => ({ text, style: "dotted" as const })),
+                { text: "", style: "none" as const },
+              ]}
+            />
+          </div>
+        ))
+      }
+    </article>
+  </div>
+</Content>
+
+<style>
+  .specimen {
+    margin-bottom: 0.4in;
+  }
+  .specimen__label {
+    font: 600 11pt var(--font-body, system-ui, sans-serif);
+    margin: 0 0 0.1in;
+  }
+</style>

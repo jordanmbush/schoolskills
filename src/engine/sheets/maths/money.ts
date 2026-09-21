@@ -40,6 +40,8 @@ import {
   answerLine,
   columnWidth,
   fitAcross,
+  problemPages,
+  wantedOf,
   type Box,
 } from "../layout";
 import { inches, own, points } from "../paper";
@@ -266,17 +268,12 @@ export function moneyLayout(config: MoneyConfig): {
   };
 }
 
-/**
- * Every problem on the sheet, in the order they are printed.
- *
- * Exported because it is the whole of what a test has to check.
- */
-export function moneyProblems(config: MoneyConfig, seed: number): Problem[] {
-  const { perPage } = moneyLayout(config);
-  // The count is a request, not a promise: a count that overruns is a second
-  // sheet out of the printer with two problems on it.
-  const wanted = clamp(config.count, 0, perPage);
-
+/** Up to `wanted` problems, in the order they are printed. */
+function drawProblems(
+  config: MoneyConfig,
+  seed: number,
+  wanted: number,
+): Problem[] {
   const rand = mulberry32(seed);
   const seen = new Set<string>();
   const problems: Problem[] = [];
@@ -367,8 +364,8 @@ function describeMoney(config: MoneyConfig): string {
 }
 
 function buildMoneySheet(config: MoneyConfig, seed: number): Sheet {
-  const items = moneyProblems(config, seed);
-  const { columns } = moneyLayout(config);
+  const { columns, perPage } = moneyLayout(config);
+  const items = drawProblems(config, seed, wantedOf(config.count, perPage));
   const head = headerOf(config);
 
   return {
@@ -380,7 +377,7 @@ function buildMoneySheet(config: MoneyConfig, seed: number): Sheet {
       fields: head.fields,
       score: { outOf: items.length },
     },
-    blocks: [{ kind: "problems", columns, items }],
+    blocks: problemPages(items, columns, perPage),
     footer: { credit: SHEET_CREDIT, url: SHEET_URL, seed },
     answers: false,
   };

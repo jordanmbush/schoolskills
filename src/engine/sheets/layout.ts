@@ -13,7 +13,7 @@
  * silent: a sheet that looks right on screen and prints its bottom row on a
  * second sheet of paper.
  */
-import type { Mil, Paper, Rule } from "./types";
+import type { Block, Mil, Paper, Problem, Rule } from "./types";
 
 import {
   inches,
@@ -40,6 +40,23 @@ export type Box = { x: Mil; y: Mil; width: Mil; height: Mil };
  */
 export const answerLine = (fontPt: number): Mil =>
   Math.max(inches(0.25), points(fontPt * 1.35));
+
+/**
+ * How wide a figure is, in ems of the body type. A tabular figure in the face
+ * a sheet prints in is about six tenths of an em, and a comma and a space are
+ * narrower, so a line reserved by this is wider than the line it holds.
+ */
+export const DIGIT_EM = 0.6;
+
+/**
+ * The room a problem's number takes in front of it: two digits and a full
+ * stop at the body size, `.sheet__number`'s margin, and the gap
+ * `.sheet__problem` puts after it. What a family adds to a drawing's own width
+ * before asking how many columns of it fit — a bracket exactly as wide as its
+ * column would print its number on the line above.
+ */
+export const numberRoom = (fontPt: number): Mil =>
+  points(fontPt * DIGIT_EM * 3) + inches(0.12);
 
 /**
  * The air between one problem and the next, down and across.
@@ -79,6 +96,36 @@ export const LIST_GAP: Mil = inches(0.16);
  * two dots, and room to read the words either side of it.
  */
 export const MATCH_ROW_EMS = 2.4;
+
+/**
+ * How tall one line of a note stands, in ems of its type — the sheet's own
+ * `line-height`, which `.sheet__panel` inherits rather than restates.
+ */
+export const NOTE_LINE_EMS = 1.35;
+
+/**
+ * The share of the body size an aside is set at — the sentence for the
+ * grown-up at the foot of a lesson, `.sheet__panel--aside` in sheet.css.
+ */
+export const ASIDE_EM = 0.85;
+
+/** The air inside a note's border, each side — `.sheet__panel`'s padding. */
+export const NOTE_PAD: Mil = inches(0.08);
+
+/** The border itself, top and bottom. */
+export const NOTE_RULE: Mil = points(0.75);
+
+/**
+ * How tall a note of `lines` lines stands, border and all, at the size its
+ * type is set — the body size, or `ASIDE_EM` of it.
+ *
+ * `Note.tsx` draws the box exactly this tall and a lesson reserves exactly
+ * this. A short estimate shows as text over the border; a box that grew would
+ * push the last block onto page two (§23).
+ */
+export const noteHeight = (lines: number, pt: number): Mil =>
+  Math.round(Math.max(1, lines) * points(pt * NOTE_LINE_EMS)) +
+  2 * (NOTE_PAD + NOTE_RULE);
 
 /**
  * The air between one block and the next.
@@ -150,11 +197,66 @@ export function columnWidth(box: Box, columns: number, gap: Mil = 0): Mil {
   return Math.max(0, Math.floor((box.width - gap * (columns - 1)) / columns));
 }
 
-/** Pages needed for a run of items, at a given capacity. Never divides by zero. */
-export function pageCount(items: number, perPage: number): number {
-  if (items <= 0) return 0;
-  if (perPage <= 0) return 1;
-  return Math.ceil(items / perPage);
+/**
+ * The most problems a sheet is asked for: the top of the builder's stepper,
+ * and the ceiling on a count from outside this build. A config in a
+ * bookmarked URL may ask for a million, and a family that drew them would
+ * hang the page before it printed one.
+ */
+export const MAX_COUNT = 200;
+
+/** How many were asked for: whole, never negative, never past `MAX_COUNT`. */
+export function countOf(count: number): number {
+  return Math.max(0, Math.min(MAX_COUNT, Math.floor(count) || 0));
+}
+
+/**
+ * How many problems a family draws for the count it was given. The count is
+ * not cut to the page — what does not fit runs on (§4) — with one exception:
+ * when not even one row fits at this type size, nothing is drawn at all,
+ * because no number of pages would mend a row taller than the paper.
+ */
+export function wantedOf(count: number, perPage: number): number {
+  return perPage <= 0 ? 0 : countOf(count);
+}
+
+/**
+ * A list cut into pages: one block a page and a `break` between, never fewer
+ * than one block, so a sheet with nothing on it still has a block to be
+ * empty in. `perPage` is the family's own arithmetic, never a measurement,
+ * and a page holds at least one item however small the number handed in — a
+ * family with nothing that fits draws nothing rather than handing a list
+ * here (§4).
+ */
+export function paged<T>(
+  items: T[],
+  perPage: number,
+  block: (page: T[], from: number) => Block,
+): Block[] {
+  const take = Math.max(1, Math.floor(perPage) || 1);
+  const blocks: Block[] = [];
+  for (let from = 0; from < items.length; from += take) {
+    if (from > 0) blocks.push({ kind: "break" });
+    blocks.push(block(items.slice(from, from + take), from));
+  }
+  return blocks.length > 0 ? blocks : [block([], 0)];
+}
+
+/**
+ * Problems a page at a time, numbered on from where the page before left
+ * off, so a child told to do 14 to 20 finds them on page two.
+ */
+export function problemPages(
+  items: Problem[],
+  columns: number,
+  perPage: number,
+): Block[] {
+  return paged(items, perPage, (page, from) => ({
+    kind: "problems",
+    columns,
+    items: page,
+    ...(from > 0 ? { start: from + 1 } : {}),
+  }));
 }
 
 /** How many whole repeats of a ruling fit in a height. Never more than fit. */

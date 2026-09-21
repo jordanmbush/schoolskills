@@ -17,15 +17,32 @@ import {
   LABEL_SIZE,
   LINE_INSET,
   NUMBER_LINE_HEIGHT,
+  jumps,
+  lineHeight,
   ticks,
 } from "@/engine/sheets/numberline";
 import type { NumberLine } from "@/engine/sheets/types";
 
 import { RULE, inch } from "./units";
 
-/** The axis, and how far the ticks stand out either side of it. */
+/**
+ * The axis, and how far the ticks stand out either side of it. Measured from
+ * the top of a plain line; a line with hops on it stands `JUMP_ROOM` taller
+ * and everything below moves down by the difference, so the hops have the
+ * room above the axis and the ticks keep exactly the drawing they had.
+ */
 const AXIS = 120;
 const TICK = 32;
+
+/**
+ * How high a hop's arc rises over the axis, and how far its label's baseline
+ * sits over that. The label's top then lands inside `JUMP_ROOM`, which is
+ * what the engine reserved.
+ */
+const RISE = 150;
+const LABEL_LIFT = 25;
+/** The arrowhead where a hop lands: this tall, and this wide at the base. */
+const HEAD = { tall: 55, wide: 30 };
 
 /**
  * How far a tick with no number under it stands out, as a share of one that
@@ -58,13 +75,17 @@ export function NumberLineView({ line }: { line: NumberLine }) {
   // them under a sum, and as many as fit on a reference line.
   const every = Math.max(1, line.label ?? 1);
   const minor = Math.round(TICK * MINOR);
+  const height = lineHeight(line);
+  const down = height - NUMBER_LINE_HEIGHT;
+  const axis = AXIS + down;
+  const hops = jumps(line);
 
   return (
     <svg
       className="sheet__ink sheet__number-line"
       width={inch(line.width)}
-      height={inch(NUMBER_LINE_HEIGHT)}
-      viewBox={`0 0 ${line.width} ${NUMBER_LINE_HEIGHT}`}
+      height={inch(height)}
+      viewBox={`0 0 ${line.width} ${height}`}
     >
       {/* Named rather than `role="img"` + `aria-label`, the same call `Grid`
           makes: the numbers along it are readable content, and collapsing
@@ -75,8 +96,8 @@ export function NumberLineView({ line }: { line: NumberLine }) {
         className="sheet__rule sheet__rule--axis"
         x1={LINE_INSET}
         x2={line.width - LINE_INSET}
-        y1={AXIS}
-        y2={AXIS}
+        y1={axis}
+        y2={axis}
         strokeWidth={RULE}
       />
       {marks.map((value, index) => {
@@ -88,21 +109,51 @@ export function NumberLineView({ line }: { line: NumberLine }) {
               className="sheet__rule"
               x1={at(value)}
               x2={at(value)}
-              y1={AXIS - out}
-              y2={AXIS + out}
+              y1={axis - out}
+              y2={axis + out}
               strokeWidth={RULE}
             />
             {numbered && (
               <text
                 className="sheet__tick"
                 x={at(value)}
-                y={LABEL}
+                y={LABEL + down}
                 fontSize={LABEL_SIZE}
                 textAnchor="middle"
               >
                 {value}
               </text>
             )}
+          </g>
+        );
+      })}
+      {hops.map((hop) => {
+        const from = at(hop.from);
+        const to = at(hop.to);
+        const middle = Math.round((from + to) / 2);
+        return (
+          <g className="sheet__jump" key={hop.from}>
+            {/* A quadratic curve's apex is half the control point's height, so
+                the control sits twice `RISE` up to put the top of the arc
+                where the label expects it. */}
+            <path
+              className="sheet__rule"
+              d={`M ${from} ${axis} Q ${middle} ${axis - 2 * RISE} ${to} ${axis}`}
+              strokeWidth={RULE}
+            />
+            <path
+              className="sheet__dot"
+              d={`M ${to} ${axis} l ${-HEAD.wide} ${-HEAD.tall} l ${2 * HEAD.wide} 0 z`}
+            />
+            <text
+              className="sheet__tick"
+              x={middle}
+              y={axis - RISE - LABEL_LIFT}
+              fontSize={LABEL_SIZE}
+              textAnchor="middle"
+            >
+              {`−${hop.from - hop.to}`}
+            </text>
           </g>
         );
       })}

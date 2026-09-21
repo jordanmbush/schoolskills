@@ -15,9 +15,11 @@
  * the top and entered there, so a child who joins into them the ordinary way
  * writes `oi` where they meant `oa`.
  *
- * Every pair below is two ordinary characters, and which of them a hand
- * actually joins is the font's answer rather than this file's (§6) — which is
- * what makes `breaks` an honest group rather than a claim.
+ * Every pair below is two ordinary characters, and which of them actually
+ * join is the model's answer rather than this file's — the font's `calt`
+ * table on an outline row (§6), the hand's own drawings on a written one
+ * (§25), where a letter with no exit stroke is a letter the pencil lifts
+ * after. That is what makes `breaks` an honest group rather than a claim.
  *
  * Kept out of `handwriting.ts` so the catalog and the builder can name a family
  * without pulling in the family that builds sheets.

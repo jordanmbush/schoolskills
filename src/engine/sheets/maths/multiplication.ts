@@ -30,6 +30,7 @@ import { mulberry32 } from "@/engine/random";
 import type {
   Block,
   GridSpec,
+  LongDigits,
   Mil,
   MultiplicationConfig,
   MultiplicationOperation,
@@ -38,18 +39,30 @@ import type {
   SheetOptions,
 } from "../types";
 
-import { sheetBlockBox } from "../chrome";
-import { PROBLEM_GAP, columnWidth, fitAcross, type Box } from "../layout";
+import { pagesUnder, sheetBlockBox, shortfall, shortfallPart } from "../chrome";
+import {
+  PROBLEM_GAP,
+  answerLine,
+  columnWidth,
+  countOf,
+  fitAcross,
+  numberRoom,
+  type Box,
+} from "../layout";
 import { inches, points } from "../paper";
 import { SHEET_CREDIT, SHEET_WORLD, gameUrl, type SheetSpec } from "../spec";
 import {
-  BRACKET_EMS,
+  HELP_NAME,
   STACK_EMS,
+  bracketHeight,
+  bracketWidth,
+  divisionHelp,
   drawLong,
   longDigits,
   longKey,
   longProblem,
   longRow,
+  operationOf,
 } from "./long";
 
 /* ── What a problem takes on the page ─────────────────────────────────────
@@ -194,7 +207,7 @@ type Fact = {
  * one anyway would shift every subsequent problem, and every seed a parent had
  * already printed would produce a different sheet.
  */
-function operationOf(
+function chosenOperation(
   operation: MultiplicationOperation,
   rand: () => number,
 ): "multiply" | "divide" {
@@ -293,7 +306,16 @@ function problemOf(
         }
       : {
           prompt: "",
-          bracket: { divisor: String(right), dividend: String(left) },
+          bracket: {
+            divisor: String(right),
+            dividend: String(left),
+            cell: answerLine(config.fontPt),
+            // No working under a fact: the bracket is the quotient row over
+            // the dividend and nothing else, and blank paper, if asked for,
+            // is `extras` like everywhere else.
+            rows: 0,
+            help: "none",
+          },
           answer: String(result),
           factId,
           ...extras,
@@ -313,34 +335,102 @@ function problemOf(
 const clamp = (value: number, low: number, high: number): number =>
   Math.max(low, Math.min(high, Math.floor(value)));
 
+const askedOf = (config: MultiplicationConfig): number => countOf(config.count);
+
 /** How tall one problem stands, working space and all. */
 function rowHeight(config: MultiplicationConfig): Mil {
   if (config.style === "long") return longRow(config, config.fontPt);
 
   const worked = config.style === "standard" && config.form === "vertical";
-  // A mixed sheet reserves for the taller of the two drawings, because the row
-  // height is one number for the whole grid of them.
-  const ems = !worked
-    ? ROW_EMS.horizontal
-    : config.operation === "divide"
-      ? BRACKET_EMS
-      : STACK_EMS;
-  return points(config.fontPt * ems) + (config.workspace ? WORKSPACE : 0);
+  const extra = config.workspace ? WORKSPACE : 0;
+  if (!worked) return points(config.fontPt * ROW_EMS.horizontal) + extra;
+
+  const stack = points(config.fontPt * STACK_EMS);
+  const bracket = bracketHeight(config.fontPt);
+  const operation = operationOf(config);
+  switch (operation) {
+    case "multiply":
+      return stack + extra;
+    case "divide":
+      return bracket + extra;
+    // A mixed sheet reserves for the taller of the two drawings, because the
+    // row height is one number for the whole grid of them.
+    case "both":
+      return Math.max(stack, bracket) + extra;
+    default: {
+      const unknown: never = operation;
+      return unknown;
+    }
+  }
 }
 
-/** How many problems the paper holds, and how wide a column of them is (§4). */
-export function multiplicationLayout(config: MultiplicationConfig): {
+/**
+ * The most digits a fact-sheet bracket can have on either side of the
+ * upright: the largest product under the bar and the largest table in the
+ * gutter, from the pool or the named facts, whichever the sheet draws from.
+ */
+function factDigits(config: MultiplicationConfig): LongDigits {
+  const named = namedFacts(config);
+  const { divide: tables, factors } = poolOf(config);
+  const table = Math.max(
+    1,
+    ...(named.length > 0 ? named.map(([picked]) => picked) : tables),
+  );
+  const product =
+    named.length > 0
+      ? Math.max(1, ...named.map(([picked, factor]) => picked * factor))
+      : table * Math.max(1, ...factors);
+  return { into: String(product).length, by: String(table).length };
+}
+
+/**
+ * How wide the widest bracket on the sheet stands, or `null` when nothing is
+ * set in one — the width the columns are cut to (§21).
+ */
+function widestBracket(config: MultiplicationConfig): Mil | null {
+  if (operationOf(config) === "multiply") return null;
+  if (config.style === "long") {
+    return bracketWidth(
+      longDigits(config),
+      config.fontPt,
+      config.remainders === true,
+    );
+  }
+  if (config.style === "standard" && config.form === "vertical") {
+    return bracketWidth(factDigits(config), config.fontPt);
+  }
+  return null;
+}
+
+type Layout = {
   box: Box;
   columns: number;
   cell: Mil;
   row: Mil;
   perPage: number;
-} {
-  // Against the header the sheet will print, not the one the config holds, and
+};
+
+/** The layout under a given header — the printed one, which may carry a sentence the config's does not. */
+function layoutOf(config: MultiplicationConfig, header: SheetOptions): Layout {
   // `true` for the score box because a sheet of problems is marked out of them.
-  const box = sheetBlockBox(headerOf(config), true);
+  const box = sheetBlockBox(header, true);
   const most = config.style === "long" ? MAX_LONG_COLUMNS : MAX_COLUMNS;
-  const columns = clamp(config.columns, 1, most);
+  const widest = widestBracket(config);
+  const fit =
+    widest === null
+      ? most
+      : Math.max(
+          1,
+          Math.min(
+            most,
+            fitAcross(
+              box.width,
+              widest + numberRoom(config.fontPt),
+              PROBLEM_GAP.x,
+            ),
+          ),
+        );
+  const columns = clamp(config.columns, 1, fit);
   const row = rowHeight(config);
   return {
     box,
@@ -351,28 +441,46 @@ export function multiplicationLayout(config: MultiplicationConfig): {
   };
 }
 
+/** How many problems the paper holds, and how wide a column of them is (§4). */
+export function multiplicationLayout(config: MultiplicationConfig): Layout {
+  return layoutOf(config, headerOf(config));
+}
+
 /**
- * Every problem on the sheet, in the order they are printed.
- *
- * Exported because it is the whole of what a test has to check. A grid has
- * none — it is one block with the answers inside it — so this is empty there.
+ * The problems, paged, and the header they print under. A count is a
+ * request, not a promise: the draw makes what it can, the instruction line
+ * says when that is short, and what one page has no room for runs on to the
+ * next rather than being cut (§4).
  */
-export function multiplicationProblems(
+function multiplicationPages(
   config: MultiplicationConfig,
   seed: number,
+): { blocks: Block[]; header: SheetOptions; count: number } {
+  return pagesUnder(
+    askedOf(config),
+    (wanted) => drawProblems(config, seed, wanted),
+    (note) => headerOf(config, note),
+    (header) => layoutOf(config, header),
+  );
+}
+
+/**
+ * Up to `wanted` problems, in the order they are printed. A grid has none —
+ * it is one block with the answers inside it — so this is empty there.
+ */
+function drawProblems(
+  config: MultiplicationConfig,
+  seed: number,
+  wanted: number,
 ): Problem[] {
   if (config.style === "grid") return [];
-
-  const { perPage } = multiplicationLayout(config);
-  // The count is a request, not a promise: a count that overruns is a second
-  // sheet out of the printer with two problems on it.
-  const wanted = clamp(config.count, 0, perPage);
 
   const rand = mulberry32(seed);
   const pool = poolOf(config);
   const seen = new Set<string>();
   const problems: Problem[] = [];
   const extras = config.workspace ? { workspace: WORKSPACE } : {};
+  const operation = operationOf(config);
 
   // The list arrives ranked worst-first and already folded onto one entry per
   // fact, so there is nothing left to shuffle or reject — and it runs out where
@@ -380,13 +488,12 @@ export function multiplicationProblems(
   const named = namedFacts(config);
   if (named.length > 0) {
     for (const [table, factor] of named.slice(0, wanted)) {
-      const asked = operationOf(config.operation, rand);
-      // Nothing is divided by zero, here or anywhere (§20). A zero fact can
-      // only be asked as a multiplication, so that is how it is asked.
-      const operation = asked === "divide" && table === 0 ? "multiply" : asked;
+      const way = chosenOperation(operation, rand);
       const slot = rand() < 0.5 ? 0 : 1;
       const fact: Fact = {
-        operation,
+        // Nothing is divided by zero, here or anywhere (§20). A zero fact can
+        // only be asked as a multiplication, so that is how it is asked.
+        operation: way === "divide" && table === 0 ? "multiply" : way,
         table,
         factor,
         product: table * factor,
@@ -398,9 +505,9 @@ export function multiplicationProblems(
 
   let misses = 0;
   while (problems.length < wanted && misses < MISS_BUDGET) {
-    const operation = operationOf(config.operation, rand);
+    const chosen = chosenOperation(operation, rand);
     if (config.style === "long") {
-      const form = drawLong(config, operation, rand);
+      const form = drawLong(config, chosen, rand);
       const key = form === null ? null : longKey(form);
       if (form === null || key === null || seen.has(key)) {
         misses += 1;
@@ -412,7 +519,7 @@ export function multiplicationProblems(
       continue;
     }
 
-    const fact = drawFact(config, pool, operation, rand);
+    const fact = drawFact(config, pool, chosen, rand);
     // Which side of a missing-number problem is blank. Drawn whatever the fact
     // style, so that switching between standard and missing does not reshuffle
     // every other problem on a sheet built from the same seed. The long forms
@@ -519,14 +626,15 @@ const MIXED_NAME = {
 
 /** "The 7 times table" — the phrase a parent says, and the one they search. */
 function titleOf(config: MultiplicationConfig): string {
+  const operation = operationOf(config);
   if (config.style === "long") {
     // The remainder switch is in the title rather than only in the catalog
     // line, because it changes what the sheet *is*: a child who has not been
     // taught remainders and meets one has been set an impossible problem.
-    const divides = config.operation !== "multiply";
+    const divides = operation !== "multiply";
     return divides && config.remainders
-      ? `${LONG_NAME[config.operation]} with remainders`
-      : LONG_NAME[config.operation];
+      ? `${LONG_NAME[operation]} with remainders`
+      : LONG_NAME[operation];
   }
 
   const top = topOf(config);
@@ -535,19 +643,22 @@ function titleOf(config: MultiplicationConfig): string {
   // A sheet of named facts is not "the 7 times table" and not "multiplication
   // to 12" either — it is whatever the record book handed over, and a title
   // claiming a pool it never drew from would be the one untrue line on it.
-  if (namedFacts(config).length > 0)
-    return `${MIXED_NAME[config.operation]} practice`;
+  if (namedFacts(config).length > 0) return `${MIXED_NAME[operation]} practice`;
 
   const tables = poolOf(config).multiply;
-  if (tables.length !== 1) return `${MIXED_NAME[config.operation]} to ${top}`;
+  if (tables.length !== 1) return `${MIXED_NAME[operation]} to ${top}`;
   const [table] = tables;
-  switch (config.operation) {
+  switch (operation) {
     case "multiply":
       return `The ${table} times table`;
     case "divide":
       return `Dividing by ${table}`;
-    default:
+    case "both":
       return `The ${table} times table, both ways`;
+    default: {
+      const unknown: never = operation;
+      return unknown;
+    }
   }
 }
 
@@ -558,7 +669,7 @@ function instructionOf(config: MultiplicationConfig): string {
     case "grid":
       return "Write each product in the square where its row meets its column.";
     case "long":
-      return config.remainders && config.operation !== "multiply"
+      return config.remainders && operationOf(config) !== "multiply"
         ? "Show your working. Write what is left over after an r."
         : "Show your working.";
     default:
@@ -568,15 +679,20 @@ function instructionOf(config: MultiplicationConfig): string {
 
 /**
  * The header this sheet will actually print, which is what the layout reserves
- * space against — see the note in `arithmetic.ts`.
+ * space against — see the note in `arithmetic.ts`. `note` is the sentence that
+ * says the page came out short, on the end of the instruction line.
  */
-function headerOf(config: MultiplicationConfig): SheetOptions {
+function headerOf(
+  config: MultiplicationConfig,
+  note: string | null = null,
+): SheetOptions {
+  const instructions = config.instructions ?? instructionOf(config);
   return {
     paper: config.paper,
     fontPt: config.fontPt,
     fields: config.fields,
     title: config.title ?? titleOf(config),
-    instructions: config.instructions ?? instructionOf(config),
+    instructions: note ? `${instructions} ${note}` : instructions,
   };
 }
 
@@ -587,8 +703,25 @@ function headerOf(config: MultiplicationConfig): SheetOptions {
  * sheet matches the lesson: how the problem is written down, and — for a long
  * form — how big the numbers are.
  */
+/**
+ * What the line that names a saved sheet can say about a page coming out
+ * short without a seed to draw from: a pool with nothing in it, and a row
+ * taller than the page. A draw that misses is the page's to report.
+ */
+function describedShortfall(config: MultiplicationConfig): string | null {
+  if (config.style === "grid") return null;
+  const asked = askedOf(config);
+  const { perPage } = multiplicationLayout(config);
+  const empty =
+    config.style !== "long" &&
+    namedFacts(config).length === 0 &&
+    poolOf(config).multiply.length === 0;
+  return shortfall(asked, perPage, empty || perPage === 0 ? 0 : asked);
+}
+
 function describeMultiplication(config: MultiplicationConfig): string {
   const digits = longDigits(config);
+  const operation = operationOf(config);
   // "8 tricky facts" is the race's own phrase for the same list — see
   // `describeFlashConfig` — so a drill that was printed and one that was raced
   // read alike wherever the two end up beside each other.
@@ -597,15 +730,20 @@ function describeMultiplication(config: MultiplicationConfig): string {
     const facts = named.length === 1 ? "fact" : "facts";
     return `${titleOf(config)} — ${named.length} tricky ${facts}`;
   }
+  const short = describedShortfall(config);
   return [
     titleOf(config),
     config.style === "long"
       ? `${digits.into}-digit by ${digits.by}-digit`
       : null,
+    config.style === "long" && operation !== "multiply"
+      ? HELP_NAME[divisionHelp(config)]
+      : null,
     config.style === "standard" && config.form === "vertical"
       ? "worked in columns"
       : null,
     config.style === "missing" ? "missing number" : null,
+    short === null ? null : shortfallPart(short),
   ]
     .filter((part): part is string => part !== null)
     .join(" — ");
@@ -613,36 +751,33 @@ function describeMultiplication(config: MultiplicationConfig): string {
 
 /* ── The sheet ─────────────────────────────────────────────────────────── */
 
-/** The blocks, and what the sheet is marked out of. */
+/** The blocks, the header over them, and what the sheet is marked out of. */
 function bodyOf(
   config: MultiplicationConfig,
   seed: number,
-): { blocks: Block[]; outOf: number } {
+): { blocks: Block[]; header: SheetOptions; outOf: number } {
   if (config.style === "grid") {
+    const header = headerOf(config);
     const grid = multiplicationGrid(config);
-    if (grid === null) return { blocks: [], outOf: 0 };
+    if (grid === null) return { blocks: [], header, outOf: 0 };
     return {
       blocks: [{ kind: "grid", grid }],
+      header,
       // Marked out of the squares a child has to fill, which is the grid
       // without its two headers.
       outOf: (grid.columns - 1) * (grid.rows - 1),
     };
   }
 
-  const items = multiplicationProblems(config, seed);
-  const { columns } = multiplicationLayout(config);
-  return {
-    blocks: [{ kind: "problems", columns, items }],
-    outOf: items.length,
-  };
+  const { blocks, header, count } = multiplicationPages(config, seed);
+  return { blocks, header, outOf: count };
 }
 
 function buildMultiplicationSheet(
   config: MultiplicationConfig,
   seed: number,
 ): Sheet {
-  const head = headerOf(config);
-  const { blocks, outOf } = bodyOf(config, seed);
+  const { blocks, header: head, outOf } = bodyOf(config, seed);
 
   return {
     paper: config.paper,
