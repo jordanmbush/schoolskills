@@ -3,9 +3,9 @@
 
    A world is normally set once, as `data-world` on <html>, and owns four kinds
    of token: the ink ramp it is built out of, the chalk it writes with, the two
-   colours you can press (`--accent`, `--go`), and the ground you stand on
+   colors you can press (`--accent`, `--go`), and the ground you stand on
    (`--terrain`). Nothing else. Every screen in the app already reads its
-   colours through those names, which is why a world is thirty lines of custom
+   colors through those names, which is why a world is thirty lines of custom
    properties instead of a second stylesheet — and why re-skinning a screen
    cannot move a box on it.
 
@@ -20,7 +20,7 @@
 
    ── The worlds, and what each one is for ──────────────────────────────────
      grid    Times tables and flash cards. An engine room, photographed:
-             verdigris and brass, the two colours it is made of.
+             verdigris and brass, the two colors it is made of.
      jungle  Spelling and sight words. A photograph of the canopy, with
              lantern light coming through it.
      ice     Typing. Speed reads as gliding, so: a photograph of a glacier,
@@ -35,22 +35,22 @@
      this file.
      map     The overworld. Not a world — the screen you pick one from. Dusk,
              stars and contour lines, like a map left open on a table.
-     line    The pause menu: privacy and terms. Ruled paper, one grey, no
+     line    The pause menu: privacy and terms. Ruled paper, one gray, no
              scenery. These pages are a promise being read carefully and they
              should not cosplay as an adventure.
      empty   404. There is nothing here, and that is the joke and also the
              literal truth. One horizon and no ground.
 
    ── Adding a world ────────────────────────────────────────────────────────
-   Copy a block, change the eleven colours and the terrain, add it to the map
+   Copy a block, change the eleven colors and the terrain, add it to the map
    in src/components/site/WorldMap.astro, and point a page at it with
    `world="…"`. Nothing else needs to know it exists.                       */
 
-/* ── Every world's signature colour, readable from inside any of them ──────
+/* ── Every world's signature color, readable from inside any of them ──────
    The map shows all the worlds at once and so does the masthead, from
    wherever you're standing, so these can't live inside a world block — by
    definition only one of those is ever in scope. Keep them in step with the
-   `--accent`/`--go` of the matching world below; they're the same colour seen
+   `--accent`/`--go` of the matching world below; they're the same color seen
    from outside. */
 :root {
   --w-grid: #f0b94b;
@@ -79,7 +79,7 @@
   --chalk-soft: #dccbb0;
   --chalk-dim: #ab9a80;
 
-  /* Verdigris and brass: the two colours an engine room is made of. */
+  /* Verdigris and brass: the two colors an engine room is made of. */
   --accent: #6fe3d4;
   --accent-ink: #04201c;
   --go: #f0b94b;
@@ -213,7 +213,7 @@
   --accent: #4fb8d8;
   --accent-ink: #04171e;
   /* Press this, and it is a sheet of paper. Every other world's `--go` is a
-     colour; this one is the thing the world makes. */
+     color; this one is the thing the world makes. */
   --go: #f4efe4;
   --go-ink: #17140f;
 

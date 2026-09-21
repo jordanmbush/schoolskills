@@ -11,7 +11,7 @@ import { THEME_COLOUR, WORLDS, type World } from "./worlds";
  * type-check about itself.
  *
  * `THEME_COLOUR` is `Record<World, string>`, so a missing entry is already a
- * type error — what a type cannot say is whether the colour in it is the one
+ * type error — what a type cannot say is whether the color in it is the one
  * `worlds.css` paints. Those two are the only duplication in the world system,
  * and they are duplicated for a reason that isn't going away: `<meta
  * name="theme-color">` is markup, and markup cannot read a custom property. A
@@ -125,7 +125,7 @@ describe("the worlds", () => {
   });
 
   it.each(DECLARED)(
-    "%s is themed the same colour in the chrome as on the page",
+    "%s is themed the same color in the chrome as on the page",
     (world) => {
       expect(
         STYLED.size,

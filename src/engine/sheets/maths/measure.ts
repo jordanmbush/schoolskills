@@ -3,7 +3,7 @@
  *
  * The shared machinery is unchanged (§7, §11). What is different here is that a
  * unit conversion has an exact right answer and *looks* like one
- * that doesn't: three kilometres is three thousand metres, not 2999.9999999996,
+ * that doesn't: three kilometers is three thousand meters, not 2999.9999999996,
  * and a generator that multiplied by a float would print that. So every unit in
  * `units.ts` is a whole number of the smallest unit of its quantity, every
  * conversion is a multiplication of whole numbers, and the one division in this
@@ -107,8 +107,8 @@ const pick = <T>(items: T[], rand: () => number): T =>
  * The pairs of units a question may be asked across: the smaller one, the
  * larger, and how many of the first make one of the second.
  *
- * `neighbours` is the pairs one step apart in the scale — millimetres and
- * centimetres, feet and yards — which is what a comparison is drawn from.
+ * `neighbours` is the pairs one step apart in the scale — millimeters and
+ * centimeters, feet and yards — which is what a comparison is drawn from.
  */
 type Pair = { small: Unit; big: Unit; ratio: number };
 
@@ -322,7 +322,7 @@ function headerOf(config: MeasureConfig): SheetOptions {
  *
  * What the title leaves off is which units are actually on the page, which is
  * the whole of whether a sheet matches the lesson: "metric units of length" is
- * millimetres one week and kilometres the next.
+ * millimeters one week and kilometers the next.
  */
 function describeMeasure(config: MeasureConfig): string {
   const system = systemOf(config);

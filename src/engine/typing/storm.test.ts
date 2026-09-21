@@ -40,7 +40,7 @@ import type { Shield, StormLetter, StormState, Wave, WaveSpec } from "./storm";
  * Enough seeds that a rare draw is not a lucky pass.
  *
  * Spread rather than 0–15, for the same reason `generate.test.ts` spreads
- * its: `mulberry32` is well-behaved over neighbouring seeds, but the numbers a
+ * its: `mulberry32` is well-behaved over neighboring seeds, but the numbers a
  * run actually uses come from `randomSeed()` and look nothing like a counter.
  */
 const SEEDS = [

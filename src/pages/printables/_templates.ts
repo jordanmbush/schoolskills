@@ -39,7 +39,7 @@ export type TemplateSheet = {
   slug: string;
   /** How it is listed on a hub. */
   name: string;
-  /** How it is labelled in the row of neighbouring sheets. A few words. */
+  /** How it is labeled in the row of neighboring sheets. A few words. */
   short: string;
   /** The page's `<h1>`. */
   heading: string;
@@ -153,11 +153,11 @@ export const TEMPLATE_SHEETS: TemplateSheet[] = [
     heading: "Printable reading log",
     keyword: "Free printable reading log",
     summary:
-      "Fourteen ruled rows under five columns — Date, What I read, Pages, Minutes and Signed — for a fortnight of reading at a time.",
-    lead: "A fortnight on one sheet: fourteen rows, and five columns across them for the date, what was read, how many pages, how many minutes and a grown-up's signature. One line a day, filled in when the reading is done rather than planned before it.",
+      "Fourteen ruled rows under five columns — Date, What I read, Pages, Minutes and Signed — for two weeks of reading at a time.",
+    lead: "Two weeks on one sheet: fourteen rows, and five columns across them for the date, what was read, how many pages, how many minutes and a grown-up's signature. One line a day, filled in when the reading is done rather than planned before it.",
     notes: [
       "The minutes column is the one to insist on, and the pages column is the one to be relaxed about. A page of a picture book and a page of a chapter book are not the same quantity, so a log kept in pages rewards whoever happens to be reading large type; minutes are the same minutes for everybody, and twenty of them is what a school asks for when it asks for anything. A child who has read for eleven minutes writes eleven.",
-      'The columns are as wide as what goes in them rather than a fifth of the page each. "Minutes" is three numerals wide and "What I read" has to hold a title, so an even division would print one column nobody can write in and another that is mostly empty. If a fortnight is the wrong period, the row count is a control in the builder and the widths follow it.',
+      'The columns are as wide as what goes in them rather than a fifth of the page each. "Minutes" is three numerals wide and "What I read" has to hold a title, so an even division would print one column nobody can write in and another that is mostly empty. If two weeks is the wrong period, the row count is a control in the builder and the widths follow it.',
     ],
     teaches: "Keeping a record of daily reading",
     ages: "Ages 5–11",
@@ -171,13 +171,13 @@ export const TEMPLATE_SHEETS: TemplateSheet[] = [
     heading: "Printable book report form",
     keyword: "Free printable book report template",
     summary:
-      "A page of plain headings for a book that has been finished: the title, who wrote it, what it is about, the favourite part and why, and who else should read it.",
-    lead: 'Six headings with room to write under each, in the words a child already uses. Not "protagonist" and not "setting" — what it is about, the favourite part and why, and who you would tell to read it.',
+      "A page of plain headings for a book that has been finished: the title, who wrote it, what it is about, the favorite part and why, and who else should read it.",
+    lead: 'Six headings with room to write under each, in the words a child already uses. Not "protagonist" and not "setting" — what it is about, the favorite part and why, and who you would tell to read it.',
     notes: [
-      'The two words that do the work on this sheet are "and why". A favourite part with no reason attached is one sentence and the end of the exercise; the same question with a reason asked for is a paragraph, and it is the first paragraph most children write that argues something rather than retelling it. The box is sized for that answer rather than for the question.',
+      'The two words that do the work on this sheet are "and why". A favorite part with no reason attached is one sentence and the end of the exercise; the same question with a reason asked for is a paragraph, and it is the first paragraph most children write that argues something rather than retelling it. The box is sized for that answer rather than for the question.',
       "The boxes are deliberately not the same height as each other. The title gets a line, because a title is a line; what the book is about gets the largest share of the page, because that is the part worth thinking about. A form ruled into equal boxes teaches a child that every question on it is worth the same amount of writing, which is precisely the thing a book report is trying to unteach.",
     ],
-    teaches: "Summarising a book, and giving a reason",
+    teaches: "Summarizing a book, and giving a reason",
     ages: "Ages 7–11",
     group: "writing",
     config: form(WORKED, { style: "book-report" }),
@@ -211,7 +211,7 @@ export const TEMPLATE_SHEETS: TemplateSheet[] = [
     lead: "One sentence in each box, in the order they are printed. Joined up, they are the paragraph: an opening that says what it is about, three reasons with something specific attached to each, and a close that says it again differently.",
     notes: [
       'Each of the three middle boxes asks for a reason *and* a detail, on one line, and the detail is the half that goes missing. "Dogs are good pets because they are friendly" is a reason with nothing behind it; "because ours waits by the door at half past three" is the same reason with the thing that makes a reader believe it. Asking for both in one box means a missing detail is visible as a short line rather than invisible as a complete sentence.',
-      "It is scaffolding, and scaffolding is meant to come down. The frame is worth printing for a fortnight and then worth withholding: a child who can fill it in can write the paragraph without it, and the way to find that out is to hand them a sheet of lined paper and ask for the same thing. If the paragraph falls apart, print the frame again for a week. If it does not, the sheet has done its job.",
+      "It is scaffolding, and scaffolding is meant to come down. The frame is worth printing for two weeks and then worth withholding: a child who can fill it in can write the paragraph without it, and the way to find that out is to hand them a sheet of lined paper and ask for the same thing. If the paragraph falls apart, print the frame again for a week. If it does not, the sheet has done its job.",
     ],
     teaches: "Writing a paragraph that argues something",
     ages: "Ages 8–12",
@@ -284,8 +284,8 @@ export const TEMPLATE_SHEETS: TemplateSheet[] = [
       "The date, the time and the weather across the top, a box to draw what was seen, and ruled lines under it for what was noticed about it.",
     lead: "Half the page is a box with nothing ruled in it, because half of a naturalist's page is a drawing. Draw it first, and write what you noticed afterwards.",
     notes: [
-      'Drawing first is the instruction and it is the whole method. A child who writes "a bird" has stopped looking; a child who has to draw one has to decide how long its beak is against its head, whether its legs are behind it or under it, and how many colours are actually on it — and the sentence they write afterwards is a different sentence for having drawn. The box is unruled for that reason: rules in it would be a page asking for writing in the space reserved for looking.',
-      "The three small boxes across the top are the ones that turn a nice drawing into an observation. The same feeder at eight in the morning and at four in the afternoon is two different sets of birds, and a page with no time on it cannot say so; a fortnight of these with the date and the weather filled in is a record somebody can look back through and notice something in, which is the point of keeping one at all.",
+      'Drawing first is the instruction and it is the whole method. A child who writes "a bird" has stopped looking; a child who has to draw one has to decide how long its beak is against its head, whether its legs are behind it or under it, and how many colors are actually on it — and the sentence they write afterwards is a different sentence for having drawn. The box is unruled for that reason: rules in it would be a page asking for writing in the space reserved for looking.',
+      "The three small boxes across the top are the ones that turn a nice drawing into an observation. The same feeder at eight in the morning and at four in the afternoon is two different sets of birds, and a page with no time on it cannot say so; two weeks of these with the date and the weather filled in is a record somebody can look back through and notice something in, which is the point of keeping one at all.",
     ],
     teaches: "Observing carefully, and recording what was seen",
     ages: "Ages 6–11",
@@ -303,7 +303,7 @@ export const TEMPLATE_SHEETS: TemplateSheet[] = [
     lead: "One thing to a row, earliest at the top. The dates go down the left of a heavy upright rule and the events hang off the right of it, which is the one thing that makes this a timeline rather than a two-column table.",
     notes: [
       "The heavy rule with a tick into every row is the whole drawing. A two-column table of dates and events carries exactly the same information and does not read as time passing; a spine does, because the eye follows it and the ticks are stops along it. It is worth pointing at when the sheet is handed over — the line is the century, and each tick is a place on it.",
-      "What it records is order rather than scale, and it is worth saying so out loud: the rows are all the same height, so a gap of a hundred years and a gap of a fortnight take up the same amount of paper. That is the right trade for a life, a reign or the events of a book. For a period where the *distances* are the lesson — how long the Romans were here against how recent the war is — a scaled line is the honest drawing, and a printable number line is on the charts shelf.",
+      "What it records is order rather than scale, and it is worth saying so out loud: the rows are all the same height, so a gap of a hundred years and a gap of two weeks take up the same amount of paper. That is the right trade for a life, a reign or the events of a book. For a period where the *distances* are the lesson — how long the Romans were here against how recent the war is — a scaled line is the honest drawing, and a printable number line is on the charts shelf.",
     ],
     teaches: "Putting events in order",
     ages: "Ages 7–12",
@@ -340,7 +340,7 @@ export const TEMPLATE_SHEETS: TemplateSheet[] = [
       "The seven days down the page with three columns across each — morning, afternoon and evening — for a week planned by when rather than by what.",
     lead: "Seven day rows, and each day cut into a morning, an afternoon and an evening. A week with one box a day is a to-do list; the thing a home-schooling week actually needs to say is when.",
     notes: [
-      'Splitting the day into three is what makes the sheet usable by the child rather than only by the adult who wrote it. "Maths" somewhere on Tuesday is a plan only the planner can read; "maths" in Tuesday morning answers the question a seven-year-old asks four times a day, and answers it without anybody being interrupted. Pin it at their height rather than filing it.',
+      'Splitting the day into three is what makes the sheet usable by the child rather than only by the adult who wrote it. "Math" somewhere on Tuesday is a plan only the planner can read; "math" in Tuesday morning answers the question a seven-year-old asks four times a day, and answers it without anybody being interrupted. Pin it at their height rather than filing it.',
       'The three columns are named rather than fixed. A family that works in periods, or in blocks named after the people teaching them, can put their own headings across the top in the builder and get the same grid — and a week whose columns are "before lunch" and "after lunch" is a perfectly good week. What stays fixed is the seven rows, because a week is seven days whatever the columns are called.',
     ],
     teaches: "Planning a week",
@@ -368,10 +368,10 @@ export const TEMPLATE_SHEETS: TemplateSheet[] = [
   },
   {
     slug: "behaviour-chart",
-    name: "Behaviour chart",
-    short: "Behaviour chart",
-    heading: "Printable behaviour chart",
-    keyword: "Free printable behaviour chart",
+    name: "Behavior chart",
+    short: "Behavior chart",
+    heading: "Printable behavior chart",
+    keyword: "Free printable behavior chart",
     summary:
       "Eight rows for the things being worked on, the seven days across them, and a column on the end to count up how many went well.",
     lead: "Nine columns: what I am working on, the seven days, and how many. The left column is headed as a thing being worked on rather than as a fault being recorded, and the last column counts what went well.",
@@ -435,7 +435,7 @@ export const TEMPLATE_SHEETS: TemplateSheet[] = [
       "Four tent name tags to a page at 3.75 by 4.625 inches, folded in half so each panel stands up and reads from both sides.",
     lead: 'Four tags, each with "Hello, my name is" over a rule to write on. Folded across the middle, one stands on a desk and reads from the front and the back at once.',
     notes: [
-      "The two panels of a tent are the same piece of paper, which is exactly what a printed back cannot promise on a home printer. A second pass through the tray lands a little off and lands off asymmetrically, so a name printed on the back of a card ends up a few millimetres from where the front says it is. Folding sidesteps the whole problem: whatever the printer did, it did to both halves at once.",
+      "The two panels of a tent are the same piece of paper, which is exactly what a printed back cannot promise on a home printer. A second pass through the tray lands a little off and lands off asymmetrically, so a name printed on the back of a card ends up a few millimeters from where the front says it is. Folding sidesteps the whole problem: whatever the printer did, it did to both halves at once.",
       "The upper panel is printed upside down, and it is meant to be. Fold the top half back and down and it comes round to face the other way, so it has to be printed the other way up to be read — and the fold is exactly halfway down the card, which is what makes the two panels match rather than nearly match. Print on the heaviest paper the printer will take; at this size a tag in ordinary copier paper will not stand.",
     ],
     teaches: "Making a name tag for a class or a group",
@@ -520,7 +520,7 @@ export const TEMPLATE_SHEETS: TemplateSheet[] = [
       "It prints landscape without anybody choosing landscape. A certificate is a landscape document, the sheet carries its own paper, and the page rule follows the sheet — so pressing print gives a certificate the right way round rather than a portrait one somebody has to notice and rotate in the dialog. That is the single commonest thing wrong with a printable certificate, and it costs a reprint every time.",
       'The line that matters is "For". A certificate for great work is wallpaper; a certificate for finishing the seven times table, or for reading every night for a month, is a record of a specific thing that happened, and it is the specificity that makes a child keep it. The double rule is set in from the cut rather than against it, so a cut a thirty-second of an inch out trims paper instead of slicing through the border.',
     ],
-    teaches: "Recognising something specific that was finished",
+    teaches: "Recognizing something specific that was finished",
     ages: "Ages 4+",
     group: "making",
     config: cardsheet(PINNED, {
@@ -558,7 +558,7 @@ export const TEMPLATE_SHEETS: TemplateSheet[] = [
     keyword: "Free printable spinner template",
     summary:
       "A dial cut into six equal sectors of 60°, numbered, with the pointer to cut out and pin through the middle printed underneath it.",
-    lead: "A circle divided into six equal slices, and an arrow under it to cut out and pin through the centre. Push a split pin through both and the arrow turns freely.",
+    lead: "A circle divided into six equal slices, and an arrow under it to cut out and pin through the center. Push a split pin through both and the arrow turns freely.",
     notes: [
       'The sectors are equal, and they are equal by construction rather than by having been drawn carefully: a whole turn is divided by how many there are, and there is nowhere for a longer label to buy itself a wider slice. That matters because "do you think this is fair?" is the question the object exists to answer. A spinner whose sectors had been sized by how much text was on them would teach the opposite of the answer, and a child would have no way of telling.',
       "The pointer is cut from the same sheet, which is why the dial is not as large as the page would allow — the paper has to hold both, so the circle is sized against what is left after the arrow rather than against the margin. A split pin is the fastener this is drawn for; a paper clip opened out and bent over on the back works, and a pencil point held through the middle does not, because the arrow has to turn without being held.",

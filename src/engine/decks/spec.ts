@@ -5,7 +5,7 @@
  * `CardResult` and know nothing about arithmetic. The three things they can't
  * do generically are here: fold two cards onto one fact, name a fact on
  * screen, and decide whether what a player typed matches the answer. Each is
- * a judgement only the deck family can make — 7×8 and 8×7 are one fact while
+ * a judgment only the deck family can make — 7×8 and 8×7 are one fact while
  * 21÷3 and 21÷7 are two, and "Cat" is a correct spelling of "cat" while "07"
  * is only a correct sum because leading zeros don't count.
  */
@@ -19,7 +19,7 @@ export type DeckSpec = {
   /**
    * Which world this deck is played in — see src/engine/worlds.ts.
    *
-   * A fourth judgement of the same kind as the three below: only the deck
+   * A fourth judgment of the same kind as the three below: only the deck
    * family knows that spellings happen in the jungle and sums happen in
    * space. It's keyed off `mode`, which is what a saved run already carries,
    * so opening a race from three months ago lands in the right scenery.

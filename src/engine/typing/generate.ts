@@ -103,7 +103,7 @@ const FREQ_BIAS = 2;
  *
  * The coarse half of the same weighting. A lesson of thirty-five words
  * reaching into two thousand would meet its fifteen-hundredth-commonest word
- * about as often as anything worth practising. The tail is not wasted: it is
+ * about as often as anything worth practicing. The tail is not wasted: it is
  * what the bigram lessons filter, and what keeps the early alphabets from
  * emptying.
  */
@@ -300,7 +300,7 @@ const readable = (pool: readonly string[], lesson: Lesson) =>
  * `ffff jjjj fjfj fdfd dkdk` — a new key, met and then used.
  *
  * Three sorts of group, in the proportions §5.2's band asks for: **new** (four
- * of today's keys), **mixed** (two new and two already learnt, which is the
+ * of today's keys), **mixed** (two new and two already learned, which is the
  * actual exercise — the finger has to come back to the new key from
  * somewhere), and **review** (four characters of two older keys).
  *

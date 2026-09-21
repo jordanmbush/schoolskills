@@ -52,7 +52,7 @@ export function Button({
   className,
   // Defaulting to "button" rather than inheriting the platform default. A
   // bare <button> inside a <form> submits it — which is a real hazard here,
-  // since the player editor is a form full of avatar and colour pickers.
+  // since the player editor is a form full of avatar and color pickers.
   type = "button",
   ...rest
 }: ButtonProps) {

@@ -462,7 +462,7 @@ try {
    * by how MANY distinct positions a single stone occupies across a window
    * several spawns long — a number a re-render cannot reach and only a frame
    * loop can. The lifetime half is a ledger of every frame handle requested
-   * and not yet delivered or cancelled, which two numbers settle: one frame in
+   * and not yet delivered or canceled, which two numbers settle: one frame in
    * flight while the storm is running, and none at all once the run is over or
    * the screen is gone.
    */
@@ -608,7 +608,7 @@ try {
     "a stone moves on every frame, not once per spawn",
     fall.distinct >= 12 && fall.forwards && fall.attached,
     `${fall.distinct} distinct positions in ${fall.samples} readings over 700ms, ` +
-      `${fall.travelled}px travelled (a per-spawn staircase gives 1)`,
+      `${fall.travelled}px traveled (a per-spawn staircase gives 1)`,
   );
   check(
     "the loop has exactly one frame in flight while it runs",
@@ -809,7 +809,7 @@ try {
       holes.every((zone) => zone.hp === 0) &&
       holes.map((zone) => zone.finger).join() === "r-index" &&
       // And the zone that took three of four is drawn short but whole, which
-      // is what makes the hole above a hole rather than a colour.
+      // is what makes the hole above a hole rather than a color.
       damage.zones.some((zone) => !zone.hole && zone.hp === 0.25),
     damage.zones.map((z) => `${z.finger}:${z.hp.toFixed(2)}`).join(" "),
   );
@@ -1167,7 +1167,7 @@ try {
   );
 
   // And a wrong key, against a letter that is really there: the one case that
-  // is not a shot at an empty sky, so it takes the target's own neighbours out
+  // is not a shot at an empty sky, so it takes the target's own neighbors out
   // of the argument.
   //
   // Which has to be *waited* for and then *checked*, neither of which it used
@@ -1500,7 +1500,7 @@ try {
   );
 
   /*
-   * The setting a falling-letter game cannot honour by removing the falling
+   * The setting a falling-letter game cannot honor by removing the falling
    * (docs/typing.md §8.10, #155).
    *
    * Two claims, and neither can be read off the stylesheet. **The fall stays**
@@ -1566,7 +1566,7 @@ try {
     "a stone still falls, frame by frame, for a child who asked for less motion",
     calm.distinct >= 12 && calm.forwards && calm.travelled > 0,
     `${calm.distinct} distinct positions in 20 readings over 500ms, ` +
-      `${calm.travelled}px travelled`,
+      `${calm.travelled}px traveled`,
   );
   check(
     "and nothing but the stones is moved at all",

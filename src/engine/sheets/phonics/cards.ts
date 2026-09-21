@@ -8,7 +8,7 @@
  * own and this one imports them like everybody else.
  *
  * The three marks are independent switches, derived from `sounds.ts` rather
- * than authored, so there is nowhere here for a programme's own spelling of a
+ * than authored, so there is nowhere here for a program's own spelling of a
  * rule to be written down (docs/printables.md §13).
  *
  * **One mark to a piece**, and it is worth seeing why rather than trusting it:

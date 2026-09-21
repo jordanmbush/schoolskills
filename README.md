@@ -76,7 +76,7 @@ Two consequences worth knowing:
   `navigator.storage.persist()` to keep the browser from evicting it, but a
   deliberate "clear browsing data" always wins.
 - **Safari evicts script-writable storage after 7 days** without a first-party
-  visit, and doesn't honour `persist()` the way Chrome does. Adding the site to
+  visit, and doesn't honor `persist()` the way Chrome does. Adding the site to
   the iOS Home Screen exempts it — which is why the PWA is a real feature here,
   not a nice-to-have.
 

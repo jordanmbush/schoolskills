@@ -138,7 +138,7 @@ describe("view layer (src/components/, src/games/, src/pages/)", () => {
  *
  * Both spellings of the same hop are pinned. The aliased one is what was really
  * there — typing read the flash cards' splits table until the table moved into
- * the kit — and the relative one is what a neighbour would write instead if
+ * the kit — and the relative one is what a neighbor would write instead if
  * only the alias were banned.
  */
 describe("game islands (src/games/)", () => {
@@ -265,7 +265,7 @@ describe("the typing corpus (src/engine/decks/ → engine/typing/)", () => {
    * The one hop. `lessons.ts` is the single engine/typing module the deck layer
    * may import, so it is the single file where a corpus import buys the whole
    * site a 222 KB chunk without a line of `decks/` changing. Both spellings are
-   * pinned: the aliased one, and the relative one a neighbour actually writes.
+   * pinned: the aliased one, and the relative one a neighbor actually writes.
    */
   it.each([
     ['import { WORDS } from "./lexicon";\nexport const x = WORDS;\n'],
@@ -316,7 +316,7 @@ describe("the typing corpus (src/engine/decks/ → engine/typing/)", () => {
   });
 
   /** Not every `./lexicon` is this one — the rule resolves before it judges. */
-  it("leaves an unrelated module's own neighbour alone", async () => {
+  it("leaves an unrelated module's own neighbor alone", async () => {
     const fired = await rulesFiredFor(
       "src/engine/decks/typing.ts",
       `import { WORDS } from "./lexicon";\nexport const x = WORDS;\n`,

@@ -13,7 +13,7 @@
  * of those would reproduce somebody's copyrighted sequence by reference (§13).
  * They say what *this sheet* uses and nothing more.
  *
- * **One stock, as with maths, spelling and grammar** (§8): nothing on a phonics
+ * **One stock, as with math, spelling and grammar** (§8): nothing on a phonics
  * sheet is a measurement.
  */
 import { FIRST_LETTERS } from "@/games/printshop/defaults";
@@ -32,7 +32,7 @@ export type PhonicsSheet = {
   slug: string;
   /** How it is listed on a hub. */
   name: string;
-  /** How it is labelled in the row of neighbouring sheets. A few words. */
+  /** How it is labeled in the row of neighboring sheets. A few words. */
   short: string;
   /** The page's `<h1>`. */
   heading: string;
@@ -70,7 +70,7 @@ export const PHONICS_SEED = 1;
 /**
  * `the`, taught whole — on both inventories below, and not a shortcut. Nearly
  * every decodable sentence in English needs it, it cannot be sounded out by a
- * child who has not met `th` and the unstressed `e`, and every programme
+ * child who has not met `th` and the unstressed `e`, and every program
  * teaches it by sight in the first weeks. `Inventory.tricky` is the door for
  * that.
  */
@@ -200,7 +200,7 @@ export const PHONICS_SHEETS: PhonicsSheet[] = [
    * being the commonest. This one draws its endings from the spellings a child
    * has actually been taught, so it is the same idea arriving through the
    * phonics progression — a genuinely different sheet, and one that was
-   * competing with its neighbour for a query only one of them can win. The
+   * competing with its neighbor for a query only one of them can win. The
    * slug stays as it is: the URL is live and there is nowhere on a static site
    * to redirect it from.
    */
@@ -251,7 +251,7 @@ export const PHONICS_SHEETS: PhonicsSheet[] = [
     lead: "The page a child gets has numbers and rules on it and nothing else. The words are on the sheet behind, in order, for the person reading them aloud. Writing a word you have only heard is the other half of phonics, and it is the half a worksheet usually skips.",
     notes: [
       "Read each word twice, in a normal voice, and then leave it alone. The temptation is to sound it out for them — /c/ /a/ /t/ — and that turns the exercise into copying: the work is the child doing the segmenting themselves, and it is uncomfortable to watch for the first few weeks.",
-      "This is the one sheet on the shelf where a word taught by sight belongs. “Said” cannot be sounded out on any day of any course, so it never appears on a blending line — but it is read out and written down like everything else, which is exactly how every programme handles it. Add your own to the sight-word box in the builder.",
+      "This is the one sheet on the shelf where a word taught by sight belongs. “Said” cannot be sounded out on any day of any course, so it never appears on a blending line — but it is read out and written down like everything else, which is exactly how every program handles it. Add your own to the sight-word box in the builder.",
     ],
     teaches: "Writing words from the sounds in them",
     ages: "Ages 5–7",
@@ -269,7 +269,7 @@ export const PHONICS_SHEETS: PhonicsSheet[] = [
     lead: "Connected text, at last — and every word in it spellable from the sounds on the chart. Cut the strips apart and a child reads one a day, or the whole page at once when a week has gone well.",
     notes: [
       "These are short and a little plain, and that is the honest cost of the promise. A sentence that reads more naturally is a sentence with a word in it the child has to be told, and being told one word in five is how a child learns that reading means guessing from the picture. Every word here is one they can work out.",
-      "“The” is the exception, and it is on the sheet because English will not make a sentence without it. It is on the sight-word list rather than sounded out, which is where every programme puts it in the first fortnight — and it is the only word on this page that is not built from the spellings above.",
+      "“The” is the exception, and it is on the sheet because English will not make a sentence without it. It is on the sight-word list rather than sounded out, which is where every program puts it in the first two weeks — and it is the only word on this page that is not built from the spellings above.",
     ],
     teaches: "Reading connected text made only of taught spellings",
     ages: "Ages 5–7",

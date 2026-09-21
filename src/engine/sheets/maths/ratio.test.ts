@@ -358,7 +358,7 @@ describe("how much fits", () => {
     expect((rows + 1) * row + rows * PROBLEM_GAP.y).toBeGreaterThan(box.height);
   });
 
-  it("honours the count and the columns it was given", () => {
+  it("honors the count and the columns it was given", () => {
     expect(problemsOf({ count: 10 }, 1).length).toBe(10);
     for (const columns of [1, 2, 3]) {
       expect(pagesOf(buildSheet(config({ columns }), 1))[0].columns).toBe(
@@ -420,6 +420,6 @@ const GOLDEN = {
   rate: [
     ["18 words in 9 minutes = _ words per minute", "2"],
     ["35 seats in 5 rows = _ seats per row", "7"],
-    ["24 litres in 6 minutes = _ litres per minute", "4"],
+    ["24 liters in 6 minutes = _ liters per minute", "4"],
   ],
 };

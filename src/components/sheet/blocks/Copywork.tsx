@@ -9,7 +9,7 @@ import type { BlockProps } from "./block";
  * built on (§4) — so one line of `text` is one repeat of the ruling, and a
  * family that wants a verse across four lines puts three newlines in it. It
  * also means a Scripture passage is stored and rendered exactly as it was
- * given, punctuation and all, which the WEB's one licence condition requires
+ * given, punctuation and all, which the WEB's one license condition requires
  * (§12).
  */
 export function Copywork({ block, metrics }: BlockProps<"copywork">) {

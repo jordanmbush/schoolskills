@@ -17,7 +17,7 @@
  * varieties disagree about its vowel (`bank.ts`).
  *
  * `the` is in nearly all of them, and it costs a child two spellings — `th` as
- * in `this` and the unstressed `e` of `garden`. Every programme teaches it long
+ * in `this` and the unstressed `e` of `garden`. Every program teaches it long
  * before either, which is exactly what `Inventory.tricky` is for: a parent who
  * has taught `the` by sight puts it on that list and these sentences open up.
  */
@@ -122,7 +122,7 @@ const TEAMS: Sentence[] = [
   s("we will eat the sweet fruit"),
 ];
 
-/* ── The r-coloured vowels ──────────────────────────────────────────────── */
+/* ── The r-colored vowels ──────────────────────────────────────────────── */
 
 const R_COLOURED: Sentence[] = [
   s("the car went far"),

@@ -15,7 +15,7 @@ import {
 } from "./_maths";
 
 /**
- * One prerendered maths worksheet per topic — and the page is the worksheet
+ * One prerendered math worksheet per topic — and the page is the worksheet
  * (§8). Prose that answers the query, the sheet itself under it as HTML, and
  * nothing to choose first: one button prints it, because the sheet IS the
  * page.
@@ -101,7 +101,7 @@ const strand = strands.find((group) => group.id === sheet.strand)!;
   {
     /*
       The sheets, outside `.wrap` deliberately. A wrap adds an inline padding
-      that print.css cannot take back off, and a sheet printed a centimetre in
+      that print.css cannot take back off, and a sheet printed a centimeter in
       from where it says it is has the wrong geometry everywhere at once. The key
       stays an adjacent sibling — see the note above on why.
     */
@@ -177,7 +177,7 @@ const strand = strands.find((group) => group.id === sheet.strand)!;
   </section>
 
   <section class="band band--tight wrap no-print">
-    <h2 class="h2">Every maths sheet</h2>
+    <h2 class="h2">Every math sheet</h2>
     <p class="h2__sub">
       {MATHS_SHEETS.length} topics, each one a page like this one &mdash; the sheet,
       its answer key, and no account to print either.
@@ -204,7 +204,7 @@ const strand = strands.find((group) => group.id === sheet.strand)!;
       ))
     }
     <div class="hero__actions">
-      <a class="cta cta--quiet" href="/printables/math">All the maths sheets</a>
+      <a class="cta cta--quiet" href="/printables/math">All the math sheets</a>
       <a class="cta cta--quiet" href="/printables">Back to The Print Shop</a>
     </div>
   </section>

@@ -28,7 +28,7 @@ import {
   type Stock,
 } from "./_catalog";
 
-/** How the hub groups the shelf: what is being written, in the order it is learnt. */
+/** How the hub groups the shelf: what is being written, in the order it is learned. */
 export type HandwritingGroup = "letters" | "words" | "passages";
 
 export type HandwritingSheet = {
@@ -36,7 +36,7 @@ export type HandwritingSheet = {
   slug: string;
   /** How it is listed on a hub. */
   name: string;
-  /** How it is labelled in the row of neighbouring sheets. A few words. */
+  /** How it is labeled in the row of neighboring sheets. A few words. */
   short: string;
   /** The page's `<h1>`. */
   heading: string;
@@ -93,7 +93,7 @@ const STAR = [
  *
  * Short enough that none of them wraps on either stock, because the point of
  * the sheet is a whole sentence on one line. Between them they carry a capital,
- * a full stop, and the word spacing that is the actual lesson.
+ * a period, and the word spacing that is the actual lesson.
  */
 const SENTENCES = [
   "The cat sat on the warm mat.",
@@ -114,8 +114,8 @@ export const HANDWRITING_SHEETS: HandwritingSheet[] = [
       "Every letter of the alphabet as a capital and a small letter, on ⅝-inch ruled paper: a solid model, two dotted letters to trace, and an empty space to write it alone.",
     lead: "All twenty-six letters, each one written as the pair a child is taught — A then a, B then b — on as many pages as ⅝ paper takes rather than shrunk to fit one. Every letter gets a solid model to look at, two dotted ones to trace over, and an empty space at the end where nobody is helping.",
     notes: [
-      "The three steps on each line are the whole point of the sheet, and they are meant to be done in order. A child who traces a letter twenty times has practised following a line; a child who traces it once and then writes it from nothing has practised writing the letter. The empty space at the end of every group is where the actual learning happens, and it is why this page is worth more than a page of dotted letters twice the length.",
-      "Capitals and small letters sit together rather than on separate pages, because they are one letter with two shapes and a child meets them that way in every book they open. It also makes the difference visible: b and d are a genuine problem at this age, and having Bb and Dd on the same sheet is a better answer than practising each of them alone a week apart.",
+      "The three steps on each line are the whole point of the sheet, and they are meant to be done in order. A child who traces a letter twenty times has practiced following a line; a child who traces it once and then writes it from nothing has practiced writing the letter. The empty space at the end of every group is where the actual learning happens, and it is why this page is worth more than a page of dotted letters twice the length.",
+      "Capitals and small letters sit together rather than on separate pages, because they are one letter with two shapes and a child meets them that way in every book they open. It also makes the difference visible: b and d are a genuine problem at this age, and having Bb and Dd on the same sheet is a better answer than practicing each of them alone a week apart.",
     ],
     teaches: "Printing the letters of the alphabet",
     ages: "Ages 4–7",
@@ -143,7 +143,7 @@ export const HANDWRITING_SHEETS: HandwritingSheet[] = [
     lead: "Capital letters only, on the ¾-inch ruling a lot of schools spend the first term on. Every capital starts at the top line and sits on the baseline, which is the one rule that makes a capital a capital.",
     notes: [
       "Capitals are usually the first letters a child writes, and not because they come first in the alphabet: every one of them is made of straight lines and simple curves that start at the top and finish at the bottom, with nothing that has to be joined and nothing that drops below the line. If handwriting is going badly, this is the page to go back to.",
-      "The ruling is a size larger than the ⅝ paper most of Year 1 works on. That is deliberate rather than a concession — a child whose fine motor control is still arriving writes large, and paper that asks them to write smaller than they can control teaches them that handwriting is something they are bad at. Drop to ⅝ when the letters stop touching the top line by accident.",
+      "The ruling is a size larger than the ⅝ paper most of Grade 1 works on. That is deliberate rather than a concession — a child whose fine motor control is still arriving writes large, and paper that asks them to write smaller than they can control teaches them that handwriting is something they are bad at. Drop to ⅝ when the letters stop touching the top line by accident.",
     ],
     teaches: "Forming capital letters",
     ages: "Ages 4–6",
@@ -198,7 +198,7 @@ export const HANDWRITING_SHEETS: HandwritingSheet[] = [
       "Every numeral from 0 to 9 on ¾-inch paper with a solid midline, one to a line: a model, four dotted numbers to trace, and one written alone.",
     lead: "The ten numerals every other number is built out of, one to a line on large ¾-inch paper. Each gets a solid model, four dotted numbers to trace, and an empty space at the end where nobody is helping.",
     notes: [
-      "Ten symbols is the whole of it, and they are worth more practice than they usually get. Every number a child will ever write is made of these ten shapes, and a 5 started at the wrong end or a 2 drawn as a loop is a habit that survives into secondary school and slows down every sum on the page. Six goes at each is roughly what it takes for the direction to stick, which is why they get a line each rather than sharing one.",
+      "Ten symbols is the whole of it, and they are worth more practice than they usually get. Every number a child will ever write is made of these ten shapes, and a 5 started at the wrong end or a 2 drawn as a loop is a habit that survives into middle school and slows down every sum on the page. Six goes at each is roughly what it takes for the direction to stick, which is why they get a line each rather than sharing one.",
       "A solid midline rather than a dashed one, because a four- or five-year-old is aiming at a line rather than reading a hint. Numbers help here: unlike letters, almost all of them are the full height of the writing space, so the top line and the baseline are the two that matter and the middle one is a landmark rather than a limit on how tall a body may be.",
     ],
     teaches: "Writing the numerals 0 to 9",
@@ -228,7 +228,7 @@ export const HANDWRITING_SHEETS: HandwritingSheet[] = [
     lead: "The first twelve sight words, one to a line, each with a model to read, a dotted word to trace and an empty stretch of line to write it on. The same words the jungle deals as flash cards, on paper.",
     notes: [
       "Writing a word out is a different exercise from writing its letters, and this is the sheet where that gap gets closed. A child who can form every letter of the alphabet can still stall at “because”, because a word needs the letters in an order, joined by spaces that are the right size, on a line that has to keep going. One word to a line is what gives them room to get all three right.",
-      "These are sight words rather than phonetic ones on purpose: they are the words that turn up most often and are least worth sounding out, so writing them is memory work as much as handwriting. If a different list is wanted — this week's spellings off a school letter, or the words a child kept missing on screen — the builder takes a typed or pasted list and prints the same sheet.",
+      "These are sight words rather than phonetic ones on purpose: they are the words that turn up most often and are least worth sounding out, so writing them is memory work as much as handwriting. If a different list is wanted — this week's spellings off a note from school, or the words a child kept missing on screen — the builder takes a typed or pasted list and prints the same sheet.",
     ],
     teaches: "Writing sight words by hand",
     ages: "Ages 5–7",
@@ -257,7 +257,7 @@ export const HANDWRITING_SHEETS: HandwritingSheet[] = [
       "Four short sentences on half-inch paper, each printed as a model, traced twice on the lines below, and then written on a line of its own.",
     lead: "Four sentences a five-year-old can read, on the half-inch ruling that fits a whole sentence on a line. Each one appears four times down the page: printed to read, dotted twice to trace, and empty to write.",
     notes: [
-      "A sentence brings in everything a letter sheet leaves out — a capital at the start, spaces between the words, and a full stop at the end — and those are the three things a child forgets first when they stop thinking about them. The model line at the top of each group is there to be looked at rather than skipped: the spacing is as much the lesson as the letters are.",
+      "A sentence brings in everything a letter sheet leaves out — a capital at the start, spaces between the words, and a period at the end — and those are the three things a child forgets first when they stop thinking about them. The model line at the top of each group is there to be looked at rather than skipped: the spacing is as much the lesson as the letters are.",
       "Half an inch is the ruling where handwriting stops being about forming letters and starts being about writing a line without the page running out. If the sentences are being squeezed or the writing is drifting off the baseline, print the ⅝ or ¾ version from the builder instead — the sheet is identical apart from the size, which is the one thing worth changing at a time.",
     ],
     teaches: "Writing whole sentences by hand",
@@ -282,11 +282,11 @@ export const HANDWRITING_SHEETS: HandwritingSheet[] = [
     heading: "Copywork worksheets",
     keyword: "Free printable copywork worksheets",
     summary:
-      "A verse of “The Star” on ⅜-inch transitional paper: the line printed, two grey copies to write over, and an empty line to write it from nothing.",
+      "A verse of “The Star” on ⅜-inch transitional paper: the line printed, two gray copies to write over, and an empty line to write it from nothing.",
     lead: "A verse of a real poem, one line at a time. Each line is printed to read, then printed faintly twice to write over, then left as an empty ruled line. Copywork is the oldest handwriting exercise there is and still the best one once letters are formed.",
     notes: [
-      "The faint lines are grey rather than dotted, which is the change that marks this sheet as the one after tracing. A dotted letter is a path to follow; a grey one is a shape to write over, and the pencil has to do the deciding. The empty line under each group is where it stops being a copy at all — and by then the eye has held the words long enough that the spelling has gone in as well.",
-      "The ⅜ ruling has a top line and a baseline and no midline at all. By this stage a child knows how tall a letter is and the paper stops telling them; what is left is a pair of lines to keep the writing straight, which is all an exercise book gives you. It is the last ruling before ordinary lined paper, and copying a poem onto it is a fair test of whether someone is ready for that.",
+      "The faint lines are gray rather than dotted, which is the change that marks this sheet as the one after tracing. A dotted letter is a path to follow; a gray one is a shape to write over, and the pencil has to do the deciding. The empty line under each group is where it stops being a copy at all — and by then the eye has held the words long enough that the spelling has gone in as well.",
+      "The ⅜ ruling has a top line and a baseline and no midline at all. By this stage a child knows how tall a letter is and the paper stops telling them; what is left is a pair of lines to keep the writing straight, which is all a notebook gives you. It is the last ruling before ordinary lined paper, and copying a poem onto it is a fair test of whether someone is ready for that.",
     ],
     teaches: "Copywork and sustained handwriting",
     ages: "Ages 7–10",

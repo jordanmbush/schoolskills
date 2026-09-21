@@ -205,7 +205,7 @@ describe("what a page claims about its own sheet", () => {
     expect(checked).toBeGreaterThanOrEqual(6);
   });
 
-  it("prints a fortnight of reading in five columns", () => {
+  it("prints two weeks of reading in five columns", () => {
     const table = tableOf(built(bySlug("reading-log")))!;
     expect(table.rows).toBe(14);
     expect(table.columns.map((column) => column.label)).toEqual([

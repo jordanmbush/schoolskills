@@ -3,7 +3,7 @@
 
    Every other surface here is a stack of quiet bands. This is a route with
    stops on it: a dotted path, a node per world, and each node built out of
-   that world's own colours and standing on a strip of that world's own
+   that world's own colors and standing on a strip of that world's own
    ground. The card is a window into the place it takes you, which is why it
    works without a single illustration — the terrain is the same CSS the world
    itself is painted with (see worlds.css), just cropped to 80 pixels.
@@ -46,7 +46,7 @@
   position: relative;
 }
 
-/* The stop on the path, in the colour of the world it leads to. */
+/* The stop on the path, in the color of the world it leads to. */
 .map__node::before {
   content: "";
   position: absolute;
@@ -75,7 +75,7 @@
 @media (width >= 62rem) {
   .map__route {
     /* The column count, written once. The dashed path below has to stop at the
-       centre of the first and last node, which is half a column in from each
+       center of the first and last node, which is half a column in from each
        edge — a number only derivable from this one. A fifth world changes this
        line and nothing else. */
     --map-cols: 4;
@@ -85,7 +85,7 @@
   }
 
   .map__route::before {
-    /* Between the first and last node centre: half a column in from each edge. */
+    /* Between the first and last node center: half a column in from each edge. */
     left: calc(100% / var(--map-cols) / 2);
     right: calc(100% / var(--map-cols) / 2);
     top: var(--path-y);

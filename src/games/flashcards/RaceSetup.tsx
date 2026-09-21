@@ -72,7 +72,7 @@ export default function RaceSetup() {
   const location = useLocation();
 
   // "Drill these" in the record book arrives here with a deck already built,
-  // so the player sees what they're about to practise before it starts. A drill
+  // so the player sees what they're about to practice before it starts. A drill
   // is always built from a deck this app owns, so it can't hand in a subject
   // this screen has no settings for.
   const handed = (location.state as { config?: CardConfig } | null)?.config;
@@ -153,7 +153,7 @@ export default function RaceSetup() {
    * Load the missed facts into the screen rather than starting them.
    *
    * A drill is a deck, and the deck is what this screen chooses — so a child
-   * handed one still sees what they are about to practise, still picks a rival
+   * handed one still sees what they are about to practice, still picks a rival
    * and still presses Start. The record book makes the same offer beside the
    * facts themselves; it is repeated here because a child who never opens the
    * record book is the one it was written for.
@@ -224,7 +224,7 @@ export default function RaceSetup() {
         <p className="u-eyebrow">{subject.eyebrow}</p>
         {trouble.length >= 3 && (
           <Button variant="bare" className="setup__drill" onClick={drill}>
-            Practise the {plural(trouble.length, "fact")} you keep missing →
+            Practice the {plural(trouble.length, "fact")} you keep missing →
           </Button>
         )}
       </header>

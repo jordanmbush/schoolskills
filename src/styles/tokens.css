@@ -1,16 +1,16 @@
 /* ── The shared spine ──────────────────────────────────────────────────────
    Everything here is true in every world: the type scale, the spacing rhythm,
-   the corner radii, the easings, and the five colours that MEAN something.
+   the corner radii, the easings, and the five colors that MEAN something.
 
    What is NOT here is the environment — sky, ground, ink ramp, accent. Those
    belong to a world and live in worlds.css, keyed off `data-world` on <html>.
-   The split is the whole trick: because the game reads its colours from these
+   The split is the whole trick: because the game reads its colors from these
    names and nothing else, a world is a token swap rather than a stylesheet,
    and re-skinning a screen can't move a single box.
 
    ── The telemetry five, which never change ────────────────────────────────
    A wrong answer is the same red in the jungle as it is in space. These are
-   feedback, not decoration, and a world that recoloured them would be teaching
+   feedback, not decoration, and a world that recolored them would be teaching
    a child to re-learn the signal every time the background changed.          */
 
 :root {
@@ -24,7 +24,7 @@
      Which finger presses a key, on the keyboard picture in the typing world
      (docs/typing.md §4.6). Here rather than in a world block because the
      finger that types `f` is the same finger in every biome, and because
-     Hailstorm colours a falling letter by the finger that stops it — the two
+     Hailstorm colors a falling letter by the finger that stops it — the two
      halves have to agree or the shield is teaching a different lesson than
      the board.
 
@@ -37,11 +37,11 @@
 
      The pattern is a temperature and a walk. The left hand is warm and the
      right hand is cool, so the hand a key belongs to is legible before any
-     individual colour is — which is the half of the split that matters, and
+     individual color is — which is the half of the split that matters, and
      the half a child gets wrong at `g` and `h`. Within a hand the hue walks
-     outward from the index finger, so neighbouring columns never share a
+     outward from the index finger, so neighboring columns never share a
      family. There is no ninth: the space bar is pressed by EITHER thumb, and
-     a colour there would be naming a choice the technique does not make.  */
+     a color there would be naming a choice the technique does not make.  */
   --finger-l-index: #c2a276; /* sand */
   --finger-l-middle: #c08d76; /* clay */
   --finger-l-ring: #bb8686; /* rose */

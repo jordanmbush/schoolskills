@@ -266,7 +266,7 @@ describe("NAMES", () => {
   });
 
   /**
-   * And they stay out of `WORDS`. A proper noun in the corpus is a capitalised
+   * And they stay out of `WORDS`. A proper noun in the corpus is a capitalized
    * noun in every draw that is not about names, and there are two thousand of
    * those — the reason the corpus holds no name to begin with.
    */

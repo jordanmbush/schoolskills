@@ -124,12 +124,12 @@ describe("StormOver", () => {
     expect(readOut(alone)).toContain("let 1 letter through");
   });
 
-  it("offers that finger's keys, and a way to go and practise them", () => {
+  it("offers that finger's keys, and a way to go and practice them", () => {
     const html = draw(BREACHED);
     // `o` and `l` are the right ring finger's; `f` and `j` are not, and the
     // wave's pool has both — so this is the zone and not the whole storm.
     expect(readOut(BREACHED)).toContain("Its keys: o l");
-    expect(html).toContain("Practise that finger");
+    expect(html).toContain("Practice that finger");
   });
 
   it("offers the same storm again, and the way out", () => {
@@ -150,8 +150,8 @@ describe("StormOver", () => {
     for (const shaming of ["fail", "Fail", "lost", "Lost", "%", "wrong"])
       expect(text, shaming).not.toContain(shaming);
     expect(html, "no telemetry red").not.toContain("flare");
-    // The finger's own hue is the one colour here, and it is identity rather
-    // than judgement — the same block that broke, the same keys under it.
+    // The finger's own hue is the one color here, and it is identity rather
+    // than judgment — the same block that broke, the same keys under it.
     expect(html).toContain('data-finger="r-ring"');
   });
 
@@ -190,8 +190,8 @@ describe("StormOver", () => {
     expect(text).toContain(String(stormReport(CLEARED)?.bestCombo));
     expect(text).toContain(`+${stormXp(CLEARED)}`);
 
-    // Nothing to practise, because no finger let anything through.
-    expect(draw(CLEARED)).not.toContain("Practise that finger");
+    // Nothing to practice, because no finger let anything through.
+    expect(draw(CLEARED)).not.toContain("Practice that finger");
     expect(draw(CLEARED)).toContain("Try this wave again");
   });
 

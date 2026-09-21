@@ -26,7 +26,7 @@ import {
  * Grammar, held to the bar every other family meets — and to the one that only
  * bites here.
  *
- * On a maths sheet "verified by an independent path" means the answer is worked
+ * On a math sheet "verified by an independent path" means the answer is worked
  * out a second way. There is no second way to work out whether a word is an
  * adverb: the answer is a **tag somebody wrote down**, so what this file proves
  * is that the tags are sound and that the sheet prints them faithfully.
@@ -187,11 +187,11 @@ describe("the sentence bank", () => {
     expect(new Set(tagged)).toEqual(new Set(PARTS));
   });
 
-  it("leaves exactly one word to capitalise, and never the first", () => {
+  it("leaves exactly one word to capitalize, and never the first", () => {
     for (const entry of SENTENCES) {
       const [first, ...rest] = wordsOf(entry.text);
       expect(first, entry.text).not.toBe("");
-      // Whatever else is capitalised inside the sentence is the proper noun and
+      // Whatever else is capitalized inside the sentence is the proper noun and
       // nothing else — an "I" or a second name would be a second thing a child
       // could point at and be right about.
       const capitalised = rest.filter(
@@ -225,7 +225,7 @@ describe("the sentence bank", () => {
 
   it("never asks which mark an exclamation ends on", () => {
     // "What a mess" takes a bang and a full stop is not a mistake anybody can
-    // point to, so the one judgement call in end punctuation is left out of the
+    // point to, so the one judgment call in end punctuation is left out of the
     // topic rather than guessed at.
     const asked = topicOf("punctuation").questions.map((one) => one.answer);
     expect(new Set(asked)).toEqual(new Set([".", "?"]));
@@ -579,7 +579,7 @@ describe("the styles a topic offers", () => {
       for (const style of styles) expect(known, topic).toContain(style);
       expect(new Set(styles).size, topic).toBe(styles.length);
       // A topic offers "circle one" exactly when there is something closed to
-      // circle. An end mark, a capitalised word and a sentence cut in half are
+      // circle. An end mark, a capitalized word and a sentence cut in half are
       // none of them one of four things.
       expect(styles.includes("choose"), topic) //
         .toBe(topicOf(topic).options !== undefined);

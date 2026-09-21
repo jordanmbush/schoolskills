@@ -21,7 +21,7 @@ import { startOf, type BlockProps } from "./block";
  * The answer prints when the sheet says so and is blank when it doesn't. Both
  * come from the same build, so a key cannot disagree with its sheet (§7).
  *
- * **This is the shared primitive.** Every maths family prints through it
+ * **This is the shared primitive.** Every math family prints through it
  * rather than adding a block of its own, so the shapes below are the shapes an
  * arithmetic problem takes and not several families' worth of markup: written
  * along a line, written along a line with the gap inside it, stacked in columns
@@ -183,7 +183,7 @@ function Written({ problem, answers }: Part) {
  *
  * A long multiplication has spent it too. Its working goes *inside* the stack,
  * between the rule and the total, because a partial product written anywhere
- * else is the mistake the sheet exists to practise out of a child. A long
+ * else is the mistake the sheet exists to practice out of a child. A long
  * division never has one: its reservation is the squares under the bracket
  * (`bracket.rows`), which the bracket draws itself.
  */

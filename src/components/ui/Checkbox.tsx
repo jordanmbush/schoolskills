@@ -9,10 +9,10 @@ import type { InputHTMLAttributes } from "react";
  * negatives", "print an answer key". Several sit in one panel, several are on
  * at once, and none of them do anything until the thing is rebuilt.
  *
- * The native box is kept, not redrawn. `accent-color` recolours it to the
+ * The native box is kept, not redrawn. `accent-color` recolors it to the
  * world's `--go` while leaving the platform's own checkmark, its
  * `:focus-visible` ring (base.css draws that for every real control) and its
- * behaviour under forced colours intact. A hand-drawn box has to reproduce all
+ * behavior under forced colors intact. A hand-drawn box has to reproduce all
  * three.
  *
  * The label is structural — the `<input>` sits inside the `<label>`, as in

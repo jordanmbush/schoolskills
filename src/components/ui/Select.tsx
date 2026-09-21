@@ -12,7 +12,7 @@ import type { SelectHTMLAttributes } from "react";
  *
  * The wrapper span carries the chevron. `appearance: none` removes the
  * platform arrow, and drawing our own with a border triangle keeps it on
- * `currentColor`'s side of the theme rather than baking a colour into an SVG.
+ * `currentColor`'s side of the theme rather than baking a color into an SVG.
  */
 export interface SelectOption {
   value: string;

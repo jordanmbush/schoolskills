@@ -32,7 +32,7 @@ import type { StormState, Wave } from "@/engine/typing/storm";
  * be a long way behind: a wave with nothing spawning, landing or being shot
  * re-renders nothing at all. Fire from that and a shot resolves against a
  * target read at a stale clock, on a state with every tick since thrown away.
- * So the keydown listener is armed and cancelled with the loop, in the same
+ * So the keydown listener is armed and canceled with the loop, in the same
  * effect, and hands `fire` the ref.
  *
  * The stones are DOM elements moved by a custom property rather than a
@@ -301,7 +301,7 @@ export function useStormClock(
       // Cleared before anything else, so `frame` never holds a handle that
       // has already been delivered: on the frame that ends a run nothing is
       // re-requested below, and this is the difference between "nothing is
-      // pending" and a stale number that only looks like it was cancelled.
+      // pending" and a stale number that only looks like it was canceled.
       frame = 0;
       const next = tick(live.current, stepMs(now, last));
       last = now;

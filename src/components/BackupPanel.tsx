@@ -41,7 +41,7 @@ export default function BackupPanel() {
     setBusy(true);
     try {
       const parsed: unknown = JSON.parse(await file.text());
-      // Validate before writing. A half-recognised file that imports anyway is
+      // Validate before writing. A half-recognized file that imports anyway is
       // worse than one that refuses: it silently mixes junk into real history.
       if (
         typeof parsed !== "object" ||

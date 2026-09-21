@@ -63,7 +63,7 @@ Three questions before writing one:
 
 - **Would a rename do this instead?** A comment that exists to explain what a
   name means is a naming bug. Change the name and delete the comment.
-- **Could a reader work this out from the code, its neighbours and its
+- **Could a reader work this out from the code, its neighbors and its
   callers?** If so, let them.
 - **Are these plain words?** Reaching for the precise technical term reads as
   authority and lands as fog.
@@ -74,7 +74,7 @@ Four habits to delete on sight — the ones this codebase actually grew:
 - **Narrating history.** "There WAS an allowlist here…" A comment says what is
   true now; git holds what used to be true.
 - **Repeating `docs/`.** Design rationale lives in `docs/`, written once. A
-  module comment may summarise the decision it implements and cite the section
+  module comment may summarize the decision it implements and cite the section
   (`docs/typing.md §8.6`), but copying the reasoning across gives one fact two
   owners, and two owners drift.
 - **Ornate phrasing.** The plain word beats the exact one. From
@@ -149,18 +149,18 @@ That is a real structure, not a metaphor in the copy:
 | `empty`  | `/404`                              | literally nothing          |
 
 A world is `data-world` on `<html>` and **nothing else**. Every screen already
-reads its colours through `--ink-*`, `--chalk-*`, `--accent`, `--go` and
+reads its colors through `--ink-*`, `--chalk-*`, `--accent`, `--go` and
 `--terrain`, so `src/styles/worlds.css` swaps eleven custom properties and the
 whole app changes biome without a box moving. Adding one is a block in that file
 plus an entry in `src/engine/worlds.ts` — the registry both halves read, and the
-only place a world's name, blurb or theme colour is written down.
+only place a world's name, blurb or theme color is written down.
 
 Three rules:
 
 - **The telemetry five never change.** `--lime` (correct), `--flare` (wrong),
   `--sky` (the ghost), `--gold` (records), `--grape` (badges) live in
   `tokens.css` and mean the same thing in every world. Use `--go` for "press
-  this", which _is_ per-world; a world that recoloured `--lime` would teach a
+  this", which _is_ per-world; a world that recolored `--lime` would teach a
   child to re-learn the signal every time the background changed.
 - **The deck decides the world, via `DeckSpec.world`.** Keyed off `mode`, so a
   race saved three months ago still opens in the scenery it was run in. The
@@ -223,7 +223,7 @@ The card loop, XP, ghost racing and stats work off `Card` and `CardResult`,
 which are text in and text out — `answer` is `"56"`, not `56`, and `factId` is
 `"7:8"` or `"because"`. Nothing in the loop knows about arithmetic.
 
-The three judgements a loop can't make generically live on a **`DeckSpec`**
+The three judgments a loop can't make generically live on a **`DeckSpec`**
 (`src/engine/decks/spec.ts`): fold two cards onto one fact (`masteryKey`,
 `drillKey`), name a fact on screen (`factLabel`), and decide whether what was
 typed matches (`normalise`). A new deck family implements that and routes in
@@ -238,7 +238,7 @@ Three families exist: `decks/flashcards.ts` (arithmetic), `decks/words.ts`
 they play in the flash-card loop, using the same clock, ghost and record book.
 What they don't share is a route: `src/games/flashcards/App.tsx` is mounted
 twice, at `/flash-cards` (The Grid) and `/spelling/play` (Word Jungle), with a
-`subject` prop deciding which decks exist inside. A child sent to practise
+`subject` prop deciding which decks exist inside. A child sent to practice
 spellings should not have to walk past a times-table picker to get there.
 `src/components/state/SubjectContext.tsx` is where a subject is defined and
 where the reasoning lives; `/spelling` remains the crawlable page about it.

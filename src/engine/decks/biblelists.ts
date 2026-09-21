@@ -33,11 +33,11 @@
  *               14 August 2026, pulled 17 August 2026.
  *   Why that    it is the same release `sheets/passages/scripture.ts` quotes,
  *               so the book named at the top of a copywork sheet and the book
- *               spelt on a memory list cannot be two different spellings.
+ *               spelled on a memory list cannot be two different spellings.
  *
  * `biblelists.test.ts` pins that: every book the passage library references —
  * forty-eight of the sixty-six, each already checked character for character
- * against the release — must appear in these lists spelt identically. Rename
+ * against the release — must appear in these lists spelled identically. Rename
  * one and the suite fails, which is the same mechanism the verses have.
  *
  * A numbered book is written as the release writes it: `1 Samuel`, not `First
@@ -86,7 +86,7 @@
  *      boat, Amos kept sheep, Obadiah is the shortest book in the Old
  *      Testament. What baptism accomplishes, what happens at communion, how
  *      the days of Genesis 1 are counted: all real questions, none of them a
- *      thing to hand a seven-year-old as a definition to memorise. The
+ *      thing to hand a seven-year-old as a definition to memorize. The
  *      vocabulary list is short for exactly that reason, and it is the right
  *      trade — a definition a child learns and later finds was one side of an
  *      argument teaches them to distrust the sheet.
@@ -101,7 +101,7 @@ import type { WordList } from "./wordlists";
  * they are comments rather than data because a division is how the list is
  * *taught*, not what it is. A child recites sixty-six names in one run; a
  * parent chunks them into five. Splitting the list into five shipped lists
- * would make the recitation impossible to practise, which is the exercise.
+ * would make the recitation impossible to practice, which is the exercise.
  */
 export const BIBLE_LISTS: WordList[] = [
   {
@@ -158,7 +158,7 @@ export const BIBLE_LISTS: WordList[] = [
       { word: "Micah", clue: "_ said the king would come from Bethlehem." },
       { word: "Nahum", clue: "_ said Nineveh would fall." },
       { word: "Habakkuk", clue: "_ asked God why the wicked win." },
-      { word: "Zephaniah", clue: "_ wrote about a coming day of judgement." },
+      { word: "Zephaniah", clue: "_ wrote about a coming day of judgment." },
       { word: "Haggai", clue: "_ told the people to rebuild the temple." },
       { word: "Zechariah", clue: "_ saw visions of a coming king." },
       { word: "Malachi", clue: "_ ends the Old Testament." },
@@ -251,7 +251,7 @@ export const BIBLE_LISTS: WordList[] = [
       { word: "Lazarus", clue: "_ came out of the tomb." },
       { word: "Zacchaeus", clue: "_ climbed a tree to see." },
       { word: "Paul", clue: "_ was blinded on the Damascus road." },
-      { word: "Barnabas", clue: "_ travelled with Paul." },
+      { word: "Barnabas", clue: "_ traveled with Paul." },
       { word: "Timothy", clue: "_ had a mother and grandmother of faith." },
       { word: "Lydia", clue: "_ sold purple cloth." },
     ],
@@ -332,7 +332,7 @@ export const BIBLE_LISTS: WordList[] = [
       { word: "mercy", clue: "Not being punished as you deserve is _." },
       { word: "forgive", clue: "To let a wrong go is to _." },
       { word: "repent", clue: "To turn away from wrong is to _." },
-      { word: "worship", clue: "Giving God honour and praise is _." },
+      { word: "worship", clue: "Giving God honor and praise is _." },
       { word: "praise", clue: "Saying how great God is means _." },
       { word: "prayer", clue: "Talking with God is called _." },
       { word: "blessing", clue: "A good gift from God is a _." },

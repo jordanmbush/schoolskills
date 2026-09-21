@@ -44,7 +44,7 @@ export type ShelfSheet = {
   /**
    * The sheet's full name, never the catalog's `short` label. A shelf's own hub
    * can use the short one because everything around it is from the same shelf;
-   * a cross-shelf page can't, where "Chart" is a times-table chart on the maths
+   * a cross-shelf page can't, where "Chart" is a times-table chart on the math
    * shelf and "Decimals" is two different sheets on two of them.
    */
   name: string;
@@ -86,7 +86,7 @@ export type Shelf = {
   href: string;
   hub: boolean;
   /**
-   * What the link to `href` is labelled, in that shelf's own words. Written out
+   * What the link to `href` is labeled, in that shelf's own words. Written out
    * rather than composed from `label`: "All the Scripture sheets" is what that
    * shelf calls itself, and "all the bible sheets" is a worse sentence.
    */
@@ -130,10 +130,10 @@ const listing = <Sheet extends Listed>(
 export const SHELVES: Shelf[] = [
   {
     id: "math",
-    label: "Maths",
+    label: "Math",
     href: "/printables/math",
     hub: true,
-    all: "All the maths sheets",
+    all: "All the math sheets",
     blurb:
       "Worksheets from adding to twenty through to word problems, each with its answer key on the page behind it.",
     sheets: listing(MATHS_SHEETS, mathsPath),

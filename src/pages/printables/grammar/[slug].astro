@@ -24,7 +24,7 @@ import {
  * is the same build with `answers` flipped, so it cannot disagree with the
  * sheet it belongs to (§7).
  *
- * **One stock, as with maths and spelling** (§8), which is why this is a
+ * **One stock, as with math and spelling** (§8), which is why this is a
  * single-segment `[slug]` rather than a rest pattern: there is no second
  * segment to carry.
  *
@@ -93,7 +93,7 @@ const group = groups.find((entry) => entry.id === sheet.group)!;
   {
     /*
       The sheets, outside `.wrap` deliberately. A wrap adds an inline padding
-      that print.css cannot take back off, and a sheet printed a centimetre in
+      that print.css cannot take back off, and a sheet printed a centimeter in
       from where it says it is has the wrong geometry everywhere at once. The
       key is a sibling of the sheet with nothing between them, because
       print.css breaks pages on `.sheet + .sheet` as well.

@@ -1,6 +1,6 @@
 /**
  * The tagged sentences a grammar sheet is made of, written down once and
- * tagged rather than parsed because grammar is a judgement (§11). A sentence
+ * tagged rather than parsed because grammar is a judgment (§11). A sentence
  * carries as many of the five topics' tags as it can honestly carry.
  *
  * ── House rules for adding one ──────────────────────────────────────────────
@@ -14,7 +14,7 @@
  *   - **Verbs are past tense or imperative.** `walk` is a noun and a verb;
  *     `walked` is only ever a verb, and so is the `Put` that opens a command.
  *   - **Adjectives and adverbs that are nothing else.** Not `fast`, `hard`,
- *     `well` or `light`; not a colour, which is a noun as often as a modifier.
+ *     `well` or `light`; not a color, which is a noun as often as a modifier.
  *     Adverbs are `-ly` adverbs of manner, and never the `-ly` words that are
  *     adjectives (`friendly`, `lonely`, `early`).
  *   - **Pronouns that are only pronouns.** `her` and `his` are pronouns in one
@@ -26,7 +26,7 @@
  *     the verb phrase.
  *   - **An exclamation is exclamative in form.** `What a …!` and `How …!`, never
  *     a statement with an exclamation mark on it.
- *   - **One word to capitalise, and it is never the first.** The capitals sheet
+ *   - **One word to capitalize, and it is never the first.** The capitals sheet
  *     lower-cases `proper` and asks for it back, so a second capital anywhere
  *     in the sentence would be a second thing a child could point at.
  *     `grammar.test.ts` holds the bank to that mechanically, along with the
@@ -94,7 +94,7 @@ export type Tagged = {
   /** Absent where no word in it can be tagged without argument. */
   focus?: Focus;
   /**
-   * A proper noun in it, written as it is spelt correctly.
+   * A proper noun in it, written as it is spelled correctly.
    *
    * The capitals sheet prints the sentence with this word in lower case and
    * asks for it back, so it is never the first word — a lower-cased opening

@@ -176,7 +176,7 @@ function namedFacts(config: MultiplicationConfig): Array<[number, number]> {
         ],
     )
     .filter(
-      // The same judgement `drawFact` makes, reached from the other side: a
+      // The same judgment `drawFact` makes, reached from the other side: a
       // blank that any number would fill is not a question, so a fact with a
       // zero in it is dropped from a missing-number sheet rather than printed
       // as one a child cannot answer.

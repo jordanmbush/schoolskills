@@ -62,7 +62,7 @@ ol {
 }
 
 /* `--go` rather than `--lime`: the focus ring follows the world's "press this"
-   colour, so it stays visible against jungle green and glacier blue alike.
+   color, so it stays visible against jungle green and glacier blue alike.
    `--lime` is reserved for meaning "correct" and must not drift. */
 :focus-visible {
   outline: 3px solid var(--go);

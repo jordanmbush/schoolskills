@@ -7,7 +7,7 @@ import type { World } from "@/engine/worlds";
 /**
  * Moving the game between worlds.
  *
- * The world is a single attribute on <html> and every colour in the app is
+ * The world is a single attribute on <html> and every color in the app is
  * derived from it (src/styles/worlds.css), so changing subject is a one-line
  * write rather than a re-render. Picking a spelling list on the setup screen
  * turns the whole screen into the jungle while you watch, which is the entire

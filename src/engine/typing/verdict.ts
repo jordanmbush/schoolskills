@@ -134,7 +134,7 @@ function keyBars(
       need: pass.keyAccuracy,
       // Deliberately not `got >= need`. The strike floor is the second half of
       // the gate and a fraction cannot carry it: three strikes of `z` all
-      // landed is a lucky guess, not a key learnt, and a run that met `z` once
+      // landed is a lucky guess, not a key learned, and a run that met `z` once
       // would otherwise pass it at 100%. So a bar can read full and still not
       // be `ok`, and `ok` is what `passed` and the results screen go by.
       ok: strikes >= pass.keyStrikes && got >= pass.keyAccuracy,

@@ -373,7 +373,7 @@ function buildHandwritingSheet(config: HandwritingConfig, seed: number): Sheet {
     },
     blocks: bodyOf(config),
     // No game to point at: the words on a handwriting sheet may come from the
-    // jungle, but what is being practised is the shape of the letters and not
+    // jungle, but what is being practiced is the shape of the letters and not
     // the spelling (§16).
     //
     // `source` is where the words came from, printed on every page that carries

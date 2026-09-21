@@ -62,7 +62,7 @@ export default function StormRun() {
     return <Navigate to={`/p/${profile.id}`} replace />;
 
   /* **The key carries the lesson as well as the attempt**, and the lesson half
-     is not decoration. `StormPlay` builds its wave in a `useState` initialiser,
+     is not decoration. `StormPlay` builds its wave in a `useState` initializer,
      which runs once per mount — so a route that stayed mounted across
      `#/…/storm/L39` → `#/…/storm/L45` (same pattern, different param, no
      remount) would go on playing lesson 45's storm under lesson 51's name, and
@@ -147,7 +147,7 @@ function StormPlay({
    * Built once per mount and never rebuilt: a run's wave is fixed for its
    * whole life (`StormState.wave`). Which is safe only because a different
    * lesson is a different mount — see the key in `StormRun`, without which
-   * this initialiser would keep the first storm a child opened for as long as
+   * this initializer would keep the first storm a child opened for as long as
    * they stayed on the route.
    */
   const [wave] = useState(() => stormWave(lesson));

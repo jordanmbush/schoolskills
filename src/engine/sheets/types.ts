@@ -110,7 +110,7 @@ export type NumberLine = {
    * Hops drawn back along the line from `start` towards the line's own left
    * end — division as repeated subtraction (§23): `size` at a time, or the
    * `sizes` listed, in order, which is what chunking looks like (a hop of
-   * 120 and then one of 36). Each hop is labelled with what was taken away.
+   * 120 and then one of 36). Each hop is labeled with what was taken away.
    * The line stands taller to hold them: `lineHeight` in numberline.ts says
    * by how much.
    */
@@ -434,7 +434,7 @@ export type Point = { x: Mil; y: Mil };
 /**
  * A shape to measure, name or classify. The points are the whole of it, and
  * `shape` only says what sort of ink they take: a closed outline, a circle from
- * a centre and a point on it, or the two open arms of an angle. `figure.ts`
+ * a center and a point on it, or the two open arms of an angle. `figure.ts`
  * makes one, and says why a rectangle is drawn in proportion and an angle true.
  */
 export type Figure = {
@@ -521,7 +521,7 @@ export type SoundCard = {
 };
 
 /**
- * One labelled place on a form: a heading, and room to answer under it (§11).
+ * One labeled place on a form: a heading, and room to answer under it (§11).
  *
  * `space` is stated rather than derived from `lines` because a field with no
  * lines is one a child draws in, and a drawing box has a height that has
@@ -770,7 +770,7 @@ export type Block =
    */
   | { kind: "counters"; counters: Counters }
   /**
-   * A blank form: labelled boxes to write in, laid out across the page. Its own
+   * A blank form: labeled boxes to write in, laid out across the page. Its own
    * block because there is no question here — it asks what the book was about,
    * so numbering it "1." would be a page pretending to be a worksheet and the
    * key has nothing to reveal on it.
@@ -987,7 +987,7 @@ export type BlankConfig = SheetOptions & { kind: "blank" };
 export type PaperConfig = SheetOptions & { kind: "paper"; rule: Rule };
 
 /**
- * The blank maths references: a hundred chart, a number line, a coordinate
+ * The blank math references: a hundred chart, a number line, a coordinate
  * grid, a place-value chart. Geometry rather than generation, which is why it
  * sits beside `PaperConfig` rather than in `maths/`.
  *
@@ -1085,7 +1085,7 @@ export type FormConfig = SheetOptions & {
 
 /**
  * The week, on a wall: five things that are all a table with different headings.
- * The chore and behaviour charts differ only in their labels and their title,
+ * The chore and behavior charts differ only in their labels and their title,
  * which is stated rather than hidden — they are different queries and the same
  * paper, and collapsing them would answer neither search (§8).
  */
@@ -1253,7 +1253,7 @@ export type LongDigits = { into: number; by: number };
  * What is drawn under a long division's bracket (§21). Each level includes
  * the one before it: a place-value grid; then the minus signs and rules of the
  * take-away rows; then the squares that get written in shaded, and the last
- * row labelled R.
+ * row labeled R.
  */
 export type DivisionHelp = "none" | "grid" | "steps" | "guided";
 
@@ -1477,7 +1477,7 @@ export type TimeConfig = SheetOptions & {
 /**
  * A switch for the reason the currency is: a British child converting yards is
  * being asked about a country they have never measured anything in, and an
- * American child converting millimetres likewise.
+ * American child converting millimeters likewise.
  */
 export type UnitSystem = "metric" | "imperial";
 
@@ -1494,8 +1494,8 @@ export type MeasureConfig = SheetOptions & {
   style: MeasureStyle;
   system: UnitSystem;
   /**
-   * A pool rather than one, for the reason `tables` is: "millimetres,
-   * centimetres and metres" is a lesson somebody teaches, and "everything
+   * A pool rather than one, for the reason `tables` is: "millimeters,
+   * centimeters and meters" is a lesson somebody teaches, and "everything
    * measurable" is not.
    */
   quantities: Quantity[];
@@ -1669,7 +1669,7 @@ export type WordProblemConfig = SheetOptions & {
  * takes letters out; `test` prints numbered lines for a list read aloud; `abc`
  * asks for the list back in alphabetical order; `shapes` draws each word as the
  * outline its letters make; `sentence` asks for the word used in one; and
- * `find` prints the word among its near misses, which is the same judgement the
+ * `find` prints the word among its near misses, which is the same judgment the
  * race's "spot it" round makes.
  */
 export type WordSheetStyle =
@@ -1832,7 +1832,7 @@ export type GrammarConfig = SheetOptions & {
   style: GrammarStyle;
   count: number;
   /**
-   * Caps lower than the maths families, because a sentence is a long thing to
+   * Caps lower than the math families, because a sentence is a long thing to
    * print — and the subject-and-predicate sheet ignores it entirely, its answer
    * being two ruled lines the width of the column.
    */
@@ -1890,7 +1890,7 @@ export type HandwritingStyle =
   "letters" | "numbers" | "joins" | "words" | "passage";
 
 /**
- * Which joins a joins sheet practises, in the order they are taught.
+ * Which joins a joins sheet practices, in the order they are taught.
  *
  * The four classic joins are named for where the exit stroke leaves the first
  * letter and how tall the second is: a *diagonal* join climbs from the
@@ -1997,7 +1997,7 @@ export type HandwritingConfig = SheetOptions & {
  * A handwriting sheet teaches a letter. These take a child who can already
  * form one and work on what makes a page of them readable: the strokes the
  * letters are made of, the family a letter belongs to, how tall it stands
- * against its neighbours, the space between words, judging their own work,
+ * against its neighbors, the space between words, judging their own work,
  * and writing quickly without the writing coming apart.
  */
 export type PenmanshipStyle =

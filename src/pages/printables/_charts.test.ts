@@ -161,7 +161,7 @@ describe("the sheet on a catalog page", () => {
   });
 
   it("prints a name line where a child works on the sheet, and not on a wall chart", () => {
-    // The one editorial judgement on this shelf that shows up on the paper: a
+    // The one editorial judgment on this shelf that shows up on the paper: a
     // chart to pin up and a strip about to be cut into six have nothing to
     // write a name on. Blank either way, always (§1).
     for (const sheet of CHART_SHEETS) {

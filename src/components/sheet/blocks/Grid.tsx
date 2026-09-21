@@ -12,7 +12,7 @@ const CELL_TO_EM = 0.5;
  *
  * Half a square is the right size for the numerals a grid was built for and far
  * too big for a word — a heading too wide for its column overlaps its
- * neighbours and is sliced off at the edge of the drawing. A cell that cannot
+ * neighbors and is sliced off at the edge of the drawing. A cell that cannot
  * hold its text at the shared size is set at the size that fits, measured off
  * the face's own declared mean advance (`faces.ts`). Through `glyphAdvance`
  * rather than off `advance` directly, because every word here starts with a
@@ -68,7 +68,7 @@ export function Grid({ block, metrics }: BlockProps<"grid">) {
 
   // How far off the edge of the drawing a numeral and a point's letter have to
   // stay. An `<svg>` clips to its viewBox and the outermost gridline of a plane
-  // *is* the edge of it, so anything centred there loses half of itself — and a
+  // *is* the edge of it, so anything centered there loses half of itself — and a
   // letter drawn a square further out loses all of it, leaving the sheet asking
   // "E = ___" with no E anywhere on the paper.
   const half = Math.max(1, Math.round(size * 0.5));

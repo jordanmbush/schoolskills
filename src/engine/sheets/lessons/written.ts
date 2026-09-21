@@ -63,7 +63,7 @@ const remainders: Topic = {
     note(page, {
       heading: "Sometimes it doesn’t share out evenly",
       text: [
-        "14 ÷ 4 means 14 sweets shared between 4 children. Deal them out and 2 are left in the bag — not enough for everyone to get one more. What is left over is the remainder.",
+        "14 ÷ 4 means 14 candies shared between 4 children. Deal them out and 2 are left in the bag — not enough for everyone to get one more. What is left over is the remainder.",
       ],
     }),
     picture(page, 14, 3, "share", {
@@ -72,7 +72,7 @@ const remainders: Topic = {
     note(page, {
       heading: "14 ÷ 4, step by step",
       items: [
-        "14 sweets, 4 children. Deal them out: 1 each, 2 each, 3 each.",
+        "14 candies, 4 children. Deal them out: 1 each, 2 each, 3 each.",
         "Only 2 left — not enough for everyone to get one more. Stop.",
         "3 each, 2 left over. 14 ÷ 4 = 3 remainder 2.",
         "Check: 4 × 3 = 12, and 12 + 2 = 14.",

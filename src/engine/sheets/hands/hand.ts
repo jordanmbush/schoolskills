@@ -15,7 +15,7 @@
  * sizes itself by setting `ascent` on the top line, and the midline then
  * lands exactly, which no outline face here manages (§6).
  *
- * Some letters are taught in more than one shape — an `a` with one storey
+ * Some letters are taught in more than one shape — an `a` with one story
  * or two, a `t` with a curved foot or a straight one — and a scheme picks
  * one of each. So a glyph is the hand's own drawing of the letter plus,
  * where the hand draws it another way, the others by form, and a sheet
@@ -34,7 +34,7 @@
 
 /**
  * The shapes a letter is taught in, one word each so a choice means the
- * same thing in every hand: the storeys of `a`, the foot or tail of `t`,
+ * same thing in every hand: the stories of `a`, the foot or tail of `t`,
  * `q`, `l`, `i` and `y`. The same list as `FORMS` in
  * `scripts/hand/names.mjs`; a generated module is typed against this one,
  * and a form arriving from a URL is checked against it.

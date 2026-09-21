@@ -275,7 +275,7 @@ function problemOf(word: string, config: WordsConfig): Problem {
 /**
  * The list in alphabetical order.
  *
- * Compared on the normalised word so that "Because" files where a child would
+ * Compared on the normalized word so that "Because" files where a child would
  * look for it, and compared with `<` rather than with `localeCompare`, which
  * consults whatever collation the platform happens to ship: a sheet built in CI
  * and the same sheet built in a browser have to be the same sheet (§7), and this

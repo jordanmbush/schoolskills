@@ -14,7 +14,7 @@
  * square forty-two, and the hub links to both rather than pretending they are
  * missing.
  *
- * **One stock, as with maths, spelling and grammar** (§8): a hundred chart four
+ * **One stock, as with math, spelling and grammar** (§8): a hundred chart four
  * per cent smaller is still a hundred chart with a hundred squares in it. The
  * squares on graph paper are the case where that is not true, and graph paper
  * is on the shelf that prints both stocks for exactly that reason.
@@ -33,7 +33,7 @@ export type ChartSheet = {
   slug: string;
   /** How it is listed on a hub. */
   name: string;
-  /** How it is labelled in the row of neighbouring sheets. A few words. */
+  /** How it is labeled in the row of neighboring sheets. A few words. */
   short: string;
   /** The page's `<h1>`. */
   heading: string;
@@ -105,7 +105,7 @@ export const CHART_SHEETS: ChartSheet[] = [
     lead: "One hundred squares, ten to a row, numbered 1 to 100. Every column is one digit repeating, every row is a count of ten, and moving down the chart is adding ten — which is the whole of what it teaches and the reason it is never nine or eleven squares wide.",
     notes: [
       "The chart is worth having on a wall before it is worth being a worksheet. A child who is asked “what is 34 and 10?” and can put a finger on 34 and move it straight down has been shown something a right answer would not have given them: that the tens digit is the row and the units digit is the column, and that adding ten is a move rather than a sum.",
-      "Print the blank one beside it and the pair does most of Year 1. Counting in twos, fives and tens are three patterns a child can colour in; the multiples of nine come out as a diagonal; and the numbers that will not make a rectangle of counters — the primes — are the ones with nothing shaded around them.",
+      "Print the blank one beside it and the pair does most of Grade 1. Counting in twos, fives and tens are three patterns a child can color in; the multiples of nine come out as a diagonal; and the numbers that will not make a rectangle of counters — the primes — are the ones with nothing shaded around them.",
     ],
     teaches: "Counting, place value and number patterns to 100",
     ages: "Ages 5–8",

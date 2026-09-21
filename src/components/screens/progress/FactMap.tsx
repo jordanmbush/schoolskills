@@ -6,7 +6,7 @@ import { MASTERY_LABEL, MasteryLegend } from "./MasteryLegend";
 const AXIS = Array.from({ length: 12 }, (_, i) => i + 1);
 
 /**
- * Every fact from 1 to 12, coloured by how well it's known.
+ * Every fact from 1 to 12, colored by how well it's known.
  *
  * A real <table> with header cells on both axes: a grid of 144 divs would be
  * unreadable to a screen reader, and each cell already carries its own

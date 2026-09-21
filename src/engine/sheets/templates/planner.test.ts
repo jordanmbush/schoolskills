@@ -313,7 +313,7 @@ describe("the charts", () => {
     expect(table.rows).toBe(labels.length);
   });
 
-  it("counts the week on a behaviour chart", () => {
+  it("counts the week on a behavior chart", () => {
     const table = tableOf(buildSheet(config({ style: "behaviour" }), 1));
     expect(table.columns.map((column) => column.label)).toEqual([
       "What I am working on",

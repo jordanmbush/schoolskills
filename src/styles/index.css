@@ -3,7 +3,7 @@
    looking like one product.
 
    **This list is the cascade.** Rules of equal weight are settled by which one
-   the browser read first, so the order below is behaviour and not filing — a
+   the browser read first, so the order below is behavior and not filing — a
    file moved up this list can restyle a screen without failing a test. The
    game's own seven are the screens in the order a child meets them. */
 @import "./fonts.css";

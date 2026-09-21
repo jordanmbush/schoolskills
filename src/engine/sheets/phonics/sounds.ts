@@ -183,7 +183,7 @@ export type Correspondence = {
   phonemes: string[];
   /** A word spelled that way. What a sound card and a wall chart print. */
   example: string;
-  /** When the spelling is restricted to a position or a neighbour. */
+  /** When the spelling is restricted to a position or a neighbor. */
   note?: string;
   /**
    * Recorded, but never tickable: a spelling with too few words behind it to be

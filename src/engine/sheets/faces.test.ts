@@ -294,14 +294,14 @@ describe("the faces on disk", () => {
   });
 });
 
-/* ── The licence describes the same files ──────────────────────────────────
+/* ── The license describes the same files ──────────────────────────────────
    This repo is public and it redistributes eight fonts, so `public/fonts` is a
    distribution and the OFL's conditions are ours to meet — not the CDN's. The
    digests do double duty: they are how a reader checks a file against its
    distributor, and they are the only thing tying the constants above to the
    bytes they were measured out of.                                          */
 
-describe("the licence beside the files", () => {
+describe("the license beside the files", () => {
   const dir = join(ROOT, "public/fonts");
   const licence = read("public/fonts/LICENSE.md");
   /** Every `<sha256>  <file>.woff2` line `LICENSE.md` records. */
@@ -310,8 +310,8 @@ describe("the licence beside the files", () => {
       .map((line) => [line[2], line[1]] as const),
   );
 
-  it("carries the licence text, not a link to it", () => {
-    // OFL 1.1 condition 2 wants each redistributed copy to contain the licence
+  it("carries the license text, not a link to it", () => {
+    // OFL 1.1 condition 2 wants each redistributed copy to contain the license
     // — a text file, a readable header or a metadata field. Only OpenDyslexic
     // has it inside the binary (name ID 13); the rest carry a URL, and a URL
     // is not a copy. `public/` ships to `dist/`, so this travels with the

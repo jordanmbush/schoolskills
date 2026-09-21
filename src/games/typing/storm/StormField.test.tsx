@@ -205,7 +205,7 @@ const stones = (state: StormState) =>
 /**
  * Where a falling letter's middle lands, in key units: the field's own `left`
  * declaration, run rather than restated. `translate: -50% 0` — pinned below,
- * because this depends on it — centres the stone on that point, so what comes
+ * because this depends on it — centers the stone on that point, so what comes
  * back is the middle and not the left edge.
  */
 const stoneCentre = (lane: number) =>
@@ -247,9 +247,9 @@ const capCentre = (key: KeyDef) => {
  * Where a shield segment starts and ends, in the same units and out of the
  * same sheet — `FINGER_ZONES` through the field's own `left` and `width`.
  *
- * A span rather than a centre, because a zone is a group of keys and the claim
+ * A span rather than a center, because a zone is a group of keys and the claim
  * being checked is that it covers them: `l-index` is `f` and `g` together, and
- * a segment centred on the pair while too narrow for it would put half of `g`
+ * a segment centered on the pair while too narrow for it would put half of `g`
  * over the right hand's shield.
  */
 const zoneSpan = (zone: FingerZone): [number, number] => {
@@ -315,7 +315,7 @@ describe("StormField", () => {
   it("falls on a transform, down the sky rather than down itself", () => {
     // A transform and not `top`, so twelve moving stones are not twelve
     // layouts a frame (§8.9). `translateY` specifically, which leaves
-    // `translate: -50% 0` free to hold the lane centring.
+    // `translate: -50% 0` free to hold the lane centering.
     expect(declaration(".storm__letter", "transform")).toBe(
       "translateY(calc(var(--drop) * var(--fall)))",
     );
@@ -447,16 +447,16 @@ describe("StormField", () => {
     expect(html).toContain('class="storm__over');
   });
 
-  it("is drawn out of ice tokens, with no colour of its own", () => {
-    // Every colour is a world token or a finger hue: a hailstone with a
+  it("is drawn out of ice tokens, with no color of its own", () => {
+    // Every color is a world token or a finger hue: a hailstone with a
     // literal in it would be a stone that stayed the same in the next world.
     expect(storm).not.toMatch(/#[0-9a-f]{3}/i);
     expect(storm).not.toMatch(
       /\b(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch|color)\(/,
     );
 
-    // Notations can be listed; the named colours cannot, so they are caught
-    // from the other end: strip a colour-bearing value of its tokens and its
+    // Notations can be listed; the named colors cannot, so they are caught
+    // from the other end: strip a color-bearing value of its tokens and its
     // plumbing and there is nothing left to read. `color: rebeccapurple`
     // leaves a word, and so would any notation the list above forgets.
     const PLUMBING =
@@ -471,7 +471,7 @@ describe("StormField", () => {
     ).toEqual([]);
   });
 
-  it("borrows exactly the two telemetry colours it has something to say with", () => {
+  it("borrows exactly the two telemetry colors it has something to say with", () => {
     // The field itself borrows none of the five. The shield and the HUD borrow
     // two, and only where they already mean what they mean everywhere else on
     // this site (§8.5, §8.6). The other three would each be a lie about what
@@ -517,7 +517,7 @@ describe("StormField", () => {
     }
   });
 
-  it("tiles the bottom of the sky in eight, centred on the plastic", () => {
+  it("tiles the bottom of the sky in eight, centered on the plastic", () => {
     const spans = SHIELD_FINGERS.map((finger) =>
       zoneSpan(FINGER_ZONES[finger]),
     );
@@ -528,7 +528,7 @@ describe("StormField", () => {
     for (let i = 1; i < spans.length; i++)
       expect(spans[i][0], SHIELD_FINGERS[i]).toBeCloseTo(spans[i - 1][1], 10);
 
-    // The rail is centred on the DRAWN board, not on the sky: the half-gap
+    // The rail is centered on the DRAWN board, not on the sky: the half-gap
     // step-back moves the whole rail left, so against the sky it hangs half a
     // gap past the left edge and stops half a gap short of the right. The caps
     // are what a child aims at, so they are what this compares against. Take

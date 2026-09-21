@@ -110,7 +110,7 @@ export function taughtSounds(inventory: Inventory): Correspondence[] {
 /**
  * Can this child read this word?
  *
- * Every spelling taught, or the whole word learnt by sight. The `has` is over a
+ * Every spelling taught, or the whole word learned by sight. The `has` is over a
  * set the caller may hand in, because the question is asked once per word in
  * the bank per sheet and rebuilding the set three hundred times is the kind of
  * thing that turns a live preview into a stutter.

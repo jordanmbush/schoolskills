@@ -6,7 +6,7 @@
    So the type runs in two registers. Lilita One does the headlines in SENTENCE
    case here — the same face the game shouts scorelines in, talking normally —
    over Nunito at a comfortable measure. The child's half of the page is the
-   colour, the world names and the map; the parent's half is a 68-character
+   color, the world names and the map; the parent's half is a 68-character
    column of plain prose that never gets in its way.
 
    Layout is deliberately boring: a stack of bands, each holding one wrap. No
@@ -62,7 +62,7 @@
 /* One gutter for the whole site, matching the masthead's, so a heading lines
    up with the wordmark above it. Reading measure is set on the text itself
    (`.prose`, `.hero__lead`, `.h2__sub`) rather than by narrowing this — a
-   centred 68ch column under a 1180px header reads as two different pages. */
+   centered 68ch column under a 1180px header reads as two different pages. */
 .wrap {
   width: min(1180px, 100%);
   margin-inline: auto;
@@ -105,7 +105,7 @@
   color: var(--chalk-dim);
 }
 
-/* The world you're standing in, named in its own colour. */
+/* The world you're standing in, named in its own color. */
 .hero__world {
   display: inline-flex;
   align-items: center;
@@ -422,8 +422,8 @@
 
 /* The verse under the band, and the styling is most of what keeps it content
    rather than a credential (docs/printables.md §12). Set as an aside is set —
-   one rule down the left, the body size, the body's colours — so it reads as
-   another line of the argument. Nothing here centres it, enlarges it or gives
+   one rule down the left, the body size, the body's colors — so it reads as
+   another line of the argument. Nothing here centers it, enlarges it or gives
    it a flourish, because all three would make it an announcement. */
 .verse {
   max-width: 62ch;

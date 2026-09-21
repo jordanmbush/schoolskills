@@ -288,7 +288,7 @@ const dividingByDecimals: Topic = {
     note(page, {
       heading: "You can’t share between 0.2 of a person",
       text: [
-        "But you can ask: how many 0.2s make 8.4? Think of ribbon. How many 0.2 m pieces can you cut from 8.4 m? Ask it in centimetres — how many 20 cm pieces from 840 cm — and it is the same question with easier numbers. Scale both numbers up by the same amount until the divisor is whole. The answer does not change.",
+        "But you can ask: how many 0.2s make 8.4? Think of ribbon. How many 0.2 m pieces can you cut from 8.4 m? Ask it in centimeters — how many 20 cm pieces from 840 cm — and it is the same question with easier numbers. Scale both numbers up by the same amount until the divisor is whole. The answer does not change.",
       ],
     }),
     worked(

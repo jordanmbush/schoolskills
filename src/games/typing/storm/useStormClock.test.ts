@@ -23,7 +23,7 @@ import type {
  * The two decisions the clock makes, without a browser to make them in.
  *
  * The loop itself is four lines around `tick` and cannot be interesting in a
- * unit test — what a `requestAnimationFrame` does and when it is cancelled is
+ * unit test — what a `requestAnimationFrame` does and when it is canceled is
  * a question for a real browser, and `e2e/smoke.mjs` counts the outstanding
  * frames there. What IS answerable here is everything the loop decides before
  * it touches the DOM: how long a frame is allowed to be, and when the picture

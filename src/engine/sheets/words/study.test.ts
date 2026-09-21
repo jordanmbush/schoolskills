@@ -31,7 +31,7 @@ import {
 } from "./study";
 
 /**
- * Word study, held to the bar the maths families set — and to one more.
+ * Word study, held to the bar the math families set — and to one more.
  *
  * "Verified by an independent path" means something different again here. There
  * is no arithmetic to check an answer against: the answers are authored, so what

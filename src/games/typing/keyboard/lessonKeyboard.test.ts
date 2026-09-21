@@ -68,7 +68,7 @@ describe("keyboardLock", () => {
     expect(keyboardLock(L07)).toBeNull();
   });
 
-  /** A control greyed out with no reason is the bug that looks tidier. */
+  /** A control grayed out with no reason is the bug that looks tidier. */
   it("gives the reason at both ends of the ladder", () => {
     expect(keyboardLock(L01)).toContain("new keys");
     expect(keyboardLock(L10)).toContain("Checkpoints");

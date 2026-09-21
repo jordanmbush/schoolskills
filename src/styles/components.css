@@ -37,7 +37,7 @@
   pointer-events: none;
 }
 
-/* The primary action, in whichever colour this world says "press this" in —
+/* The primary action, in whichever color this world says "press this" in —
    lime in space, lantern amber in the jungle, low sun on the glacier. */
 .btn--go {
   --btn-bg: var(--go);
@@ -271,9 +271,9 @@
 }
 
 /* ── Checkbox ──────────────────────────────────────────────────────────────
-   The native box, resized and recoloured — see Checkbox.tsx for why it isn't
+   The native box, resized and recolored — see Checkbox.tsx for why it isn't
    redrawn. `accent-color` is doing the theming, which means the tick, the
-   fill, the focus ring and forced-colours mode all remain the platform's job.
+   fill, the focus ring and forced-colors mode all remain the platform's job.
 
    The row is the hit target, not the box: the <input> sits inside the <label>,
    so 1.35rem of checkbox is backed by a 2.75rem line of clickable label.      */
@@ -292,7 +292,7 @@
   flex: none;
   width: 1.35rem;
   height: 1.35rem;
-  /* Optically centred against the first line of the label rather than its box,
+  /* Optically centered against the first line of the label rather than its box,
      which is what stops a two-line label pushing the tick down with it. */
   margin-top: 0.15em;
   accent-color: var(--go);
@@ -317,7 +317,7 @@
 /* ── Range ─────────────────────────────────────────────────────────────────
    A slider big enough to grab. The thumb is styled per engine because there is
    no standard pseudo-element for it yet; both branches say the same thing, and
-   the track heights have to match or the thumb sits off-centre in one of them. */
+   the track heights have to match or the thumb sits off-center in one of them. */
 
 .range {
   display: flex;
@@ -351,7 +351,7 @@
   appearance: none;
   width: 1.6rem;
   height: 1.6rem;
-  /* (track − thumb) ÷ 2, which is what centres a thumb on a WebKit track. */
+  /* (track − thumb) ÷ 2, which is what centers a thumb on a WebKit track. */
   margin-top: -0.55rem;
   border-radius: 50%;
   background: var(--go);

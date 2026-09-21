@@ -107,7 +107,7 @@ const HEADING_FILL = 0.86;
  *
  * A folded name tag stands on a desk and reads from both sides, and a folded
  * flashcard does the same on a table. A folded certificate is not a thing and a
- * folded bookmark is a bookmark half as long, so the switch is honoured where
+ * folded bookmark is a bookmark half as long, so the switch is honored where
  * it makes an object and ignored where it would only make a crease.
  */
 const foldable = (style: CardStyle): boolean =>

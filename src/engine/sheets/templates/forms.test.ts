@@ -20,7 +20,7 @@ import { FORM_SHEET, MAX_FORM_ROWS, formKeyed } from "./forms";
 /**
  * The forms, and the one thing a blank form can get wrong.
  *
- * There are no answers on any of these sheets, so most of what a maths suite
+ * There are no answers on any of these sheets, so most of what a math suite
  * checks does not apply. What is left is geometry, and it is the geometry that
  * hides: a form whose boxes come to an inch more than the page is invisible on
  * screen — `.sheet` is `min-height`, so nothing overflows — and prints its last

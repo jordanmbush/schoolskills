@@ -70,7 +70,7 @@ describe("a counters picture", () => {
     const picture = counters(21, 3, "group", 3600, { rings: false });
     const { dots, rings } = countersGeometry(picture);
     expect(rings).toHaveLength(0);
-    // Nothing about the spacing says where a group ends: every neighbour on a
+    // Nothing about the spacing says where a group ends: every neighbor on a
     // row is the same distance along.
     const rows = new Map<number, number[]>();
     for (const dot of dots)

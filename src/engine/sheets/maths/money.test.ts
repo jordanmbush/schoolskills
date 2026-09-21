@@ -18,7 +18,7 @@ import type {
 import { CURRENCIES, MONEY_SHEET, currencyOf, moneyLayout } from "./money";
 
 /**
- * Money, held to the bar the maths families set.
+ * Money, held to the bar the math families set.
  *
  * **Nothing here checks the generator against the generator.** Every answer is
  * verified from the *printed* problem by a path the family does not use: an
@@ -464,7 +464,7 @@ describe("how much fits", () => {
     expect((rows + 1) * row + rows * PROBLEM_GAP.y).toBeGreaterThan(box.height);
   });
 
-  it("honours the count and the columns it was given", () => {
+  it("honors the count and the columns it was given", () => {
     expect(problemsOf({ count: 10 }, 1).length).toBe(10);
     expect(problemsOf({ count: 0 }, 1).length).toBe(0);
     for (const columns of [1, 2, 3, 4]) {

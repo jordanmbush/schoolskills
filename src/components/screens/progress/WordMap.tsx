@@ -3,12 +3,12 @@ import { masteryOf, type FactStat } from "@/engine/records";
 import { MASTERY_LABEL, MasteryLegend } from "./MasteryLegend";
 
 /**
- * The word list, coloured by how well each word is known.
+ * The word list, colored by how well each word is known.
  *
  * The times-table map's counterpart. A grid makes no sense here — words have
  * no two axes — so it's the list itself, in the order the list is taught,
  * which is also roughly the order of difficulty. Seeing the words you haven't
- * met yet sitting greyed out beside the ones you've mastered is most of the
+ * met yet sitting grayed out beside the ones you've mastered is most of the
  * point.
  *
  * When the list has been deleted, the words a player actually raced are all
@@ -39,7 +39,7 @@ export function WordMap({
       </div>
       <p className="muted">
         {label} — {known} of {words.length} mastered. A word turns green once
-        it&apos;s spelt right three times running and under four seconds.
+        it&apos;s spelled right three times running and under four seconds.
       </p>
 
       <ul className="wordmap">

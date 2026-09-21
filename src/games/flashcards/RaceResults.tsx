@@ -217,7 +217,7 @@ export default function RaceResults() {
       <div className="results__actions">
         {practiceFirst && (
           <Button variant="go" onClick={practise}>
-            Practise {plural(missedFacts.length, "fact")}
+            Practice {plural(missedFacts.length, "fact")}
           </Button>
         )}
         {/* A new tab, which is the one place on the site that earns one: this

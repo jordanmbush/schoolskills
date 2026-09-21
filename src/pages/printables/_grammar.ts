@@ -12,7 +12,7 @@
  * tagged in `engine/sheets/grammar/bank.ts` under house rules written down
  * there, and the shelf is deliberately smaller than it could be (§11).
  *
- * **One stock, as with maths and spelling** (§8): nothing on a grammar sheet is
+ * **One stock, as with math and spelling** (§8): nothing on a grammar sheet is
  * a measurement.
  */
 import { DEFAULT_FONT_PT } from "@/engine/sheets/paper";
@@ -32,7 +32,7 @@ export type GrammarSheet = {
   slug: string;
   /** How it is listed on a hub. */
   name: string;
-  /** How it is labelled in the row of neighbouring sheets. A few words. */
+  /** How it is labeled in the row of neighboring sheets. A few words. */
   short: string;
   /** The page's `<h1>`. */
   heading: string;
@@ -135,8 +135,8 @@ export const GRAMMAR_SHEETS: GrammarSheet[] = [
       "Twelve sentences to sort into statements, questions, commands and exclamations, with four names to circle on every line and the key behind.",
     lead: "A sentence on each line and four things it could be underneath: a statement, a question, a command or an exclamation. Two of the four announce themselves with the mark on the end; the other two do not, and that is where the work is.",
     notes: [
-      "Statements and commands both end in a full stop, and telling them apart is the whole exercise. “The old tractor belonged to Jack” and “Put the muddy boots outside the door” look identical at the end of the line, and the only way through is to ask what the sentence is for — one of them says how the world is, and the other tells somebody to change it. Questions and exclamations are the easy half, and they are there so a six-year-old can start.",
-      "Every exclamation on this sheet is an exclamation by its grammar rather than by its tone: “What a tremendous splash that was!” and “How brightly the lights of Oslo shone!” cannot be written any other way. That rules out a whole class of sentence a worksheet usually smuggles in — the plain statement with a bang on the end, where whether it should have been a full stop is a matter of how loudly you were imagining it. There is no right answer to that, so it is not asked.",
+      "Statements and commands both end in a period, and telling them apart is the whole exercise. “The old tractor belonged to Jack” and “Put the muddy boots outside the door” look identical at the end of the line, and the only way through is to ask what the sentence is for — one of them says how the world is, and the other tells somebody to change it. Questions and exclamations are the easy half, and they are there so a six-year-old can start.",
+      "Every exclamation on this sheet is an exclamation by its grammar rather than by its tone: “What a tremendous splash that was!” and “How brightly the lights of Oslo shone!” cannot be written any other way. That rules out a whole class of sentence a worksheet usually smuggles in — the plain statement with a bang on the end, where whether it should have been a period is a matter of how loudly you were imagining it. There is no right answer to that, so it is not asked.",
     ],
     teaches: "Statements, questions, commands and exclamations",
     ages: "Ages 6–10",
@@ -150,11 +150,11 @@ export const GRAMMAR_SHEETS: GrammarSheet[] = [
     heading: "Punctuation worksheets",
     keyword: "Free printable punctuation worksheets",
     summary:
-      "Twenty sentences printed with nothing on the end and a ruled space for the mark that belongs there — a full stop or a question mark, and the key behind.",
-    lead: "Each sentence stops where its punctuation should be, and there is a ruled space for the mark. A full stop or a question mark: which one is decided by the way the sentence is built, not by how it is read aloud.",
+      "Twenty sentences printed with nothing on the end and a ruled space for the mark that belongs there — a period or a question mark, and the key behind.",
+    lead: "Each sentence stops where its punctuation should be, and there is a ruled space for the mark. A period or a question mark: which one is decided by the way the sentence is built, not by how it is read aloud.",
     notes: [
-      "Only two marks are asked for, and the reason is the same one that shapes the rest of this shelf. Whether a sentence deserves an exclamation mark is a judgement about tone — “What a mess” is right with a bang and not wrong with a full stop — so an answer key cannot honestly claim either. A full stop against a question mark is decided by grammar instead: a sentence that inverts its verb or opens on a question word is a question, and nothing else is.",
-      "Commands are on this sheet on purpose, and they are the reason it is worth doing at all. “Put the muddy boots outside the door” takes a full stop although it is not a statement, which is exactly the case a child gets wrong after being taught that questions get question marks and everything else is a statement. Twenty short sentences in two columns is about five minutes, which is the right length for a thing that is mostly about noticing.",
+      "Only two marks are asked for, and the reason is the same one that shapes the rest of this shelf. Whether a sentence deserves an exclamation mark is a judgment about tone — “What a mess” is right with a bang and not wrong with a period — so an answer key cannot honestly claim either. A period against a question mark is decided by grammar instead: a sentence that inverts its verb or opens on a question word is a question, and nothing else is.",
+      "Commands are on this sheet on purpose, and they are the reason it is worth doing at all. “Put the muddy boots outside the door” takes a period although it is not a statement, which is exactly the case a child gets wrong after being taught that questions get question marks and everything else is a statement. Twenty short sentences in two columns is about five minutes, which is the right length for a thing that is mostly about noticing.",
     ],
     teaches: "Choosing the mark at the end of a sentence",
     ages: "Ages 5–9",

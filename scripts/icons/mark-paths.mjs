@@ -3,7 +3,7 @@
  *
  * Vector paths traced from scripts/icons/source.png by scripts/trace-icon.mjs.
  * Re-run that script if the artwork changes; everything else about the icons
- * (colour, corner radius, which sizes exist) is decided in generate-icons.mjs.
+ * (color, corner radius, which sizes exist) is decided in generate-icons.mjs.
  *
  * The three tones tile the square without overlapping, so paint order is free:
  * plate, then black, then white, in any arrangement, gives the same picture.
