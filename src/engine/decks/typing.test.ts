@@ -58,7 +58,7 @@ describe("the levels", () => {
     for (const level of TYPING_LEVELS) {
       if (level.kind === "sentences") continue;
       for (const word of level.pool) {
-        // "I" is the one word that is always capitalised, and it reaches the
+        // "I" is the one word that is always capitalized, and it reaches the
         // "every letter" level from the sight-word lists. Everything else with
         // a capital would be teaching the shift key two levels early.
         if (word !== "I") expect(word).toBe(word.toLowerCase());
@@ -75,7 +75,7 @@ describe("the levels", () => {
 });
 
 /**
- * The Scripture level, held to the licence rather than to a promise.
+ * The Scripture level, held to the license rather than to a promise.
  *
  * eBible.org's one condition on the World English Bible is that a *modified*
  * text may not carry the name, and `passages/scripture.test.ts` enforces that
@@ -362,7 +362,7 @@ describe("buildTypingDrill", () => {
   });
 
   it("de-duplicates without folding case", () => {
-    // "The" and "the" are different things to practise here.
+    // "The" and "the" are different things to practice here.
     expect(buildTypingDrill(["The", "the", "the"], "sentences").words).toEqual([
       "The",
       "the",

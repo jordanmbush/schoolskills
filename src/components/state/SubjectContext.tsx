@@ -11,7 +11,7 @@ import type { World } from "@/engine/worlds";
  *
  * One island, two front doors. `/flash-cards` is The Grid and `/spelling/play`
  * is Word Jungle, and a player entering one never sees the other's decks — a
- * child sent to practise spellings should not have to walk past a times-table
+ * child sent to practice spellings should not have to walk past a times-table
  * picker to get there.
  *
  * ── Why two routes rather than two apps ─────────────────────────────────────
@@ -63,7 +63,7 @@ export const SUBJECTS: Record<SubjectId, Subject> = {
     title: ["Word", "Jungle"],
     blurb:
       "Hear a word and spell it from memory, against the clock — or against a ghost of your best run, or one of your siblings'.",
-    // Borrows the age tuning the maths presets already do: how long a race is,
+    // Borrows the age tuning the math presets already do: how long a race is,
     // whether it's typed or tapped, and how tight the card clock starts. Only
     // what's ON the cards is different.
     startingConfig: (age) => {

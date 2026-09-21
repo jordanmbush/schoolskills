@@ -23,20 +23,20 @@ import type {
 import { GEOMETRY_SHEET, geometryLayout } from "./geometry";
 
 /**
- * Shape and space, held to the bar the maths families set.
+ * Shape and space, held to the bar the math families set.
  *
  * **Nothing here checks the generator against the generator.** The family works
  * forwards — from a pair of numbers to a figure and an answer — and every check
- * below works backwards from what is *printed*: the shape is recognised by
+ * below works backwards from what is *printed*: the shape is recognized by
  * counting the corners it was drawn with, its measurements are read off the
  * labels, its angles are recovered with `atan2`, and the answers are recomputed
  * by repeated addition. There is no multiplication in this file.
  *
  * That makes one thing testable that a worksheet site usually leaves to review:
- * **the drawing has to agree with the labels.** A rectangle labelled 8 by 3 and
+ * **the drawing has to agree with the labels.** A rectangle labeled 8 by 3 and
  * drawn 8 by 4 has a right answer and a lying picture, and the scale check below
- * is what catches it — every labelled edge has to have been drawn at the same
- * number of mil per centimetre, or the figure is out of proportion.
+ * is what catches it — every labeled edge has to have been drawn at the same
+ * number of mil per centimeter, or the figure is out of proportion.
  *
  * The angles go further, because an angle is drawn at life size: a sheet that
  * called something obtuse is checked by measuring the ink.
@@ -229,7 +229,7 @@ const measurements = (figure: Figure): Array<Measured | null> =>
  * How many mil the figure was drawn at, per unit of every edge that carries a
  * measurement.
  *
- * The whole of the proportion check: a shape drawn 8 by 4 and labelled 8 by 3
+ * The whole of the proportion check: a shape drawn 8 by 4 and labeled 8 by 3
  * comes back with two different numbers here, and a shape drawn honestly comes
  * back with one.
  */
@@ -376,7 +376,7 @@ describe("the answer key", () => {
           const total = totalOf(problem.answer, "");
 
           if (figure.points.length === 3) {
-            // All three sides are labelled, because all three are added — and
+            // All three sides are labeled, because all three are added — and
             // the sloping one has to be a whole number, which is why the family
             // draws these out of Pythagorean triples.
             expect(sides.filter(Boolean).length, problem.answer).toBe(3);
@@ -397,7 +397,7 @@ describe("the answer key", () => {
   });
 
   it("draws every figure in proportion to the numbers written on it", () => {
-    // The check a worksheet site usually leaves to review. A rectangle labelled
+    // The check a worksheet site usually leaves to review. A rectangle labeled
     // 8 by 3 and drawn 8 by 4 has a right answer and a lying picture.
     for (const shape of EVERY_SHAPE) {
       for (const seed of SEEDS) {
@@ -463,7 +463,7 @@ describe("the answer key", () => {
         const figure = figureOf(problem);
         if (figure.shape === "circle") {
           expect(problem.answer).toBe("circle");
-          expect(figure.points.length, "a centre and a point on it").toBe(2);
+          expect(figure.points.length, "a center and a point on it").toBe(2);
           continue;
         }
         const corners = figure.points.length;
@@ -546,7 +546,7 @@ function unitOn(figure: Figure): string {
  *
  * A square carries one measurement and four equal drawn sides, so the second
  * side is the first one — read off the drawing rather than assumed, which is
- * what makes a square labelled once still checkable.
+ * what makes a square labeled once still checkable.
  */
 function squareOrRectangle(
   figure: Figure,
@@ -919,7 +919,7 @@ describe("how much fits", () => {
     }
   });
 
-  it("honours the count and the columns it was given", () => {
+  it("honors the count and the columns it was given", () => {
     expect(problemsOf({ style: "volume", count: 10 }, 1).length).toBe(10);
     expect(problemsOf({ count: 0 }, 1).length).toBe(0);
     const columnsOf = (over: Partial<GeometryConfig>) =>

@@ -6,7 +6,7 @@ import { createHoldWatch } from "./useHeldKey";
  * What the run has to be able to trust about the key it asked for (§5.8).
  *
  * Two things are pinned: that the held key never types — its keydown is
- * cancelled every time, repeats included — and that every other key is left
+ * canceled every time, repeats included — and that every other key is left
  * alone, because the free hand has to keep typing through it.
  */
 

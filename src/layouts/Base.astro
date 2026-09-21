@@ -9,7 +9,7 @@
  * astro.config.mjs) so it can't drift from the sitemap.
  *
  * `world` is the other required-ish decision: it stamps `data-world` on <html>
- * and every colour on the page follows from it (see src/styles/worlds.css).
+ * and every color on the page follows from it (see src/styles/worlds.css).
  * The default is `grid` because that's the game, and an unthemed game screen
  * should land somewhere deliberate rather than somewhere blank.
  */
@@ -22,7 +22,7 @@ interface Props {
   description: string;
   /** Overrides the og:image. Defaults to the site-wide card. */
   image?: string;
-  /** Structured data for this page, serialised into a JSON-LD script tag. */
+  /** Structured data for this page, serialized into a JSON-LD script tag. */
   jsonLd?: Record<string, unknown>;
   /**
    * The trail to this page, root first, as `BreadcrumbList` structured data.
@@ -35,7 +35,7 @@ interface Props {
    * hierarchy above it is a claim about a structure that isn't there.
    */
   breadcrumb?: Array<{ name: string; href: string }>;
-  /** Which world this page is in. Drives every colour on it. */
+  /** Which world this page is in. Drives every color on it. */
   world?: World;
   /**
    * Keep this page out of search results.
@@ -222,14 +222,14 @@ const structured = jsonLd && {
        * Google AdSense.
        *
        * NON-PERSONALISED, ALWAYS. This site is directed to children, so
-       * behavioural advertising here would need verifiable parental consent
+       * behavioral advertising here would need verifiable parental consent
        * that a free static site cannot obtain — see src/components/site/ads.ts
        * for the COPPA and AdSense-policy reasoning, and /privacy for what we
        * tell parents.
        *
        * The order of these two tags is the whole point. `requestNonPersonalized
        * Ads` has to be set on the queue BEFORE the loader executes, because the
-       * loader reads it when it initialises; putting the async script first
+       * loader reads it when it initializes; putting the async script first
        * would leave a race in which the first ad request of a visit could go
        * out personalised. Inline, synchronous, first.
        *

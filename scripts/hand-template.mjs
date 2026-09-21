@@ -213,7 +213,7 @@ function template({ hand, character, id, glyph, source }) {
 
   const notes = [
     `    <text x="${originX}" y="40" font-family="sans-serif" font-size="30" fill="#1f3a5f">${hand.name} — ${id}</text>`,
-    `    <text x="${originX}" y="76" font-family="sans-serif" font-size="22" fill="#5b7fa6">Draw in the "strokes" layer with the pen tool: one open path per pen stroke, in the order the pen makes them. Grey is the shape; red dashes are how far the tall or hanging part goes.</text>`,
+    `    <text x="${originX}" y="76" font-family="sans-serif" font-size="22" fill="#5b7fa6">Draw in the "strokes" layer with the pen tool: one open path per pen stroke, in the order the pen makes them. Gray is the shape; red dashes are how far the tall or hanging part goes.</text>`,
     `    <text x="${originX}" y="${height - 20}" font-family="sans-serif" font-size="22" fill="#5b7fa6">Ink starts wherever you like: the ingest sets the side bearings.</text>`,
   ].join("\n");
 

@@ -710,7 +710,7 @@ describe("how much fits", () => {
     ).toBeGreaterThanOrEqual(12);
   });
 
-  it("honours the count and the columns it was given", () => {
+  it("honors the count and the columns it was given", () => {
     expect(problemsOf({ count: 8 }, 1).length).toBe(8);
     expect(problemsOf({ count: 0 }, 1).length).toBe(0);
     for (const columns of [1, 2, 3, 4]) {

@@ -20,14 +20,14 @@
  *     which is exactly why the copy is named.
  *   - The Declaration, the Preamble and the First Amendment come from the U.S.
  *     National Archives transcripts, which follow the engrossed originals —
- *     including "defence" and the capitalised nouns that look like errors and
+ *     including "defence" and the capitalized nouns that look like errors and
  *     are not.
  *   - The Second Inaugural closing is from the Wikisource text of Lincoln's
  *     *Life and Works*.
  *
  * Federal government works carry no copyright (17 U.S.C. §105); the two Lincoln
  * texts are also long out of copyright by age. There is nothing here whose
- * status turns on a judgement call, which is the standard for this directory.
+ * status turns on a judgment call, which is the standard for this directory.
  */
 import type { Passage, PassageCollection } from "./types";
 

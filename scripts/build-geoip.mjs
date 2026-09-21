@@ -9,14 +9,14 @@
  * that one artifact and is ready in a tenth of a second.
  *
  * Run it when you want fresher data — see the cadence note below, which is a
- * licence obligation rather than a preference:
+ * license obligation rather than a preference:
  *
  *   npm run analytics:geoip          build and upload
  *   npm run analytics:geoip -- --dry build locally, upload nothing
  *
  * ## Two databases, because they are good at different things
  *
- * | Source                                   | Gives         | Licence     |
+ * | Source                                   | Gives         | License     |
  * | ---------------------------------------- | ------------- | ----------- |
  * | `@ip-location-db/geo-whois-asn-country`   | country       | CC0-1.0     |
  * | `@ip-location-db/geolite2-city`           | region, city  | MaxMind EULA|
@@ -27,11 +27,11 @@
  * authoritative means adding cities did not silently move anybody between
  * countries. GeoLite2 fills in the country only where whois is silent.
  *
- * ## ⚠️ Rebuild this periodically — it is a term of the licence
+ * ## ⚠️ Rebuild this periodically — it is a term of the license
  *
  * The GeoLite2 redistribution says you "may not prevent the Library from
  * updating local copies of the GeoLite2 Databases to honor Do Not Sell requests
- * submitted to MaxMind". MaxMind honours those requests by dropping records
+ * submitted to MaxMind". MaxMind honors those requests by dropping records
  * from later releases, so a snapshot pinned in S3 forever is precisely the
  * thing that clause forbids. `.github/workflows/refresh-geoip.yml` re-runs this
  * monthly so the obligation is discharged by the pipeline rather than by
@@ -149,7 +149,7 @@ async function fetchSource(name, { url, gz }) {
  * A partition of the address space: `starts[i]` up to `starts[i+1] - 1` holds
  * `values[i]`, with `null` for the stretches no database covers.
  *
- * Modelling gaps as explicit entries rather than as a separate `ends` array is
+ * Modeling gaps as explicit entries rather than as a separate `ends` array is
  * what makes both the merge below and the reader's binary search trivial —
  * every address is inside exactly one entry, always, so a lookup never has to
  * ask a second question after finding its index.
@@ -352,7 +352,7 @@ export function buildFamily({
 const align = (n) => (n + 7) & ~7;
 
 /**
- * Serialise to the format `scripts/geoip.mjs` reads.
+ * Serialize to the format `scripts/geoip.mjs` reads.
  *
  * The header is JSON, uncompressed and at the front, so that anyone who finds
  * this file in a bucket in three years can read what it is and how it is laid

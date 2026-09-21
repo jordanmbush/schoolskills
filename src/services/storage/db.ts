@@ -48,7 +48,7 @@ interface HubDB extends DBSchema {
   sheets: { key: string; value: SavedSheet };
   /**
    * Keyed by id and nothing else, for the reason `sheets` is: a phonics
-   * programme belongs to the household rather than to a child. See
+   * program belongs to the household rather than to a child. See
    * `services/phonics.ts` for why it is a store rather than a field of a sheet.
    */
   inventories: { key: string; value: SavedInventory };
@@ -191,7 +191,7 @@ export async function putDeck(deck: CustomDeck): Promise<void> {
 /**
  * Removes a deck but NOT the races played on it. Those stay in the record
  * book keyed by their own mode, which `deckSpec` still resolves — deleting a
- * list a child has been practising must not delete the practice.
+ * list a child has been practicing must not delete the practice.
  */
 export async function removeDeck(id: string): Promise<void> {
   await (await db()).delete("decks", id);

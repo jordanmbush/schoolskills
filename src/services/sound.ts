@@ -347,7 +347,7 @@ export const sfx = {
    * sound), and the escapement ticks the carriage on one space a beat later.
    * The tick is what makes the set read as a typewriter rather than as a
    * mouse click; it is also the quietest of the three, because it is the part
-   * a listener recognises without noticing.
+   * a listener recognizes without noticing.
    */
   keyStrike: () => {
     noise({ dur: 0.016, gain: 0.1, sweepFrom: 5200, sweepTo: 2400 });
@@ -393,7 +393,7 @@ export const sfx = {
    *
    * Under it, the return: a rising sweep as the carriage flies left, and a low
    * knock as it hits the stop. Rising, because nothing else in the kit is —
-   * `misfire` is the only near neighbour and lives on a screen with no keyboard
+   * `misfire` is the only near neighbor and lives on a screen with no keyboard
    * on it.
    *
    * Quieter than `finish`, because Enter commits the last word of a passage, so

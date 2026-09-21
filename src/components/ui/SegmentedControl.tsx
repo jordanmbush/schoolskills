@@ -40,7 +40,7 @@ export type SegmentedOption<T extends string> = {
   /**
    * The full name, for when `label` is a symbol. Becomes both the hover
    * tooltip and the announced name — a "×" left to a screen reader's own
-   * judgement is read differently by every one of them.
+   * judgment is read differently by every one of them.
    */
   title?: string;
   /** A quiet second line under the label, for a choice that needs a word. */

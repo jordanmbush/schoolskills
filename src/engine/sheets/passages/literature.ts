@@ -2,7 +2,7 @@
  * Prose: the openings children know, and three fables.
  *
  * Copywork wants a paragraph that is worth having in your hand twice — once
- * read and once written — so these are first paragraphs rather than favourite
+ * read and once written — so these are first paragraphs rather than favorite
  * sentences. A first paragraph is a complete unit the author shaped, it can be
  * quoted without cutting anything, and it is the part of a book a child is
  * most likely to meet again.

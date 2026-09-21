@@ -79,7 +79,7 @@ export const MAX_SHARE_PAYLOAD = 4096;
  * Exported because the builder's own fields have to stop where the decoder
  * stops. A box that accepted more than this would silently lose the tail of
  * what somebody typed the first time the link was reopened, which is the worst
- * of the three possible behaviours.
+ * of the three possible behaviors.
  */
 export const MAX_TITLE = 120;
 export const MAX_INSTRUCTIONS = 400;

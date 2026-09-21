@@ -86,7 +86,7 @@ export function KeyboardSetting({
    * lesson.
    *
    * A sentence rather than a `disabled` flag, because a control that can be
-   * greyed out without saying why is a control that will be. The pills still
+   * grayed out without saying why is a control that will be. The pills still
    * show which mode the run is in.
    */
   lockedBecause?: string | null;

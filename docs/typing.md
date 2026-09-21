@@ -49,7 +49,7 @@ here in specific ways:
 
 Plus four that are particular to typing:
 
-1. **Never reward looking down.** The keyboard on screen, the finger colours
+1. **Never reward looking down.** The keyboard on screen, the finger colors
    and the next-key hint all exist to make looking down unnecessary. A child
    who is slow _and_ not looking is doing better than one who is fast and
    hunting, and the screen must say so.
@@ -120,7 +120,7 @@ the engine instead, because three things that are not pictures need it:
   word producible from the keys unlocked so far? That is the invariant that
   makes a hundred lessons safe to reorder (§5.2), and it is a pure function
   over the layout.
-- **Hailstorm** needs a key's horizontal centre, because that is the lane its
+- **Hailstorm** needs a key's horizontal center, because that is the lane its
   letter falls down (§8.2).
 
 Only the fourth consumer is the picture. Put the layout in the view and the
@@ -172,7 +172,7 @@ per key and no arithmetic anybody has to trust.
 is the lane its letter falls down (§8.2). The field and the drawn board cannot
 disagree about where a key is because both read this same table and both measure
 in key units off the same `--key` — one _table_, not one function. `keyX` is the
-field's convenience for the centre of a key's slot; the board wants a left edge
+field's convenience for the center of a key's slot; the board wants a left edge
 and a width, and takes `x` and `width` directly. A lane half a unit out is a
 spatial hint that teaches the wrong thing, and the shared table is what rules
 that out. It returns `null` for a code this board does not carry.
@@ -224,7 +224,7 @@ function, so a second layout is a second table plus a profile field, and
 ```ts
 export type KeyboardMode =
   | "off" // not on screen at all
-  | "keys" // the board, with finger colours; no hint
+  | "keys" // the board, with finger colors; no hint
   | "guide"; // the board, plus the next key (and its shift) lit
 ```
 
@@ -328,13 +328,13 @@ is already carried by the passage — the current word is `aria-current`, the
 characters are text, errors are in the DOM. So `aria-hidden="true"` on the
 whole board, and the picture stays a picture.
 
-The **toggle** that shows and hides it is a real kit `Toggle`, labelled, and
+The **toggle** that shows and hides it is a real kit `Toggle`, labeled, and
 reachable — because that one is a control.
 
 ### 4.5 · Touch devices
 
 On a tablet the software keyboard _is_ the interface, and "don't look down" has
-no meaning. The board still renders (it shows finger colours and the next key,
+no meaning. The board still renders (it shows finger colors and the next key,
 which are still useful), but it is never tappable. A tappable board would be a
 different product — a hunt-and-peck trainer — and building it would undo the
 whole point.
@@ -345,9 +345,9 @@ keyboard on screen during it either. See §8.8. The course itself assumes a
 real keyboard: the held-key lessons (§5.8) have nothing to hold on a software
 one, and they gate the ladder from lesson 7.
 
-### 4.6 · Colour
+### 4.6 · Color
 
-Finger colours are the one new palette this epic needs, and they must not come
+Finger colors are the one new palette this epic needs, and they must not come
 out of the telemetry five. `--lime`, `--flare`, `--sky`, `--gold` and
 `--grape` mean correct / wrong / ghost / record / badge in every world
 (CLAUDE.md), and a keyboard that used `--lime` for "left index finger" would
@@ -386,9 +386,9 @@ Three things had to give for the real number to fit:
   ceiling is never reached.
 - **The race column.** `.race` is `min(720px, 100%)` because that is a
   comfortable measure for a clock, a rival's gap and a line of words. A
-  life-size board is 1080px, so on the passage screen it is centred on its grid
+  life-size board is 1080px, so on the passage screen it is centered on its grid
   area and overflows it evenly — which is also how the desk it depicts is
-  arranged, a screen with a wider keyboard under it. The centring is
+  arranged, a screen with a wider keyboard under it. The centering is
   `margin-inline: calc(50% - 7.5 * var(--key))` and not an alignment property:
   `margin-inline: auto` is defined to resolve to zero against negative free
   space, and `justify-self: center` is start-aligned by Chrome for an
@@ -477,7 +477,7 @@ Three keystrokes make no sound at all, and each is the same shape of argument:
   else; `keyFor` in `engine/keyboard.ts` is the one place that asks.
 
 Backspace clacks like any other key, deliberately. A typewriter has no undo,
-and a quieter correction would be the board passing judgement on one.
+and a quieter correction would be the board passing judgment on one.
 
 Hailstorm draws no board (decision 64) and therefore has none of this. It is
 already one sound per stroke down there, and its gun says something the clack
@@ -676,7 +676,7 @@ Two rows in that table are not what they look like:
 - **Block 4 introduces capitals, not shifts.** A shift is not a character, and
   the unit of this curriculum is a character — so what lessons 37 and 38 hand
   over is the set of capitals each shift _reaches_. The right shift is held by
-  the right pinky and capitalises the left hand's letters; the left shift the
+  the right pinky and capitalizes the left hand's letters; the left shift the
   right hand's. Two lessons, twenty-six characters, and the opposite-hand rule
   (§3.3) taught as the only way either of them works. `keys.ts` reads the
   shifts back out of those two rows, and there is nowhere else they are
@@ -736,7 +736,7 @@ lesson is woven in below it (§5.8).
 |  25 | L21 | Down to v and m               | `v m`       | keys      | guide🔒 |    26 |  11 | 95% |
 |  26 | L22 | c, and the comma              | `c ,`       | keys      | guide🔒 |    26 |  11 | 95% |
 |  27 | L23 | Hailstorm · Down low          | —           | storm     | guide   |    22 |   — |   — |
-|  28 | L24 | x, and the full stop          | `x .`       | keys      | guide🔒 |    26 |  12 | 95% |
+|  28 | L24 | x, and the period             | `x .`       | keys      | guide🔒 |    26 |  12 | 95% |
 |  29 | L25 | The last corner               | `z /`       | keys      | guide🔒 |    26 |  12 | 95% |
 |  30 | L26 | The last two                  | `b n`       | keys      | guide🔒 |    28 |  12 | 95% |
 |  31 | H05 | Right hand · Reaching down    | `n m , . /` | keys      | guide🔒 |    28 |  10 | 95% |
@@ -804,7 +804,7 @@ lesson is woven in below it (§5.8).
 |  73 | L63 | Hyphen and underscore       | `- _`         | keys    | guide🔒 |    35 |  19 | 95% |
 |  74 | L64 | Colon and semicolon         | `: ;`         | keys    | guide🔒 |    35 |  19 | 95% |
 |  75 | L65 | Hailstorm · Punctuation     | —             | storm   | keys    |    34 |   — |   — |
-|  76 | L66 | Brackets                    | `( )`         | keys    | guide🔒 |    35 |  19 | 95% |
+|  76 | L66 | Parentheses                 | `( )`         | keys    | guide🔒 |    35 |  19 | 95% |
 |  77 | L67 | Above the numbers           | `@ # $ % & *` | keys    | guide🔒 |    35 |  18 | 95% |
 |  78 | L68 | Slash, plus, equals         | `/ \ + =`     | keys    | guide🔒 |    35 |  19 | 95% |
 |  79 | L69 | Hailstorm · Symbols         | —             | storm   | off     |    36 |   — |   — |
@@ -901,7 +901,7 @@ combo that repairs the weakest zone, and `—` is none.
 | 109 | The last storm   |  50 |   300–500 | 1200–1800 |      2 |     — | —        |   99 |
 
 **There is no `keys` column, and there cannot be one.** A level's pool is
-`unlockedAt(n)` — the same computed alphabet its neighbours' words come from
+`unlockedAt(n)` — the same computed alphabet its neighbors' words come from
 (§5.2) — so a storm can never ask for a key the ladder has not taught, and
 moving a storm up the ladder moves what falls in it. "Rains" is a weighting on
 top of that pool, not a replacement for it: the named class is repeated until
@@ -1004,7 +1004,7 @@ sheet imposes. Nothing is marked wrong, because nothing was typed. Trusting
 `keyup` is the opposite call from the echo's (§4.3) and the opposite failure:
 a missed release leaves the run believing the key is still held, which costs a
 child nothing, and a lost window releases it anyway. The held key itself types
-nothing — its `keydown` is cancelled, first press and every auto-repeat after
+nothing — its `keydown` is canceled, first press and every auto-repeat after
 it, so no `f` ever lands in the field; the echo leaves it alone, so a child is
 not flashed red for holding the key they were told to hold; and the board
 draws it in a state of its own, asked for and then held, beside whatever the
@@ -1305,7 +1305,7 @@ bribe stapled on the side, because the thing it drills is real:
   down at that will tell you where a key is.
 - It drills **single-key reaction** rather than word rhythm, which is the one
   thing the passage lessons cannot exercise.
-- It shows you **which finger is weak** as a hole in your own defences (§8.5).
+- It shows you **which finger is weak** as a hole in your own defenses (§8.5).
 
 ### 8.2 · The field is the keyboard, and draws none
 
@@ -1386,7 +1386,7 @@ of smear. The glyph is **bold**, because what survives motion blur is stroke
 width, and `l` and `i` are told apart by a thick stem long after a thin one has
 washed out. And the stone gets `will-change: transform`, so it is rasterised
 once and composited rather than re-rasterised at a new sub-pixel offset sixty
-times a second — the cost is greyscale antialiasing, slightly softer standing
+times a second — the cost is grayscale antialiasing, slightly softer standing
 still and much steadier moving, which is the right way round for the one element
 on this site that is always moving.
 
@@ -1402,13 +1402,13 @@ passage screen overrides it, because that screen has a board to budget height
 for and this one has nothing under the sky (§4.7).
 
 They scale off it differently, though, and the difference had to be resolved
-rather than inherited. `keyX` returns the centre of a key's **slot**, while the
+rather than inherited. `keyX` returns the center of a key's **slot**, while the
 drawn keycap is inset inside that slot: `game/keyboard.css` gives it
 `width: calc(var(--w) * var(--key) - var(--key-gap))`, with `--key-gap` set to
-`calc(var(--key) * 0.09)`. So a cap's visual centre is `--key * (x + w/2 -
+`calc(var(--key) * 0.09)`. So a cap's visual center is `--key * (x + w/2 -
 0.045)` while its lane is `--key * (x + w/2)` — a letter placed at
-`left: calc(var(--lane) * var(--key))` and centred on that point would sit
-**0.045 key units right of the centre of the cap it names**, about 3.2px at the
+`left: calc(var(--lane) * var(--key))` and centered on that point would sit
+**0.045 key units right of the center of the cap it names**, about 3.2px at the
 4.5rem ceiling of `--key` and about 0.8px at the 1.05rem floor.
 
 **The field subtracts it** (decision 36):
@@ -1440,7 +1440,7 @@ happened to round the right way at one size.
 
 That the storm no longer DRAWS those caps does not retire the check, and this is
 the one place worth saying why. The correction exists because a lane is a slot
-centre and the eight shield segments step back by the same half gap (§8.5) — so
+center and the eight shield segments step back by the same half gap (§8.5) — so
 the two claims that have to stay true are that a lane and its segment share the
 offset, and that both are still the geometry a keycap would have had. The board
 under the passage is drawn from the same declarations, so the arithmetic is
@@ -1534,7 +1534,7 @@ moment it is new, and this is the moment it is not moving. Reading the letter
 and racing it down become two things instead of one, and a child who has
 already identified an `i` does not need it to be legible on the way past.
 
-A second is a judgement rather than a measurement, and what anchors it is that
+A second is a judgment rather than a measurement, and what anchors it is that
 it is the same order as the fastest fall on the ladder (900ms, at lessons 4, 11
 and 15). Round, long enough to read an unfamiliar glyph without hurrying, and
 short enough that a level with a 300ms gap still has a queue rather than a
@@ -1659,7 +1659,7 @@ points.
 - A letter that lands in a hole ends the run.
 
 Finger zones rather than per-key segments, because a hole under `o` tells you
-nothing and a hole under **right ring finger** tells you what to practise. When
+nothing and a hole under **right ring finger** tells you what to practice. When
 the run ends, the screen says which finger let it through, and offers a drill
 of exactly the keys that zone covers — which is the trouble-facts machinery
 already in `records.ts`, pointed at a different question.
@@ -1688,7 +1688,7 @@ What it concludes is decided in `stormReport(state)` and rendered in
   tying that exact millisecond is left unresolved while the clock reads it as
   landed; counting the clock would over-report what got through, on the one
   screen where the number is the whole point.
-- **The keys to practise.** That finger's characters, out of `spec.keys` rather
+- **The keys to practice.** That finger's characters, out of `spec.keys` rather
   than off the whole board: a child who died at lesson 15 has met perhaps two
   of the right ring finger's keys, and a drill of `9` and `(` would be a
   practice deck of keys nobody has taught them. It can never be empty for a
@@ -1712,12 +1712,12 @@ where both figures are already in reach, because it builds its drill through
 that ended early is "the storm got through", not a mark. Everything on the two
 endings that a child could read as a grade is identical: the same panel, in the
 same order, with the same four figures in the same places, drawn in the same
-colours. What differs is what there is to say and to offer — the heading, the
+colors. What differs is what there is to say and to offer — the heading, the
 lede under it, and, after a breach only, an "Its keys" line and a third button
 offering a drill of those keys. So nothing in the arrangement, the ordering or
-the colour can be read as a mark for the child rather than a report of what the
+the color can be read as a mark for the child rather than a report of what the
 weather did. The one hue a breach adds is the named finger's own, which is
-identity and not judgement: the same colour as the block that broke and the
+identity and not judgment: the same color as the block that broke and the
 keys under it. `--lime` appears exactly once, on the XP, where it means
 what it means everywhere else on this site — this is what the letters paid,
 and it could not have gone down (§8.6). A cleared wave that let nothing through
@@ -1730,7 +1730,7 @@ than a derivation: every row divides into eight runs — no row hands a key back
 to a finger it has already passed — but the rows are staggered, so they
 disagree about where the divisions fall. The left pinky gives way to the left
 ring at 2 on the number row, at 2.5 on the top row, at 2.75 on the home row and
-at 3.25 on the bottom row, and a vertical seam can honour one of the four. The
+at 3.25 on the bottom row, and a vertical seam can honor one of the four. The
 home row wins because it is the row the hands are ON: `a s d f` and `j k l ;`
 is where the fingers rest and what every reach returns to, so "your right ring
 finger" and "the column over `l`" are the same sentence to the child being told
@@ -1760,7 +1760,7 @@ ring finger crumble learns something about their hands that no accuracy
 percentage will ever tell them.
 
 `repairAt` gives it back: every _n_ consecutive hits restores a point to the
-weakest segment. It is the comeback path, and it rewards the exact behaviour
+weakest segment. It is the comeback path, and it rewards the exact behavior
 the game exists to build. The weakest segment rather than the last one damaged,
 because a segment at zero is simultaneously the one about to end the run and
 the one a single point is worth most in — "weakest" reaches it with no special
@@ -2091,7 +2091,7 @@ Ten falling letters, a shield and a keyboard, at 60fps, in DOM elements with
 
 Not canvas, for a reason that is specific to this site: **the whole app changes
 biome by swapping eleven custom properties** (CLAUDE.md), and a canvas is a
-hole in that — every colour inside it would have to be read out of
+hole in that — every color inside it would have to be read out of
 `getComputedStyle` and re-plumbed by hand, and the first world added after this
 would silently not apply to the one screen that most needs the scenery.
 
@@ -2161,7 +2161,7 @@ redrawing the old one.
 
 ### 8.10 · Motion, flashing and reduced motion
 
-A falling-letter game cannot honour `prefers-reduced-motion` by removing the
+A falling-letter game cannot honor `prefers-reduced-motion` by removing the
 falling. What it can and must do:
 
 - **No screen shake, no parallax, no particles** under reduced motion. Those
@@ -2293,7 +2293,7 @@ falling. What it can and must do:
   The cap is `MIN_FALL_MS` in `buildWave`, and it is there rather than in the
   levels because the twenty `WaveSpec`s are a table and a table gets tightened
   one row at a time until a level nobody can read ships (decision 52). 800ms is
-  a judgement rather than a measured reaction time, and it is anchored to the
+  a judgment rather than a measured reaction time, and it is anchored to the
   ladder's own shapes: the fastest fall any of the twenty declares is 900ms
   (lessons 4, 11 and 15, §5.7), so the floor sits just under the fastest the
   ladder ever _means_ to be and no row is touched by it. At the 1280×1000
@@ -2624,7 +2624,7 @@ which is what every run saved before this is.
 | 18  | Hailstorm is a route in the typing island                                                    | It is a level inside the ladder; a second island means a page load mid-progression and a second keyboard                                                                |
 | 19  | Letters fall down their key's column                                                         | The lane is a spatial hint — the game teaches the layout the whole time it is played                                                                                    |
 | 20  | Only the lowest letter can be shot                                                           | Otherwise spraying the keyboard is a winning strategy                                                                                                                   |
-| 21  | The shield is eight finger zones                                                             | A hole under `o` tells you nothing; a hole under the right ring finger tells you what to practise                                                                       |
+| 21  | The shield is eight finger zones                                                             | A hole under `o` tells you nothing; a hole under the right ring finger tells you what to practice                                                                       |
 | 22  | Score can fall, XP cannot                                                                    | XP is cumulative across years and four games; a bad five minutes must not lower a level                                                                                 |
 | 23  | A Hailstorm run is a `Session`                                                               | Record book, XP, badges and the drill builder all work with no new code                                                                                                 |
 | 24  | Hailstorm never gates the ladder                                                             | A tablet has no keys, and a reward that blocks you is not a reward                                                                                                      |
@@ -2639,7 +2639,7 @@ which is what every run saved before this is.
 | 33  | An exact tie goes to the earlier spawn                                                       | The index is the letter's identity, so a replay resolves the same dead heat the same way                                                                                |
 | 34  | A repair never lifts a zone above `spec.shield`                                              | "Untouched" has to keep meaning the eight-of-`shield` a run started with                                                                                                |
 | 35  | A tick resolves every landing inside it                                                      | A backgrounded tab hands back seconds; clamping the delta is the clock's call, not the rule's                                                                           |
-| 36  | The field's lanes step back half a `--key-gap`                                               | `keyX` centres a key's slot; the child aims at the cap drawn inside it, and half the gap is the difference                                                              |
+| 36  | The field's lanes step back half a `--key-gap`                                               | `keyX` centers a key's slot; the child aims at the cap drawn inside it, and half the gap is the difference                                                              |
 | 37  | `--key` is declared at the root, once per screen                                             | It lived on the board, which the field above it cannot read — and two clamps inside one screen are two ideas of a key                                                   |
 | 38  | A frame is clamped to 100ms of wave time                                                     | A hidden tab hands back seconds; running slow below 10fps beats teleporting letters through the shield                                                                  |
 | 39  | The loop writes `--drop`; the stylesheet owns the fall                                       | Geometry stays off one `--key` and the sky's own height, so the loop holds no second opinion about either                                                               |
@@ -2662,7 +2662,7 @@ which is what every run saved before this is.
 | 56  | A storm level cannot name its own keys                                                       | The row holds a `WaveSpec` minus `keys`, so the pool can only be `unlockedAt(n)` and reachability is structural                                                         |
 | 57  | The miss flash has a floor, in the reducer                                                   | A zone's tint rate is the schedule's and the specs keep it; a wrong key's is a hand's, and no spec can                                                                  |
 | 58  | A storm's seed is the level's, not the visit's                                               | A level is the same weather twice, and the twenty waves measured for strobe are the twenty a child meets                                                                |
-| 59  | A lesson is cleared only by a run that says it is that lesson                                | A drill files under the lesson's mode, so mode alone would let practising a lesson clear it                                                                             |
+| 59  | A lesson is cleared only by a run that says it is that lesson                                | A drill files under the lesson's mode, so mode alone would let practicing a lesson clear it                                                                             |
 | 60  | A storm's brief is its own screen                                                            | Three bars, a best and a keyboard control are three things a storm does not have, and it has three of its own                                                           |
 | 61  | The board is drawn at 19.05mm key pitch                                                      | It is a map read while the hands are on the real thing; at half scale the child does the scaling, which is the work looking down would have saved                       |
 | 62  | The board may overflow the 720px race column                                                 | 720px is a reading measure and a keyboard is not read; a screen with a wider keyboard under it is the desk it depicts                                                   |
@@ -2732,7 +2732,7 @@ nothing.
 **KEY — the keyboard.** Ships on its own, under today's passage.
 
 1. `engine/keyboard.ts` — the layout, `strokeFor`, `keyX`, and its tests.
-2. `Keyboard.tsx` and finger-colour tokens.
+2. `Keyboard.tsx` and finger-color tokens.
 3. `useKeyEcho` — press flash and wrong-key flash.
 4. The next-key hint, including the opposite-hand shift.
 5. `Profile.keyboard` and the toggle.
@@ -2749,7 +2749,7 @@ nothing.
 13. The lesson run — `TypingTrack` without the race (§7).
 14. The lesson results — three bars, and what to do next.
 15. The ladder screen and the brief.
-16. Badges, and the keyboard toggle honouring lesson locks.
+16. Badges, and the keyboard toggle honoring lesson locks.
 
 **STORM — Hailstorm.** Needs KEY. Runs alongside LESSON.
 

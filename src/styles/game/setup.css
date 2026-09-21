@@ -50,7 +50,7 @@
 /* ── Which half of the typing screen you are on ─────────────────────────
    The ladder and free play are alternatives rather than two sections of one
    page, and this row is the only thing that says so (docs/typing.md §9). So
-   it sits above both and centred, which is where nothing else on the screen
+   it sits above both and centered, which is where nothing else on the screen
    is — a switch aligned with the panels reads as a control belonging to the
    first of them. */
 .setup__switch {

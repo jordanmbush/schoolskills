@@ -1,5 +1,5 @@
 /**
- * Penmanship: the page after the letters are learnt (§24).
+ * Penmanship: the page after the letters are learned (§24).
  *
  * The handwriting family teaches a letter — trace it, copy it, write it. A
  * child who can do that and still hands in a page nobody can read has a

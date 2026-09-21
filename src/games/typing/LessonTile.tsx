@@ -7,12 +7,12 @@ import { lockNote } from "./lessonNotes";
  * One rung of the ladder, as a square on a map (§9).
  *
  * The shape of the map is `LessonLadder`'s problem; a tile does not know it has
- * ninety-nine neighbours.
+ * ninety-nine neighbors.
  *
- * **Every state is in the accessible name, not only in the colour.** The number
+ * **Every state is in the accessible name, not only in the color.** The number
  * is the visible label and the sentence beside it is the spoken one, which is
  * the same split `TopBar` uses for its icons. A ladder that said "passed" in
- * cyan and "locked" in grey and nothing else would be a hundred unlabelled
+ * cyan and "locked" in gray and nothing else would be a hundred unlabeled
  * buttons to a child using a screen reader, and some of them do.
  */
 

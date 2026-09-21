@@ -27,7 +27,7 @@
  *     two places. `want`, `wash` and `watch`, which agree, are here.
  *
  * Words whose *vowel* differs while its identity doesn't — everything using
- * `/o/`, `/aw/` or an r-coloured vowel — are fine and are here, because both
+ * `/o/`, `/aw/` or an r-colored vowel — are fine and are here, because both
  * varieties agree about which words share a vowel. `variesByAccent` names them
  * for the one sheet style that would have to care: hearing two sounds apart.
  */
@@ -621,7 +621,7 @@ const VOWEL_TEAMS: Word[] = [
   w("hello", "h e ll o:oa"),
 ];
 
-/* ── The r-coloured vowels ────────────────────────────────────────────────
+/* ── The r-colored vowels ────────────────────────────────────────────────
    Three spellings for the vowel of `her` and three sounds for the letters of
    `ear`, which between them make the case for the whole model. Rhotic or not,
    the letters are the same — see the accent note in `sounds.ts`.             */
@@ -801,7 +801,7 @@ const POSITIONS: Word[] = [
    Every word here uses a spelling marked `odd` in `sounds.ts`, which is what
    makes it unreachable by ticking sounds — the only way one of these reaches
    a page is a parent putting the word itself on their `tricky` list, which is
-   exactly how a programme teaches them. The cuts are still honest: `ai`
+   exactly how a program teaches them. The cuts are still honest: `ai`
    really does say /e/ in `said`, and saying so is how a sheet can print the
    awkward part in a different weight (§13).                                 */
 

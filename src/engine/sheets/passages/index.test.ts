@@ -3,7 +3,7 @@
  *
  * scripture.test.ts holds the WEBu to its release; this holds everything else
  * to the two rules types.ts states — every passage names its source and its
- * licence, and nothing is quoted that we can't say why we may quote. Those are
+ * license, and nothing is quoted that we can't say why we may quote. Those are
  * the rules that stop being true quietly, one careless addition at a time.
  */
 import { describe, expect, it } from "vitest";
@@ -28,7 +28,7 @@ import { SCRIPTURE } from "./scripture";
 const ALL = listPassages();
 
 describe("provenance", () => {
-  it("records a source and a licence on every passage", () => {
+  it("records a source and a license on every passage", () => {
     for (const item of ALL) {
       const { work, author, year, edition, licence } = item.source;
       for (const [field, value] of Object.entries({
@@ -176,7 +176,7 @@ describe("the front door", () => {
     expect(passagesIn("no-such-collection")).toEqual([]);
   });
 
-  it("summarises without the words, but with how many there are", () => {
+  it("summarizes without the words, but with how many there are", () => {
     const summary = listPassageSummaries().find((s) => s.id === "psalm-23");
     const full = passage("psalm-23");
     expect(summary).not.toHaveProperty("lines");

@@ -123,7 +123,7 @@
 }
 
 /* The content slot is always leaderboard height, so on a narrow screen it
-   holds the mobile banner centred rather than a cropped wide one. */
+   holds the mobile banner centered rather than a cropped wide one. */
 .ad--content .ad__unit,
 .ad--article .ad__unit {
   height: 50px;
@@ -138,7 +138,7 @@
 
 /*
  * Nothing to show — no slot id yet, ads disabled, or the request failed. The
- * box stays exactly the same size and says nothing, because an empty labelled
+ * box stays exactly the same size and says nothing, because an empty labeled
  * frame looks like a broken advert rather than an absent one.
  */
 .ad:empty,

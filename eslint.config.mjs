@@ -118,7 +118,7 @@ const resolveSpecifier = (context, specifier) => {
  * only a fresh object literal throws. That is a trap rather than a reprieve —
  * it means the failure depends on how someone happens to write the duplicate.
  * Don't rely on it; keep the single registration below.
- * `eslint.config.test.mjs` pins both halves of this behaviour.
+ * `eslint.config.test.mjs` pins both halves of this behavior.
  */
 const localPlugin = {
   rules: {
@@ -342,7 +342,7 @@ export default defineConfig([
   // on the site imports `decks/index.ts`, so what the deck layer imports, all
   // of them download — and the typing corpus is the largest thing in the
   // codebase that only one screen needs. See CORPUS_BAN for the number this
-  // was learnt from, and `local/no-corpus-in-decks` for why it is a local rule.
+  // was learned from, and `local/no-corpus-in-decks` for why it is a local rule.
   //
   // Scoped to the whole engine despite the rule's name, because what §5.3 asks
   // for is that the corpus "must never become REACHABLE from decks/index.ts",
@@ -633,7 +633,7 @@ export default defineConfig([
 
   {
     // The browser-driving suite straddles two runtimes: the file itself is
-    // Node, but every `page.evaluate(() => …)` callback is serialised and run
+    // Node, but every `page.evaluate(() => …)` callback is serialized and run
     // inside the page. ESLint sees one scope, so both sets of globals have to
     // be declared — and the storage ban has to lift, since verifying what
     // landed in IndexedDB is precisely this suite's job.

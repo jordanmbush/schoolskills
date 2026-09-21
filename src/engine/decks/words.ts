@@ -126,7 +126,7 @@ export function clueParts(clue: string): [string, string] {
  * is the whole of "clues from the list's own definitions where available" —
  * available means somebody wrote one, and this is where they are.
  *
- * Normalised on the way in and on the way out, so a list typed in capitals
+ * Normalized on the way in and on the way out, so a list typed in capitals
  * still finds its sentence. A few hundred entries, built once at load.
  *
  * Across every shipped list rather than the graded ones, for the same reason:
@@ -281,7 +281,7 @@ export function buildWordDrill(
 /**
  * Every word deck marks and folds identically; only the name differs. Built
  * per list so the record book can title a run, and produced on demand for an
- * id it doesn't recognise — a list this build has never heard of is the normal
+ * id it doesn't recognize — a list this build has never heard of is the normal
  * case once a parent can author their own.
  */
 export function wordDeckSpec(mode: string): DeckSpec {
@@ -291,7 +291,7 @@ export function wordDeckSpec(mode: string): DeckSpec {
     label: list?.name ?? "Words",
     world: "jungle",
     // A word is one fact however it's asked, so nothing folds and nothing
-    // splits. Normalised so "Because" and "because" are the same square.
+    // splits. Normalized so "Because" and "because" are the same square.
     masteryKey: normaliseWord,
     drillKey: normaliseWord,
     factLabel: (factId) => factId,

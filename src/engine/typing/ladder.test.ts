@@ -145,7 +145,7 @@ describe("a child who has done nothing", () => {
   /**
    * A drill carries the mode it was offered from and **no `lessonId`** (§8.5).
    * Filed by mode alone it would clear the lesson without the lesson ever
-   * being run — the ladder filling in behind a child who only ever practised.
+   * being run — the ladder filling in behind a child who only ever practiced.
    * `progress.ts` reads its badges off `config.lessonId` for the same reason.
    */
   it("is not advanced by a drill filed under a lesson's mode", () => {
@@ -255,7 +255,7 @@ describe("Hailstorm never gates the ladder", () => {
    * Decision 72, and the other half of the rule above. `open` is what keeps a
    * wave optional; the pointer is what stops it being invisible. Carrying both
    * — which is what shipped first — meant a child passed 50, was sent to 52,
-   * and never learnt there was a game at 51 to turn down.
+   * and never learned there was a game at 51 to turn down.
    */
   it("points at the storm rather than over it", () => {
     const progress = ladderProgress([passing(lesson(50))]);

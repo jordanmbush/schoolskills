@@ -12,14 +12,14 @@
  * the thin line, as it is on a pattern. What is new is `guides`: on a model
  * cell a dot marks where each stroke starts, an arrow says which way it
  * goes, and a number says which stroke it is. And `forms`, which letters
- * the row writes the other way — a double-storey `a`, a straight `t` — for
+ * the row writes the other way — a double-story `a`, a straight `t` — for
  * every cell alike, since a sheet teaches one shape of a letter at a time.
  *
  * Sized by setting the hand's `ascent` on the writing space, less the room
  * its ink needs to touch a line rather than lie on it, so the tallest
  * letter reaches the top line and, because the hand is drawn to a ruling,
  * the small letters reach the midline as well. A cell whose text is wider
- * than the cell shrinks to fit rather than running into its neighbour, as a
+ * than the cell shrinks to fit rather than running into its neighbor, as a
  * traced cell does.
  *
  * In a hand that joins, the letters of a word are one line for as long as
@@ -125,7 +125,7 @@ export function WrittenRow({
   const ink = letterInk(writing);
   // A stroke lying along a line would be lost in it, so a letter is set with
   // its ink just inside the lines it reaches: a stroke on the top line, the
-  // baseline or the line under the tail space is centred a rule's half-width
+  // baseline or the line under the tail space is centered a rule's half-width
   // and an ink's half-width off it, and the two touch. The midline is dashed
   // and left where it is, so a crossbar still sits on it (§25).
   const inset = (RULE + ink.width) / 2;
@@ -186,7 +186,7 @@ export function WrittenRow({
         };
         // Every letter is placed before any join is drawn or any guide laid
         // out: a join needs both its letters on the paper, and a letter's
-        // guides keep off its neighbours' ink as well as its own.
+        // guides keep off its neighbors' ink as well as its own.
         const marks: { x: number; y: number }[] = [];
         const placed: Placed[] = [...entry.text].map((character) => {
           const glyph = glyphOf(hand, character, forms);

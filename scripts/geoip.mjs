@@ -67,7 +67,7 @@ export const cacheDir = () => join(tmpdir(), "schoolskills-geoip");
  *
  * Not an expiry — a stale table still answers, and losing a month of counts
  * because nobody re-ran a build would be the worse failure. But the GeoLite2
- * licence requires that local copies keep updating so MaxMind's Do Not Sell
+ * license requires that local copies keep updating so MaxMind's Do Not Sell
  * requests propagate, so an artifact this old means the refresh has stopped
  * and somebody needs to know. See scripts/build-geoip.mjs.
  */

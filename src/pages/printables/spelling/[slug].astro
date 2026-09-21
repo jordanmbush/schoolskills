@@ -19,7 +19,7 @@ import {
  * One prerendered spelling sheet per topic — and the page is the sheet (§8),
  * with prose above it and nothing to choose before it prints.
  *
- * **One stock, as with maths and unlike the ruled shelves** (§8), which is why
+ * **One stock, as with math and unlike the ruled shelves** (§8), which is why
  * this is a single-segment `[slug]` rather than a rest pattern: there is no
  * second segment to carry.
  *
@@ -102,7 +102,7 @@ const study = sheet.config.kind === "word-study";
   {
     /*
       The sheets, outside `.wrap` deliberately. A wrap adds an inline padding
-      that print.css cannot take back off, and a sheet printed a centimetre in
+      that print.css cannot take back off, and a sheet printed a centimeter in
       from where it says it is has the wrong geometry everywhere at once. The key
       stays an adjacent sibling, because print.css breaks pages on
       `.sheet + .sheet` as well.

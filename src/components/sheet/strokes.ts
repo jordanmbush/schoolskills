@@ -11,7 +11,7 @@
  * The continuous ones — zigzag, waves, humps, cups and the two loops — start
  * and end each repeat on the same line, so a cell that starts where the last
  * one ended continues the pattern in phase; the lifted ones — lines, slants
- * and circles — are one stroke a repeat, centred in it.
+ * and circles — are one stroke a repeat, centered in it.
  *
  * Coordinates are mil, matching the viewBox the row sets up, and rounded to a
  * tenth so a page of paths stays a page.

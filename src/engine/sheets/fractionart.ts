@@ -3,7 +3,7 @@
  *
  * The bar and the circle a fraction is taught from before it is a pair of
  * numbers. Like a number line, it is a drawing attached to a problem rather than
- * a block of its own — the problem grid is the shared primitive every maths
+ * a block of its own — the problem grid is the shared primitive every math
  * family prints through, and a picture the question is *about* belongs inside
  * the question.
  *
@@ -12,7 +12,7 @@
  * dimensions, and both halves read it.
  *
  * The sizes are inches and do not scale with the body type. A diagram is a
- * physical object a child colours in — a quarter is a quarter of the same bar
+ * physical object a child colors in — a quarter is a quarter of the same bar
  * whether the sheet is set at 12pt or at 18pt for a five-year-old — and §17's
  * larger type is about reading the words, not about growing the pictures.
  */

@@ -35,7 +35,7 @@ import {
   type Stock,
 } from "./_catalog";
 
-/** How the hub groups the shelf: what is being written, in the order it is learnt. */
+/** How the hub groups the shelf: what is being written, in the order it is learned. */
 export type CursiveGroup = "letters" | "joins" | "words" | "passages";
 
 export type CursiveSheet = {
@@ -43,7 +43,7 @@ export type CursiveSheet = {
   slug: string;
   /** How it is listed on a hub. */
   name: string;
-  /** How it is labelled in the row of neighbouring sheets. A few words. */
+  /** How it is labeled in the row of neighboring sheets. A few words. */
   short: string;
   /** The page's `<h1>`. */
   heading: string;
@@ -208,7 +208,7 @@ export const CURSIVE_SHEETS: CursiveSheet[] = [
       "The twenty-six small cursive letters on ⅝-inch paper with a dashed midline and room for the loops, traced twice and then written alone.",
     lead: "Small letters on their own, on the ⅝ paper a school means by handwriting paper. Most of them start with a lead-in stroke from the baseline and all of them finish with an exit stroke — the anticlockwise letters a, c, d, g, o and q are the exception, because they are entered at the top — and those strokes are what every join is made of.",
     notes: [
-      "The small letters are where joined writing is actually learnt, because they are the ones that join. Each letter here is drawn with the stroke that leads into it and the stroke that leaves it, so a child practising a single letter is already practising both halves of a join — which is why a cursive letter looks unfinished on its own and is supposed to.",
+      "The small letters are where joined writing is actually learned, because they are the ones that join. Each letter here is drawn with the stroke that leads into it and the stroke that leaves it, so a child practicing a single letter is already practicing both halves of a join — which is why a cursive letter looks unfinished on its own and is supposed to.",
       "The descender space matters more here than it does in print. In the looped hand a g, a j and a y drop below the baseline and come back up to meet the next letter, so the tail is not decoration but the road to the following letter. That is the reason this sheet is ruled with a tail space rather than on plain two-line paper, and the reason the loops are drawn full size rather than clipped at the line.",
     ],
     teaches: "Forming lowercase cursive letters",
@@ -237,7 +237,7 @@ export const CURSIVE_SHEETS: CursiveSheet[] = [
     keyword: "Free printable cursive joining letters worksheets",
     summary:
       "Thirty letter pairs on ⅝-inch paper, five from each family of join: diagonal and horizontal, into small letters and tall ones, into the round letters, and the pairs where the pencil lifts.",
-    lead: "The sheet cursive has and printing does not. A join is a stroke between two letters and it can only be practised with both of them there, so this page is thirty pairs — in, ch, ow, wh, ea, ba — each traced and then written from nothing.",
+    lead: "The sheet cursive has and printing does not. A join is a stroke between two letters and it can only be practiced with both of them there, so this page is thirty pairs — in, ch, ow, wh, ea, ba — each traced and then written from nothing.",
     notes: [
       "Joins are taught in families rather than as 676 pairs, and the families are named for where the stroke starts and where it has to arrive. A diagonal join climbs from the baseline into the next letter; a horizontal one carries across from the top of an o, an r, a v or a w; and a tall second letter changes where the stroke lands. The round letters — a, c, d, g, o and q — get a family of their own because they are entered at the top, and a child who joins into them the ordinary way writes oi where they meant oa.",
       "The last five pairs on the page are the ones where the pencil may lift, and whether it does is a fact about the hand being taught rather than about the letters. This sheet is set in the looped traditional model, which joins out of every letter including b, g, j, p, q and y. Print the same sheet in the unlooped model from the builder and those five pairs come out separated, because that model lifts the pencil after them — the sheet is right in both, and it is the model that answers, not us.",
@@ -326,11 +326,11 @@ export const CURSIVE_SHEETS: CursiveSheet[] = [
     heading: "Cursive copywork worksheets",
     keyword: "Free printable cursive copywork worksheets",
     summary:
-      "The opening of “The Owl and the Pussy-cat” on ⅜-inch transitional paper: the line printed, two grey copies to write over, and an empty line to write it from nothing.",
+      "The opening of “The Owl and the Pussy-cat” on ⅜-inch transitional paper: the line printed, two gray copies to write over, and an empty line to write it from nothing.",
     lead: "Four lines of a real poem, one at a time, in a joined hand on the small transitional ruling. Each line is printed to read, printed faintly twice to write over, and then left as an empty ruled line. This is the sheet where cursive stops being an exercise and becomes handwriting.",
     notes: [
-      "The ⅜ ruling has a top line and a baseline and no midline at all, which is as much help as an ordinary exercise book gives. Cursive at this size is a fair test of whether the hand has actually learnt the letters or has been copying large ones: loops close up, the joins get shorter than the letters, and anything a child was drawing rather than writing stops working. If it falls apart here, the ⅝ version of the same sheet is one setting away.",
-      "The faint grey lines are the step after dotted and dashed. A grey line is a shape to write over rather than a path to follow, so the pencil is making every decision and the model is only confirming them. By the empty line at the bottom of each group the poem has been read four times, which is the other half of what copywork has always been for — a child copying Lear is reading Lear.",
+      "The ⅜ ruling has a top line and a baseline and no midline at all, which is as much help as an ordinary notebook gives. Cursive at this size is a fair test of whether the hand has actually learned the letters or has been copying large ones: loops close up, the joins get shorter than the letters, and anything a child was drawing rather than writing stops working. If it falls apart here, the ⅝ version of the same sheet is one setting away.",
+      "The faint gray lines are the step after dotted and dashed. A gray line is a shape to write over rather than a path to follow, so the pencil is making every decision and the model is only confirming them. By the empty line at the bottom of each group the poem has been read four times, which is the other half of what copywork has always been for — a child copying Lear is reading Lear.",
     ],
     teaches: "Cursive copywork and sustained joined writing",
     ages: "Ages 8–12",

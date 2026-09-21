@@ -144,7 +144,7 @@ export function normalise(text) {
  * — "the same curve cardXp pays a flash card at" is not a phrase two authors
  * arrive at separately.
  *
- * @param {string} text Already normalised.
+ * @param {string} text Already normalized.
  * @param {number} [size]
  * @returns {Set<string>}
  */
@@ -160,7 +160,7 @@ export function shingles(text, size = 8) {
 /**
  * How much of `text` is quoted from `reference`.
  *
- * @param {string} text Already normalised.
+ * @param {string} text Already normalized.
  * @param {Set<string>} reference
  * @param {number} [size]
  * @returns {number}

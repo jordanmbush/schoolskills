@@ -61,7 +61,7 @@ export const numberRoom = (fontPt: number): Mil =>
 /**
  * The air between one problem and the next, down and across.
  *
- * `.sheet__problems` in sheet.css is the grid every maths family prints
+ * `.sheet__problems` in sheet.css is the grid every math family prints
  * through, and this is its `gap` written in the unit the capacity arithmetic
  * works in.
  */

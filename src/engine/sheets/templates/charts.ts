@@ -1,5 +1,5 @@
 /**
- * The blank maths references: the paper a lesson is done *against*.
+ * The blank math references: the paper a lesson is done *against*.
  *
  * A hundred chart, a number line, a coordinate grid and a place-value chart —
  * the "templates" tier of §11, where an off-by-one is a sheet that teaches

@@ -14,7 +14,7 @@ import { wordMode } from "@/engine/decks/words";
  */
 describe("what a beacon is allowed to say", () => {
   it("names a shipped deck, because a shipped deck is a public list", () => {
-    // Knowing that someone practised "dolch-1" says something about the site,
+    // Knowing that someone practiced "dolch-1" says something about the site,
     // not about them: everyone who picks that list produces the same string.
     // The whole shelf, not Dolch alone — a Bible list is just as public, and
     // reporting one as "custom" is the mistake this file exists to prevent.

@@ -49,7 +49,7 @@ describe("PassBars", () => {
   });
 
   it("keeps the speed bar on a lesson that introduces nothing", () => {
-    // The neighbouring case, and the one that says the rule above is about
+    // The neighboring case, and the one that says the rule above is about
     // storms rather than about an empty `keys` array: a review lesson has no
     // key bar and is still marked on speed.
     expect(

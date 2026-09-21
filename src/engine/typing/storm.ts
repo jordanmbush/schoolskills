@@ -207,7 +207,7 @@ export const MIN_FALL_MS = 800;
  * A queued letter is on the field, and shootable, the whole time it hangs
  * there.
  *
- * A second is a judgement and not a measurement. Round, long enough to read an
+ * A second is a judgment and not a measurement. Round, long enough to read an
  * unfamiliar glyph without hurrying, and short enough that a level with a
  * 300ms gap still has a queue rather than a crowd.
  */
@@ -864,7 +864,7 @@ export type StormReport = {
   readonly breach: {
     readonly finger: ShieldFinger;
     readonly through: number;
-    /** What to practise: this finger's keys, out of the wave's own pool. */
+    /** What to practice: this finger's keys, out of the wave's own pool. */
     readonly keys: string[];
   } | null;
   /** Hit points left across all eight zones… */

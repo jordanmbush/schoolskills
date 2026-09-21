@@ -283,7 +283,7 @@ export function evaluateBadges({
   const timedOut = session.cards.some((c) => c.timedOut);
   if (session.config.timeLimitMs && cardsThisRace >= 10 && !timedOut)
     earned.add("beat-the-clock");
-  // A drill is a named set of things to practise, whichever deck it came from.
+  // A drill is a named set of things to practice, whichever deck it came from.
   const config = session.config;
   const drilled = isFlash(config)
     ? config.facts?.length

@@ -11,7 +11,7 @@
  * `stroke-width: 0.75pt` declaration inside a viewBox scaled from mil to
  * inches is resolved in CSS pixels and then multiplied by the viewBox
  * transform, which turns three quarters of a point into about a thousandth of
- * one — a line that vanishes on paper while looking fine on screen. Colour and
+ * one — a line that vanishes on paper while looking fine on screen. Color and
  * font family don't scale, so those stay in the stylesheet where they belong.
  */
 import { inches, points, toInches } from "@/engine/sheets/paper";

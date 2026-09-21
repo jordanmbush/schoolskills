@@ -69,11 +69,11 @@ const MARK_GAP: Mil = inches(0.05);
 /**
  * More than two columns of sentences is a page nobody can read.
  *
- * Lower than every maths family's cap and lower than word study's three,
+ * Lower than every math family's cap and lower than word study's three,
  * because what is in the cell is a whole sentence rather than a sum: at three
  * columns on Letter a cell holds about twenty characters, so every row wraps to
  * four lines and the page holds five questions. This is where the arithmetic
- * stops giving anything back, rather than a taste judgement.
+ * stops giving anything back, rather than a taste judgment.
  */
 const MAX_COLUMNS = 2;
 
@@ -235,7 +235,7 @@ const TOPICS: Record<GrammarTopic, Topic> = {
     styles: ["write"],
     instruction: {
       write:
-        "Write the full stop or the question mark that belongs at the end of each sentence.",
+        "Write the period or the question mark that belongs at the end of each sentence.",
     },
     questions: endMarks(),
     lines: 0,

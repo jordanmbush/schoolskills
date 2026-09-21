@@ -76,7 +76,7 @@ type OperationDef = Omit<
   /**
    * Whether the two numbers can swap without changing the question. Decides
    * both whether the prompt is shown either way round and whether the pair
-   * folds — 7 × 8 and 8 × 7 are one fact to practise, 21 ÷ 3 and 21 ÷ 7 are
+   * folds — 7 × 8 and 8 × 7 are one fact to practice, 21 ÷ 3 and 21 ÷ 7 are
    * two.
    */
   commutative: boolean;

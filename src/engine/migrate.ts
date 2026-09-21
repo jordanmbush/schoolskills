@@ -16,7 +16,7 @@ import type {
  * that is a deliberate trade. An upgrade would retire the legacy branch for
  * good, but it rewrites the only copy of data that by design exists nowhere
  * else — there is no server holding a spare. A read-time widening is
- * idempotent, costs one pass over a list already being deserialised, and
+ * idempotent, costs one pass over a list already being deserialized, and
  * cannot corrupt anything: the worst case is that it does nothing.
  *
  * So the branch below is permanent. Deleting it deletes years of a child's

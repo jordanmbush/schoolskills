@@ -10,7 +10,7 @@
  *                 eBible's own text-only edition: no notes, no section
  *                 headings, no paragraph marks, one verse to a line.
  *   Pulled        17 August 2026
- *   Licence       Public domain. "World English Bible" is a trademark of
+ *   License       Public domain. "World English Bible" is a trademark of
  *                 eBible.org and the single condition attached is that a
  *                 *modified* text must not carry the name.
  *

@@ -36,7 +36,7 @@ import { DEFAULT_HAND_RULE, LOWER, MODELLED, UPPER } from "./rows";
 import { STROKE_PATTERNS, hasTail, strokePatterns } from "./strokes";
 
 /**
- * The family after the letters are learnt (§24).
+ * The family after the letters are learned (§24).
  *
  * What it promises is content rather than a count — every pattern asked for,
  * every letter of a family, all three heights, every sentence, the whole
@@ -398,7 +398,7 @@ describe("a circle-your-best sheet", () => {
     ).toEqual(["because", "friend"]);
   });
 
-  it("asks for the tries it printed, and for a judgement", () => {
+  it("asks for the tries it printed, and for a judgment", () => {
     expect(instructionOf(config({ style: "check", repeats: 6 }))).toBe(
       "Write each letter 5 times, then circle the one that looks most like the model.",
     );

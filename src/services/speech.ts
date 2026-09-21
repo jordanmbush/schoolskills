@@ -144,7 +144,7 @@ const stopWatching = () => {
 };
 
 /**
- * Says a word, cancelling anything already speaking.
+ * Says a word, canceling anything already speaking.
  *
  * Without the cancel, tapping replay three times queues three readings and the
  * card falls out of sync with what's being said. Slightly under normal pace:
@@ -178,7 +178,7 @@ export function say(text: string, onFail?: () => void): boolean {
     utterance.rate = 0.85;
 
     // Per-utterance, not module-level: the one this closure was made for may
-    // still be cancelled by a later card long after we stopped caring.
+    // still be canceled by a later card long after we stopped caring.
     let settled = false;
     const fail = () => {
       if (settled) return;

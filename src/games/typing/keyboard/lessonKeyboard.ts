@@ -57,7 +57,7 @@ export function keyboardFor(
  * `null` here: a lesson that names no mode is insisting on nothing, and
  * `keyboardFor` above lets the player through for the same reason. Both ask
  * `forcedKeyboard` rather than each reading the two fields itself, so a control
- * greyed out with a reason cannot sit over a run that honoured the child.
+ * grayed out with a reason cannot sit over a run that honored the child.
  */
 export function keyboardLock(lesson: Lesson): string | null {
   const forced = forcedKeyboard(lesson);

@@ -58,7 +58,7 @@ describe("the word lists", () => {
   });
 
   it("has no capitals a speller would be marked down for", () => {
-    // "I" is the one word that is genuinely always capitalised. Anything else
+    // "I" is the one word that is genuinely always capitalized. Anything else
     // with a capital is a proper noun that doesn't belong in a spelling list,
     // because nothing on the card signals that a capital is required.
     for (const list of WORD_LISTS) {
@@ -81,7 +81,7 @@ describe("the word lists", () => {
  * kind of content that rots one careless edit at a time. These check the
  * mechanical half of the house rules in wordlists.ts — the half a machine can
  * see. Whether a sentence actually settles which homophone is meant is a
- * judgement, and stays a human's.
+ * judgment, and stays a human's.
  */
 describe("the sentence on every word", () => {
   it("gives every word exactly one slot to fill", () => {
@@ -205,7 +205,7 @@ describe("buildWordDeck", () => {
     setCustomLists([]);
   });
 
-  it("keys each card on the normalised word", () => {
+  it("keys each card on the normalized word", () => {
     for (const card of buildWordDeck(config(), 5)) {
       expect(card.factId).toBe(normaliseWord(card.answer));
     }

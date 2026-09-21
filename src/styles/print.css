@@ -49,7 +49,7 @@
    * The ad slots are the important entry. They must never sit inside the
    * printable region in the first place — `src/components/sheet/` renders no
    * `.ad` and a test holds it to that — and this is the second line of
-   * defence, for a slot placed beside a sheet by a page around it.
+   * defense, for a slot placed beside a sheet by a page around it.
    */
   .mast,
   .foot,
@@ -84,7 +84,7 @@
     box-shadow: none;
   }
 
-  /* Belt and braces with `break-after` in sheet.css: some engines honour one
+  /* Belt and suspenders with `break-after` in sheet.css: some engines honor one
      and not the other, and a variant sharing a page with the sheet before it
      is the single most visible way this can go wrong. */
   .sheet + .sheet {

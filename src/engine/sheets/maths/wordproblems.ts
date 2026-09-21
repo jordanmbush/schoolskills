@@ -1,7 +1,7 @@
 /**
  * Word problems, from templates.
  *
- * The one place in the maths set where generated *text* is read by a person.
+ * The one place in the math set where generated *text* is read by a person.
  * Everywhere else a template failure is a sum that looks odd; here it is a page
  * that reads as machinery — the worksheet farm §11 exists to keep out of the
  * shop, arrived at from the inside. So there are twenty templates, four to a
@@ -221,7 +221,7 @@ const TEMPLATES: Template[] = [
       const above = between(range.min, range.max, rand);
       const down = between(range.min, range.max * 2, rand);
       return story(
-        `${cast.name} is ${above} m above sea level and walks ${down} m down into a valley. How many metres above sea level is ${cast.name} now?`,
+        `${cast.name} is ${above} m above sea level and walks ${down} m down into a valley. How many meters above sea level is ${cast.name} now?`,
         above - down,
       );
     },

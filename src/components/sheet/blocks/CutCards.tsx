@@ -22,7 +22,7 @@ const MAX_LINES = 12;
  * one line somebody is about to follow with a pair of scissors. Drawn over the
  * top there is one line per boundary, and it is the boundary.
  *
- * The outside edge is a cut line too, and the block is centred by `.sheet__cut`
+ * The outside edge is a cut line too, and the block is centered by `.sheet__cut`
  * so whatever the cards did not use is split evenly left and right — the two
  * halves of the cut geometry in §11, and both invisible on screen.
  */

@@ -67,7 +67,7 @@ export function jumps(line: NumberLine): Array<{ from: number; to: number }> {
 }
 
 /**
- * Room at each end for the outermost label, which is centred on its tick and
+ * Room at each end for the outermost label, which is centered on its tick and
  * would otherwise be cut in half by the edge of the drawing. Enough for three
  * digits at the size below.
  *
@@ -104,7 +104,7 @@ const STEPS = [1, 2, 5, 10, 20, 25, 50, 100, 200, 250, 500, 1000];
 /**
  * How much room the labels on a line need, tick to tick.
  *
- * The widest label, plus a digit's worth of air: labels are centred on their
+ * The widest label, plus a digit's worth of air: labels are centered on their
  * ticks, so two of them exactly one label apart are two labels touching. The
  * widest is measured rather than assumed, because a line that runs to 100 to
  * cover a range of 20 is a three-digit label on a two-digit sheet.
@@ -218,7 +218,7 @@ export function hopLine(
  *
  * Only ever a multiple a child would count in, and always a divisor of the
  * whole run where one will do, so the last tick keeps its number: a line to 100
- * labelled every 3 would end on 99 with nothing under the end of it.
+ * labeled every 3 would end on 99 with nothing under the end of it.
  */
 export function labelEvery(line: NumberLine): number {
   const marks = ticks(line);
@@ -233,7 +233,7 @@ export function labelEvery(line: NumberLine): number {
     if (gap * every >= labelRoom(shown)) return every;
   }
   // Nothing divides the run and still fits, so keep the two ends and the ticks
-  // between them bare. A number under every tick that overlaps its neighbour is
+  // between them bare. A number under every tick that overlaps its neighbor is
   // a line nobody can read; two numbers and a scale is still a number line.
   return steps;
 }

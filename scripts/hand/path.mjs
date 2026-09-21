@@ -17,7 +17,7 @@
  * convert it here and hide that it happened.
  */
 
-/** A segment after normalising: absolute, and one of the four kept commands. */
+/** A segment after normalizing: absolute, and one of the four kept commands. */
 // type Segment = { type: "M" | "L" | "C" | "Q"; points: number[] }
 
 const PARAMS = {

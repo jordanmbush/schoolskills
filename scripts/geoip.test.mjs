@@ -22,7 +22,7 @@ import {
  * perfectly reasonable city for the wrong visitor, in a table nobody can check
  * against the raw lines once they expire.
  *
- * The suite is therefore built around a ROUND TRIP: the builder's serialiser
+ * The suite is therefore built around a ROUND TRIP: the builder's serializer
  * writes an artifact and the reader reads it back, in-process. That is the
  * only contract two files have to agree about — byte offsets, alignment,
  * word order, the reserved zero location — and it is the one that would fail

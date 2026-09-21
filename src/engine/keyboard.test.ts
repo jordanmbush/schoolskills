@@ -302,7 +302,7 @@ describe("the board", () => {
   it("puts every key on the finger the standard assignment gives it", () => {
     // The assignment is the thing being taught, and three consumers read it:
     // the curriculum's mirrored-pair ordering (§5.5), the next-key hint's
-    // finger colour, and Hailstorm's eight shield zones (§8.5), where a wrong
+    // finger color, and Hailstorm's eight shield zones (§8.5), where a wrong
     // finger puts the hole under the wrong hand. Nothing else in this file
     // would notice a typo — the opposite-hand test compares only the hand.
     const expected = new Map<string, Finger>();
@@ -399,7 +399,7 @@ describe("FINGER_ZONES", () => {
     const outside = strays.filter((stray) => stray.out > 0);
     // Seven keys, every one of them on the number row, every one of them a
     // quarter unit LEFT of its own segment — so each is drawn over the segment
-    // of the finger to its LEFT, which is a different neighbour on each hand:
+    // of the finger to its LEFT, which is a different neighbor on each hand:
     // the outboard one on the left (2 over the pinky, 3 over the ring, 4 over
     // the middle) and the inboard one on the right (8 over the index, 9 over
     // the middle, 0 over the ring). `6` is the one to know: right index, over

@@ -2,7 +2,7 @@
    A picture of the board, drawn from the layout in engine/keyboard.ts so a
    child never has to look down at the real one (docs/typing.md §4).
 
-   Every colour here is a world token or a finger token mixed into one, which
+   Every color here is a world token or a finger token mixed into one, which
    is what lets the same board sit in the glacier without a single `[data-
    world="ice"]` rule underneath it. The keycaps are the world's ink, the
    legends are its chalk, and the eight hues on top are the same in all of
@@ -43,7 +43,7 @@
 
    `--key-gap` is here for the same reason and one more: it is the inset that
    turns a key's slot into the keycap drawn inside it, so it is also what the
-   field subtracts half of to centre a letter over the CAP rather than over
+   field subtracts half of to center a letter over the CAP rather than over
    the slot (decision 36). One declaration, and both halves of that stay
    true at every size. */
 :root {
@@ -94,11 +94,11 @@
    things above it — a clock, a rival's gap, a line of words to read. A
    life-size keyboard is 1080px, and squeezing it back into 720 would be
    letting a column width that exists for reading decide the size of a piece
-   of hardware. So it doesn't: the board is centred on its grid area and
+   of hardware. So it doesn't: the board is centered on its grid area and
    overflows it evenly on both sides, which is also how the desk it is a
    picture of is arranged — a screen, and a wider keyboard underneath it.
 
-   The centring is arithmetic rather than an alignment property, because
+   The centering is arithmetic rather than an alignment property, because
    neither alignment property survives the overflow. `margin-inline: auto` is
    defined to resolve to ZERO against negative free space, so the board would
    hug the left edge of the column and hang off the right; `justify-self:
@@ -111,9 +111,9 @@
    Nothing ends up off screen, because `--key` is capped by `6vw` first: the
    widest the board can be is 90vw, whatever the column underneath it says.
 
-   The storm is not scoped in here on purpose. Its board is already centred in
+   The storm is not scoped in here on purpose. Its board is already centered in
    a full-width field, so it has nothing to break out of, and `.storm__sky`
-   centres itself at the same fifteen units by the same `margin-inline: auto`
+   centers itself at the same fifteen units by the same `margin-inline: auto`
    — a lane and its cap stay one column of the screen (§8.2).             */
 .typing .keyboard {
   margin-inline: calc(50% - 7.5 * var(--key));
@@ -151,7 +151,7 @@
 
 .keyboard__key {
   /* The thumb has no hue of its own — see tokens.css. Its keys inherit this
-     neutral, which is the world's own quiet grey. */
+     neutral, which is the world's own quiet gray. */
   --finger: var(--chalk-dim);
 
   /* The lip under a keycap. Named because every rule that adds a shadow of
@@ -246,7 +246,7 @@
 
 /* ── Typing: the next-key hint ───────────────────────────────────────────
    Go here next (docs/typing.md §3.3, §4.1). Drawn in `--go`, which is the
-   world's own "press this" — the same colour as the button that started the
+   world's own "press this" — the same color as the button that started the
    run and the focus ring around it — so the hint is per-world scenery rather
    than a sixth telemetry signal a child has to be taught.
 
@@ -266,7 +266,7 @@
    why.
 
    The fade is allowed here, unlike on the echo: the hint moves from key to key
-   as a passage is typed, and easing that move reads as the pointer travelling
+   as a passage is typed, and easing that move reads as the pointer traveling
    rather than teleporting. A press has to be instant; an instruction does not.
 
    Placed ABOVE the press echo so the cascade lands the right way round on the
@@ -314,7 +314,7 @@
    the telemetry five and are the only rules here allowed to, because they
    already mean this everywhere else on the site — `--lime` is "that was
    right", `--flare` is "that was wrong". A child glancing down at the board
-   is reading the two colours the flash-card loop taught them.
+   is reading the two colors the flash-card loop taught them.
 
    Neither is `:active`. The board is never tappable (§4.5), so the only
    thing that can light a key is a keystroke, and the class goes out on a
@@ -347,9 +347,9 @@
    glancing down has to tell apart — and the echo is told to leave this key
    alone (`useKeyEcho.ignore`), so neither is ever under a flash.
 
-   Drawn in `--accent`, the world's own ground colour, and not in `--go`: the
+   Drawn in `--accent`, the world's own ground color, and not in `--go`: the
    guide's hint already means "press this next" and moves key to key, and a
-   second ring in the same colour that never moves would read as a hint that
+   second ring in the same color that never moves would read as a hint that
    had stuck. Nor in any of the telemetry five — holding a key is not right,
    wrong, a ghost, a record or a badge.                                    */
 

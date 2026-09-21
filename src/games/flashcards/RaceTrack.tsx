@@ -56,7 +56,7 @@ export default function RaceTrack() {
   // A refresh mid-race clears the pending setup; send them back to configure.
   // The typing check can't fire — the two games are separate islands with
   // separate providers — but it's what narrows `config` to a card deck, and
-  // it would be the right behaviour if they ever shared one.
+  // it would be the right behavior if they ever shared one.
   if (!pending || pending.profileId !== profile.id) {
     return <Navigate to={`/p/${profile.id}`} replace />;
   }

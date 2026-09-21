@@ -74,7 +74,7 @@ describe("soundForKey", () => {
 
   it("clacks for the keys that are not letters but are on the board", () => {
     // Backspace deliberately sounds like any other key. A typewriter has no
-    // undo, and a quieter correction would be the board passing judgement on
+    // undo, and a quieter correction would be the board passing judgment on
     // one — which is the thing this set does not do.
     expect(soundForKey(press("Backspace"))).toBe("strike");
     expect(soundForKey(press("Tab"))).toBe("strike");

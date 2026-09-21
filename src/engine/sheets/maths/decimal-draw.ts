@@ -55,7 +55,7 @@ const MULTIPLIER = { min: 2, max: 9 };
 /**
  * The percentages a sheet asks for.
  *
- * The ones a child is taught to recognise rather than every whole number
+ * The ones a child is taught to recognize rather than every whole number
  * between 1 and 100: "37% of 200" is a calculator question, and "25% of 80" is
  * a quarter of eighty, which is the whole point of the lesson.
  */
@@ -300,7 +300,7 @@ export function drawPercent(
  * wrong.
  *
  * Each direction draws only from what is legal at the places the sheet is set
- * at, rather than drawing freely and rejecting. That is not an optimisation:
+ * at, rather than drawing freely and rejecting. That is not an optimization:
  * a tenths sheet has ten legal percents and a hundred illegal ones, so a
  * rejecting draw spends nine tenths of its budget on the one direction that
  * always succeeds, and prints a page of "70% = _" with two other questions
@@ -342,7 +342,7 @@ export function drawConvert(
   if (usable.length === 0) return null;
   const d = usable[Math.floor(rand() * usable.length)];
   const n = between(1, d - 1, rand);
-  // In lowest terms, so the fraction on the page is the one a child recognises:
+  // In lowest terms, so the fraction on the page is the one a child recognizes:
   // `2/4 = 0.5` teaches them to simplify first and then convert, which is two
   // questions in one blank.
   if (gcd(n, d) !== 1) return null;

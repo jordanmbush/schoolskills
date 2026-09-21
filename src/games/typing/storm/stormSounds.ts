@@ -49,7 +49,7 @@ export function soundsFor(
   else if (after.misses > before.misses) sounds.push("shoot", "miss");
 
   // Identity first, and it is a real short-circuit rather than a micro-
-  // optimisation: `tick` keeps the same shield object on every frame that
+  // optimization: `tick` keeps the same shield object on every frame that
   // resolves no landing, which is all but a handful of the sixty a second.
   if (after.shield !== before.shield) {
     let damaged = false;

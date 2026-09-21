@@ -20,7 +20,7 @@ import { STATISTICS_SHEET, modeOf, statisticsLayout } from "./statistics";
  * Mean, median, mode and range.
  *
  * **Nothing here checks the generator against the generator.** Every set is read
- * off the printed line and summarised again by a path the family does not have:
+ * off the printed line and summarized again by a path the family does not have:
  *
  * - the **mean** is checked by multiplying back — the answer added to itself
  *   once per number in the set has to make the total — so there is no division
@@ -36,7 +36,7 @@ import { STATISTICS_SHEET, modeOf, statisticsLayout } from "./statistics";
  *   number rather than by trusting the order.
  */
 
-/* ── Summarising a set, the long way round ───────────────────────────────── */
+/* ── Summarizing a set, the long way round ───────────────────────────────── */
 
 /** `a` added to itself `b` times — the only multiplication in this file. */
 function multiply(a: number, b: number): number {
@@ -503,7 +503,7 @@ describe("how much fits", () => {
     }
   });
 
-  it("honours the count and the columns it was given", () => {
+  it("honors the count and the columns it was given", () => {
     expect(problemsOf({ count: 6 }, 1).length).toBe(6);
     for (const columns of [1, 2]) {
       expect(pagesOf(buildSheet(config({ columns }), 1))[0].columns).toBe(

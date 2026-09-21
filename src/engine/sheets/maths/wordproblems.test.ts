@@ -503,7 +503,7 @@ describe("how much fits", () => {
     expect(perPage).toBeGreaterThanOrEqual(8);
   });
 
-  it("honours the count and the columns it was given", () => {
+  it("honors the count and the columns it was given", () => {
     expect(problemsOf({ count: 6 }, 1).length).toBe(6);
     const columnsOf = (over: Partial<WordProblemConfig>) =>
       pagesOf(buildSheet(config(over), 1))[0].columns;

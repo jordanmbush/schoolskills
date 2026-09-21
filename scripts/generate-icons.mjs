@@ -56,7 +56,7 @@ const SKY = "#4cc4ff";
  *
  * `radius` of 0 gives the full-bleed square that iOS and Android expect to mask
  * themselves. `inset` shrinks the art inside the plate for maskable output,
- * where anything outside the centre 80% may be cropped. `id` only has to be
+ * where anything outside the center 80% may be cropped. `id` only has to be
  * unique within whichever document this lands in.
  */
 const markBody = (paths, { radius = RADIUS, inset = 1, id = "plate" } = {}) => {
@@ -91,7 +91,7 @@ const png = (svg) =>
  * The old mark was a 240x300 portrait plate. A 240 square beside display type
  * that tall reads underweight, so this matches the old plate's area instead of
  * its width — 268 squared is within a per cent of 240x300 — and stays clear of
- * the text column at x=380. Centred on the card's midline, not eyeballed.
+ * the text column at x=380. Centered on the card's midline, not eyeballed.
  */
 const OG_MARK = { x: 80, size: 268 };
 
@@ -132,7 +132,7 @@ const outputs = [
 
   /**
    * Maskable: Android crops this to whatever shape the launcher uses, and only
-   * the centre 80% is guaranteed to survive. Full bleed so no transparent
+   * the center 80% is guaranteed to survive. Full bleed so no transparent
    * corner can appear, with the art inset so the crop takes plate, not figures.
    */
   [

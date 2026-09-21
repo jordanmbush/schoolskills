@@ -31,7 +31,7 @@ import {
  *
  * **The answer key is the passage, whole** — and the instruction line says the
  * words were left out on purpose. Both halves are checked here, because both
- * are the licence rather than the layout (§12).
+ * are the license rather than the layout (§12).
  *
  * **The last round is the empty one.** This family caps the number of rounds
  * and re-spreads them rather than dropping the end off the progression.

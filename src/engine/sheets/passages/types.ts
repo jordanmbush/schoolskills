@@ -8,7 +8,7 @@
  *
  * Three rules the shape enforces:
  *
- *   - **Every passage names its source and its licence.** `PassageSource` has
+ *   - **Every passage names its source and its license.** `PassageSource` has
  *     no optional fields. A passage that can't say where its text came from
  *     doesn't get into the library.
  *   - **The text is a list of lines, not a paragraph of prose.** A stanza break

@@ -16,7 +16,7 @@ import type { Profile } from "@/engine/types";
  *
  * `/flash-cards`, `/spelling/play` and `/typing` all mount it at their `/`,
  * which is why it lives here rather than inside a game and why it names no
- * subject: choosing a player comes before choosing what to practise, and all
+ * subject: choosing a player comes before choosing what to practice, and all
  * three mounts read one profile list because a game is a path and not a
  * subdomain (CLAUDE.md).
  *

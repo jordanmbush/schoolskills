@@ -131,7 +131,7 @@ describe.each(FAMILIES)("a $name mode", ({ world, modes }) => {
     // it was asked about rather than the family's own idea of an id.
     expect(spec.id).toBe(mode);
     expect(spec.label.length).toBeGreaterThan(0);
-    // The one judgement that decides which mount a run belongs to: a race is on
+    // The one judgment that decides which mount a run belongs to: a race is on
     // this island only if `deckSpec(mode).world` is the island's world, so a
     // mode landing in the wrong world hides a child's runs from the game they
     // played them in.
@@ -150,7 +150,7 @@ describe.each(FAMILIES)("a $name mode", ({ world, modes }) => {
       expect(typeof spec.drillKey(factId), where).toBe("string");
       expect(typeof spec.factLabel(factId), where).toBe("string");
 
-      // Fact ids are stored already normalised, so folding one again must land
+      // Fact ids are stored already normalized, so folding one again must land
       // on the same square a fresh card folds onto. A rule that changed its
       // answer on the second pass would split a child's mastery of a word
       // across two cells, one of which nothing can ever fill again.

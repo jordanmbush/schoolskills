@@ -1,12 +1,12 @@
 # Rebuild the geo-IP artifact the analytics rollup reads.
 #
-# ⚠️ This exists to discharge a LICENCE OBLIGATION, not to keep a number
+# ⚠️ This exists to discharge a LICENSE OBLIGATION, not to keep a number
 # fresh. The GeoLite2 redistribution the artifact is built from says you
 #
 #   "may not prevent the Library from updating local copies of the GeoLite2
 #    Databases to honor Do Not Sell requests submitted to MaxMind"
 #
-# and MaxMind honours those requests by dropping records from later releases.
+# and MaxMind honors those requests by dropping records from later releases.
 # A snapshot pinned in S3 forever is precisely what that forbids, so the
 # refresh has to be something the pipeline does rather than something somebody
 # remembers. If this workflow is disabled, the obligation stops being met —
@@ -82,7 +82,7 @@ jobs:
           title="Geo-IP artifact refresh failed"
           body="Refresh failed: ${RUN_URL}
 
-          This is a licence obligation, not just stale data — see the header of
+          This is a license obligation, not just stale data — see the header of
           .github/workflows/refresh-geoip.yml and scripts/build-geoip.mjs.
 
           First things to check:

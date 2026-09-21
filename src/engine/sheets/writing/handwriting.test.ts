@@ -719,7 +719,7 @@ describe("joined writing", () => {
 
 /* ── Copywork, from the library or from a paste ────────────────────────────
    The passage style's other door (§12). Two things have to hold, and the
-   second is a licence condition rather than a nicety: the words that reach the
+   second is a license condition rather than a nicety: the words that reach the
    paper are the library's exactly, and the credit its source asks for is on the
    sheet that quotes it.                                                      */
 
@@ -764,7 +764,7 @@ describe("copywork out of the passage library", () => {
   it("hands on the longest passage in the library whole, and cuts a paste on a word", () => {
     /*
      * The cap on a paste is not a cap on the library, and the difference is a
-     * licence condition rather than a tidiness one (§12). A library passage
+     * license condition rather than a tidiness one (§12). A library passage
      * travels as its id — nine characters in a `#s=` link — so §14's reason for
      * capping a config never reaches it; applying the cap there anyway cost the
      * longest entry its last eight words *and* half of the word before them, and

@@ -66,7 +66,7 @@ export const placeLabel = (key) => {
  * in the version the grid drops.
  *
  * `label` receives every key in the section alongside the one being drawn,
- * because a label can depend on its neighbours: country codes are padded to
+ * because a label can depend on its neighbors: country codes are padded to
  * the widest present, and `(unknown)` is nine characters against everyone
  * else's two.
  *
