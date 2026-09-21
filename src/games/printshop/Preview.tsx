@@ -15,10 +15,17 @@
  * printshop.css takes the transform back off, because a scaled sheet sent to a
  * printer is a sheet at 45% of the size it measures.
  */
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { memo, useEffect, useRef, useState, type CSSProperties } from "react";
 
 import { SheetView } from "@/components/sheet/Sheet";
 import type { Sheet } from "@/engine/sheets/types";
+
+/**
+ * The page, skipped when its sheet has not changed. The scale is set again on
+ * every frame the split moves, and without this each frame would re-render
+ * every problem on every page to change one number on the box around them.
+ */
+const Page = memo(SheetView);
 
 export function Preview({ sheets }: { sheets: Sheet[] }) {
   const stage = useRef<HTMLDivElement>(null);
@@ -94,7 +101,7 @@ export function Preview({ sheets }: { sheets: Sheet[] }) {
             // Indexed keys: the stack is rebuilt whole on every change and
             // nothing in it is stateful, so there is nothing a stable key would
             // preserve — the same reasoning `SheetView` gives for its blocks.
-            <SheetView key={index} sheet={sheet} />
+            <Page key={index} sheet={sheet} />
           ))}
         </div>
       </div>

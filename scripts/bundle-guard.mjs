@@ -80,7 +80,7 @@ export const HEADROOM = 10 * 1024;
 export const BASELINE = {
   "/flash-cards": 389_189,
   "/printables": 203_902,
-  "/printables/make": 409_308,
+  "/printables/make": 419_788,
   "/spelling/play": 389_189,
   "/typing": 410_445,
   [RUNTIME]: 192_242,

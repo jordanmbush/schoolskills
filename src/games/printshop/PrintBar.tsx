@@ -1,12 +1,12 @@
 /**
- * The rail's first row: everything that is about the sheet as paper rather
- * than about making it. On the left, another draw of the same settings and
- * the link; on the right, how many copies, whether the answer key comes with
- * them, and Print.
+ * The head of the paper pane: everything that is about the sheet as paper
+ * rather than about making it. Print first, because it is the one thing every
+ * visit ends in; then how many copies and whether the answer key comes with
+ * them; then another draw of the same settings, and the link.
  *
  * Print is the entire output path and the browser's own dialog is the download
  * as well as the print (§10). The sentence that says so is under the paper
- * (`Caption.tsx`), because it needs a line and the rail has room for a word.
+ * (`Caption.tsx`), because it needs a line and this row has room for a word.
  *
  * The link button copies the address bar, which already holds the whole
  * configuration: `useBuilder` rewrites `#s=` on every change, so there is
@@ -64,35 +64,32 @@ export function PrintBar({
   };
 
   return (
-    <div className="printbar wrap">
+    <div className="printbar">
+      <Button variant="go" ref={printRef} onClick={() => window.print()}>
+        Print
+      </Button>
+      <span className="printbar__copies">
+        <span aria-hidden="true">Copies</span>
+        <NumberStepper
+          label="Copies, each a different draw of the same settings"
+          value={variants}
+          min={1}
+          max={MAX_VARIANTS}
+          onChange={onVariants}
+        />
+      </span>
+      <Checkbox
+        label="Answer key"
+        className="checkbox checkbox--inline"
+        checked={answers}
+        onChange={onAnswers}
+      />
       <span className="printbar__sheet">
         <Button variant="ghost" size="sm" onClick={onReroll}>
           Another sheet like this
         </Button>
         <Button variant="ghost" size="sm" onClick={() => void copyLink()}>
           {COPY_LABEL[said]}
-        </Button>
-      </span>
-
-      <span className="printbar__out">
-        <span className="printbar__copies">
-          <span aria-hidden="true">Copies</span>
-          <NumberStepper
-            label="Copies, each a different draw of the same settings"
-            value={variants}
-            min={1}
-            max={MAX_VARIANTS}
-            onChange={onVariants}
-          />
-        </span>
-        <Checkbox
-          label="Answer key"
-          className="checkbox checkbox--inline"
-          checked={answers}
-          onChange={onAnswers}
-        />
-        <Button variant="go" ref={printRef} onClick={() => window.print()}>
-          Print
         </Button>
       </span>
     </div>

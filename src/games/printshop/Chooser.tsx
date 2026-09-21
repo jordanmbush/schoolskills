@@ -52,7 +52,7 @@ export function Chooser({
   };
 
   return (
-    <div className="chooser wrap">
+    <div className="chooser">
       <p className="chooser__lead">
         Pick a subject, then what kind of sheet to start from. Every other step
         can be changed afterwards, in any order.

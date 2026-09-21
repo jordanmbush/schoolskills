@@ -74,7 +74,7 @@ export function SavedSheets({
   };
 
   return (
-    <div className="saved wrap">
+    <div className="saved">
       {sheet ? (
         <div className="saved__form">
           <Field
