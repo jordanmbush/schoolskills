@@ -1359,50 +1359,57 @@ describe("how much fits", () => {
   const SIZES: PaperSize[] = ["letter", "a4", "legal"];
   const MARGINS: MarginSize[] = ["none", "narrow", "normal", "wide"];
 
-  it("never prints more problems on a page than the paper holds", () => {
-    // Against the box the printed header leaves — which carries the sentence
-    // that says the page came out short, and may be a row shorter for it —
-    // rather than the config's. And every page but the last is full: a page
-    // cut short of what fits would be a sheet of paper for nothing.
-    for (const size of SIZES) {
-      for (const margin of MARGINS) {
-        for (const fontPt of [8, 12, 18, 24, 36]) {
-          for (const shape of EVERY_SHAPE) {
-            const over = { ...shape, paper: paper({ size, margin }), fontPt };
-            const where = `${size}/${margin}/${fontPt}pt ${JSON.stringify(shape)}`;
-            const sheet = buildSheet(config({ ...over, count: 200 }), 8);
-            const pages = pagesOf(sheet);
-            expect(pages.length, where).toBeGreaterThan(0);
-            const { row, perPage } = decimalLayout(config(over));
-            for (const [at, page] of pages.entries()) {
-              const rows = Math.ceil(page.items.length / page.columns);
-              const used = rows * row + Math.max(0, rows - 1) * PROBLEM_GAP.y;
-              expect(used, `${where}, page ${at + 1}`).toBeLessThanOrEqual(
-                printedBlockBox(sheet).height,
-              );
-              if (at < pages.length - 1) {
-                expect(page.items.length, `${where}, page ${at + 1}`).toBe(
-                  pages[0].items.length,
+  // Sixty papers by every shape, two hundred problems each: under two seconds
+  // here and past the default five on a CI runner, which is a slower machine
+  // rather than a slower test — so the budget is the test's own.
+  it(
+    "never prints more problems on a page than the paper holds",
+    { timeout: 30_000 },
+    () => {
+      // Against the box the printed header leaves — which carries the sentence
+      // that says the page came out short, and may be a row shorter for it —
+      // rather than the config's. And every page but the last is full: a page
+      // cut short of what fits would be a sheet of paper for nothing.
+      for (const size of SIZES) {
+        for (const margin of MARGINS) {
+          for (const fontPt of [8, 12, 18, 24, 36]) {
+            for (const shape of EVERY_SHAPE) {
+              const over = { ...shape, paper: paper({ size, margin }), fontPt };
+              const where = `${size}/${margin}/${fontPt}pt ${JSON.stringify(shape)}`;
+              const sheet = buildSheet(config({ ...over, count: 200 }), 8);
+              const pages = pagesOf(sheet);
+              expect(pages.length, where).toBeGreaterThan(0);
+              const { row, perPage } = decimalLayout(config(over));
+              for (const [at, page] of pages.entries()) {
+                const rows = Math.ceil(page.items.length / page.columns);
+                const used = rows * row + Math.max(0, rows - 1) * PROBLEM_GAP.y;
+                expect(used, `${where}, page ${at + 1}`).toBeLessThanOrEqual(
+                  printedBlockBox(sheet).height,
+                );
+                if (at < pages.length - 1) {
+                  expect(page.items.length, `${where}, page ${at + 1}`).toBe(
+                    pages[0].items.length,
+                  );
+                }
+              }
+              // A bracket that reserves more than the box at the largest type
+              // holds nothing, and says so, rather than printing a title over
+              // blank paper.
+              if (perPage === 0) {
+                expect(
+                  pages.map((page) => page.items),
+                  where,
+                ).toEqual([[]]);
+                expect(sheet.header.instructions, where).toMatch(
+                  /Nothing fits on the page at this size\.$/,
                 );
               }
-            }
-            // A bracket that reserves more than the box at the largest type
-            // holds nothing, and says so, rather than printing a title over
-            // blank paper.
-            if (perPage === 0) {
-              expect(
-                pages.map((page) => page.items),
-                where,
-              ).toEqual([[]]);
-              expect(sheet.header.instructions, where).toMatch(
-                /Nothing fits on the page at this size\.$/,
-              );
             }
           }
         }
       }
-    }
-  });
+    },
+  );
 
   it("cuts the columns to the widest bracket, at every type size", () => {
     // A bracket is a fixed drawing in squares and does not wrap to its
