@@ -3041,11 +3041,11 @@ describe("print isolation", () => {
   });
 
   it("takes the builder's own layout out from under the sheet", () => {
-    // `.no-print` empties the bench's columns; it does not remove them. A print
-    // copy left inside a live two-column grid prints indented by the bench's
-    // padding and a row down from where the preview was — on Letter, 18px off
-    // the right edge of the paper and a full-page sheet onto a second one. It
-    // cannot be seen on screen, because the preview is a separate scaled copy.
+    // `.no-print` empties the bench; it does not remove it. A print copy left
+    // inside a live padded layout prints indented by the bench's padding and a
+    // row down from where the preview was — on Letter, 18px off the right edge
+    // of the paper and a full-page sheet onto a second one. It cannot be seen
+    // on screen, because the preview is a separate scaled copy.
     //
     // The smoke run measures the real box in a browser, which is the only place
     // that can. This is the fast half: the two lines that make it possible.
@@ -3055,8 +3055,8 @@ describe("print isolation", () => {
     expect(print).toMatch(/\.bench\s*\{[^}]*padding:\s*0/);
     expect(print).toMatch(/\.bench\s*\{[^}]*max-width:\s*none/);
 
-    // And the column itself, not only the two controls inside it — an empty
-    // grid item still occupies the row above the paper.
+    // And the paper's own frame, not only the two things inside it — an
+    // emptied box still holds its padding above the print copy.
     const app = read(join(ROOT, "src/games/printshop/App.tsx"));
     expect(app).toMatch(/className="bench__paper[^"]*\bno-print\b/);
   });

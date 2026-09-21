@@ -65,6 +65,13 @@ export function Preview({ sheets }: { sheets: Sheet[] }) {
   // a preview that lies in the other direction.
   const scale = box.width > 0 ? Math.min(1, box.room / box.width) : 1;
 
+  // Centred by hand, about the top-left corner, rather than with `margin: auto`
+  // about the middle: a stack wider than the room — every landscape sheet — is
+  // already hanging out of the right of the frame before the scale is applied,
+  // and scaled about its own centre it shrinks towards a point that was never
+  // in view, leaving the right edge of the paper cut off.
+  const inset = Math.max(0, (box.room - box.width * scale) / 2);
+
   return (
     <div className="preview no-print">
       {/* The stage is what holds the space the scaled stack takes up. A
@@ -79,7 +86,9 @@ export function Preview({ sheets }: { sheets: Sheet[] }) {
         <div
           className="preview__stack"
           ref={stack}
-          style={{ "--preview-scale": scale } as CSSProperties}
+          style={
+            { "--preview-scale": scale, marginLeft: inset } as CSSProperties
+          }
         >
           {sheets.map((sheet, index) => (
             // Indexed keys: the stack is rebuilt whole on every change and

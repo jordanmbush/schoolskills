@@ -69,25 +69,25 @@ export function SavedSheets({
   };
 
   return (
-    <section className="saved no-print">
-      <h2 className="saved__title u-display">My sheets</h2>
-
-      <Field
-        label="Save this one"
-        hint="Kept on this device only. Nothing is uploaded."
-        error={error ?? undefined}
-      >
-        <Input
-          value={name}
-          maxLength={sheetService.MAX_NAME}
-          placeholder="Name it, or leave it blank"
-          blurOnEnter
-          onChange={setName}
-        />
-      </Field>
-      <Button variant="accent" size="sm" onClick={() => void save()}>
-        Save to my sheets
-      </Button>
+    <div className="saved wrap">
+      <div className="saved__form">
+        <Field
+          label="Save this one"
+          hint="Kept on this device only. Nothing is uploaded."
+          error={error ?? undefined}
+        >
+          <Input
+            value={name}
+            maxLength={sheetService.MAX_NAME}
+            placeholder="Name it, or leave it blank"
+            blurOnEnter
+            onChange={setName}
+          />
+        </Field>
+        <Button variant="accent" size="sm" onClick={() => void save()}>
+          Save to my sheets
+        </Button>
+      </div>
 
       {saved.length === 0 ? (
         <p className="saved__empty">
@@ -119,6 +119,6 @@ export function SavedSheets({
           ))}
         </ul>
       )}
-    </section>
+    </div>
   );
 }

@@ -1,29 +1,36 @@
 /**
  * The bench: pick a sheet, tune it, watch the page change, print it.
  *
- * Two columns and one idea. On the left, every option that changes the paper;
- * on the right, the paper. There is no preview button and no "apply", because
- * there is nothing to apply to: `buildWith(spec, config, seed)` is a pure
- * function of the state this island holds, so the sheet on the right is not a
- * rendering of the settings on the left, it *is* them.
+ * One rail and one idea. Across the top, everything that changes the paper,
+ * one section at a time in a tray under the rail; under that, the paper, as
+ * wide as the screen allows. There is no preview button and no "apply",
+ * because there is nothing to apply to: `buildWith(spec, config, seed)` is a
+ * pure function of the state this island holds, so the sheet is not a
+ * rendering of the settings, it *is* them.
  *
  * Why an island can keep the site's chrome around it here, where a race cannot,
  * is in make.astro.
  */
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 
 import { buildWith, keyWith } from "@/engine/sheets/spec";
-import type { Sheet } from "@/engine/sheets/types";
+import type { Sheet, SheetConfig } from "@/engine/sheets/types";
 import "@/styles/printshop.css";
 
-import { Bootstrap } from "./Bootstrap";
+import { Caption } from "./Caption";
+import { Chooser } from "./Chooser";
 import { FamilyOptions } from "./options";
-import { PageOptions } from "./PageOptions";
-import { Picker } from "./Picker";
+import {
+  AnswerBoxes,
+  HeadingOptions,
+  LetteringOptions,
+  PaperOptions,
+} from "./PageOptions";
 import { Preview, PrintCopy } from "./Preview";
-import { PrintBar } from "./PrintBar";
+import { Rail, TRAY_ID, useUnderMasthead, type Section } from "./Rail";
 import { SavedSheets } from "./SavedSheets";
 import { FIRST_SHEET } from "./defaults";
+import { labelOf, tabOf } from "./shelves";
 import {
   openingSheet,
   useBuilder,
@@ -47,8 +54,17 @@ export default function PrintShopApp() {
   return first ? <Bench opening={opening} /> : null;
 }
 
+/** The tray a sheet lands in when it arrives: its own options, if it has any. */
+const landing = (kind: string): Section | null =>
+  tabOf(kind) ? "family" : null;
+
 function Bench({ opening }: { opening: SharedSheet | null }) {
   const bench = useBuilder(opening);
+  const [open, setOpen] = useState<Section | null>(() =>
+    landing(bench.config.kind),
+  );
+  const rail = useRef<HTMLDivElement>(null);
+  useUnderMasthead(rail);
 
   // Memoised so the debounce below has something stable to hold. Without it
   // every render would make a new object, the timer would restart on the render
@@ -65,7 +81,7 @@ function Bench({ opening }: { opening: SharedSheet | null }) {
 
   const settled = useDebounced(live);
 
-  // Two families, and the second is not a slip. The picker names the one being
+  // Two families, and the second is not a slip. The chooser names the one being
   // chosen and the press builds the one that has settled, which are the same
   // family except in the moment after a switch — and that is exactly when the
   // difference pays, because asking for the live one starts its download while
@@ -86,52 +102,85 @@ function Bench({ opening }: { opening: SharedSheet | null }) {
     return pages;
   }, [printing, settled]);
 
+  const toggle = (section: Section) =>
+    setOpen((current) => (current === section ? null : section));
+
+  // A sheet chosen or opened lands on its own options, whichever door it came
+  // through: that is where the next question is.
+  const choose = (kind: string) => {
+    bench.setFamily(kind);
+    setOpen(landing(kind));
+  };
+  const openSheet = (config: SheetConfig, seed: number) => {
+    bench.open(config, seed);
+    setOpen(landing(config.kind));
+  };
+
+  const panel = { config: bench.config, set: bench.set };
+
   return (
     <div className="bench">
-      <div className="bench__panel no-print">
-        {/* Above the picker, because it answers the question the picker asks: a
-            parent who came to print what their child keeps missing should not
-            have to work out which family that is. It only ever opens a sheet on
-            the bench — everything below stays in charge of it afterwards. */}
-        <Bootstrap onOpen={bench.open} />
-
-        <Picker
-          config={bench.config}
-          spec={chosen}
-          onFamily={bench.setFamily}
-        />
-
-        <section className="bench__group">
-          <h2 className="bench__title u-display">What is on it</h2>
-          <FamilyOptions config={bench.config} set={bench.set} />
-        </section>
-
-        <section className="bench__group">
-          <h2 className="bench__title u-display">The page</h2>
-          <PageOptions config={bench.config} set={bench.set} />
-        </section>
-
-        <SavedSheets
-          config={bench.config}
-          seed={bench.seed}
-          onOpen={bench.open}
-        />
-      </div>
-
-      {/* `.no-print` on the column and not only on the two things inside it:
-          both children already carry it, but a bench column emptied by
-          `display: none` on its contents is still a column, and the print copy
-          below would lay out under it rather than at the top of the paper. */}
-      <div className="bench__paper no-print">
-        <PrintBar
-          seed={bench.seed}
+      <div className="bench__rail no-print" ref={rail}>
+        <Rail
+          sheet={labelOf(bench.config.kind)}
+          tab={tabOf(bench.config.kind)}
+          open={open}
+          onToggle={toggle}
           variants={bench.variants}
           answers={bench.answers}
           onVariants={bench.setVariants}
           onAnswers={bench.setAnswers}
+        />
+        <div className="tray" id={TRAY_ID} hidden={open === null}>
+          {open === "sheet" && (
+            <Chooser
+              kind={bench.config.kind}
+              onFamily={choose}
+              onOpen={openSheet}
+            />
+          )}
+          {open === "family" && (
+            <div className="tray__grid wrap">
+              <FamilyOptions {...panel} />
+              <AnswerBoxes {...panel} />
+            </div>
+          )}
+          {open === "paper" && (
+            <div className="tray__grid wrap">
+              <PaperOptions {...panel} />
+            </div>
+          )}
+          {open === "lettering" && (
+            <div className="tray__grid tray__grid--wide wrap">
+              <LetteringOptions {...panel} />
+            </div>
+          )}
+          {open === "heading" && (
+            <div className="tray__grid tray__grid--wide wrap">
+              <HeadingOptions {...panel} />
+            </div>
+          )}
+          {open === "mine" && (
+            <SavedSheets
+              config={bench.config}
+              seed={bench.seed}
+              onOpen={openSheet}
+            />
+          )}
+        </div>
+      </div>
+
+      {/* `.no-print` on the frame and not only on the two things inside it:
+          both children already carry it, but a frame emptied by `display: none`
+          on its contents still has its padding, and the print copy below would
+          lay out under it rather than at the top of the paper. */}
+      <div className="bench__paper wrap no-print">
+        <Preview sheets={sheets} />
+        <Caption
+          line={chosen ? chosen.describe(bench.config) : ""}
+          seed={bench.seed}
           onReroll={bench.reroll}
         />
-        <Preview sheets={sheets} />
       </div>
 
       <PrintCopy sheets={sheets} />

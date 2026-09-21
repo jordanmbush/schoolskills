@@ -202,6 +202,16 @@
   padding: 0.4em 1em;
 }
 
+/* A row of pills is a pill; a column of them with a line under each is a
+   list, and a list in a fully round box reads as a blob. */
+.segmented:has(.segmented__btn--stack) {
+  border-radius: var(--radius);
+}
+
+.segmented:has(.segmented__btn--stack) .segmented__btn {
+  border-radius: calc(var(--radius) - 0.3rem);
+}
+
 .segmented__hint {
   font-size: var(--step--2);
   opacity: 0.75;
