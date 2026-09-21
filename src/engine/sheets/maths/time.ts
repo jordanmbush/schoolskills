@@ -49,6 +49,8 @@ import {
   answerLine,
   columnWidth,
   fitAcross,
+  problemPages,
+  wantedOf,
   type Box,
 } from "../layout";
 import { inches } from "../paper";
@@ -252,17 +254,12 @@ export function timeLayout(config: TimeConfig): {
   };
 }
 
-/**
- * Every problem on the sheet, in the order they are printed.
- *
- * Exported because it is the whole of what a test has to check.
- */
-export function timeProblems(config: TimeConfig, seed: number): Problem[] {
-  const { perPage } = timeLayout(config);
-  // The count is a request, not a promise: a count that overruns is a second
-  // sheet out of the printer with two problems on it.
-  const wanted = clamp(config.count, 0, perPage);
-
+/** Up to `wanted` problems, in the order they are printed. */
+function drawProblems(
+  config: TimeConfig,
+  seed: number,
+  wanted: number,
+): Problem[] {
   const rand = mulberry32(seed);
   const step = stepOf(config);
   const seen = new Set<string>();
@@ -343,8 +340,8 @@ function describeTime(config: TimeConfig): string {
 }
 
 function buildTimeSheet(config: TimeConfig, seed: number): Sheet {
-  const items = timeProblems(config, seed);
-  const { columns } = timeLayout(config);
+  const { columns, perPage } = timeLayout(config);
+  const items = drawProblems(config, seed, wantedOf(config.count, perPage));
   const head = headerOf(config);
 
   return {
@@ -356,7 +353,7 @@ function buildTimeSheet(config: TimeConfig, seed: number): Sheet {
       fields: head.fields,
       score: { outOf: items.length },
     },
-    blocks: [{ kind: "problems", columns, items }],
+    blocks: problemPages(items, columns, perPage),
     footer: { credit: SHEET_CREDIT, url: SHEET_URL, seed },
     answers: false,
   };

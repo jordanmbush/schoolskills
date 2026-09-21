@@ -177,9 +177,9 @@
 
   /* `align-content` matters here because a lesson puts a second child in the
      overlay (the home-row note, docs/typing.md §7). Left at its default the
-     two rows stretch to fill the viewport and each child centres inside its
+     two rows stretch to fill the viewport and each child centers inside its
      own half, which drops the note hundreds of pixels below the numeral and
-     on top of the keyboard. Centring the track group keeps the two as one
+     on top of the keyboard. Centering the track group keeps the two as one
      stack. */
   place-items: center;
   align-content: center;

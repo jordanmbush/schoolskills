@@ -7,6 +7,8 @@
  * are on the sheet from the moment it is built, so a key is `answers: true`
  * and nothing else and cannot disagree with the sheet it belongs to.
  */
+import type { Forms } from "./hands/hand";
+import type { Tableau } from "./maths/tableau";
 import type { Inventory } from "./phonics/inventory";
 import type { TranslationId } from "./passages/types";
 
@@ -84,6 +86,14 @@ export type Rule = {
 export type TraceStyle =
   "solid" | "dim" | "hollow" | "dotted" | "dashed" | "none";
 
+/**
+ * Which models on a tracing row carry their guides — the start dot, the
+ * arrow and the number on each stroke (§25). `letters` is a single letter,
+ * numeral or pair and not a word; `all` is every model, words and sentences
+ * included; `none` is no marks at all.
+ */
+export type ModelGuides = "letters" | "all" | "none";
+
 /** A line to count along, under a problem — or, on its own, the whole sheet. */
 export type NumberLine = {
   from: number;
@@ -96,6 +106,44 @@ export type NumberLine = {
    * them out to what fits, per `labelEvery` in numberline.ts.
    */
   label?: number;
+  /**
+   * Hops drawn back along the line from `start` towards the line's own left
+   * end — division as repeated subtraction (§23): `size` at a time, or the
+   * `sizes` listed, in order, which is what chunking looks like (a hop of
+   * 120 and then one of 36). Each hop is labeled with what was taken away.
+   * The line stands taller to hold them: `lineHeight` in numberline.ts says
+   * by how much.
+   */
+  jumps?: { start: number; size: number } | { start: number; sizes: number[] };
+};
+
+/**
+ * Where the dots of a counters picture stand in relation to each other: in
+ * rings of `per` (sharing), in a row ringed `per` at a time (grouping), or in
+ * rows of `per` (an array). Same dots, three stories — see `Counters`.
+ */
+export type CounterLayout = "share" | "group" | "array";
+
+/**
+ * Counters, drawn already sorted: the picture division is taught from before
+ * it is a sign (§23).
+ *
+ * `total` dots, `per` to a group, and `layout` says what a group looks like. A
+ * total that does not divide leaves `total mod per` dots outside any ring — the
+ * remainder, drawn where a child would put it. `rings` off leaves the grouping
+ * for the child to draw; the dots are then spaced evenly so nothing gives it
+ * away. The sizes are `counters.ts`'s, which is where `height` comes from, and
+ * `width` is what the drawing may wrap inside.
+ */
+export type Counters = {
+  total: number;
+  per: number;
+  layout: CounterLayout;
+  rings: boolean;
+  /** Printed under the picture: "3 rings · 4 in each". */
+  caption?: string;
+  width: Mil;
+  height: Mil;
 };
 
 /**
@@ -124,8 +172,8 @@ export type Problem = {
   /** Text even when it's a number — "56", not 56, as `Card.answer` is. */
   answer: string;
   /**
-   * The answer as more than one thing to write, one ruled line each — a fact
-   * family's four number sentences.
+   * The answer as things to write on ruled lines, one line each — a fact
+   * family's four number sentences, or an ordering's one sorted set.
    *
    * When it is here it *is* the answer place: the prompt prints no slot, and
    * `workspace` becomes the height those lines share. One slot instead would
@@ -157,14 +205,34 @@ export type Problem = {
    */
   working?: string[];
   /**
-   * Long division's tableau: the divisor outside the bracket, the dividend
-   * under the bar, the quotient along the top.
+   * Long division's bracket: the divisor in the gutter, the dividend under the
+   * bar, the quotient along the top, and the working in squares under the
+   * dividend (§21).
    *
    * Not a stack with a different sign — it is the one arithmetic form whose
    * working happens under the dividend and whose answer is written above the
    * problem. `answer` is the quotient, remainder and all ("234 r 2").
    */
-  bracket?: { divisor: string; dividend: string };
+  bracket?: {
+    divisor: string;
+    /** As printed, point and all. One column per digit; the point is not a column (§22). */
+    dividend: string;
+    /** The square: one digit wide, one line of working tall — `answerLine`. */
+    cell: Mil;
+    /**
+     * Squares of working reserved under the dividend. This is the whole of a
+     * long division's reservation — the problem carries no `workspace` besides
+     * it — and it is zero on a fact sheet, whose bracket has no working.
+     */
+    rows: number;
+    help: DivisionHelp;
+    /**
+     * Present wherever there is working to write — long divisions and
+     * bracketed decimal divisions; a fact sheet's bracket has none. The key
+     * writes it in.
+     */
+    tableau?: Tableau;
+  };
   /**
    * Which fact this exercises, in the vocabulary the race already uses ("7:8")
    * — what lets the record book hand over fact ids and a family turn them into
@@ -193,8 +261,19 @@ export type Problem = {
    */
   figure?: Figure;
   line?: NumberLine;
+  /**
+   * Counters beside the problem, already dealt into the groups the question is
+   * about. The question, so it prints on the sheet as well as on the key.
+   */
+  counters?: Counters;
   /** Blank height under the problem for working out. Absent means none. */
   workspace?: Mil;
+  /**
+   * A worked example: the answer is printed on the sheet as well as on the
+   * key, in every place an answer goes. It carries no number, so the try-its
+   * after it still count from one, and it is not marked (§23).
+   */
+  worked?: boolean;
 };
 
 /**
@@ -216,8 +295,45 @@ export type LetterShape = "tall" | "small" | "tail" | "gap";
  */
 export type WordShape = { word: string; letters: LetterShape[] };
 
-/** One place on a tracing row: what is written there, and how it is drawn. */
-export type TraceCell = { text: string; style: TraceStyle };
+/**
+ * One place on a tracing row: what is written there, and how it is drawn.
+ *
+ * `spaces` is how the spaces in it are set. Absent is a word space. `finger`
+ * is the width a finger laid on the line takes, which the spacing family's
+ * rows set so that a model and the rows traced under it line up; `marked` is
+ * that with a small circle in each gap, the model's way of showing where the
+ * finger goes (§24).
+ */
+export type TraceCell = {
+  text: string;
+  style: TraceStyle;
+  spaces?: "finger" | "marked";
+};
+
+/**
+ * The strokes a letter is built from, drawn as a pattern across a ruling
+ * rather than as a letter (§24). Geometry, not text: the same row in every
+ * face, and the sheet a child does before there are letters to trace.
+ */
+export type StrokePattern =
+  | "lines"
+  | "slants"
+  | "circles"
+  | "zigzag"
+  | "waves"
+  | "humps"
+  | "cups"
+  | "loops"
+  | "tails";
+
+/**
+ * One row of a stroke drill: a pattern across one repeat of the ruling, cut
+ * into cells that walk the progression a tracing row walks — a solid model,
+ * then the pattern in the trace style, then empty ruling. The pattern's
+ * phase carries across the cells, so the row reads as one continuous line
+ * whose drawing changes as it goes.
+ */
+export type StrokeRow = { pattern: StrokePattern; cells: TraceStyle[] };
 
 export type TraceRow = {
   /**
@@ -318,7 +434,7 @@ export type Point = { x: Mil; y: Mil };
 /**
  * A shape to measure, name or classify. The points are the whole of it, and
  * `shape` only says what sort of ink they take: a closed outline, a circle from
- * a centre and a point on it, or the two open arms of an angle. `figure.ts`
+ * a center and a point on it, or the two open arms of an angle. `figure.ts`
  * makes one, and says why a rectangle is drawn in proportion and an angle true.
  */
 export type Figure = {
@@ -405,7 +521,7 @@ export type SoundCard = {
 };
 
 /**
- * One labelled place on a form: a heading, and room to answer under it (§11).
+ * One labeled place on a form: a heading, and room to answer under it (§11).
  *
  * `space` is stated rather than derived from `lines` because a field with no
  * lines is one a child draws in, and a drawing box has a height that has
@@ -520,9 +636,26 @@ export type Net =
     };
 
 export type Block =
-  | { kind: "problems"; columns: number; items: Problem[] }
+  | {
+      kind: "problems";
+      columns: number;
+      items: Problem[];
+      /**
+       * The number the first problem carries when the block continues a list
+       * cut across blocks — a lesson's problems to try, one row to a block
+       * when the whole set is taller than the page. Absent is 1.
+       */
+      start?: number;
+    }
   | { kind: "rules"; rule: Rule; lines: number }
-  | { kind: "trace"; rule: Rule; rows: TraceRow[] }
+  | {
+      kind: "trace";
+      rule: Rule;
+      rows: TraceRow[];
+      /** Which models carry their guides. Absent is `letters` (§25). */
+      guides?: ModelGuides;
+    }
+  | { kind: "strokes"; rule: Rule; rows: StrokeRow[] }
   | { kind: "copywork"; text: string; rule: Rule; mode: TraceStyle }
   | { kind: "grid"; grid: GridSpec }
   | {
@@ -573,16 +706,19 @@ export type Block =
       /** `answer[i]` is the index in `right` that `left[i]` pairs with. */
       answer: number[];
     }
-  | { kind: "blanks"; sentences: Blank[] }
-  | { kind: "choice"; questions: Choice[] }
+  /** `start` as on `problems`: the number the first sentence carries. */
+  | { kind: "blanks"; sentences: Blank[]; start?: number }
+  /** `start` as on `problems`: the number the first question carries. */
+  | { kind: "choice"; questions: Choice[]; start?: number }
   /**
    * Words as the outline their letters make, one row of boxes each.
    *
    * Not a `problems` item with a drawing on it, because the boxes *are* the
    * answer place — and a problem may have exactly one of those, so a row of
    * eight boxes with a ruled slot on the end is a sheet a child answers twice.
+   * `start` as on `problems`: the number the first word carries.
    */
-  | { kind: "wordshapes"; columns: number; words: WordShape[] }
+  | { kind: "wordshapes"; columns: number; words: WordShape[]; start?: number }
   /**
    * Cards: a spelling over the word it is in, or a sentence on a strip. Its own
    * block because there is no answer place on it at all — a card is read, cut
@@ -612,7 +748,29 @@ export type Block =
    */
   | { kind: "numberline"; line: NumberLine }
   /**
-   * A blank form: labelled boxes to write in, laid out across the page. Its own
+   * A boxed panel of short sentences: the idea a lesson is about, or the steps
+   * of a worked example, numbered (§23). Text and never a picture, for the
+   * reason the problems are (§2). `lines` is what the family reserved for it,
+   * counted from the characters at the column width; the renderer draws the
+   * box that tall and does not measure.
+   */
+  | {
+      kind: "note";
+      heading?: string;
+      text: string[];
+      items?: string[];
+      lines: number;
+      /** Set small: the sentence for the grown-up, not for the child. */
+      aside?: boolean;
+    }
+  /**
+   * Counters on their own, as the picture a lesson is about, rather than
+   * beside a problem — the same drawing `Problem.counters` carries, as
+   * `numberline` is to `Problem.line`.
+   */
+  | { kind: "counters"; counters: Counters }
+  /**
+   * A blank form: labeled boxes to write in, laid out across the page. Its own
    * block because there is no question here — it asks what the book was about,
    * so numbering it "1." would be a page pretending to be a worksheet and the
    * key has nothing to reveal on it.
@@ -745,15 +903,17 @@ export type Sheet = {
    */
   fontPt: number;
   /**
-   * The three below are the presentation half of `SheetOptions`, carried here
+   * The four below are the presentation half of `SheetOptions`, carried here
    * for the reason `fontPt` is — a `Sheet` is the whole hand-off, and a renderer
    * holding one must not also need the config it came from.
    *
    * No family sets them. `buildSheet` copies them on at the front door, the same
-   * bargain `chrome.ts` struck: otherwise every family writes the same three
+   * bargain `chrome.ts` struck: otherwise every family writes the same four
    * lines and the next one added is the one that forgets.
    */
   font?: SheetFont;
+  /** Which shape of each letter the hand writes — see `SheetOptions.forms`. */
+  forms?: Forms;
   /** A box round the answer place rather than a rule under it. */
   answerBox?: boolean;
   /** Dashed guides across the page, for a sheet that gets cut up. */
@@ -792,6 +952,12 @@ export type SheetOptions = {
   /** Absent is the print face, which is what a worksheet is set in. */
   font?: SheetFont;
   /**
+   * Which shape of each letter the sheet teaches, where the face has a hand
+   * (§25): `{ a: "double", t: "straight" }`. Absent is each letter as the hand
+   * draws it, and a form the hand lacks falls back the same way.
+   */
+  forms?: Forms;
+  /**
    * A box round the answer place instead of a rule under it. The same slot
    * either way — this decides how it is drawn, not where — which is why it can
    * be a shared switch and why it costs no height: a bordered slot is the same
@@ -821,7 +987,7 @@ export type BlankConfig = SheetOptions & { kind: "blank" };
 export type PaperConfig = SheetOptions & { kind: "paper"; rule: Rule };
 
 /**
- * The blank maths references: a hundred chart, a number line, a coordinate
+ * The blank math references: a hundred chart, a number line, a coordinate
  * grid, a place-value chart. Geometry rather than generation, which is why it
  * sits beside `PaperConfig` rather than in `maths/`.
  *
@@ -919,7 +1085,7 @@ export type FormConfig = SheetOptions & {
 
 /**
  * The week, on a wall: five things that are all a table with different headings.
- * The chore and behaviour charts differ only in their labels and their title,
+ * The chore and behavior charts differ only in their labels and their title,
  * which is stated rather than hidden — they are different queries and the same
  * paper, and collapsing them would answer neither search (§8).
  */
@@ -1083,6 +1249,14 @@ export type MultiplicationForm = "horizontal" | "vertical";
  */
 export type LongDigits = { into: number; by: number };
 
+/**
+ * What is drawn under a long division's bracket (§21). Each level includes
+ * the one before it: a place-value grid; then the minus signs and rules of the
+ * take-away rows; then the squares that get written in shaded, and the last
+ * row labeled R.
+ */
+export type DivisionHelp = "none" | "grid" | "steps" | "guided";
+
 export type MultiplicationConfig = SheetOptions & {
   kind: "multiplication";
   operation: MultiplicationOperation;
@@ -1118,6 +1292,8 @@ export type MultiplicationConfig = SheetOptions & {
    * not been taught them has been set an impossible problem.
    */
   remainders?: boolean;
+  /** Long division only. Absent is `none`. */
+  help?: DivisionHelp;
   workspace?: boolean;
 };
 
@@ -1172,10 +1348,27 @@ export type FractionConfig = SheetOptions & {
 
 /* ── Decimals, percents and money ──────────────────────────────────────── */
 
-export type DecimalStyle = "standard" | "percent" | "convert";
+/**
+ * `standard` is the four operations; `percent` and `convert` are the two ways
+ * a decimal is another number; the last five are number sense, each aimed at
+ * one wrong idea a child has about decimals (§22).
+ */
+export type DecimalStyle =
+  | "standard"
+  | "percent"
+  | "convert"
+  | "powers"
+  | "compare"
+  | "order"
+  | "round"
+  | "place";
+
+/** What a rounding sheet rounds to. */
+export type RoundTo = "whole" | "tenth" | "hundredth";
 
 /** `both` shuffles addition and subtraction, as it does on an arithmetic sheet. */
-export type DecimalOperation = "add" | "subtract" | "multiply" | "both";
+export type DecimalOperation =
+  "add" | "subtract" | "multiply" | "divide" | "both";
 
 /**
  * Column form is worth more here than anywhere else: every value prints to the
@@ -1196,6 +1389,31 @@ export type DecimalConfig = SheetOptions & {
   places: number;
   /** The whole numbers the values sit between, ends included. */
   range: { min: number; max: number };
+  /**
+   * Dividing only: the whole numbers a division divides by, ends included,
+   * 2 to 99. Absent is 2 to 9; two digits is the harder sheet.
+   */
+  divisor?: { min: number; max: number };
+  /**
+   * Dividing and multiplying: what the second number is. Absent is `whole`.
+   *
+   * Dividing by a decimal — 8.4 ÷ 0.2 — is never set in the bracket (§22).
+   * Multiplying by one — 3.7 × 2.4 — is set in columns like any other, and
+   * the answer has as many places as the two numbers together.
+   */
+  by?: "whole" | "decimal";
+  /**
+   * Rounding only: the place rounded to. The values carry one place more than
+   * it, which is where the digit that decides sits. Absent is `whole`.
+   */
+  to?: RoundTo;
+  /**
+   * Dividing only: the number divided is whole and the answer runs past the
+   * point — 7 ÷ 4 = 1.75. In columns it prints as `7.00` (§22).
+   */
+  wholeDividend?: boolean;
+  /** Dividing in columns only. Absent is `none`. */
+  help?: DivisionHelp;
   count: number;
   columns: number;
   workspace?: boolean;
@@ -1259,7 +1477,7 @@ export type TimeConfig = SheetOptions & {
 /**
  * A switch for the reason the currency is: a British child converting yards is
  * being asked about a country they have never measured anything in, and an
- * American child converting millimetres likewise.
+ * American child converting millimeters likewise.
  */
 export type UnitSystem = "metric" | "imperial";
 
@@ -1276,8 +1494,8 @@ export type MeasureConfig = SheetOptions & {
   style: MeasureStyle;
   system: UnitSystem;
   /**
-   * A pool rather than one, for the reason `tables` is: "millimetres,
-   * centimetres and metres" is a lesson somebody teaches, and "everything
+   * A pool rather than one, for the reason `tables` is: "millimeters,
+   * centimeters and meters" is a lesson somebody teaches, and "everything
    * measurable" is not.
    */
   quantities: Quantity[];
@@ -1451,7 +1669,7 @@ export type WordProblemConfig = SheetOptions & {
  * takes letters out; `test` prints numbered lines for a list read aloud; `abc`
  * asks for the list back in alphabetical order; `shapes` draws each word as the
  * outline its letters make; `sentence` asks for the word used in one; and
- * `find` prints the word among its near misses, which is the same judgement the
+ * `find` prints the word among its near misses, which is the same judgment the
  * race's "spot it" round makes.
  */
 export type WordSheetStyle =
@@ -1614,11 +1832,42 @@ export type GrammarConfig = SheetOptions & {
   style: GrammarStyle;
   count: number;
   /**
-   * Caps lower than the maths families, because a sentence is a long thing to
+   * Caps lower than the math families, because a sentence is a long thing to
    * print — and the subject-and-predicate sheet ignores it entirely, its answer
    * being two ruled lines the width of the column.
    */
   columns: number;
+};
+
+/* ── Lessons ───────────────────────────────────────────────────────────── */
+
+/**
+ * The lessons, in the order a child meets them (§23): the three meanings of
+ * division, then leftovers and the two written methods, then decimals. The
+ * order is `LESSON_TOPICS` in lessons/lesson.ts; this is only the names. A
+ * topic this build has never heard of prints a page saying so (`MISSING`
+ * there).
+ */
+export type LessonTopic =
+  | "division-sharing"
+  | "division-grouping"
+  | "division-arrays"
+  | "division-remainders"
+  | "division-chunking"
+  | "long-division-steps"
+  | "decimals-powers-of-ten"
+  | "decimal-division"
+  | "dividing-by-decimals";
+
+export type LessonConfig = SheetOptions & {
+  kind: "lesson";
+  topic: LessonTopic;
+  /**
+   * The problems to try after the lesson. Off prints the lesson alone — the
+   * page a parent pins up rather than hands over — and a sheet with nothing
+   * to answer has no score box and a key that is the sheet itself.
+   */
+  practice?: boolean;
 };
 
 /* ── Handwriting ───────────────────────────────────────────────────────── */
@@ -1641,7 +1890,7 @@ export type HandwritingStyle =
   "letters" | "numbers" | "joins" | "words" | "passage";
 
 /**
- * Which joins a joins sheet practises, in the order they are taught.
+ * Which joins a joins sheet practices, in the order they are taught.
  *
  * The four classic joins are named for where the exit stroke leaves the first
  * letter and how tall the second is: a *diagonal* join climbs from the
@@ -1697,6 +1946,14 @@ export type HandwritingConfig = SheetOptions & {
    * way, which is the sheet for a child not yet ready to be left alone.
    */
   progression?: boolean;
+  /**
+   * Which models carry the guides — the dot, arrow and number on each stroke
+   * (§25). Absent is `letters`: a single letter or pair has them and a word
+   * does not, which is what a letter sheet has always printed. `all` puts
+   * them on the model of a word or a sentence too, the parent's own included;
+   * `none` leaves every model bare.
+   */
+  guides?: ModelGuides;
   /** `letters` only. Absent is both cases, which is how letters are taught. */
   letters?: LetterCase;
   /**
@@ -1730,6 +1987,78 @@ export type HandwritingConfig = SheetOptions & {
    * else in the library, which has only the one text.
    */
   translation?: TranslationId;
+};
+
+/* ── Penmanship ────────────────────────────────────────────────────────── */
+
+/**
+ * What a penmanship sheet works on (§24).
+ *
+ * A handwriting sheet teaches a letter. These take a child who can already
+ * form one and work on what makes a page of them readable: the strokes the
+ * letters are made of, the family a letter belongs to, how tall it stands
+ * against its neighbors, the space between words, judging their own work,
+ * and writing quickly without the writing coming apart.
+ */
+export type PenmanshipStyle =
+  "strokes" | "families" | "sizes" | "spacing" | "check" | "fluency";
+
+/**
+ * The letters that share a first stroke — see `writing/letterfamilies.ts`.
+ * Named for the stroke rather than for the letters in it, so the ids hold for
+ * capitals as well as small letters and for a joined hand as well as print;
+ * which letters fall into each is the hand's answer. Five names for four
+ * families a hand, because print has no loop and a joined hand has no
+ * straight slant.
+ */
+export type LetterFamily = "round" | "line" | "arch" | "slant" | "loop";
+
+/**
+ * What a timed sheet asks for: the alphabet in order from memory, which is the
+ * task the research measures fluency with, or a sentence copied over and over.
+ */
+export type FluencyTask = "alphabet" | "sentence";
+
+export type PenmanshipConfig = SheetOptions & {
+  kind: "penmanship";
+  style: PenmanshipStyle;
+  /** As `HandwritingConfig.rule`: any ruling with a pitch, blank resolved. */
+  rule: Rule;
+  /** As `HandwritingConfig.trace`. Never drawn on a check or fluency sheet. */
+  trace: TraceStyle;
+  /**
+   * As `HandwritingConfig.repeats`. On a check sheet it is the model and the
+   * tries after it, because there the child judges the tries against it.
+   */
+  repeats: number;
+  progression?: boolean;
+  /** As `HandwritingConfig.guides`. Nothing on a strokes sheet, which has no letters. */
+  guides?: ModelGuides;
+  /**
+   * `strokes` only: how many rows each pattern gets. The first walks the
+   * progression; the rest are the child's own. Absent is one.
+   */
+  lines?: number;
+  /** `strokes` only. Absent is every pattern, in the order they are taught. */
+  patterns?: StrokePattern[];
+  /** `families` only. Absent is every family, one after another. */
+  family?: LetterFamily;
+  /**
+   * `families` and `check`. A family is a set of one case, so `both` is read
+   * as small letters there; a check sheet writes the pair.
+   */
+  letters?: LetterCase;
+  /** `check` only: a parent's own words in place of the alphabet. */
+  words?: string[];
+  /**
+   * `spacing` and `fluency`: the parent's own sentences, one a line. A
+   * spacing sheet sets every line; a timed sheet copies the first.
+   */
+  text?: string;
+  /** `fluency` only. Absent is the alphabet. */
+  task?: FluencyTask;
+  /** `fluency` only: how long the timer runs, in whole minutes. */
+  minutes?: number;
 };
 
 /* ── Memory work ───────────────────────────────────────────────────────── */
@@ -1860,7 +2189,9 @@ export type SheetConfig =
   | WordStudyConfig
   | PuzzleConfig
   | GrammarConfig
+  | LessonConfig
   | HandwritingConfig
+  | PenmanshipConfig
   | MemoryConfig
   | PhonicsConfig;
 

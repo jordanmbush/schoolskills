@@ -229,7 +229,7 @@ export default function TypingSetup() {
         </Link>
       </TopBar>
 
-      {/* Above both halves and centred, where nothing else on the screen is,
+      {/* Above both halves and centered, where nothing else on the screen is,
           because it governs the screen rather than either panel on it. */}
       <div className="setup__switch">
         <SegmentedControl

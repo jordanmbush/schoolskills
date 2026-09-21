@@ -3,11 +3,13 @@ import type { CSSProperties } from "react";
 import type { Problem } from "@/engine/sheets/types";
 
 import { ClockFaceView } from "../ClockFace";
+import { CountersView } from "../Counters";
 import { FigureView } from "../Figure";
 import { FractionArtView } from "../FractionArt";
 import { NumberLineView } from "../NumberLine";
 import { inch } from "../units";
-import type { BlockProps } from "./block";
+import { Bracket } from "./Bracket";
+import { startOf, type BlockProps } from "./block";
 
 /**
  * Numbered problems in columns.
@@ -19,7 +21,7 @@ import type { BlockProps } from "./block";
  * The answer prints when the sheet says so and is blank when it doesn't. Both
  * come from the same build, so a key cannot disagree with its sheet (§7).
  *
- * **This is the shared primitive.** Every maths family prints through it
+ * **This is the shared primitive.** Every math family prints through it
  * rather than adding a block of its own, so the shapes below are the shapes an
  * arithmetic problem takes and not several families' worth of markup: written
  * along a line, written along a line with the gap inside it, stacked in columns
@@ -28,63 +30,91 @@ import type { BlockProps } from "./block";
  */
 export function Problems({ block, metrics }: BlockProps<"problems">) {
   const columns = Math.max(1, Math.floor(block.columns));
+  // Worked examples carry no number, so the problems a child answers still
+  // count from one — or from where the block before this one left off —
+  // however many examples stand before them.
+  let counted = startOf(block.start) - 1;
+  const numbers = block.items.map((problem) => {
+    if (problem.worked) return null;
+    counted += 1;
+    return counted;
+  });
+  // A block of nothing but worked examples is a lesson's, and keeps the height
+  // it was given: the spare paper on the page belongs to the problems after it.
+  const example =
+    block.items.length > 0 && numbers.every((number) => number === null);
 
   return (
     <ol
-      className="sheet__problems"
+      className={`sheet__problems${example ? " sheet__problems--worked" : ""}`}
       style={{ "--sheet-columns": columns } as CSSProperties}
     >
-      {block.items.map((problem, index) => (
-        <li className="sheet__problem" key={`${index}-${problem.prompt}`}>
-          {/* The number is written out rather than left to a list marker:
-              `base.css` strips markers site-wide, and a numbered problem a
-              child is told to "do 4, 7 and 12 of" has to carry its number as
-              text anyway. */}
-          <span className="sheet__number">{index + 1}.</span>
-          {/* The pictures a problem asks about, before the blank they are
-              answered in. On the sheet as well as on the key, because they are
-              the question rather than the answer. */}
-          {problem.art && <FractionArtView art={problem.art} />}
-          {problem.figure && (
-            <FigureView
-              figure={problem.figure}
-              fontPt={metrics.fontPt}
-              font={metrics.font}
-            />
-          )}
-          {asked(problem) && problem.clock && (
-            <ClockFaceView face={problem.clock} answers={metrics.answers} />
-          )}
-          {/* A problem is set the way the data says it is set: a stack when
-              there is a stack, a bracket when there is a bracket, a sentence
-              otherwise — no flag beside the data to disagree with. */}
-          {problem.bracket ? (
-            <Bracket problem={problem} answers={metrics.answers} />
-          ) : problem.operands ? (
-            <Stacked problem={problem} answers={metrics.answers} />
-          ) : problem.figure ? (
-            // Under the drawing, always — which is how the row was reserved: a
-            // figure, the wrap, and a line (`geometry.ts`). Left to the flex
-            // row it would sit beside the narrow shapes and under the wide
-            // ones, and a column of answer lines that do not line up is a
-            // sheet that looks like a mistake.
-            <span className="sheet__under">
-              <Written problem={problem} answers={metrics.answers} />
-            </span>
-          ) : (
-            <Written problem={problem} answers={metrics.answers} />
-          )}
-          {/* And the one picture that is the answer rather than the question: a
-              dial with no hands on it, which the key draws them onto. It comes
-              after the time it is drawn from, where the ruled slot would have
-              been on any other sheet — because it is the ruled slot. */}
-          {drawn(problem) && problem.clock && (
-            <ClockFaceView face={problem.clock} answers={metrics.answers} />
-          )}
-          {problem.line && <NumberLineView line={problem.line} />}
-          <Below problem={problem} answers={metrics.answers} />
-        </li>
-      ))}
+      {block.items.map((problem, index) => {
+        // A worked example prints its answers on the sheet as well as on the
+        // key, in every place an answer goes.
+        const answers = metrics.answers || problem.worked === true;
+        // The number is written out rather than left to a list marker:
+        // `base.css` strips markers site-wide, and a numbered problem a child
+        // is told to "do 4, 7 and 12 of" has to carry its number as text
+        // anyway.
+        const number = numbers[index] !== null && (
+          <span className="sheet__number">{numbers[index]}.</span>
+        );
+        return (
+          <li className="sheet__problem" key={`${index}-${problem.prompt}`}>
+            {/* Under a counters picture the number goes with the prompt on
+                the line below: the drawing is as wide as the column, so a
+                number beside it would take a line of its own that no family
+                reserved for. */}
+            {!problem.counters && number}
+            {/* The pictures a problem asks about, before the blank they are
+                answered in. On the sheet as well as on the key, because they
+                are the question rather than the answer. */}
+            {problem.art && <FractionArtView art={problem.art} />}
+            {problem.counters && <CountersView counters={problem.counters} />}
+            {problem.figure && (
+              <FigureView
+                figure={problem.figure}
+                fontPt={metrics.fontPt}
+                font={metrics.font}
+              />
+            )}
+            {asked(problem) && problem.clock && (
+              <ClockFaceView face={problem.clock} answers={answers} />
+            )}
+            {/* A problem is set the way the data says it is set: a stack when
+                there is a stack, a bracket when there is a bracket, a sentence
+                otherwise — no flag beside the data to disagree with. */}
+            {problem.bracket ? (
+              <Bracket problem={problem} answers={answers} />
+            ) : problem.operands ? (
+              <Stacked problem={problem} answers={answers} />
+            ) : problem.figure || problem.counters ? (
+              // Under the drawing, always — which is how the row was reserved:
+              // a picture, the wrap, and a line. Left to the flex row it would
+              // sit beside the narrow pictures and under the wide ones, and a
+              // column of answer lines that do not line up is a sheet that
+              // looks like a mistake.
+              <span className="sheet__under">
+                {problem.counters && number}
+                <Written problem={problem} answers={answers} />
+              </span>
+            ) : (
+              <Written problem={problem} answers={answers} />
+            )}
+            {/* And the one picture that is the answer rather than the
+                question: a dial with no hands on it, which the key draws them
+                onto. It comes after the time it is drawn from, where the ruled
+                slot would have been on any other sheet — because it is the
+                ruled slot. */}
+            {drawn(problem) && problem.clock && (
+              <ClockFaceView face={problem.clock} answers={answers} />
+            )}
+            {problem.line && <NumberLineView line={problem.line} />}
+            <Below problem={problem} answers={answers} />
+          </li>
+        );
+      })}
     </ol>
   );
 }
@@ -153,7 +183,9 @@ function Written({ problem, answers }: Part) {
  *
  * A long multiplication has spent it too. Its working goes *inside* the stack,
  * between the rule and the total, because a partial product written anywhere
- * else is the mistake the sheet exists to practise out of a child.
+ * else is the mistake the sheet exists to practice out of a child. A long
+ * division never has one: its reservation is the squares under the bracket
+ * (`bracket.rows`), which the bracket draws itself.
  */
 function Below({ problem, answers }: Part) {
   if (ruled(problem)) return <Ruled problem={problem} answers={answers} />;
@@ -243,37 +275,6 @@ function Stacked({ problem, answers }: Part) {
         className={`sheet__total${answers ? " sheet__total--answered" : ""}`}
       >
         {answers ? problem.answer : ""}
-      </span>
-    </span>
-  );
-}
-
-/**
- * Long division, in the one shape it has ever been written in: the divisor
- * outside the bracket, the dividend under the bar, and the quotient along the
- * top of it.
- *
- * The bar and the upright are borders rather than a drawing, for the reason
- * everything else on a sheet is (§5) — they are foreground paint and always
- * print. The quotient is right-aligned over the dividend and not centred,
- * because the two are aligned by place value: the last digit of a quotient
- * always belongs over the last digit of the dividend, whatever either of them
- * measures. That is the whole reason for `tabular-nums` here, and it is the
- * same reason a column sum has it.
- */
-function Bracket({ problem, answers }: Part) {
-  const bracket = problem.bracket;
-  if (!bracket) return null;
-  return (
-    <span className="sheet__bracket">
-      <span className="sheet__divisor">{bracket.divisor}</span>
-      <span className="sheet__house">
-        <span
-          className={`sheet__quotient${answers ? " sheet__quotient--answered" : ""}`}
-        >
-          {answers ? problem.answer : ""}
-        </span>
-        <span className="sheet__dividend">{bracket.dividend}</span>
       </span>
     </span>
   );

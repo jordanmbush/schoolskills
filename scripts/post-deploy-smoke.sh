@@ -3,7 +3,7 @@
 #
 # Deliberately narrow: this asks "did a working site actually land at this
 # URL", not "does the game work" — the browser suite in CI already covers the
-# game against the same build artefact. What can only break HERE is the
+# game against the same build artifact. What can only break HERE is the
 # delivery: DNS, the certificate, cache headers, the error document.
 #
 # Three things this got wrong once, all fixed below. Two of them reported a

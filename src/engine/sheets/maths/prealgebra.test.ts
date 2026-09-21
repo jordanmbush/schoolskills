@@ -1,21 +1,25 @@
 import { describe, expect, it } from "vitest";
 
-import { buildSheet, describeSheet } from "../index";
+import { answerKey, buildSheet, describeSheet } from "../index";
+import { printedBlockBox } from "../chrome";
 import { describeSheetFamily } from "../contract";
 import { BLOCK_GAP, PROBLEM_GAP } from "../layout";
 import type {
+  Block,
   GridMark,
+  GridSpec,
   MarginSize,
   Paper,
   PaperSize,
   PreAlgebraConfig,
   Problem,
+  Sheet,
 } from "../types";
 
 import { PREALGEBRA_SHEET, preAlgebraLayout } from "./prealgebra";
 
 /**
- * Pre-algebra, held to the bar the maths families set — and to one more, because
+ * Pre-algebra, held to the bar the math families set — and to one more, because
  * three of these five styles have an answer that can be nearly right.
  *
  * **Nothing here checks the generator against the generator.** Every assertion
@@ -199,7 +203,9 @@ const EVERY_SHAPE: Array<Partial<PreAlgebraConfig>> = [
   { style: "inequality", steps: 2, negatives: false },
   { style: "slope" },
   { style: "slope", negatives: false },
-  { style: "graph" },
+  // Every pair the six points make, which is more than fit under the plane —
+  // so this shape is the graph sheet on two pages.
+  { style: "graph", count: 15 },
   { style: "graph", quadrants: 1 },
   { workspace: true, count: 6 },
 ];
@@ -214,21 +220,57 @@ describeSheetFamily("prealgebra", {
   seeds: SEEDS,
 });
 
-/** The problems block, which is the last one whatever else is on the sheet. */
+/** Every problem on the sheet, page after page. */
 function problemsOf(over: Partial<PreAlgebraConfig>, seed: number): Problem[] {
-  const blocks = buildSheet(config(over), seed).blocks;
-  const block = blocks[blocks.length - 1];
-  if (block.kind !== "problems")
-    throw new Error(`expected problems, got ${block.kind}`);
-  return block.items;
+  return pagesOf(buildSheet(config(over), seed)).flatMap(
+    (page) => page.problems.items,
+  );
 }
 
-/** And the plane above them, on the one style that has one. */
-function marksOf(over: Partial<PreAlgebraConfig>, seed: number): GridMark[] {
-  const block = buildSheet(config(over), seed).blocks[0];
-  if (block.kind !== "grid")
-    throw new Error(`expected a grid, got ${block.kind}`);
-  return block.grid.marks ?? [];
+/** One page: its problems, and the plane above them on the one style that has one. */
+type Page = { grid?: GridSpec; problems: Extract<Block, { kind: "problems" }> };
+
+/**
+ * Each page of a sheet, in order. A page is a plane at most and then one
+ * problems block, so anything else on a page is a failure here rather than a
+ * page silently skipped.
+ */
+function pagesOf(sheet: Sheet): Page[] {
+  const pages: Page[] = [];
+  let grid: GridSpec | undefined;
+  let open = false;
+  for (const block of sheet.blocks) {
+    if (block.kind === "break") {
+      expect(open, "a break with no page before it").toBe(true);
+      open = false;
+      continue;
+    }
+    if (block.kind === "grid") {
+      expect(open, "a plane after the page's problems").toBe(false);
+      expect(grid, "two planes on one page").toBeUndefined();
+      grid = block.grid;
+      continue;
+    }
+    if (block.kind !== "problems")
+      throw new Error(`expected problems, got ${block.kind}`);
+    expect(open, "two problems blocks on one page").toBe(false);
+    pages.push(grid ? { grid, problems: block } : { problems: block });
+    grid = undefined;
+    open = true;
+  }
+  expect(grid, "a plane with no problems under it").toBeUndefined();
+  return pages;
+}
+
+/** The pages of a graph sheet: the dots on each one's plane, and the pairs under it. */
+function graphPagesOf(
+  over: Partial<PreAlgebraConfig>,
+  seed: number,
+): Array<{ marks: GridMark[]; problems: Problem[] }> {
+  return pagesOf(buildSheet(config(over), seed)).map(({ grid, problems }) => {
+    if (!grid) throw new Error("a graph page with no plane on it");
+    return { marks: grid.marks ?? [], problems: problems.items };
+  });
 }
 
 const everyProblem = function* (
@@ -284,8 +326,7 @@ describe("the pre-algebra family", () => {
 
   it("marks the sheet out of what is on it", () => {
     const sheet = buildSheet(config({ count: 7 }), 3);
-    const block = sheet.blocks[sheet.blocks.length - 1];
-    expect(block.kind === "problems" && block.items.length).toBe(
+    expect(pagesOf(sheet).flatMap((page) => page.problems.items).length).toBe(
       sheet.header.score?.outOf,
     );
   });
@@ -379,19 +420,23 @@ describe("the answer key", () => {
   });
 
   it("reads a graph's slopes off the dots that are printed on it", () => {
+    // Off the plane on the same page, so a pair on page two is read off page
+    // two's dots.
     for (const shape of shapesOf("graph")) {
       for (const seed of SEEDS) {
-        const points = plotted(marksOf(shape, seed), shape);
-        for (const problem of problemsOf(shape, seed)) {
-          const named = /^([A-Z]) and ([A-Z])$/.exec(problem.prompt);
-          expect(named, problem.prompt).not.toBeNull();
-          const [from, to] = [
-            points[named?.[1] ?? ""],
-            points[named?.[2] ?? ""],
-          ];
-          expect(from, problem.prompt).toBeDefined();
-          expect(to, problem.prompt).toBeDefined();
-          expectSlope(problem.answer, from, to, problem.prompt);
+        for (const page of graphPagesOf(shape, seed)) {
+          const points = plotted(page.marks, shape);
+          for (const problem of page.problems) {
+            const named = /^([A-Z]) and ([A-Z])$/.exec(problem.prompt);
+            expect(named, problem.prompt).not.toBeNull();
+            const [from, to] = [
+              points[named?.[1] ?? ""],
+              points[named?.[2] ?? ""],
+            ];
+            expect(from, problem.prompt).toBeDefined();
+            expect(to, problem.prompt).toBeDefined();
+            expectSlope(problem.answer, from, to, problem.prompt);
+          }
         }
       }
     }
@@ -516,19 +561,21 @@ describe("what may be on the page", () => {
     // number a child can write in a blank.
     for (const shape of shapesOf("graph")) {
       for (const seed of SEEDS) {
-        const points = Object.values(plotted(marksOf(shape, seed), shape));
-        const span = Math.floor(shape.quadrants ?? 4) === 4 ? 8 : 10;
-        const low = Math.floor(shape.quadrants ?? 4) === 4 ? -span : 1;
-        expect(new Set(points.map((point) => point.x)).size).toBe(
-          points.length,
-        );
-        for (const point of points) {
-          for (const at of [point.x, point.y]) {
-            expect(at, JSON.stringify(point)).toBeGreaterThanOrEqual(low);
-            expect(at, JSON.stringify(point)).toBeLessThanOrEqual(span);
-            // Never on an axis: a dot on one of the two heavy rules is a dot a
-            // child has to look twice at.
-            expect(at, JSON.stringify(point)).not.toBe(0);
+        for (const page of graphPagesOf(shape, seed)) {
+          const points = Object.values(plotted(page.marks, shape));
+          const span = Math.floor(shape.quadrants ?? 4) === 4 ? 8 : 10;
+          const low = Math.floor(shape.quadrants ?? 4) === 4 ? -span : 1;
+          expect(new Set(points.map((point) => point.x)).size).toBe(
+            points.length,
+          );
+          for (const point of points) {
+            for (const at of [point.x, point.y]) {
+              expect(at, JSON.stringify(point)).toBeGreaterThanOrEqual(low);
+              expect(at, JSON.stringify(point)).toBeLessThanOrEqual(span);
+              // Never on an axis: a dot on one of the two heavy rules is a
+              // dot a child has to look twice at.
+              expect(at, JSON.stringify(point)).not.toBe(0);
+            }
           }
         }
       }
@@ -599,26 +646,97 @@ describe("how much fits", () => {
   const SIZES: PaperSize[] = ["letter", "a4", "legal"];
   const MARGINS: MarginSize[] = ["none", "narrow", "normal", "wide"];
 
-  it("never prints more problems than the paper holds", () => {
+  it("never prints more problems on a page than the paper holds", () => {
+    // Against the box the printed header leaves rather than the config's,
+    // with the plane's share taken off every page that carries one — and
+    // every page but the last is full: a page cut short of what fits would
+    // be a sheet of paper for nothing.
     for (const size of SIZES) {
       for (const margin of MARGINS) {
         for (const fontPt of [12, 18]) {
           for (const shape of EVERY_SHAPE) {
             const over = { ...shape, paper: paper({ size, margin }), fontPt };
-            const problems = problemsOf({ ...over, count: 200 }, 8);
-            const { box, columns, row, plane } = preAlgebraLayout(config(over));
-            const rows = Math.ceil(problems.length / columns);
-            const used =
-              rows * row +
-              Math.max(0, rows - 1) * PROBLEM_GAP.y +
-              (plane ? plane.grid.rows * plane.grid.cell + BLOCK_GAP : 0);
-            expect(used, `${size}/${margin}/${fontPt}pt`).toBeLessThanOrEqual(
-              box.height,
-            );
+            const where = `${size}/${margin}/${fontPt}pt ${JSON.stringify(shape)}`;
+            const sheet = buildSheet(config({ ...over, count: 200 }), 8);
+            const pages = pagesOf(sheet);
+            expect(pages.length, where).toBeGreaterThan(0);
+            const { row, perPage, plane } = preAlgebraLayout(config(over));
+            for (const [at, { grid, problems }] of pages.entries()) {
+              // A plane on every page of a graph sheet, and on no page of any
+              // other.
+              expect(grid !== undefined, `${where}, page ${at + 1}`).toBe(
+                plane !== undefined,
+              );
+              const rows = Math.ceil(problems.items.length / problems.columns);
+              const used =
+                rows * row +
+                Math.max(0, rows - 1) * PROBLEM_GAP.y +
+                (grid ? grid.rows * grid.cell + BLOCK_GAP : 0);
+              expect(used, `${where}, page ${at + 1}`).toBeLessThanOrEqual(
+                printedBlockBox(sheet).height,
+              );
+              if (at < pages.length - 1) {
+                expect(problems.items.length, `${where}, page ${at + 1}`).toBe(
+                  pages[0].problems.items.length,
+                );
+              }
+            }
+            // A row taller than the page holds nothing.
+            if (perPage === 0) {
+              expect(
+                pages.map((page) => page.problems.items),
+                where,
+              ).toEqual([[]]);
+            }
           }
         }
       }
     }
+  });
+
+  it("runs on to another page rather than cutting the count to the paper", () => {
+    // Fifty equations at twenty-two to a page are three pages, not
+    // twenty-two equations: a parent who wanted one page prints page one
+    // (§4). The numbering carries on, so a child told to do 40 to 50 finds
+    // them.
+    const over = { style: "equation" as const, count: 50 };
+    const sheet = buildSheet(config(over), 3);
+    const { perPage } = preAlgebraLayout(config(over));
+    const pages = pagesOf(sheet);
+    expect(pages.length).toBe(Math.ceil(50 / perPage));
+    expect(pages.flatMap((page) => page.problems.items).length).toBe(50);
+    expect(sheet.header.score?.outOf).toBe(50);
+    for (const [at, { problems }] of pages.entries()) {
+      expect(problems.start, `page ${at + 1}`).toBe(
+        at > 0 ? at * perPage + 1 : undefined,
+      );
+      if (at < pages.length - 1)
+        expect(problems.items.length, `page ${at + 1}`).toBe(perPage);
+    }
+    // And the key runs on with it, page for page.
+    expect(
+      pagesOf(answerKey(config(over), 3)).map(
+        (page) => page.problems.items.length,
+      ),
+    ).toEqual(pages.map((page) => page.problems.items.length));
+  });
+
+  it("carries the graph on to every page its pairs are read off", () => {
+    // Six points make fifteen pairs and ten fit under the plane, so the last
+    // five are on page two — with the same six dots above them, because a
+    // pair is read off the page it is on, and the key marks it there (§4).
+    const over = { style: "graph" as const, count: 15 };
+    const { perPage } = preAlgebraLayout(config(over));
+    const pages = graphPagesOf(over, 3);
+    expect(pages.length).toBe(Math.ceil(15 / perPage));
+    expect(pages.length).toBeGreaterThan(1);
+    expect(pages.flatMap((page) => page.problems).length).toBe(15);
+    for (const [at, page] of pages.entries()) {
+      expect(page.marks.length, `page ${at + 1}`).toBe(6);
+      expect(page.marks, `page ${at + 1}`).toEqual(pages[0].marks);
+    }
+    expect(pagesOf(answerKey(config(over), 3)).map((page) => page.grid?.marks)) //
+      .toEqual(pages.map((page) => page.marks));
   });
 
   it("does not throw the page away either", () => {
@@ -628,20 +746,15 @@ describe("how much fits", () => {
     expect((rows + 1) * row + rows * PROBLEM_GAP.y).toBeGreaterThan(box.height);
   });
 
-  it("honours the count and the columns it was given", () => {
+  it("honors the count and the columns it was given", () => {
     expect(problemsOf({ style: "equation", count: 9 }, 1).length).toBe(9);
-    for (const columns of [1, 2, 3]) {
-      const blocks = buildSheet(
-        config({ style: "equation", columns }),
-        1,
-      ).blocks;
-      const block = blocks[blocks.length - 1];
-      expect(block.kind === "problems" && block.columns).toBe(columns);
-    }
+    const columnsOf = (over: Partial<PreAlgebraConfig>) =>
+      pagesOf(buildSheet(config(over), 1))[0].problems.columns;
+    for (const columns of [1, 2, 3])
+      expect(columnsOf({ style: "equation", columns })).toBe(columns);
     // Two columns of expressions, because `2x + 3y when x = 4, y = 2` is most
     // of a line of type before its answer slot.
-    const wide = buildSheet(config({ columns: 6 }), 1).blocks[0];
-    expect(wide.kind === "problems" && wide.columns).toBe(2);
+    expect(columnsOf({ columns: 6 })).toBe(2);
   });
 });
 

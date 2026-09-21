@@ -10,7 +10,7 @@
  * which is the same module the family reserved the row height with, and this
  * file only puts ink on them: a closed outline, a circle, or the two open arms
  * of an angle. A renderer that scaled a shape to fit would be a renderer that
- * can disagree with the labels on it, and a rectangle drawn 8 by 4 and labelled
+ * can disagree with the labels on it, and a rectangle drawn 8 by 4 and labeled
  * 8 by 3 teaches a child not to trust the picture.
  */
 import { figureInk, radiusOf } from "@/engine/sheets/figure";
@@ -100,9 +100,9 @@ const hasLabel = (figure: Figure, edge: number): boolean =>
   (figure.labels?.[edge] ?? "") !== "";
 
 /**
- * A circle is two points: where its centre is, and one point on it.
+ * A circle is two points: where its center is, and one point on it.
  *
- * The radius is drawn only when it is being labelled. An unlabelled circle is
+ * The radius is drawn only when it is being labeled. An unlabeled circle is
  * just a circle, and a line across the middle of it is a line a child has to
  * decide to ignore.
  */

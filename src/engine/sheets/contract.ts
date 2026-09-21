@@ -25,7 +25,7 @@ import { describe, expect, it } from "vitest";
 import { answerKey, buildSheet, describeSheet, sheetSpec } from "./index";
 import { sheetFamily } from "./families";
 import { SHEET_CREDIT, SHEET_URL, type SheetSpec } from "./spec";
-import type { SheetConfig } from "./types";
+import type { Block, SheetConfig } from "./types";
 
 /**
  * What a key says at the foot of the page.
@@ -50,6 +50,39 @@ const OTHER_STOCK = {
   paper: { size: "a4", orientation: "landscape", margin: "wide" },
   fontPt: 18,
 } as const;
+
+/**
+ * Whether a block prints the same on a key as on its sheet: its renderer
+ * never reads `answers`, or every problem on it already prints its own. Held
+ * here as a list of what the renderers do, not read from a family — the
+ * family is what is being held to it.
+ */
+function printsTheSameKeyed(block: Block): boolean {
+  switch (block.kind) {
+    case "break":
+    case "note":
+    case "counters":
+    case "numberline":
+      return true;
+    case "grid":
+      return (block.grid.answers?.length ?? 0) === 0;
+    case "problems":
+      return block.items.every((item) => item.worked === true);
+    default:
+      return false;
+  }
+}
+
+/**
+ * What a key left off the front of its sheet: nothing, or whole leading pages
+ * (§7). `null` when the key's blocks are not the sheet's cut at a page break.
+ */
+function leftOffByKey(sheet: Block[], key: Block[]): Block[] | null {
+  const cut = sheet.length - key.length;
+  if (cut < 0) return null;
+  if (cut > 0 && sheet[cut - 1].kind !== "break") return null;
+  return sheet.slice(0, cut);
+}
 
 export type SheetFamilyContract<C extends SheetConfig> = {
   /** How the picker names it — the string in families.ts. */
@@ -208,7 +241,9 @@ export function describeSheetFamily<C extends SheetConfig>(
       // The key is the build, told to print what it already worked out — never
       // a second draw from the seed, which could answer a question the page
       // never asked (§7). So the two differ in the answers switch and in the
-      // note at the foot, and in nothing else.
+      // note at the foot, and in nothing else — except that a key may leave
+      // off whole leading pages, and only pages that would have printed the
+      // same either way.
       for (const one of configs) {
         const sheet = buildSheet(one, 11);
         const key = answerKey(one, 11);
@@ -216,10 +251,21 @@ export function describeSheetFamily<C extends SheetConfig>(
           { ...key.footer, note: sheet.footer.note },
           `${where(one)}: the key changed the footer for more than to say what it is — the source credit belongs to the words on the page and prints on both`,
         ).toEqual(sheet.footer);
+        const leftOff = leftOffByKey(sheet.blocks, key.blocks);
+        expect(
+          leftOff,
+          `${where(one)}: the key's blocks are not the sheet's with whole leading pages left off`,
+        ).not.toBeNull();
         expect(
           { ...key, answers: sheet.answers, footer: sheet.footer },
           `${where(one)}: the key is not the sheet it belongs to`,
-        ).toEqual(sheet);
+        ).toEqual({ ...sheet, blocks: sheet.blocks.slice(leftOff?.length) });
+        expect(
+          (leftOff ?? [])
+            .filter((block) => !printsTheSameKeyed(block))
+            .map((block) => block.kind),
+          `${where(one)}: the key left off a page with something to reveal on it`,
+        ).toEqual([]);
       }
     });
 

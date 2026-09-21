@@ -25,7 +25,7 @@
  * DNS (mirrors the monilibrium pattern): the domain is Cloudflare-registered
  * and Cloudflare-authoritative. SST's Cloudflare adapter writes the app's CNAME
  * and the ACM validation records; there is no Route53 zone at all. Records are
- * written DNS-only (grey cloud) — CloudFront is already the CDN, and proxying
+ * written DNS-only (gray cloud) — CloudFront is already the CDN, and proxying
  * through Cloudflare on top would double up TLS termination for nothing.
  *
  * Env vars that gate production, read at deploy time and never committed:
@@ -66,7 +66,7 @@ export default $config({
           profile: process.env.CI ? undefined : "schoolskills",
         },
         // Only production declares the Cloudflare provider. Declaring it
-        // unconditionally makes Pulumi initialise and AUTHENTICATE it on every
+        // unconditionally makes Pulumi initialize and AUTHENTICATE it on every
         // stage, so a domain-less dev deploy fails with "Invalid access token"
         // despite never touching DNS. Pinned rather than floating: a provider
         // major can change record resource shapes and silently recreate DNS.

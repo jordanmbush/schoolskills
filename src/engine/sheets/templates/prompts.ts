@@ -3,7 +3,7 @@
  *
  * The one authored list on the paperwork shelf, and it is authored for the
  * reason the grammar bank and the phonics sentences are: no rule turns a topic
- * into a prompt. "Write about an animal" is a topic; "Your dog has learnt to
+ * into a prompt. "Write about an animal" is a topic; "Your dog has learned to
  * talk, and the first thing it says is that it has been lying to you" is a
  * prompt, and the difference between them is a whole page of writing.
  *
@@ -20,7 +20,7 @@
  *     "describe autumn" is not.
  *
  * Sorted by nothing. The seed picks one (§7), so "another prompt like this" is
- * `seed + 1` here exactly as "another sheet of sums" is on the maths shelf —
+ * `seed + 1` here exactly as "another sheet of sums" is on the math shelf —
  * which is the whole reason this shelf has a seed at all.
  */
 
@@ -37,7 +37,7 @@ export const WRITING_PROMPTS: readonly string[] = [
   "Write a day in the life of the person who has to clean up after a dragon.",
   "You are given a jar with one afternoon in it. Whose afternoon, and what happens when you open it?",
   "A parcel arrives with your name on it and no address. Inside is something that is definitely not for you.",
-  "Describe your bedroom to somebody who cannot see it, using no colours.",
+  "Describe your bedroom to somebody who cannot see it, using no colors.",
   "The sea has gone out and not come back. It is the third day.",
   "You have been asked to write the rules for a new playground game. Write them so an argument is impossible.",
   "Something very small in your house has been moving at night. Tonight you stay awake.",

@@ -350,7 +350,7 @@
 
 /* The chevron for <Select>. `.field__input` sets `background` as a shorthand,
    which resets background-image — so the arrow is drawn as a rotated border
-   on the wrapper instead, where it also follows the theme colour. */
+   on the wrapper instead, where it also follows the theme color. */
 .field__selectwrap {
   position: relative;
   display: block;
@@ -886,7 +886,7 @@
   display: grid;
 }
 
-/* ── The word list, coloured by mastery ────────────────────────────────── */
+/* ── The word list, colored by mastery ────────────────────────────────── */
 
 .wordmap {
   display: flex;

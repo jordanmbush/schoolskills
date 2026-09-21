@@ -3,7 +3,7 @@
  *
  * Everything here is a whole number of thousandths of an inch (`Mil`), and the
  * conversions are one-way on purpose: a size is written in whichever unit it is
- * genuinely specified in — 8.5 inches, 210 millimetres, 12 points — and stored
+ * genuinely specified in — 8.5 inches, 210 millimeters, 12 points — and stored
  * as mil, so nothing downstream has to remember which stock came from which
  * standard.
  *

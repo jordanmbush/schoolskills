@@ -37,6 +37,8 @@ import {
   answerLine,
   columnWidth,
   fitAcross,
+  problemPages,
+  wantedOf,
   type Box,
 } from "../layout";
 import { inches } from "../paper";
@@ -68,7 +70,7 @@ const MISS_BUDGET = 500;
 /**
  * How far a proportion is scaled up: `3 : 4` becomes `9 : 12`, not `93 : 124`.
  *
- * Small on purpose. What is being practised is that the two pairs are the same
+ * Small on purpose. What is being practiced is that the two pairs are the same
  * relationship, and a factor a child cannot spot turns that into a long
  * multiplication with a proportion painted on the front.
  */
@@ -165,10 +167,10 @@ const RATES: Rate[] = [
   { what: "words", per: "minutes", one: "minute" },
   { what: "miles", per: "hours", one: "hour" },
   { what: "pages", per: "days", one: "day" },
-  { what: "litres", per: "minutes", one: "minute" },
+  { what: "liters", per: "minutes", one: "minute" },
   { what: "beats", per: "minutes", one: "minute" },
   { what: "seats", per: "rows", one: "row" },
-  { what: "sweets", per: "bags", one: "bag" },
+  { what: "candies", per: "bags", one: "bag" },
   { what: "photos", per: "albums", one: "album" },
 ];
 
@@ -220,17 +222,12 @@ export function ratioLayout(config: RatioConfig): {
   };
 }
 
-/**
- * Every problem on the sheet, in the order they are printed.
- *
- * Exported because it is the whole of what a test has to check.
- */
-export function ratioProblems(config: RatioConfig, seed: number): Problem[] {
-  const { perPage } = ratioLayout(config);
-  // The count is a request, not a promise: a count that overruns is a second
-  // sheet out of the printer with two problems on it.
-  const wanted = clamp(config.count, 0, perPage);
-
+/** Up to `wanted` problems, in the order they are printed. */
+function drawProblems(
+  config: RatioConfig,
+  seed: number,
+  wanted: number,
+): Problem[] {
   const rand = mulberry32(seed);
   const seen = new Set<string>();
   const problems: Problem[] = [];
@@ -304,8 +301,8 @@ function describeRatio(config: RatioConfig): string {
 }
 
 function buildRatioSheet(config: RatioConfig, seed: number): Sheet {
-  const items = ratioProblems(config, seed);
-  const { columns } = ratioLayout(config);
+  const { columns, perPage } = ratioLayout(config);
+  const items = drawProblems(config, seed, wantedOf(config.count, perPage));
   const head = headerOf(config);
 
   return {
@@ -317,7 +314,7 @@ function buildRatioSheet(config: RatioConfig, seed: number): Sheet {
       fields: head.fields,
       score: { outOf: items.length },
     },
-    blocks: [{ kind: "problems", columns, items }],
+    blocks: problemPages(items, columns, perPage),
     footer: { credit: SHEET_CREDIT, url: SHEET_URL, seed },
     answers: false,
   };

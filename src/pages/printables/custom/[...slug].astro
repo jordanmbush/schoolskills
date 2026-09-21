@@ -1,0 +1,189 @@
+---
+import Content from "@/layouts/Content.astro";
+import SheetActions from "@/components/site/SheetActions.astro";
+import AdSlot from "@/components/site/AdSlot.astro";
+import { SheetView } from "@/components/sheet/Sheet";
+import { answerKey, buildSheet } from "@/engine/sheets";
+import HubLinks from "../_HubLinks.astro";
+import { trailTo } from "../_shelves";
+import {
+  CUSTOM_PAGES,
+  CUSTOM_ROOT,
+  CUSTOM_SEED,
+  builderHref,
+  hrefFor,
+  type CustomPage,
+} from "../_custom";
+
+/**
+ * The builder's front door, and the three pages behind it — the pages a
+ * search for a custom worksheet lands on, since the bench itself is `noindex`
+ * (`_custom.ts`, §8). One route for the four because they are one shape: the
+ * prose that answers the query, a finished sheet as HTML under it, and doors
+ * into the builder that open on exactly the sheet each names.
+ *
+ * `slug` is a rest parameter so the front door is this file too, at the
+ * directory itself, rather than a second file with the same body.
+ *
+ * **No client directive on `SheetView`, ever**, and **everything that is not
+ * a sheet carries `.no-print`**, for the reasons `[topic].astro` gives: the
+ * sheet is real HTML that ships no JavaScript, and printing this page means
+ * printing the sheet on it.
+ */
+
+type Props = { page: CustomPage };
+
+export function getStaticPaths() {
+  return CUSTOM_PAGES.map((page) => ({
+    params: { slug: page.slug },
+    props: { page },
+  }));
+}
+
+const { page } = Astro.props;
+
+const printed = buildSheet(page.example.config, CUSTOM_SEED);
+const key = page.example.keyed
+  ? answerKey(page.example.config, CUSTOM_SEED)
+  : null;
+
+const url = `https://schoolskills.app${hrefFor(page)}`;
+const front = CUSTOM_PAGES[0];
+const others = CUSTOM_PAGES.filter((other) => other !== page);
+
+const trail = trailTo(
+  null,
+  ...(page.slug
+    ? [
+        { name: front.name, href: CUSTOM_ROOT },
+        { name: page.name, href: url },
+      ]
+    : [{ name: page.name, href: url }]),
+);
+---
+
+<Content
+  title={page.title}
+  description={page.description}
+  world="paper"
+  breadcrumb={trail}
+  jsonLd={{
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    name: page.heading,
+    description: page.description,
+    url,
+    inLanguage: "en",
+    isAccessibleForFree: true,
+    mainEntity: {
+      "@type": "WebApplication",
+      name: "The School Skills sheet builder",
+      url: "https://schoolskills.app/printables/make",
+      applicationCategory: "EducationalApplication",
+      operatingSystem: "Any",
+      browserRequirements: "Requires JavaScript",
+      isAccessibleForFree: true,
+      offers: { "@type": "Offer", price: 0, priceCurrency: "USD" },
+    },
+  }}
+>
+  <header class="hero wrap no-print">
+    <p class="hero__eyebrow">
+      <span class="hero__world">The Print Shop</span>
+      {page.slug ? front.name : "The sheet builder"}
+    </p>
+    <h1 class="hero__title">{page.heading}</h1>
+    <p class="hero__lead">{page.lead}</p>
+    <SheetActions builder={builderHref(page.example.config)} />
+    <p class="hero__note">Free &middot; no account &middot; nothing uploaded</p>
+  </header>
+
+  {
+    /*
+      The sheet, outside `.wrap` deliberately — see `[topic].astro`. The key,
+      where there is one, stays an adjacent sibling so print.css breaks the
+      page between them.
+    */
+  }
+  <div class="sheet-frame">
+    <SheetView sheet={printed} />
+    {key && <SheetView sheet={key} />}
+  </div>
+
+  <section class="band band--tight wrap no-print">
+    <h2 class="h2">What is on this sheet</h2>
+    <div class="prose">
+      <p>{page.caption}</p>
+      <p>
+        The builder link at the top of the page carries this sheet&rsquo;s own
+        settings, so the bench opens on exactly the sheet here rather than on a
+        blank one. Change what you like and press print.
+      </p>
+    </div>
+  </section>
+
+  <section class="band band--tight wrap no-print">
+    <h2 class="h2">{page.notesHeading}</h2>
+    <div class="prose">{page.notes.map((note) => <p>{note}</p>)}</div>
+  </section>
+
+  <section class="band band--tight wrap no-print">
+    <h2 class="h2">{page.doorsHeading}</h2>
+    <p class="h2__sub">{page.doorsLead}</p>
+    {
+      page.groups.map((group) => (
+        <>
+          {group.label && <h3 class="h2 h2--next">{group.label}</h3>}
+          <nav class="stones" aria-label={group.label ?? page.doorsHeading}>
+            {group.doors.map((door) => (
+              <a class="stone" href={builderHref(door.config)}>
+                {door.label}
+              </a>
+            ))}
+          </nav>
+        </>
+      ))
+    }
+    <div class="hero__actions">
+      <a class="cta" href="/printables/make">Build a sheet</a>
+    </div>
+  </section>
+
+  <section class="band band--tight wrap no-print">
+    <h2 class="h2">In the classroom</h2>
+    <div class="prose">
+      <p>
+        A class set is one sheet printed once per child. Set the copies and each
+        one is a new draw of the same settings with its own answer key, so the
+        two children sharing a desk are not sharing a page. The heading can
+        carry a Class line beside Name and Date, and a sheet you have set up can
+        be handed to a colleague or a parent as a link that opens on exactly
+        that sheet.
+      </p>
+      <p>
+        Nothing needs a login, nothing is installed and nothing about a student
+        is uploaded, which is what makes it usable on a school device that
+        allows none of those: the builder runs in the browser, and a sheet saved
+        on that device stays on it. Every sheet is free for classroom and school
+        use.
+      </p>
+    </div>
+  </section>
+
+  <div class="wrap no-print"><AdSlot name="article" /></div>
+
+  <section class="band band--tight wrap no-print">
+    <h2 class="h2">The other custom sheets</h2>
+    <nav class="stones" aria-label="Custom worksheets">
+      {
+        others.map((other) => (
+          <a class="stone" href={hrefFor(other)}>
+            {other.name}
+          </a>
+        ))
+      }
+    </nav>
+  </section>
+
+  <HubLinks />
+</Content>

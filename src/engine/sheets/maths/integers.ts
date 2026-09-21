@@ -43,6 +43,8 @@ import {
   answerLine,
   columnWidth,
   fitAcross,
+  problemPages,
+  wantedOf,
   type Box,
 } from "../layout";
 import { inches } from "../paper";
@@ -431,7 +433,7 @@ const TEMPLATES: Template[] = [
  *
  * Three operations over numbers to fifty is a page of five-digit answers, which
  * is a multiplication lesson wearing an order-of-operations sheet's clothes.
- * The rule being practised is which operation goes first, and it is practised
+ * The rule being practiced is which operation goes first, and it is practiced
  * on numbers a child can hold in their head.
  */
 const EXPRESSION_MAX = 12;
@@ -551,9 +553,7 @@ export function integerProblems(
   seed: number,
 ): Problem[] {
   const { perPage } = integerLayout(config);
-  // The count is a request, not a promise: a count that overruns is a second
-  // sheet out of the printer with two problems on it.
-  const wanted = clamp(config.count, 0, perPage);
+  const wanted = wantedOf(config.count, perPage);
 
   const rand = mulberry32(seed);
   const seen = new Set<string>();
@@ -607,7 +607,7 @@ function titleOf(config: IntegerConfig): string {
 
 const INSTRUCTION: Record<IntegerStyle, string> = {
   arithmetic: "Work out each answer. Watch the signs.",
-  order: "Work out each answer. Brackets first, then powers, then × and ÷.",
+  order: "Work out each answer. Parentheses first, then powers, then × and ÷.",
   powers: "Work out each answer.",
 };
 
@@ -620,7 +620,7 @@ const INSTRUCTION: Record<IntegerStyle, string> = {
  * saying so is worse. So `powers` moves both, from here.
  */
 const ORDER_WITHOUT_POWERS =
-  "Work out each answer. Brackets first, then × and ÷, then + and −.";
+  "Work out each answer. Parentheses first, then × and ÷, then + and −.";
 
 /** What the sheet tells a child to do, which is a function of what is on it. */
 function instructionOf(config: IntegerConfig): string {
@@ -662,7 +662,7 @@ function describeIntegers(config: IntegerConfig): string {
 
 function buildIntegerSheet(config: IntegerConfig, seed: number): Sheet {
   const items = integerProblems(config, seed);
-  const { columns } = integerLayout(config);
+  const { columns, perPage } = integerLayout(config);
   const head = headerOf(config);
 
   return {
@@ -674,7 +674,7 @@ function buildIntegerSheet(config: IntegerConfig, seed: number): Sheet {
       fields: head.fields,
       score: { outOf: items.length },
     },
-    blocks: [{ kind: "problems", columns, items }],
+    blocks: problemPages(items, columns, perPage),
     footer: { credit: SHEET_CREDIT, url: SHEET_URL, seed },
     answers: false,
   };

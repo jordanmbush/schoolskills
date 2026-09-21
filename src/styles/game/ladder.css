@@ -4,10 +4,10 @@
    than a syllabus: what is behind you, the rung you are on, and the
    checkpoint at the end of the row you are in, all at one glance.
 
-   Every colour here is a world token — `--accent` for ground already
+   Every color here is a world token — `--accent` for ground already
    covered, `--go` for "press this" — so the map re-skins with `data-world`
    and not one rule borrows from the telemetry five (tokens.css). Shape does
-   the work colour cannot: a checkpoint is a circle and a Hailstorm level a
+   the work color cannot: a checkpoint is a circle and a Hailstorm level a
    diamond, because a child who cannot tell cyan from gold still has to be
    able to tell an exam from a lesson.                                    */
 
@@ -113,7 +113,7 @@
 }
 
 /* Lit: this one is next. `--go` is the world's "press this", so the one tile
-   a child is being pointed at is the same colour as every other button on the
+   a child is being pointed at is the same color as every other button on the
    site that means go. */
 .ladder__tile.is-next {
   background: var(--go);
@@ -156,7 +156,7 @@
   border-radius: 5px;
 }
 
-/* A storm a child can play reads as one, and the four states above colour it
+/* A storm a child can play reads as one, and the four states above color it
    like any other rung — filled when it is behind them, outlined when it is
    open. What stays dim is a diamond this device cannot enter: on a tablet the
    twenty are shut (§8.8) and there is no reason to draw them as an invitation.
@@ -244,7 +244,7 @@
    apiece, and the guidance — and CLAUDE.md, which is blunter about it,
    because the youngest player is five — puts a tap target at 44. Growing the
    tiles taller than they are wide bought some of that back and cost the
-   shapes, which are the half of the legend colour cannot carry: an ellipse
+   shapes, which are the half of the legend color cannot carry: an ellipse
    is not a circle and a squashed diamond is not a diamond.
 
    So what gives at this width is TWELVE, not the square. A block is still

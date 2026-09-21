@@ -54,7 +54,7 @@ describe("KeyboardSetting", () => {
     expect(html).toContain("Show the next key");
   });
 
-  it("renders an unrecognised keyboard value on guide", () => {
+  it("renders an unrecognized keyboard value on guide", () => {
     // What restore can hand back: `services/hub.ts#importAll` puts a profile
     // into the store exactly as the file had it, so a hand-edited backup
     // reaches this component carrying a value the type says cannot exist. The
@@ -79,7 +79,7 @@ describe("KeyboardSetting", () => {
 
   /**
    * The lessons that insist (§4.2). A control that ignores the setting a child
-   * chose and one greyed out with no explanation are the same bug at different
+   * chose and one grayed out with no explanation are the same bug at different
    * volumes, so the panel shows all three pills, disabled, with the reason.
    */
   it("shows a locked keyboard, disabled, with the reason", () => {

@@ -1,8 +1,8 @@
 /**
- * What the bench opens on, for every family it can make.
+ * What a family opens on, for every family the bench can make.
  *
  * Each is a sheet somebody would print unchanged, which is the rule the rest of
- * the file follows, and each is an editorial judgement rather than a technical
+ * the file follows, and each is an editorial judgment rather than a technical
  * one — §14 is where both are argued.
  *
  * Every value here is inside the range its own family clamps to, so nothing
@@ -89,7 +89,7 @@ export const FIRST_LETTERS: string[] = [
  * A pangram, because a sentence set for handwriting is chosen for the letters it
  * uses rather than for what it says. The second line is there so the box arrives
  * holding two: a passage is broken where the paper runs out, and a parent who
- * has never seen that happen would not know a newline of their own is honoured.
+ * has never seen that happen would not know a newline of their own is honored.
  */
 const PASSAGE =
   "The quick brown fox jumps over the lazy dog.\nGood handwriting is slow before it is neat.";
@@ -115,7 +115,7 @@ const MEMORY_PASSAGE = "for-god-so-loved-the-world";
  * line breaks as spaces, so a pangram's second line would arrive looking like a
  * break the sheet then ignored.
  */
-const MEMORY_TEXT = "A verse is learnt by saying it, not by reading it again.";
+const MEMORY_TEXT = "A verse is learned by saying it, not by reading it again.";
 
 const DEFAULTS: Record<string, SheetConfig> = {
   blank: { ...BASE, kind: "blank", title: "Blank sheet" },
@@ -312,6 +312,14 @@ const DEFAULTS: Record<string, SheetConfig> = {
     count: STARTER_WORDS.length,
     columns: 2,
   },
+  lesson: {
+    ...BASE,
+    kind: "lesson",
+    topic: "division-sharing",
+    practice: true,
+    // Larger than the shop's default type, because the reader is six.
+    fontPt: 14,
+  },
   grammar: {
     ...BASE,
     kind: "grammar",
@@ -348,6 +356,18 @@ const DEFAULTS: Record<string, SheetConfig> = {
     passage: COPYWORK_PASSAGE,
     text: PASSAGE,
   },
+  penmanship: {
+    ...BASE,
+    kind: "penmanship",
+    // The strokes, because they are the sheet for the widest range of ages,
+    // and every pattern in teaching order with a second line to carry each on.
+    style: "strokes",
+    rule: { style: "hand-5-8", midline: "dashed", descender: true },
+    trace: "dotted",
+    repeats: 3,
+    lines: 2,
+    letters: "lower",
+  },
   memory: {
     ...BASE,
     kind: "memory",
@@ -368,15 +388,15 @@ const DEFAULTS: Record<string, SheetConfig> = {
   },
 };
 
-/** Where the bench opens when the address bar had nothing to say. */
-export const FIRST_SHEET = "arithmetic";
+/** The family whose config a kind with no entry above is given. */
+const FALLBACK = "arithmetic";
 
 /**
- * A starting config for a family, or the first sheet's if this build has never
+ * A starting config for a family, or the fallback's if this build has never
  * heard of it. Never throws, for the same reason `sheetSpec` doesn't: a family
  * added to the registry without a default here would otherwise take the whole
  * bench down rather than open on something.
  */
 export function defaultConfig(kind: string): SheetConfig {
-  return Object.hasOwn(DEFAULTS, kind) ? DEFAULTS[kind] : DEFAULTS[FIRST_SHEET];
+  return Object.hasOwn(DEFAULTS, kind) ? DEFAULTS[kind] : DEFAULTS[FALLBACK];
 }

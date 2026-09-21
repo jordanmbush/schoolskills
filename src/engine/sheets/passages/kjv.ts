@@ -8,7 +8,7 @@
  *   Release       eng-kjv2006, source files dated 16 May 2026
  *   Format        the verse-per-line release, `eng-kjv2006_vpl.txt`.
  *   Pulled        17 August 2026
- *   Licence       Public domain. The Crown's letters patent still bind
+ *   License       Public domain. The Crown's letters patent still bind
  *                 *printing in the United Kingdom*; outside it the text is
  *                 unambiguously free, which is why the WEBu is the default and
  *                 this is the option (docs/printables.md §12).

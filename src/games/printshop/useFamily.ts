@@ -9,18 +9,20 @@
  *
  * Returns nothing until the module is here. That is a real state and the bench
  * renders it: there is no paper to draw before the family that draws it lands.
+ * Asked about no family at all — the bench before anything is chosen — it
+ * fetches nothing and returns nothing.
  */
 import { useEffect, useState } from "react";
 
 import { loadSheet, loadedSheet } from "@/engine/sheets/families";
 import type { SheetSpec } from "@/engine/sheets/spec";
 
-export function useFamily(kind: string): SheetSpec | undefined {
+export function useFamily(kind: string | undefined): SheetSpec | undefined {
   const [, redraw] = useState(0);
-  const spec = loadedSheet(kind);
+  const spec = kind === undefined ? undefined : loadedSheet(kind);
 
   useEffect(() => {
-    if (loadedSheet(kind)) return;
+    if (kind === undefined || loadedSheet(kind)) return;
     let live = true;
     void loadSheet(kind).then(() => {
       if (live) redraw((count) => count + 1);

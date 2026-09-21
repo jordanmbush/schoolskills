@@ -6,8 +6,8 @@
  * and the rest arrive with the builder.
  *
  * The line that sorts a page from a permutation is whether it is *different
- * paper*. A quarter-inch square and a centimetre square are two different
- * things to count on, and both are searched for by name; five millimetres and a
+ * paper*. A quarter-inch square and a centimeter square are two different
+ * things to count on, and both are searched for by name; five millimeters and a
  * fifth of an inch are the same square to within three thousandths of an inch,
  * so one of them is a page and the other is a sentence on it.
  *
@@ -33,7 +33,7 @@ export type PaperSheet = {
   slug: string;
   /** How it is listed on the hub. */
   name: string;
-  /** How it is labelled in the row of every ruling. A few characters. */
+  /** How it is labeled in the row of every ruling. A few characters. */
   short: string;
   /** The page's `<h1>`. */
   heading: string;
@@ -100,8 +100,8 @@ export const PAPER_SHEETS: PaperSheet[] = [
       "College ruled paper: rules 9/32 of an inch apart, with the same 1¼-inch margin line.",
     lead: "The narrower of the two notebook rules — nine thirty-seconds of an inch — with the same margin line as wide ruled and about six more lines on the page.",
     notes: [
-      "College ruled is what secondary-school and university notebooks are printed at, and what a teacher usually means by “lined paper” from around Year 6 upwards. More words to a page is the whole of the difference.",
-      "If handwriting is still growing into the line, print the wide ruled sheet instead. Narrow rules do not make writing neater; they make a child write smaller than they can control, which is the opposite of the thing being practised.",
+      "College ruled is what middle-school, high-school and college notebooks are printed at, and what a teacher usually means by “lined paper” from around Grade 5 upwards. More words to a page is the whole of the difference.",
+      "If handwriting is still growing into the line, print the wide ruled sheet instead. Narrow rules do not make writing neater; they make a child write smaller than they can control, which is the opposite of the thing being practiced.",
     ],
     teaches: "Note taking",
     ages: "Ages 11+",
@@ -136,7 +136,7 @@ export const PAPER_SHEETS: PaperSheet[] = [
       "Handwriting paper ruled at ⅝ of an inch: top line, dashed midline, baseline, and room below for descenders.",
     lead: "Three lines to a set — a top line to reach, a dashed midline for the body of a letter, and a baseline to sit on — repeating every ⅝ of an inch, with the space below it that a g, a y and a p need.",
     notes: [
-      "⅝ is the commonest primary size and the one a school most often means by “handwriting paper”. It is where most children are by the middle of Year 1 and where they stay for a year or two.",
+      "⅝ is the commonest primary size and the one a school most often means by “handwriting paper”. It is where most children are by the middle of Grade 1 and where they stay for a year or two.",
       "The midline is dashed rather than solid on purpose. A solid line invites a child to write on it; a dashed one tells them how tall an x is and then gets out of the way, which is the step between copying a letter and writing one.",
     ],
     teaches: "Handwriting",
@@ -170,9 +170,9 @@ export const PAPER_SHEETS: PaperSheet[] = [
     keyword: "Free printable handwriting paper, ¾ inch",
     summary:
       "Handwriting paper ruled at ¾ of an inch: dashed midline, and room for descenders.",
-    lead: "Three quarters of an inch to a set, with a dashed midline and descender space — the step between inch-high kindergarten paper and the ⅝ most of Year 1 is written on.",
+    lead: "Three quarters of an inch to a set, with a dashed midline and descender space — the step between inch-high kindergarten paper and the ⅝ most of Grade 1 is written on.",
     notes: [
-      "This is the size a lot of schools spend the first term of Year 1 on. It is worth printing a page of it before dropping to ⅝: if letters are still hitting the top line, the paper is not the problem yet.",
+      "This is the size a lot of schools spend the first term of Grade 1 on. It is worth printing a page of it before dropping to ⅝: if letters are still hitting the top line, the paper is not the problem yet.",
       "Everything else about it matches the ⅝ sheet — same three lines, same dashed midline, same tail space — so moving down a size changes one thing at a time.",
     ],
     teaches: "Handwriting",
@@ -223,9 +223,9 @@ export const PAPER_SHEETS: PaperSheet[] = [
     heading: "Graph paper, ¼ inch",
     keyword: "Free printable graph paper, ¼ inch squares",
     summary: "Quarter-inch squared graph paper, ruled edge to edge.",
-    lead: "Quarter-inch squares, ruled in both directions across the whole writing area — the squared paper that maths homework is set on.",
+    lead: "Quarter-inch squares, ruled in both directions across the whole writing area — the graph paper that math homework is set on.",
     notes: [
-      "Squared paper is worth printing for long multiplication and long division long before anyone plots a graph on it: one digit to a square is what keeps the columns lined up, and a column that drifts is most of what goes wrong in a long sum.",
+      "Graph paper is worth printing for long multiplication and long division long before anyone plots a graph on it: one digit to a square is what keeps the columns lined up, and a column that drifts is most of what goes wrong in a long sum.",
       "The lines are drawn as hairlines rather than as a printed background, so they come out of the printer as light as they look here and do not compete with a pencil.",
     ],
     teaches: "Arithmetic layout and graphing",
@@ -240,7 +240,7 @@ export const PAPER_SHEETS: PaperSheet[] = [
     heading: "Dot grid paper, ¼ inch",
     keyword: "Free printable dot grid paper",
     summary: "Quarter-inch dot grid — the squares implied rather than drawn.",
-    lead: "A quarter-inch grid with only the corners printed. The structure of squared paper without the lines through the middle of the work.",
+    lead: "A quarter-inch grid with only the corners printed. The structure of graph paper without the lines through the middle of the work.",
     notes: [
       "Dots are the right paper for drawing shapes, arrays and number lines: there is something to measure against, but nothing crossing what has been drawn.",
       "It is also the usual paper for bullet journals and hand-drawn plans, which is why a page of it is worth having in the printer tray whatever age is using it.",
@@ -270,20 +270,20 @@ export const PAPER_SHEETS: PaperSheet[] = [
   },
   /* The metric squares. Everything above this point is a quarter of an inch,
      which is the paper an American classroom is stocked with and no use at all
-     for work in centimetres: a rectangle 7cm by 4cm drawn on quarter-inch
+     for work in centimeters: a rectangle 7cm by 4cm drawn on quarter-inch
      squares has to be measured with a ruler rather than counted, which is most
-     of what squared paper is for.                                            */
+     of what graph paper is for.                                            */
   {
     slug: "graph-paper-1-cm",
     name: "Graph paper — 1 cm",
     short: "1 cm",
     heading: "Graph paper, 1 cm",
     keyword: "Free printable 1 cm graph paper",
-    summary: "Centimetre squared paper, ruled edge to edge.",
-    lead: "One centimetre to a square, in both directions. The squared paper a metric classroom works in, where a length in centimetres is a number of squares rather than something to measure.",
+    summary: "Centimeter graph paper, ruled edge to edge.",
+    lead: "One centimeter to a square, in both directions. The graph paper a metric classroom works in, where a length in centimeters is a number of squares rather than something to measure.",
     notes: [
-      "A centimetre square is big enough to write a whole two-digit number into, which makes this the right squared paper for column arithmetic as well as for area. A child who puts one digit in each square keeps the columns lined up without being told to, and a column that drifts is most of what goes wrong in a long sum.",
-      "It is also the paper for area and perimeter the first time either is taught. A rectangle drawn 7 squares by 4 squares has an area a child can count and a perimeter they can walk round with a finger, and both of those are lost the moment the squares are a quarter of an inch and the label says centimetres.",
+      "A centimeter square is big enough to write a whole two-digit number into, which makes this the right graph paper for column arithmetic as well as for area. A child who puts one digit in each square keeps the columns lined up without being told to, and a column that drifts is most of what goes wrong in a long sum.",
+      "It is also the paper for area and perimeter the first time either is taught. A rectangle drawn 7 squares by 4 squares has an area a child can count and a perimeter they can walk round with a finger, and both of those are lost the moment the squares are a quarter of an inch and the label says centimeters.",
     ],
     teaches: "Area, perimeter and metric measurement",
     ages: "Ages 7+",
@@ -297,11 +297,11 @@ export const PAPER_SHEETS: PaperSheet[] = [
     heading: "Graph paper, 5 mm",
     keyword: "Free printable 5 mm graph paper",
     summary:
-      "Five-millimetre squares — the ruling a school exercise book is printed at.",
-    lead: "Half a centimetre to a square: the squares in a school maths book, and the finest ruling here that is still comfortable to write a digit into.",
+      "Five-millimeter squares — the ruling a school notebook is printed at.",
+    lead: "Half a centimeter to a square: the squares in a school math book, and the finest ruling here that is still comfortable to write a digit into.",
     notes: [
-      "This is what “squared paper” means in most of the world, and a page of it sits beside a torn-out exercise book page without looking like a different thing. Two squares to the centimetre also makes halves obvious, which is worth more than it sounds when a child is first asked to draw a line 3.5 cm long.",
-      "Five millimetres is a hair under a fifth of an inch — three thousandths of an inch smaller, which is finer than a printer resolves — so a sheet of this does duty as the American quad pad as well. If the work is in inches, though, the quarter-inch sheet is the one to print: the squares there are a unit rather than nearly one.",
+      "This is what “squared paper” means in most of the world, and a page of it sits beside a torn-out notebook page without looking like a different thing. Two squares to the centimeter also makes halves obvious, which is worth more than it sounds when a child is first asked to draw a line 3.5 cm long.",
+      "Five millimeters is a hair under a fifth of an inch — three thousandths of an inch smaller, which is finer than a printer resolves — so a sheet of this does duty as the American quad pad as well. If the work is in inches, though, the quarter-inch sheet is the one to print: the squares there are a unit rather than nearly one.",
     ],
     teaches: "Graphing and metric measurement",
     ages: "Ages 9+",
@@ -314,10 +314,10 @@ export const PAPER_SHEETS: PaperSheet[] = [
     short: "1 cm dots",
     heading: "Dot grid paper, 1 cm",
     keyword: "Free printable 1 cm dot grid paper",
-    summary: "Centimetre dot grid — the squares implied rather than drawn.",
-    lead: "A centimetre grid with only the corners printed. Everything the squared sheet gives you to measure against, and nothing crossing what has been drawn on top of it.",
+    summary: "Centimeter dot grid — the squares implied rather than drawn.",
+    lead: "A centimeter grid with only the corners printed. Everything the squared sheet gives you to measure against, and nothing crossing what has been drawn on top of it.",
     notes: [
-      "Dots are the right paper for drawing shapes on. A quadrilateral drawn corner to corner on a centimetre grid has sides a child can count and an area they can work out by cutting it into rectangles — and none of the pencil lines are competing with a printed grid for attention.",
+      "Dots are the right paper for drawing shapes on. A quadrilateral drawn corner to corner on a centimeter grid has sides a child can count and an area they can work out by cutting it into rectangles — and none of the pencil lines are competing with a printed grid for attention.",
       "It is also the paper for arrays. Six dots by four dots is a picture of 6 × 4 that a child can circle in rows or in columns, which is commutativity drawn rather than asserted, and it is much harder to see when the dots are a quarter of an inch apart.",
     ],
     teaches: "Shapes, arrays and area",
@@ -332,11 +332,11 @@ export const PAPER_SHEETS: PaperSheet[] = [
     heading: "Isometric graph paper, 1 cm",
     keyword: "Free printable 1 cm isometric graph paper",
     summary:
-      "A centimetre triangular grid at 30° — the same paper as the quarter-inch sheet, at a size a whole cube fits on.",
-    lead: "Triangles a centimetre to a side rather than a quarter of an inch. The same three families of lines at sixty degrees to each other, drawn large enough that a solid a few units across takes up a usable part of the page.",
+      "A centimeter triangular grid at 30° — the same paper as the quarter-inch sheet, at a size a whole cube fits on.",
+    lead: "Triangles a centimeter to a side rather than a quarter of an inch. The same three families of lines at sixty degrees to each other, drawn large enough that a solid a few units across takes up a usable part of the page.",
     notes: [
       "The larger triangle is the one to print for a first attempt at drawing a cube. Small isometric paper is unforgiving — a line drawn one row out is a corner that does not meet — and a child who has just been shown the trick needs the room before they need the detail.",
-      "The rows are spaced by the height of the triangle rather than by its side, here as on the quarter-inch sheet, which is what makes the grid genuinely thirty degrees rather than a squashed approximation of it. A centimetre triangle is therefore about 8.7 mm from one row to the next, and that number is the whole reason the drawing looks right.",
+      "The rows are spaced by the height of the triangle rather than by its side, here as on the quarter-inch sheet, which is what makes the grid genuinely thirty degrees rather than a squashed approximation of it. A centimeter triangle is therefore about 8.7 mm from one row to the next, and that number is the whole reason the drawing looks right.",
     ],
     teaches: "Three-dimensional shapes and nets",
     ages: "Ages 9+",
@@ -356,7 +356,7 @@ export const GROUPS: Array<{ id: PaperGroup; label: string; blurb: string }> = [
     id: "handwriting",
     label: "Handwriting paper",
     blurb:
-      "Three lines to a set, in the five sizes a primary school works through.",
+      "Three lines to a set, in the five sizes an elementary school works through.",
   },
   {
     id: "grid",
@@ -409,7 +409,7 @@ export const benchHref = (config: SheetConfig, seed: number): string =>
   `/printables/make#s=${encodeSharedSheet({ config, seed })}`;
 
 /**
- * The shelf, grouped — the shape every hub and every row of neighbours lists it
+ * The shelf, grouped — the shape every hub and every row of neighbors lists it
  * in. Written once because the failure to keep two copies in step is silent: a
  * sheet shown on one page but not the other still builds and still looks right.
  */

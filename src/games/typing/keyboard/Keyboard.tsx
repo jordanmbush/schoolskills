@@ -93,7 +93,7 @@ export function Keyboard({
                 key={key.code}
                 // `is-wrong` is written alongside `is-down` rather than
                 // instead of it: a wrong key is still a key that went down,
-                // and the CSS orders the two so the flare wins the colour.
+                // and the CSS orders the two so the flare wins the color.
                 // `is-next` stacks the same way and loses the cap to both,
                 // but only the cap — the hint's ring and its pulse are
                 // properties the echo never declares, so a hinted key that is

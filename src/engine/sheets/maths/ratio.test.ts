@@ -1,14 +1,17 @@
 import { describe, expect, it } from "vitest";
 
-import { buildSheet, describeSheet } from "../index";
+import { answerKey, buildSheet, describeSheet } from "../index";
+import { printedBlockBox } from "../chrome";
 import { describeSheetFamily } from "../contract";
 import { PROBLEM_GAP } from "../layout";
 import type {
+  Block,
   MarginSize,
   Paper,
   PaperSize,
   Problem,
   RatioConfig,
+  Sheet,
 } from "../types";
 
 import { RATIO_SHEET, ratioLayout } from "./ratio";
@@ -101,12 +104,32 @@ describeSheetFamily("ratio", {
   seeds: SEEDS,
 });
 
-/** The one block a ratio sheet has, narrowed for the reader. */
+/** Every problem on the sheet, page after page. */
 function problemsOf(over: Partial<RatioConfig>, seed: number): Problem[] {
-  const block = buildSheet(config(over), seed).blocks[0];
-  if (block.kind !== "problems")
-    throw new Error(`expected problems, got ${block.kind}`);
-  return block.items;
+  return pagesOf(buildSheet(config(over), seed)).flatMap((page) => page.items);
+}
+
+/**
+ * The problems block of each page, in order. A ratio sheet prints one such
+ * block a page and nothing else, so anything else on a page is a failure here
+ * rather than a page silently skipped.
+ */
+function pagesOf(sheet: Sheet): Array<Extract<Block, { kind: "problems" }>> {
+  const pages: Array<Extract<Block, { kind: "problems" }>> = [];
+  let open = false;
+  for (const block of sheet.blocks) {
+    if (block.kind === "break") {
+      expect(open, "a break with no page before it").toBe(true);
+      open = false;
+      continue;
+    }
+    if (block.kind !== "problems")
+      throw new Error(`expected problems, got ${block.kind}`);
+    expect(open, "two problems blocks on one page").toBe(false);
+    pages.push(block);
+    open = true;
+  }
+  return pages;
 }
 
 const everyProblem = function* (
@@ -145,8 +168,7 @@ describe("the ratio family", () => {
 
   it("marks the sheet out of what is on it", () => {
     const sheet = buildSheet(config({ count: 7 }), 3);
-    const block = sheet.blocks[0];
-    expect(block.kind === "problems" && block.items.length).toBe(
+    expect(pagesOf(sheet).flatMap((page) => page.items).length).toBe(
       sheet.header.score?.outOf,
     );
   });
@@ -299,19 +321,30 @@ describe("how much fits", () => {
   const SIZES: PaperSize[] = ["letter", "a4", "legal"];
   const MARGINS: MarginSize[] = ["none", "narrow", "normal", "wide"];
 
-  it("never prints more problems than the paper holds", () => {
+  it("never prints more problems on a page than the paper holds", () => {
     for (const size of SIZES) {
       for (const margin of MARGINS) {
         for (const fontPt of [12, 18]) {
           for (const shape of EVERY_SHAPE) {
-            const over = { ...shape, paper: paper({ size, margin }), fontPt };
-            const problems = problemsOf({ ...over, count: 200 }, 8);
-            const { box, columns, row } = ratioLayout(config(over));
-            const rows = Math.ceil(problems.length / columns);
-            const used = rows * row + Math.max(0, rows - 1) * PROBLEM_GAP.y;
-            expect(used, `${size}/${margin}/${fontPt}pt`).toBeLessThanOrEqual(
-              box.height,
-            );
+            const one = config({
+              ...shape,
+              paper: paper({ size, margin }),
+              fontPt,
+              count: 200,
+            });
+            const sheet = buildSheet(one, 8);
+            const { row } = ratioLayout(one);
+            const pages = pagesOf(sheet);
+            for (const [at, page] of pages.entries()) {
+              const where = `${size}/${margin}/${fontPt}pt, page ${at + 1}`;
+              const rows = Math.ceil(page.items.length / page.columns);
+              const used = rows * row + Math.max(0, rows - 1) * PROBLEM_GAP.y;
+              expect(used, where).toBeLessThanOrEqual(
+                printedBlockBox(sheet).height,
+              );
+              if (at < pages.length - 1)
+                expect(page.items.length, where).toBe(pages[0].items.length);
+            }
           }
         }
       }
@@ -325,15 +358,50 @@ describe("how much fits", () => {
     expect((rows + 1) * row + rows * PROBLEM_GAP.y).toBeGreaterThan(box.height);
   });
 
-  it("honours the count and the columns it was given", () => {
+  it("honors the count and the columns it was given", () => {
     expect(problemsOf({ count: 10 }, 1).length).toBe(10);
     for (const columns of [1, 2, 3]) {
-      const block = buildSheet(config({ columns }), 1).blocks[0];
-      expect(block.kind === "problems" && block.columns).toBe(columns);
+      expect(pagesOf(buildSheet(config({ columns }), 1))[0].columns).toBe(
+        columns,
+      );
     }
     // Two columns of rates, because a rate is a sentence rather than a sum.
-    const wide = buildSheet(config({ style: "rate", columns: 6 }), 1).blocks[0];
-    expect(wide.kind === "problems" && wide.columns).toBe(2);
+    expect(
+      pagesOf(buildSheet(config({ style: "rate", columns: 6 }), 1))[0].columns,
+    ).toBe(2);
+  });
+
+  it("runs on to another page rather than cutting the count to the paper", () => {
+    // Fifty ratios are however many pages fifty ratios take, not one page's
+    // worth: a parent who wanted one page prints page one (§4). The numbering
+    // carries on, so a child told to do 30 to 40 finds them.
+    const asked = config({ count: 50 });
+    const sheet = buildSheet(asked, 3);
+    const { perPage } = ratioLayout(asked);
+    expect(perPage).toBeLessThan(50);
+    const pages = pagesOf(sheet);
+    expect(pages.length).toBe(Math.ceil(50 / perPage));
+    expect(pages.flatMap((page) => page.items).length).toBe(50);
+    expect(sheet.header.score?.outOf).toBe(50);
+    for (const [at, page] of pages.entries()) {
+      expect(page.start, `page ${at + 1}`).toBe(
+        at > 0 ? at * perPage + 1 : undefined,
+      );
+      if (at < pages.length - 1)
+        expect(page.items.length, `page ${at + 1}`).toBe(perPage);
+    }
+    // And the key runs on with it, page for page.
+    expect(pagesOf(answerKey(asked, 3)).map((page) => page.items.length)) //
+      .toEqual(pages.map((page) => page.items.length));
+  });
+
+  it("draws nothing when not even one row fits", () => {
+    // No number of pages mends a row taller than the paper (§4).
+    const tall = config({ fontPt: 200 });
+    expect(ratioLayout(tall).perPage).toBe(0);
+    const sheet = buildSheet(tall, 1);
+    expect(pagesOf(sheet).map((page) => page.items)).toEqual([[]]);
+    expect(sheet.header.score?.outOf).toBe(0);
   });
 });
 
@@ -352,6 +420,6 @@ const GOLDEN = {
   rate: [
     ["18 words in 9 minutes = _ words per minute", "2"],
     ["35 seats in 5 rows = _ seats per row", "7"],
-    ["24 litres in 6 minutes = _ litres per minute", "4"],
+    ["24 liters in 6 minutes = _ liters per minute", "4"],
   ],
 };

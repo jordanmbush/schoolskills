@@ -22,10 +22,18 @@
  */
 import { between } from "@/engine/random";
 
-import type { LongDigits, Mil, MultiplicationConfig, Problem } from "../types";
+import type {
+  DivisionHelp,
+  LongDigits,
+  Mil,
+  MultiplicationConfig,
+  MultiplicationOperation,
+  Problem,
+} from "../types";
 
-import { answerLine } from "../layout";
-import { points } from "../paper";
+import { DIGIT_EM, answerLine } from "../layout";
+import { inches, points } from "../paper";
+import { divisionTableau } from "./tableau";
 
 /**
  * How many digits a long form may be asked for.
@@ -40,21 +48,85 @@ const MAX_DIGITS = 5;
 export const DEFAULT_DIGITS: LongDigits = { into: 3, by: 2 };
 
 /**
- * The two shapes a problem worked on paper takes, in ems of the body type and
- * trailing sheet.css the way every declared height here does.
+ * The column stack, in ems of the body type, trailing sheet.css the way every
+ * declared height here does.
  *
- * Exported because the fact styles print the same two drawings without any
- * working in them — a column form times-table sheet is this stack and nothing
- * else — and a second copy of either number would be a second thing to keep in
- * step with `.sheet__column` and `.sheet__bracket`.
+ * Exported because the fact styles print the same drawing without any working
+ * in it — a column form times-table sheet is this stack and nothing else — and
+ * a second copy of the number would be a second thing to keep in step with
+ * `.sheet__column`.
  */
 export const STACK_EMS = 4.4;
-/* The bracket is two lines of body type, the bar between them and the padding
-   either side of it — which comes to a shade over three ems at every size the
-   sheet is set at, and is rounded up rather than down. Reserving a tenth of an
-   inch too much costs one problem at the bottom of the page; reserving too
-   little puts that problem on a second sheet of paper. */
-export const BRACKET_EMS = 3.1;
+
+/**
+ * How tall the bracket stands: the quotient row over the dividend row, each a
+ * square tall, with the bar inside the dividend row's own height (§21).
+ *
+ * From the same line the working squares are built on rather than from the
+ * body type, so the two cannot come apart. A constant in ems was short at
+ * small type, where a quarter-inch line is taller than three ems of it.
+ */
+export const bracketHeight = (fontPt: number): Mil => 2 * answerLine(fontPt);
+
+/** `.sheet__remainder`'s padding: the air between the quotient and "r 2". */
+const REMAINDER_PAD: Mil = inches(0.06);
+
+/**
+ * How wide the bracket stands: a square per digit of the divisor in the
+ * gutter, then a square per digit of the dividend — and, where a remainder
+ * may be written, room after the quotient for "r " and as many digits as the
+ * divisor has, which the key prints and the sheet does not. The one width both
+ * families cut their columns to (§21).
+ */
+export function bracketWidth(
+  digits: LongDigits,
+  fontPt: number,
+  remainders = false,
+): Mil {
+  const squares = (digits.by + digits.into) * answerLine(fontPt);
+  if (!remainders) return squares;
+  return squares + REMAINDER_PAD + points(fontPt * DIGIT_EM * (2 + digits.by));
+}
+
+const HELP: readonly DivisionHelp[] = ["none", "grid", "steps", "guided"];
+
+/**
+ * The help level, made safe to read from whatever a saved config says.
+ *
+ * Over any config that carries `help`, because the decimals family sets the
+ * same bracket with the same four levels (§22) and two readers of one field
+ * would be two answers to what an unknown level means.
+ */
+export function divisionHelp(config: { help?: DivisionHelp }): DivisionHelp {
+  const asked = config.help;
+  return asked !== undefined && HELP.includes(asked) ? asked : "none";
+}
+
+/** How a help level reads in the line that names a saved sheet. */
+export const HELP_NAME: Record<DivisionHelp, string | null> = {
+  none: null,
+  grid: "on a grid",
+  steps: "with steps",
+  guided: "guided",
+};
+
+const OPERATIONS: readonly MultiplicationOperation[] = [
+  "multiply",
+  "divide",
+  "both",
+];
+
+/**
+ * The operation, made safe to read from whatever a saved config says. Here
+ * beside `divisionHelp` because both modules of the family read it and this
+ * is the one the other imports.
+ */
+export function operationOf(
+  config: MultiplicationConfig,
+): MultiplicationOperation {
+  const asked = config.operation;
+  return OPERATIONS.includes(asked) ? asked : "multiply";
+}
 
 /** The smallest and largest whole number with exactly this many digits. */
 function span(digits: number): { min: number; max: number } {
@@ -62,12 +134,20 @@ function span(digits: number): { min: number; max: number } {
   return { min: places === 1 ? 1 : 10 ** (places - 1), max: 10 ** places - 1 };
 }
 
-/** The digit counts, made safe to draw from whatever a saved config says. */
+/**
+ * The digit counts, made safe to draw from whatever a saved config says.
+ *
+ * The number doing the working never has more digits than the one worked on:
+ * a two-digit divisor into a one-digit dividend is not a division, and a
+ * sheet that quietly drew nothing would be a titled page with no problems on
+ * it. The description says what was actually set.
+ */
 export function longDigits(config: MultiplicationConfig): LongDigits {
   const asked = config.digits ?? DEFAULT_DIGITS;
   const clamp = (value: number, low: number): number =>
     Math.max(low, Math.min(MAX_DIGITS, Math.floor(value) || low));
-  return { into: clamp(asked.into, 1), by: clamp(asked.by, 1) };
+  const into = clamp(asked.into, 1);
+  return { into, by: Math.min(into, clamp(asked.by, 1)) };
 }
 
 /* ── What is drawn ─────────────────────────────────────────────────────── */
@@ -82,7 +162,7 @@ export type LongMultiplication = {
    * is 2082 and then 6940, not 2082 and 694. The shift is part of the
    * arithmetic rather than something the renderer does with padding, because a
    * partial written in the wrong column is the entire mistake this sheet
-   * exists to practise out of a child.
+   * exists to practice out of a child.
    *
    * A zero digit keeps its row. The algorithm writes it, so the key shows it.
    */
@@ -167,8 +247,9 @@ function drawDivision(
   const { min, max } = span(digits.into);
   const low = Math.max(1, Math.ceil((min - remainder) / divisor));
   const high = Math.floor((max - remainder) / divisor);
-  // Nothing to draw: a two-digit divisor into a one-digit dividend is not a
-  // division, and an empty sheet is the honest answer to asking for one.
+  // Only when the digit counts are equal and the remainder was drawn large:
+  // 9 with 8 left over needs a dividend of at least 17, which has two digits.
+  // A miss rather than an empty sheet, since a smaller remainder is drawn next.
   if (high < low) return null;
 
   const quotient = between(low, high, rand);
@@ -240,16 +321,21 @@ export function longRow(config: MultiplicationConfig, fontPt: number): Mil {
   const line = answerLine(fontPt);
   const multiplication =
     points(fontPt * STACK_EMS) + partialLines(digits) * line;
-  const division = points(fontPt * BRACKET_EMS) + divisionLines(digits) * line;
-  switch (config.operation) {
+  const division = bracketHeight(fontPt) + divisionLines(digits) * line;
+  const operation = operationOf(config);
+  switch (operation) {
     case "multiply":
       return multiplication;
     case "divide":
       return division;
     // A mixed sheet reserves for whichever is taller, because it prints both
     // and the row height is one number for the whole grid of them.
-    default:
+    case "both":
       return Math.max(multiplication, division);
+    default: {
+      const unknown: never = operation;
+      return unknown;
+    }
   }
 }
 
@@ -293,9 +379,20 @@ export function longProblem(
     };
   }
 
+  const dividend = String(form.dividend);
   return {
     prompt: "",
-    bracket: { divisor: String(form.divisor), dividend: String(form.dividend) },
+    bracket: {
+      divisor: String(form.divisor),
+      dividend,
+      cell: line,
+      // The reservation the layout made, as squares rather than blank paper:
+      // what the page was measured for governs, not what this draw happened
+      // to need, so a shorter tableau leaves blank squares under it.
+      rows: divisionLines(digits),
+      help: divisionHelp(config),
+      tableau: divisionTableau(dividend, form.divisor),
+    },
     // "234 r 2" — the way it is written on paper, and the way a child is asked
     // to write it. A remainder of nothing is not written at all rather than
     // written as "r 0", which is a different (and wrong) sentence.
@@ -303,6 +400,5 @@ export function longProblem(
       form.remainder > 0
         ? `${form.quotient} r ${form.remainder}`
         : String(form.quotient),
-    workspace: divisionLines(digits) * line,
   };
 }

@@ -1,12 +1,14 @@
 import { describe, expect, it } from "vitest";
 
-import { buildSheet, describeSheet } from "../index";
+import { answerKey, buildSheet, describeSheet } from "../index";
+import { printedBlockBox } from "../chrome";
 import { describeSheetFamily } from "../contract";
 import type { Bounds, FigureInk, LabelInk } from "../figure";
 import { figureBox, figureInk, figureRow, labelWidth } from "../figure";
 import { points } from "../paper";
 import { BLOCK_GAP, PROBLEM_GAP } from "../layout";
 import type {
+  Block,
   Figure,
   GeometryConfig,
   GridSpec,
@@ -15,25 +17,26 @@ import type {
   PaperSize,
   Point,
   Problem,
+  Sheet,
 } from "../types";
 
 import { GEOMETRY_SHEET, geometryLayout } from "./geometry";
 
 /**
- * Shape and space, held to the bar the maths families set.
+ * Shape and space, held to the bar the math families set.
  *
  * **Nothing here checks the generator against the generator.** The family works
  * forwards — from a pair of numbers to a figure and an answer — and every check
- * below works backwards from what is *printed*: the shape is recognised by
+ * below works backwards from what is *printed*: the shape is recognized by
  * counting the corners it was drawn with, its measurements are read off the
  * labels, its angles are recovered with `atan2`, and the answers are recomputed
  * by repeated addition. There is no multiplication in this file.
  *
  * That makes one thing testable that a worksheet site usually leaves to review:
- * **the drawing has to agree with the labels.** A rectangle labelled 8 by 3 and
+ * **the drawing has to agree with the labels.** A rectangle labeled 8 by 3 and
  * drawn 8 by 4 has a right answer and a lying picture, and the scale check below
- * is what catches it — every labelled edge has to have been drawn at the same
- * number of mil per centimetre, or the figure is out of proportion.
+ * is what catches it — every labeled edge has to have been drawn at the same
+ * number of mil per centimeter, or the figure is out of proportion.
  *
  * The angles go further, because an angle is drawn at life size: a sheet that
  * called something obtuse is checked by measuring the ink.
@@ -93,20 +96,57 @@ describeSheetFamily("geometry", {
   seeds: SEEDS,
 });
 
-/** The problems of a sheet, whichever block they landed in. */
+/** Every problem on the sheet, page after page. */
 function problemsOf(over: Partial<GeometryConfig>, seed: number): Problem[] {
-  for (const block of buildSheet(config(over), seed).blocks) {
-    if (block.kind === "problems") return block.items;
-  }
-  throw new Error("no problems on the sheet");
+  return pagesOf(buildSheet(config(over), seed)).flatMap(
+    (page) => page.problems.items,
+  );
 }
 
-/** And the plane above them, on the one style that has one. */
-function gridOf(over: Partial<GeometryConfig>, seed: number): GridSpec {
-  for (const block of buildSheet(config(over), seed).blocks) {
-    if (block.kind === "grid") return block.grid;
+/** One page: its problems, and the plane above them on the one style that has one. */
+type Page = { grid?: GridSpec; problems: Extract<Block, { kind: "problems" }> };
+
+/**
+ * Each page of a sheet, in order. A page is a plane at most and then one
+ * problems block, so anything else on a page is a failure here rather than a
+ * page silently skipped.
+ */
+function pagesOf(sheet: Sheet): Page[] {
+  const pages: Page[] = [];
+  let grid: GridSpec | undefined;
+  let open = false;
+  for (const block of sheet.blocks) {
+    if (block.kind === "break") {
+      expect(open, "a break with no page before it").toBe(true);
+      open = false;
+      continue;
+    }
+    if (block.kind === "grid") {
+      expect(open, "a plane after the page's problems").toBe(false);
+      expect(grid, "two planes on one page").toBeUndefined();
+      grid = block.grid;
+      continue;
+    }
+    if (block.kind !== "problems")
+      throw new Error(`expected problems, got ${block.kind}`);
+    expect(open, "two problems blocks on one page").toBe(false);
+    pages.push(grid ? { grid, problems: block } : { problems: block });
+    grid = undefined;
+    open = true;
   }
-  throw new Error("no grid on the sheet");
+  expect(grid, "a plane with no problems under it").toBeUndefined();
+  return pages;
+}
+
+/** The pages of a coordinate sheet: the plane on each, and the questions under it. */
+function coordinatePagesOf(
+  over: Partial<GeometryConfig>,
+  seed: number,
+): Array<{ grid: GridSpec; problems: Problem[] }> {
+  return pagesOf(buildSheet(config(over), seed)).map(({ grid, problems }) => {
+    if (!grid) throw new Error("a coordinate page with no plane on it");
+    return { grid, problems: problems.items };
+  });
 }
 
 /**
@@ -189,7 +229,7 @@ const measurements = (figure: Figure): Array<Measured | null> =>
  * How many mil the figure was drawn at, per unit of every edge that carries a
  * measurement.
  *
- * The whole of the proportion check: a shape drawn 8 by 4 and labelled 8 by 3
+ * The whole of the proportion check: a shape drawn 8 by 4 and labeled 8 by 3
  * comes back with two different numbers here, and a shape drawn honestly comes
  * back with one.
  */
@@ -336,7 +376,7 @@ describe("the answer key", () => {
           const total = totalOf(problem.answer, "");
 
           if (figure.points.length === 3) {
-            // All three sides are labelled, because all three are added — and
+            // All three sides are labeled, because all three are added — and
             // the sloping one has to be a whole number, which is why the family
             // draws these out of Pythagorean triples.
             expect(sides.filter(Boolean).length, problem.answer).toBe(3);
@@ -357,7 +397,7 @@ describe("the answer key", () => {
   });
 
   it("draws every figure in proportion to the numbers written on it", () => {
-    // The check a worksheet site usually leaves to review. A rectangle labelled
+    // The check a worksheet site usually leaves to review. A rectangle labeled
     // 8 by 3 and drawn 8 by 4 has a right answer and a lying picture.
     for (const shape of EVERY_SHAPE) {
       for (const seed of SEEDS) {
@@ -423,7 +463,7 @@ describe("the answer key", () => {
         const figure = figureOf(problem);
         if (figure.shape === "circle") {
           expect(problem.answer).toBe("circle");
-          expect(figure.points.length, "a centre and a point on it").toBe(2);
+          expect(figure.points.length, "a center and a point on it").toBe(2);
           continue;
         }
         const corners = figure.points.length;
@@ -456,23 +496,28 @@ describe("the answer key", () => {
   });
 
   it("reads a coordinate off the plane the dot was put on", () => {
+    // Off the plane on the same page: past one page, every page carries its
+    // own plane with its own dots, and a dot is looked for there and nowhere
+    // else.
     for (const quadrants of [1, 4]) {
       for (const seed of SEEDS) {
-        const over = { style: "coordinates" as const, quadrants, count: 8 };
-        const grid = gridOf(over, seed);
-        const problems = problemsOf(over, seed);
-        expect(problems.length).toBeGreaterThan(0);
-        expect(grid.marks?.length).toBe(problems.length);
+        const over = { style: "coordinates" as const, quadrants, count: 32 };
+        const pages = coordinatePagesOf(over, seed);
+        expect(pages.length).toBeGreaterThan(1);
+        for (const [at, { grid, problems }] of pages.entries()) {
+          expect(problems.length, `page ${at + 1}`).toBeGreaterThan(0);
+          expect(grid.marks?.length, `page ${at + 1}`).toBe(problems.length);
 
-        for (const problem of problems) {
-          const letter = /^(\w) = _$/.exec(problem.prompt)?.[1];
-          const mark = grid.marks?.find((one) => one.label === letter);
-          expect(mark, problem.prompt).toBeTruthy();
-          // Counted out from where the axes cross, in squares — which is what a
-          // child does with a finger.
-          const x = mark!.column - (grid.origin?.column ?? 0);
-          const y = (grid.origin?.row ?? 0) - mark!.row;
-          expect(problem.answer, problem.prompt).toBe(`(${x}, ${y})`);
+          for (const problem of problems) {
+            const letter = /^(\w) = _$/.exec(problem.prompt)?.[1];
+            const mark = grid.marks?.find((one) => one.label === letter);
+            expect(mark, problem.prompt).toBeTruthy();
+            // Counted out from where the axes cross, in squares — which is
+            // what a child does with a finger.
+            const x = mark!.column - (grid.origin?.column ?? 0);
+            const y = (grid.origin?.row ?? 0) - mark!.row;
+            expect(problem.answer, problem.prompt).toBe(`(${x}, ${y})`);
+          }
         }
       }
     }
@@ -501,7 +546,7 @@ function unitOn(figure: Figure): string {
  *
  * A square carries one measurement and four equal drawn sides, so the second
  * side is the first one — read off the drawing rather than assumed, which is
- * what makes a square labelled once still checkable.
+ * what makes a square labeled once still checkable.
  */
 function squareOrRectangle(
   figure: Figure,
@@ -585,32 +630,33 @@ describe("what may be on the page", () => {
   it("keeps every point on the plane and off its axes", () => {
     for (const quadrants of [1, 4]) {
       for (const seed of SEEDS) {
-        const over = { style: "coordinates" as const, quadrants, count: 8 };
-        const grid = gridOf(over, seed);
-        // How far the plane runs, which is not how far the ruling runs: the
-        // squares outside the axes are where the numerals sit, and a plane that
-        // called them part of itself would have the renderer print a "-1" on a
-        // first-quadrant sheet.
-        const axis = grid.axis;
-        expect(axis, "a plane says how far it runs").toBeTruthy();
-        expect(axis!.min).toBe(quadrants === 4 ? -axis!.max : 0);
-        expect(axis!.max).toBe(grid.columns - (grid.origin?.column ?? 0));
+        const over = { style: "coordinates" as const, quadrants, count: 32 };
+        for (const { grid } of coordinatePagesOf(over, seed)) {
+          // How far the plane runs, which is not how far the ruling runs: the
+          // squares outside the axes are where the numerals sit, and a plane
+          // that called them part of itself would have the renderer print a
+          // "-1" on a first-quadrant sheet.
+          const axis = grid.axis;
+          expect(axis, "a plane says how far it runs").toBeTruthy();
+          expect(axis!.min).toBe(quadrants === 4 ? -axis!.max : 0);
+          expect(axis!.max).toBe(grid.columns - (grid.origin?.column ?? 0));
 
-        for (const mark of grid.marks ?? []) {
-          expect(mark.column).toBeGreaterThanOrEqual(0);
-          expect(mark.column).toBeLessThanOrEqual(grid.columns);
-          expect(mark.row).toBeGreaterThanOrEqual(0);
-          expect(mark.row).toBeLessThanOrEqual(grid.rows);
-          expect(mark.column).not.toBe(grid.origin?.column);
-          expect(mark.row).not.toBe(grid.origin?.row);
-          // And inside the extent the axes are numbered over, or the dot is a
-          // dot whose coordinates are not written anywhere on the paper.
-          for (const at of [
-            mark.column - (grid.origin?.column ?? 0),
-            (grid.origin?.row ?? 0) - mark.row,
-          ]) {
-            expect(at).toBeGreaterThanOrEqual(axis!.min);
-            expect(at).toBeLessThanOrEqual(axis!.max);
+          for (const mark of grid.marks ?? []) {
+            expect(mark.column).toBeGreaterThanOrEqual(0);
+            expect(mark.column).toBeLessThanOrEqual(grid.columns);
+            expect(mark.row).toBeGreaterThanOrEqual(0);
+            expect(mark.row).toBeLessThanOrEqual(grid.rows);
+            expect(mark.column).not.toBe(grid.origin?.column);
+            expect(mark.row).not.toBe(grid.origin?.row);
+            // And inside the extent the axes are numbered over, or the dot is
+            // a dot whose coordinates are not written anywhere on the paper.
+            for (const at of [
+              mark.column - (grid.origin?.column ?? 0),
+              (grid.origin?.row ?? 0) - mark.row,
+            ]) {
+              expect(at).toBeGreaterThanOrEqual(axis!.min);
+              expect(at).toBeLessThanOrEqual(axis!.max);
+            }
           }
         }
       }
@@ -714,26 +760,86 @@ describe("how much fits", () => {
   const SIZES: PaperSize[] = ["letter", "a4", "legal"];
   const MARGINS: MarginSize[] = ["none", "narrow", "normal", "wide"];
 
-  it("never prints more problems than the paper holds", () => {
+  it("never prints more problems on a page than the paper holds", () => {
+    // Against the box the printed header leaves rather than the config's,
+    // with the plane's share taken off every page that carries one — and
+    // every page but the last is full: a page cut short of what fits would
+    // be a sheet of paper for nothing.
     for (const size of SIZES) {
       for (const margin of MARGINS) {
         for (const fontPt of [12, 18]) {
           for (const shape of EVERY_SHAPE) {
             const over = { ...shape, paper: paper({ size, margin }), fontPt };
-            const problems = problemsOf({ ...over, count: 200 }, 8);
-            const { box, columns, row, plane } = geometryLayout(config(over));
-            const rows = Math.ceil(problems.length / columns);
-            const used =
-              rows * row +
-              Math.max(0, rows - 1) * PROBLEM_GAP.y +
-              (plane ? plane.grid.rows * plane.grid.cell + BLOCK_GAP : 0);
-            expect(used, `${size}/${margin}/${fontPt}pt`).toBeLessThanOrEqual(
-              box.height,
-            );
+            const where = `${size}/${margin}/${fontPt}pt ${JSON.stringify(shape)}`;
+            const sheet = buildSheet(config({ ...over, count: 200 }), 8);
+            const pages = pagesOf(sheet);
+            expect(pages.length, where).toBeGreaterThan(0);
+            const { row, perPage, plane } = geometryLayout(config(over));
+            for (const [at, { grid, problems }] of pages.entries()) {
+              // A plane on every page of a coordinate sheet, and on no page
+              // of any other.
+              expect(grid !== undefined, `${where}, page ${at + 1}`).toBe(
+                plane !== undefined,
+              );
+              const rows = Math.ceil(problems.items.length / problems.columns);
+              const used =
+                rows * row +
+                Math.max(0, rows - 1) * PROBLEM_GAP.y +
+                (grid ? grid.rows * grid.cell + BLOCK_GAP : 0);
+              expect(used, `${where}, page ${at + 1}`).toBeLessThanOrEqual(
+                printedBlockBox(sheet).height,
+              );
+              if (at < pages.length - 1) {
+                expect(problems.items.length, `${where}, page ${at + 1}`).toBe(
+                  pages[0].problems.items.length,
+                );
+              }
+            }
+            // A row taller than the page holds nothing.
+            if (perPage === 0) {
+              expect(
+                pages.map((page) => page.problems.items),
+                where,
+              ).toEqual([[]]);
+            }
           }
         }
       }
     }
+  });
+
+  it("runs on to another page, each with the dots that page asks about", () => {
+    // Thirty-two points at fifteen to a page are three pages, not fifteen
+    // points: a parent who wanted one page prints page one (§4). The
+    // numbering carries on, and every page carries its own plane with only
+    // its own dots on it, so page two stands alone and the key marks its
+    // points there.
+    const over = { style: "coordinates" as const, count: 32 };
+    const sheet = buildSheet(config(over), 3);
+    const { perPage } = geometryLayout(config(over));
+    const pages = pagesOf(sheet);
+    expect(pages.length).toBe(Math.ceil(32 / perPage));
+    expect(pages.flatMap((page) => page.problems.items).length).toBe(32);
+    expect(sheet.header.score?.outOf).toBe(32);
+    for (const [at, { grid, problems }] of pages.entries()) {
+      expect(problems.start, `page ${at + 1}`).toBe(
+        at > 0 ? at * perPage + 1 : undefined,
+      );
+      if (at < pages.length - 1)
+        expect(problems.items.length, `page ${at + 1}`).toBe(perPage);
+      expect(
+        grid?.marks?.map((mark) => mark.label),
+        `page ${at + 1}`,
+      ).toEqual(
+        problems.items.map((problem) => problem.prompt.replace(/ = _$/, "")),
+      );
+    }
+    // And the key runs on with it, page for page, dots and all.
+    const key = pagesOf(answerKey(config(over), 3));
+    expect(key.map((page) => page.problems.items.length)) //
+      .toEqual(pages.map((page) => page.problems.items.length));
+    expect(key.map((page) => page.grid?.marks)) //
+      .toEqual(pages.map((page) => page.grid?.marks));
   });
 
   it("reserves a whole figure for every row that carries one", () => {
@@ -813,19 +919,16 @@ describe("how much fits", () => {
     }
   });
 
-  it("honours the count and the columns it was given", () => {
+  it("honors the count and the columns it was given", () => {
     expect(problemsOf({ style: "volume", count: 10 }, 1).length).toBe(10);
     expect(problemsOf({ count: 0 }, 1).length).toBe(0);
-    for (const columns of [1, 2, 3]) {
-      const problems = buildSheet(config({ columns }), 1).blocks[0];
-      expect(problems.kind === "problems" && problems.columns).toBe(columns);
-    }
+    const columnsOf = (over: Partial<GeometryConfig>) =>
+      pagesOf(buildSheet(config(over), 1))[0].problems.columns;
+    for (const columns of [1, 2, 3])
+      expect(columnsOf({ columns })).toBe(columns);
     // Three columns of figures, four of sentences.
-    const wide = buildSheet(config({ columns: 6 }), 1).blocks[0];
-    expect(wide.kind === "problems" && wide.columns).toBe(3);
-    const sums = buildSheet(config({ style: "volume", columns: 6 }), 1)
-      .blocks[0];
-    expect(sums.kind === "problems" && sums.columns).toBe(4);
+    expect(columnsOf({ columns: 6 })).toBe(3);
+    expect(columnsOf({ style: "volume", columns: 6 })).toBe(4);
   });
 });
 

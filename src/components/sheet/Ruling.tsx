@@ -66,7 +66,7 @@ function LinedRuling({ rule, box, sets, marginLine }: Props) {
   // 1.25in from the edge of the paper, so it lands in the same place as the
   // one on a notebook the child already owns. Black rather than the printed
   // red, because the default sheet is black on white and nobody should pay
-  // for a colour cartridge to get lined paper.
+  // for a color cartridge to get lined paper.
   const margin =
     !marginLine || ruling.marginLine === undefined
       ? null

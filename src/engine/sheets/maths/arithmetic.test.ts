@@ -1,16 +1,19 @@
 import { describe, expect, it } from "vitest";
 
 import { answerKey, buildSheet, describeSheet } from "../index";
+import { printedBlockBox } from "../chrome";
 import { describeSheetFamily } from "../contract";
 import { PROBLEM_GAP } from "../layout";
 import { LINE_INSET, labelRoom, ticks } from "../numberline";
 import { inches } from "../paper";
 import type {
   ArithmeticConfig,
+  Block,
   MarginSize,
   Paper,
   PaperSize,
   Problem,
+  Sheet,
 } from "../types";
 
 import { ARITHMETIC_SHEET, arithmeticLayout } from "./arithmetic";
@@ -101,12 +104,32 @@ describeSheetFamily("arithmetic", {
 /** Every column count the family will lay out — `MAX_COLUMNS` is six. */
 const COLUMN_COUNTS = [1, 2, 3, 4, 5, 6];
 
-/** The one block an arithmetic sheet has, narrowed for the reader. */
+/** Every problem on the sheet, page after page, in the order printed. */
 function problemsOf(over: Partial<ArithmeticConfig>, seed: number): Problem[] {
-  const block = buildSheet(config(over), seed).blocks[0];
-  if (block.kind !== "problems")
-    throw new Error(`expected problems, got ${block.kind}`);
-  return block.items;
+  return pagesOf(buildSheet(config(over), seed)).flatMap((page) => page.items);
+}
+
+/**
+ * The problems block of each page, in order. This family prints one such
+ * block a page and nothing else, so anything else on a page is a failure here
+ * rather than a page silently skipped.
+ */
+function pagesOf(sheet: Sheet): Array<Extract<Block, { kind: "problems" }>> {
+  const pages: Array<Extract<Block, { kind: "problems" }>> = [];
+  let open = false;
+  for (const block of sheet.blocks) {
+    if (block.kind === "break") {
+      expect(open, "a break with no page before it").toBe(true);
+      open = false;
+      continue;
+    }
+    if (block.kind !== "problems")
+      throw new Error(`expected problems, got ${block.kind}`);
+    expect(open, "two problems blocks on one page").toBe(false);
+    pages.push(block);
+    open = true;
+  }
+  return pages;
 }
 
 /* ── Reading a sheet the way a child does ──────────────────────────────────
@@ -240,12 +263,11 @@ describe("the arithmetic family", () => {
 
   it("gives the sheet a title and a score box it can be marked against", () => {
     const sheet = buildSheet(config(), 3);
-    const block = sheet.blocks[0];
     expect(sheet.header.title).toBe("Addition to 20");
     expect(sheet.header.instructions).toBe("Work out each answer.");
-    // Out of what is on the page, not out of what was asked for: a sheet that
+    // Out of what is printed, not out of what was asked for: a sheet that
     // says "/ 20" over eighteen problems is wrong twice.
-    expect(block.kind === "problems" && block.items.length).toBe(
+    expect(pagesOf(sheet).flatMap((page) => page.items).length).toBe(
       sheet.header.score?.outOf,
     );
   });
@@ -504,22 +526,44 @@ describe("how much fits", () => {
   const SIZES: PaperSize[] = ["letter", "a4", "legal"];
   const MARGINS: MarginSize[] = ["none", "narrow", "normal", "wide"];
 
-  it("never prints more problems than the paper holds", () => {
+  it("never prints more problems on a page than the paper holds", () => {
     // The failure is silent on screen and obvious on paper: one row too many
-    // is a second sheet out of the printer with two sums on it, and print is
-    // the whole of the output path (§10).
+    // is a page's last row on the next sheet out of the printer, and print is
+    // the whole of the output path (§10). Held to the box the printed header
+    // leaves, not the one the config reserved against. And every page but the
+    // last is full: a page cut short of what fits is a sheet of paper for
+    // nothing.
     for (const size of SIZES) {
       for (const margin of MARGINS) {
         for (const fontPt of [12, 18]) {
           for (const shape of EVERY_SHAPE) {
             const over = { ...shape, paper: paper({ size, margin }), fontPt };
-            const problems = problemsOf({ ...over, count: 200 }, 8);
-            const { box, columns, row } = arithmeticLayout(config(over));
-            const rows = Math.ceil(problems.length / columns);
-            const used = rows * row + Math.max(0, rows - 1) * PROBLEM_GAP.y;
-            expect(used, `${size}/${margin}/${fontPt}pt`).toBeLessThanOrEqual(
-              box.height,
-            );
+            const where = `${size}/${margin}/${fontPt}pt ${JSON.stringify(shape)}`;
+            const sheet = buildSheet(config({ ...over, count: 200 }), 8);
+            const pages = pagesOf(sheet);
+            expect(pages.length, where).toBeGreaterThan(0);
+            const { row, perPage } = arithmeticLayout(config(over));
+            for (const [at, page] of pages.entries()) {
+              const rows = Math.ceil(page.items.length / page.columns);
+              const used = rows * row + Math.max(0, rows - 1) * PROBLEM_GAP.y;
+              expect(used, `${where}, page ${at + 1}`).toBeLessThanOrEqual(
+                printedBlockBox(sheet).height,
+              );
+              expect(page.items.length, `${where}, page ${at + 1}`) //
+                .toBeLessThanOrEqual(perPage);
+              if (at < pages.length - 1) {
+                expect(page.items.length, `${where}, page ${at + 1}`).toBe(
+                  pages[0].items.length,
+                );
+              }
+            }
+            // A row taller than the page holds nothing (§4).
+            if (perPage === 0) {
+              expect(
+                pages.map((page) => page.items),
+                where,
+              ).toEqual([[]]);
+            }
           }
         }
       }
@@ -537,13 +581,47 @@ describe("how much fits", () => {
     expect((rows + 1) * row + rows * PROBLEM_GAP.y).toBeGreaterThan(box.height);
   });
 
-  it("honours the count and the columns it was given", () => {
+  it("honors the count and the columns it was given", () => {
     expect(problemsOf({ count: 12 }, 1).length).toBe(12);
     expect(problemsOf({ count: 0 }, 1).length).toBe(0);
     for (const columns of [1, 2, 3, 4]) {
-      const block = buildSheet(config({ columns }), 1).blocks[0];
-      expect(block.kind === "problems" && block.columns).toBe(columns);
+      expect(pagesOf(buildSheet(config({ columns }), 1))[0].columns).toBe(
+        columns,
+      );
     }
+  });
+
+  it("runs on to another page rather than cutting the count to the paper", () => {
+    // Ninety problems are as many pages as ninety take, not one page's worth:
+    // a parent who wanted one page prints page one (§4). The numbering carries
+    // on, so a child told to start at the top of page two finds it numbered.
+    const over = { count: 90 };
+    const sheet = buildSheet(config(over), 3);
+    const { perPage } = arithmeticLayout(config(over));
+    const pages = pagesOf(sheet);
+    expect(pages.length).toBeGreaterThan(1);
+    expect(pages.length).toBe(Math.ceil(90 / perPage));
+    expect(pages.flatMap((page) => page.items).length).toBe(90);
+    expect(sheet.header.score?.outOf).toBe(90);
+    for (const [at, page] of pages.entries()) {
+      expect(page.start, `page ${at + 1}`).toBe(
+        at > 0 ? at * perPage + 1 : undefined,
+      );
+      if (at < pages.length - 1)
+        expect(page.items.length, `page ${at + 1}`).toBe(perPage);
+    }
+    // And the key runs on with it, page for page.
+    expect(pagesOf(answerKey(config(over), 3)).map((page) => page.items.length)) //
+      .toEqual(pages.map((page) => page.items.length));
+  });
+
+  it("draws nothing when not even one row fits", () => {
+    // No number of pages mends a row taller than the paper (§4).
+    const over = { fontPt: 600 };
+    expect(arithmeticLayout(config(over)).perPage).toBe(0);
+    const sheet = buildSheet(config(over), 1);
+    expect(pagesOf(sheet).map((page) => page.items)).toEqual([[]]);
+    expect(sheet.header.score?.outOf).toBe(0);
   });
 
   it("sizes the number line to the column it sits in", () => {
@@ -693,10 +771,9 @@ describe("the facts they keep missing", () => {
   it("keys them the way it keys everything else", () => {
     const practice = config({ facts: MISSED, operation: "both" });
     const key = answerKey(practice, 9);
-    const block = key.blocks[0];
-    if (block.kind !== "problems") throw new Error("expected problems");
+    const keyed = pagesOf(key).flatMap((page) => page.items);
     expect(key.answers).toBe(true);
-    for (const sentence of block.items.flatMap(sentences)) {
+    for (const sentence of keyed.flatMap(sentences)) {
       expect(holds(sentence), sentence).toBe(true);
     }
   });
@@ -710,13 +787,17 @@ describe("the facts they keep missing", () => {
       .toBe("Addition to 20");
   });
 
-  it("never prints more of them than the paper holds", () => {
+  it("runs the whole list on to another page rather than cutting it", () => {
     const many: string[] = [];
     for (let a = 1; a <= 20; a += 1) {
       for (let b = 1; b <= 10; b += 1) many.push(`${a}:${b}`);
     }
     const over = { facts: many, count: many.length };
-    expect(problemsOf(over, 1).length) //
-      .toBe(arithmeticLayout(config(over)).perPage);
+    const { perPage } = arithmeticLayout(config(over));
+    const pages = pagesOf(buildSheet(config(over), 1));
+    expect(pages.length).toBe(Math.ceil(many.length / perPage));
+    expect(pages[0].items.length).toBe(perPage);
+    expect(pages[1].start).toBe(perPage + 1);
+    expect(problemsOf(over, 1).length).toBe(many.length);
   });
 });

@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes } from "react";
+import type { ButtonHTMLAttributes, RefAttributes } from "react";
 
 /**
  * The one button in the app.
@@ -28,7 +28,13 @@ const VARIANT_CLASS: Record<Exclude<ButtonVariant, "bare">, string> = {
   danger: "btn--danger",
 };
 
-export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+/* `RefAttributes` so a caller can hand focus to a button — the bench's last
+   step hands it to Print. A ref is an ordinary prop on a function component
+   now, and `...rest` carries it to the element. */
+export interface ButtonProps
+  extends
+    ButtonHTMLAttributes<HTMLButtonElement>,
+    RefAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
   size?: ButtonSize;
   /**
@@ -46,7 +52,7 @@ export function Button({
   className,
   // Defaulting to "button" rather than inheriting the platform default. A
   // bare <button> inside a <form> submits it — which is a real hazard here,
-  // since the player editor is a form full of avatar and colour pickers.
+  // since the player editor is a form full of avatar and color pickers.
   type = "button",
   ...rest
 }: ButtonProps) {

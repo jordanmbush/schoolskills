@@ -117,7 +117,7 @@ export type Face = {
    * Measured across the twenty-six `Aa`…`Zz` pairs **as they are actually
    * set** — shaped, so whatever alternates and joining strokes the face inserts
    * are in the number — and as *ink* rather than advance, because what overflows
-   * a cell is ink and a neighbour's side bearing is there to meet the one beside
+   * a cell is ink and a neighbor's side bearing is there to meet the one beside
    * it.
    *
    * It can come out *under* `advance`, and in OpenDyslexic it does: that face
@@ -171,8 +171,9 @@ export const MAX_OUTLINE: Mil = points(0.75);
  * `public/fonts/LICENSE.md`. The ids are the user's choice; the families are an
  * implementation detail that a saved sheet deliberately does not carry.
  *
- * Which letters join is the font file's own `calt` table and never this repo's
- * opinion; see `writing/joins.ts`.
+ * Which letters join on an outline row is the font file's own `calt` table
+ * and never this repo's opinion; see `writing/joins.ts`. A face written in a
+ * hand joins by the hand's own drawings instead (§25).
  */
 export const FACES: Record<SheetFont, Face> = {
   print: {
@@ -322,7 +323,7 @@ export function glyphHeight(text: string, face: Face): number {
 /**
  * How wide one character of `text` is reserved, as a share of the em.
  *
- * `glyphHeight` read sideways, and the same judgement (§6): a row of `Aa` is not
+ * `glyphHeight` read sideways, and the same judgment (§6): a row of `Aa` is not
  * a sample of `a`–`z` and must not be packed as though it were.
  *
  * The classes are taken at their largest, for the reason they are in

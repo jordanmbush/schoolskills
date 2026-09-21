@@ -1,7 +1,7 @@
 /**
  * Mean, median, mode and range.
  *
- * The shared machinery unchanged (§7, §11), over the one maths family whose
+ * The shared machinery unchanged (§7, §11), over the one math family whose
  * question is a *set* rather than a sum — and the one where the usual generator
  * bug is invisible on the page. Three of them:
  *
@@ -39,6 +39,8 @@ import {
   answerLine,
   columnWidth,
   fitAcross,
+  problemPages,
+  wantedOf,
   type Box,
 } from "../layout";
 import { inches } from "../paper";
@@ -111,7 +113,7 @@ function medianText(values: number[]): string {
 /**
  * The value that appears most often, when exactly one value does.
  *
- * Exported because it is the one judgement in this file that a set can fail, and
+ * Exported because it is the one judgment in this file that a set can fail, and
  * because the draw below builds sets that pass it on purpose — so the rule
  * itself is only reachable from a test that hands it a tie directly. A family
  * that lost this would print a question with two right answers on it, which is
@@ -320,20 +322,12 @@ export function statisticsLayout(config: StatisticsConfig): {
   };
 }
 
-/**
- * Every problem on the sheet, in the order they are printed.
- *
- * Exported because it is the whole of what a test has to check.
- */
-export function statisticsProblems(
+/** Up to `wanted` problems, in the order they are printed. */
+function drawProblems(
   config: StatisticsConfig,
   seed: number,
+  wanted: number,
 ): Problem[] {
-  const { perPage } = statisticsLayout(config);
-  // The count is a request, not a promise: a count that overruns is a second
-  // sheet out of the printer with two problems on it.
-  const wanted = clamp(config.count, 0, perPage);
-
   const rand = mulberry32(seed);
   const seen = new Set<string>();
   const problems: Problem[] = [];
@@ -420,8 +414,8 @@ function describeStatistics(config: StatisticsConfig): string {
 }
 
 function buildStatisticsSheet(config: StatisticsConfig, seed: number): Sheet {
-  const items = statisticsProblems(config, seed);
-  const { columns } = statisticsLayout(config);
+  const { columns, perPage } = statisticsLayout(config);
+  const items = drawProblems(config, seed, wantedOf(config.count, perPage));
   const head = headerOf(config);
 
   return {
@@ -433,7 +427,7 @@ function buildStatisticsSheet(config: StatisticsConfig, seed: number): Sheet {
       fields: head.fields,
       score: { outOf: items.length },
     },
-    blocks: [{ kind: "problems", columns, items }],
+    blocks: problemPages(items, columns, perPage),
     footer: { credit: SHEET_CREDIT, url: SHEET_URL, seed },
     answers: false,
   };

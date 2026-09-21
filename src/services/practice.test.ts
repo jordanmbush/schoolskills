@@ -8,7 +8,7 @@ import { practiceFrom } from "./practice";
  * The half of the practice service that decides anything.
  *
  * Loading needs IndexedDB and is covered against a fake one in
- * `storage/db.test.ts`; what is worth pinning here is the judgement — whose
+ * `storage/db.test.ts`; what is worth pinning here is the judgment — whose
  * facts, from which deck, in what order, and what a player with no history
  * gets — because every one of those is a way the headline feature could be
  * subtly wrong while looking right.

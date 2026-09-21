@@ -1,0 +1,29 @@
+{
+  "id": "print",
+  "name": "School Skills Print",
+  "units": 1000,
+  "ascent": 1000,
+  "xHeight": 500,
+  "descent": -500,
+  "bearing": 60,
+  "space": 320,
+  "reach": {
+    "tall": "bdfhkl",
+    "threeQuarter": "tij",
+    "tail": "gjpqy"
+  },
+  "forms": {
+    "a": ["single", "double"],
+    "t": ["curved", "straight"],
+    "q": ["curved", "straight"],
+    "l": ["straight", "curved"],
+    "i": ["straight", "curved"],
+    "y": ["curved", "straight"]
+  },
+  "tracedOver": {
+    "family": "Andika",
+    "master": "Andika-Regular.ufo",
+    "licence": "OFL-1.1",
+    "source": "https://github.com/silnrsi/font-andika"
+  }
+}

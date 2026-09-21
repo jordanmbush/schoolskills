@@ -9,7 +9,7 @@ import { Button, Field, FieldSet, Input, Scrim } from "@/components/ui/kit";
  *
  * The default rotates on how many players already exist, so the second child
  * in a house isn't handed the first child's fox. On the picker the face and
- * the colour are the whole of how a five-year-old finds their own card.
+ * the color are the whole of how a five-year-old finds their own card.
  */
 export const AVATARS = [
   "🦊",
@@ -40,7 +40,7 @@ export const AVATARS = [
 
 /**
  * Rotated the same way, and not only a swatch: `usePlayer` writes the chosen
- * one to `--accent`, so it becomes the colour of the whole app while that
+ * one to `--accent`, so it becomes the color of the whole app while that
  * player is in it.
  */
 export const COLORS = [
@@ -91,7 +91,7 @@ export default function PlayerEditor({ profile, onClose, onDeleted }: Props) {
     profile?.emoji ?? AVATARS[profiles.length % AVATARS.length],
   );
   // Previewed live: the form below carries its own `--accent`, so the Save
-  // button and the focus rings take this colour before it is saved. The root
+  // button and the focus rings take this color before it is saved. The root
   // holds the saved one (`usePlayer`), which is what makes closing without
   // saving leave nothing behind.
   const [color, setColor] = useState(
@@ -219,7 +219,7 @@ export default function PlayerEditor({ profile, onClose, onDeleted }: Props) {
           </div>
         </FieldSet>
 
-        <FieldSet legend="Colour">
+        <FieldSet legend="Color">
           <div className="picker picker--color">
             {COLORS.map((option) => (
               <Button
@@ -232,7 +232,7 @@ export default function PlayerEditor({ profile, onClose, onDeleted }: Props) {
                   sfx.tap();
                 }}
                 pressed={option === color}
-                aria-label={`Colour ${option}`}
+                aria-label={`Color ${option}`}
               />
             ))}
           </div>

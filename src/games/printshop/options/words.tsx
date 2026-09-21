@@ -58,8 +58,7 @@ export function WordsPanel({ config, set }: PanelProps<WordsConfig>) {
         onChange={(text) => {
           const words = parseWords(text);
           // The count follows the list unless a parent has said otherwise —
-          // "print all of them" is what a list means, and the family caps it at
-          // what the page holds anyway.
+          // "print all of them" is what a list means.
           set({ words, count: words.length });
         }}
       />

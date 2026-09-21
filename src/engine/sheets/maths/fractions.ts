@@ -42,6 +42,8 @@ import {
   answerLine,
   columnWidth,
   fitAcross,
+  problemPages,
+  wantedOf,
   type Box,
 } from "../layout";
 import { inches } from "../paper";
@@ -381,9 +383,7 @@ export function fractionProblems(
   seed: number,
 ): Problem[] {
   const { perPage } = fractionLayout(config);
-  // The count is a request, not a promise: a count that overruns is a second
-  // sheet out of the printer with two problems on it.
-  const wanted = clamp(config.count, 0, perPage);
+  const wanted = wantedOf(config.count, perPage);
 
   const rand = mulberry32(seed);
   const pool = denominatorsOf(config);
@@ -534,7 +534,7 @@ function describeFractions(config: FractionConfig): string {
 
 function buildFractionSheet(config: FractionConfig, seed: number): Sheet {
   const items = fractionProblems(config, seed);
-  const { columns } = fractionLayout(config);
+  const { columns, perPage } = fractionLayout(config);
   const head = headerOf(config);
 
   return {
@@ -546,7 +546,7 @@ function buildFractionSheet(config: FractionConfig, seed: number): Sheet {
       fields: head.fields,
       score: { outOf: items.length },
     },
-    blocks: [{ kind: "problems", columns, items }],
+    blocks: problemPages(items, columns, perPage),
     footer: { credit: SHEET_CREDIT, url: SHEET_URL, seed },
     answers: false,
   };

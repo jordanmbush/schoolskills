@@ -44,7 +44,14 @@ const signature = passage("the-day-of-small-things")?.title;
 
     <nav class="foot__col" aria-label="Worlds">
       <p class="foot__head">Worlds</p>
-      {WORLDS.map((w) => <a href={w.href}>{w.name}</a>)}
+      {
+        WORLDS.map((w) => (
+          <>
+            <a href={w.href}>{w.name}</a>
+            {w.build && <a href={w.island}>{w.build}</a>}
+          </>
+        ))
+      }
       {
         guides.length > 0 && (
           <>

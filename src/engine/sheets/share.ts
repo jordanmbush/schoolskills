@@ -29,6 +29,7 @@ import type {
 } from "./types";
 
 import { FACES } from "./faces";
+import { FORMS, type Forms } from "./hands/hand";
 import { DEFAULT_FONT_PT, FONT_PT, MARGINS, PAPERS } from "./paper";
 
 /** What a link carries: which sheet, and which one of them. */
@@ -78,7 +79,7 @@ export const MAX_SHARE_PAYLOAD = 4096;
  * Exported because the builder's own fields have to stop where the decoder
  * stops. A box that accepted more than this would silently lose the tail of
  * what somebody typed the first time the link was reopened, which is the worst
- * of the three possible behaviours.
+ * of the three possible behaviors.
  */
 export const MAX_TITLE = 120;
 export const MAX_INSTRUCTIONS = 400;
@@ -93,6 +94,34 @@ const FIELDS: HeaderField[] = ["name", "date", "class"];
 const FONTS = Object.keys(FACES) as SheetFont[];
 const ORIENTATIONS: Orientation[] = ["portrait", "landscape"];
 
+/**
+ * Every key `options` owns, as a record so the type checker holds it to
+ * `SheetOptions` — a field added there without a line here fails to compile.
+ *
+ * What it is for: the family's fields are spread through untouched, and a
+ * shared field `options` chose to leave out must not ride along with them. A
+ * `forms` that arrived as a number or `null` would otherwise reach the
+ * renderer that indexes into it by character.
+ */
+const SHARED: Record<keyof SheetOptions, true> = {
+  paper: true,
+  fontPt: true,
+  title: true,
+  instructions: true,
+  fields: true,
+  font: true,
+  forms: true,
+  answerBox: true,
+  cutLines: true,
+};
+
+/** The family's own fields: whatever arrived that the shared half does not own. */
+function familyFields(raw: Record<string, unknown>): Record<string, unknown> {
+  return Object.fromEntries(
+    Object.entries(raw).filter(([key]) => !Object.hasOwn(SHARED, key)),
+  );
+}
+
 /** One of a known set, or the fallback. Never what the payload said. */
 function oneOf<T extends string>(value: unknown, allowed: T[], fallback: T): T {
   return typeof value === "string" && (allowed as string[]).includes(value)
@@ -104,6 +133,23 @@ function text(value: unknown, cap: number): string | undefined {
   if (typeof value !== "string") return undefined;
   const trimmed = value.trim().slice(0, cap);
   return trimmed === "" ? undefined : trimmed;
+}
+
+/**
+ * The letter shapes a payload asked for, or nothing.
+ *
+ * Kept only where the key is one character and the form is a word the
+ * vocabulary knows (§25), because a renderer indexes straight into this by
+ * character: anything else that arrived is dropped rather than carried, and
+ * `undefined` rather than `{}` so nothing is written back into a link.
+ */
+function formsOf(value: unknown): Forms | undefined {
+  if (typeof value !== "object" || value === null) return undefined;
+  const kept = Object.entries(value).filter(
+    ([character, form]) =>
+      character.length === 1 && (FORMS as readonly unknown[]).includes(form),
+  );
+  return kept.length > 0 ? (Object.fromEntries(kept) as Forms) : undefined;
 }
 
 function paperOf(value: unknown): Paper {
@@ -139,8 +185,9 @@ function options(raw: Record<string, unknown>): SheetOptions {
   const fontPt = typeof raw.fontPt === "number" ? Math.round(raw.fontPt) : NaN;
   const title = text(raw.title, MAX_TITLE);
   const instructions = text(raw.instructions, MAX_INSTRUCTIONS);
+  const forms = formsOf(raw.forms);
 
-  // The four optional fields are omitted rather than written as `undefined` or
+  // The optional fields are omitted rather than written as `undefined` or
   // `false`, so that decoding a link and re-encoding it produces the same link.
   // A round trip that quietly grew `"answerBox":false` would make every URL a
   // little longer each time somebody opened one and sent it on.
@@ -155,6 +202,7 @@ function options(raw: Record<string, unknown>): SheetOptions {
     ...(typeof raw.font === "string"
       ? { font: oneOf(raw.font, FONTS, "print") }
       : {}),
+    ...(forms ? { forms } : {}),
     ...(raw.answerBox === true ? { answerBox: true } : {}),
     ...(raw.cutLines === true ? { cutLines: true } : {}),
   };
@@ -200,7 +248,7 @@ export function decodeSharedSheet(payload: string): SharedSheet | null {
     return null;
 
   return {
-    config: { ...raw, ...options(raw) } as SheetConfig,
+    config: { ...familyFields(raw), ...options(raw) } as SheetConfig,
     seed,
   };
 }

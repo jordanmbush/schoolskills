@@ -11,7 +11,7 @@
  * Output is scripts/icons/mark-paths.mjs, which generate-icons.mjs consumes.
  * Splitting it this way keeps potrace out of the normal icon pipeline — the
  * trace runs once when the art changes, the icons regenerate whenever a size
- * or a colour does.
+ * or a color does.
  *
  * potrace is deliberately NOT a dependency. Install it for the one run:
  *
@@ -137,7 +137,7 @@ const module = `/**
  *
  * Vector paths traced from scripts/icons/source.png by scripts/trace-icon.mjs.
  * Re-run that script if the artwork changes; everything else about the icons
- * (colour, corner radius, which sizes exist) is decided in generate-icons.mjs.
+ * (color, corner radius, which sizes exist) is decided in generate-icons.mjs.
  *
  * The three tones tile the square without overlapping, so paint order is free:
  * plate, then black, then white, in any arrangement, gives the same picture.

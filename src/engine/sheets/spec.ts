@@ -61,7 +61,7 @@ export const LONGEST_SHEET_URL: string = WORLDS.map((world) =>
  * `build: (config: C, seed: number) => Sheet` and the registry stops
  * compiling.
  *
- * Behaviour only: what a family is called and which `kind` reaches it are in
+ * Behavior only: what a family is called and which `kind` reaches it are in
  * `SheetFamily`, because the picker names every family without loading one.
  *
  * **The functions a family fills these in with are its own — not exported.**
@@ -119,12 +119,12 @@ export const UNKNOWN_SHEET: SheetSpec = {
  * The presentation half of `SheetOptions`, copied onto what a family built.
  *
  * Here rather than in every `build` function: every family would otherwise write
- * the same three lines, and the next one added would be the one that forgot. It
- * is safe to do after the fact because none of the three changes a length — the
- * face is set in points, a bordered slot is the same line box as a ruled one,
- * and the cut guides are drawn over the paper rather than in the flow — so
- * nothing here can make a sheet the layout arithmetic already fitted stop
- * fitting.
+ * the same four lines, and the next one added would be the one that forgot. It
+ * is safe to do after the fact because none of the four changes a length — the
+ * face is set in points, a letter's other shape is written on the same ruling,
+ * a bordered slot is the same line box as a ruled one, and the cut guides are
+ * drawn over the paper rather than in the flow — so nothing here can make a
+ * sheet the layout arithmetic already fitted stop fitting.
  *
  * A family that has already said something wins, which is what keeps this a
  * default rather than an override: `UNKNOWN_SHEET` sets nothing and gets the
@@ -135,6 +135,7 @@ function present(config: SheetConfig, sheet: Sheet): Sheet {
   return {
     ...sheet,
     font: sheet.font ?? config.font,
+    forms: sheet.forms ?? config.forms,
     answerBox: sheet.answerBox ?? config.answerBox,
     cutLines: sheet.cutLines ?? config.cutLines,
   };

@@ -35,7 +35,7 @@ const MAX_NEW_SHARE = 0.35;
  * Enough seeds that a rare draw is not a lucky pass. Sixteen crossed with a
  * hundred lessons runs in under a second, because the corpus is filtered once
  * per lesson. Spread rather than 0–15: `mulberry32` is well-behaved over
- * neighbouring seeds, but the numbers a run actually uses come from
+ * neighboring seeds, but the numbers a run actually uses come from
  * `randomSeed()` and look nothing like a counter.
  */
 const SEEDS = [

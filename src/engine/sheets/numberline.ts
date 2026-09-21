@@ -15,13 +15,59 @@
  */
 import type { Mil, NumberLine } from "./types";
 
+import { gcd } from "./maths/exact";
 import { inches } from "./paper";
 
 /** The axis, its ticks, and the labels under them. */
 export const NUMBER_LINE_HEIGHT: Mil = inches(0.34);
 
 /**
- * Room at each end for the outermost label, which is centred on its tick and
+ * What a line with hops on it adds above the axis: room for an arc a child
+ * can read as a jump, and the "−3" over it, at `LABEL_SIZE` (§23).
+ *
+ * Added, not carved out of `NUMBER_LINE_HEIGHT`, which every family reserving
+ * for a plain line has already paid for.
+ */
+export const JUMP_ROOM: Mil = inches(0.28);
+
+/** How tall a line stands — the plain height, and the hops' room if it has any. */
+export const lineHeight = (line: NumberLine): Mil =>
+  NUMBER_LINE_HEIGHT + (line.jumps ? JUMP_ROOM : 0);
+
+/**
+ * The most hops a line draws. A hop of one along a line to a hundred is a
+ * hundred arcs nobody can read, and a size a saved config got wrong must not
+ * loop.
+ */
+const MOST_JUMPS = 40;
+
+/**
+ * Every hop, largest value first: where it leaves from and where it lands.
+ *
+ * Hops stop when the next would land short of the line's own left end, so a
+ * total that does not divide leaves the last landing above it — which is the
+ * remainder, drawn. A start off the line, or a size of nothing, is no hops at
+ * all rather than a guess. Listed sizes are taken in order and stop when the
+ * list does.
+ */
+export function jumps(line: NumberLine): Array<{ from: number; to: number }> {
+  const hop = line.jumps;
+  if (!hop || hop.start > line.to || hop.start < line.from) return [];
+  const sizeOf = (index: number): number =>
+    "sizes" in hop ? (hop.sizes[index] ?? 0) : hop.size;
+  const out: Array<{ from: number; to: number }> = [];
+  let at = hop.start;
+  while (out.length < MOST_JUMPS) {
+    const size = sizeOf(out.length);
+    if (size <= 0 || at - size < line.from) break;
+    out.push({ from: at, to: at - size });
+    at -= size;
+  }
+  return out;
+}
+
+/**
+ * Room at each end for the outermost label, which is centered on its tick and
  * would otherwise be cut in half by the edge of the drawing. Enough for three
  * digits at the size below.
  *
@@ -58,7 +104,7 @@ const STEPS = [1, 2, 5, 10, 20, 25, 50, 100, 200, 250, 500, 1000];
 /**
  * How much room the labels on a line need, tick to tick.
  *
- * The widest label, plus a digit's worth of air: labels are centred on their
+ * The widest label, plus a digit's worth of air: labels are centered on their
  * ticks, so two of them exactly one label apart are two labels touching. The
  * widest is measured rather than assumed, because a line that runs to 100 to
  * cover a range of 20 is a three-digit label on a two-digit sheet.
@@ -133,6 +179,34 @@ export function numberLine(low: number, high: number, width: Mil): NumberLine {
 }
 
 /**
+ * A line from nought to `start` for hopping back along it in the sizes given
+ * (§23). Every landing is a tick, so the spacing divides the start and every
+ * hop, and the line ends on the start rather than on a round number past it:
+ * a line to 22 for 21 ÷ 3 has no 21 on it and no 18, 15 or 12 either. The
+ * finest such spacing whose labels fit, or the coarsest there is when none
+ * does — which for a lesson's numbers is the divisor itself.
+ */
+export function hopLine(
+  start: number,
+  sizes: number[],
+  width: Mil,
+): NumberLine {
+  const common = [start, ...sizes].reduce((left, right) => gcd(left, right), 0);
+  if (start <= 0 || common <= 0)
+    return numberLine(0, Math.max(1, start), width);
+  const at = (step: number): NumberLine => ({
+    from: 0,
+    to: start,
+    step,
+    width,
+  });
+  for (let step = 1; step <= common; step += 1) {
+    if (common % step === 0 && fits(at(step))) return at(step);
+  }
+  return at(common);
+}
+
+/**
  * How many ticks apart the numbers under a line have to be to fit.
  *
  * One where every tick can keep its number, which is the answer for every line
@@ -144,7 +218,7 @@ export function numberLine(low: number, high: number, width: Mil): NumberLine {
  *
  * Only ever a multiple a child would count in, and always a divisor of the
  * whole run where one will do, so the last tick keeps its number: a line to 100
- * labelled every 3 would end on 99 with nothing under the end of it.
+ * labeled every 3 would end on 99 with nothing under the end of it.
  */
 export function labelEvery(line: NumberLine): number {
   const marks = ticks(line);
@@ -159,7 +233,7 @@ export function labelEvery(line: NumberLine): number {
     if (gap * every >= labelRoom(shown)) return every;
   }
   // Nothing divides the run and still fits, so keep the two ends and the ticks
-  // between them bare. A number under every tick that overlaps its neighbour is
+  // between them bare. A number under every tick that overlaps its neighbor is
   // a line nobody can read; two numbers and a scale is still a number line.
   return steps;
 }

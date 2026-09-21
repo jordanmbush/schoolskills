@@ -11,7 +11,7 @@ import { THEME_COLOUR, WORLDS, type World } from "./worlds";
  * type-check about itself.
  *
  * `THEME_COLOUR` is `Record<World, string>`, so a missing entry is already a
- * type error — what a type cannot say is whether the colour in it is the one
+ * type error — what a type cannot say is whether the color in it is the one
  * `worlds.css` paints. Those two are the only duplication in the world system,
  * and they are duplicated for a reason that isn't going away: `<meta
  * name="theme-color">` is markup, and markup cannot read a custom property. A
@@ -125,7 +125,7 @@ describe("the worlds", () => {
   });
 
   it.each(DECLARED)(
-    "%s is themed the same colour in the chrome as on the page",
+    "%s is themed the same color in the chrome as on the page",
     (world) => {
       expect(
         STYLED.size,
@@ -155,5 +155,20 @@ describe("the worlds", () => {
       ROUTES.includes(href),
       `${what} points at ${href}, and no page in src/pages/ builds that route. The routes this build emits are:\n  ${[...ROUTES].sort().join("\n  ")}`,
     ).toBe(true);
+  });
+});
+
+describe("the builder behind a front door", () => {
+  it("is offered wherever a world's island is not its front door", () => {
+    // `build` is the label the map and the footer link `island` under. A world
+    // whose island IS its front door has nothing to offer twice, and a world
+    // whose island isn't would otherwise be the only way in that no card and
+    // no footer names.
+    for (const world of WORLDS) {
+      expect(
+        Boolean(world.build),
+        `${world.name}: build should be set exactly when island differs from href`,
+      ).toBe(world.island !== world.href);
+    }
   });
 });

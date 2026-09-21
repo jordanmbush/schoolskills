@@ -1,18 +1,20 @@
 /**
- * What you do with a sheet once it is right: print it, or take a copy of it.
+ * The head of the paper pane: everything that is about the sheet as paper
+ * rather than about making it. Print first, because it is the one thing every
+ * visit ends in; then how many copies and whether the answer key comes with
+ * them; then another draw of the same settings, and the link.
  *
  * Print is the entire output path and the browser's own dialog is the download
- * as well as the print (§10), which is what the hint under the button is for: a
- * parent who does not know "Save as PDF" is in there will conclude the site
- * cannot make a file at all.
+ * as well as the print (§10). The sentence that says so is under the paper
+ * (`Caption.tsx`), because it needs a line and this row has room for a word.
  *
  * The link button copies the address bar, which already holds the whole
  * configuration: `useBuilder` rewrites `#s=` on every change, so there is
  * nothing to build here and nothing to keep in step.
  */
-import { useState } from "react";
+import { useState, type RefObject } from "react";
 
-import { Button, Checkbox, FieldSet, NumberStepper } from "@/components/ui/kit";
+import { Button, Checkbox, NumberStepper } from "@/components/ui/kit";
 
 import { MAX_VARIANTS } from "./useBuilder";
 
@@ -28,19 +30,20 @@ const COPY_LABEL = {
 } as const;
 
 export function PrintBar({
-  seed,
   variants,
   answers,
   onVariants,
   onAnswers,
   onReroll,
+  printRef,
 }: {
-  seed: number;
   variants: number;
   answers: boolean;
   onVariants: (count: number) => void;
   onAnswers: (on: boolean) => void;
   onReroll: () => void;
+  /** The Print button, so the last step's "Next" can hand focus to it. */
+  printRef: RefObject<HTMLButtonElement | null>;
 }) {
   // Three states rather than a boolean, because the failure has to be visible:
   // see `copyLink`.
@@ -61,48 +64,34 @@ export function PrintBar({
   };
 
   return (
-    <div className="printbar no-print">
-      <div className="printbar__row">
-        <FieldSet
-          legend="Copies"
-          hint="Each one is a different draw of the same settings."
-        >
-          <NumberStepper
-            label="Copies"
-            value={variants}
-            min={1}
-            max={MAX_VARIANTS}
-            onChange={onVariants}
-          />
-        </FieldSet>
-        <Checkbox
-          label="Answer key"
-          hint="Printed after each copy, on its own page."
-          checked={answers}
-          onChange={onAnswers}
+    <div className="printbar">
+      <Button variant="go" ref={printRef} onClick={() => window.print()}>
+        Print
+      </Button>
+      <span className="printbar__copies">
+        <span aria-hidden="true">Copies</span>
+        <NumberStepper
+          label="Copies, each a different draw of the same settings"
+          value={variants}
+          min={1}
+          max={MAX_VARIANTS}
+          onChange={onVariants}
         />
-      </div>
-
-      <div className="printbar__actions">
-        <Button variant="go" onClick={() => window.print()}>
-          Print
-        </Button>
-        <Button variant="ghost" onClick={onReroll}>
+      </span>
+      <Checkbox
+        label="Answer key"
+        className="checkbox checkbox--inline"
+        checked={answers}
+        onChange={onAnswers}
+      />
+      <span className="printbar__sheet">
+        <Button variant="ghost" size="sm" onClick={onReroll}>
           Another sheet like this
         </Button>
-        <Button variant="ghost" onClick={() => void copyLink()}>
+        <Button variant="ghost" size="sm" onClick={() => void copyLink()}>
           {COPY_LABEL[said]}
         </Button>
-      </div>
-
-      <p className="printbar__hint">
-        Choose <strong>Save as PDF</strong> in the print dialog if you want a
-        file rather than paper, that is downloadable.
-      </p>
-      <p className="printbar__seed">
-        Sheet <span className="u-mono">{seed}</span>. The number is printed at
-        the foot of the page, so this exact sheet can be had again.
-      </p>
+      </span>
     </div>
   );
 }

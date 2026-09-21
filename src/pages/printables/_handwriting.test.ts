@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 
 import { answerKey, buildSheet } from "@/engine/sheets";
 import type { HandwritingConfig, TraceRow } from "@/engine/sheets/types";
-import { MODELLED } from "@/engine/sheets/writing/handwriting";
+import { MODELLED } from "@/engine/sheets/writing/rows";
 
 import { PAPER_SHEETS, STOCKS, pathFor as paperPath } from "./_catalog";
 import { MATHS_SHEETS, pathFor as mathsPath } from "./_maths";
@@ -85,7 +85,7 @@ describe("the handwriting catalog", () => {
     );
   });
 
-  it("never claims a path that paper or maths already prints on", () => {
+  it("never claims a path that paper or math already prints on", () => {
     // Three route patterns over one prefix. They only coexist because the paths
     // they emit are disjoint; the day they are not, Astro has two routes for
     // one URL and picks one of them.
@@ -155,7 +155,7 @@ describe("the handwriting catalog", () => {
 
 describe("the sheet on a catalog page", () => {
   it("prints every letter, numeral, word and line it promised", () => {
-    // The check this family needs and the maths one doesn't: the content is a
+    // The check this family needs and the math one doesn't: the content is a
     // set rather than a count, so "as many as fit" is not an acceptable answer.
     for (const sheet of HANDWRITING_SHEETS) {
       for (const stock of STOCKS) {
@@ -245,7 +245,7 @@ describe("the sitemap", () => {
   /*
    * A URL missing from the sitemap is the failure nobody notices — nothing
    * breaks, the page is simply never submitted. Skipped when there is no
-   * `dist/`, exactly as the maths one is; CI builds before it runs the suite.
+   * `dist/`, exactly as the math one is; CI builds before it runs the suite.
    */
   it("carries every handwriting slug, on both stocks, and the hub", () => {
     const file = `${ROOT}/dist/sitemap-0.xml`;

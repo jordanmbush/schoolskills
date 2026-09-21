@@ -1,7 +1,7 @@
 /**
  * The week, on a wall.
  *
- * A calendar, a weekly planner, a chore chart, a behaviour chart and a verse of
+ * A calendar, a weekly planner, a chore chart, a behavior chart and a verse of
  * the week — five sheets that are one table with different headings, which is
  * why they are one family rather than five. The blank ones are blank on purpose
  * (§11): the left column is where a household's own words go.
@@ -457,7 +457,7 @@ const TITLE: Record<PlannerStyle, string> = {
   calendar: "Calendar",
   week: "Weekly planner",
   chores: "Chore chart",
-  behaviour: "Behaviour chart",
+  behaviour: "Behavior chart",
   "verse-week": "Verse of the week",
 };
 

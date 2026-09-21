@@ -16,3 +16,11 @@ export type BlockProps<K extends Block["kind"]> = {
   block: BlockOf<K>;
   metrics: SheetMetrics;
 };
+
+/**
+ * The number a block's first item carries: its `start`, made whole and at
+ * least one, so a block that continues a list cut across pages numbers on
+ * from where the page before stopped.
+ */
+export const startOf = (start: number | undefined): number =>
+  Math.max(1, Math.floor(start ?? 1) || 1);

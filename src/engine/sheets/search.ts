@@ -27,18 +27,29 @@ import type { RuleStyle, SheetConfig } from "./types";
  * answers "what will my child be doing with it" — and the two cross, which is
  * the whole reason both are facets. *Practice* — a model traced, copied, then
  * written alone — spans the handwriting, cursive and Bible shelves and one sheet
- * off the spelling shelf, and *worksheet* spans maths, spelling, grammar and
+ * off the spelling shelf, and *worksheet* spans math, spelling, grammar and
  * phonics the same way.
  *
  * Six rather than five because the builder can already make a word search, a
  * crossword and a scramble; no page in the curated catalog is one yet, so the
  * chip simply isn't offered until one is (see `searchIndex`).
+ *
+ * And a seventh, *lesson*, which is not a worksheet: a page that explains a
+ * method before asking for it, with a few problems at the foot. A parent who
+ * types "how to" wants the explanation, and filing it under worksheets would
+ * hide it among a hundred pages of drill.
  */
 export type SheetType =
-  "worksheet" | "practice" | "puzzle" | "reference" | "paper" | "form";
+  | "worksheet"
+  | "lesson"
+  | "practice"
+  | "puzzle"
+  | "reference"
+  | "paper"
+  | "form";
 
 /**
- * How each is labelled on a chip. A word, because it sits in a row of them.
+ * How each is labeled on a chip. A word, because it sits in a row of them.
  *
  * "Practice" rather than "Handwriting", which is what these sheets mostly are:
  * the chips sit directly under a row of subjects that already has a
@@ -47,6 +58,7 @@ export type SheetType =
  */
 export const SHEET_TYPES: Array<{ id: SheetType; label: string }> = [
   { id: "worksheet", label: "Worksheets" },
+  { id: "lesson", label: "Lessons" },
   { id: "practice", label: "Practice" },
   { id: "puzzle", label: "Puzzles" },
   { id: "reference", label: "References" },
@@ -93,7 +105,9 @@ export const TYPE_OF: Record<SheetConfig["kind"], SheetType> = {
   "word-study": "worksheet",
   puzzle: "puzzle",
   grammar: "worksheet",
+  lesson: "lesson",
   handwriting: "practice",
+  penmanship: "practice",
   memory: "practice",
   phonics: "worksheet",
 };
@@ -242,7 +256,7 @@ const labelOf = (facet: Facet, id: string): string =>
  * The catalog writes `3rd-grade` and half the people searching write "third
  * grade". This is a fact about English ordinals rather than about the shop, so
  * it lives here rather than costing ten more strings in the shipped file — and
- * it only ever WIDENS what a row answers to. Normalising the query instead
+ * it only ever WIDENS what a row answers to. Normalizing the query instead
  * would narrow it, and turn somebody looking for the "First sentences"
  * handwriting sheet into somebody looking for "1st sentences", which is a sheet
  * nobody has.
@@ -268,7 +282,7 @@ const yearWords = (slug: string): string => {
  * Everything a row can be found by, as one lowercased string.
  *
  * Wider than the name on purpose, and every part of it is already written down
- * somewhere else in this build. A parent typing "maths" is typing the shelf's
+ * somewhere else in this build. A parent typing "math" is typing the shelf's
  * label and not any word on the sheet; a parent typing "third grade" is typing a
  * school year, which is a fact about the row's bits rather than about its prose.
  * A search that returned nothing for either would be read as a catalog that
@@ -328,7 +342,7 @@ export type FacetKey = Exclude<keyof Query, "text">;
  *
  * Each chip is tried in place of the row's current value, not on top of it, so
  * the row a parent has already chosen from stays open — picking "4th grade"
- * greys out the subjects with nothing for a fourth grader, not the other years.
+ * grays out the subjects with nothing for a fourth grader, not the other years.
  * The chip that is pressed is the caller's to keep enabled: even when it finds
  * nothing, it has to stay pressable so it can be turned off.
  */
@@ -375,7 +389,7 @@ export function writeQuery(query: Query): string {
 }
 
 /**
- * A query read back out of a fragment, with anything unrecognised dropped.
+ * A query read back out of a fragment, with anything unrecognized dropped.
  *
  * Untrusted input, the same as a shared sheet's payload: what arrives here came
  * off somebody's clipboard. It cannot throw and it cannot half-apply — a facet

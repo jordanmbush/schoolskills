@@ -25,7 +25,7 @@ import {
  * on a parent's printer. `keyed` is the engine's own answer to that
  * (`phonicsKeyed`), so the page and the family cannot disagree.
  *
- * **One stock, as with maths, spelling and grammar** (§8), which is why this is
+ * **One stock, as with math, spelling and grammar** (§8), which is why this is
  * a single-segment `[slug]` rather than a rest pattern.
  *
  * **No client directive on `SheetView`, ever.** `@astrojs/react` renders a
@@ -93,7 +93,7 @@ const group = groups.find((entry) => entry.id === sheet.group)!;
   {
     /*
       The sheets, outside `.wrap` deliberately. A wrap adds an inline padding
-      that print.css cannot take back off, and a sheet printed a centimetre in
+      that print.css cannot take back off, and a sheet printed a centimeter in
       from where it says it is has the wrong geometry everywhere at once. The
       key is a sibling of the sheet with nothing between them, because
       print.css breaks pages on `.sheet + .sheet` as well.

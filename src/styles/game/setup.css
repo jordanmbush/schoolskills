@@ -50,7 +50,7 @@
 /* ── Which half of the typing screen you are on ─────────────────────────
    The ladder and free play are alternatives rather than two sections of one
    page, and this row is the only thing that says so (docs/typing.md §9). So
-   it sits above both and centred, which is where nothing else on the screen
+   it sits above both and centered, which is where nothing else on the screen
    is — a switch aligned with the panels reads as a control belonging to the
    first of them. */
 .setup__switch {
@@ -200,6 +200,16 @@
   align-items: flex-start;
   gap: 0;
   padding: 0.4em 1em;
+}
+
+/* A row of pills is a pill; a column of them with a line under each is a
+   list, and a list in a fully round box reads as a blob. */
+.segmented:has(.segmented__btn--stack) {
+  border-radius: var(--radius);
+}
+
+.segmented:has(.segmented__btn--stack) .segmented__btn {
+  border-radius: calc(var(--radius) - 0.3rem);
 }
 
 .segmented__hint {

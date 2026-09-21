@@ -289,7 +289,7 @@ type Row = LessonRow | StormRow;
  *     review lessons after it (§6.3, decision 11). Do not smooth it out.
  *   - **Keys arrive in mirrored pairs, one per hand** through the three letter
  *     blocks (§5.5). The number row is the deliberate exception: it walks
- *     outward from the centre of the *board* instead, so `4 5` are both the
+ *     outward from the center of the *board* instead, so `4 5` are both the
  *     left index's and `9 0` are the right ring and pinky. That is the
  *     standard finger assignment, not a slip.
  *   - **The last of every block is a checkpoint**, named in `CHECKPOINTS`,
@@ -334,7 +334,7 @@ const ROWS: readonly Row[] = [
   ["L21", "Down to v and m", "vm", "keys", "guide!", 26, 11, 95],
   ["L22", "c, and the comma", "c,", "keys", "guide!", 26, 11, 95],
   ["L23", "Hailstorm · Down low", "", "storm", "guide"],
-  ["L24", "x, and the full stop", "x.", "keys", "guide!", 26, 12, 95],
+  ["L24", "x, and the period", "x.", "keys", "guide!", 26, 12, 95],
   ["L25", "The last corner", "z/", "keys", "guide!", 26, 12, 95],
   ["L26", "The last two", "bn", "keys", "guide!", 28, 12, 95],
   ["H05", "Right hand · Reaching down", "nm,./", "keys", "guide!", 28, 10, 95],
@@ -346,7 +346,7 @@ const ROWS: readonly Row[] = [
 
   // ── Block 4 · Capitals ─────────────────────────────────────────────────────
   // A shift is not a character, so what these two lessons introduce is the set
-  // of capitals each one *reaches* — the right shift capitalises the left
+  // of capitals each one *reaches* — the right shift capitalizes the left
   // hand's letters and the left shift the right hand's. `keys.ts` reads the
   // shifts back out of these two rows; there is nowhere else they are written.
   ["L31", "The right shift", "QWERTASDFGZXCVB", "keys", "guide!", 30, 13, 95],
@@ -401,7 +401,7 @@ const ROWS: readonly Row[] = [
   ["L63", "Hyphen and underscore", "-_", "keys", "guide!", 35, 19, 95],
   ["L64", "Colon and semicolon", ":;", "keys", "guide!", 35, 19, 95],
   ["L65", "Hailstorm · Punctuation", "", "storm", "keys"],
-  ["L66", "Brackets", "()", "keys", "guide!", 35, 19, 95],
+  ["L66", "Parentheses", "()", "keys", "guide!", 35, 19, 95],
   ["L67", "Above the numbers", "@#$%&*", "keys", "guide!", 35, 18, 95],
   ["L68", "Slash, plus, equals", "/\\+=", "keys", "guide!", 35, 19, 95],
   ["L69", "Hailstorm · Symbols", "", "storm", "off"],
@@ -743,7 +743,7 @@ export const lessonNumbered = (n: number): Lesson | null =>
  * The one definition of "the lesson forced the board", and it lives here — in
  * the engine, beside the rows it reads — because two layers need the same
  * answer to two different questions. The island asks it to draw the board and
- * to grey out the control (`keyboardFor`, `keyboardLock`); the engine asks it
+ * to gray out the control (`keyboardFor`, `keyboardLock`); the engine asks it
  * to award `eyes-up` (§6.7, decision 28), and the engine may not import from
  * `src/games/`. That badge is why the distinction is a function at all rather
  * than a line inside the island's resolver.

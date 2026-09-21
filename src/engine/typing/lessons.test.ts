@@ -271,7 +271,7 @@ describe("the keys, and the order they arrive in", () => {
 
   /**
    * The number row is the exception to the pair above, which is why that one
-   * stops at block 3: each pair straddles the centre of the board and so sums
+   * stops at block 3: each pair straddles the center of the board and so sums
    * to nine. `4 5` are both the left index's, `9 0` the right ring and pinky —
    * the standard assignment, not a slip.
    */

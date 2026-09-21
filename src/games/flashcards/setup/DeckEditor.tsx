@@ -17,7 +17,7 @@ const EMOJI = ["✏️", "📚", "🐝", "🦉", "🚀", "🌟", "🧩", "🐙"]
  *
  * Editing an existing list doesn't disturb races already run on it: they're
  * filed under the deck's id, not its contents. Removing a word stops it being
- * asked; it stays in the record book, which is right — it was practised.
+ * asked; it stays in the record book, which is right — it was practiced.
  */
 export function DeckEditor({
   deck,

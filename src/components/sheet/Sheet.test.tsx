@@ -7,17 +7,39 @@ import { describe, expect, it } from "vitest";
 
 import { answerKey, buildSheet } from "@/engine/sheets";
 import { printedBlockBox } from "@/engine/sheets/chrome";
+import { CAPTION_EMS, counters, grouped } from "@/engine/sheets/counters";
 import { figureInk } from "@/engine/sheets/figure";
-import { ticks } from "@/engine/sheets/numberline";
-import { DEFAULT_PAPER, toInches } from "@/engine/sheets/paper";
+import {
+  ASIDE_EM,
+  NOTE_LINE_EMS,
+  NOTE_PAD,
+  NOTE_RULE,
+  noteHeight,
+} from "@/engine/sheets/layout";
+import { decimalTableau } from "@/engine/sheets/maths/decimal-division";
+import { PRINT } from "@/engine/sheets/hands/print";
+import { divisionLines } from "@/engine/sheets/maths/long";
+import { divisionTableau } from "@/engine/sheets/maths/tableau";
+import { LESSON_TOPICS } from "@/engine/sheets/lessons/lesson";
+import {
+  LABEL_SIZE,
+  jumps,
+  lineHeight,
+  ticks,
+} from "@/engine/sheets/numberline";
+import { DEFAULT_PAPER, toInches, toPoints } from "@/engine/sheets/paper";
 import { SCRIPTURE_CREDIT } from "@/engine/sheets/passages";
 import type {
   ArithmeticConfig,
   Block,
   ChartConfig,
+  DecimalConfig,
+  DivisionHelp,
   FractionArt,
   FractionConfig,
   GeometryConfig,
+  LessonConfig,
+  ModelGuides,
   MoneyConfig,
   MultiplicationConfig,
   Paper,
@@ -26,6 +48,8 @@ import type {
   SheetConfig,
   SheetFont,
   TimeConfig,
+  StrokePattern,
+  TraceCell,
   TraceStyle,
   WordsConfig,
 } from "@/engine/sheets/types";
@@ -90,9 +114,15 @@ const EVERY_BLOCK: Block[] = [
       },
       {
         prompt: "",
-        bracket: { divisor: "4", dividend: "938" },
+        bracket: {
+          divisor: "4",
+          dividend: "938",
+          cell: 250,
+          rows: 6,
+          help: "guided",
+          tableau: divisionTableau("938", 4),
+        },
         answer: "234 r 2",
-        workspace: 1500,
       },
       // And the one problem whose question is a picture: a whole cut into equal
       // parts with some of them shaded, which prints on the blank sheet as well
@@ -142,7 +172,36 @@ const EVERY_BLOCK: Block[] = [
         answer: "9:45",
         clock: { hour: 9, minute: 45, hands: false },
       },
+      // A lesson's two shapes: a worked example, whose answer prints on the
+      // sheet, and counters beside a problem.
+      { prompt: "3 × 4 =", answer: "12", worked: true },
+      {
+        prompt: "8 ÷ 2 =",
+        answer: "4",
+        counters: counters(8, 4, "share", 3600),
+      },
     ],
+  },
+  {
+    kind: "note",
+    heading: "Dividing is sharing out fairly",
+    text: ["12 ÷ 3 means 12 things shared between 3."],
+    items: ["Draw 3 rings.", "Give one to each ring."],
+    lines: 4,
+  },
+  {
+    kind: "counters",
+    counters: counters(12, 3, "group", 7500, { caption: "groups of 3" }),
+  },
+  {
+    kind: "numberline",
+    line: {
+      from: 0,
+      to: 12,
+      step: 1,
+      width: 7500,
+      jumps: { start: 12, size: 3 },
+    },
   },
   { kind: "rules", rule: { style: "hand-5-8", descender: true }, lines: 6 },
   { kind: "rules", rule: { style: "college" }, lines: 4 },
@@ -420,27 +479,6 @@ function filesUnder(dir: string, endings: string[]): string[] {
 }
 
 const read = (path: string) => readFileSync(path, "utf8");
-
-/**
- * How far a rule holds its text off the right edge of its own box, as written.
- *
- * Compared as the source string rather than as a length, because that is all
- * this can honestly claim without a browser: two rules that declare `0.06in`
- * agree, and two that declare different things are a question for whoever
- * changed one of them. Both the longhand and the three-value shorthand are
- * read, since the two rules this compares are written each way.
- */
-function rightInset(css: string, rule: string): string {
-  const block = css.slice(css.indexOf(rule));
-  const body = block.slice(0, block.indexOf("}"));
-  const longhand = /padding-right:\s*([^;]+);/.exec(body);
-  if (longhand) return longhand[1].trim();
-  const shorthand = /padding:\s*([^;]+);/.exec(body);
-  if (!shorthand) throw new Error(`${rule} declares no padding at all`);
-  // top | right-and-left | bottom, and the one-value form besides.
-  const parts = shorthand[1].trim().split(/\s+/);
-  return parts.length === 1 ? parts[0] : parts[1];
-}
 
 /**
  * The landmarks a page puts around a sheet: its sections, its page header, and
@@ -859,21 +897,123 @@ describe("a rendered multiplication sheet", () => {
 
   it("sets a long division in a bracket, with the answer on top of the bar", () => {
     const [item] = problems(timesKey(LONG_DIVISION));
-    const divisor = item.indexOf('class="sheet__divisor"');
     const quotient = item.indexOf('class="sheet__quotient');
+    const divisor = item.indexOf("sheet__divisor");
     const dividend = item.indexOf('class="sheet__dividend"');
-    // The divisor is outside the bracket, the quotient is written along the
-    // top of the bar, and the dividend is under it. In that order, because
-    // that is the order they are on paper and there is only one of it.
-    expect(divisor).toBeGreaterThanOrEqual(0);
-    expect(quotient).toBeGreaterThan(divisor);
-    expect(dividend).toBeGreaterThan(quotient);
-    expect(item).toMatch(
-      /class="sheet__quotient sheet__quotient--answered">\d+ r \d+</,
+    // The quotient is written along the top of the bar, the divisor is outside
+    // the bracket beside the dividend, and the dividend is under the bar. In
+    // that order, because that is the order they are read on paper.
+    expect(quotient).toBeGreaterThanOrEqual(0);
+    expect(divisor).toBeGreaterThan(quotient);
+    expect(dividend).toBeGreaterThan(divisor);
+    // The key writes each quotient digit into its own square and the
+    // remainder after the row, the way a child is asked to write it.
+    const [problem] = itemsOf(multiplication(LONG_DIVISION));
+    const [digits, remainder] = problem.answer.split(" r ");
+    for (const digit of digits) {
+      expect(item).toContain(
+        `<span class="sheet__square sheet__square--answered">${digit}</span>`,
+      );
+    }
+    expect(item).toContain(
+      `<span class="sheet__remainder">r ${remainder}</span>`,
     );
-    expect(problems(timesTable(LONG_DIVISION))[0]).toContain(
-      '<span class="sheet__quotient"></span>',
+    // And the sheet writes nothing there: every square over the bar is empty.
+    const blank = problems(timesTable(LONG_DIVISION))[0];
+    expect(blank).not.toContain("sheet__remainder");
+    expect(count(blank, '<span class="sheet__square"></span>')).toBe(
+      count(blank, 'class="sheet__square"'),
     );
+  });
+
+  it("puts the quotient's digits in the dividend's columns", () => {
+    // Place value is the whole exercise, and it is kept by column, never by
+    // text (§21): both rows are the same squares at the engine's one width,
+    // set once on the bracket.
+    const items = itemsOf(multiplication(LONG_DIVISION));
+    const html = problems(timesKey(LONG_DIVISION));
+    expect(html.length).toBe(items.length);
+    items.forEach((problem, index) => {
+      const item = html[index];
+      const bracket = problem.bracket;
+      if (!bracket) throw new Error("no bracket");
+      expect(item).toContain(`style="--sheet-cell:${toInches(bracket.cell)}in`);
+      const quotient = item.slice(
+        item.indexOf('class="sheet__quotient'),
+        item.indexOf('class="sheet__dividend"'),
+      );
+      const dividend = item.slice(
+        item.indexOf('class="sheet__dividend"'),
+        item.indexOf(
+          'class="sheet__bracket-row"',
+          item.indexOf('class="sheet__dividend"'),
+        ),
+      );
+      expect(count(quotient, 'class="sheet__square')).toBe(
+        bracket.dividend.length,
+      );
+      expect(count(dividend, 'class="sheet__square')).toBe(
+        bracket.dividend.length,
+      );
+    });
+    const css = read(join(ROOT, "src/styles/sheet.css"));
+    const square = css.slice(css.indexOf(".sheet__square {"));
+    expect(square.slice(0, square.indexOf("}"))).toContain(
+      "width: var(--sheet-cell)",
+    );
+  });
+
+  it("right-aligns a fact's quotient over the dividend when there is no working", () => {
+    // A times-table division worked in columns has no tableau — its bracket
+    // is the quotient row over the dividend and nothing else — so the key
+    // puts the answer's last digit over the dividend's last digit: the 8 of
+    // 56 ÷ 7 lands in the square over the 6, with the one before it empty.
+    const fact = (dividend: string, answer: string): Problem => ({
+      prompt: "",
+      answer,
+      bracket: { divisor: "7", dividend, cell: 250, rows: 0, help: "none" },
+    });
+    const keyed = (items: Problem[]) =>
+      problems(
+        render(
+          sheet({
+            answers: true,
+            blocks: [{ kind: "problems", columns: 1, items }],
+          }),
+        ),
+      );
+    const quotientOf = (item: string) =>
+      item.slice(
+        item.indexOf('class="sheet__quotient'),
+        item.indexOf('class="sheet__dividend"'),
+      );
+    const answered = (digit: string) =>
+      `<span class="sheet__square sheet__square--answered">${digit}</span>`;
+    const [one] = keyed([fact("56", "8")]);
+    expect(quotientOf(one)).toContain(
+      `<span class="sheet__square"></span>${answered("8")}`,
+    );
+    const [two] = keyed([fact("84", "12")]);
+    expect(quotientOf(two)).toContain(`${answered("1")}${answered("2")}`);
+    const [left] = keyed([fact("57", "8 r 1")]);
+    expect(quotientOf(left)).toContain(
+      `<span class="sheet__square"></span>${answered("8")}<span class="sheet__remainder">r 1</span>`,
+    );
+    // And so on the family's own key, for every division on the page.
+    const divided = { operation: "divide" as const, form: "vertical" as const };
+    const items = itemsOf(multiplication(divided));
+    const html = problems(timesKey(divided));
+    expect(items.length).toBeGreaterThan(0);
+    items.forEach((problem, index) => {
+      const bracket = problem.bracket;
+      if (!bracket) throw new Error("no bracket");
+      const digits = problem.answer.split(" r ")[0];
+      expect(quotientOf(html[index]), problem.answer).toContain(
+        '<span class="sheet__square"></span>'.repeat(
+          bracket.dividend.length - digits.length,
+        ) + [...digits].map(answered).join(""),
+      );
+    });
   });
 
   it("rules the bracket rather than drawing it, so it always prints", () => {
@@ -906,10 +1046,14 @@ describe("a rendered multiplication sheet", () => {
       expect(item).toContain("height:0.25in");
       expect(count(item, 'class="sheet__workspace"')).toBe(0);
     }
-    // Long division does take blank paper under the bracket, which is where a
-    // child works it: the two forms spend the same reservation differently.
+    // Long division spends its reservation on rows of squares inside the
+    // house, one per line of working, and takes no blank paper besides: the
+    // two forms spend the same reservation differently.
     for (const item of problems(timesTable(LONG_DIVISION))) {
-      expect(count(item, 'class="sheet__workspace"')).toBe(1);
+      expect(count(item, 'class="sheet__workspace"')).toBe(0);
+      expect(count(item, 'class="sheet__bracket-row"')).toBe(
+        2 + divisionLines(LONG_DIVISION.digits),
+      );
     }
 
     const key = timesKey(LONG_MULTIPLICATION);
@@ -926,15 +1070,99 @@ describe("a rendered multiplication sheet", () => {
         "font-variant-numeric: tabular-nums",
       );
     }
+  });
 
-    // Tabular figures only line a quotient up with its dividend while the two
-    // boxes hold their digits the same distance off their shared right edge. A
-    // padding added to one and not the other slides the whole quotient across
-    // by a fraction of a digit — invisible in review, and the one thing the
-    // sheet exists to teach. Asserted rather than trusted.
-    expect(rightInset(css, ".sheet__quotient {")).toBe(
-      rightInset(css, ".sheet__dividend {"),
-    );
+  /**
+   * The problems of a long-division sheet beside the markup of each, so a
+   * test can compare what was drawn against the tableau it was drawn from.
+   */
+  function divisions(help: MultiplicationConfig["help"], answers: boolean) {
+    const over = { ...LONG_DIVISION, help };
+    const items = itemsOf(multiplication(over));
+    const html = problems(answers ? timesKey(over) : timesTable(over));
+    expect(items.length).toBeGreaterThan(0);
+    expect(html.length).toBe(items.length);
+    return items.map((problem, index) => {
+      const bracket = problem.bracket;
+      if (!bracket?.tableau) throw new Error("no tableau");
+      return { bracket, tableau: bracket.tableau, item: html[index] };
+    });
+  }
+
+  it("draws no squares under a bracket unless help was asked for", () => {
+    for (const answers of [false, true]) {
+      for (const { item } of divisions(undefined, answers)) {
+        expect(item).not.toContain("sheet__bracket--ruled");
+        expect(item).not.toContain("sheet__square--take");
+        expect(item).not.toContain("sheet__shading");
+        expect(item).not.toContain(">−<");
+        expect(item).not.toContain(">R<");
+      }
+    }
+  });
+
+  it("rules a square for every digit of every line of working on a grid", () => {
+    for (const { bracket, item } of divisions("grid", false)) {
+      expect(item).toContain("sheet__bracket--ruled");
+      // The quotient boxes, the dividend, and one row of squares per line of
+      // working reserved — no more, whatever this division needed.
+      expect(count(item, 'class="sheet__square')).toBe(
+        bracket.dividend.length * (2 + bracket.rows),
+      );
+      expect(item).not.toContain("sheet__square--take");
+      expect(item).not.toContain("sheet__shading");
+    }
+  });
+
+  it("marks the take-away rows with steps, and shades the written squares when guided", () => {
+    for (const { tableau, item } of divisions("steps", false)) {
+      const takes = tableau.rows.filter((row) => row.role === "take");
+      expect(count(item, ">−<")).toBe(takes.length);
+      // The heavier rule runs under the columns the row was written in.
+      expect(count(item, "sheet__square--take")).toBe(
+        takes.reduce((sum, row) => sum + row.text.length, 0),
+      );
+      expect(item).not.toContain("sheet__shading");
+      expect(item).not.toContain(">R<");
+    }
+    for (const { tableau, item } of divisions("guided", false)) {
+      const written =
+        tableau.quotient.text.length +
+        tableau.rows.reduce((sum, row) => sum + row.text.length, 0);
+      expect(count(item, "<rect")).toBe(written);
+      // As a fill that prints, never a background (§5).
+      expect(item).toContain('fill="currentColor"');
+      expect(item).not.toContain("background");
+      expect(count(item, ">R<")).toBe(1);
+    }
+  });
+
+  it("writes the whole tableau on the key at every level, and none of it on the sheet", () => {
+    // The squares are there at every level and only the borders differ, so
+    // the key writes the working into them whether or not the sheet drew
+    // them: a parent marking from the key wants it under a bare bracket too.
+    for (const help of [undefined, "grid", "steps", "guided"] as const) {
+      const where = help ?? "none";
+      for (const { tableau, item } of divisions(help, true)) {
+        const written =
+          tableau.quotient.text.length +
+          tableau.rows.reduce((sum, row) => sum + row.text.length, 0);
+        expect(count(item, "sheet__square--answered"), where).toBe(written);
+        for (const row of tableau.rows) {
+          for (const digit of row.text) {
+            // Bold, in a square, and on a take-away row under the heavier rule.
+            expect(item, where).toMatch(
+              new RegExp(
+                `<span class="sheet__square sheet__square--answered( sheet__square--take)?">${digit}</span>`,
+              ),
+            );
+          }
+        }
+      }
+      for (const { item } of divisions(help, false)) {
+        expect(item, where).not.toContain("--answered");
+      }
+    }
   });
 
   it("fills a multiplication grid in only on the key", () => {
@@ -959,7 +1187,9 @@ describe("a rendered multiplication sheet", () => {
     const PLACES = [
       /<span class="sheet__slot"[^>]*>(.*?)<\/span>/g,
       /<span class="sheet__total"[^>]*>(.*?)<\/span>/g,
-      /<span class="sheet__quotient"[^>]*>(.*?)<\/span>/g,
+      // The dividend's squares carry a modifier and hold the question, so a
+      // bare square is an answer place: the quotient's or the working's.
+      /<span class="sheet__square"[^>]*>(.*?)<\/span>/g,
       /<span class="sheet__work-line"[^>]*>(.*?)<\/span>/g,
     ];
     for (const shape of SHAPES) {
@@ -975,6 +1205,215 @@ describe("a rendered multiplication sheet", () => {
       }
       expect(found, where).toBeGreaterThan(0);
     }
+  });
+});
+
+/* ── Decimals in the bracket ──────────────────────────────────────────────
+   (§22): the point sits between two squares, so every digit keeps its
+   column.                                                                  */
+
+const decimals = (over: Partial<DecimalConfig> = {}): DecimalConfig => ({
+  kind: "decimals",
+  paper: DEFAULT_PAPER,
+  fontPt: 12,
+  fields: ["name"],
+  style: "standard",
+  operation: "divide",
+  form: "vertical",
+  places: 2,
+  range: { min: 0, max: 9 },
+  count: 6,
+  columns: 3,
+  ...over,
+});
+
+describe("a rendered decimal division", () => {
+  /** The quotient row and the dividend row of one bracket's markup. */
+  function rowsOf(item: string): { quotient: string; dividend: string } {
+    const quotientAt = item.indexOf('class="sheet__quotient');
+    const dividendAt = item.indexOf('class="sheet__dividend"');
+    return {
+      quotient: item.slice(quotientAt, dividendAt),
+      dividend: item.slice(
+        dividendAt,
+        item.indexOf('class="sheet__bracket-row"', dividendAt),
+      ),
+    };
+  }
+
+  /** After how many squares a row's point falls, or −1 when it has none. */
+  const pointAfter = (row: string): number => {
+    const at = row.indexOf('class="sheet__point"');
+    return at < 0 ? -1 : count(row.slice(0, at), 'class="sheet__square');
+  };
+
+  it("draws the point between two squares, and the quotient's on the same boundary", () => {
+    for (const help of ["none", "grid", "steps", "guided"] as const) {
+      for (const answers of [false, true]) {
+        const config = decimals({ help });
+        const items = itemsOf(config);
+        const built = answers
+          ? answerKey(config, SEED)
+          : buildSheet(config, SEED);
+        const html = problems(render(built as Sheet));
+        expect(items.length).toBeGreaterThan(0);
+        expect(html.length).toBe(items.length);
+        items.forEach((problem, index) => {
+          const bracket = problem.bracket;
+          if (!bracket) throw new Error("no bracket");
+          const where = `${help} ${answers ? "key" : "sheet"} ${bracket.dividend}`;
+          const { quotient, dividend } = rowsOf(html[index]);
+          const digits = bracket.dividend.replace(".", "").length;
+          const point = bracket.dividend.indexOf(".");
+          // One square per digit — the point takes no column — and the point
+          // after exactly the digits that come before it.
+          expect(count(dividend, 'class="sheet__square'), where).toBe(digits);
+          expect(count(quotient, 'class="sheet__square'), where).toBe(digits);
+          expect(count(dividend, 'class="sheet__point"'), where).toBe(1);
+          expect(pointAfter(dividend), where).toBe(point);
+          // Above the bar it is on the key always, and on the sheet only where
+          // squares are drawn to place it in: a bare bracket leaves that to
+          // the child.
+          if (answers || help !== "none") {
+            expect(count(quotient, 'class="sheet__point"'), where).toBe(1);
+            expect(pointAfter(quotient), where).toBe(point);
+          } else {
+            expect(quotient, where).not.toContain("sheet__point");
+          }
+        });
+      }
+    }
+  });
+
+  /** One bracket on a page of its own, blank or keyed. */
+  const bracketed = (
+    dividend: string,
+    divisor: number,
+    answer: string,
+    answers: boolean,
+    help: DivisionHelp = "grid",
+  ) => {
+    const problem: Problem = {
+      prompt: "",
+      answer,
+      bracket: {
+        divisor: String(divisor),
+        dividend,
+        cell: 250,
+        rows: 6,
+        help,
+        tableau: decimalTableau(dividend, divisor),
+      },
+    };
+    const page = sheet({
+      answers,
+      blocks: [{ kind: "problems", columns: 1, items: [problem] }],
+    });
+    return problems(render(page))[0];
+  };
+
+  it("writes 8.46 ÷ 3 as 2.82 in the right boxes on the key, and nothing on the sheet", () => {
+    const answered = (digit: string) =>
+      `<span class="sheet__square sheet__square--answered">${digit}</span>`;
+    const point = '<span class="sheet__point">.</span>';
+    const key = rowsOf(bracketed("8.46", 3, "2.82", true));
+    expect(key.quotient).toContain(
+      `${answered("2")}${point}${answered("8")}${answered("2")}`,
+    );
+    expect(key.dividend).toContain(
+      `<span class="sheet__square sheet__square--dividend">8</span>${point}<span class="sheet__square sheet__square--dividend">4</span>`,
+    );
+    // The sheet has the same three boxes, empty, with the point already
+    // between the first and the second.
+    const blank = rowsOf(bracketed("8.46", 3, "2.82", false));
+    expect(blank.quotient).toContain(
+      `<span class="sheet__square"></span>${point}<span class="sheet__square"></span><span class="sheet__square"></span>`,
+    );
+    expect(blank.quotient).not.toContain("--answered");
+    // A quotient below one keeps its leading zero, in the units box.
+    const small = rowsOf(bracketed("0.69", 3, "0.23", true));
+    expect(small.quotient).toContain(
+      `${answered("0")}${point}${answered("2")}${answered("3")}`,
+    );
+    // And a whole dividend divides into its annexed zeros.
+    const annexed = rowsOf(bracketed("7.00", 4, "1.75", true));
+    expect(annexed.quotient).toContain(
+      `${answered("1")}${point}${answered("7")}${answered("5")}`,
+    );
+  });
+
+  it("shades the leading zero's square on a guided sheet, because a child writes it", () => {
+    const item = bracketed("0.69", 3, "0.23", false, "guided");
+    const tableau = decimalTableau("0.69", 3);
+    const written =
+      tableau.quotient.text.length +
+      tableau.rows.reduce((sum, row) => sum + row.text.length, 0);
+    expect(tableau.quotient.text).toBe("023");
+    expect(count(item, "<rect")).toBe(written);
+  });
+});
+
+/* ── Decimals with no sum in them ──────────────────────────────────────────
+   The number-sense styles (§22) print through the same three answer places
+   as everything else: a slot at the end, a slot in the gap, or ruled lines
+   under the sentence. What is checked is that each style gets exactly one,
+   and that the ordering's line is the height the family reserved.        */
+
+describe("a rendered number-sense sheet", () => {
+  const STYLES = ["powers", "compare", "order", "round", "place"] as const;
+  const sense = (style: (typeof STYLES)[number]) =>
+    decimals({ style, operation: "add", form: "horizontal", count: 6 });
+
+  it("gives every problem exactly one place to write the answer", () => {
+    for (const style of STYLES) {
+      for (const answers of [false, true]) {
+        const config = sense(style);
+        const built = answers
+          ? answerKey(config, SEED)
+          : buildSheet(config, SEED);
+        const items = problems(render(built as Sheet));
+        expect(items.length, style).toBeGreaterThan(0);
+        for (const item of items) {
+          const places =
+            count(item, 'class="sheet__slot') +
+            count(item, 'class="sheet__total') +
+            count(item, 'class="sheet__answers"');
+          expect(places, `${style}: ${item}`).toBe(1);
+        }
+      }
+    }
+  });
+
+  it("rules one line under an ordering, at the height the family reserved", () => {
+    const items = itemsOf(sense("order"));
+    const sheet = problems(render(buildSheet(sense("order"), SEED) as Sheet));
+    const key = problems(render(answerKey(sense("order"), SEED) as Sheet));
+    expect(items.length).toBeGreaterThan(0);
+    items.forEach((problem, index) => {
+      expect(count(sheet[index], 'class="sheet__answer-line"')).toBe(1);
+      expect(sheet[index]).toContain("height:0.25in");
+      expect(sheet[index]).not.toContain(problem.answer);
+      expect(key[index]).toContain(
+        `sheet__answer-line sheet__answer-line--answered" style="height:0.25in">${problem.answer}<`,
+      );
+      // The sentence itself prints no slot: the line is the answer place.
+      expect(sheet[index]).not.toContain("sheet__slot");
+    });
+  });
+
+  it("puts a comparison's sign in the gap, and a digit's worth on the end", () => {
+    const [compared] = problems(
+      render(answerKey(sense("compare"), SEED) as Sheet),
+    );
+    const prompt = compared.indexOf('<span class="sheet__prompt">');
+    const slot = compared.indexOf('<span class="sheet__slot');
+    expect(slot).toBeGreaterThan(prompt);
+    // Inside the sentence — nothing closes the prompt before the slot opens.
+    expect(compared.slice(prompt, slot)).not.toContain("</span>");
+    expect(compared).toMatch(/sheet__slot sheet__slot--answered">[<>=]</);
+
+    const [placed] = problems(render(answerKey(sense("place"), SEED) as Sheet));
+    expect(placed).toMatch(/worth\?<\/span><span class="sheet__slot/);
   });
 });
 
@@ -1346,7 +1785,7 @@ describe("a rendered geometry sheet", () => {
   it("puts the outline on the points the engine gave it", () => {
     // The renderer scales nothing. A shape drawn to fit its box would be a
     // shape that can disagree with the numbers written on it, and a rectangle
-    // labelled 8 by 3 and drawn 8 by 4 teaches a child not to trust the
+    // labeled 8 by 3 and drawn 8 by 4 teaches a child not to trust the
     // picture.
     const html = render(buildSheet(geometry(), SEED) as Sheet);
     for (const [where, problem] of itemsOf(geometry()).entries()) {
@@ -1456,7 +1895,7 @@ describe("a rendered geometry sheet", () => {
    Word shapes. The engine's suite proves which band each letter belongs in;
    this is the half that only exists once it is drawn, and it is the half the
    exercise is: a tall box has to *look* taller than a small one and a tail box
-   has to hang below it, or the outline a child is being taught to recognise is
+   has to hang below it, or the outline a child is being taught to recognize is
    not on the paper.                                                          */
 
 const spelling = (over: Partial<WordsConfig> = {}): WordsConfig => ({
@@ -1786,6 +2225,14 @@ describe("ruled blocks", () => {
    pattern runs along the glyph outline. Every one of them is fill or stroke —
    foreground paint — so they survive a printer with background graphics off. */
 
+/**
+ * A word the outline face keeps. A row the print hand can write whole is
+ * drawn as strokes instead (§25, the describe after this one), and no hand
+ * draws an `@` — `scripts/hand/names.mjs` lists what one can — so these rows
+ * stay on `<text>` whichever letters get drawn next.
+ */
+const OUTLINED = "c@t";
+
 describe("trace styles", () => {
   const tracedIn = (style: TraceStyle, font?: SheetFont) =>
     render(
@@ -1795,7 +2242,7 @@ describe("trace styles", () => {
           {
             kind: "trace",
             rule: { style: "hand-5-8", midline: "dashed", descender: true },
-            rows: [{ cells: [{ text: "cat", style }] }],
+            rows: [{ cells: [{ text: OUTLINED, style }] }],
           },
         ],
       }),
@@ -1869,7 +2316,7 @@ describe("trace styles", () => {
           {
             kind: "trace",
             rule: { style: "isometric" },
-            rows: [{ cells: [{ text: "gg", style: "dotted" }] }],
+            rows: [{ cells: [{ text: "g@", style: "dotted" }] }],
           },
         ],
       }),
@@ -1906,6 +2353,253 @@ describe("trace styles", () => {
     expect(styles).toContain(".sheet__glyph--dotted");
     expect(styles.slice(0, styles.indexOf("── Problems"))) //
       .not.toContain("background");
+  });
+});
+
+/* ── Rows written in a hand (§25) ──────────────────────────────────────────
+   A tracing row set in a face that has a hand is drawn as the strokes of its
+   letters — one path per pen stroke — wherever the hand has every character
+   on the row, and is the outline face's `<text>` for a row it cannot write
+   whole. Only letters the hand already has are written here, and `@` is the
+   one character asserted missing: the hand is still growing.               */
+
+describe("rows written in a hand", () => {
+  const tracing = (cells: TraceCell[], over: Partial<Sheet> = {}) =>
+    render(
+      sheet({
+        ...over,
+        blocks: [
+          {
+            kind: "trace",
+            rule: { style: "hand-5-8", midline: "dashed", descender: true },
+            rows: [{ cells }],
+          },
+        ],
+      }),
+    );
+
+  /** The path data of every pen stroke a row drew. */
+  const strokes = (html: string) =>
+    [...html.matchAll(/<path class="sheet__stroke[^"]*" d="([^"]*)"/g)].map(
+      (match) => match[1],
+    );
+
+  const outlined = (html: string) => html.includes('class="sheet__glyph');
+
+  it("writes a row the hand can write whole as strokes, not as text", () => {
+    const html = tracing([
+      { text: "gate", style: "solid" },
+      { text: "gate", style: "dotted" },
+      { text: "", style: "none" },
+    ]);
+    expect(strokes(html).length).toBeGreaterThan(0);
+    expect(outlined(html)).toBe(false);
+  });
+
+  it("guides the models the block says to: a letter or pair unless told, every model on all, none on none", () => {
+    const numbered = (cells: TraceCell[], guides?: ModelGuides) =>
+      render(
+        sheet({
+          blocks: [
+            {
+              kind: "trace",
+              rule: { style: "hand-5-8", midline: "dashed", descender: true },
+              rows: [{ cells }],
+              ...(guides ? { guides } : {}),
+            },
+          ],
+        }),
+      ).match(/sheet__guide-number/g)?.length ?? 0;
+    const strokesIn = (text: string) =>
+      [...text].reduce((n, c) => n + PRINT.glyphs[c].strokes.length, 0);
+    const pair: TraceCell[] = [
+      { text: "Aa", style: "solid" },
+      { text: "Aa", style: "dotted" },
+    ];
+    const word: TraceCell[] = [
+      { text: "gate", style: "solid" },
+      { text: "gate", style: "dotted" },
+    ];
+    expect(numbered(pair)).toBe(strokesIn("Aa"));
+    expect(numbered(word)).toBe(0);
+    expect(numbered(word, "all")).toBe(strokesIn("gate"));
+    expect(numbered(pair, "none")).toBe(0);
+  });
+
+  it("gives every row of a block guided on all the model's spacing, so a trace lines up under it", () => {
+    const starts = (guides?: ModelGuides) =>
+      [
+        ...render(
+          sheet({
+            blocks: [
+              {
+                kind: "trace",
+                rule: { style: "hand-5-8", midline: "dashed", descender: true },
+                rows: [
+                  { cells: [{ text: "The dog", style: "solid" }] },
+                  { cells: [{ text: "The dog", style: "dotted" }] },
+                ],
+                ...(guides ? { guides } : {}),
+              },
+            ],
+          }),
+        ).matchAll(
+          /<path class="sheet__stroke sheet__stroke--(\w+)" d="M ([\d.]+)/g,
+        ),
+      ].map((match) => ({ style: match[1], x: Number(match[2]) }));
+    const guided = starts("all");
+    const solid = guided.filter((s) => s.style === "solid").map((s) => s.x);
+    const dotted = guided.filter((s) => s.style === "dotted").map((s) => s.x);
+    expect(solid.length).toBeGreaterThan(0);
+    expect(dotted).toEqual(solid);
+    // And both are spread out from where the same rows sit unguided, which
+    // is the room the marks need.
+    const plain = starts()
+      .filter((s) => s.style === "solid")
+      .map((s) => s.x);
+    expect(solid[solid.length - 1]).toBeGreaterThan(plain[plain.length - 1]);
+  });
+
+  it("sets a row the hand cannot write whole in the outline face", () => {
+    // Row by row: half a word in one shape and half in the other on one line
+    // is a worse model than the outline face whole.
+    const html = tracing([
+      { text: "gate", style: "solid" },
+      { text: "g@te", style: "dotted" },
+    ]);
+    expect(outlined(html)).toBe(true);
+    expect(strokes(html)).toHaveLength(0);
+  });
+
+  it("keeps a face with no hand on the outline row", () => {
+    const html = tracing([{ text: "gate", style: "solid" }], {
+      font: "dyslexic",
+    });
+    expect(outlined(html)).toBe(true);
+    expect(strokes(html)).toHaveLength(0);
+  });
+
+  it("writes the looped cursive face in its hand, joined, and falls back where it has no numeral yet", () => {
+    const joined = tracing(
+      [
+        { text: "gate", style: "solid" },
+        { text: "gate", style: "dotted" },
+      ],
+      { font: "cursive" },
+    );
+    expect(outlined(joined)).toBe(false);
+    // One line for the word and one for the t's crossbar, in each cell.
+    expect(strokes(joined)).toHaveLength(4);
+    // A capital that ends on the baseline joins its small letter: one line.
+    const pair = tracing([{ text: "Aa", style: "solid" }], { font: "cursive" });
+    expect(outlined(pair)).toBe(false);
+    expect(strokes(pair)).toHaveLength(1);
+    const lifted = tracing([{ text: "Bb", style: "solid" }], {
+      font: "cursive",
+    });
+    expect(strokes(lifted)).toHaveLength(2);
+    const numbered = tracing([{ text: "A1", style: "solid" }], {
+      font: "cursive",
+    });
+    expect(outlined(numbered)).toBe(true);
+    expect(strokes(numbered)).toHaveLength(0);
+  });
+
+  it("writes the other two cursive models in their own hands: one lifts after a b, the other joins through it", () => {
+    const lifted = tracing([{ text: "bat", style: "solid" }], {
+      font: "cursive-modern",
+    });
+    expect(outlined(lifted)).toBe(false);
+    // The b alone, then "at" as one line, then the t's crossbar.
+    expect(strokes(lifted)).toHaveLength(3);
+    const joined = tracing([{ text: "bat", style: "solid" }], {
+      font: "cursive-uk",
+    });
+    expect(outlined(joined)).toBe(false);
+    expect(strokes(joined)).toHaveLength(2);
+  });
+
+  it("writes the letter shapes the sheet asks for", () => {
+    const own = strokes(tracing([{ text: "a", style: "solid" }]));
+    const other = strokes(
+      tracing([{ text: "a", style: "solid" }], { forms: { a: "double" } }),
+    );
+    expect(own.length).toBeGreaterThan(0);
+    expect(other).not.toEqual(own);
+  });
+
+  it("guides a model of a letter and not a model of a word", () => {
+    // A word's marks would crowd the row, and the row never shrinks a word to
+    // make room for them; a trace is not a model at all.
+    expect(tracing([{ text: "a", style: "solid" }])).toContain("sheet__guide");
+    expect(tracing([{ text: "gate", style: "solid" }])).not.toContain(
+      "sheet__guide",
+    );
+    expect(tracing([{ text: "a", style: "dotted" }])).not.toContain(
+      "sheet__guide",
+    );
+  });
+});
+
+/* ── Stroke rows (§24) ─────────────────────────────────────────────────────
+   A pattern rather than a letterform on the ruling: one path per cell that
+   is drawn, in the same five appearances, and nothing where the child is on
+   their own.                                                                */
+
+describe("stroke rows", () => {
+  const strokedIn = (cells: TraceStyle[], pattern: StrokePattern = "loops") =>
+    render(
+      sheet({
+        blocks: [
+          {
+            kind: "strokes",
+            rule: { style: "hand-5-8", midline: "dashed", descender: true },
+            rows: [{ pattern, cells }],
+          },
+        ],
+      }),
+    );
+
+  const paths = (html: string) =>
+    [
+      ...html.matchAll(
+        /<path class="sheet__stroke sheet__stroke--(\w+)"([^>]*)>/g,
+      ),
+    ].map((match) => ({ style: match[1], attrs: match[2] }));
+
+  it("draws one path per cell, and none where the child is on their own", () => {
+    const drawn = paths(strokedIn(["solid", "dotted", "none"]));
+    expect(drawn.map((path) => path.style)).toEqual(["solid", "dotted"]);
+    // The dotted cell starts where the solid one ended: a third of the way
+    // along, on the baseline the loops begin on.
+    const starts = drawn.map((path) => /d="M([\d.]+),(\d+)/.exec(path.attrs));
+    expect(Number(starts[0]?.[1])).toBe(0);
+    expect(Number(starts[1]?.[1])).toBeGreaterThan(0);
+    expect(starts[0]?.[2]).toBe(starts[1]?.[2]);
+  });
+
+  it("is five appearances of one line, as the letterforms are", () => {
+    const looks = new Map(
+      paths(strokedIn(["solid", "dim", "hollow", "dotted", "dashed"])).map(
+        (path) => [path.style, path.attrs],
+      ),
+    );
+    expect(looks.size).toBe(5);
+    expect(looks.get("dotted")).toMatch(/stroke-dasharray="0 \d+"/);
+    expect(looks.get("dashed")).toMatch(/stroke-dasharray="[1-9]\d* \d+"/);
+    expect(looks.get("solid")).not.toContain("stroke-dasharray");
+    // Thin is the same line at half the weight.
+    const weight = (style: string) =>
+      Number(/stroke-width="([\d.]+)"/.exec(looks.get(style) ?? "")?.[1]);
+    expect(weight("hollow")).toBeCloseTo(weight("solid") / 2, 5);
+  });
+
+  it("draws the ruling under an empty row and says what the row is for", () => {
+    const html = strokedIn(["none"], "humps");
+    expect(paths(html)).toHaveLength(0);
+    expect(html).toContain("sheet__rule--base");
+    expect(html).toContain('aria-label="Humps: a line to carry on"');
+    expect(strokedIn(["solid"], "humps")).toContain('aria-label="Humps"');
   });
 });
 
@@ -2033,7 +2727,7 @@ describe("a rendered table", () => {
     // A table's columns are unequal on purpose — that is what `width` is for —
     // so one width for every label measures the longest heading against the
     // narrowest column and shrinks the whole row to a size no column needed.
-    // It set a behaviour chart's headings at 52 mil, under four points, beside
+    // It set a behavior chart's headings at 52 mil, under four points, beside
     // a twelve-point body.
     const markup = drawn(uneven());
     const sizes = [
@@ -2222,7 +2916,7 @@ describe("a rendered net", () => {
     //
     // The middle is read off where the spokes *start* rather than worked back
     // from where the first one ends. Reconstructing it as "one radius above the
-    // first endpoint" puts the centre directly under that endpoint by
+    // first endpoint" puts the center directly under that endpoint by
     // construction, which makes the first angle zero however the drawing was
     // done — an assertion that cannot fail is not one.
     const markup = built("spinner");
@@ -2234,7 +2928,7 @@ describe("a rendered net", () => {
     expect(spokes).toHaveLength(6);
 
     // Every spoke starts at the same point, which is the other half of "equal":
-    // six radii from one centre rather than six lines that happen to fan out.
+    // six radii from one center rather than six lines that happen to fan out.
     expect(new Set(spokes.map(([x1, , y1]) => `${x1},${y1}`)).size).toBe(1);
     const [x1, , y1] = spokes[0];
     const angles = spokes.map(
@@ -2347,11 +3041,11 @@ describe("print isolation", () => {
   });
 
   it("takes the builder's own layout out from under the sheet", () => {
-    // `.no-print` empties the bench's columns; it does not remove them. A print
-    // copy left inside a live two-column grid prints indented by the bench's
-    // padding and a row down from where the preview was — on Letter, 18px off
-    // the right edge of the paper and a full-page sheet onto a second one. It
-    // cannot be seen on screen, because the preview is a separate scaled copy.
+    // `.no-print` empties the bench; it does not remove it. A print copy left
+    // inside a live padded layout prints indented by the bench's padding and a
+    // row down from where the preview was — on Letter, 18px off the right edge
+    // of the paper and a full-page sheet onto a second one. It cannot be seen
+    // on screen, because the preview is a separate scaled copy.
     //
     // The smoke run measures the real box in a browser, which is the only place
     // that can. This is the fast half: the two lines that make it possible.
@@ -2361,8 +3055,8 @@ describe("print isolation", () => {
     expect(print).toMatch(/\.bench\s*\{[^}]*padding:\s*0/);
     expect(print).toMatch(/\.bench\s*\{[^}]*max-width:\s*none/);
 
-    // And the column itself, not only the two controls inside it — an empty
-    // grid item still occupies the row above the paper.
+    // And the paper's own frame, not only the two things inside it — an
+    // emptied box still holds its padding above the print copy.
     const app = read(join(ROOT, "src/games/printshop/App.tsx"));
     expect(app).toMatch(/className="bench__paper[^"]*\bno-print\b/);
   });
@@ -2520,5 +3214,390 @@ describe("the notebook margin line", () => {
     expect(render(sheet({ blocks: [trace] }))).not.toContain(
       "sheet__rule--margin",
     );
+  });
+});
+
+/* ── Lessons (§23) ────────────────────────────────────────────────────────
+   The three renderers a lesson adds — a boxed note, counters, and hops along
+   a number line — and the one flag, `worked`.                              */
+
+const lesson = (over: Partial<LessonConfig> = {}): LessonConfig => ({
+  kind: "lesson",
+  paper: DEFAULT_PAPER,
+  fontPt: 14,
+  fields: ["name"],
+  topic: "division-sharing",
+  practice: true,
+  ...over,
+});
+
+const lessonSheet = (over: Partial<LessonConfig> = {}) =>
+  render(buildSheet(lesson(over), SEED) as Sheet);
+const lessonKey = (over: Partial<LessonConfig> = {}) =>
+  render(answerKey(lesson(over), SEED) as Sheet);
+
+/** The markup of each counters drawing, one string per `<svg>`. */
+const pictures = (html: string): string[] =>
+  html.split('class="sheet__ink sheet__dots"').slice(1);
+
+/** Whether a problem carries a number — a worked one has none. */
+const numbered = (item: string): boolean =>
+  item.slice(0, item.indexOf("</li>")).includes('class="sheet__number"');
+
+/** The problems a child answers — the numbered ones. */
+const asked = (html: string): string[] => problems(html).filter(numbered);
+
+describe("a rendered lesson", () => {
+  it("boxes a note with a border, the height the family reserved, never a background", () => {
+    const built = buildSheet(lesson(), SEED);
+    const notes = built.blocks.filter(
+      (block): block is BlockOf<"note"> => block.kind === "note",
+    );
+    expect(notes.length).toBeGreaterThan(1);
+    const html = lessonSheet();
+    expect(count(html, '<div class="sheet__panel')).toBe(notes.length);
+    for (const note of notes) {
+      const pt = note.aside ? 14 * ASIDE_EM : 14;
+      expect(html).toContain(
+        `style="height:${toInches(noteHeight(note.lines, pt))}in"`,
+      );
+      if (note.heading) {
+        expect(html).toContain(
+          `<p class="sheet__panel-heading">${note.heading}</p>`,
+        );
+      }
+      note.items?.forEach((item, index) => {
+        expect(html).toContain(
+          `<span class="sheet__number">${index + 1}.</span>${item}`,
+        );
+      });
+    }
+    // The grown-up's sentence is set small and comes last.
+    expect(count(html, 'class="sheet__panel sheet__panel--aside"')).toBe(1);
+    const css = read(join(ROOT, "src/styles/sheet.css"));
+    const rule = css.slice(css.indexOf(".sheet__panel {"));
+    expect(rule.slice(0, rule.indexOf("}"))).toContain("border:");
+    expect(rule.slice(0, rule.indexOf("}"))).not.toContain("background");
+  });
+
+  it("draws every counter as a dot and every group as a ring, at the engine's size", () => {
+    const built = buildSheet(lesson(), SEED);
+    const [picture] = built.blocks.flatMap((block) =>
+      block.kind === "counters" ? [block.counters] : [],
+    );
+    const drawn = pictures(lessonSheet());
+    // The lesson's picture, then one beside each of the six to try.
+    expect(drawn).toHaveLength(7);
+    expect(count(drawn[0], '<circle class="sheet__dot"')).toBe(picture.total);
+    expect(count(drawn[0], '<rect class="sheet__shape"')).toBe(
+      grouped(picture).groups,
+    );
+    expect(drawn[0]).toContain(
+      `width="${toInches(picture.width)}in" height="${toInches(picture.height)}in"`,
+    );
+    expect(drawn[0]).toContain(
+      `<span class="sheet__caption">${picture.caption}</span>`,
+    );
+    // Filled with ink, not painted with a background (§5).
+    const css = read(join(ROOT, "src/styles/sheet.css"));
+    expect(css).toMatch(/\.sheet__dot[^{]*\{[^}]*fill: currentcolor/);
+    for (const item of asked(lessonSheet())) {
+      expect(item).not.toContain("sheet__caption");
+    }
+  });
+
+  it("leaves the grouping try-its unringed, and rings the lesson's", () => {
+    const drawn = pictures(lessonSheet({ topic: "division-grouping" }));
+    expect(drawn).toHaveLength(5);
+    expect(count(drawn[0], "<rect")).toBe(4);
+    for (const picture of drawn.slice(1))
+      expect(picture).not.toContain("<rect");
+  });
+
+  it("draws a hop for every jump back along the line, labeled with what was taken", () => {
+    const built = buildSheet(lesson({ topic: "division-grouping" }), SEED);
+    const [line] = built.blocks.flatMap((block) =>
+      block.kind === "numberline" ? [block.line] : [],
+    );
+    const hops = jumps(line);
+    expect(hops).toHaveLength(4);
+    const html = lessonSheet({ topic: "division-grouping" });
+    expect(count(html, 'class="sheet__jump"')).toBe(hops.length);
+    expect(count(html, ">−3</text>")).toBe(hops.length);
+    expect(html).toContain(`height="${toInches(lineHeight(line))}in"`);
+    // The two blank lines to try carry no hops.
+    expect(count(html, 'class="sheet__ink sheet__number-line"')).toBe(3);
+    // Every label sits inside the room the engine reserved over the axis: an
+    // <svg> clips to its viewBox, and a label above it is a hop with no
+    // number on it. Measured off the ink — the baseline less the size.
+    const labels = [
+      ...html.matchAll(
+        /<g class="sheet__jump">[\s\S]*?<text[^>]*\by="(\d+)"[^>]*font-size="(\d+)"/g,
+      ),
+    ];
+    expect(labels).toHaveLength(hops.length);
+    for (const [, y, size] of labels) {
+      expect(Number(size)).toBe(LABEL_SIZE);
+      expect(Number(y) - Number(size)).toBeGreaterThanOrEqual(0);
+    }
+  });
+
+  it("draws with the numbers the engine reserved by, read back from sheet.css", () => {
+    // Every height a lesson declares trails a rule in the stylesheet, and the
+    // failure when they drift is silent: a page that looks right on screen
+    // and prints its last block on a second sheet. So the rules are read.
+    const css = read(join(ROOT, "src/styles/sheet.css"));
+    const rule = (selector: string): string => {
+      const at = css.indexOf(`${selector} {`);
+      expect(at, selector).toBeGreaterThanOrEqual(0);
+      return css.slice(at, css.indexOf("}", at));
+    };
+    const number = (text: string, property: string): number =>
+      Number(new RegExp(`${property}: ([\\d.]+)`).exec(text)?.[1]);
+    expect(rule(".sheet__bracket-row")).toContain("height: var(--sheet-cell)");
+    expect(number(rule(".sheet__panel"), "padding")).toBe(toInches(NOTE_PAD));
+    expect(number(rule(".sheet__panel"), "border")).toBeCloseTo(
+      toPoints(NOTE_RULE),
+      1,
+    );
+    expect(number(rule(".sheet__panel--aside"), "font-size")).toBe(ASIDE_EM);
+    expect(number(rule(".sheet"), "line-height")).toBe(NOTE_LINE_EMS);
+    // The caption's size times the sheet's leading is what `CAPTION_EMS`
+    // reserves. Scoped to the counters, because a net's caption is set
+    // smaller further down the file and a bare selector loses to it.
+    expect(
+      number(rule(".sheet__counters .sheet__caption"), "font-size") *
+        NOTE_LINE_EMS,
+    ).toBeCloseTo(CAPTION_EMS, 2);
+  });
+
+  it("prints a worked example's answer on the sheet, unnumbered, and numbers the rest from one", () => {
+    const html = lessonSheet();
+    const items = problems(html);
+    expect(items).toHaveLength(9);
+    for (const item of items.slice(0, 3)) {
+      expect(numbered(item)).toBe(false);
+      expect(item).toContain('class="sheet__slot sheet__slot--answered"');
+    }
+    expect(items[1]).toContain(
+      '<span class="sheet__slot sheet__slot--answered">4</span>',
+    );
+    expect(items[3]).toContain('<span class="sheet__number">1.</span>');
+    expect(items[8]).toContain('<span class="sheet__number">6.</span>');
+    // The worked block keeps its height; the try-its take the spare paper.
+    expect(count(html, 'class="sheet__problems sheet__problems--worked"')).toBe(
+      1,
+    );
+    expect(count(html, 'class="sheet__problems"')).toBe(1);
+  });
+
+  it("honors worked in every answer place", () => {
+    const tableau = divisionTableau("657", 3);
+    const items: Problem[] = [
+      { prompt: "7 × 8 =", answer: "56", worked: true },
+      {
+        prompt: "",
+        answer: "10 ÷ 2 = 5 · 10 ÷ 5 = 2",
+        answers: ["10 ÷ 2 = 5", "10 ÷ 5 = 2"],
+        worked: true,
+      },
+      {
+        prompt: "",
+        operands: ["347", "26"],
+        operator: "×",
+        working: ["2082", "6940"],
+        workspace: 500,
+        answer: "9022",
+        worked: true,
+      },
+      {
+        prompt: "",
+        bracket: {
+          divisor: "3",
+          dividend: "657",
+          cell: 250,
+          rows: 6,
+          help: "guided",
+          tableau,
+        },
+        answer: "219",
+        worked: true,
+      },
+    ];
+    const html = render(
+      sheet({
+        blocks: [{ kind: "problems", columns: 2, items }],
+        answers: false,
+      }),
+    );
+    expect(html).toContain(
+      '<span class="sheet__slot sheet__slot--answered">56</span>',
+    );
+    expect(
+      count(html, 'class="sheet__answer-line sheet__answer-line--answered"'),
+    ).toBe(2);
+    expect(html).toContain("10 ÷ 5 = 2");
+    // The partials between the rule and the total, as well as the total.
+    expect(
+      count(html, 'class="sheet__work-line sheet__work-line--answered"'),
+    ).toBe(2);
+    expect(html).toContain(">2082</span>");
+    expect(html).toContain(">6940</span>");
+    expect(html).toContain(
+      '<span class="sheet__total sheet__total--answered">9022</span>',
+    );
+    const written =
+      tableau.quotient.text.length +
+      tableau.rows.reduce((sum, row) => sum + row.text.length, 0);
+    expect(count(html, "sheet__square--answered")).toBe(written);
+    expect(html).not.toContain('class="sheet__number"');
+  });
+
+  it("prints nothing in a try-it's answer place until the sheet is a key", () => {
+    for (const topic of LESSON_TOPICS) {
+      const built = buildSheet(lesson({ topic }), SEED);
+      const count = built.blocks
+        .flatMap((block) => (block.kind === "problems" ? block.items : []))
+        .filter((problem) => !problem.worked).length;
+      const blank = asked(lessonSheet({ topic }));
+      expect(blank, topic).toHaveLength(count);
+      for (const item of blank) {
+        expect(item, topic).not.toContain("--answered");
+        for (const [, inside] of item.matchAll(
+          /<span class="sheet__slot"[^>]*>(.*?)<\/span>/g,
+        )) {
+          expect(inside, topic).toBe("");
+        }
+        for (const [, inside] of item.matchAll(
+          /<span class="sheet__answer-line"[^>]*>(.*?)<\/span>/g,
+        )) {
+          expect(inside, topic).toBe("");
+        }
+      }
+      for (const item of asked(lessonKey({ topic }))) {
+        expect(item, topic).toContain("--answered");
+      }
+    }
+  });
+
+  it("prints the arrays' problems on a second page, with the header again", () => {
+    const html = lessonSheet({ topic: "division-arrays" });
+    expect(count(html, '<article class="sheet"')).toBe(2);
+    expect(count(html, 'class="sheet__title"')).toBe(2);
+    expect(count(lessonSheet(), '<article class="sheet"')).toBe(1);
+  });
+
+  it("numbers a block on from where the one before it left off", () => {
+    // A lesson's problems to try go one row to a block when the whole set is
+    // taller than the page, and the second row's first problem is 4, not 1.
+    const items: Problem[] = [
+      { prompt: "7 × 8 =", answer: "56" },
+      { prompt: "6 × 9 =", answer: "54" },
+    ];
+    const html = render(
+      sheet({ blocks: [{ kind: "problems", columns: 2, items, start: 4 }] }),
+    );
+    expect(html).toContain('<span class="sheet__number">4.</span>');
+    expect(html).toContain('<span class="sheet__number">5.</span>');
+    expect(html).not.toContain('<span class="sheet__number">1.</span>');
+    // So on a lesson at the largest type the six are numbered 1 to 6, once
+    // each and in order, across however many blocks they were cut into. A
+    // note's steps carry the same number span, so only the problems count.
+    const large = lessonSheet({ topic: "division-arrays", fontPt: 36 });
+    expect(count(large, 'class="sheet__problems"')).toBeGreaterThan(1);
+    expect(
+      asked(large).map(
+        (item) => /<span class="sheet__number">(\d+)\.<\/span>/.exec(item)?.[1],
+      ),
+    ).toEqual(["1", "2", "3", "4", "5", "6"]);
+  });
+
+  it("numbers sentences, questions and word shapes on from `start` too", () => {
+    // The three other numbered lists a counted sheet prints through, so a
+    // spelling test that runs to two pages does not start again at 1.
+    const html = render(
+      sheet({
+        blocks: [
+          {
+            kind: "blanks",
+            sentences: [{ text: "The __ sat.", answers: ["cat"] }],
+            start: 7,
+          },
+          {
+            kind: "choice",
+            questions: [{ prompt: "Legs?", options: ["two"], answer: 0 }],
+            start: 8,
+          },
+          {
+            kind: "wordshapes",
+            columns: 1,
+            words: [{ word: "big", letters: ["tall", "small", "tail"] }],
+            start: 9,
+          },
+        ],
+      }),
+    );
+    for (const number of [7, 8, 9]) {
+      expect(html).toContain(`<span class="sheet__number">${number}.</span>`);
+    }
+    expect(html).not.toContain('<span class="sheet__number">1.</span>');
+  });
+
+  it("draws a chunked line's hops at their own sizes", () => {
+    const html = lessonSheet({ topic: "division-chunking" });
+    expect(count(html, 'class="sheet__jump"')).toBe(2);
+    expect(html).toContain(">−120</text>");
+    expect(html).toContain(">−36</text>");
+  });
+
+  it("fills the worked bracket in on the sheet, and the try-its only on the key", () => {
+    for (const topic of ["long-division-steps", "decimal-division"] as const) {
+      const built = buildSheet(lesson({ topic }), SEED);
+      const items = built.blocks.flatMap((block) =>
+        block.kind === "problems" ? block.items : [],
+      );
+      const written = (problem: Problem): number => {
+        const tableau = problem.bracket?.tableau;
+        if (!tableau) return 0;
+        return (
+          tableau.quotient.text.length +
+          tableau.rows.reduce((sum, row) => sum + row.text.length, 0)
+        );
+      };
+      const [example, ...rest] = items;
+      expect(example.worked, topic).toBe(true);
+      const sheet = lessonSheet({ topic });
+      expect(count(sheet, "sheet__square--answered"), topic).toBe(
+        written(example),
+      );
+      // Every try-it is shaded or stepped, and none is written in.
+      expect(count(sheet, 'class="sheet__shading"'), topic).toBe(
+        1 + rest.filter((item) => item.bracket?.help === "guided").length,
+      );
+      // The key prints only the page that differs (§7), so the worked
+      // example on page one is not on it — the try-its are, every one
+      // written in.
+      expect(count(lessonKey({ topic }), "sheet__square--answered")).toBe(
+        rest.reduce((sum, item) => sum + written(item), 0),
+      );
+    }
+    // The decimal example carries its point above the bar and below it.
+    expect(
+      count(lessonSheet({ topic: "decimal-division" }), 'class="sheet__point"'),
+    ).toBeGreaterThanOrEqual(2);
+  });
+
+  it("draws the place-value chart as a grid with the point as a heavy rule", () => {
+    const html = lessonSheet({ topic: "decimals-powers-of-ten" });
+    const chart = html.slice(html.indexOf("<title>8 by 5 chart grid</title>"));
+    const grid = chart.slice(0, chart.indexOf("</svg>"));
+    expect(count(grid, 'class="sheet__rule sheet__rule--axis"')).toBe(2);
+    for (const head of ["Th", "H", "T", "O", "t", "h", "th"]) {
+      expect(grid).toContain(`>${head}</text>`);
+    }
+    expect(grid).toContain(">× 10</text>");
+    expect(grid).toContain(">÷ 1000</text>");
+    // Printed as cells on the sheet, not held back for the key.
+    expect(grid).not.toContain("sheet__cell--answered");
   });
 });

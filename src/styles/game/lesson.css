@@ -51,7 +51,7 @@
 }
 
 /* Met, in the same green "correct" is everywhere else — one of the five
-   colours that mean the same thing in every world (CLAUDE.md). */
+   colors that mean the same thing in every world (CLAUDE.md). */
 .passbar.is-ok .passbar__fill {
   background: var(--lime);
 }
@@ -155,7 +155,7 @@
 }
 
 /* The same keycap `.brief__new` draws, sat inside a sentence: the cap is a
-   grid so its legend centres, and a grid is block-level unless told
+   grid so its legend centers, and a grid is block-level unless told
    otherwise — left as is, "Hold f down" broke into three lines. */
 .brief__hold .brief__key {
   display: inline-grid;

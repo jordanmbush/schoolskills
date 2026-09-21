@@ -19,7 +19,7 @@ import type { PanelProps } from "./parts";
 type FamilyPanel = ComponentType<PanelProps>;
 
 /**
- * Files a family's panel under the union, which the lookup then honours — the
+ * Files a family's panel under the union, which the lookup then honors — the
  * one cast in the directory, and worth reading before it is copied.
  *
  * The assertion says "this panel will only ever be given its own family's
@@ -75,10 +75,12 @@ const PANELS: Record<string, FamilyPanel> = {
   "word-study": panel(async () => (await import("./wordstudy")).WordStudyPanel),
   puzzle: panel(async () => (await import("./puzzles")).PuzzlesPanel),
   grammar: panel(async () => (await import("./grammar")).GrammarPanel),
+  lesson: panel(async () => (await import("./lessons")).LessonsPanel),
   phonics: panel(async () => (await import("./phonics")).PhonicsPanel),
   handwriting: panel(
     async () => (await import("./handwriting")).HandwritingPanel,
   ),
+  penmanship: panel(async () => (await import("./penmanship")).PenmanshipPanel),
   memory: panel(async () => (await import("./memory")).MemoryPanel),
 };
 

@@ -34,7 +34,7 @@ import type { PaperConfig, SheetOptions } from "./types";
 const INDEX: SheetIndex = {
   facets: {
     subject: [
-      ["math", "Maths"],
+      ["math", "Math"],
       ["paper", "Paper"],
     ],
     grade: [
@@ -146,9 +146,9 @@ describe("asking the index something", () => {
   });
 
   it("finds a sheet by its shelf and by its school year", () => {
-    // Neither word is on the sheet. "Maths" is the shelf's label and "3rd
+    // Neither word is on the sheet. "Math" is the shelf's label and "3rd
     // grade" is a fact about the row's bits, and a parent types both.
-    expect(hrefs({ ...EMPTY_QUERY, text: "maths" })).toEqual([
+    expect(hrefs({ ...EMPTY_QUERY, text: "math" })).toEqual([
       "/printables/multiplication-worksheets",
     ]);
     expect(hrefs({ ...EMPTY_QUERY, text: "3rd grade" })).toEqual([
@@ -180,7 +180,7 @@ describe("which chips are still worth pressing", () => {
     ...openChips(INDEX, { ...EMPTY_QUERY, ...query }, key),
   ];
 
-  it("greys out what the rest of the query has ruled out", () => {
+  it("grays out what the rest of the query has ruled out", () => {
     expect(chips({ subject: "math" }, "grade")).toEqual(["3rd-grade"]);
     expect(chips({ grade: "pre-k" }, "subject")).toEqual(["paper"]);
     expect(chips({ grade: "pre-k" }, "rule")).toEqual(["wide"]);
@@ -188,7 +188,7 @@ describe("which chips are still worth pressing", () => {
   });
 
   it("tries a chip in place of its row's value, not on top of it", () => {
-    // Picking maths must not grey out paper: the row a parent has chosen
+    // Picking math must not gray out paper: the row a parent has chosen
     // from stays open, so the choice can be changed and not only cleared.
     expect(chips({ subject: "math" }, "subject")).toEqual(["math", "paper"]);
   });

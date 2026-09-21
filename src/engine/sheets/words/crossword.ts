@@ -56,7 +56,7 @@ const at = (cells: Cells, x: number, y: number): string | null =>
  * words:
  *
  * - The squares immediately before and after the word must be empty, or the
- *   entry would run on into its neighbour and the answer read off the grid
+ *   entry would run on into its neighbor and the answer read off the grid
  *   would be longer than the answer in the clue list.
  * - A square that already holds a letter must hold *this* letter. That is a
  *   crossing, and it is the only way two words may touch.

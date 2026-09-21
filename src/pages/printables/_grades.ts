@@ -2,9 +2,9 @@
  * The school years the Print Shop is browsable by, and how a sheet gets onto
  * one of them.
  *
- * **No sheet on this site is labelled “Grade 3”, and none is going to be.** A
+ * **No sheet on this site is labeled “Grade 3”, and none is going to be.** A
  * grade is read off the ages a catalog entry already states, never written onto
- * a sheet (§8), so nothing here is a judgement — it parses that string and tests
+ * a sheet (§8), so nothing here is a judgment — it parses that string and tests
  * for overlap. The same sheet lands on two or three of these pages, which is
  * correct rather than sloppy.
  */
@@ -21,7 +21,7 @@ export type Grade = {
    * anybody writes Pre-K.
    */
   phrase: string;
-  /** How it is labelled in a row of the ten. A few characters. */
+  /** How it is labeled in a row of the ten. A few characters. */
   short: string;
   /** The page's `<h1>`. */
   heading: string;
@@ -29,7 +29,7 @@ export type Grade = {
   keyword: string;
   /**
    * The ages most children are during this year, inclusive at both ends. Two of
-   * them, not one: a first-grader is six in the autumn and seven by the spring,
+   * them, not one: a first-grader is six in the fall and seven by the spring,
    * and a shelf reaching only one of those would drop half the sheets a parent
    * needs in the second half of the year.
    */
@@ -119,7 +119,7 @@ export const GRADES: Grade[] = [
     heading: "Printable 1st grade worksheets",
     keyword: "Free printable 1st grade worksheets",
     ages: [6, 7],
-    lead: "Six and seven: sums that cross ten, sentences that a child can decode on their own, and the ⅝-inch ruling that most of primary school is written on. The work stops being letters and starts being lines of them.",
+    lead: "Six and seven: sums that cross ten, sentences that a child can decode on their own, and the ⅝-inch ruling that most of elementary school is written on. The work stops being letters and starts being lines of them.",
     notes: [
       "Adding with regrouping is the sheet this year turns on. Carrying is the first piece of arithmetic that is a procedure rather than a fact, and it is where a child who has been counting on their fingers quietly runs out of fingers — so the sheet is set in columns, with the room above the sum where the carried digit goes, rather than written along a line where there is nowhere to put it.",
       "Decodable sentences are the reading equivalent, and they come off the same ticked list of sounds as the rest of the phonics shelf: every word in every sentence is built from spellings that have already been taught. A first sentence read without a single guess in it is worth more than a page of pictures, and it is only possible if the page knows what has been covered.",
@@ -127,7 +127,7 @@ export const GRADES: Grade[] = [
     landmarks: [
       {
         href: "/printables/handwriting-paper",
-        why: "⅝ of an inch, dashed midline: the size most of Year 1 is written at.",
+        why: "⅝ of an inch, dashed midline: the size most of Grade 1 is written at.",
       },
       {
         href: "/printables/addition-with-regrouping-worksheets",
@@ -149,7 +149,7 @@ export const GRADES: Grade[] = [
     ages: [7, 8],
     lead: "Seven and eight: the times tables start, money and clocks arrive, handwriting drops to half an inch, and the first joined letters appear. It is the busiest year in this catalog, which is why nearly every shelf has something on this page.",
     notes: [
-      "Multiplication is the one to be systematic about, because it is the last piece of arithmetic that is pure recall and everything after it — long division, fractions, ratio — is built on the assumption that it is already automatic. The worksheets and the twelve times-table pages here are the same facts as the flash cards in The Grid, so a table can be practised on paper in the morning and raced on screen in the afternoon.",
+      "Multiplication is the one to be systematic about, because it is the last piece of arithmetic that is pure recall and everything after it — long division, fractions, ratio — is built on the assumption that it is already automatic. The worksheets and the twelve times-table pages here are the same facts as the flash cards in The Grid, so a table can be practiced on paper in the morning and raced on screen in the afternoon.",
       "Cursive can start this year, and the sheets say what most cursive worksheets leave out: the joins are the skill. A child who can form twenty-six cursive letters and cannot join them writes print with curls on it, so the alphabet, the joins and the words are three separate sheets rather than one.",
     ],
     landmarks: [
@@ -205,7 +205,7 @@ export const GRADES: Grade[] = [
     ages: [9, 10],
     lead: "Nine and ten: long division, fractions that are added rather than shaded, decimals, and word problems where the hard part is deciding what to do. The handwriting shelf is down to its last sheet by now, and that sheet is copywork.",
     notes: [
-      "Long division is the longest procedure in primary maths and the one most often printed badly, so these sheets are set in the bracket with the quotient written along the top and a band of blank paper under each problem to bring the digits down into. The working is the exercise rather than the answer. If the columns drift the answer is wrong for a reason that has nothing to do with division, which is why squared paper is on this page as well.",
+      "Long division is the longest procedure in elementary math and the one most often printed badly, so these sheets are set in the bracket with the quotient written along the top and a band of blank paper under each problem to bring the digits down into. The working is the exercise rather than the answer. If the columns drift the answer is wrong for a reason that has nothing to do with division, which is why graph paper is on this page as well.",
       "Copywork is what handwriting turns into once the letters are formed. The passage is real writing — a psalm, a speech, a poem out of the public domain — and the sheet is a model line above an empty one, so the practice is a sentence worth reading rather than a row of the same letter. It is also the shelf where Scripture sits, in the same picker as everything else.",
     ],
     landmarks: [
@@ -259,15 +259,15 @@ export const GRADES: Grade[] = [
     heading: "Printable 6th grade worksheets",
     keyword: "Free printable 6th grade worksheets",
     ages: [11, 12],
-    lead: "Eleven and twelve: ratio and proportion, averages, the whole pre-algebra strand, and paperwork that starts to look like a secondary school’s — a lab report, a timeline, a paragraph frame with the shape of an argument printed on it.",
+    lead: "Eleven and twelve: ratio and proportion, averages, the whole pre-algebra strand, and paperwork that starts to look like a middle school’s — a lab report, a timeline, a paragraph frame with the shape of an argument printed on it.",
     notes: [
       "Ratio and averages are the two topics on this page where a generated worksheet most often prints a confident wrong answer, and both are guarded in the engine rather than by hand: a ratio is reduced with a greatest common divisor so the key is in its lowest terms rather than merely equal to the right answer, and a set of numbers is redrawn until it has a single mode, because a page that asks for “the” mode of a set with two is asking for something that does not exist.",
-      "The writing frames matter more than they look. A paragraph frame is a page with the shape of a paragraph on it and nothing else — a topic sentence, three reasons with a detail attached to each, and a close — and it is the difference between a child who cannot start and a child who has started. It is also scaffolding, which is meant to come down: print it for a fortnight, then hand over lined paper and ask for the same thing.",
+      "The writing frames matter more than they look. A paragraph frame is a page with the shape of a paragraph on it and nothing else — a topic sentence, three reasons with a detail attached to each, and a close — and it is the difference between a child who cannot start and a child who has started. It is also scaffolding, which is meant to come down: print it for two weeks, then hand over lined paper and ask for the same thing.",
     ],
     landmarks: [
       {
         href: "/printables/order-of-operations-worksheets",
-        why: "A rule about reading a sum, practised until it is not a rule any more.",
+        why: "A rule about reading a sum, practiced until it is not a rule any more.",
       },
       {
         href: "/printables/charts/decimal-place-value-chart",
@@ -287,9 +287,9 @@ export const GRADES: Grade[] = [
     heading: "Printable 7th grade worksheets",
     keyword: "Free printable 7th grade worksheets",
     ages: [12, 13],
-    lead: "Twelve and thirteen: the maths shelf keeps its top half — fractions, decimals and the pre-algebra sheets — while most of what actually gets printed is paper to work on rather than questions to answer.",
+    lead: "Twelve and thirteen: the math shelf keeps its top half — fractions, decimals and the pre-algebra sheets — while most of what actually gets printed is paper to work on rather than questions to answer.",
     notes: [
-      "By this age the useful printables are mostly blank. Squared paper at five millimetres, the four-quadrant grid, a lab report form, a weekly planner: the work itself comes out of a textbook or a class, and what a home printer is for is the surface it is done on. The paper shelf keeps everything on this page except the primary rulings, while the worksheet shelves have thinned right out.",
+      "By this age the useful printables are mostly blank. Graph paper at five millimeters, the four-quadrant grid, a lab report form, a weekly planner: the work itself comes out of a textbook or a class, and what a home printer is for is the surface it is done on. The paper shelf keeps everything on this page except the primary rulings, while the worksheet shelves have thinned right out.",
       "Narrow ruled is the paper for this end of the catalog, and it is a fair-copy paper rather than a practice one — a quarter of an inch between rules and no margin line at all, because at that size there is not much page left to give away. It is the ruling for lists, indexes and notes meant to be kept, and it is the tightest one here. It says Ages 12+, so it is already on the sixth-grade page for anyone who turned twelve there.",
     ],
     landmarks: [
@@ -299,7 +299,7 @@ export const GRADES: Grade[] = [
       },
       {
         href: "/printables/graph-paper-5-mm",
-        why: "The squares a school exercise book is printed at, on both stocks.",
+        why: "The squares a school notebook is printed at, on both stocks.",
       },
       {
         href: "/printables/narrow-ruled-paper",
@@ -315,9 +315,9 @@ export const GRADES: Grade[] = [
     heading: "Printable 8th grade worksheets",
     keyword: "Free printable 8th grade worksheets",
     ages: [13, 14],
-    lead: "Thirteen and fourteen, and this is the shortest page of the ten. The pre-algebra worksheets, the reference paper, the paperwork a week needs and the longer copywork are what a catalog built for primary school honestly has at this age.",
+    lead: "Thirteen and fourteen, and this is the shortest page of the ten. The pre-algebra worksheets, the reference paper, the paperwork a week needs and the longer copywork are what a catalog built for elementary school honestly has at this age.",
     notes: [
-      "The shelves that stop, stop. There is no handwriting, cursive, phonics, spelling or grammar sheet on this page, because every one of those states an age range that ends before thirteen — and relabelling one “Grade 8” to make this page look fuller is the single thing a catalog like this must not do. A parent who found a tracing sheet listed for a fourteen-year-old would be right to distrust every other page here.",
+      "The shelves that stop, stop. There is no handwriting, cursive, phonics, spelling or grammar sheet on this page, because every one of those states an age range that ends before thirteen — and relabeling one “Grade 8” to make this page look fuller is the single thing a catalog like this must not do. A parent who found a tracing sheet listed for a fourteen-year-old would be right to distrust every other page here.",
       "What is left is genuinely for this age. Integers, ratio, averages, the order of operations and one-step equations are the arithmetic that carries into algebra; the four-quadrant grid and the graph papers are what it is worked on; and the copywork and memory sheets take whole passages rather than a verse at a time. If your child needs something from an earlier year, the page for that year is one link away and nothing here will disagree with you about which to use.",
     ],
     landmarks: [

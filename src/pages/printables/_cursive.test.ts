@@ -15,11 +15,8 @@ import type {
   TraceRow,
   TraceStyle,
 } from "@/engine/sheets/types";
-import {
-  MODELLED,
-  fontOf,
-  handwritingLayout,
-} from "@/engine/sheets/writing/handwriting";
+import { fontOf, handwritingLayout } from "@/engine/sheets/writing/handwriting";
+import { MODELLED } from "@/engine/sheets/writing/rows";
 import { JOIN_FAMILIES, joinPairs } from "@/engine/sheets/writing/joins";
 
 import { PAPER_SHEETS, STOCKS, pathFor as paperPath } from "./_catalog";
@@ -240,7 +237,7 @@ describe("a sheet on this shelf is joined", () => {
 
 describe("the sheet on a catalog page", () => {
   it("prints every letter, join, word and line it promised", () => {
-    // The check this family needs and the maths one doesn't: the content is a
+    // The check this family needs and the math one doesn't: the content is a
     // set rather than a count, so "as many as fit" is not an acceptable answer.
     for (const sheet of CURSIVE_SHEETS) {
       for (const stock of STOCKS) {

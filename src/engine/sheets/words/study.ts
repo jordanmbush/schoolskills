@@ -31,6 +31,9 @@ import {
   PROBLEM_GAP,
   columnWidth,
   fitAcross,
+  paged,
+  problemPages,
+  wantedOf,
   type Box,
 } from "../layout";
 import { inches, own, points } from "../paper";
@@ -356,6 +359,8 @@ export function studyLayout(config: WordStudyConfig): {
   columns: number;
   cell: Mil;
   row: Mil;
+  /** The air between one row and the next, as the page was divided by it. */
+  gap: Mil;
   perPage: number;
 } {
   // Against the header the sheet will print rather than the one the config
@@ -385,8 +390,22 @@ export function studyLayout(config: WordStudyConfig): {
     columns,
     cell,
     row,
+    gap,
     perPage: columns * fitAcross(box.height, row, gap),
   };
+}
+
+/**
+ * How many questions this sheet draws: what was asked for, or the whole bank,
+ * and never more than the bank holds. Every style runs on to another page
+ * (§4).
+ */
+function studyWanted(config: WordStudyConfig, perPage: number): number {
+  const { questions } = topicOf(config.topic);
+  return Math.min(
+    questions.length,
+    wantedOf(config.count ?? questions.length, perPage),
+  );
 }
 
 /**
@@ -394,18 +413,16 @@ export function studyLayout(config: WordStudyConfig): {
  *
  * Shuffled rather than taken in order, because the bank is written in teaching
  * order — every plain `-s` plural first — and a sheet of the first twelve would
- * be a sheet of the easy half. Never more than the bank holds and never more
- * than the page holds, so the count is a request rather than a promise.
+ * be a sheet of the easy half.
  */
 export function studyQuestions(
   config: WordStudyConfig,
   seed: number,
+  perPage: number,
 ): Question[] {
   const { questions } = topicOf(config.topic);
-  const { perPage } = studyLayout(config);
-  const room = Math.min(perPage, questions.length);
-  const wanted = clamp(config.count ?? room, 0, room);
-  return shuffled(questions, mulberry32(seed)).slice(0, wanted);
+  return shuffled(questions, mulberry32(seed)) //
+    .slice(0, studyWanted(config, perPage));
 }
 
 /** A prompt and a ruled slot — the shape of every `write` sheet. */
@@ -449,7 +466,8 @@ function bodyOf(
   seed: number,
 ): { blocks: Block[]; outOf: number } {
   const topic = topicOf(config.topic);
-  const drawn = studyQuestions(config, seed);
+  const { columns, perPage } = studyLayout(config);
+  const drawn = studyQuestions(config, seed, perPage);
   const outOf = drawn.length;
   const style = styleOf(config);
   // A second generator off the same seed — `studyQuestions` made its own for
@@ -462,33 +480,40 @@ function bodyOf(
 
   if (style === "choose") {
     const questions = drawn.map((question) => chosen(question, topic, rand));
-    return { blocks: [{ kind: "choice", questions }], outOf };
+    return {
+      blocks: paged(questions, perPage, (page, from) => ({
+        kind: "choice",
+        questions: page,
+        ...(from > 0 ? { start: from + 1 } : {}),
+      })),
+      outOf,
+    };
   }
 
   if (style === "match") {
     // The right column is shuffled and the left is not: the left is the order
     // the questions were drawn in, and a matching sheet whose columns lined up
-    // would be a sheet a child could answer with a ruler.
-    const right = shuffled(
-      drawn.map((question) => question.answer),
-      rand,
-    );
+    // would be a sheet a child could answer with a ruler. Shuffled within the
+    // page, so every page is its own exercise.
     return {
-      blocks: [
-        {
+      blocks: paged(drawn, perPage, (page) => {
+        const right = shuffled(
+          page.map((question) => question.answer),
+          rand,
+        );
+        return {
           kind: "matching",
-          left: drawn.map((question) => question.cue),
+          left: page.map((question) => question.cue),
           right,
-          answer: drawn.map((question) => right.indexOf(question.answer)),
-        },
-      ],
+          answer: page.map((question) => right.indexOf(question.answer)),
+        };
+      }),
       outOf,
     };
   }
 
-  const { columns } = studyLayout(config);
   return {
-    blocks: [{ kind: "problems", columns, items: drawn.map(written) }],
+    blocks: problemPages(drawn.map(written), columns, perPage),
     outOf,
   };
 }
@@ -525,10 +550,9 @@ function headerOf(config: WordStudyConfig): SheetOptions {
 function describeStudy(config: WordStudyConfig): string {
   const topic = topicOf(config.topic);
   // What the sheet will print rather than what was asked for, and by the same
-  // arithmetic the build uses — a line that promised twenty over a page of
+  // arithmetic the build uses — a line that promised twenty over a bank of
   // fourteen would be wrong in the record book and in the picker at once.
-  const room = Math.min(studyLayout(config).perPage, topic.questions.length);
-  const asked = clamp(config.count ?? room, 0, room);
+  const asked = studyWanted(config, studyLayout(config).perPage);
   return [
     topic.label,
     `${asked} ${asked === 1 ? "question" : "questions"}`,

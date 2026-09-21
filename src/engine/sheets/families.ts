@@ -78,6 +78,11 @@ export const SHEET_FAMILIES: readonly SheetFamily[] = [
       import("./maths/multiplication").then((m) => m.MULTIPLICATION_SHEET),
   },
   {
+    id: "lesson",
+    label: "Lessons: a method, explained",
+    load: () => import("./lessons/lesson").then((m) => m.LESSON_SHEET),
+  },
+  {
     id: "fractions",
     label: "Fractions",
     load: () => import("./maths/fractions").then((m) => m.FRACTIONS_SHEET),
@@ -163,6 +168,11 @@ export const SHEET_FAMILIES: readonly SheetFamily[] = [
     label: "Handwriting practice",
     load: () =>
       import("./writing/handwriting").then((m) => m.HANDWRITING_SHEET),
+  },
+  {
+    id: "penmanship",
+    label: "Penmanship",
+    load: () => import("./writing/penmanship").then((m) => m.PENMANSHIP_SHEET),
   },
   {
     id: "memory",

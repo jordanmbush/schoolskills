@@ -15,8 +15,9 @@ import { JOIN_FAMILIES, joinFamily, joinPairs } from "./joins";
  * and a shuffled order would teach the horizontal join before the diagonal one.
  *
  * What is deliberately *not* asserted is whether any given pair joins: that is
- * the font's answer and not the engine's (§6), and the same table is correct in
- * all three models.
+ * the model's answer and not this file's — the font's on an outline row, the
+ * hand's on a written one (§6, §25) — and the same table is correct in all
+ * three models.
  */
 
 describe("the families of join", () => {

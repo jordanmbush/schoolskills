@@ -10,7 +10,7 @@ import * as store from "./storage/db";
  * what may be saved are written down — the bargain `decks.ts` and `sheets.ts`
  * both strike, for the same reason.
  *
- * **This is what a preset is.** A parent working through a phonics programme
+ * **This is what a preset is.** A parent working through a phonics program
  * re-ticks the same forty boxes every time they make a sheet unless the list
  * can be kept, and the list outlives any one worksheet: the same "sounds we
  * know" builds a blending-line sheet on Monday and a dictation sheet on Friday.
@@ -66,7 +66,7 @@ function validate(input: InventoryInput): InventoryInput {
 /**
  * Every saved inventory, oldest first.
  *
- * All of them, with no profile to filter by — a phonics programme belongs to
+ * All of them, with no profile to filter by — a phonics program belongs to
  * the household, the same way a worksheet does, and the second child through it
  * uses the list the first one's parent already ticked.
  */

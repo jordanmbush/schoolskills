@@ -6,10 +6,10 @@ import type { WorldInfo } from "@/engine/worlds";
 import { Button } from "@/components/ui/kit";
 
 /**
- * The facts worth practising, and the two things to do about them.
+ * The facts worth practicing, and the two things to do about them.
  *
  * The list itself is `troubleFacts` — ranked worst-first, and a fact drops off
- * it as it gets learned — so this panel adds no judgement of its own. What it
+ * it as it gets learned — so this panel adds no judgment of its own. What it
  * adds is the pair of doors: **the same list, either raced or printed**
  * (docs/printables.md §14). A drill is a short deck of exactly these facts; a
  * sheet is exactly these facts on paper, which is the one thing no other

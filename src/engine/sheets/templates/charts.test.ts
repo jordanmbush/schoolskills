@@ -20,7 +20,7 @@ import { CHART_SHEET, chartKeyed } from "./charts";
 /**
  * The family where being one out is the whole of the bug.
  *
- * The suite is arithmetic rather than judgement: a 1–100 chart has a hundred
+ * The suite is arithmetic rather than judgment: a 1–100 chart has a hundred
  * squares numbered 1 to 100 in order, a 0–100 line marked every 10 has eleven
  * ticks and not ten, a first-quadrant plane to 10 has eleven gridlines each
  * way, and a heading sits over the column it names.
@@ -451,7 +451,7 @@ describe("every reference sheet", () => {
 
   it("prints something a parent can measure, in inches", () => {
     // The unit the whole subtree is in (§4). A square that came out as a
-    // fraction of a millimetre would still pass every count above.
+    // fraction of a millimeter would still pass every count above.
     const grid = gridOf(buildSheet(config(), 1));
     expect(toInches(grid.cell)).toBeGreaterThan(0.2);
     expect(toInches(grid.cell)).toBeLessThanOrEqual(0.8);

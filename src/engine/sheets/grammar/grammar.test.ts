@@ -1,8 +1,16 @@
 import { describe, expect, it } from "vitest";
 
-import { buildSheet, describeSheet } from "../index";
+import { answerKey, buildSheet, describeSheet } from "../index";
+import { printedBlockBox } from "../chrome";
 import { describeSheetFamily } from "../contract";
-import type { Block, GrammarConfig, GrammarStyle, Paper } from "../types";
+import { MAX_COUNT } from "../layout";
+import type {
+  Block,
+  GrammarConfig,
+  GrammarStyle,
+  Paper,
+  Sheet,
+} from "../types";
 
 import { END_MARK, KINDS, PARTS, SENTENCES, type Tagged } from "./bank";
 import {
@@ -18,7 +26,7 @@ import {
  * Grammar, held to the bar every other family meets — and to the one that only
  * bites here.
  *
- * On a maths sheet "verified by an independent path" means the answer is worked
+ * On a math sheet "verified by an independent path" means the answer is worked
  * out a second way. There is no second way to work out whether a word is an
  * adverb: the answer is a **tag somebody wrote down**, so what this file proves
  * is that the tags are sound and that the sheet prints them faithfully.
@@ -60,8 +68,59 @@ const EVERY_SHEET: GrammarConfig[] = GRAMMAR_TOPICS.flatMap((topic) =>
 
 const where = (one: GrammarConfig) => `${one.topic}/${one.style}`;
 
+/**
+ * One block a page, in order, with a `break` between. A grammar sheet prints
+ * nothing else, so a second block on a page is a failure here rather than a
+ * page silently skipped.
+ */
+function pagesOf(sheet: Sheet): Block[] {
+  const pages: Block[] = [];
+  let open = false;
+  for (const block of sheet.blocks) {
+    if (block.kind === "break") {
+      expect(open, "a break with no page before it").toBe(true);
+      open = false;
+      continue;
+    }
+    expect(open, "two blocks on one page").toBe(false);
+    pages.push(block);
+    open = true;
+  }
+  return pages;
+}
+
+/** The pages of a sheet, each narrowed to the block kind its style prints. */
+function pagesAs<K extends Block["kind"]>(
+  sheet: Sheet,
+  kind: K,
+): Array<Extract<Block, { kind: K }>> {
+  return pagesOf(sheet).map((block) => {
+    if (block.kind !== kind)
+      throw new Error(`expected ${kind}, got ${block.kind}`);
+    return block as Extract<Block, { kind: K }>;
+  });
+}
+
 const blockOf = (one: GrammarConfig, seed = 1): Block =>
-  buildSheet(one, seed).blocks[0];
+  pagesOf(buildSheet(one, seed))[0];
+
+/** Every choice a sheet put on paper, whichever pages it took. */
+const questionsOn = (one: GrammarConfig, seed = 1) =>
+  pagesAs(buildSheet(one, seed), "choice").flatMap((page) => page.questions);
+
+/** Every sentence a sheet put on paper, whichever pages it took. */
+const printedOf = (sheet: Sheet): number =>
+  pagesOf(sheet).reduce((total, block) => total + countOf(block), 0);
+
+/** The number a page's first sentence carries — both grammar blocks number. */
+const startOf = (block: Block): number | undefined =>
+  block.kind === "problems" || block.kind === "choice"
+    ? block.start
+    : undefined;
+
+/** How many across a page lays its sentences; a list down the page is one. */
+const columnsOf = (block: Block): number =>
+  block.kind === "problems" ? block.columns : 1;
 
 /** The bank by the sentence it holds, which is how a prompt finds its way home. */
 const BY_TEXT = new Map(SENTENCES.map((entry) => [entry.text, entry]));
@@ -128,11 +187,11 @@ describe("the sentence bank", () => {
     expect(new Set(tagged)).toEqual(new Set(PARTS));
   });
 
-  it("leaves exactly one word to capitalise, and never the first", () => {
+  it("leaves exactly one word to capitalize, and never the first", () => {
     for (const entry of SENTENCES) {
       const [first, ...rest] = wordsOf(entry.text);
       expect(first, entry.text).not.toBe("");
-      // Whatever else is capitalised inside the sentence is the proper noun and
+      // Whatever else is capitalized inside the sentence is the proper noun and
       // nothing else — an "I" or a second name would be a second thing a child
       // could point at and be right about.
       const capitalised = rest.filter(
@@ -166,7 +225,7 @@ describe("the sentence bank", () => {
 
   it("never asks which mark an exclamation ends on", () => {
     // "What a mess" takes a bang and a full stop is not a mistake anybody can
-    // point to, so the one judgement call in end punctuation is left out of the
+    // point to, so the one judgment call in end punctuation is left out of the
     // topic rather than guessed at.
     const asked = topicOf("punctuation").questions.map((one) => one.answer);
     expect(new Set(asked)).toEqual(new Set([".", "?"]));
@@ -196,17 +255,13 @@ describe("the grammar family", () => {
       const sheet = buildSheet(one, 1);
       expect(sheet.header.title, where(one)).not.toBe("");
       expect(sheet.header.instructions, where(one)).toBeTruthy();
-      // Marked out of what is on the page rather than out of what was asked
-      // for: a subject-and-predicate sheet spends three lines on every sentence
-      // and holds eight of them, and "/ 10" over eight is wrong twice.
-      const room = Math.min(
-        one.count,
-        grammarLayout(one).perPage,
-        topicOf(one.topic).questions.length,
-      );
+      // Marked out of what is on the sheet rather than out of what was asked
+      // for, and the sheet runs on: subject and predicate spends three lines
+      // on every sentence, holds eight to a page, and prints ten over two.
+      const room = Math.min(one.count, topicOf(one.topic).questions.length);
       expect(room, where(one)).toBeGreaterThan(5);
       expect(sheet.header.score?.outOf, where(one)).toBe(room);
-      expect(sheet.blocks, where(one)).toHaveLength(1);
+      expect(printedOf(sheet), where(one)).toBe(room);
       // §16's footer URL is the game that matches the sheet, and there is no
       // grammar race — so this one says the site.
       expect(sheet.footer.url, where(one)).toBe("schoolskills.app");
@@ -218,6 +273,12 @@ describe("the grammar family", () => {
       .toBe("Capital letters — 10 sentences — written in");
     expect(describeSheet(config({ topic: "types", style: "choose" }))) //
       .toBe("Kinds of sentence — 10 sentences — circled");
+    // A count past the bank names the bank, not the page: a written sheet
+    // runs on to another page rather than stopping at the paper.
+    const capitals = topicOf("capitals").questions.length;
+    expect(
+      describeSheet(config({ topic: "capitals", style: "write", count: 200 })),
+    ).toBe(`Capital letters — ${capitals} sentences — written in`);
   });
 
   it("falls back to a style the topic has rather than throwing", () => {
@@ -240,7 +301,9 @@ describe("the grammar family", () => {
     }
   });
 
-  it("never prints more sentences than the paper holds", () => {
+  it("runs both styles on to another page rather than cutting either", () => {
+    // A sheet asked for more than a page holds is more pages, written or
+    // circled (§4) — and never more than the bank has.
     for (const size of ["letter", "a4"] as const) {
       for (const fontPt of [10, 12, 18, 36]) {
         for (const one of EVERY_SHEET) {
@@ -251,13 +314,87 @@ describe("the grammar family", () => {
             count: 200,
             columns: 2,
           };
+          const label = `${where(one)} ${size}@${fontPt}`;
           const { perPage } = grammarLayout(big);
-          const printed = countOf(blockOf(big));
-          expect(printed, `${where(one)} ${size}@${fontPt}`) //
-            .toBeLessThanOrEqual(perPage);
-          // And never more than the bank has, which is the other cap.
-          expect(printed, where(one)) //
-            .toBeLessThanOrEqual(topicOf(one.topic).questions.length);
+          const bank = Math.min(topicOf(one.topic).questions.length, MAX_COUNT);
+          const sheet = buildSheet(big, 1);
+          const pages = pagesOf(sheet);
+          // A row taller than the page holds nothing at all, and no number
+          // of pages would mend it.
+          if (perPage === 0) {
+            expect(pages.map(countOf), label).toEqual([0]);
+            continue;
+          }
+          expect(pages.length, label).toBe(Math.ceil(bank / perPage));
+          expect(printedOf(sheet), label).toBe(bank);
+          for (const [at, page] of pages.entries())
+            if (at < pages.length - 1)
+              expect(countOf(page), `${label}, page ${at + 1}`).toBe(perPage);
+        }
+      }
+    }
+  });
+
+  it("runs on to another page rather than cutting the count to the paper", () => {
+    // Twenty sentences to cut in half, at eight to a page, are three pages
+    // and not eight sentences; every part of speech to circle at 36pt is
+    // several (§4). The numbering carries on, the score box counts every
+    // page, and the key runs on page for page.
+    const shapes: Array<Partial<GrammarConfig>> = [
+      { topic: "subject", style: "write", count: 20 },
+      { topic: "parts", style: "choose", count: 200, fontPt: 36 },
+    ];
+    for (const shape of shapes) {
+      const one = config(shape);
+      const { perPage } = grammarLayout(one);
+      const wanted = Math.min(one.count, topicOf(one.topic).questions.length);
+      const sheet = buildSheet(one, 3);
+      const pages = pagesOf(sheet);
+      expect(pages.length, where(one)).toBeGreaterThan(1);
+      expect(pages.length, where(one)).toBe(Math.ceil(wanted / perPage));
+      expect(countOf(pages[0]), where(one)).toBe(perPage);
+      expect(startOf(pages[1]), where(one)).toBe(perPage + 1);
+      expect(printedOf(sheet), where(one)).toBe(wanted);
+      expect(sheet.header.score?.outOf, where(one)).toBe(wanted);
+      expect(pagesOf(answerKey(one, 3)).map(countOf), where(one)) //
+        .toEqual(pages.map(countOf));
+    }
+  });
+
+  it("never prints more sentences on a page than the paper holds", () => {
+    // Against the box the printed header leaves rather than the config's,
+    // and every page but the last full: a page cut short of what fits would
+    // be a sheet of paper for nothing.
+    for (const size of ["letter", "a4", "legal"] as const) {
+      for (const margin of ["narrow", "normal", "wide"] as const) {
+        for (const fontPt of [8, 12, 18, 24, 36]) {
+          for (const one of EVERY_SHEET) {
+            const big = {
+              ...one,
+              paper: { ...paper, size, margin },
+              fontPt,
+              count: 200,
+              columns: 2,
+            };
+            const label = `${where(one)} ${size}/${margin}/${fontPt}pt`;
+            const sheet = buildSheet(big, 8);
+            const pages = pagesOf(sheet);
+            expect(pages.length, label).toBeGreaterThan(0);
+            const { row, gap, perPage } = grammarLayout(big);
+            for (const [at, page] of pages.entries()) {
+              const rows = Math.ceil(countOf(page) / columnsOf(page));
+              const used = rows * row + Math.max(0, rows - 1) * gap;
+              expect(used, `${label}, page ${at + 1}`).toBeLessThanOrEqual(
+                printedBlockBox(sheet).height,
+              );
+              if (at < pages.length - 1)
+                expect(countOf(page), `${label}, page ${at + 1}`).toBe(
+                  countOf(pages[0]),
+                );
+            }
+            // A row taller than the page holds nothing at all.
+            if (perPage === 0) expect(pages.map(countOf), label).toEqual([0]);
+          }
         }
       }
     }
@@ -302,12 +439,14 @@ function entryOf(prompt: string, find: (entry: Tagged) => string): Tagged {
   return found;
 }
 
-/** The `problems` block of a written sheet, narrowed. */
+/** Every problem of a written sheet, whichever pages it took. */
 function itemsOf(topic: string) {
-  const block = blockOf(config({ topic: topic as never, style: "write" }), 3);
-  if (block.kind !== "problems") throw new Error(`got ${block.kind}`);
-  expect(block.items.length, topic).toBeGreaterThan(0);
-  return block.items;
+  const items = pagesAs(
+    buildSheet(config({ topic: topic as never, style: "write" }), 3),
+    "problems",
+  ).flatMap((page) => page.items);
+  expect(items.length, topic).toBeGreaterThan(0);
+  return items;
 }
 
 describe("the answers on a grammar sheet", () => {
@@ -387,13 +526,12 @@ describe("circling one of a closed list", () => {
       const scale = topicOf(topic).options;
       if (!scale) throw new Error(`${topic} circles nothing`);
       for (let seed = 1; seed <= 50; seed++) {
-        const block = blockOf(
+        const printed = questionsOn(
           config({ topic, style: "choose", count: 12 }),
           seed,
         );
-        if (block.kind !== "choice") throw new Error("expected choice");
         const drawn = new Set(
-          block.questions.map((question) => question.options[question.answer]),
+          printed.map((question) => question.options[question.answer]),
         );
         expect([...drawn].sort(), `${topic} @${seed}`).toEqual(
           [...scale].sort(),
@@ -407,11 +545,12 @@ describe("circling one of a closed list", () => {
       if (!grammarStyles(topic).includes("choose")) continue;
       const scale = topicOf(topic).options;
       if (!scale) throw new Error(`${topic} circles nothing`);
-      const block = blockOf(config({ topic, style: "choose", count: 12 }));
-      if (block.kind !== "choice") throw new Error("expected choice");
-      expect(block.questions.length, topic).toBeGreaterThan(0);
+      const printed = questionsOn(
+        config({ topic, style: "choose", count: 12 }),
+      );
+      expect(printed.length, topic).toBeGreaterThan(0);
 
-      for (const question of block.questions) {
+      for (const question of printed) {
         // The same list on every line, in the same order — a page whose options
         // moved about is a page a child has to read five times.
         expect(question.options, question.prompt).toEqual(scale);
@@ -440,7 +579,7 @@ describe("the styles a topic offers", () => {
       for (const style of styles) expect(known, topic).toContain(style);
       expect(new Set(styles).size, topic).toBe(styles.length);
       // A topic offers "circle one" exactly when there is something closed to
-      // circle. An end mark, a capitalised word and a sentence cut in half are
+      // circle. An end mark, a capitalized word and a sentence cut in half are
       // none of them one of four things.
       expect(styles.includes("choose"), topic) //
         .toBe(topicOf(topic).options !== undefined);

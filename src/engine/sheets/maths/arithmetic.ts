@@ -1,5 +1,5 @@
 /**
- * Addition and subtraction, and the family every maths family after it copies.
+ * Addition and subtraction, and the family every math family after it copies.
  *
  * Lined paper is correct if it measures what it says it measures. A page of sums
  * is correct only if every answer on the key is right, every problem is inside
@@ -26,6 +26,8 @@ import {
   answerLine,
   columnWidth,
   fitAcross,
+  problemPages,
+  wantedOf,
   type Box,
 } from "../layout";
 import { NUMBER_LINE_HEIGHT, numberLine } from "../numberline";
@@ -398,10 +400,7 @@ export function arithmeticProblems(
   seed: number,
 ): Problem[] {
   const { cell, perPage } = arithmeticLayout(config);
-  // The count is a request, not a promise. Print is the whole of the output
-  // path (§10), so a count that overruns is a second sheet out of the printer
-  // with two problems on it — worse than printing the ones that fit.
-  const wanted = clamp(config.count, 0, perPage);
+  const wanted = wantedOf(config.count, perPage);
 
   const rand = mulberry32(seed);
   const seen = new Set<string>();
@@ -564,7 +563,7 @@ function describeArithmetic(config: ArithmeticConfig): string {
 
 function buildArithmeticSheet(config: ArithmeticConfig, seed: number): Sheet {
   const items = arithmeticProblems(config, seed);
-  const { columns } = arithmeticLayout(config);
+  const { columns, perPage } = arithmeticLayout(config);
   const head = headerOf(config);
 
   return {
@@ -574,11 +573,12 @@ function buildArithmeticSheet(config: ArithmeticConfig, seed: number): Sheet {
       title: head.title ?? "",
       instructions: head.instructions,
       fields: head.fields,
-      // Marked out of what is actually on the page, not out of what was asked
-      // for: a sheet that says "/ 20" over eighteen problems is wrong twice.
+      // Marked out of what was actually drawn, every page counted, not out of
+      // what was asked for: a sheet that says "/ 20" over eighteen problems is
+      // wrong twice.
       score: { outOf: items.length },
     },
-    blocks: [{ kind: "problems", columns, items }],
+    blocks: problemPages(items, columns, perPage),
     footer: { credit: SHEET_CREDIT, url: gameUrl("grid"), seed },
     answers: false,
   };

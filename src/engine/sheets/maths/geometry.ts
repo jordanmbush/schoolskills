@@ -5,7 +5,7 @@
  * unchanged (§7, §11); the two things that are new are both about the picture
  * rather than the sum.
  *
- * **A wrong drawing is a wrong answer.** A rectangle labelled 8 by 3 and drawn 8
+ * **A wrong drawing is a wrong answer.** A rectangle labeled 8 by 3 and drawn 8
  * by 4 is a sheet that teaches a child not to trust the picture, which is worse
  * than a sheet with no picture on it. So every figure is built from the same
  * numbers the labels are written from (`figure.ts` does the building), and the
@@ -13,7 +13,7 @@
  * generator — a shape drawn out of proportion fails there.
  *
  * **An angle is drawn true.** Lengths are drawn in proportion because a
- * rectangle eight metres across does not fit on a page; an angle has no size, so
+ * rectangle eight meters across does not fit on a page; an angle has no size, so
  * a sixty-degree angle is drawn at sixty degrees and "is this acute or obtuse?"
  * is a question about the paper rather than about the caption.
  *
@@ -25,6 +25,7 @@
 import { between, mulberry32 } from "@/engine/random";
 
 import type {
+  Block,
   Figure,
   GeometryConfig,
   GeometryStyle,
@@ -52,6 +53,7 @@ import {
   answerLine,
   columnWidth,
   fitAcross,
+  wantedOf,
   type Box,
 } from "../layout";
 import { inches } from "../paper";
@@ -169,7 +171,7 @@ function drawArea(config: GeometryConfig, rand: () => number): Drawn | null {
     key: `area:triangle:${across}:${down}:${unit}`,
     prompt: "",
     answer: `${(across * down) / 2} ${squared(unit)}`,
-    // The sloping side is not labelled: it is not part of the area, and a number
+    // The sloping side is not labeled: it is not part of the area, and a number
     // on it is a number a child will try to multiply by.
     figure: rightTriangleFigure(across, down, [say(across), "", say(down)]),
   };
@@ -217,7 +219,7 @@ function drawPerimeter(
     prompt: "",
     answer: `${(base + height + slope) * by} ${unit}`,
     // In the order the points are given: the base, then the sloping side, then
-    // the upright. All three are labelled here, because all three are added.
+    // the upright. All three are labeled here, because all three are added.
     figure: rightTriangleFigure(base * by, height * by, [
       say(base * by),
       say(slope * by),
@@ -282,7 +284,7 @@ function drawAngle(rand: () => number): Drawn {
 }
 
 /**
- * How oblong an unlabelled rectangle has to be drawn: seven to five.
+ * How oblong an unlabeled rectangle has to be drawn: seven to five.
  *
  * Written as two whole numbers rather than a ratio, so the comparison that uses
  * them is whole-number arithmetic like everything else in this family.
@@ -424,49 +426,48 @@ export function geometryLayout(config: GeometryConfig): {
   };
 }
 
+/** A problem as it is printed, with the dot on the plane it asks about. */
+type Asked = { problem: Problem; mark?: GridMark };
+
 /**
- * Every problem on the sheet, and the points marked on the plane above them.
- *
- * Exported because it is the whole of what a test has to check. The marks come
- * back with the problems rather than being worked out again from them, so a dot
- * on the grid and the coordinates it is answered with cannot disagree.
+ * Every problem on the sheet, in the order they are printed, each with its
+ * own mark. The mark comes back with the problem rather than being worked
+ * out again from it, so a dot on the grid and the coordinates it is answered
+ * with cannot disagree — and so a page can carry exactly the dots its own
+ * problems ask about.
  */
-export function geometryProblems(
-  config: GeometryConfig,
-  seed: number,
-): { items: Problem[]; marks: GridMark[] } {
+function geometryProblems(config: GeometryConfig, seed: number): Asked[] {
   const { perPage, plane } = geometryLayout(config);
-  // The count is a request, not a promise: a count that overruns is a second
-  // sheet out of the printer with two problems on it.
-  const wanted = clamp(config.count, 0, perPage);
+  const wanted = wantedOf(config.count, perPage);
 
   const rand = mulberry32(seed);
   const seen = new Set<string>();
-  const items: Problem[] = [];
-  const marks: GridMark[] = [];
+  const asked: Asked[] = [];
   const extras = config.workspace ? { workspace: WORKSPACE } : {};
 
   let misses = 0;
-  while (items.length < wanted && misses < MISS_BUDGET) {
-    const drawn = drawOne(config, plane, items.length, rand);
+  while (asked.length < wanted && misses < MISS_BUDGET) {
+    const drawn = drawOne(config, plane, asked.length, rand);
     // A pool that has run out ends the draw rather than repeating itself:
-    // there are five shapes with names on this sheet, and five is the honest
+    // there are seven shapes with names on this sheet, and seven is the honest
     // answer to a request for twenty.
     if (drawn === null || seen.has(drawn.key)) {
       misses += 1;
       continue;
     }
     seen.add(drawn.key);
-    items.push({
-      prompt: drawn.prompt,
-      answer: drawn.answer,
-      ...(drawn.figure ? { figure: drawn.figure } : {}),
-      ...extras,
+    asked.push({
+      problem: {
+        prompt: drawn.prompt,
+        answer: drawn.answer,
+        ...(drawn.figure ? { figure: drawn.figure } : {}),
+        ...extras,
+      },
+      ...(drawn.mark ? { mark: drawn.mark } : {}),
     });
-    if (drawn.mark) marks.push(drawn.mark);
     misses = 0;
   }
-  return { items, marks };
+  return asked;
 }
 
 function drawOne(
@@ -550,9 +551,47 @@ function describeGeometry(config: GeometryConfig): string {
   ].join(" — ");
 }
 
+/**
+ * The problems cut into pages, and what the sheet is marked out of. On a
+ * coordinate sheet every page is the plane and then the questions about it,
+ * with only that page's dots on it: a child on page two finds the point
+ * they are asked about on page two, and the key marks it there (§4). One
+ * plane a page rather than one beside every problem, because a child reads
+ * the scale once and then uses it a dozen times.
+ *
+ * Written out rather than through `paged`, which cuts a list into one block
+ * a page, and a page here is two.
+ */
+function geometryPages(
+  config: GeometryConfig,
+  seed: number,
+): { blocks: Block[]; outOf: number } {
+  const { columns, perPage, plane } = geometryLayout(config);
+  const asked = geometryProblems(config, seed);
+  const take = Math.max(1, perPage);
+  const pages = Math.max(1, Math.ceil(asked.length / take));
+
+  const blocks: Block[] = [];
+  for (let at = 0; at < pages; at += 1) {
+    const from = at * take;
+    const page = asked.slice(from, from + take);
+    if (at > 0) blocks.push({ kind: "break" });
+    if (plane) {
+      const marks = page.flatMap((one) => (one.mark ? [one.mark] : []));
+      blocks.push({ kind: "grid", grid: { ...plane.grid, marks } });
+    }
+    blocks.push({
+      kind: "problems",
+      columns,
+      items: page.map((one) => one.problem),
+      ...(at > 0 ? { start: from + 1 } : {}),
+    });
+  }
+  return { blocks, outOf: asked.length };
+}
+
 function buildGeometrySheet(config: GeometryConfig, seed: number): Sheet {
-  const { items, marks } = geometryProblems(config, seed);
-  const { columns, plane } = geometryLayout(config);
+  const { blocks, outOf } = geometryPages(config, seed);
   const head = headerOf(config);
 
   return {
@@ -562,17 +601,9 @@ function buildGeometrySheet(config: GeometryConfig, seed: number): Sheet {
       title: head.title ?? "",
       instructions: head.instructions,
       fields: head.fields,
-      score: { outOf: items.length },
+      score: { outOf },
     },
-    blocks: [
-      // The plane, then the questions about it. One grid for the sheet rather
-      // than one per problem, and it carries the dots that are being asked
-      // about — which is why it is only here when there is a plane at all.
-      ...(plane
-        ? [{ kind: "grid" as const, grid: { ...plane.grid, marks } }]
-        : []),
-      { kind: "problems", columns, items },
-    ],
+    blocks,
     footer: { credit: SHEET_CREDIT, url: SHEET_URL, seed },
     answers: false,
   };

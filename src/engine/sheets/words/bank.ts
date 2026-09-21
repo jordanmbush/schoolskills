@@ -3,7 +3,7 @@
  * because English will not yield to a rule here (§11).
  *
  * ── House rules for adding one ──────────────────────────────────────────────
- *   - **One right answer**, markable without judgement. "Which of these rhymes
+ *   - **One right answer**, markable without judgment. "Which of these rhymes
  *     with cat" belongs here; "write a word that rhymes with cat" cannot be
  *     printed with a key.
  *   - **No second right answer among the near misses.** A distractor is drawn
@@ -13,7 +13,7 @@
  *     equally of `heavy`, `soft` of `hard` and equally of `loud` — so neither
  *     appears in `ANTONYMS` at all. No test can hold that line for you: a clash
  *     of meanings is invisible to something comparing strings.
- *   - **British spelling**, and nothing whose spelling differs between the two:
+ *   - **American spelling**, and nothing whose spelling differs between the two:
  *     a sheet is printed on both sides of the Atlantic, and a child marked
  *     wrong for `colour` is a bad sheet.
  *   - **Words a child of the age can picture.** These are read without a
@@ -104,7 +104,7 @@ export const MAX_SYLLABLES = 4;
 /* ── Two words that make one ───────────────────────────────────────────────
    The suffixes are chosen so that the spelling changes are on the page rather
    than avoided — `happy + ness` is the entry worth having, and `sad + ness` is
-   the one it is learnt against.                                             */
+   the one it is learned against.                                             */
 
 export type Sum = { part: string; base: string; word: string };
 
@@ -266,7 +266,7 @@ export const HOMOPHONES: Homophone[] = [
   },
   {
     pair: ["knight", "night"],
-    sentence: "The _ rode a grey horse.",
+    sentence: "The _ rode a gray horse.",
     answer: "knight",
   },
   {

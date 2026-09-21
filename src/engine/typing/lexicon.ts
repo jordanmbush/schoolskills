@@ -25,7 +25,7 @@
  *
  * ── Where the words came from ───────────────────────────────────────────────
  * Written for this repository. No corpus file was copied in, so there is no
- * upstream licence riding on it and nothing to re-check when a dependency
+ * upstream license riding on it and nothing to re-check when a dependency
  * changes hands.
  *
  * The first hundred are the common rank order of written English, which is a
@@ -34,8 +34,8 @@
  * grouped by sense in bands of decreasing frequency, commoner bands first — an
  * honest description of what the order is worth, and enough for its only two
  * consumers, which take the first twenty-five and the first hundred.
- * Selection leant on the Dolch and Fry sight-word sets already in
- * `decks/wordlists.ts` for the early bands and on what a primary reader
+ * Selection leaned on the Dolch and Fry sight-word sets already in
+ * `decks/wordlists.ts` for the early bands and on what a young reader
  * actually meets for the rest.
  *
  * The sentences and passages are original prose written for this file, which
@@ -51,11 +51,11 @@
  *     one. No curly quotes, no accents, no dashes that are not the hyphen.
  *     `lexicon.test.ts` walks every character of every word for this.
  *   - **Lowercase, and no proper nouns**, except where English will not have
- *     it: `I`, and the days and months. All three are capitalised here for the
- *     same reason they are capitalised on a page, and `unlockedAt` keeps them
+ *     it: `I`, and the days and months. All three are capitalized here for the
+ *     same reason they are capitalized on a page, and `unlockedAt` keeps them
  *     out of a child's way until block 4 teaches the shifts. Every other name
  *     lives in `NAMES` or in the sentence pool, where it reads as a name
- *     rather than as a capitalised noun in the middle of two thousand
+ *     rather than as a capitalized noun in the middle of two thousand
  *     lowercase ones.
  *   - **British spelling**, as everywhere in this repo. A child copies what is
  *     on screen, so the choice costs nothing and being consistent is worth
@@ -322,7 +322,7 @@ export const WORDS: readonly string[] = [
   "family",
   "body",
   "music",
-  "colour",
+  "color",
   "mark",
   "often",
   "until",
@@ -370,7 +370,7 @@ export const WORDS: readonly string[] = [
   "wait",
 
   // ── People, and what they are to each other ────────────────────────────────
-  "mum",
+  "mom",
   "dad",
   "baby",
   "brother",
@@ -381,9 +381,9 @@ export const WORDS: readonly string[] = [
   "uncle",
   "cousin",
   "granny",
-  "grandad",
+  "grandpa",
   "parent",
-  "neighbour",
+  "neighbor",
   "teacher",
   "class",
   "friends",
@@ -556,7 +556,7 @@ export const WORDS: readonly string[] = [
   "lesson",
   "reading",
   "writing",
-  "maths",
+  "math",
   "science",
   "history",
   "spelling",
@@ -677,7 +677,7 @@ export const WORDS: readonly string[] = [
   "jam",
   "honey",
   "cake",
-  "biscuit",
+  "cookie",
   "bun",
   "pie",
   "pudding",
@@ -817,7 +817,7 @@ export const WORDS: readonly string[] = [
   "harvest",
   "spring",
   "summer",
-  "autumn",
+  "pumpkin",
   "winter",
 
   // ── Town, travel and machines ──────────────────────────────────────────────
@@ -1010,7 +1010,7 @@ export const WORDS: readonly string[] = [
   "painted",
   "drew",
   "wrote",
-  "spelt",
+  "spelled",
   "counted",
   "measured",
   "built",
@@ -1042,7 +1042,7 @@ export const WORDS: readonly string[] = [
   "stood",
   "lay",
   "knelt",
-  "leant",
+  "leaned",
   "reached",
   "stretched",
   "bent",
@@ -1076,13 +1076,13 @@ export const WORDS: readonly string[] = [
   "floated",
   "melted",
   "froze",
-  "burnt",
+  "burned",
   "shone",
   "glowed",
   "sparkled",
   "grew",
   "changed",
-  "learnt",
+  "learned",
   "taught",
   "showed",
   "told",
@@ -1153,7 +1153,7 @@ export const WORDS: readonly string[] = [
   "obeyed",
   "allowed",
   "tried",
-  "practised",
+  "practiced",
   "improved",
   "managed",
   "succeeded",
@@ -1289,7 +1289,7 @@ export const WORDS: readonly string[] = [
   "purple",
   "brown",
   "black",
-  "grey",
+  "gray",
   "golden",
   "silver",
   "pink",
@@ -1402,7 +1402,7 @@ export const WORDS: readonly string[] = [
   "expensive",
   "experiment",
   "explorer",
-  "favourite",
+  "favorite",
   "following",
   "fortunate",
   "frightened",
@@ -1605,8 +1605,8 @@ export const WORDS: readonly string[] = [
   "length",
   "height",
   "width",
-  "metre",
-  "centimetre",
+  "meter",
+  "centimeter",
   "kilogram",
   "gram",
   "litre",
@@ -1941,7 +1941,7 @@ export const WORDS: readonly string[] = [
   "stories",
   "poems",
   "pictures",
-  "colours",
+  "colors",
   "shapes",
   "numbers",
   "answers",
@@ -2033,7 +2033,7 @@ export const WORDS: readonly string[] = [
   "buttons",
   "ribbons",
   "sandwiches",
-  "biscuits",
+  "cookies",
   "cakes",
   "apples",
   "oranges",
@@ -2066,7 +2066,7 @@ export const WORDS: readonly string[] = [
   "planting",
   "building",
   "mending",
-  "colouring",
+  "coloring",
   "measuring",
   "weighing",
   "sorting",
@@ -2075,7 +2075,7 @@ export const WORDS: readonly string[] = [
   "finishing",
   "starting",
   "trying",
-  "practising",
+  "practicing",
   "improving",
   "remembering",
   "forgetting",
@@ -2541,8 +2541,8 @@ export const ALTERNATING: readonly string[] = [
   "eight",
   "pair",
   "wish",
-  "spelt",
-  "burnt",
+  "usual",
+  "neighbor",
   "paid",
   "spent",
   "kept",
@@ -2671,7 +2671,7 @@ export const RIGHT_HAND: readonly string[] = [
   "him",
   "look",
   "only",
-  "mum",
+  "mom",
   "puppy",
   "pony",
   "lion",
@@ -2725,12 +2725,12 @@ export const RIGHT_HAND: readonly string[] = [
  *
  * Lesson 39 is a **words** lesson whose whole subject is names, which is the
  * one thing `WORDS` deliberately has none of: a proper noun in the corpus is a
- * capitalised noun in every draw that is not about names, and there are two
+ * capitalized noun in every draw that is not about names, and there are two
  * thousand of those. So the names it needs are a pool of their own, reached by
  * that lesson and by nothing else.
  *
  * It comes straight after the two shift lessons on purpose. A capital is the
- * one character a child has just learnt to make and cannot yet practise on
+ * one character a child has just learned to make and cannot yet practice on
  * anything — every word in the corpus is lowercase but for `I` and the
  * calendar — and a name is a capital that has a reason to be there.
  *
@@ -2813,7 +2813,7 @@ export const NAMES: readonly string[] = [
  * digits. A lesson takes the ones its alphabet can reach and the order above
  * is what makes sure there are enough of them at every level.
  *
- * Names in a sentence are a name; names in `WORDS` would be capitalised nouns
+ * Names in a sentence are a name; names in `WORDS` would be capitalized nouns
  * skewing every ordinary draw, which is why lesson 44 reads "Ravi and Grace
  * waited at the gate" and why the bare list lesson 39 needs is `NAMES` above
  * rather than a band in the corpus.
@@ -2836,7 +2836,7 @@ export const SENTENCES: readonly string[] = [
   "Ten sheep stood together in the field.",
   "We planted seeds along the garden path.",
   "The train left the station without us.",
-  "A grey cloud covered the whole sky.",
+  "A gray cloud covered the whole sky.",
   "Her house is the last one on the hill.",
   "The children painted a long paper banner.",
   "Snow lay thick on the roof of the shed.",
@@ -2848,7 +2848,7 @@ export const SENTENCES: readonly string[] = [
   "The market opens early on a Saturday.",
   "She washed the plates and dried them.",
   "The wind blew the gate open again.",
-  "A ladder leant against the garden wall.",
+  "A ladder leaned against the garden wall.",
   "Our team won the match by one goal.",
 
   // With commas. Lesson 43 is about exactly this.
@@ -2864,7 +2864,7 @@ export const SENTENCES: readonly string[] = [
   "When the storm passed, the garden was covered in twigs.",
   "Slowly, quietly, the fox crossed the empty field.",
   "We climbed the hill, ate our lunch and came home.",
-  "The shop sells paper, pens, glue and coloured card.",
+  "The store sells paper, pens, glue and construction paper.",
   "Because it was snowing, the school stayed closed.",
   "He counted the coins, put them in a jar and smiled.",
 
@@ -2877,7 +2877,7 @@ export const SENTENCES: readonly string[] = [
   "Nina lives in a cottage near the harbour.",
   "Omar carried the ladder round to the shed.",
   "Lily and Finn raced to the top of the hill.",
-  "Jack helped his grandad plant the apple tree.",
+  "Jack helped his grandpa plant the apple tree.",
   "Rosa painted a picture of the old lighthouse.",
   "Ben and Zoe went to the museum on Tuesday.",
   "Kai left his boots by the kitchen door.",
@@ -2919,9 +2919,9 @@ export const SENTENCES: readonly string[] = [
 
   // Speech marks, from lesson 72. Lesson 86 is a whole passage of them.
   '"Come and look at this," said Mia.',
-  '"I think it is going to snow," said Grandad.',
+  '"I think it is going to snow," said Grandpa.',
   'Ravi shouted, "Wait for me!"',
-  '"Who wants the last biscuit?" asked Mum.',
+  '"Who wants the last cookie?" asked Mom.',
   '"We are nearly there," said Dad. "Keep walking."',
   '"That," said the teacher, "is a very good question."',
   '"Be careful on the ice," she warned.',
@@ -2934,15 +2934,15 @@ export const SENTENCES: readonly string[] = [
   "The old, well-loved book had a torn cover.",
   "He named the file winter_walk and saved it.",
   "The path (the muddy one) leads to the river.",
-  "We paid 3 pounds for a bag of apples.",
+  "We paid 3 dollars for a bag of apples.",
   "Add 25 and 17, then take away 8.",
-  "The shop opens at 9 and closes at 5.",
+  "The store opens at 9 and closes at 5.",
   "Our class has 28 children and 2 rabbits.",
   "She was born on 14 June 2019.",
   "The train leaves platform 3 at 10 past 7.",
   "Write to us at 12 Green Lane.",
   "The recipe makes 24 small buns.",
-  "He ran 100 metres in 15 seconds.",
+  "He ran 100 meters in 15 seconds.",
 ];
 
 /**
@@ -2979,27 +2979,27 @@ export const SENTENCES: readonly string[] = [
  */
 export const PASSAGES: readonly string[] = [
   "The path to the beach runs between two high hedges. In summer it is full of bees, and the grass on either side grows taller than a child. At the end there is a gate, and beyond the gate the ground drops away into sand. On a still morning you can hear the sea long before you can see it. We walked down with our boots in our hands and found the tide out, the whole bay flat and shining, and not a single footprint on it but our own.",
-  "Every autumn the old apple tree in the corner of the garden drops more fruit than we can carry. Some of it we pick, some of it the birds take, and the rest lies in the wet grass until the wasps find it. Grandad says the tree was planted the year he was born, which makes it older than the house. It leans a little to the left now, and one branch is held up by a wooden post, but it still gives us enough apples for a year of pies.",
-  "The hedgehog was under the shed, curled tight and covered in dry leaves. We left a bowl of water near the gap and waited. For three nights nothing moved. On the fourth night the bowl was empty, and in the morning there were small tracks in the mud by the fence. Mum said the best thing we could do was leave it alone, so we did. By the end of the month the tracks reached all the way across the garden to the compost heap, and back again.",
-  "Learning to ride a bicycle is mostly learning to trust the thing not to fall over. For a week I went up and down the lane with Dad holding the back of the seat, and every time he let go I stopped pedalling and put my feet down. Then one afternoon I got to the end of the lane and turned round before I noticed that he was standing by the gate, a long way behind me, with his hands in his pockets. I have not fallen off since.",
+  "Every fall the old apple tree in the corner of the garden drops more fruit than we can carry. Some of it we pick, some of it the birds take, and the rest lies in the wet grass until the wasps find it. Grandpa says the tree was planted the year he was born, which makes it older than the house. It leans a little to the left now, and one branch is held up by a wooden post, but it still gives us enough apples for a year of pies.",
+  "The hedgehog was under the shed, curled tight and covered in dry leaves. We left a bowl of water near the gap and waited. For three nights nothing moved. On the fourth night the bowl was empty, and in the morning there were small tracks in the mud by the fence. Mom said the best thing we could do was leave it alone, so we did. By the end of the month the tracks reached all the way across the garden to the compost heap, and back again.",
+  "Learning to ride a bicycle is mostly learning to trust the thing not to fall over. For a week I went up and down the lane with Dad holding the back of the seat, and every time he let go I stopped pedaling and put my feet down. Then one afternoon I got to the end of the lane and turned around before I noticed that he was standing by the gate, a long way behind me, with his hands in his pockets. I have not fallen off since.",
   "The library is warm in winter and cool in summer, which is more than can be said for our classroom. It has a low shelf near the window with the picture books on it, and a table where you are allowed to draw as long as you tidy up afterwards. The best day is Thursday, when the boxes come back from the other libraries and nobody knows what will be in them. I have found books about whales, about castles, and once about a girl who walked across a frozen lake.",
-  "It snowed in the night, quietly, the way it always does. By breakfast the garden had lost its edges: the path, the flower beds and the low wall were one smooth white shape, and the shed had a thick roof of it. The birds came down to the place where the grass had been and stood about looking cross. We put out crumbs and half an apple, and then we went out ourselves and made a track all the way to the gate that spoilt the whole thing, which was the point.",
-  "The den took two days to build and lasted until the first proper storm. We made the walls out of fallen branches leant against a low wall, and the roof out of an old sheet with stones on the corners. Inside there was room for three of us if nobody moved. We kept a tin of biscuits under a flat rock by the door, and a candle we were not allowed to light. When the wind took the roof off in October we found the biscuits were still dry, which felt like a kind of success.",
-  "Rowing on the lake at dawn is the quietest thing I know. The water is grey and completely flat, and the oars make a sound like somebody turning the page of a very large book. Mist sits on the surface in patches and moves when you go through it. Once we saw a heron standing in the reeds, so still that we had gone past it before we understood what it was. By the time the sun is properly up the wind has started, the lake has small waves on it, and the morning is over.",
+  "It snowed in the night, quietly, the way it always does. By breakfast the garden had lost its edges: the path, the flower beds and the low wall were one smooth white shape, and the shed had a thick roof of it. The birds came down to the place where the grass had been and stood about looking annoyed. We put out crumbs and half an apple, and then we went out ourselves and made a track all the way to the gate that spoiled the whole thing, which was the point.",
+  "The fort took two days to build and lasted until the first proper storm. We made the walls out of fallen branches leaned against a low wall, and the roof out of an old sheet with stones on the corners. Inside there was room for three of us if nobody moved. We kept a tin of cookies under a flat rock by the door, and a candle we were not allowed to light. When the wind took the roof off in October we found the cookies were still dry, which felt like a kind of success.",
+  "Rowing on the lake at dawn is the quietest thing I know. The water is gray and completely flat, and the oars make a sound like somebody turning the page of a very large book. Mist sits on the surface in patches and moves when you go through it. Once we saw a heron standing in the reeds, so still that we had gone past it before we understood what it was. By the time the sun is properly up the wind has started, the lake has small waves on it, and the morning is over.",
 
   // The five below are the long end, and the ladder is what asks for it: 100
   // words at lessons 90 and 104, 120 at lesson 106, 150 at lesson 110. A pool
   // topping out under those is a pool the endurance lessons cannot be
   // generated from at all, which is why the length test counts against
   // LESSONS rather than against a window written into the test.
-  "The old railway line behind the village has not carried a train since before my mother was born. The rails came up years ago and the sleepers went with them, so what is left is a long flat path running straight through the middle of the fields, with a hedge on either side and a bridge every mile or so. In spring it fills with cow parsley taller than my head, and the whole cutting smells green. You can walk it for an hour and meet nobody but a man with a dog. At the far end there is a platform standing on its own in the grass, with a bench on it and no station left to belong to.",
-  "Bread is four things: flour, water, salt and yeast. Everything else is time. We mixed ours in a bowl with a wooden spoon until it stopped being a puddle and started being a lump, and then we turned it out onto the table and pushed it about for ten minutes, which is a great deal longer than it sounds. After that it sat under a cloth by the radiator and doubled in size while we did something else entirely. The part I like best is knocking it back down again. It came out of the oven brown on top and hollow when you tapped the bottom, and we burnt our fingers on it because nobody was willing to wait for it to cool.",
+  "The old railroad line behind the village has not carried a train since before my mother was born. The rails came up years ago and the ties went with them, so what is left is a long flat path running straight through the middle of the fields, with a hedge on either side and a bridge every mile or so. In spring it fills with wildflowers taller than my head, and the whole cutting smells green. You can walk it for an hour and meet nobody but a man with a dog. At the far end there is a platform standing on its own in the grass, with a bench on it and no station left to belong to.",
+  "Bread is four things: flour, water, salt and yeast. Everything else is time. We mixed ours in a bowl with a wooden spoon until it stopped being a puddle and started being a lump, and then we turned it out onto the table and pushed it about for ten minutes, which is a great deal longer than it sounds. After that it sat under a cloth by the radiator and doubled in size while we did something else entirely. The part I like best is knocking it back down again. It came out of the oven brown on top and hollow when you tapped the bottom, and we burned our fingers on it because nobody was willing to wait for it to cool.",
   "A lighthouse is not really a house, though somebody used to live in most of them. The one on the point has a door at the bottom, a stair that turns round and round the inside wall, and a room at the top made almost entirely of glass. The light itself is smaller than you would expect. What makes it carry for miles is the lens around it, a great barrel of curved glass rings that gathers everything the lamp gives out and throws it flat across the water. The whole thing floats on a bed of oil and turns so slowly that you cannot see it move, and the flash a sailor counts out at sea is that turn coming round to face him again.",
   "Ice is water that has stopped moving, and if you watch a pond through a cold week you can see it happen in stages. The first night puts a skin on the still edges, thin enough that a stone goes straight through it and the hole freezes over again by morning. After three or four nights the skin has reached the middle and thickened, and the whole surface groans when the temperature changes, because ice takes up more room than the water it came from and has nowhere to go but up and outwards. The fish are still there underneath, slower than they were, breathing water that never quite freezes. The lid of ice is what keeps the cold out as much as it keeps it in, which is the part nobody expects. A frozen pond is not a dead one. It is a room with the door shut, and when the thaw comes the whole thing goes back to being water again as though nothing had happened at all.",
   "Nobody in our house can agree about the right way to make a fire. My father builds a small pile of twigs, lights it, and feeds bigger sticks in one at a time until it takes. My aunt lays the whole thing first, biggest at the bottom, and puts a single match to it. Both of them are completely certain, and both of their fires burn, which is the annoying part. What they do agree on is the two rules: everything must be dry, and there must be room for the air to get in. A fire is not really the wood burning at all. It is the hot gas coming off the wood, meeting the air above it and catching, which is why a heap packed tight goes out and a loose one does not. I have watched enough of them now to believe it, though neither of them has ever managed to light one in the rain.",
-  '"Hold the end of it," said Dad, "and do not let go until I say." I held the end of it. The tent went up, more or less, and then it went sideways, and then it lay down in the grass like something that had given up. "Right," said Dad. "We will read the instructions." Mum laughed from the car. By the time it was dark we had a tent, a fire, and a rule that nobody was allowed to say the word tent again for the rest of the week.',
-  '"Does anybody know why the sea is salty?" asked Mrs Hall. Nobody did. "Rivers," she said. "Rain falls on the hills, runs down through the rocks, and carries a little salt with it all the way to the sea. The water leaves again as cloud, but the salt stays behind." Ravi put his hand up. "So it is getting saltier?" he asked. "Very slowly," said Mrs Hall, "and it has been doing it for a very long time." We all looked out of the window at the rain.',
-  '"What is the coldest it has ever been here?" I asked Grandad. He thought about it for a while. "The winter the pipes froze," he said. "The snow came in December and it was still lying in the lane in March. We carried water up from the stream in buckets, and the milk froze on the step before your great grandmother could bring it in." I asked him whether the school had closed. "For a fortnight," he said, "and we were pleased about that for roughly three days. After that there is nothing to be done with a fortnight of snow but shovel it, and then shovel it again." He laughed at me. "You would have hated every minute of it. We all did."',
-  "The market opens at 7 and is packed by 9. Apples are 2 pounds a bag, bread is 3, and the man on the corner stall sells 6 eggs for the price of 4 if you get there early. We had 15 pounds between us and a list of 8 things, which sounds like plenty until you add it up. In the end we came home with 5 bags, 2 loaves and no money at all, and Mum said that is exactly how a market is supposed to work.",
-  "The moon is about 384 thousand kilometres away, which is roughly 30 Earths laid end to end. Light crosses that gap in 1 and a quarter seconds, so a radio message to somebody standing there takes about 2 and a half seconds to go and come back. The astronauts of 1969 took 3 days. They landed with 25 seconds of fuel left, walked about for 2 hours, and brought back 22 kilograms of rock, which is still being studied in laboratories today.",
+  '"Hold the end of it," said Dad, "and do not let go until I say." I held the end of it. The tent went up, more or less, and then it went sideways, and then it lay down in the grass like something that had given up. "Right," said Dad. "We will read the instructions." Mom laughed from the car. By the time it was dark we had a tent, a fire, and a rule that nobody was allowed to say the word tent again for the rest of the week.',
+  '"Does anybody know why the sea is salty?" asked Mrs. Hall. Nobody did. "Rivers," she said. "Rain falls on the hills, runs down through the rocks, and carries a little salt with it all the way to the sea. The water leaves again as cloud, but the salt stays behind." Ravi put his hand up. "So it is getting saltier?" he asked. "Very slowly," said Mrs. Hall, "and it has been doing it for a very long time." We all looked out of the window at the rain.',
+  '"What is the coldest it has ever been here?" I asked Grandpa. He thought about it for a while. "The winter the pipes froze," he said. "The snow came in December and it was still lying in the lane in March. We carried water up from the stream in buckets, and the milk froze on the step before your great grandmother could bring it in." I asked him whether the school had closed. "For two weeks," he said, "and we were pleased about that for roughly three days. After that there is nothing to be done with two weeks of snow but shovel it, and then shovel it again." He laughed at me. "You would have hated every minute of it. We all did."',
+  "The market opens at 7 and is packed by 9. Apples are 2 dollars a bag, bread is 3, and the man on the corner stand sells 6 eggs for the price of 4 if you get there early. We had 15 dollars between us and a list of 8 things, which sounds like plenty until you add it up. In the end we came home with 5 bags, 2 loaves and no money at all, and Mom said that is exactly how a market is supposed to work.",
+  "The moon is about 384 thousand kilometers away, which is roughly 30 Earths laid end to end. Light crosses that gap in 1 and a quarter seconds, so a radio message to somebody standing there takes about 2 and a half seconds to go and come back. The astronauts of 1969 took 3 days. They landed with 25 seconds of fuel left, walked about for 2 hours, and brought back 22 kilograms of rock, which is still being studied in laboratories today.",
 ];

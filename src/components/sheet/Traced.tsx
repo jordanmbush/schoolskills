@@ -33,6 +33,14 @@ import type { SheetMetrics } from "./metrics";
  */
 const STROKED: TraceStyle[] = ["hollow", "dotted", "dashed"];
 
+/**
+ * What an outline face puts in a marked space: a middle dot in place of the
+ * space, since a font's dot is about as wide as its space and the row has
+ * no way to widen a gap or find its middle. A hand draws a ring in a wider
+ * gap instead (`Written.tsx`).
+ */
+export const SPACE_MARK = "·";
+
 export function Glyph({
   text,
   x,
@@ -181,7 +189,11 @@ export function TracedRow({
         {cells.map((entry, index) => (
           <Glyph
             key={`${index}-${entry.text}`}
-            text={entry.text}
+            text={
+              entry.spaces === "marked"
+                ? entry.text.replaceAll(" ", SPACE_MARK)
+                : entry.text
+            }
             x={index * cell}
             y={baseline}
             size={size}

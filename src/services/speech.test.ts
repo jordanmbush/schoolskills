@@ -97,7 +97,7 @@ describe("choosing a voice", () => {
   });
 
   it("expresses no accent preference on a device that isn't set to English", () => {
-    // A Spanish-language household practising English spellings. We know
+    // A Spanish-language household practicing English spellings. We know
     // nothing about which English they hear, so clarity alone decides.
     expect(chooseVoice(MAC_PREMIUM, null)!.name).toMatch(/\(Premium\)/);
   });
@@ -184,7 +184,7 @@ afterEach(() => {
 describe("noticing a word that never got said", () => {
   it("says nothing when the next card interrupts this one", async () => {
     // The trap this whole triage exists for. We cancel before every card, and
-    // cancelling reports itself as an error on whatever it stopped. Counting
+    // canceling reports itself as an error on whatever it stopped. Counting
     // that as a failure would mute the voice on card two of every race.
     const { say, spoken } = await bench();
     const onFail = vi.fn();

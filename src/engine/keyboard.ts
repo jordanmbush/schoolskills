@@ -184,7 +184,7 @@ export function keyFor(code: string): KeyDef | null {
  * the same single `--key` the picture does. Hailstorm's lanes are this function
  * (§3.2, §8.2, decision 19).
  *
- * The **middle** rather than the left edge, because a falling glyph is centred
+ * The **middle** rather than the left edge, because a falling glyph is centered
  * on its column and the wide keys are where the difference shows: the space bar
  * is 6.25 units, so its edge and its middle are three keys apart.
  */

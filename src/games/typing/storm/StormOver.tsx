@@ -29,7 +29,7 @@ import type { StormState } from "@/engine/typing/storm";
  * number, straight off `state`.
  *
  * **No grade, in any of it** (§8.5). The two endings are the same panel with
- * the same four figures in the same places and the same colours; what differs
+ * the same four figures in the same places and the same colors; what differs
  * is the heading, the lede, and — after a breach only — the "Its keys" line
  * and the drill button that offers them.
  */
@@ -140,7 +140,7 @@ export function StormOver({
       <div className="storm__actions">
         {breach && (
           <Button variant="go" onClick={() => practise(breach.keys)}>
-            Practise that finger
+            Practice that finger
           </Button>
         )}
         {/* The same storm, not another one: a wave is replayable from its seed

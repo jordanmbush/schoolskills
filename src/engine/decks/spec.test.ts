@@ -21,7 +21,7 @@ import { UNKNOWN_DECK } from "./spec";
 describe("a retired deck", () => {
   it("hands facts back exactly as they were stored", () => {
     // No folding, in either key. Whether 7×8 and 8×7 are one fact is a
-    // judgement only the family that built them can make, and it is gone.
+    // judgment only the family that built them can make, and it is gone.
     for (const factId of ["7:8", "8:7", "because", "The", ""]) {
       expect(UNKNOWN_DECK.masteryKey(factId)).toBe(factId);
       expect(UNKNOWN_DECK.drillKey(factId)).toBe(factId);

@@ -18,7 +18,8 @@
  * page's presentation, and a joins sheet resolves one for itself whatever is
  * picked there (`fontOf`).
  */
-import { MAX_REPEATS } from "@/engine/sheets/writing/handwriting";
+import { fontOf } from "@/engine/sheets/writing/handwriting";
+import { MAX_REPEATS } from "@/engine/sheets/writing/rows";
 import { JOIN_FAMILIES } from "@/engine/sheets/writing/joins";
 import type {
   HandwritingConfig,
@@ -31,6 +32,7 @@ import type {
 import { Checkbox, FieldSet, NumberStepper } from "@/components/ui/kit";
 import { parseWords } from "@/services/decks";
 
+import { GuidesControl } from "./guides";
 import { PassageControls } from "./passages";
 import { Choice, WordList, opt, type PanelProps } from "./parts";
 import { RULED_STYLES, RulingControls } from "./ruling";
@@ -69,7 +71,7 @@ const TRACES = [
   opt<TraceStyle>("dotted", "Dotted", "the usual"),
   opt<TraceStyle>("dashed", "Dashed"),
   opt<TraceStyle>("hollow", "Hollow"),
-  opt<TraceStyle>("dim", "Grey"),
+  opt<TraceStyle>("dim", "Gray"),
   opt<TraceStyle>("solid", "Solid"),
   opt<TraceStyle>("none", "None", "a model, then empty lines"),
 ];
@@ -135,6 +137,12 @@ export function HandwritingPanel({
         value={config.trace}
         onChange={(trace) => set({ trace })}
         options={TRACES}
+      />
+
+      <GuidesControl
+        font={fontOf(config)}
+        value={config.guides}
+        onChange={(guides) => set({ guides })}
       />
 
       <FieldSet

@@ -83,7 +83,7 @@ const SHAPES: Record<string, FormShape> = {
       { label: "Who wrote it", weight: 1, span: 1 },
       { label: "How many pages", weight: 1, span: 1 },
       { label: "What it is about", weight: 5, span: 2 },
-      { label: "My favourite part, and why", weight: 4, span: 2 },
+      { label: "My favorite part, and why", weight: 4, span: 2 },
       { label: "Who I would tell to read it", weight: 3, span: 2 },
     ],
   },
@@ -187,7 +187,7 @@ const INSTRUCTION: Record<string, string> = {
 /* ── The two tables ───────────────────────────────────────────────────────
    A reading log and a timeline are lists of days rather than sets of headings,
    so they are the table block. The columns are declared as shares, because the
-   proportions are the editorial judgement and the inches belong to whichever
+   proportions are the editorial judgment and the inches belong to whichever
    stock is in the tray.                                                     */
 
 const LOG_COLUMNS = [

@@ -1,4 +1,4 @@
-import type { BlockProps } from "./block";
+import { startOf, type BlockProps } from "./block";
 
 /**
  * Sentences with something missing.
@@ -13,6 +13,7 @@ import type { BlockProps } from "./block";
  * which is how a marked sheet reads.
  */
 export function Blanks({ block, metrics }: BlockProps<"blanks">) {
+  const from = startOf(block.start);
   return (
     <ol className="sheet__blanks">
       {block.sentences.map((sentence, index) => {
@@ -21,7 +22,7 @@ export function Blanks({ block, metrics }: BlockProps<"blanks">) {
         const segments = sentence.text.split(/_+/);
         return (
           <li className="sheet__sentence" key={`${index}-${sentence.text}`}>
-            <span className="sheet__number">{index + 1}.</span>
+            <span className="sheet__number">{from + index}.</span>
             {segments.map((segment, gap) => (
               <span key={gap}>
                 {segment}

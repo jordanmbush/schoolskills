@@ -20,7 +20,7 @@ import { Keyboard } from "./Keyboard";
  * That split is per BLOCK, not per file: the board is scenery and borrows none
  * of the five, and the press echo below it is signal and borrows exactly two.
  * So the scenery assertion reads the board's own block and stops where the
- * echo's begins — a slice to the end of the file would forbid the very colours
+ * echo's begins — a slice to the end of the file would forbid the very colors
  * §4.3 requires.
  */
 
@@ -100,7 +100,7 @@ describe("Keyboard", () => {
       expect(html).toContain(`data-finger="${key.finger}"`);
   });
 
-  it("has eight finger hues, and not one of them is a telemetry colour", () => {
+  it("has eight finger hues, and not one of them is a telemetry color", () => {
     const declarations = [
       ...css("tokens.css").matchAll(/(--finger-[a-z-]+):\s*([^;]+);/g),
     ];
@@ -156,11 +156,11 @@ describe("Keyboard", () => {
     );
   });
 
-  it("centres the board on the arithmetic when it overflows the race column", () => {
+  it("centers the board on the arithmetic when it overflows the race column", () => {
     // A life-size board overflows the 720px race column on purpose, and is
-    // centred with half the column minus half of fifteen units rather than
+    // centered with half the column minus half of fifteen units rather than
     // with an alignment property — neither `margin-inline: auto` nor
-    // `justify-self: center` centres against negative free space (§4.7,
+    // `justify-self: center` centers against negative free space (§4.7,
     // decision 62).
     //
     // Filtered rather than taken first, because `.typing .keyboard` is written
@@ -216,7 +216,7 @@ describe("Keyboard", () => {
     expect(lit.match(/is-wrong/g)).toHaveLength(1);
   });
 
-  it("points at the next key in `--go`, and not in a press colour", () => {
+  it("points at the next key in `--go`, and not in a press color", () => {
     const hint = game.slice(game.indexOf(HINT_BLOCK), game.indexOf(ECHO_BLOCK));
 
     // `--go` already means "press this". A hint drawn in `--lime` would be

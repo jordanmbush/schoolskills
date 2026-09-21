@@ -1,13 +1,16 @@
 import { describe, expect, it } from "vitest";
 
-import { buildSheet, describeSheet } from "../index";
+import { answerKey, buildSheet, describeSheet } from "../index";
+import { printedBlockBox } from "../chrome";
 import { describeSheetFamily } from "../contract";
 import { PROBLEM_GAP, answerLine } from "../layout";
 import type {
+  Block,
   MarginSize,
   Paper,
   PaperSize,
   Problem,
+  Sheet,
   StatisticsConfig,
 } from "../types";
 
@@ -17,7 +20,7 @@ import { STATISTICS_SHEET, modeOf, statisticsLayout } from "./statistics";
  * Mean, median, mode and range.
  *
  * **Nothing here checks the generator against the generator.** Every set is read
- * off the printed line and summarised again by a path the family does not have:
+ * off the printed line and summarized again by a path the family does not have:
  *
  * - the **mean** is checked by multiplying back — the answer added to itself
  *   once per number in the set has to make the total — so there is no division
@@ -33,7 +36,7 @@ import { STATISTICS_SHEET, modeOf, statisticsLayout } from "./statistics";
  *   number rather than by trusting the order.
  */
 
-/* ── Summarising a set, the long way round ───────────────────────────────── */
+/* ── Summarizing a set, the long way round ───────────────────────────────── */
 
 /** `a` added to itself `b` times — the only multiplication in this file. */
 function multiply(a: number, b: number): number {
@@ -144,12 +147,32 @@ describeSheetFamily("statistics", {
   seeds: SEEDS,
 });
 
-/** The one block a statistics sheet has, narrowed for the reader. */
+/** Every problem on the sheet, page after page. */
 function problemsOf(over: Partial<StatisticsConfig>, seed: number): Problem[] {
-  const block = buildSheet(config(over), seed).blocks[0];
-  if (block.kind !== "problems")
-    throw new Error(`expected problems, got ${block.kind}`);
-  return block.items;
+  return pagesOf(buildSheet(config(over), seed)).flatMap((page) => page.items);
+}
+
+/**
+ * The problems block of each page, in order. A statistics sheet prints one such
+ * block a page and nothing else, so anything else on a page is a failure here
+ * rather than a page silently skipped.
+ */
+function pagesOf(sheet: Sheet): Array<Extract<Block, { kind: "problems" }>> {
+  const pages: Array<Extract<Block, { kind: "problems" }>> = [];
+  let open = false;
+  for (const block of sheet.blocks) {
+    if (block.kind === "break") {
+      expect(open, "a break with no page before it").toBe(true);
+      open = false;
+      continue;
+    }
+    if (block.kind !== "problems")
+      throw new Error(`expected problems, got ${block.kind}`);
+    expect(open, "two problems blocks on one page").toBe(false);
+    pages.push(block);
+    open = true;
+  }
+  return pages;
 }
 
 const everyProblem = function* (
@@ -190,8 +213,7 @@ describe("the statistics family", () => {
 
   it("marks the sheet out of what is on it", () => {
     const sheet = buildSheet(config({ count: 5 }), 3);
-    const block = sheet.blocks[0];
-    expect(block.kind === "problems" && block.items.length).toBe(
+    expect(pagesOf(sheet).flatMap((page) => page.items).length).toBe(
       sheet.header.score?.outOf,
     );
   });
@@ -440,19 +462,30 @@ describe("how much fits", () => {
   const SIZES: PaperSize[] = ["letter", "a4", "legal"];
   const MARGINS: MarginSize[] = ["none", "narrow", "normal", "wide"];
 
-  it("never prints more problems than the paper holds", () => {
+  it("never prints more problems on a page than the paper holds", () => {
     for (const size of SIZES) {
       for (const margin of MARGINS) {
         for (const fontPt of [12, 18]) {
           for (const shape of EVERY_SHAPE) {
-            const over = { ...shape, paper: paper({ size, margin }), fontPt };
-            const problems = problemsOf({ ...over, count: 200 }, 8);
-            const { box, columns, row } = statisticsLayout(config(over));
-            const rows = Math.ceil(problems.length / columns);
-            const used = rows * row + Math.max(0, rows - 1) * PROBLEM_GAP.y;
-            expect(used, `${size}/${margin}/${fontPt}pt`).toBeLessThanOrEqual(
-              box.height,
-            );
+            const one = config({
+              ...shape,
+              paper: paper({ size, margin }),
+              fontPt,
+              count: 200,
+            });
+            const sheet = buildSheet(one, 8);
+            const { row } = statisticsLayout(one);
+            const pages = pagesOf(sheet);
+            for (const [at, page] of pages.entries()) {
+              const where = `${size}/${margin}/${fontPt}pt, page ${at + 1}`;
+              const rows = Math.ceil(page.items.length / page.columns);
+              const used = rows * row + Math.max(0, rows - 1) * PROBLEM_GAP.y;
+              expect(used, where).toBeLessThanOrEqual(
+                printedBlockBox(sheet).height,
+              );
+              if (at < pages.length - 1)
+                expect(page.items.length, where).toBe(pages[0].items.length);
+            }
           }
         }
       }
@@ -470,16 +503,51 @@ describe("how much fits", () => {
     }
   });
 
-  it("honours the count and the columns it was given", () => {
+  it("honors the count and the columns it was given", () => {
     expect(problemsOf({ count: 6 }, 1).length).toBe(6);
     for (const columns of [1, 2]) {
-      const block = buildSheet(config({ columns }), 1).blocks[0];
-      expect(block.kind === "problems" && block.columns).toBe(columns);
+      expect(pagesOf(buildSheet(config({ columns }), 1))[0].columns).toBe(
+        columns,
+      );
     }
     // One column when all four are asked at once: the answers are sentences
     // rather than numbers, and they go underneath.
-    const wide = buildSheet(config({ style: "all", columns: 4 }), 1).blocks[0];
-    expect(wide.kind === "problems" && wide.columns).toBe(1);
+    expect(
+      pagesOf(buildSheet(config({ style: "all", columns: 4 }), 1))[0].columns,
+    ).toBe(1);
+  });
+
+  it("runs on to another page rather than cutting the count to the paper", () => {
+    // Fifty sets are however many pages fifty sets take, not one page's
+    // worth: a parent who wanted one page prints page one (§4). The numbering
+    // carries on, so a child told to do 30 to 40 finds them.
+    const asked = config({ count: 50 });
+    const sheet = buildSheet(asked, 3);
+    const { perPage } = statisticsLayout(asked);
+    expect(perPage).toBeLessThan(50);
+    const pages = pagesOf(sheet);
+    expect(pages.length).toBe(Math.ceil(50 / perPage));
+    expect(pages.flatMap((page) => page.items).length).toBe(50);
+    expect(sheet.header.score?.outOf).toBe(50);
+    for (const [at, page] of pages.entries()) {
+      expect(page.start, `page ${at + 1}`).toBe(
+        at > 0 ? at * perPage + 1 : undefined,
+      );
+      if (at < pages.length - 1)
+        expect(page.items.length, `page ${at + 1}`).toBe(perPage);
+    }
+    // And the key runs on with it, page for page.
+    expect(pagesOf(answerKey(asked, 3)).map((page) => page.items.length)) //
+      .toEqual(pages.map((page) => page.items.length));
+  });
+
+  it("draws nothing when not even one row fits", () => {
+    // No number of pages mends a row taller than the paper (§4).
+    const tall = config({ style: "all", fontPt: 200 });
+    expect(statisticsLayout(tall).perPage).toBe(0);
+    const sheet = buildSheet(tall, 1);
+    expect(pagesOf(sheet).map((page) => page.items)).toEqual([[]]);
+    expect(sheet.header.score?.outOf).toBe(0);
   });
 });
 

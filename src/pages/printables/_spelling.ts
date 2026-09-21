@@ -13,7 +13,7 @@
  * a child races in the jungle are the words they write on paper, and the age
  * band on the list is what decides which page a parent lands on.
  *
- * **One stock, as with maths and unlike paper** (§8). The one page here that
+ * **One stock, as with math and unlike paper** (§8). The one page here that
  * *is* ruled — the tracing sheet — says so and links to the handwriting shelf,
  * which comes on both.
  */
@@ -38,7 +38,7 @@ export type SpellingSheet = {
   slug: string;
   /** How it is listed on a hub. */
   name: string;
-  /** How it is labelled in the row of neighbouring sheets. A few words. */
+  /** How it is labeled in the row of neighboring sheets. A few words. */
   short: string;
   /** The page's `<h1>`. */
   heading: string;
@@ -158,8 +158,8 @@ export const SPELLING_SHEETS: SpellingSheet[] = [
       "Eighteen words with two letters taken out of each — never the first, and never two in a row — with the answer key on the page behind.",
     lead: "Each word is printed with two of its letters missing and a ruled gap where each one goes. The letters taken out are always inside the word rather than at the start of it, so there is a word to work from rather than a guessing game.",
     notes: [
-      "Never the first letter, and never two in a row: those two rules are what make this an exercise rather than a puzzle. A child reading “_at” has a word to work from; a child reading “_ _ t” has a lottery. What is being practised is the middle of a word, which is where nearly every spelling mistake in English actually happens — the vowels a speaker cannot hear the difference between and the doubled consonants nobody sounds out.",
-      "The words are the longer sight words, which is where the gaps do the most work. “Because”, “before”, “around” and “always” are all mis-spelt in the middle by the same children who can spell them aloud, and a gap in that exact position is a question they cannot answer by sounding it out. The answer key on the page behind prints the letters back in, so this can be marked by somebody who was not sitting next to them.",
+      "Never the first letter, and never two in a row: those two rules are what make this an exercise rather than a puzzle. A child reading “_at” has a word to work from; a child reading “_ _ t” has a lottery. What is being practiced is the middle of a word, which is where nearly every spelling mistake in English actually happens — the vowels a speaker cannot hear the difference between and the doubled consonants nobody sounds out.",
+      "The words are the longer sight words, which is where the gaps do the most work. “Because”, “before”, “around” and “always” are all misspelled in the middle by the same children who can spell them aloud, and a gap in that exact position is a question they cannot answer by sounding it out. The answer key on the page behind prints the letters back in, so this can be marked by somebody who was not sitting next to them.",
     ],
     teaches: "Spelling patterns inside a word",
     ages: "Ages 6–9",
@@ -197,7 +197,7 @@ export const SPELLING_SHEETS: SpellingSheet[] = [
       "Word shapes are the reading scheme's answer to a child who knows all their sounds and still cannot spell, and they work because a word has a silhouette. “Bed” and “bad” are the same three sounds and a different picture; “light” has two tall letters at the front and a tail nowhere. A child who has drawn the shape a few times has a second way of checking a word that has nothing to do with sounding it out.",
       "The boxes are drawn as hairlines rather than as shaded blocks, which matters more here than it looks: browsers throw away background paint when printing unless somebody has found the “Background graphics” checkbox, and a word-shape sheet whose boxes were a tint comes out of the printer as an empty page. Everything on this sheet is a stroke, so it prints as it looks. The answer key writes each letter into its own box.",
     ],
-    teaches: "Recognising the shape of a word",
+    teaches: "Recognizing the shape of a word",
     ages: "Ages 5–8",
     group: "spelling",
     config: spelling("shapes", dolch("dolch-3", 16)),
@@ -210,10 +210,10 @@ export const SPELLING_SHEETS: SpellingSheet[] = [
     keyword: "Free printable spelling sentence worksheets",
     summary:
       "Eight of the hardest sight words, each with two ruled lines to use it in a sentence of the child's own.",
-    lead: "One word at the top of each group and two ruled lines under it. Nothing to copy: what goes on the lines is a sentence the child writes, using the word properly, with a capital at the front and a full stop at the end.",
+    lead: "One word at the top of each group and two ruled lines under it. Nothing to copy: what goes on the lines is a sentence the child writes, using the word properly, with a capital at the front and a period at the end.",
     notes: [
-      "A word is not learnt until it has been used, and this is the sheet that asks for that. A child can spell “together” in a test on Friday and still not put it in a sentence, and the gap between those two things is most of what a spelling list is for. It is also the page where handwriting, punctuation and spelling are being practised at once, which is why the lines are ruled rather than blank.",
-      "There is no answer key on this one, and there should not be: a sentence a child wrote is not a thing that has a right answer printed somewhere. What a parent marks is whether the word is spelt correctly and used as the word actually means — which is worth a conversation rather than a tick, and is the reason this sheet is eight words long rather than twenty.",
+      "A word is not learned until it has been used, and this is the sheet that asks for that. A child can spell “together” in a test on Friday and still not put it in a sentence, and the gap between those two things is most of what a spelling list is for. It is also the page where handwriting, punctuation and spelling are being practiced at once, which is why the lines are ruled rather than blank.",
+      "There is no answer key on this one, and there should not be: a sentence a child wrote is not a thing that has a right answer printed somewhere. What a parent marks is whether the word is spelled correctly and used as the word actually means — which is worth a conversation rather than a tick, and is the reason this sheet is eight words long rather than twenty.",
     ],
     teaches: "Using spelling words in writing",
     ages: "Ages 7–10",
@@ -233,7 +233,7 @@ export const SPELLING_SHEETS: SpellingSheet[] = [
     lead: "The first twelve words of the Dolch list, one to a line, each printed once and then written three times. These are the words a beginning reader meets most often and can least afford to stop at.",
     notes: [
       "A sight word is one worth knowing by sight rather than by sounding out, and the reason is arithmetic: a hundred or so words make up about half of everything a child reads, and a good many of them — “said”, “one”, “come”, “because” — do not say what their letters suggest. Time spent on these is worth several times the same time spent on a word a child could have worked out.",
-      "Writing them is a different exercise from reading them, and this is the sheet that closes that gap. A child who recognises “away” instantly on a page can still stall when asked to write it, because recognising a word and producing it are two different pieces of memory. Three goes at each, with the model printed once, is what turns the first into the second.",
+      "Writing them is a different exercise from reading them, and this is the sheet that closes that gap. A child who recognizes “away” instantly on a page can still stall when asked to write it, because recognizing a word and producing it are two different pieces of memory. Three goes at each, with the model printed once, is what turns the first into the second.",
     ],
     teaches: "Writing first sight words",
     ages: "Ages 4–6",
@@ -250,7 +250,7 @@ export const SPELLING_SHEETS: SpellingSheet[] = [
       "Twelve sight words on ⅝-inch handwriting paper, each traced once in dots and then written on an empty stretch of line.",
     lead: "One word to a line on ruled handwriting paper: a solid model to read, a dotted word to trace over, and then empty line to write it on. Spelling and handwriting in the same three minutes.",
     notes: [
-      "Tracing before writing is the right order at this age and the wrong place to stop. A dotted word practises following a line; the empty stretch after it is where a child practises writing the word, and it is the part that teaches. This sheet is one line of each, on ⅝-inch paper with room to write. The ruling is a real ⅝ of an inch, which is what a school means by handwriting paper, and it is the paper that decides how many lines a page holds: the list runs on to a second page rather than being squeezed onto one.",
+      "Tracing before writing is the right order at this age and the wrong place to stop. A dotted word practices following a line; the empty stretch after it is where a child practices writing the word, and it is the part that teaches. This sheet is one line of each, on ⅝-inch paper with room to write. The ruling is a real ⅝ of an inch, which is what a school means by handwriting paper, and it is the paper that decides how many lines a page holds: the list runs on to a second page rather than being squeezed onto one.",
       "It is a handwriting sheet whose words happen to be a spelling list, which is why it is ruled and the rest of this shelf is not. That also means it comes on A4 as well as on US Letter, over on the handwriting shelf: a ruling shrunk to fit whatever is in the printer is no longer the size it was chosen for, and every ruled sheet here has a twin measured for the other stock.",
     ],
     teaches: "Tracing and writing sight words",
@@ -429,8 +429,8 @@ export const SPELLING_SHEETS: SpellingSheet[] = [
       "Twelve sentences with a pair of homophones beside each — their and there, to and two, blue and blew — and a ruled gap for the one that belongs.",
     lead: "Each sentence has a word missing and the two spellings it could be printed beside it. Only one of them fits the sentence, and the sentence is the only thing that can decide it.",
     notes: [
-      "A homophone cannot be spelt from its sound, which is what makes this the one word exercise that has to be a sentence. “Their” and “there” are one noise, so a child asked to spell that noise cannot be wrong — there is no answer to the question. Put the noise in “put the box over ___” and there is exactly one right answer, and it is decided by meaning rather than by phonics.",
-      "These are the mistakes that survive into adult writing, which is a fair argument for meeting them early and often. Their/there, to/too/two, your/you’re and its/it’s are mis-spelt by people who spell everything else correctly, because the ear cannot help and the eye was never trained. Both spellings are printed beside every sentence so that the choice is on the page — the exercise is choosing, not remembering that a choice exists.",
+      "A homophone cannot be spelled from its sound, which is what makes this the one word exercise that has to be a sentence. “Their” and “there” are one noise, so a child asked to spell that noise cannot be wrong — there is no answer to the question. Put the noise in “put the box over ___” and there is exactly one right answer, and it is decided by meaning rather than by phonics.",
+      "These are the mistakes that survive into adult writing, which is a fair argument for meeting them early and often. Their/there, to/too/two, your/you’re and its/it’s are misspelled by people who spell everything else correctly, because the ear cannot help and the eye was never trained. Both spellings are printed beside every sentence so that the choice is on the page — the exercise is choosing, not remembering that a choice exists.",
     ],
     teaches: "Choosing between homophones",
     ages: "Ages 7–11",
@@ -448,7 +448,7 @@ export const SPELLING_SHEETS: SpellingSheet[] = [
     lead: "Two columns of words, and each word on the left means the same as one on the right. Draw a line between them. Every pair is a word a child already has beside a word that will make their writing better.",
     notes: [
       "Synonyms are how a piece of writing stops saying “big” four times in a paragraph, and that is worth doing before anybody hands a child a thesaurus. A thesaurus offers twenty words for “big” of which three are usable by a nine-year-old; a page of pairs offers one, and it is one they can actually reach for. Every word on the right of this sheet is one a primary child can use without sounding like a dictionary.",
-      "Matching rather than writing is the right shape for this one, because the pairing is the whole content. There is nothing to spell here and no rule to apply — the question is whether two words mean the same, which is a judgement about meaning and the first properly semantic exercise on this shelf. Say the pairs in a sentence if one looks doubtful: two words mean the same when swapping them leaves the sentence true.",
+      "Matching rather than writing is the right shape for this one, because the pairing is the whole content. There is nothing to spell here and no rule to apply — the question is whether two words mean the same, which is a judgment about meaning and the first properly semantic exercise on this shelf. Say the pairs in a sentence if one looks doubtful: two words mean the same when swapping them leaves the sentence true.",
     ],
     teaches: "Words that mean the same",
     ages: "Ages 7–11",
