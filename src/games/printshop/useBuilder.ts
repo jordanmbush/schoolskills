@@ -46,6 +46,12 @@ export type Builder = {
   setFamily: (kind: string) => void;
   /** Load a whole sheet — a shared link, or one out of My Sheets. */
   open: (config: SheetConfig, seed: number) => void;
+  /**
+   * Take the sheet off the bench, which is what changing subject does: a type
+   * from another subject cannot stand under the new one. The paper is kept
+   * for the next sheet, for the reason `setFamily` gives.
+   */
+  clear: () => void;
   /** The same config, a different draw of it (§7). */
   reroll: () => void;
   setVariants: (count: number) => void;
@@ -107,13 +113,29 @@ export function useBuilder(opening: SharedSheet | null): Builder {
   const [variants, setVariants] = useState(1);
   const [answers, setAnswers] = useState(false);
 
+  // The last sheet's paper, so that a sheet chosen after a clear opens on the
+  // paper a parent had already chosen about their printer.
+  const paper = useRef<SheetConfig["paper"] | null>(null);
+  useEffect(() => {
+    if (sheet) paper.current = sheet.config.paper;
+  }, [sheet]);
+
   // The hash this hook last wrote. Compared before writing so that a change
   // which happens to produce the same URL — pressing + and then − — doesn't
   // touch the address bar at all.
   const written = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!sheet) return;
+    if (!sheet) {
+      // Cleared rather than never set: the address bar still names the sheet
+      // that was here, and a reload would bring it back.
+      if (written.current !== null) {
+        written.current = null;
+        const { pathname, search } = window.location;
+        window.history.replaceState(null, "", pathname + search);
+      }
+      return;
+    }
     const payload = encodeSharedSheet(sheet);
     if (written.current === payload) return;
     written.current = payload;
@@ -140,17 +162,23 @@ export function useBuilder(opening: SharedSheet | null): Builder {
     // three columns, because the numbers mean different things in each. Paper
     // is the exception: somebody who has chosen A4 has chosen it about their
     // printer, not about long division.
-    setSheet((current) => ({
-      seed: current?.seed ?? 1,
-      config: current
-        ? { ...defaultConfig(kind), paper: current.config.paper }
-        : defaultConfig(kind),
-    }));
+    setSheet((current) => {
+      const fresh = defaultConfig(kind);
+      return {
+        seed: current?.seed ?? 1,
+        config: {
+          ...fresh,
+          paper: current?.config.paper ?? paper.current ?? fresh.paper,
+        },
+      };
+    });
   }, []);
 
   const open = useCallback((config: SheetConfig, seed: number) => {
     setSheet({ config, seed });
   }, []);
+
+  const clear = useCallback(() => setSheet(null), []);
 
   const reroll = useCallback(() => {
     setSheet((current) => current && { ...current, seed: current.seed + 1 });
@@ -163,6 +191,7 @@ export function useBuilder(opening: SharedSheet | null): Builder {
     set,
     setFamily,
     open,
+    clear,
     reroll,
     setVariants,
     setAnswers,

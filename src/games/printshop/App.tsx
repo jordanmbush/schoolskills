@@ -201,6 +201,7 @@ function Bench({ opening }: { opening: SharedSheet | null }) {
               kind={sheet?.config.kind ?? null}
               onFamily={choose}
               onOpen={openSheet}
+              onClear={bench.clear}
             />
           )}
           {open === "mine" && <SavedSheets sheet={sheet} onOpen={openSheet} />}

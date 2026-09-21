@@ -1464,7 +1464,10 @@ names beside the five shelves the chooser groups the families on, cut coarser
 than the catalog's because five is what fits across a chooser. On screen a
 shelf is a subject, the word a parent has for it and the word the search
 index already uses, and the sheet types are not offered until one is chosen,
-so a first visit asks one thing. The bootstraps
+so a first visit asks one thing. Choosing another subject takes the sheet off
+the bench — a type from one subject cannot stand under another, and a "Next"
+that led back to the old subject's problems was the tell — so the bench is
+step one again until a type is picked, keeping only the paper. The bootstraps
 below are the chooser's lower half rather than a section of their own, and
 each sits on the shelf whose sheets it makes: the record book's facts under
 Math; a list, a paste and the record book's spellings under Spelling; nothing
