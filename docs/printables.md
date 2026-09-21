@@ -1409,7 +1409,8 @@ src/games/printshop/
   useBuilder.ts      the config, the seed, and the URL they live in
   defaults.ts        what a family opens on
   shelves.ts         the chooser's shelves, and what each family's tab is called
-  Rail.tsx           the rail's numbered steps, each with the line that says what is set
+  Rail.tsx           the numbered steps down the settings pane, each with the line that says what is set
+  Split.tsx          the button on the line between the panes, and whether there is a line
   summary.ts         those lines, for the paper, the lettering and the heading
   Chooser.tsx        choose a family (the catalog, in-app), and the doors on its shelf
   PageOptions.tsx    the options every sheet has, in three sections
@@ -1424,17 +1425,32 @@ src/games/printshop/
   options/*.tsx      one panel per family
 ```
 
-**One rail, one tray, and the steps are numbered.** The options first stood
-in a column beside the paper, and the column grew to five screens: a parent
-tuning a sheet scrolled up and down it looking for the one control they meant,
-and a landscape sheet had half the width it needed. Now everything that changes
-the paper runs across the top in one rail, as numbered steps in the order a
-stranger needs them — the sheet type, what is on it, the paper, the lettering,
-the heading — and a step opens its section in a tray under the rail, laid out
-in columns so the whole section is on screen at once. The row above the steps
-is what leaves the bench as paper: another draw, the link, copies, the answer
-key and Print. The rail sticks under the masthead, and the paper takes the full
-width below.
+**Two panes, and the steps are numbered.** The options first stood in a
+column beside the paper, and the column grew to five screens: a parent tuning
+a sheet scrolled up and down it looking for the one control they meant, and a
+landscape sheet had half the width it needed. A rail across the top came
+next, the steps in a row and the open one's section in a tray under them
+with the paper full width below — and the tray had to be capped so the paper
+kept some of the screen, which left neither with enough: a long section
+scrolled inside a strip, and the paper under it was the top corner of a page.
+So the bench is two panes under the masthead, as tall as the window and
+pinned there. The settings on the left, three quarters of it: the numbered
+steps down one side in the order a stranger needs them — the sheet type, what
+is on it, the paper, the lettering, the heading — and the open step's section
+beside them, laid out in columns. The paper on the right, small enough to see
+whole, with what leaves the bench as paper above it: Print, copies, the answer
+key, another draw and the link. Each pane scrolls on its own and keeps its
+scrolling to itself, so a section three screens long never carries the paper
+away and a stack of copies never carries the settings, and the steps stay put
+while their section goes by. One button sits halfway down the line between
+the panes and flips the room: the paper takes nearly all of it, the settings
+fold to a strip of step numbers that cannot be pressed, and pressing it again
+puts the room back. It is the same paper at a different size — the preview is
+scaled to the room it has, whatever the room — so nothing is rebuilt to look
+closer, and the last step's "Next" is that flip with focus on Print, which is
+how the walk through the steps ends on the finished page. Under 62rem the
+panes stack and the button goes, because a sheet is already as wide as a
+phone.
 
 Three things make it a way through rather than a set of tabs, and each is a
 finding rather than a taste. A closed step shows the choices made in it as one
@@ -1446,7 +1462,8 @@ walks the order and ends at Print, while any step can be opened at any time —
 Material's non-linear stepper, and GOV.UK's "allow users to complete tasks in
 any order". And a stranger opens on step one and nothing else: no kind is
 chosen, no pill is pressed, and the later steps, the print row and the paper
-are not on the page until one is. A default sheet stood there at first, and
+are not on the page until one is — only a blank the shape of the paper, where
+it will go. A default sheet stood there at first, and
 it hid the first question — a parent who arrived on a finished page of sums
 did not know they were meant to pick one — so now the only thing on the bench
 is the choice, which is progressive disclosure at its plainest: the one

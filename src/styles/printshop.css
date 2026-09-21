@@ -1,7 +1,7 @@
 /* ── The bench ──────────────────────────────────────────────────────────────
-   The builder's own layout, and nothing else: the rail across the top, the
-   tray that opens under it, the chooser and the option grids inside that, and
-   the frame the paper is looked at in below.
+   The builder's own layout, and nothing else: two panes under the masthead,
+   the steps and the open step's options in one and the paper in the other,
+   the button on the line between them, and the grids inside the first.
 
    Not one color is written down here. Every surface reads `--ink-*`,
    `--chalk-*`, `--accent` and `--hairline`, which is what makes the whole
@@ -18,62 +18,251 @@
    file deals with: `.print-only`, which is the whole point of the screen, and
    `.bench` itself, which cannot be hidden because it is what holds it.       */
 
-/* `minmax(0, 1fr)` rather than the implicit `auto` track: the steps strip
-   scrolls sideways rather than shrinking, and an auto track would grow to its
-   full width and take the whole bench past the edge of a phone with it. */
+/* Stacked first: the settings, then the paper under them, each as tall as it
+   needs to be. That is the whole layout under 62rem, where a sheet is already
+   as wide as the screen and there is nothing to make larger. `--gutter` is
+   the site's own, so the title sits where the wordmark does on a phone. */
 .bench {
+  --gutter: clamp(1rem, 4vw, 2rem);
+  position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--gap-4);
-  padding-bottom: var(--gap-5);
 }
 
-/* ── The rail ───────────────────────────────────────────────────────────────
-   Stuck under the masthead with the open tray hanging from it, so the tabs and
-   the paper are on screen together however many pages the preview runs to.
-   `--mast-height` is the masthead's real box, set by Rail.tsx; it wraps to two
-   rows before it stops being sticky (chrome.css), so no one number would do.
-   Under 760px the masthead scrolls away and the rail takes the top.          */
+.pane {
+  min-width: 0;
+  padding-inline: var(--gutter);
+}
 
-.bench__rail {
-  position: sticky;
-  top: 0;
-  z-index: 10;
+/* No padding under the settings: the tray carries it (see `.tray__next`). */
+.pane--settings {
+  padding-top: var(--gap-3);
   background: var(--ink-850);
-  border-block: 1px solid var(--hairline);
-  box-shadow: var(--shadow-paper);
+  border-bottom: 1px solid var(--hairline);
 }
 
-@media (width >= 760px) {
-  .bench__rail {
+/* The press-room floor the paper is looked at on. */
+.pane--paper {
+  display: grid;
+  align-content: start;
+  gap: var(--gap-3);
+  padding-block: var(--gap-3) var(--gap-4);
+  background:
+    radial-gradient(120% 60% at 50% 0%, rgb(255 255 255 / 4%), transparent 70%),
+    var(--ink-950);
+  container: pane / inline-size;
+}
+
+.pane__head {
+  display: grid;
+  gap: var(--gap-1);
+  margin-bottom: var(--gap-3);
+}
+
+.pane__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--step-2);
+  line-height: 1.1;
+  letter-spacing: 0.01em;
+  color: var(--chalk);
+}
+
+.pane__lead {
+  margin: 0;
+  max-width: 60ch;
+  font-size: var(--step--1);
+  color: var(--chalk-soft);
+}
+
+/* Before a kind is chosen: a blank the size and shape of the paper to come,
+   so the room is already the room and nothing moves when the sheet arrives. */
+.pane__empty {
+  display: grid;
+  gap: var(--gap-3);
+  justify-items: center;
+  text-align: center;
+  padding-block: var(--gap-4);
+}
+
+.pane__blank {
+  width: min(100%, 12rem);
+  aspect-ratio: 8.5 / 11;
+  border: 1px dashed var(--hairline);
+  border-radius: 3px;
+}
+
+/* ── Side by side ───────────────────────────────────────────────────────────
+   From 62rem the two panes stand together, as tall as the window under the
+   masthead and pinned there, so the page behind never scrolls the paper away.
+   Each pane scrolls on its own and keeps its scrolling to itself
+   (`overscroll-behavior`), which is what "the paper is always in view" costs.
+   `--mast-height` is the masthead's real box, set by Rail.tsx: it wraps to
+   two rows before it stops being sticky (chrome.css), so no one number would
+   do. Split.tsx asks the same 62rem question, because a folded pane is also
+   an inert one.
+
+   `--settings` is the split, and the one thing the large view changes: the
+   settings pane narrows to the width of its step numbers and the paper pane
+   takes the rest. Both are lengths rather than `fr` so the columns can move
+   between them — a length and a flex fraction have no in-between.          */
+
+@media (width >= 62rem) {
+  .bench {
+    --settings: 75%;
+    --strip: 3.5rem;
+    position: sticky;
     top: var(--mast-height, 0px);
+    height: calc(100dvh - var(--mast-height, 0px));
+    grid-template-columns: var(--settings) minmax(0, 1fr);
+    transition: grid-template-columns 0.4s var(--ease-out);
+  }
+
+  .bench--large {
+    --settings: var(--strip);
+  }
+
+  .pane {
+    min-height: 0;
+    overflow: hidden auto;
+    overscroll-behavior: contain;
+  }
+
+  .pane--settings {
+    border-bottom: 0;
+    border-right: 1px solid var(--hairline);
+  }
+
+  /* A quarter of the window is not much, so the paper pane keeps a tighter
+     gutter than the settings: the sheet gets the width, not the margins. */
+  .pane--paper {
+    padding-inline: var(--gap-3);
+  }
+
+  /* Folded: the numbers alone, dimmed, down a strip — a bookmark of where
+     the walk through the steps was, and nothing that can be pressed. The
+     pane is `inert` while it looks like this (App.tsx). The dimming is on
+     the rail and not the pane, whose ground would otherwise thin enough to
+     show the world's photograph through it. */
+  .bench--large .pane--settings {
+    padding-inline: 0;
+  }
+
+  .bench--large .pane__head,
+  .bench--large .tray,
+  .bench--large .step__name,
+  .bench--large .step__value,
+  .bench--large .step--aside {
+    display: none;
+  }
+
+  .bench--large .work {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .bench--large .rail {
+    justify-items: center;
+    padding-right: 0;
+    border-right: 0;
+    opacity: 0.55;
+  }
+
+  .bench--large .step {
+    grid-template-columns: auto;
+    grid-template-areas: "num";
+    padding-inline: 0;
+  }
+
+  .bench--large .step[aria-expanded="true"]::after {
+    display: none;
   }
 }
 
-/* Two rows: what leaves the bench as paper, then the numbered steps that
-   make it, with the open step underlined into the tray beneath. One row was
-   tried and does not fit: five steps with a value line each, a stepper with a
-   button either side and Print run past the site's column at any width.    */
+/* ── The split, and the button on it ────────────────────────────────────────
+   Halfway down the line between the panes, and moving with it, so it is on
+   the split whichever room the bench is in. A dark knob with the accent as
+   its ring rather than its fill: the pressed pills and "Next" are already
+   the accent solid, and a disc in the same color read as one more of them.
+   The deep ground is the accent mixed into the ink, so it is still this
+   world's and no new color is written down. The chevron points the way the
+   split is about to go.                                                     */
+
+.bench__split {
+  display: none;
+  position: absolute;
+  top: 50%;
+  left: var(--settings);
+  z-index: 2;
+  width: 3rem;
+  height: 3rem;
+  translate: -50% -50%;
+  place-items: center;
+  padding: 0;
+  border: 2px solid var(--accent);
+  border-radius: 50%;
+  background: color-mix(in oklab, var(--accent) 22%, var(--ink-900));
+  color: var(--accent);
+  box-shadow: var(--shadow-lift);
+  cursor: pointer;
+  transition:
+    left 0.4s var(--ease-out),
+    scale 0.14s var(--ease-spring),
+    background-color 0.14s ease;
+}
+
+.bench__split:hover {
+  scale: 1.08;
+  background: color-mix(in oklab, var(--accent) 40%, var(--ink-900));
+}
+
+.bench__split svg {
+  transition: rotate 0.4s var(--ease-out);
+}
+
+.bench--large .bench__split svg {
+  rotate: 180deg;
+}
+
+@media (width >= 62rem) {
+  .bench__split {
+    display: grid;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bench,
+  .bench__split,
+  .bench__split svg {
+    transition: none;
+  }
+}
+
+/* ── The print bar ──────────────────────────────────────────────────────────
+   The head of the paper pane: Print, copies and the answer key on one row,
+   another draw and the link on a second, because the pane is a quarter of
+   the window. Once the paper is large the pane is most of it, and the second
+   row joins the first at the far end.                                       */
 
 .printbar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
   gap: var(--gap-2) var(--gap-3);
-  padding-block: var(--gap-2) var(--gap-1);
 }
 
-.printbar__sheet,
-.printbar__out {
+.printbar__sheet {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--gap-2) var(--gap-3);
+  gap: var(--gap-2);
+  flex-basis: 100%;
 }
 
-.printbar__out {
-  margin-left: auto;
+@container pane (width >= 44rem) {
+  .printbar__sheet {
+    flex-basis: auto;
+    margin-left: auto;
+  }
 }
 
 .printbar__copies {
@@ -100,10 +289,29 @@
   margin-top: 0;
 }
 
+/* ── The rail and the tray ──────────────────────────────────────────────────
+   The steps and the open step's section. Stacked, the steps run across the
+   pane and the section opens under them; side by side, the steps run down a
+   column that stays put while the section scrolls beside it, and the open
+   step's bar reaches across the rule into the section it opened — the two
+   read as one piece rather than a highlighted word beside an unrelated
+   panel.                                                                    */
+
+/* `minmax(0, 1fr)` rather than the implicit `auto` track: the steps strip
+   scrolls sideways rather than shrinking, and an auto track would grow to its
+   full width and take the whole pane past the edge of a phone with it. */
+.work {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--gap-3);
+  align-items: start;
+}
+
 .rail {
   display: flex;
   align-items: stretch;
   gap: var(--gap-3);
+  border-bottom: 1px solid var(--hairline);
 }
 
 .rail__steps {
@@ -129,7 +337,7 @@
   grid-template-areas:
     "num name"
     "num value";
-  column-gap: var(--gap-1);
+  column-gap: var(--gap-2);
   align-items: center;
   padding: 0.5rem var(--gap-2) 0.7rem;
   text-align: left;
@@ -163,7 +371,7 @@
 
 .step__value {
   grid-area: value;
-  max-width: 14rem;
+  max-width: 12rem;
   overflow: hidden;
   text-overflow: ellipsis;
   font-size: var(--step--2);
@@ -184,8 +392,6 @@
   color: var(--chalk-soft);
 }
 
-/* The open step is underlined into the tray it opened, so the two read as one
-   piece rather than a highlighted word above an unrelated panel. */
 .step[aria-expanded="true"]::after {
   content: "";
   position: absolute;
@@ -206,34 +412,71 @@
   margin-left: auto;
 }
 
-@media (width < 62rem) {
-  .step__value {
-    max-width: 10rem;
+@media (width >= 62rem) {
+  .work {
+    grid-template-columns: 13rem minmax(0, 1fr);
+    gap: var(--gap-4);
   }
-}
 
-/* ── The tray ───────────────────────────────────────────────────────────────
-   One section at a time, laid out in columns rather than down a rail, so the
-   whole of a section is on screen at once — which is the point of the rail.
-   It is part of the sticky block, and capped so that the paper always keeps
-   some of the screen: a section taller than that scrolls inside the tray.  */
+  /* Stuck to the top of the pane's own scroll, not the window's: the
+     section beside it may be three screens of options, and the steps stay
+     while it goes by. */
+  .rail {
+    position: sticky;
+    top: 0;
+    display: grid;
+    gap: var(--gap-2);
+    padding-right: var(--gap-3);
+    border-bottom: 0;
+    border-right: 1px solid var(--hairline);
+  }
 
-.tray {
-  border-top: 1px solid var(--hairline);
-  background: linear-gradient(180deg, var(--ink-800), var(--ink-850));
-  max-height: 60vh;
-  overflow-y: auto;
+  .rail__steps {
+    flex-direction: column;
+    gap: 0;
+    overflow: visible;
+  }
+
+  .step {
+    width: 100%;
+    white-space: normal;
+    padding: 0.55rem var(--gap-2);
+    align-items: start;
+    row-gap: 0.1rem;
+  }
+
+  .step__num {
+    margin-top: 0.15rem;
+  }
+
+  .step__value {
+    max-width: none;
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .step[aria-expanded="true"]::after {
+    top: 0.45rem;
+    bottom: 0.45rem;
+    left: auto;
+    right: calc(-1 * var(--gap-3) - 2px);
+    height: auto;
+    width: 3px;
+    border-radius: 3px 0 0 3px;
+  }
+
+  .step--aside {
+    margin-left: 0;
+    margin-top: var(--gap-2);
+    padding-top: var(--gap-2);
+    border-top: 1px solid var(--hairline);
+  }
 }
 
 .tray[hidden] {
   display: none;
-}
-
-/* Before a kind is chosen the tray is the whole bench, so it takes whatever
-   height the chooser needs rather than scrolling inside a page with nothing
-   under it. */
-.bench--choosing .tray {
-  max-height: none;
 }
 
 /* `dense` so a cell that spans two columns and does not fit at the end of a
@@ -245,14 +488,24 @@
   grid-auto-flow: dense;
   gap: var(--gap-3) var(--gap-4);
   align-items: start;
-  padding-block: var(--gap-3) var(--gap-4);
+  padding-block: 0.5rem var(--gap-2);
 }
 
-/* The foot of every step: the one button that says what comes next. */
+/* The foot of every step: the one button that says what comes next. Stuck to
+   the bottom of the pane's scroll while the step is taller than the pane, so
+   the way on is in reach without scrolling to look for it, and back in the
+   flow the moment it is not. The ground under it is the pane's own, so the
+   options going by beneath do not show through the button. The pane's bottom
+   padding is this box's own: a stuck box stops short of the scrollport by
+   any padding on the box that contains it, and a band of options would show
+   in the gap. */
 .tray__next {
+  position: sticky;
+  bottom: 0;
   display: flex;
   justify-content: flex-end;
-  padding-bottom: var(--gap-3);
+  padding-block: var(--gap-3) var(--gap-4);
+  background: linear-gradient(180deg, transparent, var(--ink-850) 40%);
 }
 
 /* Sections whose controls are text — a title, a face with a line under each
@@ -277,7 +530,7 @@
 .chooser {
   display: grid;
   gap: var(--gap-3);
-  padding-block: var(--gap-3) var(--gap-4);
+  padding-block: 0.5rem var(--gap-4);
 }
 
 .chooser__lead {
@@ -393,7 +646,7 @@
   grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr));
   gap: var(--gap-3) var(--gap-4);
   align-items: start;
-  padding-block: var(--gap-3) var(--gap-4);
+  padding-block: 0.5rem var(--gap-4);
 }
 
 .saved__form {
@@ -444,14 +697,10 @@
 
 /* The stage holds the room the scaled stack takes up, because a transform
    changes what is painted and not what is laid out. Preview.tsx measures both
-   boxes and sets the height and the inset; everything else about it is here. */
+   boxes and sets the height and the inset; everything else about it is here.
+   The pane is the ground the paper sits on, so the preview has no frame of
+   its own. */
 .preview {
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--hairline);
-  background:
-    radial-gradient(120% 90% at 50% 0%, rgb(255 255 255 / 4%), transparent 70%),
-    var(--ink-950);
-  padding: var(--gap-3);
   overflow: hidden;
 }
 
@@ -500,6 +749,8 @@
      the only correct thing between it and the page box is nothing at all. */
   .bench {
     display: block;
+    position: static;
+    height: auto;
     max-width: none;
     margin: 0;
     padding: 0;

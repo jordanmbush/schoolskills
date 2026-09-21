@@ -29,10 +29,10 @@
 }
 
 /* How far down the page the masthead reaches once it is stuck, with a little
-   air under it. Anything else that pins itself to the top of the viewport, or
-   scrolls a heading up to it, clears this much — a jump target in content.css
-   and the paper column of the sheet builder in printshop.css both read it, so
-   a taller masthead is one number changed here. */
+   air under it. Anything that scrolls a heading up to it clears this much — a
+   jump target in content.css reads it, so a taller masthead is one number
+   changed here. The sheet builder pins its bench to the masthead's real box
+   instead, measured by Rail.tsx, because it needs the edge and not the air. */
 :root {
   --mast-clear: 5.5rem;
 }
