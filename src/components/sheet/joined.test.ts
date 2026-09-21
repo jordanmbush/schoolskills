@@ -133,6 +133,18 @@ describe("joined", () => {
     expect(afterI).toMatch(new RegExp(`C [\\d. ]+ 75 50 ${top} ${left}`));
   });
 
+  it("climbs into a bowl beside its side, not over its top", () => {
+    const [[line]] = joined([i(0), o(60)], BASELINE, MIDLINE);
+    const connector = line.find((s) => s.type === "C")!;
+    const [, , hx, hy] = connector.points;
+    // The bowl's top sets off leftward from (75,50) and comes down its left
+    // side at x=60 heading straight down. The join arrives climbing the same
+    // way, so its second handle is straight below where it lands — arriving
+    // the way the top sets off would put it out to the right of the bowl.
+    expect(hx).toBe(75);
+    expect(hy).toBeGreaterThan(50);
+  });
+
   it("ends a run at a letter that does not join, and starts again after it", () => {
     const units = joined([i(0), stop(50), i(60)], BASELINE, MIDLINE);
     expect(units).toHaveLength(3);

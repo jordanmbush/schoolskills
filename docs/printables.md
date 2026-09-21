@@ -2511,8 +2511,11 @@ The two unlooped hands are the same rules applied to models that draw no
 lead-in. Every small letter of both is written from where a print letter
 starts, and the entry stroke a child sees on every letter of a British
 joined word is the join itself arriving. So the run decides how a join
-arrives at a letter with nothing to replace, by which way the letter sets
-off. Over the top of a bowl or along the bar of an `e`, the join arrives
+arrives at a letter with nothing to replace, by what the letter starts
+with. Into a bowl the join arrives climbing, parallel to the bowl's side,
+and the letter's own top turns over from where the join lands; arriving
+the way the top sets off, leftward, would swing the join out past the bowl
+and over its top from the right. Along the bar of an `e` the join arrives
 heading that way and the curve flows into the letter. Down a stem — every
 `i`, `t`, `n` and `b` of both models — it arrives along the straight line
 from where it left, the way a pen goes to the top of a stem and turns
