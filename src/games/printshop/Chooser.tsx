@@ -10,8 +10,9 @@
  *
  * One question at a time. Before a subject is chosen the sheet types are not
  * shown, so a first visit asks one thing and nothing is pressed. Once there
- * is a sheet, the shelf showing is the one it is on, until a parent looks at
- * another, so reopening the chooser shows the sheet among its neighbors.
+ * is a sheet, the shelf showing is the one it is on; choosing another subject
+ * takes the sheet off the bench, because a type from one subject cannot stand
+ * under another, and the bench is back to this step until a type is picked.
  *
  * The names come from `SHEET_FAMILIES`, so a family added to the engine's table
  * appears without its module (§3); `shelves.ts` says which shelf it is on.
@@ -31,16 +32,24 @@ export function Chooser({
   kind,
   onFamily,
   onOpen,
+  onClear,
 }: {
   /** The kind on the bench, or nothing while there is no sheet yet. */
   kind: string | null;
   onFamily: (kind: string) => void;
   onOpen: (config: SheetConfig, seed: number) => void;
+  /** Take the sheet off the bench; called when the subject changes under it. */
+  onClear: () => void;
 }) {
   const [browsing, setBrowsing] = useState<string | null>(null);
   const shelf =
     SHELVES.find((candidate) => candidate.id === browsing) ??
     (kind === null ? undefined : shelfOf(kind));
+
+  const browse = (id: string) => {
+    setBrowsing(id);
+    if (kind !== null && shelfOf(kind).id !== id) onClear();
+  };
 
   return (
     <div className="chooser wrap">
@@ -52,7 +61,7 @@ export function Chooser({
         <SegmentedControl
           label="Subject"
           value={shelf?.id ?? ""}
-          onChange={setBrowsing}
+          onChange={browse}
           options={SHELF_OPTIONS}
         />
       </FieldSet>
