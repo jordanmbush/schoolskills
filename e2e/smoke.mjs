@@ -253,11 +253,34 @@ try {
     JSON.stringify(savedSheets),
   );
 
-  const shared = page.url();
+  // Compared as the sheet the link holds, not as a string: the reader puts
+  // a config's keys in its own order before the bench writes it back, so the
+  // same sheet can come out as a different string and the same string can
+  // only mean the same sheet.
+  const sheetIn = (url) => {
+    const payload = url.split("#s=")[1] ?? "";
+    const sort = (value) =>
+      Array.isArray(value)
+        ? value.map(sort)
+        : value && typeof value === "object"
+          ? Object.fromEntries(
+              Object.keys(value)
+                .sort()
+                .map((key) => [key, sort(value[key])]),
+            )
+          : value;
+    return JSON.stringify(
+      sort(JSON.parse(Buffer.from(payload, "base64url").toString())),
+    );
+  };
+  const shared = sheetIn(page.url());
   await page.reload({ waitUntil: "networkidle" });
   await page.waitForSelector(".bench", { timeout: 15000 });
   await page.waitForTimeout(900);
-  check("the shared link reopens the same sheet", page.url() === shared);
+  check(
+    "the shared link reopens the same sheet",
+    /#s=/.test(page.url()) && sheetIn(page.url()) === shared,
+  );
 
   /*
    * The headline of the whole section, walked end to end (§14).
