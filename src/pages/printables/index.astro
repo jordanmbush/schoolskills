@@ -40,6 +40,7 @@ import {
   pathFor as templatePath,
   templateShelf,
 } from "./_templates";
+import { CUSTOM_PAGES, hrefFor as customHref } from "./_custom";
 import HubLinks from "./_HubLinks.astro";
 import Find from "@/games/printshop/Find";
 import "@/styles/search.css";
@@ -65,9 +66,10 @@ import "@/styles/search.css";
  * `client:only` is what guarantees it: there is no server-rendered search field
  * to sit there looking live and doing nothing.
  */
-const title = "Free printable worksheets — The Print Shop | School Skills";
+const title =
+  "Free printable worksheets for parents and teachers | School Skills";
 const description =
-  "Practice sheets you can print at home, free and without an account. Every sheet is an ordinary web page: read it on screen, print it, or save it as a PDF to keep — and nothing about your child goes into the file.";
+  "Practice sheets to print at home or run off for a class, free and without an account. Every sheet is an ordinary web page: read it on screen, print it, or save it as a PDF — and nothing about your child goes into the file.";
 
 /** Listed on the default stock; each sheet page carries the link to its twin. */
 const letter = STOCKS[0];
@@ -106,10 +108,10 @@ const paperwork = templateShelf();
     </p>
     <h1 class="hero__title">Paper, when the screen has had enough</h1>
     <p class="hero__lead">
-      The one corner of School Skills built for the grown-up. Open a sheet,
+      The one corner of School Skills built for the grown-up: a parent at the
+      kitchen table, or a teacher with a class set to run off. Open a sheet,
       press print, and that is the whole of it &mdash; free, nothing to
-      download, and your child&rsquo;s name left blank for them to fill in by
-      hand.
+      download, and the name line left blank to fill in by hand.
     </p>
     <div class="hero__actions">
       <a class="cta" href="/printables/make">Build a sheet</a>
@@ -453,6 +455,35 @@ const paperwork = templateShelf();
         </details>
       ))
     }
+  </section>
+
+  {
+    /*
+     * The builder's front door, on the page search sends people to: the four
+     * pages under /printables/custom are what a search for a custom worksheet
+     * lands on (§8), and a page nothing links to is a page nothing ranks.
+     */
+  }
+  <section class="band band--tight wrap">
+    <h2 class="h2">Or build the worksheet you actually need</h2>
+    <p class="h2__sub">
+      The sheet builder makes a worksheet to order and redraws the page as you
+      change it: math to your own numbers, a spelling sheet from the list that
+      came home, a name to trace. For a class, print a set where every copy is a
+      different draw with its own answer key, and hand the link to a colleague.
+    </p>
+    <nav class="stones" aria-label="Custom worksheets">
+      {
+        CUSTOM_PAGES.map((page) => (
+          <a class="stone" href={customHref(page)}>
+            {page.name}
+          </a>
+        ))
+      }
+    </nav>
+    <div class="hero__actions">
+      <a class="cta" href="/printables/make">Build a sheet</a>
+    </div>
   </section>
 
   <section class="band band--tight wrap">

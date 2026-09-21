@@ -21,6 +21,7 @@ import {
 } from "@/engine/sheets/search";
 
 import { STOCKS } from "./_catalog";
+import { CUSTOM_PAGES, hrefFor as customHref } from "./_custom";
 import { GRADES, gradeHref, reaches } from "./_grades";
 import { SHELVES, type ShelfSheet } from "./_shelves";
 
@@ -125,6 +126,7 @@ export function catalogAudit(): {
         "/printables/grade",
         ...SHELVES.map((shelf) => shelf.href),
         ...GRADES.map(gradeHref),
+        ...CUSTOM_PAGES.map(customHref),
       ]),
     ],
     stocks: STOCKS.map((stock) => stock.path).filter(Boolean),

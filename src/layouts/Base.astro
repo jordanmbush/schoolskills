@@ -107,8 +107,19 @@ const crumbs = breadcrumb?.length
     }
   : undefined;
 
+/**
+ * The audience, likewise a fact about the site rather than any one page: a
+ * parent at home and a teacher with a class. Both roles, because the copy
+ * long said "your child" to everyone and a good share of the people arriving
+ * are teachers. Valid on every `@type` this site emits, all of them
+ * CreativeWorks; a page with an audience of its own keeps it.
+ */
 const structured = jsonLd && {
   ...jsonLd,
+  audience: jsonLd.audience ?? [
+    { "@type": "EducationalAudience", educationalRole: "parent" },
+    { "@type": "EducationalAudience", educationalRole: "teacher" },
+  ],
   publisher: jsonLd.publisher ?? {
     "@type": "Organization",
     name: "School Skills",
