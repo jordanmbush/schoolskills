@@ -39,10 +39,10 @@ import type {
   MarginSize,
   Orientation,
   PaperSize,
-  SheetFont,
 } from "@/engine/sheets/types";
 
 import { Choice, opt, type PanelProps } from "./options/parts";
+import { FONTS } from "./summary";
 
 const SIZES = [
   opt<PaperSize>("letter", "Letter"),
@@ -60,32 +60,6 @@ const MARGINS = [
   opt<MarginSize>("narrow", "Narrow"),
   opt<MarginSize>("normal", "Normal"),
   opt<MarginSize>("wide", "Wide"),
-];
-
-/**
- * Named by shape and never by a teaching model, because the models with names
- * are trademarks with per-seat fonts behind them (§6).
- *
- * Five is the last count `Choice` still draws as a row of pills — the threshold
- * is *past* five, not at it (`options/parts.tsx`) — so all five faces stay on
- * screen at once with their hints, which is what a list where two entries differ
- * by a detail worth reading needs. A sixth face would take the row to a dropdown
- * and the hints with it.
- */
-const FONTS = [
-  opt<SheetFont>("print", "Print", "single-storey a and g"),
-  opt<SheetFont>("cursive", "Cursive, looped", "the traditional joined hand"),
-  opt<SheetFont>(
-    "cursive-modern",
-    "Cursive, unlooped",
-    "simpler shapes; the pencil lifts after b, f, g, j, p, q, s and y",
-  ),
-  opt<SheetFont>(
-    "cursive-uk",
-    "Cursive, fully joined",
-    "lead-in strokes, and a join out of every letter",
-  ),
-  opt<SheetFont>("dyslexic", "Dyslexia", "weighted letters that can't mirror"),
 ];
 
 /**

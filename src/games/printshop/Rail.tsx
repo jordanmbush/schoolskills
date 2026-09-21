@@ -1,99 +1,78 @@
 /**
- * The rail: one strip across the top of the bench holding everything a parent
- * reaches for, in the order they reach for it (§14).
+ * The rail's steps: numbered, in the order a stranger needs them, each showing
+ * what was chosen in it (§14).
  *
- * Above, the sheet's name, which opens the chooser, and at the other end what
- * leaves the bench as paper. Below, a tab for each section of options; the one
- * that is open is pressed again to close, so the paper can have the whole
- * screen.
+ * A step is a disclosure button rather than a tab, because a tab list always
+ * has one tab selected and the state this rail has to be able to show is
+ * "nothing open". Each says with `aria-expanded` whether its section is the
+ * one in the tray, and with `aria-current` that it is where the process is.
  *
- * Disclosure buttons rather than a tab list, because a tab list always has one
- * tab selected and the state this rail has to be able to show is "nothing
- * open". Each button says with `aria-expanded` whether its section is the one
- * in the tray.
+ * The number says there is an order, the value line says what is set without
+ * opening anything, and any step can be opened at any time. The tray's own
+ * "Next" (App.tsx) is what walks the order; the rail only shows it.
+ *
+ * "My sheets" is not a step in making a sheet, so it is not numbered and sits
+ * apart at the end.
  */
 import { useEffect, type RefObject } from "react";
 
 import { Button } from "@/components/ui/kit";
 
-import { PrintBar } from "./PrintBar";
-
 /** What the tray under the rail can hold. */
 export type Section =
   "sheet" | "family" | "paper" | "lettering" | "heading" | "mine";
 
+/** One numbered step: its name, and the line that says what is set in it. */
+export type Step = { id: Section; name: string; value: string };
+
 /** The tray every button on the rail controls. */
 export const TRAY_ID = "bench-tray";
 
-const SECTIONS: Array<{ id: Section; label: string }> = [
-  { id: "paper", label: "Paper" },
-  { id: "lettering", label: "Lettering" },
-  { id: "heading", label: "Heading" },
-  { id: "mine", label: "My sheets" },
-];
-
 export function Rail({
-  sheet,
-  tab,
+  steps,
   open,
   onToggle,
-  variants,
-  answers,
-  onVariants,
-  onAnswers,
 }: {
-  /** The family on the bench, as it reads. */
-  sheet: string;
-  /** What the family's own tab is called, or nothing for a family with no options. */
-  tab: string | undefined;
+  steps: Step[];
   open: Section | null;
   onToggle: (section: Section) => void;
-  variants: number;
-  answers: boolean;
-  onVariants: (count: number) => void;
-  onAnswers: (on: boolean) => void;
 }) {
-  const tabs = tab
-    ? [{ id: "family" as const, label: tab }, ...SECTIONS]
-    : SECTIONS;
-
   return (
     <div className="rail wrap">
+      <ol className="rail__steps" aria-label="Steps">
+        {steps.map((step, index) => (
+          <li key={step.id}>
+            <Button
+              variant="bare"
+              className="step"
+              aria-expanded={open === step.id}
+              aria-current={open === step.id ? "step" : undefined}
+              aria-controls={TRAY_ID}
+              onClick={() => onToggle(step.id)}
+            >
+              <span className="step__num" aria-hidden="true">
+                {index + 1}
+              </span>
+              <span className="step__name">
+                <span className="u-sr">Step {index + 1}: </span>
+                {step.name}
+              </span>
+              <span className="step__value">{step.value}</span>
+            </Button>
+          </li>
+        ))}
+      </ol>
+
       <Button
         variant="bare"
-        className="rail__sheet"
-        aria-expanded={open === "sheet"}
+        className="step step--aside"
+        aria-expanded={open === "mine"}
         aria-controls={TRAY_ID}
-        onClick={() => onToggle("sheet")}
+        onClick={() => onToggle("mine")}
       >
-        <span className="rail__chip">Sheet</span>
-        <span className="rail__name">{sheet}</span>
-        <span className="rail__caret" aria-hidden="true">
-          ▾
-        </span>
+        <span className="step__name">My sheets</span>
+        <span className="step__value">Saved on this device</span>
       </Button>
-
-      <div className="rail__tabs">
-        {tabs.map((section) => (
-          <Button
-            key={section.id}
-            variant="bare"
-            className="rail__tab"
-            aria-expanded={open === section.id}
-            aria-controls={TRAY_ID}
-            onClick={() => onToggle(section.id)}
-          >
-            {section.label}
-          </Button>
-        ))}
-      </div>
-
-      <PrintBar
-        variants={variants}
-        answers={answers}
-        onVariants={onVariants}
-        onAnswers={onAnswers}
-      />
     </div>
   );
 }
