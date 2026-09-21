@@ -237,12 +237,24 @@ try {
   await page.goto(`${BASE}/printables/make`, { waitUntil: "networkidle" });
   await page.waitForSelector(".bench", { timeout: 15000 });
   await page.waitForTimeout(900);
+  // A stranger opens on step one and nothing else (§14): no sheet on the
+  // bench and nothing in the fragment until a kind is chosen.
   check(
-    "a sheet is on the bench",
+    "the bench opens on the choice alone",
+    (await page.locator(".preview .sheet").count()) === 0 &&
+      !/#s=/.test(page.url()),
+    page.url(),
+  );
+  await page.getByText("Math", { exact: true }).click();
+  await page.getByText("Addition and subtraction", { exact: true }).click();
+  await page.waitForTimeout(1200);
+  check(
+    "choosing a kind puts a sheet on the bench",
     (await page.locator(".preview .sheet__problem").count()) > 0,
   );
   check("the config is in the fragment", /#s=/.test(page.url()), page.url());
 
+  await page.getByRole("button", { name: /^my sheets/i }).click();
   await page.locator(".saved input").fill("Smoke sheet");
   await page.getByRole("button", { name: /save to my sheets/i }).click();
   await page.waitForTimeout(800);
@@ -292,24 +304,24 @@ try {
    * click. The smoke player answers correctly and quickly, so what this
    * usually exercises is the *other* path: a child with nothing standing out
    * still gets a sheet worth printing rather than an empty page.
+   *
+   * The doors sit under the sheet types on the chooser, each on the shelf
+   * whose sheets it makes, so step one is opened first: a sheet that arrived
+   * by link lands on its own options, and the chooser shows the shelf it is
+   * on — Math, where the record book's facts are the one door.
    */
   log("\n6b. The bench starts from what the record book knows");
-  const steps = await page.locator(".bootstrap__step").count();
-  // Two at least — the missed facts and a paste. The saved-list step only
-  // appears for a household that has typed one in, which this one has not.
-  check("the bootstraps are offered", steps >= 2, `${steps} steps`);
+  await page.getByRole("button", { name: /step 1/i }).click();
+  await page.waitForTimeout(900);
+  const doors = await page.locator(".door").count();
+  check("a door is offered on the math shelf", doors >= 1, `${doors} doors`);
 
-  const beforeBootstrap = page.url();
-  await page
-    .locator(".bootstrap__step")
-    .first()
-    .getByRole("button")
-    .first()
-    .click();
+  const beforeDoor = page.url();
+  await page.locator(".door").first().getByRole("button").first().click();
   await page.waitForTimeout(900);
   check(
     "pressing one puts a printable sheet on the bench",
-    page.url() !== beforeBootstrap &&
+    page.url() !== beforeDoor &&
       (await page.locator(".preview .sheet__problem").count()) > 0,
     page.url().slice(0, 60),
   );
@@ -462,7 +474,7 @@ try {
    * by how MANY distinct positions a single stone occupies across a window
    * several spawns long — a number a re-render cannot reach and only a frame
    * loop can. The lifetime half is a ledger of every frame handle requested
-   * and not yet delivered or cancelled, which two numbers settle: one frame in
+   * and not yet delivered or canceled, which two numbers settle: one frame in
    * flight while the storm is running, and none at all once the run is over or
    * the screen is gone.
    */
@@ -608,7 +620,7 @@ try {
     "a stone moves on every frame, not once per spawn",
     fall.distinct >= 12 && fall.forwards && fall.attached,
     `${fall.distinct} distinct positions in ${fall.samples} readings over 700ms, ` +
-      `${fall.travelled}px travelled (a per-spawn staircase gives 1)`,
+      `${fall.travelled}px traveled (a per-spawn staircase gives 1)`,
   );
   check(
     "the loop has exactly one frame in flight while it runs",
@@ -809,7 +821,7 @@ try {
       holes.every((zone) => zone.hp === 0) &&
       holes.map((zone) => zone.finger).join() === "r-index" &&
       // And the zone that took three of four is drawn short but whole, which
-      // is what makes the hole above a hole rather than a colour.
+      // is what makes the hole above a hole rather than a color.
       damage.zones.some((zone) => !zone.hole && zone.hp === 0.25),
     damage.zones.map((z) => `${z.finger}:${z.hp.toFixed(2)}`).join(" "),
   );
@@ -1167,7 +1179,7 @@ try {
   );
 
   // And a wrong key, against a letter that is really there: the one case that
-  // is not a shot at an empty sky, so it takes the target's own neighbours out
+  // is not a shot at an empty sky, so it takes the target's own neighbors out
   // of the argument.
   //
   // Which has to be *waited* for and then *checked*, neither of which it used
@@ -1500,7 +1512,7 @@ try {
   );
 
   /*
-   * The setting a falling-letter game cannot honour by removing the falling
+   * The setting a falling-letter game cannot honor by removing the falling
    * (docs/typing.md §8.10, #155).
    *
    * Two claims, and neither can be read off the stylesheet. **The fall stays**
@@ -1566,7 +1578,7 @@ try {
     "a stone still falls, frame by frame, for a child who asked for less motion",
     calm.distinct >= 12 && calm.forwards && calm.travelled > 0,
     `${calm.distinct} distinct positions in 20 readings over 500ms, ` +
-      `${calm.travelled}px travelled`,
+      `${calm.travelled}px traveled`,
   );
   check(
     "and nothing but the stones is moved at all",

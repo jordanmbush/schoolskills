@@ -5,7 +5,7 @@
 export type KeyboardMode =
   /** Not on screen at all. */
   | "off"
-  /** The board, with its finger colours. No hint. */
+  /** The board, with its finger colors. No hint. */
   | "keys"
   /** The board, plus the next key — and its shift — lit. */
   | "guide";
@@ -133,7 +133,7 @@ export type TypingConfig = {
    * Set only by a Hailstorm run, and the field that says a run is not ranked
    * (docs/typing.md §8.7, decision 50). `isRanked` (`decks/index.ts`) reads it
    * and `bestRun` (`engine/records.ts`) refuses those runs, so every "best" on
-   * the site inherits one judgement.
+   * the site inherits one judgment.
    *
    * On the run rather than derived from `lessonById(lessonId)`, because what a
    * run *was* is a fact about the run: re-tune lesson 45 out of a Hailstorm and
@@ -262,7 +262,7 @@ export type Session = {
    * spelling lands. A plain string rather than a union because custom decks
    * are user-named, and because a session must still load after the deck it
    * was played on has been deleted. `deckSpec()` resolves it, and answers for
-   * anything it doesn't recognise.
+   * anything it doesn't recognize.
    */
   mode: string;
   configKey: string;

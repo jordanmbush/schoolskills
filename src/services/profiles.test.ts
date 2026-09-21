@@ -91,7 +91,7 @@ describe("creating a player", () => {
     expect(await store.allProfiles()).toEqual([]);
   });
 
-  it("won't let two players share a name, however it is capitalised", async () => {
+  it("won't let two players share a name, however it is capitalized", async () => {
     const { profiles } = await fresh();
     await profiles.create(ada);
 

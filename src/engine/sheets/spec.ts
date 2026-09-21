@@ -61,7 +61,7 @@ export const LONGEST_SHEET_URL: string = WORLDS.map((world) =>
  * `build: (config: C, seed: number) => Sheet` and the registry stops
  * compiling.
  *
- * Behaviour only: what a family is called and which `kind` reaches it are in
+ * Behavior only: what a family is called and which `kind` reaches it are in
  * `SheetFamily`, because the picker names every family without loading one.
  *
  * **The functions a family fills these in with are its own — not exported.**

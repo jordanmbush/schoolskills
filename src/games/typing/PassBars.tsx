@@ -84,7 +84,7 @@ function Meter({
   /** What it has to reach, in the same units. */
   target: string;
 }) {
-  // Belt and braces against a criterion that asks for nothing. The storm arm
+  // Belt and suspenders against a criterion that asks for nothing. The storm arm
   // is the one that carries `need: 0` and it no longer reaches this function,
   // but a bar is a division and a division wants a floor under it.
   const filled = bar.need <= 0 ? 1 : Math.min(1, bar.got / bar.need);

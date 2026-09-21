@@ -153,7 +153,7 @@ describe("LessonLadder", () => {
   });
 
   /**
-   * The state has to be in the accessible name and not only in the colour.
+   * The state has to be in the accessible name and not only in the color.
    * Some of the children reading this screen are five and using a screen
    * reader, and a hundred buttons called "7" is not a map.
    */
@@ -219,7 +219,7 @@ describe("LessonLadder", () => {
   });
 
   /**
-   * The rung it names is never the storm's own neighbour: `lockNote` walks
+   * The rung it names is never the storm's own neighbor: `lockNote` walks
    * down past any storm in the way, so lesson 11's tile asks for lesson 10 and
    * never for a wave a tablet cannot play (§8.8).
    */

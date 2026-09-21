@@ -1785,7 +1785,7 @@ describe("a rendered geometry sheet", () => {
   it("puts the outline on the points the engine gave it", () => {
     // The renderer scales nothing. A shape drawn to fit its box would be a
     // shape that can disagree with the numbers written on it, and a rectangle
-    // labelled 8 by 3 and drawn 8 by 4 teaches a child not to trust the
+    // labeled 8 by 3 and drawn 8 by 4 teaches a child not to trust the
     // picture.
     const html = render(buildSheet(geometry(), SEED) as Sheet);
     for (const [where, problem] of itemsOf(geometry()).entries()) {
@@ -1895,7 +1895,7 @@ describe("a rendered geometry sheet", () => {
    Word shapes. The engine's suite proves which band each letter belongs in;
    this is the half that only exists once it is drawn, and it is the half the
    exercise is: a tall box has to *look* taller than a small one and a tail box
-   has to hang below it, or the outline a child is being taught to recognise is
+   has to hang below it, or the outline a child is being taught to recognize is
    not on the paper.                                                          */
 
 const spelling = (over: Partial<WordsConfig> = {}): WordsConfig => ({
@@ -2727,7 +2727,7 @@ describe("a rendered table", () => {
     // A table's columns are unequal on purpose — that is what `width` is for —
     // so one width for every label measures the longest heading against the
     // narrowest column and shrinks the whole row to a size no column needed.
-    // It set a behaviour chart's headings at 52 mil, under four points, beside
+    // It set a behavior chart's headings at 52 mil, under four points, beside
     // a twelve-point body.
     const markup = drawn(uneven());
     const sizes = [
@@ -2916,7 +2916,7 @@ describe("a rendered net", () => {
     //
     // The middle is read off where the spokes *start* rather than worked back
     // from where the first one ends. Reconstructing it as "one radius above the
-    // first endpoint" puts the centre directly under that endpoint by
+    // first endpoint" puts the center directly under that endpoint by
     // construction, which makes the first angle zero however the drawing was
     // done — an assertion that cannot fail is not one.
     const markup = built("spinner");
@@ -2928,7 +2928,7 @@ describe("a rendered net", () => {
     expect(spokes).toHaveLength(6);
 
     // Every spoke starts at the same point, which is the other half of "equal":
-    // six radii from one centre rather than six lines that happen to fan out.
+    // six radii from one center rather than six lines that happen to fan out.
     expect(new Set(spokes.map(([x1, , y1]) => `${x1},${y1}`)).size).toBe(1);
     const [x1, , y1] = spokes[0];
     const angles = spokes.map(
@@ -3041,11 +3041,11 @@ describe("print isolation", () => {
   });
 
   it("takes the builder's own layout out from under the sheet", () => {
-    // `.no-print` empties the bench's columns; it does not remove them. A print
-    // copy left inside a live two-column grid prints indented by the bench's
-    // padding and a row down from where the preview was — on Letter, 18px off
-    // the right edge of the paper and a full-page sheet onto a second one. It
-    // cannot be seen on screen, because the preview is a separate scaled copy.
+    // `.no-print` empties the bench; it does not remove it. A print copy left
+    // inside a live padded layout prints indented by the bench's padding and a
+    // row down from where the preview was — on Letter, 18px off the right edge
+    // of the paper and a full-page sheet onto a second one. It cannot be seen
+    // on screen, because the preview is a separate scaled copy.
     //
     // The smoke run measures the real box in a browser, which is the only place
     // that can. This is the fast half: the two lines that make it possible.
@@ -3055,8 +3055,8 @@ describe("print isolation", () => {
     expect(print).toMatch(/\.bench\s*\{[^}]*padding:\s*0/);
     expect(print).toMatch(/\.bench\s*\{[^}]*max-width:\s*none/);
 
-    // And the column itself, not only the two controls inside it — an empty
-    // grid item still occupies the row above the paper.
+    // And the paper's own frame, not only the two things inside it — an
+    // emptied box still holds its padding above the print copy.
     const app = read(join(ROOT, "src/games/printshop/App.tsx"));
     expect(app).toMatch(/className="bench__paper[^"]*\bno-print\b/);
   });
@@ -3314,7 +3314,7 @@ describe("a rendered lesson", () => {
       expect(picture).not.toContain("<rect");
   });
 
-  it("draws a hop for every jump back along the line, labelled with what was taken", () => {
+  it("draws a hop for every jump back along the line, labeled with what was taken", () => {
     const built = buildSheet(lesson({ topic: "division-grouping" }), SEED);
     const [line] = built.blocks.flatMap((block) =>
       block.kind === "numberline" ? [block.line] : [],
@@ -3391,7 +3391,7 @@ describe("a rendered lesson", () => {
     expect(count(html, 'class="sheet__problems"')).toBe(1);
   });
 
-  it("honours worked in every answer place", () => {
+  it("honors worked in every answer place", () => {
     const tableau = divisionTableau("657", 3);
     const items: Problem[] = [
       { prompt: "7 × 8 =", answer: "56", worked: true },

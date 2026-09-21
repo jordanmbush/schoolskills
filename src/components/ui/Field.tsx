@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
 /**
- * A labelled form row: label, control, optional hint, optional inline error.
+ * A labeled form row: label, control, optional hint, optional inline error.
  *
  * `Field` wraps its control in a `<label>`, so the association is structural —
  * no `htmlFor`/`id` pair to keep in sync, and nothing to forget. That only
@@ -35,7 +35,7 @@ export function Field({
 }
 
 /**
- * The same row for a *group* of controls — an avatar picker, a colour picker,
+ * The same row for a *group* of controls — an avatar picker, a color picker,
  * a stepper. A `<label>` can only point at one control, so a group needs
  * `<fieldset>`/`<legend>` to be announced as one named thing.
  */

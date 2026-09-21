@@ -581,7 +581,7 @@ describe("how much fits", () => {
     expect((rows + 1) * row + rows * PROBLEM_GAP.y).toBeGreaterThan(box.height);
   });
 
-  it("honours the count and the columns it was given", () => {
+  it("honors the count and the columns it was given", () => {
     expect(problemsOf({ count: 12 }, 1).length).toBe(12);
     expect(problemsOf({ count: 0 }, 1).length).toBe(0);
     for (const columns of [1, 2, 3, 4]) {

@@ -4,7 +4,7 @@
  *
  * Traced over Playwrite US Modern (Playwrite_MM.glyphspackage, a tenth of the way from the Rg 00 Short Slow master to Rg 00 Long Slow,
  * OFL-1.1, https://github.com/TypeTogether/Playwrite), so the shapes are
- * a modified version of that face under its licence.
+ * a modified version of that face under its license.
  *
  * Hand units, y up from the baseline. Each stroke is absolute path data in
  * M, L, C and Q, in the order the pen draws it.

@@ -101,7 +101,7 @@ const endOf = (segments) => segments[segments.length - 1].points.slice(-2);
  * join then says which stroke it is on. What comes back is the strokes as
  * the engine stores them and, for a letter with any part named, the `join`
  * that says how many segments each is. A part out of place, or one that
- * does not meet its neighbour, is a drawing error rather than a guess.
+ * does not meet its neighbor, is a drawing error rather than a guess.
  */
 export function fused(paths, file) {
   const named = (path) => PARTS.includes(path.name);

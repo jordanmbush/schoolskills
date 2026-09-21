@@ -15,10 +15,17 @@
  * printshop.css takes the transform back off, because a scaled sheet sent to a
  * printer is a sheet at 45% of the size it measures.
  */
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { memo, useEffect, useRef, useState, type CSSProperties } from "react";
 
 import { SheetView } from "@/components/sheet/Sheet";
 import type { Sheet } from "@/engine/sheets/types";
+
+/**
+ * The page, skipped when its sheet has not changed. The scale is set again on
+ * every frame the split moves, and without this each frame would re-render
+ * every problem on every page to change one number on the box around them.
+ */
+const Page = memo(SheetView);
 
 export function Preview({ sheets }: { sheets: Sheet[] }) {
   const stage = useRef<HTMLDivElement>(null);
@@ -65,6 +72,13 @@ export function Preview({ sheets }: { sheets: Sheet[] }) {
   // a preview that lies in the other direction.
   const scale = box.width > 0 ? Math.min(1, box.room / box.width) : 1;
 
+  // Centered by hand, about the top-left corner, rather than with `margin: auto`
+  // about the middle: a stack wider than the room — every landscape sheet — is
+  // already hanging out of the right of the frame before the scale is applied,
+  // and scaled about its own center it shrinks towards a point that was never
+  // in view, leaving the right edge of the paper cut off.
+  const inset = Math.max(0, (box.room - box.width * scale) / 2);
+
   return (
     <div className="preview no-print">
       {/* The stage is what holds the space the scaled stack takes up. A
@@ -79,13 +93,15 @@ export function Preview({ sheets }: { sheets: Sheet[] }) {
         <div
           className="preview__stack"
           ref={stack}
-          style={{ "--preview-scale": scale } as CSSProperties}
+          style={
+            { "--preview-scale": scale, marginLeft: inset } as CSSProperties
+          }
         >
           {sheets.map((sheet, index) => (
             // Indexed keys: the stack is rebuilt whole on every change and
             // nothing in it is stateful, so there is nothing a stable key would
             // preserve — the same reasoning `SheetView` gives for its blocks.
-            <SheetView key={index} sheet={sheet} />
+            <Page key={index} sheet={sheet} />
           ))}
         </div>
       </div>

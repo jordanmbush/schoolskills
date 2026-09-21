@@ -6,7 +6,7 @@
  * and it changes what advertising is allowed to be:
  *
  *   - Under COPPA a persistent identifier is personal information collected
- *     from a child, and behavioural advertising is NOT covered by the
+ *     from a child, and behavioral advertising is NOT covered by the
  *     "support for internal operations" exception that ordinary analytics
  *     relies on. Personalised ads here would need verifiable parental
  *     consent, which a free static site cannot obtain.
@@ -67,7 +67,7 @@ export type AdSlotName = keyof typeof AD_SLOTS;
 /**
  * A one-line kill switch for every ad request the site makes — reach for it if
  * the account is suspended, if a placement turns out to be wrong on a child's
- * screen, or if anything about Google's behaviour stops matching /privacy.
+ * screen, or if anything about Google's behavior stops matching /privacy.
  *
  * It moves TOGETHER with the advertising sections of /privacy, in both
  * directions. That page has to describe what the site actually does, and a

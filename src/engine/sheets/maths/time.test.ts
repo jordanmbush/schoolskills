@@ -19,7 +19,7 @@ import type {
 import { TIME_SHEET, timeLayout, TIME_STEPS } from "./time";
 
 /**
- * Telling the time, held to the bar the maths families set.
+ * Telling the time, held to the bar the math families set.
  *
  * **Nothing here checks the generator against the generator.** The family works
  * forwards — one number of minutes past twelve, turned into a face and into the
@@ -503,7 +503,7 @@ describe("how much fits", () => {
     }
   });
 
-  it("honours the count and the columns it was given", () => {
+  it("honors the count and the columns it was given", () => {
     expect(problemsOf({ style: "elapsed", count: 10 }, 1).length).toBe(10);
     expect(problemsOf({ count: 0 }, 1).length).toBe(0);
     for (const columns of [1, 2, 3]) {

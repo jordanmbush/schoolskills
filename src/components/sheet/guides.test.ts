@@ -96,7 +96,7 @@ describe("guidesOf", () => {
   });
 
   it("keeps the numbers off the ink, the dots and each other", () => {
-    // The layout aims at a little under half a numeral from its centre — its
+    // The layout aims at a little under half a numeral from its center — its
     // edge, near enough — and trades a hair of that for a better spot.
     const edge = set.numeral * 0.4;
     const [one, two] = set.guides.map((guide) => guide.number);

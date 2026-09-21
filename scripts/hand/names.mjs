@@ -5,7 +5,7 @@
  * A file per glyph named by the character would put `a.svg` and `A.svg` in
  * one directory, which on a Mac is one file. So the drawings take the UFO
  * convention instead — a capital carries a trailing underscore, a numeral is
- * spelt out — and this table is the only place the two spellings meet.
+ * spelled out — and this table is the only place the two spellings meet.
  */
 
 const DIGITS = [
@@ -47,7 +47,7 @@ export const STEMS = Object.fromEntries(
 /**
  * The forms a letter is taught in more than one way, as the suffix each
  * drawing of it carries: `a.single.svg` and `a.double.svg` are the two
- * storeys of an `a`, `t.curved.svg` and `t.straight.svg` the two feet of a
+ * stories of an `a`, `t.curved.svg` and `t.straight.svg` the two feet of a
  * `t`. One list for every hand, so a sheet asking for a straight `t` means
  * the same thing in each; `Form` in `src/engine/sheets/hands/hand.ts` is
  * this list again, and the type check holds a generated module to it.
@@ -70,7 +70,7 @@ const TITLE = [
 /**
  * SIL's glyph names, which are their own scheme rather than the AGL's: Latin
  * small `a` is `LtnSmA`, its capital `LtnCapA`, a digit `DigitFive`. The two
- * letters a child is taught single-storey are the alternates, not the
+ * letters a child is taught single-story are the alternates, not the
  * defaults, so the map names those.
  */
 export const SIL_NAMES = {
@@ -94,7 +94,7 @@ export const SIL_NAMES = {
 
 /**
  * The outline a form is traced over, where it is not the character's own:
- * SIL draws the other storey of `a` and the other foot of `t`, `y`, `l` and
+ * SIL draws the other story of `a` and the other foot of `t`, `y`, `l` and
  * `i` as alternates. A form not here — a hooked `q`, which the face lacks —
  * is drawn over the character's outline and given its shape by hand.
  */

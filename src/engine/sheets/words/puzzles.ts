@@ -307,7 +307,7 @@ function missingReserve(
  * The rows the line actually gets: what was reserved, or what is left over.
  *
  * The reservation is made against `MISSING_ROWS`, and a page can be too small
- * to honour it even with the grid at `MIN_GRID` and no word list at all. Then
+ * to honor it even with the grid at `MIN_GRID` and no word list at all. Then
  * the line takes what remains — never none of it, because the one thing worse
  * than a line below the bottom margin is a word that vanished without one.
  */

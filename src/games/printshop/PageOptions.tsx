@@ -1,12 +1,18 @@
 /**
  * The options every sheet has, whatever is printed on it — §17's list, minus
- * whatever a family owns.
+ * whatever a family owns — in the sections the rail offers them under.
  *
  * `SheetOptions` in the engine is the same list, which is the point: these are
- * the fields no family owns, so they sit above the family panel and stay put
- * while a parent tries three families underneath them. Paper is even carried
- * across a family change (see `setFamily`) — somebody who has chosen A4 has
- * chosen it about their printer, not about long division.
+ * the fields no family owns, so they stay put while a parent tries three
+ * families. Paper is even carried across a family change (see `setFamily`) —
+ * somebody who has chosen A4 has chosen it about their printer, not about long
+ * division.
+ *
+ * Three sections rather than one panel, because the rail shows one at a time:
+ * the paper (size, which way up, margins, cut lines), the lettering (type size,
+ * face, letter shapes) and the heading (title, instructions, the lines to fill
+ * in). Answer boxes are the exception and go in the family's own tray, since a
+ * box round the answer place is about the problems.
  */
 import { Fragment } from "react";
 
@@ -33,10 +39,10 @@ import type {
   MarginSize,
   Orientation,
   PaperSize,
-  SheetFont,
 } from "@/engine/sheets/types";
 
 import { Choice, opt, type PanelProps } from "./options/parts";
+import { FONTS } from "./summary";
 
 const SIZES = [
   opt<PaperSize>("letter", "Letter"),
@@ -57,38 +63,12 @@ const MARGINS = [
 ];
 
 /**
- * Named by shape and never by a teaching model, because the models with names
- * are trademarks with per-seat fonts behind them (§6).
- *
- * Five is the last count `Choice` still draws as a row of pills — the threshold
- * is *past* five, not at it (`options/parts.tsx`) — so all five faces stay on
- * screen at once with their hints, which is what a list where two entries differ
- * by a detail worth reading needs. A sixth face would take the row to a dropdown
- * and the hints with it.
- */
-const FONTS = [
-  opt<SheetFont>("print", "Print", "single-storey a and g"),
-  opt<SheetFont>("cursive", "Cursive, looped", "the traditional joined hand"),
-  opt<SheetFont>(
-    "cursive-modern",
-    "Cursive, unlooped",
-    "simpler shapes; the pencil lifts after b, f, g, j, p, q, s and y",
-  ),
-  opt<SheetFont>(
-    "cursive-uk",
-    "Cursive, fully joined",
-    "lead-in strokes, and a join out of every letter",
-  ),
-  opt<SheetFont>("dyslexic", "Dyslexia", "weighted letters that can't mirror"),
-];
-
-/**
  * The forms of §25 as a parent reads them — a shape, never the name of the
  * scheme that teaches it, for the reason `FONTS` gives.
  */
 const FORM_LABELS: Record<Form, string> = {
-  single: "Single storey",
-  double: "Double storey",
+  single: "Single story",
+  double: "Double story",
   curved: "Curved",
   straight: "Straight",
 };
@@ -100,19 +80,9 @@ const FIELDS: Array<{ id: HeaderField; label: string }> = [
   { id: "class", label: "Class" },
 ];
 
-export function PageOptions({ config, set }: PanelProps) {
-  const hand = handOf(config.font);
+export function PaperOptions({ config, set }: PanelProps) {
   const paper = (patch: Partial<typeof config.paper>) =>
     set({ paper: { ...config.paper, ...patch } });
-
-  const toggleField = (id: HeaderField, on: boolean) =>
-    set({
-      // Rebuilt from the canonical order rather than pushed onto the end, so
-      // ticking Class before Date still prints name, date, class.
-      fields: FIELDS.map((field) => field.id).filter((field) =>
-        field === id ? on : config.fields.includes(field),
-      ),
-    });
 
   return (
     <>
@@ -123,7 +93,7 @@ export function PageOptions({ config, set }: PanelProps) {
         options={SIZES}
       />
       <Choice
-        label="Orientation"
+        label="Which way up"
         value={config.paper.orientation}
         onChange={(orientation) => paper({ orientation })}
         options={ORIENTATIONS}
@@ -134,7 +104,21 @@ export function PageOptions({ config, set }: PanelProps) {
         onChange={(margin) => paper({ margin })}
         options={MARGINS}
       />
+      <Checkbox
+        label="Cut lines"
+        hint="Dashed guides across the middle of the page, for a sheet you cut up."
+        checked={config.cutLines === true}
+        onChange={(cutLines) => set({ cutLines })}
+      />
+    </>
+  );
+}
 
+export function LetteringOptions({ config, set }: PanelProps) {
+  const hand = handOf(config.font);
+
+  return (
+    <>
       <FieldSet
         legend="Type size"
         hint="Points, as a type size is quoted on paper. Bigger type is an option here rather than something to zoom."
@@ -148,13 +132,12 @@ export function PageOptions({ config, set }: PanelProps) {
           onChange={(fontPt) => set({ fontPt })}
         />
       </FieldSet>
-
       <Choice
         label="Face"
         value={config.font ?? "print"}
         onChange={(font) => set({ font })}
         options={FONTS}
-        hint="Print is a single-storey a and g, the three cursive models are the joined hands different countries teach, and the dyslexia-friendly face has weighted letters that can't be mirrored. All five come with the sheet."
+        hint="Print is a single-story a and g, the three cursive models are the joined hands different countries teach, and the dyslexia-friendly face has weighted letters that can't be mirrored. All five come with the sheet."
       />
       {hand && (
         <LetterShapes
@@ -163,7 +146,22 @@ export function PageOptions({ config, set }: PanelProps) {
           onChange={(forms) => set({ forms })}
         />
       )}
+    </>
+  );
+}
 
+export function HeadingOptions({ config, set }: PanelProps) {
+  const toggleField = (id: HeaderField, on: boolean) =>
+    set({
+      // Rebuilt from the canonical order rather than pushed onto the end, so
+      // ticking Class before Date still prints name, date, class.
+      fields: FIELDS.map((field) => field.id).filter((field) =>
+        field === id ? on : config.fields.includes(field),
+      ),
+    });
+
+  return (
+    <>
       <Field label="Title">
         <Input
           value={config.title ?? ""}
@@ -172,7 +170,6 @@ export function PageOptions({ config, set }: PanelProps) {
           onChange={(title) => set({ title: title || undefined })}
         />
       </Field>
-
       <Field label="Instructions">
         <TextArea
           value={config.instructions ?? ""}
@@ -184,7 +181,6 @@ export function PageOptions({ config, set }: PanelProps) {
           }
         />
       </Field>
-
       <FieldSet
         legend="Lines to fill in"
         hint="Printed blank and filled in with a pencil. Nothing here holds a child's name — there is nowhere in a sheet to put one."
@@ -200,20 +196,18 @@ export function PageOptions({ config, set }: PanelProps) {
           ))}
         </span>
       </FieldSet>
-
-      <Checkbox
-        label="Answer boxes"
-        hint="A box round the answer place rather than a rule under it."
-        checked={config.answerBox === true}
-        onChange={(answerBox) => set({ answerBox })}
-      />
-      <Checkbox
-        label="Cut lines"
-        hint="Dashed guides across the middle of the page, for a sheet you cut up."
-        checked={config.cutLines === true}
-        onChange={(cutLines) => set({ cutLines })}
-      />
     </>
+  );
+}
+
+export function AnswerBoxes({ config, set }: PanelProps) {
+  return (
+    <Checkbox
+      label="Answer boxes"
+      hint="A box round the answer place rather than a rule under it."
+      checked={config.answerBox === true}
+      onChange={(answerBox) => set({ answerBox })}
+    />
   );
 }
 

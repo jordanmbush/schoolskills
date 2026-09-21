@@ -103,7 +103,7 @@ describe("sharing a list", () => {
   });
 
   it("refuses a file that isn't one of ours", () => {
-    // A half-recognised file that imports anyway is worse than one that
+    // A half-recognized file that imports anyway is worse than one that
     // refuses: it puts junk in a list a child then gets marked against.
     for (const bad of [
       null,

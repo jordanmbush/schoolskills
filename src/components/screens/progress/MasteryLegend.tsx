@@ -19,7 +19,7 @@ export const MASTERY_ORDER: Mastery[] = [
   "mastered",
 ];
 
-/** Shared by the times-table grid and the word list — same colours, same words. */
+/** Shared by the times-table grid and the word list — same colors, same words. */
 export function MasteryLegend() {
   return (
     <ul className="legend">

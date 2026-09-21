@@ -17,7 +17,7 @@ import type {
 import { INTEGERS_SHEET, integerLayout } from "./integers";
 
 /**
- * Integers, order of operations, powers and roots — held to the bar the maths
+ * Integers, order of operations, powers and roots — held to the bar the math
  * families set.
  *
  * **Nothing here checks the generator against the generator.** The family holds
@@ -332,7 +332,7 @@ describe("the integers family", () => {
 
   it("tells a child which rule an order-of-operations sheet is about", () => {
     expect(buildSheet(config({ style: "order" }), 1).header.instructions).toBe(
-      "Work out each answer. Brackets first, then powers, then × and ÷.",
+      "Work out each answer. Parentheses first, then powers, then × and ÷.",
     );
   });
 
@@ -348,7 +348,9 @@ describe("the integers family", () => {
         1,
       ) //
       .header.instructions,
-    ).toBe("Work out each answer. Brackets first, then × and ÷, then + and −.");
+    ).toBe(
+      "Work out each answer. Parentheses first, then × and ÷, then + and −.",
+    );
 
     for (const terms of [2, 3]) {
       for (const seed of SEEDS) {
@@ -513,7 +515,7 @@ describe("what may be on the page", () => {
 
   it("keeps an order-of-operations expression inside the ceiling it declares", () => {
     // The family holds these numbers down to twelve whatever the range says,
-    // because the rule being practised is which operation goes first. What the
+    // because the rule being practiced is which operation goes first. What the
     // cap must not do is turn the range round on the way: a range starting
     // above it would draw *between* the cap and the ask — thirteen to nineteen
     // on a sheet that asked for twenty to thirty — which is neither.
@@ -680,7 +682,7 @@ describe("how much fits", () => {
     expect((rows + 1) * row + rows * PROBLEM_GAP.y).toBeGreaterThan(box.height);
   });
 
-  it("honours the count and the columns it was given", () => {
+  it("honors the count and the columns it was given", () => {
     expect(problemsOf({ count: 10 }, 1).length).toBe(10);
     for (const columns of [1, 2, 3]) {
       expect(pagesOf(buildSheet(config({ columns }), 1))[0].columns).toBe(

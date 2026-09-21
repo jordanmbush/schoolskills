@@ -81,7 +81,7 @@ describe("Passage", () => {
     expect(html).toContain('class="passage__word">painter</span>');
   });
 
-  it("colours the live word by what has been typed of it, and no further", () => {
+  it("colors the live word by what has been typed of it, and no further", () => {
     // Three letters typed of "sunshine": s-u-n hit, and the rest plain.
     const live = html.slice(html.indexOf("is-live"));
     expect(live).toContain('class="passage__ch is-hit">s</span>');

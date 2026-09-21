@@ -28,7 +28,7 @@ import {
 } from "./spelling";
 
 /**
- * Spelling, held to the bar the maths families set.
+ * Spelling, held to the bar the math families set.
  *
  * The answers here are not arithmetic, so "verified by an independent path"
  * means something different and just as strict: a gapped word is checked by

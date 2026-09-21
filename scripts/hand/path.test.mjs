@@ -108,7 +108,7 @@ describe("parseTransform", () => {
     ]);
   });
 
-  it("rotates about a centre when given one", () => {
+  it("rotates about a center when given one", () => {
     const m = parseTransform("rotate(90 10 10)");
     const [x, y] = transformed([{ type: "M", points: [20, 10] }], m)[0].points;
     expect(x).toBeCloseTo(10);
@@ -122,7 +122,7 @@ describe("parseTransform", () => {
 });
 
 describe("the written form", () => {
-  it("rounds, serialises and bounds", () => {
+  it("rounds, serializes and bounds", () => {
     const segments = rounded(
       absolute("M 0.4 0.6 C 1.5 2.5 3.4 4.4 5 6 L -2.6 10.2"),
     );

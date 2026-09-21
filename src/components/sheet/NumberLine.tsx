@@ -52,7 +52,7 @@ const HEAD = { tall: 55, wide: 30 };
  * so the engine thins them out (`labelEvery`) — and a tick with nothing under
  * it has to read as a tick rather than as a shorter version of the same thing.
  * Two thirds is the ratio a ruler uses, and it is what makes counting between
- * two labelled ticks possible at all.
+ * two labeled ticks possible at all.
  *
  * On a line under a sum this never applies: `label` is absent there, every tick
  * keeps its number, and every tick is full length.

@@ -257,7 +257,7 @@
 }
 
 /* ── Ink ────────────────────────────────────────────────────────────────────
-   Colour and font family only. Stroke widths and dash patterns are attributes
+   Color and font family only. Stroke widths and dash patterns are attributes
    in mil, set by the renderer — see src/components/sheet/units.ts for why a
    `stroke-width` declared here would come out about a thousandth of the size
    it says.                                                                  */
@@ -603,7 +603,7 @@
 
 /* The hop of a repeated subtraction along a number line: the arc is a rule,
    the arrowhead where it lands is a dot's fill, and the "−3" over it is set
-   like a tick's number. Nothing here has a colour of its own. */
+   like a tick's number. Nothing here has a color of its own. */
 .sheet__jump {
   fill: none;
 }
@@ -653,7 +653,7 @@
    where every rule above is load-bearing twice over. `tabular-nums` is what
    keeps a partial product in its own column, and a partial written half a
    column left of where it belongs is the entire mistake these sheets exist to
-   practise out of a child. `nowrap` is what keeps a row the height the layout
+   practice out of a child. `nowrap` is what keeps a row the height the layout
    arithmetic declared, exactly as it is on an answer line.                   */
 
 /* The partial products of a long multiplication. The rule under the sum is
@@ -756,7 +756,7 @@
 }
 
 /* The decimal point (§22): a box of no width on the boundary between two
-   squares, so no digit moves column. Centred in the row as the digits are, so
+   squares, so no digit moves column. Centered in the row as the digits are, so
    it shares their baseline. */
 .sheet__point {
   display: flex;
@@ -999,7 +999,7 @@
    many phonics traditions rather than owned by any: a bar over a vowel saying
    its own name, a letter that says nothing set faintly, and two letters saying
    one sound tied underneath. All three are foreground ink — an overline, an
-   underline and a lighter weight of the same colour — so all three print. */
+   underline and a lighter weight of the same color — so all three print. */
 
 .sheet__part--macron {
   text-decoration: overline;
@@ -1056,7 +1056,7 @@
 }
 
 /* ── Cards to cut out ───────────────────────────────────────────────────────
-   The block is exactly as wide as its cards and centred, which is the half of
+   The block is exactly as wide as its cards and centered, which is the half of
    §17's cut-line promise that nothing draws: whatever the cards did not use is
    split evenly left and right, so a stack of cut sheets is square with itself.
    An uneven margin is how this goes wrong and it cannot be seen on screen.  */

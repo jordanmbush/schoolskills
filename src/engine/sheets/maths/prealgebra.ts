@@ -248,7 +248,7 @@ function drawSimplify(
     // print "− 8x" while taking away minus eight of them.
     const third = Math.abs(drawCoefficient(config, rand));
     const total = first + second - third;
-    // Every letter cancelling leaves "0", which is a true answer to a question
+    // Every letter canceling leaves "0", which is a true answer to a question
     // nobody asked: the sheet is about collecting terms, not about nought. And
     // three positive terms can still collect to a negative one, which is a
     // minus sign on a sheet that turned them off.

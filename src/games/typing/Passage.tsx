@@ -25,7 +25,7 @@ const SNAP = 0.02;
 /**
  * The passage, with the current word live under the cursor.
  *
- * Per-character colouring on the current word only. Doing it on the whole
+ * Per-character coloring on the current word only. Doing it on the whole
  * passage would turn a page of text into a page of red and green, and the one
  * place a typist is looking is the word they're on.
  *

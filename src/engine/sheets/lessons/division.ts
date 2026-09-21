@@ -59,7 +59,7 @@ const sharing: Topic = {
     note(page, {
       heading: "12 ÷ 3, step by step",
       items: [
-        "12 sweets. 3 children. Draw 3 rings.",
+        "12 candies. 3 children. Draw 3 rings.",
         "Give one to each ring. Again. Again. Again.",
         "Nothing left. Count one ring: 4.",
         "12 shared between 3 is 4 each.",
@@ -126,7 +126,7 @@ const grouping: Topic = {
     note(page, {
       heading: "12 ÷ 3, step by step",
       items: [
-        "12 sweets. Bags hold 3.",
+        "12 candies. Bags hold 3.",
         "Ring 3. Ring 3. Ring 3. Ring 3.",
         "Count the rings: 4.",
         "Start at 12 on the line. Jump back 3 at a time. Four jumps reach 0.",
@@ -146,7 +146,7 @@ const grouping: Topic = {
     note(page, {
       aside: true,
       text: [
-        "For the grown-up: say it as a question — how many 3s in 12? — and let them make the groups. Then count groups, not sweets.",
+        "For the grown-up: say it as a question — how many 3s in 12? — and let them make the groups. Then count groups, not candies.",
       ],
     }),
   ],

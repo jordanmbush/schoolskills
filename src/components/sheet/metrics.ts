@@ -4,7 +4,7 @@
  * A block is handed this and its own data, and nothing else. Four facts rather
  * than the whole `Sheet`: a renderer that could read the header would start
  * deciding things the family already decided, and the declared-size bargain in
- * `layout.ts` only holds while the view honours a layout instead of
+ * `layout.ts` only holds while the view honors a layout instead of
  * discovering one.
  */
 import type { Forms } from "@/engine/sheets/hands/hand";

@@ -1168,7 +1168,7 @@ describe("how much fits", () => {
     ).toBeGreaterThanOrEqual(6);
   });
 
-  it("honours the count and the columns it was given", () => {
+  it("honors the count and the columns it was given", () => {
     expect(problemsOf({ count: 12 }, 1).length).toBe(12);
     expect(problemsOf({ count: 0 }, 1).length).toBe(0);
     for (const columns of COLUMN_COUNTS) {
@@ -1386,7 +1386,7 @@ describe("the facts they keep missing", () => {
   });
 
   it("leaves a zero out of a missing-number sheet", () => {
-    // The same judgement the drawn path makes: a blank that any number would
+    // The same judgment the drawn path makes: a blank that any number would
     // fill is not a question, and "_ × 0 = 0" is true of every number there
     // is. Dropping it is the honest answer; printing it is a page a child
     // cannot answer.

@@ -42,7 +42,7 @@ import { duration, percent } from "@/engine/format";
  *
  * It is mounted on the card island, but it is not that island's screen. The
  * typing results link into it by URL (`/flash-cards#/p/:id/progress`), and it
- * mixes two scopes deliberately. Races, cards, correct, time practising, the
+ * mixes two scopes deliberately. Races, cards, correct, time practicing, the
  * badges, the record book and the run list all count every world the player
  * has been in. The fact map, the trouble spots, the table trophies and the
  * "Facts mastered" stat follow the deck switcher, because each of them reads
@@ -162,7 +162,7 @@ export default function Progress() {
   /**
    * Race the same facts, where this app is the one they are played in. Built
    * here beside `switcher` rather than inline in the panel below, because both
-   * are a piece of behaviour the screen hands down rather than markup.
+   * are a piece of behavior the screen hands down rather than markup.
    */
   const drill = ownsMode(subject, mode)
     ? () => {
@@ -227,7 +227,7 @@ export default function Progress() {
         </div>
         <div className="stat">
           <span className="stat__value">{duration(stats.totalMs)}</span>
-          <span className="stat__label">Time practising</span>
+          <span className="stat__label">Time practicing</span>
         </div>
       </section>
 

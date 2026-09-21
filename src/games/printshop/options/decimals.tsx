@@ -79,7 +79,7 @@ export function DecimalsPanel({ config, set }: PanelProps<DecimalConfig>) {
   const bracketed = dividing && !byDecimal && config.form === "vertical";
   // Whether any divisor in the span can give a decimal answer that stops. A
   // span of 3 to 3 cannot, and a box that turned on a sheet with nothing on
-  // it would be an option that does nothing, so the box goes grey and the
+  // it would be an option that does nothing, so the box goes gray and the
   // span's own change clears it.
   const stops = stoppingDivisors(config).length > 0;
 

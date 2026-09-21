@@ -58,7 +58,7 @@ export type PracticePlayer = {
  * The same computation as the progress screen's trouble panel, per deck.
  *
  * Pure, and exported for that reason: everything below it needs IndexedDB, and
- * the judgement worth testing is which facts come out and in what order.
+ * the judgment worth testing is which facts come out and in what order.
  */
 export function practiceFrom(
   profiles: Profile[],

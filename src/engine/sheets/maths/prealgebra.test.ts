@@ -19,7 +19,7 @@ import type {
 import { PREALGEBRA_SHEET, preAlgebraLayout } from "./prealgebra";
 
 /**
- * Pre-algebra, held to the bar the maths families set — and to one more, because
+ * Pre-algebra, held to the bar the math families set — and to one more, because
  * three of these five styles have an answer that can be nearly right.
  *
  * **Nothing here checks the generator against the generator.** Every assertion
@@ -746,7 +746,7 @@ describe("how much fits", () => {
     expect((rows + 1) * row + rows * PROBLEM_GAP.y).toBeGreaterThan(box.height);
   });
 
-  it("honours the count and the columns it was given", () => {
+  it("honors the count and the columns it was given", () => {
     expect(problemsOf({ style: "equation", count: 9 }, 1).length).toBe(9);
     const columnsOf = (over: Partial<PreAlgebraConfig>) =>
       pagesOf(buildSheet(config(over), 1))[0].problems.columns;

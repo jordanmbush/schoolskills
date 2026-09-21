@@ -56,7 +56,7 @@ describe("bestRun", () => {
   /**
    * A run that may not hold a record is dropped before anything is compared.
    *
-   * `isRanked` is the judgement and this is the only place it is enforced, so
+   * `isRanked` is the judgment and this is the only place it is enforced, so
    * these two cases are what every "best" on the site inherits: the record
    * book's columns, the `previousBest` a personal-best bonus is paid on, and
    * `ghostsFor` below it. Today only a Hailstorm answers false — it ends when
@@ -196,7 +196,7 @@ describe("troubleFacts", () => {
   });
 
   it("keeps division's two questions apart", () => {
-    // 21 ÷ 3 = 7 and 21 ÷ 7 = 3 are different things to practise, so a kid who
+    // 21 ÷ 3 = 7 and 21 ÷ 7 = 3 are different things to practice, so a kid who
     // only misses one must not be drilled on both.
     const trouble = troubleFacts(
       [session("divide", [missed("3:7"), missed("7:3")])],

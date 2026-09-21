@@ -5,7 +5,7 @@
  * unchanged (§7, §11); the two things that are new are both about the picture
  * rather than the sum.
  *
- * **A wrong drawing is a wrong answer.** A rectangle labelled 8 by 3 and drawn 8
+ * **A wrong drawing is a wrong answer.** A rectangle labeled 8 by 3 and drawn 8
  * by 4 is a sheet that teaches a child not to trust the picture, which is worse
  * than a sheet with no picture on it. So every figure is built from the same
  * numbers the labels are written from (`figure.ts` does the building), and the
@@ -13,7 +13,7 @@
  * generator — a shape drawn out of proportion fails there.
  *
  * **An angle is drawn true.** Lengths are drawn in proportion because a
- * rectangle eight metres across does not fit on a page; an angle has no size, so
+ * rectangle eight meters across does not fit on a page; an angle has no size, so
  * a sixty-degree angle is drawn at sixty degrees and "is this acute or obtuse?"
  * is a question about the paper rather than about the caption.
  *
@@ -171,7 +171,7 @@ function drawArea(config: GeometryConfig, rand: () => number): Drawn | null {
     key: `area:triangle:${across}:${down}:${unit}`,
     prompt: "",
     answer: `${(across * down) / 2} ${squared(unit)}`,
-    // The sloping side is not labelled: it is not part of the area, and a number
+    // The sloping side is not labeled: it is not part of the area, and a number
     // on it is a number a child will try to multiply by.
     figure: rightTriangleFigure(across, down, [say(across), "", say(down)]),
   };
@@ -219,7 +219,7 @@ function drawPerimeter(
     prompt: "",
     answer: `${(base + height + slope) * by} ${unit}`,
     // In the order the points are given: the base, then the sloping side, then
-    // the upright. All three are labelled here, because all three are added.
+    // the upright. All three are labeled here, because all three are added.
     figure: rightTriangleFigure(base * by, height * by, [
       say(base * by),
       say(slope * by),
@@ -284,7 +284,7 @@ function drawAngle(rand: () => number): Drawn {
 }
 
 /**
- * How oblong an unlabelled rectangle has to be drawn: seven to five.
+ * How oblong an unlabeled rectangle has to be drawn: seven to five.
  *
  * Written as two whole numbers rather than a ratio, so the comparison that uses
  * them is whole-number arithmetic like everything else in this family.

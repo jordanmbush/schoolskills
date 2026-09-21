@@ -127,7 +127,7 @@ renamed. Return an `UNKNOWN_SHEET` that renders a blank page and says so.
 
 ### One table, two doors
 
-Behaviour is all a spec carries. Which `kind` reaches a family and what it is
+Behavior is all a spec carries. Which `kind` reaches a family and what it is
 called are in `families.ts`, beside a `() => import(...)` for the module itself,
 because a family reached by a static import is a family in every bundle that can
 see the registry — and several carry a corpus. Eagerly, opening the builder
@@ -232,7 +232,7 @@ off the bottom of the page is worse than no sheet.
 "How many problems fit" must be answerable without a DOM, or the catalog pages
 can't be built and the engine can't be unit-tested. So capacity is computed
 from geometry: usable height ÷ row height, usable width ÷ column width. The
-renderer then honours that layout rather than discovering it. The consequence
+renderer then honors that layout rather than discovering it. The consequence
 is that a problem cell has a **declared** size, not a measured one — which is
 a real constraint on the design of each family, and the right one.
 
@@ -336,7 +336,7 @@ outline**. That gives every trace style from one ordinary font:
 | Style      | How                                                              |
 | ---------- | ---------------------------------------------------------------- |
 | Solid      | `fill: currentColor`                                             |
-| Dim / grey | `fill: currentColor; opacity: .28` — tune per font weight        |
+| Dim / gray | `fill: currentColor; opacity: .28` — tune per font weight        |
 | Hollow     | `fill: none; stroke: currentColor; stroke-width: .5pt`           |
 | **Dotted** | as hollow, plus `stroke-dasharray: 0.5 3; stroke-linecap: round` |
 | Dashed     | as hollow, plus `stroke-dasharray: 4 3`                          |
@@ -362,7 +362,7 @@ happen here.
   family that draws handwriting guidelines, using `_` as the guideline glyph —
   designed precisely for making practice sheets. This is the find that makes
   the handwriting work tractable.
-- **Print / manuscript** — needs a single-storey `a` and `g`. **ABeeZee** (OFL,
+- **Print / manuscript** — needs a single-story `a` and `g`. **ABeeZee** (OFL,
   drawn for children learning to read) or **Andika** (SIL, drawn for literacy
   work). Pick one; don't ship both.
 - **Body and headings on the sheet** — the site's existing Nunito, so a
@@ -435,8 +435,8 @@ cursive whose descender fits the room a ⅝ rule gives it: its ascenders run
 
 `src/engine/sheets/faces.ts` is where each face's proportions are written down,
 and the file itself says where each number came from and what a test holds it
-to. What is here is the working behind them: what each number is a judgement
-about, and the obvious alternative two of those judgements turned down.
+to. What is here is the working behind them: what each number is a judgment
+about, and the obvious alternative two of those judgments turned down.
 
 **Capitals.** `capHeight` is taken from the flat-topped capitals (`E H I L T`).
 The round ones (`C G O Q S`) sit a little above that in the two text faces —
@@ -464,7 +464,7 @@ rather than convenience. It is _a pair, not a capital_, because on these sheets
 a capital never stands alone in a cell — it heads a pair, a word or a sentence,
 and what has to fit is the pair. And it is _ink, not advance_, because a cell is
 a box the letters sit inside and the side bearings either side cost nothing: the
-neighbour's bearing is there to meet them. Andika's comes out a sixth over its
+neighbor's bearing is there to meet them. Andika's comes out a sixth over its
 small-letter mean, which the air a handwriting row already reserves absorbs; the
 looped hand's is a third over, and it does not.
 
@@ -545,6 +545,8 @@ sheet again next week can have it.
 /printables/[subject]                /printables/math, /printables/handwriting,
                                      /printables/bible
 /printables/[slug]                   one sheet type — prerendered AND printable
+/printables/custom                   the builder's front door. Indexable.
+/printables/custom/[job]             /printables/custom/spelling, /handwriting, /math
 /printables/make                     the builder island. noindex.
 ```
 
@@ -559,7 +561,7 @@ later means redirects the static hosting doesn't natively do.
 Each `/printables/[slug]` page carries, in this order: a real `<h1>` and two or
 three paragraphs that answer the query, **the sheet itself as printed HTML**,
 a link into the builder preloaded with that config, and cross-links to
-neighbouring sheets. Where it's a maths topic, it also links to the matching
+neighboring sheets. Where it's a math topic, it also links to the matching
 `/multiplication/N-times-table` page and to the game — the internal-linking win
 is significant and free.
 
@@ -576,7 +578,7 @@ off the sheets, never written onto them.** Every catalog entry already stated
 the ages it was drawn for — `Ages 8–11` on the division worksheet — so a year
 page is the sheets whose stated band reaches the two ages a child is in that
 year, and `_grades.ts` is a parser and an overlap test rather than a second
-table of judgements to keep true. A sheet therefore appears on two or three of
+table of judgments to keep true. A sheet therefore appears on two or three of
 the ten, which is the honest answer and is what the pages say out loud; the
 alternative, a grade level asserted by a worksheet site, is a guess dressed as
 a standard. `_shelves.ts` is the registry the year pages read, and `hub: false`
@@ -601,6 +603,33 @@ crawler and a visitor with no JavaScript get the whole catalog and no dead
 search box. `scripts/search-index-guard.mjs` fails the build if a row points at
 a page `dist/` doesn't have, or if a page `dist/` has is reachable from
 neither the index nor a hub.
+
+**The builder has a front door of its own.** `/printables/make` is `noindex`
+for the reason `Base.astro` gives, and that left a hole nothing else filled: a
+search for "custom worksheets", "worksheet maker" or "build your own
+worksheet" had no page on this site to land on, because every indexable page
+is about one sheet and the one screen that makes a sheet to order was
+invisible. `/printables/custom` and the three pages under it are that door,
+in the catalog's own shape — prose that answers the query, a finished sheet as
+HTML under it, and doors into the builder that open on exactly the sheet each
+names, encoded into the link the way a catalog page's own builder link is
+(`_custom.ts`). Four pages and not one per family: the three are the jobs no
+fixed sheet can do — a spelling list of your own, a name or word to trace,
+math to your own numbers — and a page per family would be the doorway farm
+above, when every family is already one click from the front door, opened on
+its finished sheet. The word "generator" appears in a description and nowhere
+a reader is spoken to, because the catalog's own copy distrusts generators and
+says why.
+
+The same pages are where the site first speaks to a teacher. A good share of
+the people arriving are teachers, and until then every page said "your child"
+to all of them; the things that were always true of the bench and never said —
+copies are a class set with a key each, the Class line, a link a colleague
+can open, no login on a school device — are now said on each custom page and
+on the hub, and `Base.astro` stamps an `audience` of both roles onto every
+page's structured data so a crawler is told the same. The pages are listed in
+`catalogAudit().browse`, since they browse rather than print, and a unit test
+holds the hub and the home page to linking them.
 
 Two things about that island are worth recording, because both are decisions
 rather than defaults. A **third-party search box was never an option**: it
@@ -630,7 +659,7 @@ A4 cannot share a page. That covers paper, handwriting, cursive and Scripture,
 which print at `<slug>` and `<slug>/a4`.
 
 Where it is not, the shelf is one route and the A4 switch is a control in the
-builder. Nothing on a maths, spelling, grammar, phonics or chart sheet is a
+builder. Nothing on a math, spelling, grammar, phonics or chart sheet is a
 measurement — a printer that shrinks the page by four per cent gives a slightly
 smaller sum and the same right answer, and a hundred chart four per cent
 smaller still has a hundred squares in it. The templates shelf reaches the same
@@ -643,12 +672,12 @@ Two consequences, both load-bearing:
 - **It decides the shape of the route file.** A two-stock page is two path
   segments, so it needs a rest parameter — `[...slug].astro` — where a
   one-stock shelf needs only `[slug].astro`. Both shapes sit side by side at
-  the top of `/printables`, paper's and maths', and what keeps that legal is
+  the top of `/printables`, paper's and math', and what keeps that legal is
   that no slug is ever emitted by both. A shelf's own suite is where that is
   checked, because Astro will not complain: it simply picks one.
 - **A shelf answers for all of its pages.** The memory sheets on the Scripture
   shelf have no ruling to distort and could have lived on one stock, as the
-  maths sheets do. They come on both anyway: a shelf where some pages have an
+  math sheets do. They come on both anyway: a shelf where some pages have an
   A4 twin and some don't is a shelf a parent has to check.
 
 Graph paper is the case that proves the split rather than breaking it — its
@@ -700,6 +729,18 @@ blurb, and a strip of that world's own terrain along the bottom. Adding a
 fourth is a `BADGES` entry and nothing else, and the heading above the cards
 ("Three worlds, and no locked doors") needs its number updating.
 
+**The card links the builder too, and so does everything else.** `href` is
+the catalog and `island` is the builder, and a card that offered only the
+front door would hide the half of the world a parent comes back for.
+`WorldInfo.build` is the label the map and the footer offer `island` under, in
+the slot a guide link takes on the jungle's card, and only The Print Shop sets
+it. The home page's hero makes the builder its first action for the same
+reason — paper is what most people arrive for, and the builder is where a
+sheet that is nearly right becomes the right one — and gives it a band of its
+own under the catalog's. The Print Shop's front door carries the same button
+in its hero, and every catalog page links the builder preloaded with its own
+sheet (§8).
+
 One honest wrinkle to write around rather than ignore: the map is a child's
 screen and this world is a parent's. The card's `subject`, `tagline` and
 `blurb` should say so plainly instead of pretending a worksheet is a level, and
@@ -728,7 +769,7 @@ of the output path:
   (`break-inside: avoid` on problem rows, `break-after: page` between sheets)
   and the `@page` size have to be correct before a family ships, because
   there's no PDF to fall back on.
-- **Say what to do.** The Print button's neighbouring hint reads "Print, or
+- **Say what to do.** The Print button's neighboring hint reads "Print, or
   choose _Save as PDF_ in the print dialog to keep a copy." One line, and it
   removes the only real objection to this approach.
 
@@ -752,7 +793,7 @@ These are pure functions with verifiable answers. This is where the effort goes.
 Two rules hold across every one of them, and both exist because the failure
 they guard is a wrong answer key that prints looking right.
 
-**No maths sheet's numbers are floats.** Fractions, decimals and money share
+**No math sheet's numbers are floats.** Fractions, decimals and money share
 one hazard the times tables never had: `7 × 8` is 56 in any arithmetic anybody
 has ever implemented, but `0.1 + 0.2` is 0.30000000000000004 in the one every
 JavaScript program is written in, and `4/8` is a correct answer written the
@@ -776,7 +817,7 @@ accepts it has run out and prints what it has. That is the honest answer to
 "twenty different sums from 1 to 3": there are six, and six is what a parent
 should get rather than the same sum three times.
 
-**Maths.** Counting and numeral tracing 0–20 · ten frames · number bonds ·
+**Math.** Counting and numeral tracing 0–20 · ten frames · number bonds ·
 addition and subtraction (horizontal, vertical, with and without regrouping,
 missing addend, fact families) · multiplication and division (tables, grids,
 long multiplication, long division with and without remainders) · place value ·
@@ -805,9 +846,9 @@ rhyming · syllables · word families · prefixes and suffixes · plurals ·
 contractions · homophones · synonyms and antonyms.
 
 **Grammar.** Parts of speech · subject and predicate · sentence types ·
-punctuation · capitalisation. Not generated from a rule but drawn from a tagged
+punctuation · capitalization. Not generated from a rule but drawn from a tagged
 sentence bank — authored content, small and reusable, because grammar is a
-judgement rather than a calculation.
+judgment rather than a calculation.
 
 **What shipped (PRINT20).** The words shelf, and it is two families rather than
 one because the two halves are mirror images. `words/spelling.ts` is a list
@@ -861,7 +902,7 @@ any word at all: its own letters, out of order.
 
 **What shipped (PRINT22).** Grammar: one family, five topics, one bank. The
 bank is the story. Spelling is authored because **English will not yield to a
-rule**; grammar is authored because **grammar is a judgement** — whether a word
+rule**; grammar is authored because **grammar is a judgment** — whether a word
 is an adverb, whether a comma is needed, which half of a sentence is the
 subject, each decidable in a particular sentence and arguable in general. A
 parser would be right most of the time, and a sheet that marks a defensible
@@ -879,7 +920,7 @@ or absent, which is what stops "complete subject" and "simple subject" being two
 right answers to one question; an exclamation is exclamative in _form_, so the
 mark on the end is grammar rather than tone. Those rules are what decide the
 shape of the shelf too: there is no `match` style, because pairing a word to a
-class is the same judgement with a worse layout; there is no comma topic and no
+class is the same judgment with a worse layout; there is no comma topic and no
 exclamation-mark topic, because neither has a key; and end punctuation asks only
 for a full stop or a question mark for the same reason.
 
@@ -899,12 +940,12 @@ Lined paper in every ruling · graph, dot and isometric paper · hundred charts 
 multiplication grids (blank and filled) · number lines · coordinate grids ·
 place-value mats · reading logs · book report forms · story maps and paragraph
 frames · writing prompts · lab report sheets · scientific method sheets ·
-observation journals · timelines · calendars and planners · chore and behaviour
+observation journals · timelines · calendars and planners · chore and behavior
 charts · award certificates · name tags and bookmarks · blank flashcards with
 cut lines · dice and spinner nets · memory-verse cards and a verse-of-the-week
 chart.
 
-**What shipped (PRINT26): the blank maths references.** `templates/charts.ts` —
+**What shipped (PRINT26): the blank math references.** `templates/charts.ts` —
 hundred charts blank and filled over a configurable range, number lines with the
 interval a parent sets, first- and four-quadrant coordinate grids, and
 place-value charts down to thousandths — on eight pages at `/printables/charts`,
@@ -1055,8 +1096,8 @@ rather than a section off to one side.
 - **Templates.** Memory-verse cards to cut out, verse-of-the-week wall chart,
   Scripture bookmarks, a reading-plan grid, a Bible-study journal page.
 
-**Where it doesn't go: the maths sheets.** Not for positioning reasons — as a
-craft judgement. A verse reference bolted to a long-division problem serves
+**Where it doesn't go: the math sheets.** Not for positioning reasons — as a
+craft judgment. A verse reference bolted to a long-division problem serves
 neither the verse nor the division, and every worksheet site that does it looks
 worse for it. Scripture goes where text belongs: copywork, memory work,
 handwriting, vocabulary, reading.
@@ -1133,13 +1174,13 @@ credit travels on the passage rather than beside it: `SheetFooter.source` is a
 field of its own precisely because an answer key has to say _both_ "Answer key"
 and where the passage came from.
 
-Memory work is the second family, and it is the one §12's licence condition
+Memory work is the second family, and it is the one §12's license condition
 actually bites on: rounds of the same passage with a growing share of the words
 gone, chosen by the seed, nesting so nothing comes back. The instruction line
 says the words are left out for the exercise and the key prints the passage
 whole — both halves, in the engine, so neither is a page's decision to forget.
 The shelf is `/printables/bible`, a peer of `/printables/math` and
-`/printables/handwriting`; the maths sheets stay clear of it, as above.
+`/printables/handwriting`; the math sheets stay clear of it, as above.
 
 **What shipped (PRINT23), and the one thing that didn't.** Five word lists in
 `engine/decks/biblelists.ts` — the thirty-nine and the twenty-seven in canonical
@@ -1152,7 +1193,7 @@ quote ships the deuterocanon itself, so sixty-six is our editorial choice and is
 stated as one.
 
 **Catechism vocabulary, promised above, is declined.** Not an oversight and not
-a scheduling call: a word list is a list of definitions a child memorises, and
+a scheduling call: a word list is a list of definitions a child memorizes, and
 the catechism words worth listing are the ones the traditions answer
 differently — what baptism accomplishes, what happens at communion. A
 seven-year-old handed one side of that as a fact to learn, who later finds it
@@ -1225,7 +1266,7 @@ Shop's map card needed nothing: its blurb already listed Scripture copywork
 among times tables, handwriting and spelling lists, so `worlds.ts` is
 unchanged.
 
-Both are read through `passage()` rather than inlined, which puts the licence
+Both are read through `passage()` rather than inlined, which puts the license
 condition in code instead of in a reviewer's memory: the words on the home page
 are the release's own, and the credit travels with them exactly as it travels
 onto a sheet. `passage()` answers `undefined` rather than throwing, so either
@@ -1342,7 +1383,7 @@ letters: `be` and `the` end in the same letter and not in the same sound.
 
 The three marks are `macron`, `silent` and `joined` on `PhonicsMarking`, each a
 boolean of its own, all three off by default, and every one of them derived from
-the table — there is nowhere in the code for a programme's own spelling of a
+the table — there is nowhere in the code for a program's own spelling of a
 rule to be written down. They apply to the cards, the chart and the strips, and
 deliberately not to the blending lines or the matching sheet: **marking is for a
 word a child reads, not for a word a child is working out**, and a joined `sh`
@@ -1395,18 +1436,89 @@ of the 300-line cap — which is the right pressure for a screen like this.
 src/games/printshop/
   App.tsx            mount, and what goes where
   useBuilder.ts      the config, the seed, and the URL they live in
-  defaults.ts        what the bench opens on, per family
-  Picker.tsx         choose a family (the catalog, in-app)
-  PageOptions.tsx    the options every sheet has, whatever is on it
+  defaults.ts        what a family opens on
+  shelves.ts         the chooser's shelves, and what each family's tab is called
+  Rail.tsx           the numbered steps down the settings pane, each with the line that says what is set
+  Split.tsx          the button on the line between the panes, and whether there is a line
+  summary.ts         those lines, for the paper, the lettering and the heading
+  Chooser.tsx        choose a family (the catalog, in-app), and the doors on its shelf
+  PageOptions.tsx    the options every sheet has, in three sections
   Preview.tsx        the sheet, scaled, on the press-room ground
-  PrintBar.tsx       print · variants · answer key · share
+  PrintBar.tsx       another draw · the link · copies · answer key · print
+  Caption.tsx        under the paper: the seed, and where a file comes from
   SavedSheets.tsx    My Sheets, through services/sheets.ts
-  Bootstrap.tsx      the three below — a saved list, and a paste
-  Missed.tsx         practise what they missed, through services/practice.ts
+  Bootstrap.tsx      the doors, by shelf — what they missed; a saved list, a paste
+  Missed.tsx         practice what they missed, through services/practice.ts
   options/index.tsx  the registry — the one place `kind` is narrowed
   options/parts.tsx  choice · range · sizing · pool · word list
   options/*.tsx      one panel per family
 ```
+
+**Two panes, and the steps are numbered.** The options first stood in a
+column beside the paper, and the column grew to five screens: a parent tuning
+a sheet scrolled up and down it looking for the one control they meant, and a
+landscape sheet had half the width it needed. A rail across the top came
+next, the steps in a row and the open one's section in a tray under them
+with the paper full width below — and the tray had to be capped so the paper
+kept some of the screen, which left neither with enough: a long section
+scrolled inside a strip, and the paper under it was the top corner of a page.
+So the bench is two panes under the masthead, as tall as the window and
+pinned there. The settings on the left, three quarters of it: the numbered
+steps down one side in the order a stranger needs them — the sheet type, what
+is on it, the paper, the lettering, the heading — and the open step's section
+beside them, laid out in columns. The paper on the right, small enough to see
+whole, with what leaves the bench as paper above it: Print, copies, the answer
+key, another draw and the link. Each pane scrolls on its own and keeps its
+scrolling to itself, so a section three screens long never carries the paper
+away and a stack of copies never carries the settings, and the steps stay put
+while their section goes by. One button sits halfway down the line between
+the panes and flips the room: the paper takes nearly all of it, the settings
+fold to a strip of step numbers that cannot be pressed, and pressing it again
+puts the room back. It is the same paper at a different size — the preview is
+scaled to the room it has, whatever the room — so nothing is rebuilt to look
+closer, and the last step's "Next" is that flip with focus on Print, which is
+how the walk through the steps ends on the finished page. Under 62rem the
+panes stack and the button goes, because a sheet is already as wide as a
+phone.
+
+Three things make it a way through rather than a set of tabs, and each is a
+finding rather than a taste. A closed step shows the choices made in it as one
+line (`summary.ts`), because a step that showed only its name would have to be
+opened to be checked — the fault Baymard's checkout testing found in every
+accordion that collapsed to a heading. Every tray ends in "Next: Paper →", a
+descriptive next rather than a bare one, so a parent who only ever presses it
+walks the order and ends at Print, while any step can be opened at any time —
+Material's non-linear stepper, and GOV.UK's "allow users to complete tasks in
+any order". And a stranger opens on step one and nothing else: no kind is
+chosen, no pill is pressed, and the later steps, the print row and the paper
+are not on the page until one is — only a blank the shape of the paper, where
+it will go. A default sheet stood there at first, and
+it hid the first question — a parent who arrived on a finished page of sums
+did not know they were meant to pick one — so now the only thing on the bench
+is the choice, which is progressive disclosure at its plainest: the one
+decision that comes first, and the rest once it is made. A sheet that arrived
+by link or out of My sheets has its kind chosen already and lands on its own
+options instead. There is no tour, because
+NN/g's testing found people who read one were no more successful and rated
+the task harder, and no ticks, because every step holds a good value from the
+first second and a tick on all five would say nothing.
+
+The family's own step is called what the family holds — problems, letters,
+words, a ruling — because the one heading that had to be true of every family
+("what is on it") read as the site talking to itself. `shelves.ts` holds those
+names beside the five shelves the chooser groups the families on, cut coarser
+than the catalog's because five is what fits across a chooser. On screen a
+shelf is a subject, the word a parent has for it and the word the search
+index already uses, and the sheet types are not offered until one is chosen,
+so a first visit asks one thing. Choosing another subject takes the sheet off
+the bench — a type from one subject cannot stand under another, and a "Next"
+that led back to the old subject's problems was the tell — so the bench is
+step one again until a type is picked, keeping only the paper. The bootstraps
+below are the chooser's lower half rather than a section of their own, and
+each sits on the shelf whose sheets it makes: the record book's facts under
+Math; a list, a paste and the record book's spellings under Spelling; nothing
+under the rest. Shown under every shelf, a word-list door beside the times
+tables answered a question nobody on that shelf was asking.
 
 Built as it stands, with two names moved from this sketch: the per-family panel
 is `options/*.tsx` alone (there is no `Editor` wrapping it), and what was going
@@ -1414,11 +1526,11 @@ to be `Editor.tsx` turned out to be `PageOptions.tsx` — the options that belon
 to no family. The reading half of `#s=` lives in `engine/sheets/share.ts` beside
 the encoder rather than in the builder, because the two are one format.
 
-**The bench opens on a finished sheet, never on an empty form.** `defaults.ts`
+**A family opens on a finished sheet, never on an empty form.** `defaults.ts`
 holds one config per family and each is a worksheet somebody would print
-unchanged, so switching family produces paper before a single option has been
+unchanged, so choosing a family produces paper before a single option has been
 touched — the bargain a catalog page strikes, reached from inside the builder.
-Where a family has several styles the default is the one a parent recognises
+Where a family has several styles the default is the one a parent recognizes
 across the room and would name if asked: the reading log among the nine forms,
 blank flashcards among the five cards, the word search among the three puzzles,
 blending among the seven phonics sheets, parts of speech among the five grammar
@@ -1429,9 +1541,9 @@ whose content is a list — spelling and puzzles — open on the same shipped
 sight-word slice, so moving between the shelves keeps the words a parent is
 already looking at on screen.
 
-Those judgements live in the view rather than in the engine, deliberately. A
+Those judgments live in the view rather than in the engine, deliberately. A
 family's `SheetSpec` states what it _can_ build; "twenty-four sums with both
-numbers under twenty" is an editorial judgement about children, of a piece with
+numbers under twenty" is an editorial judgment about children, of a piece with
 the catalog copy, and `deckSpec` draws the same line for the races.
 
 The bootstraps arrived the same way. Which sheet family answers for which deck
@@ -1459,7 +1571,7 @@ import for the same reason.
 
 Bootstrapping a custom sheet is three buttons, not a wizard:
 
-1. **Practise what they missed.** Read the trouble facts the record book
+1. **Practice what they missed.** Read the trouble facts the record book
    already computes and print a sheet of exactly those. **No other worksheet
    site can do this**, because no other worksheet site knows what the child got
    wrong. It is the reason this section exists at all rather than being one
@@ -1470,7 +1582,7 @@ Bootstrapping a custom sheet is three buttons, not a wizard:
 3. **From pasted text.** `parseWords` already handles whatever a school letter
    looks like. Paste a spelling list, a verse, a passage — get a sheet.
 
-### Where "practise what they missed" is entered from
+### Where "practice what they missed" is entered from
 
 Three doors, and they're all cheap once the builder exists:
 
@@ -1512,7 +1624,7 @@ kid.
 The Print Shop is worth building on its own. It is worth much more wired to
 what's already here:
 
-- **Practise what they missed** (§14) — the highest-value feature in this
+- **Practice what they missed** (§14) — the highest-value feature in this
   document.
 - **This week's spelling deck, as paper** — and the reverse: a printed list
   that carries a link back to the race.
@@ -1553,7 +1665,7 @@ be.
 ## 18 · What to build, in what order
 
 Each phase is a shippable thing, not a layer of an unshipped thing. The order
-is arranged to reach "practise what they missed" by phase 2.
+is arranged to reach "practice what they missed" by phase 2.
 
 **Phase 0 · The press.** `engine/sheets` spine, `paper.ts`, `layout.ts`, block
 renderers, `sheet.css`, `print.css`, the `paper` world and its map card, and
@@ -1562,11 +1674,11 @@ prerendered at `/printables/lined-paper`. It is the smallest thing that proves
 the geometry, and "printable wide ruled paper" is a top-tier query in its own
 right. Plus the hub at `/printables` and the sitemap assertion from §8.
 
-**Phase 1 · Maths.** The arithmetic families with the full option set, answer
+**Phase 1 · Math.** The arithmetic families with the full option set, answer
 keys, seeds and variants. Curated catalog pages per operation, cross-linked to
 the twelve times-table pages. This is the traffic phase.
 
-**Phase 2 · The builder, and practise what they missed.** `/printables/make`,
+**Phase 2 · The builder, and practice what they missed.** `/printables/make`,
 live preview, URL-encoded config, save to IndexedDB (`DB_VERSION` 3). The three
 bootstraps, and the entry points from the results and progress screens. Kit
 primitives added as needed — a checkbox, a segmented control, a range, a
@@ -1758,7 +1870,7 @@ stops — either prints a rounded key or throws most of its draws away.
   that stops and is left out rather than rounded in: the draw takes only from
   the divisors in the span that can stop (`stoppingDivisors`), so a span that
   holds none — 3 alone, or 7 — makes nothing, the page says which divisor
-  rather than that nothing could be made, and the builder greys the box. A
+  rather than that nothing could be made, and the builder grays the box. A
   whole quotient is left out because an answer past the point is the promise.
   The answer prints to the sheet's places like every answer on the family, so
   `6 ÷ 4` at two places is `1.50` — the last annexed zero divided into and
@@ -1878,8 +1990,8 @@ and one sentence for the grown-up set small at the foot. The family is
 defaults.
 
 **A lesson is authored, not generated.** What to say first, which picture to
-draw, which numbers to use and in what order — those are judgements, and the
-grammar bank (§11) already settled how this codebase treats a judgement: write
+draw, which numbers to use and in what order — those are judgments, and the
+grammar bank (§11) already settled how this codebase treats a judgment: write
 it down once, tag it, and let the code print it. So a topic is data plus a
 small builder: the title, the instruction line, the blocks in order, and the
 problems to try, drawn from the seed only in the order they are dealt. Another
@@ -1950,7 +2062,7 @@ because it is the model of division children arrive at school holding
 (Fischbein found it the only intuitive one, and Correa, Nunes and Bryant found
 five-year-olds already sharing fairly). Grouping second, with the same 12 ÷ 3,
 because a child with only the sharing story is stuck the day the divisor stops
-being a number of people — Roche and Clarke found three quarters of practising
+being a number of people — Roche and Clarke found three quarters of practicing
 teachers could not make sense of 8 ÷ 0.5 for that reason — and because every
 later method leans on it: chunking is repeated subtraction, and dividing by a
 decimal is a grouping question. Arrays third, because one picture holds the
@@ -2166,7 +2278,7 @@ evidence names:
   character, and a line the wider gaps make too wide shrinks to fit, model
   and trace alike.
 - **Check** (`check`). A model, then the child's own tries, then a
-  judgement: "circle the one that looks most like the model". Self-evaluation
+  judgment: "circle the one that looks most like the model". Self-evaluation
   is the step that turns repetition into practice — it was in the lessons
   that moved first-graders' handwriting and their composition with it
   (Graham, Harris & Fink 2000), and writing from a studied model rather than
@@ -2264,7 +2376,7 @@ hand, twelve files for the site as it stands, the dash pitch frozen into the
 em, and still no start dot. A hand is one drawing per letter and every style
 from it, and if a real font is ever wanted (a heading set in the hand, say),
 it is a script over the same data: stroke-expand the paths into outlines.
-That direction is cheap. The other one, outlines back to centrelines, is
+That direction is cheap. The other one, outlines back to centerlines, is
 the thing this section exists to avoid doing by hand twice.
 
 ### What a hand is
@@ -2280,10 +2392,10 @@ writing space and its tail space at half again (§5) — so when a row sets
 midline; a hand drawn to the ruling has none.
 
 One thing is not set exactly on the line, and that is the ink. A stroke
-centred on a line lies half on it, and a bar along the top line or the
+centered on a line lies half on it, and a bar along the top line or the
 baseline — the top and bottom of an `E` — disappears into it. So the row
 sets a letter with its ink just inside the lines it reaches: a stroke on
-the top line, the baseline or the line under the tail space is centred a
+the top line, the baseline or the line under the tail space is centered a
 rule's half-width and an ink's half-width off it, so the two touch and
 neither covers the other. The writing space is that much shorter for the
 letter; the tail space is not, so a tail keeps its length and bumps the line
@@ -2300,7 +2412,7 @@ _Joins_ below).
 
 ### Forms — a letter taught two ways
 
-Some letters have no one shape. An `a` has one storey or two, and a `t` or
+Some letters have no one shape. An `a` has one story or two, and a `t` or
 a `q` ends in a curve or goes straight to the line; a `y`, an `l` and an
 `i` split the same way on their feet. Schemes differ on each, and
 a parent choosing a sheet has a scheme in mind — the one their child's
@@ -2318,9 +2430,9 @@ form it has no drawing of, is the letter as drawn. That fallback is what
 lets a choice be saved into a sheet: the hand may grow or rename a form
 later, and the sheet still prints.
 
-Which form is a hand's own is a judgement written into `hand.json`, first
+Which form is a hand's own is a judgment written into `hand.json`, first
 in the letter's list. The print hand's are the ones a child is taught
-first: a single-storey `a`, a `t`, a `q` and a `y` with the curve, and a
+first: a single-story `a`, a `t`, a `q` and a `y` with the curve, and a
 plain `l` and `i`; the other of each is drawn beside it. The specimen
 writes every letter in every form it has, and the words a second time with
 every letter switched to its other form, which is the guide layout's stress
@@ -2367,7 +2479,7 @@ the shaft, ink crossed at right angles is half the price of ink run
 alongside; a number is scored as its box, against ink sampled finely enough
 that a curve grazing its corner is seen. With everything clear, the outside
 of the letter and the start of the stroke win, so a plain stem gets the
-arrow a teacher would draw. The weights are judgements, and the specimen
+arrow a teacher would draw. The weights are judgments, and the specimen
 page is where they are checked: change one and look at every letter.
 
 Which models carry them is the sheet's choice: `guides` on a trace block,
@@ -2379,7 +2491,7 @@ as one three-way choice on both panels, and only in a face with a hand — the
 outline row has no strokes to mark.
 
 A word set as a model is laid out letter by letter, each keeping off its
-neighbours' ink and the earlier letters' marks, and the row tracks the
+neighbors' ink and the earlier letters' marks, and the row tracks the
 letters out into whatever spare room the cell has, never shrinking the word
 to make it. In a block set to `all`, every cell gets that room — the wider
 inset and the spread — whether or not it draws the marks. A sentence whose
@@ -2411,11 +2523,11 @@ The drawings are the source and the data module is generated from them.
 2. **Draw**, in Inkscape or anything that saves SVG: one open path per pen
    stroke, in the order the pen makes them, in that layer. Where on the
    template the letter sits does not matter. In a hand that joins, the
-   joining stroke is drawn in named parts — a path labelled `lead` for the
+   joining stroke is drawn in named parts — a path labeled `lead` for the
    lead-in, `top` for the top of a bowl, `tail` for the exit stroke, and
    the body between them — each starting where the one before ends; the
    ingest fuses them into one stroke and records how many segments each
-   was, which is the letter's `join`. The body is labelled `body` where
+   was, which is the letter's `join`. The body is labeled `body` where
    nothing else marks the stroke as a joining one: a letter the unlooped
    American model lifts the pencil after has neither lead-in nor tail, and
    joins in all the same. That stroke is the first unless the letter writes
@@ -2530,7 +2642,7 @@ a tail on every letter, the American one on none of `b`, `f`, `g`, `j`,
 as it would alone — which is how `Zebra` in that model gets the rise on
 its `r`. Both models' capitals are print, and none joins.
 
-The handle share and the halfway rule are judgements, and the specimen
+The handle share and the halfway rule are judgments, and the specimen
 writes every pair of the joins sheet so they can be checked against the
 outline face's dotted row under them.
 

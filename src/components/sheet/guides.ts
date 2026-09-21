@@ -8,7 +8,7 @@
  * alphabet. Every candidate — early or slid along the stroke, full or cut
  * short, either side, each spot for the number — is scored on what it runs
  * into, in units of one sample of ink under a mark, and the cheapest wins.
- * The weights below are judgements; the specimen page is where they are
+ * The weights below are judgments; the specimen page is where they are
  * checked.
  *
  * Everything here is in the row's mil, on paths already placed; the row
@@ -49,7 +49,7 @@ export type GuideSet = {
   /** The stroke number's type size. */
   numeral: number;
   guides: Guide[];
-  /** Every arrow, shaft and tip, sampled finely — for a neighbour to keep off. */
+  /** Every arrow, shaft and tip, sampled finely — for a neighbor to keep off. */
   marks: Point[][];
 };
 
@@ -124,7 +124,7 @@ const unit = (v: Point): Point => {
  */
 const BOX = { x: 0.28, y: 0.36 };
 
-/** The distance from a point to a box centred on `at`: none when inside. */
+/** The distance from a point to a box centered on `at`: none when inside. */
 const offBox = (at: Point, half: Point, p: Point) =>
   Math.hypot(
     Math.max(0, Math.abs(p.x - at.x) - half.x),

@@ -12,7 +12,7 @@
 
    No pixel constant appears anywhere in the geometry — a lane, a hailstone
    and the fall are all multiples of `--key`, so the field and the board
-   change size together or not at all. And no colour here is a literal: the
+   change size together or not at all. And no color here is a literal: the
    ice world's tokens draw the sky and the stones, and the telemetry five stay
    out of it until there is something to signal. A hailstone in `--lime` would
    be telling a child something was right about it.                        */
@@ -86,14 +86,14 @@
    off this screen is. So the rule is lifted exactly when there is nothing left
    falling to lose track of, which is what `:has` asks. Nothing scrolls at any
    viewport that fits, and a browser too old to answer `:has` keeps today's
-   behaviour rather than getting a worse one. */
+   behavior rather than getting a worse one. */
 .storm:has(.storm__over) {
   overflow-y: auto;
 }
 
-/* Fifteen key units of sky, centred over fifteen key units of board, so a
+/* Fifteen key units of sky, centered over fifteen key units of board, so a
    lane and its cap are the same column of the screen and not merely the same
-   number. `.keyboard` centres itself the same way at the same width — that
+   number. `.keyboard` centers itself the same way at the same width — that
    shared width is the alignment, and it is why the sky is not simply the full
    width of the field.
 
@@ -125,7 +125,7 @@
   position: absolute;
 
   /* ── The lane ──────────────────────────────────────────────────────────
-     `--lane` is `keyX(code)`: the centre of the key's SLOT, in key units from
+     `--lane` is `keyX(code)`: the center of the key's SLOT, in key units from
      the left edge of the board. The cap is drawn INSIDE that slot, inset by
      `--key-gap` on its width, so the middle of the plastic a child is looking
      at sits half a gap to the left of the middle of the slot. Half a
@@ -151,8 +151,8 @@
      scales instead of setting a width: the layout property is the honest one
      to read and the expensive one to write, and twelve stones moving sixty
      times a second is twelve layouts a frame where a transform is none.
-     The centring is the `translate` property and not part of this, so the two
-     never write over each other — a stone is centred on its lane and moved
+     The centering is the `translate` property and not part of this, so the two
+     never write over each other — a stone is centered on its lane and moved
      down the sky by two independent declarations, and the loop can own one of
      them without touching the other.
 
@@ -194,10 +194,10 @@
   /* A layer of its own, for the one element on this site that moves every
      frame and carries text. Without it the glyph is re-rasterised at a new
      sub-pixel offset sixty times a second, and sub-pixel antialiasing puts
-     the colour fringes somewhere different each time — which is a shimmer on
+     the color fringes somewhere different each time — which is a shimmer on
      top of the smear the cap above is already fighting. Promoted, it is
      rasterised once and the compositor moves the texture; the cost is
-     greyscale antialiasing, which is very slightly softer standing still and
+     grayscale antialiasing, which is very slightly softer standing still and
      much steadier moving. Twelve stones at the very most, and only while a
      wave is running. */
   will-change: transform;
@@ -252,7 +252,7 @@
    Two of the telemetry five are borrowed here, both meaning exactly what they
    mean everywhere else on this site. `--flare` washes the score for one 220ms
    pass when a wrong key takes points off it, because that is a wrong. `--lime`
-   colours the multiplier while a streak is running, because that is a run of
+   colors the multiplier while a streak is running, because that is a run of
    rights and it is what the streak IS. The other three would each be a lie:
    nothing on this screen is a ghost, a record or a badge.
 
@@ -391,7 +391,7 @@
    storm rather than rearranging a screen.
 
    Everything is in `--key` units like the rest of this field, so the panel
-   scales with the board it is about to be played on, and every colour is the
+   scales with the board it is about to be played on, and every color is the
    world's: `--chalk` for the line a child has to read, `--chalk-dim` for the
    two that explain it. None of the telemetry five appear — nothing here is
    right, wrong, a record or a ghost, and a "Get ready" in `--go` would be a
@@ -407,7 +407,7 @@
   padding: calc(var(--key) * 0.5);
 
   /* The shield is `min(0.34 × --key, 20cqh)` at the bottom of this same box
-     (below), so the panel is nudged up by about that much to sit centred in
+     (below), so the panel is nudged up by about that much to sit centered in
      the sky a child is actually looking at rather than in the box the shield
      shares. */
   padding-bottom: calc(var(--key) * 1.2);
@@ -478,9 +478,9 @@
    whole rail back by that puts every seam in a gutter rather than down the
    middle of a cap, and — because both the lane and the segment step back by
    the same amount — a letter is over its own segment exactly when its key is
-   in its own zone, with the correction cancelling out of the comparison.
+   in its own zone, with the correction canceling out of the comparison.
 
-   Colour is the other half of "over its own finger": a segment is the hue of
+   Color is the other half of "over its own finger": a segment is the hue of
    the keys beneath it, out of the same eight `--finger-*` tokens the board
    uses, so the sage block over `h` and `j` is the sage keys' block and
    nothing has to be counted to see it. Two of the telemetry five are here and no
@@ -626,7 +626,7 @@
 /* ── Hailstorm under `prefers-reduced-motion` ────────────────────────────
    What comes off, and the one thing that cannot (docs/typing.md §8.10, #155).
 
-   **The falling stays.** A falling-letter game cannot honour the setting by
+   **The falling stays.** A falling-letter game cannot honor the setting by
    removing the falling, and this is why the fall was never written as an
    animation in the first place: `useStormClock` writes `--drop` onto each
    stone from a `requestAnimationFrame` loop and the rule above multiplies it
@@ -693,11 +693,11 @@
    `:has` rule up at `.storm` is what keeps that from ever becoming a button
    nobody can reach.
 
-   Colour says nothing about how well the run went. There is no `--flare` on a
+   Color says nothing about how well the run went. There is no `--flare` on a
    loss and no `--lime` on a win: the two endings are the same panel with the
    same four figures in the same order, because a child who has just lost is
    reading it and nothing here is a mark out of ten (§8.5). The one hue in it
-   is the named finger's own, which is identity and not judgement — the same
+   is the named finger's own, which is identity and not judgment — the same
    hue as the block that broke and the keys under it. `--lime` appears exactly
    once, on the XP, where it means what it means on every other results screen
    on this site: this is what you earned, and it could not have gone down.  */
@@ -739,7 +739,7 @@
   color: var(--chalk-soft);
 }
 
-/* The finger, in the finger's own colour — see the eight below. Bold because
+/* The finger, in the finger's own color — see the eight below. Bold because
    it is the subject of the sentence and the thing a child is meant to go and
    look at on their own hand. */
 .storm__finger {
@@ -782,7 +782,7 @@
    bar (§8.5).
 
    The ending panel is on this list because it NAMES one of the eight, and the
-   name has to be the colour of the block that broke and of the keys under it:
+   name has to be the color of the block that broke and of the keys under it:
    "your right ring finger" in steel, over a steel socket, over steel keycaps,
    is one sentence said three ways. It reads `--finger` and never a token, so
    there is no ninth place a hue could be picked. */

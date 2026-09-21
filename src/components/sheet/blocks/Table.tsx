@@ -51,7 +51,7 @@ export function Table({ block, metrics }: BlockProps<"table">) {
   // is for — so handing `fitText` one width for every label would measure the
   // longest heading against the narrowest column and shrink the whole row to a
   // size no column needs: under four points beside a twelve-point body, on a
-  // behaviour chart.
+  // behavior chart.
   const headSize = columns.reduce(
     (smallest, column) =>
       Math.min(
@@ -201,7 +201,7 @@ export function Table({ block, metrics }: BlockProps<"table">) {
   );
 }
 
-/** One heading, centred over the column it names. */
+/** One heading, centered over the column it names. */
 function Head({
   column,
   x,
@@ -233,7 +233,7 @@ function Head({
  * — on most of these sheets — nothing at all.
  *
  * The corner is where a calendar's date goes, and it is a corner rather than a
- * centre for a reason a reader would notice immediately if it were not: the
+ * center for a reason a reader would notice immediately if it were not: the
  * rest of the square has to stay empty, because the square is what somebody
  * writes the day's lesson in.
  */

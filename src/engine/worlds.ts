@@ -10,9 +10,9 @@
  * It lives in the engine because "what worlds exist" is product knowledge, the
  * same kind of thing as the Dolch lists in decks/wordlists.ts. The engine never
  * interprets any of it: to the model a world id is an opaque string that a
- * stylesheet happens to key off. Nothing here may grow a behaviour.
+ * stylesheet happens to key off. Nothing here may grow a behavior.
  *
- * The colours are the ONLY duplication with src/styles/worlds.css, and they're
+ * The colors are the ONLY duplication with src/styles/worlds.css, and they're
  * here for one reason: <meta name="theme-color"> is markup, not CSS, so the
  * browser chrome can't read a custom property. Keep them in step.
  */
@@ -78,6 +78,13 @@ export type WorldInfo = {
    * nothing ranks.
    */
   guide?: { href: string; label: string };
+  /**
+   * The words the map and the footer offer `island` under, where `island` is
+   * not `href`. Only The Print Shop sets it: its front door is the catalog,
+   * and a card that offered only the front door would hide the builder behind
+   * it — the half of the world a parent comes back for.
+   */
+  build?: string;
   /** How many levels are in it, and what a level is called here. */
   levels: string;
   /** Roughly who it's for. Ages, not school years — see /spelling for why. */
@@ -153,6 +160,7 @@ export const WORLDS: WorldInfo[] = [
     icon: "🖨️",
     href: "/printables",
     island: "/printables/make",
+    build: "Build a sheet",
     levels: "Paper, not levels",
     ages: "Pre-K to Y8",
   },

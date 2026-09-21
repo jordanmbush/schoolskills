@@ -89,7 +89,7 @@ export type KeyEchoBoard = {
  * The echo as a plain state machine: presses in, two sets out, one timer per
  * key.
  *
- * Split out of the hook below because it is the part with behaviour, and the
+ * Split out of the hook below because it is the part with behavior, and the
  * unit suite runs in Node with no DOM (`vitest.config.ts`) — a rendered hook
  * could not be driven at all here, and "a press with no keyup still releases"
  * is the assertion this most needs to keep holding. What is left in the hook is

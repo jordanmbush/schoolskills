@@ -5,7 +5,7 @@
  * The shelf after handwriting. A child who can form every letter and still
  * hands in a page nobody can read has one of a short list of problems, and
  * each sheet here works on one: the strokes, the size of a letter against its
- * neighbours, the space between words, judging their own work, or staying neat
+ * neighbors, the space between words, judging their own work, or staying neat
  * at speed (`docs/printables.md` §24).
  *
  * **The slugs are curated; the sheets are generated** (`docs/printables.md`
@@ -40,7 +40,7 @@ export type PenmanshipSheet = {
   slug: string;
   /** How it is listed on a hub. */
   name: string;
-  /** How it is labelled in the row of neighbouring sheets. A few words. */
+  /** How it is labeled in the row of neighboring sheets. A few words. */
   short: string;
   /** The page's `<h1>`. */
   heading: string;
@@ -185,7 +185,7 @@ export const PENMANSHIP_SHEETS: PenmanshipSheet[] = [
       "All twenty-six small letters on ⅝-inch paper, grouped by the stroke they start with — round, straight-line, arch and slanted — each one a model, two dotted to trace, and one written alone.",
     lead: "The small letters in the order a hand learns them rather than the order the alphabet keeps them: the nine that start like a c, the six that start with a line down, the seven that go down, back up and over the top, and the four made only of slants. Two letters to a row, each with a solid model, two dotted copies to trace, and an empty place to write it on your own.",
     notes: [
-      "Letters are taught in families because a child who can make one stroke well has every letter that starts with it: the curve that begins c, o, a, d, g and q is one movement, learnt once. It is also the best answer anyone has to b and d. A letter met beside the ones it is built like is mixed up less with the one it merely looks like — b is an arch letter, made like h and p, and d is a round letter, made like a and g, and on this sheet they are rows apart.",
+      "Letters are taught in families because a child who can make one stroke well has every letter that starts with it: the curve that begins c, o, a, d, g and q is one movement, learned once. It is also the best answer anyone has to b and d. A letter met beside the ones it is built like is mixed up less with the one it merely looks like — b is an arch letter, made like h and p, and d is a round letter, made like a and g, and on this sheet they are rows apart.",
       "There are no headings between the families; the paper marks the break instead. A family with an odd number of letters ends with a row half empty — f alone at the end of the round letters, k alone at the end of the arch letters — and the next row starts a new stroke. So every letter on a line starts the same way as the one beside it, which is what the instruction at the top says, and it holds on every line. Twenty-six letters written four times each is two pages of ⅝ paper.",
     ],
     teaches: "Forming letters by the stroke they start with",
@@ -214,7 +214,7 @@ export const PENMANSHIP_SHEETS: PenmanshipSheet[] = [
     lead: "Every small letter sorted by how tall it stands: the seven that reach the top line, the fourteen that stop at the dashed midline, and the five that hang below the baseline. Then six words — high, play, light, quick, bright, happy — with a tall letter, a small one and a tail in each, because a word is where the heights have to hold together.",
     notes: [
       "A letter can be the right shape and still the wrong size, and size is what a page is read by: tall letters reach the top line, small ones stop at the midline, tails hang below it — and if an a stands as tall as the b next to it, the word is hard to read whatever the a looks like. The three groups come first as rows of single letters, two to a row, so each height is met on its own against a ruling that shows exactly where it stops.",
-      "The words are the part that matters, and they are why this is not the small-letter tracing sheet in a different order. A child who sizes every letter correctly in a row of that letter will still write high with the h no taller than the i, because the place sizing goes wrong is inside a word, next to a neighbour of another height. Each word gets a row to itself — a model, two dotted to trace, and an empty stretch to write it — and the whole sheet is three pages of ⅝ paper on either stock.",
+      "The words are the part that matters, and they are why this is not the small-letter tracing sheet in a different order. A child who sizes every letter correctly in a row of that letter will still write high with the h no taller than the i, because the place sizing goes wrong is inside a word, next to a neighbor of another height. Each word gets a row to itself — a model, two dotted to trace, and an empty stretch to write it — and the whole sheet is three pages of ⅝ paper on either stock.",
     ],
     teaches: "Sizing letters against each other",
     ages: "Ages 5–8",

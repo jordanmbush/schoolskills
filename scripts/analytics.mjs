@@ -22,8 +22,8 @@
  * A durable home for the aggregates is still owed — see docs/analytics.md.
  *
  * Usage:
- *   npm run analytics                sync, count, summarise
- *   npm run analytics -- --no-sync   re-summarise what's already downloaded
+ *   npm run analytics                sync, count, summarize
+ *   npm run analytics -- --no-sync   re-summarize what's already downloaded
  *   npm run analytics -- --days 7    narrow the table (default 30)
  *   npm run analytics -- --by-day    every breakdown with a column per day
  *   npm run analytics -- --width 200 lay the grid out for a file, not a tty

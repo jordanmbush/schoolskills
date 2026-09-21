@@ -19,7 +19,7 @@ import type {
 import { MEASURE_SHEET, measureLayout } from "./measure";
 
 /**
- * Measurement, held to the bar the maths families set.
+ * Measurement, held to the bar the math families set.
  *
  * **Nothing here checks the generator against the generator.** The family reads
  * its ratios out of `units.ts`; this file writes them down again, by hand, from
@@ -70,7 +70,7 @@ const IMPERIAL: Record<string, number> = {
   gal: 8 * 2 * 2 * 4,
 };
 
-/** Which quantity a unit belongs to, so a sheet can't compare grams with metres. */
+/** Which quantity a unit belongs to, so a sheet can't compare grams with meters. */
 const MEASURES: Record<string, Quantity> = {
   mm: "length",
   cm: "length",
@@ -290,8 +290,8 @@ describe("the answer key", () => {
     }
   });
 
-  it("never asks a child to turn a metre into a foot", () => {
-    // Or a gram into a litre. Both units in a sentence belong to one system and
+  it("never asks a child to turn a meter into a foot", () => {
+    // Or a gram into a liter. Both units in a sentence belong to one system and
     // to one quantity, or the question has no exact answer at all.
     for (const shape of EVERY_SHAPE) {
       const system = shape.system ?? "metric";
@@ -536,7 +536,7 @@ describe("how much fits", () => {
     expect((rows + 1) * row + rows * PROBLEM_GAP.y).toBeGreaterThan(box.height);
   });
 
-  it("honours the count and the columns it was given", () => {
+  it("honors the count and the columns it was given", () => {
     expect(problemsOf({ count: 10 }, 1).length).toBe(10);
     expect(problemsOf({ count: 0 }, 1).length).toBe(0);
     for (const columns of [1, 2, 3]) {

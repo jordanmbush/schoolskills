@@ -1,7 +1,7 @@
 /**
  * Mean, median, mode and range.
  *
- * The shared machinery unchanged (§7, §11), over the one maths family whose
+ * The shared machinery unchanged (§7, §11), over the one math family whose
  * question is a *set* rather than a sum — and the one where the usual generator
  * bug is invisible on the page. Three of them:
  *
@@ -113,7 +113,7 @@ function medianText(values: number[]): string {
 /**
  * The value that appears most often, when exactly one value does.
  *
- * Exported because it is the one judgement in this file that a set can fail, and
+ * Exported because it is the one judgment in this file that a set can fail, and
  * because the draw below builds sets that pass it on purpose — so the rule
  * itself is only reachable from a test that hands it a tie directly. A family
  * that lost this would print a question with two right answers on it, which is

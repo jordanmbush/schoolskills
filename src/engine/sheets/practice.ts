@@ -37,7 +37,7 @@ const BASE: SheetOptions = {
 const TABLES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 
 /**
- * A full page when there is nothing in particular to practise.
+ * A full page when there is nothing in particular to practice.
  *
  * A named-fact sheet asks for exactly as many problems as it has facts, so
  * this number only decides the length of the other sheet — the mixed one a
@@ -96,7 +96,7 @@ export function practiceSheet(
     };
   }
 
-  // A word deck's fact id *is* the word — `DeckSpec.drillKey` normalises it and
+  // A word deck's fact id *is* the word — `DeckSpec.drillKey` normalizes it and
   // does nothing else — so the missed spellings are the list the sheet prints.
   // Which is also why the two other bootstraps land on the same family: a saved
   // deck and a pasted list are this config with the words from somewhere else.

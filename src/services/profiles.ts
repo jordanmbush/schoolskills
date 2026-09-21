@@ -36,9 +36,9 @@ function validate(input: Partial<NewProfile>, partial: boolean) {
   if (!partial || has("name")) out.name = text(input.name, "Name", 24);
   if (!partial || has("emoji")) out.emoji = text(input.emoji, "Avatar", 8);
   if (!partial || has("color")) {
-    const color = text(input.color, "Colour", 24);
+    const color = text(input.color, "Color", 24);
     if (!/^#[0-9a-f]{6}$/i.test(color)) {
-      throw new InvalidInput("Colour must be a hex value like #38bdf8");
+      throw new InvalidInput("Color must be a hex value like #38bdf8");
     }
     out.color = color;
   }
@@ -60,7 +60,7 @@ function validate(input: Partial<NewProfile>, partial: boolean) {
  * Absent is a legal state (it reads as "guide"), so failing the check simply
  * leaves the field alone.
  *
- * It is *not* a defence against a corrupt record, and shouldn't be read as
+ * It is *not* a defense against a corrupt record, and shouldn't be read as
  * one. A restored backup goes into the store whole and never passes through
  * here, and a hand-edited record is already in the store — the `...existing`
  * spread below copies it back out untouched. That case is defended where such

@@ -9,8 +9,8 @@
  *
  * ── Proportion, not life size ──────────────────────────────────────────────
  * A ⅝ rule prints at ⅝ of an inch or it is wrong, and a clock dial prints at an
- * inch and a half. A rectangle eight metres by three does not print at eight
- * metres by three, so it is drawn **in proportion**: every figure is scaled to
+ * inch and a half. A rectangle eight meters by three does not print at eight
+ * meters by three, so it is drawn **in proportion**: every figure is scaled to
  * fit one box, and the scale is applied to both directions at once so that eight
  * by three is drawn eight by three. The measurements are on the labels, and the
  * child reads them there.
@@ -76,7 +76,7 @@ export const radiusOf = (centre: Point, edge?: Point): Mil =>
 
 /**
  * How far a figure actually reaches, which is not always where its points are:
- * a circle reaches a radius past its centre in every direction, so sizing one by
+ * a circle reaches a radius past its center in every direction, so sizing one by
  * its two points alone clips the bottom half off.
  */
 export function figureBounds(figure: Figure): Bounds {
@@ -107,7 +107,7 @@ export function figureBox(
  *
  * The box rather than the figure, because every constructor below fits inside
  * it and the reservation is one number for a grid of them. Height only, and it
- * is the same number whatever a figure is labelled with — a label above a shape
+ * is the same number whatever a figure is labeled with — a label above a shape
  * takes a line whether it reads `4 m` or `120 cm`, and a label beside one takes
  * no height at all.
  */
@@ -159,8 +159,8 @@ export type FigureInk = {
  * decided by the edge, not by the corner it sits nearest**. A tall thin
  * triangle's upright is closer to the top of the figure than to the side of it,
  * so pushing a label away from the middle of the shape put `9 m` back across
- * the very line it was measuring. An edge that runs down the page is labelled
- * beside it; one that runs across is labelled above or below.
+ * the very line it was measuring. An edge that runs down the page is labeled
+ * beside it; one that runs across is labeled above or below.
  *
  * The box is then whatever holds the drawing and the words together, which is
  * why it is worked out here rather than reserved as a constant: `4 m` beside a
@@ -255,7 +255,7 @@ const fit = (value: number, of: number): Mil =>
  *
  * The points run clockwise from the top-left corner, so the labels a caller
  * gives are the top edge and then the right one — the two a rectangle is
- * labelled on. The other two are the same lengths, and a sheet that printed all
+ * labeled on. The other two are the same lengths, and a sheet that printed all
  * four would be telling a child the answer to half the question.
  */
 export function rectangleFigure(
@@ -337,9 +337,9 @@ export function polygonFigure(sides: number): Figure {
 }
 
 /**
- * A circle: where its centre is, and one point on it.
+ * A circle: where its center is, and one point on it.
  *
- * Two points rather than a centre and a radius, because a radius stored beside
+ * Two points rather than a center and a radius, because a radius stored beside
  * the points is a number that can disagree with them — and every other shape in
  * the union is already a list of points.
  */
@@ -364,8 +364,8 @@ export function circleFigure(labels?: string[]): Figure {
  * because that is the direction degrees are counted in.
  *
  * `from` is what stops a page of angles all sitting on a horizontal arm. An
- * angle turned round is the same angle, and a child who can only recognise a
- * right angle in one orientation cannot recognise a right angle.
+ * angle turned round is the same angle, and a child who can only recognize a
+ * right angle in one orientation cannot recognize a right angle.
  */
 export function angleFigure(degrees: number, from = 0): Figure {
   const arm = Math.round(FIGURE / 2);

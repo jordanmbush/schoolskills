@@ -22,7 +22,7 @@
  *     across this directory is that a stated source is quoted, not improved.
  *     If they should print as em dashes, that is a decision for the renderer,
  *     made in one place, and not thirty hand edits to the data.
- *   - **"The Tiger", spelt so.** Blake's plate reads *The Tyger*; the 1794
+ *   - **"The Tiger", spelled so.** Blake's plate reads *The Tyger*; the 1794
  *     Songs of Innocence and of Experience edition transcribed here modernises
  *     the spelling throughout, and the title follows the text it belongs to.
  *

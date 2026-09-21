@@ -1,5 +1,5 @@
 /**
- * Addition and subtraction, and the family every maths family after it copies.
+ * Addition and subtraction, and the family every math family after it copies.
  *
  * Lined paper is correct if it measures what it says it measures. A page of sums
  * is correct only if every answer on the key is right, every problem is inside

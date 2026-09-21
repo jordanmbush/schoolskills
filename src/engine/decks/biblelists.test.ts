@@ -13,7 +13,7 @@
  *     move, which is the same mechanism `scripture.test.ts` gives the verses.
  *   - **Against the passage library itself.** Forty-eight of the sixty-six are
  *     already named in a `ScriptureEntry.ref`, and those verses are checked
- *     character for character against the release. A book spelt one way on a
+ *     character for character against the release. A book spelled one way on a
  *     copywork sheet and another on a memory list is a contradiction inside one
  *     build, and this is where it fails.
  *

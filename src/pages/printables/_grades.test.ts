@@ -207,7 +207,7 @@ describe("what a year lists", () => {
     // The one claim the eighth-grade prose makes about what is NOT there:
     // "no handwriting, cursive, phonics, spelling or grammar sheet on this
     // page, because every one of those states an age range that ends before
-    // thirteen". Re-ageing a single catalog entry would make that a lie.
+    // thirteen". Re-aging a single catalog entry would make that a lie.
     const shelves = shelvesForGrade(bySlug("8th-grade")).map(
       (shelf) => shelf.id,
     );
@@ -255,7 +255,7 @@ describe("what a year lists", () => {
     // paper catalog is called "Kindergarten writing paper — 1 inch", after the
     // size it is conventionally sold at, and its own "Ages 4–6" puts it on both
     // the Pre-K and the kindergarten page — so a sentence reading "No sheet is
-    // labelled Kindergarten" would ship directly above a link disproving it.
+    // labeled Kindergarten" would ship directly above a link disproving it.
     //
     // Pinned rather than forbidden: the sheet's name is right and its ages are
     // right, and nothing should be renamed to make an assertion easier. What

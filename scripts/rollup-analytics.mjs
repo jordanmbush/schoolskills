@@ -27,7 +27,7 @@
  * docs/analytics.md carries the shape of the problem.
  *
  * Deliberately not Athena. The GitHub role already has S3 read, the logs are
- * small at this traffic, and a Glue catalogue plus a query-results bucket plus
+ * small at this traffic, and a Glue catalog plus a query-results bucket plus
  * a manual CREATE TABLE is a lot of moving parts to count some lines. Athena
  * stays documented in docs/analytics.md for ad-hoc digging.
  *
@@ -404,7 +404,7 @@ async function loadGeo(enabled) {
       `geo-IP artifact ready — built ${geo.builtAt}, ` +
         `${geo.ranges.toLocaleString()} ranges, ${geo.places.toLocaleString()} places\n`,
     );
-    // Not fatal, and deliberately not silent. The GeoLite2 licence requires
+    // Not fatal, and deliberately not silent. The GeoLite2 license requires
     // that local copies keep updating so Do Not Sell requests propagate, so a
     // build this old is a stalled obligation rather than merely stale data.
     if (geo.stale) {

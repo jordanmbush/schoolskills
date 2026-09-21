@@ -266,7 +266,7 @@ describe("tally, over the first real hour of logs", () => {
       ua: GOOGLEBOT,
       type: "text/html;charset=UTF-8",
     }),
-    // An undeclared bot from a datacentre, wearing a browser's user-agent.
+    // An undeclared bot from a datacenter, wearing a browser's user-agent.
     // Nothing here can catch this one; it is counted as a person by design.
     row({
       ip: "34.171.68.1",

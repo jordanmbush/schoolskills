@@ -89,7 +89,7 @@ Three things to hold onto, because all of them are easy to over-read:
   mode `edges` has. **The finer the level, the more often it is wrong**, and
   the first two days of real data make the point: the top three cities were
   Council Bluffs, Ashburn and Santa Clara, which are Google, Amazon and a
-  datacentre belt rather than three American families.
+  datacenter belt rather than three American families.
 
   Three states are deliberately distinct, and collapsing any two of them is how
   a broken lookup starts reading as a finding:
@@ -122,7 +122,7 @@ matters: all the parsing, sorting and overlap-flattening happens **once**, in
 the build, so a rollup run loads 3.4M ranges in about 25ms instead of
 re-deriving them every time.
 
-| Source                                  | Gives        | Licence      |
+| Source                                  | Gives        | License      |
 | --------------------------------------- | ------------ | ------------ |
 | `@ip-location-db/geo-whois-asn-country` | country      | CC0-1.0      |
 | `@ip-location-db/geolite2-city`         | region, city | MaxMind EULA |
@@ -155,10 +155,10 @@ United States" fallback, which 99,194 ranges point at. That is the mechanism
 that put a Kansas farm on the receiving end of years of harassment from people
 who believed a database that said it knew where somebody was.
 
-> ⚠️ **Rebuilding is a licence term, not housekeeping.** The GeoLite2
+> ⚠️ **Rebuilding is a license term, not housekeeping.** The GeoLite2
 > redistribution says you "may not prevent the Library from updating local
 > copies of the GeoLite2 Databases to honor Do Not Sell requests submitted to
-> MaxMind", and MaxMind honours those by dropping records from later releases —
+> MaxMind", and MaxMind honors those by dropping records from later releases —
 > so an artifact pinned in S3 forever is what that clause forbids.
 > `.github/workflows/refresh-geoip.yml` rebuilds monthly, the artifact carries
 > its build date, and `npm run analytics` warns past 45 days. If that workflow
@@ -198,7 +198,7 @@ sees a child's request.
 npm run analytics                # sync, count, and print a summary
 npm run analytics -- --days 7    # narrow the table
 npm run analytics -- --by-day    # every breakdown, a column per day
-npm run analytics -- --no-sync   # re-summarise without re-downloading
+npm run analytics -- --no-sync   # re-summarize without re-downloading
 npm run analytics -- --no-geoip  # skip the country lookup (offline)
 ```
 
@@ -510,7 +510,7 @@ ORDER BY "date" DESC;
   handles it; a query written from scratch will not.
 - **An undeclared bot is a visitor.** Filtering is on the user-agent, so
   anything that says it is a crawler is excluded and anything that lies is
-  counted as a person. On this pipeline's first day, a datacentre IP wearing a
+  counted as a person. On this pipeline's first day, a datacenter IP wearing a
   desktop Chrome user-agent was one of the two recorded "visitors". Treat small
   visitor counts as an upper bound.
 - **Bots are in there.** Filter `user_agent` if a number looks implausible;
@@ -531,7 +531,7 @@ ORDER BY "date" DESC;
   workplace or anyone on a VPN can be somewhere else entirely — a harder
   failure than the edge's, which is at least always nearby. Treat a row as
   "something came from an address registered there".
-- **Most of the top cities are datacentres.** Council Bluffs is Google, Ashburn
+- **Most of the top cities are datacenters.** Council Bluffs is Google, Ashburn
   is Amazon, Santa Clara is half the industry. A city breakdown on a site this
   size measures crawlers and cloud egress at least as much as it measures
   households.

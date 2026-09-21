@@ -45,7 +45,7 @@ import { SPELLING_SHEETS, pathFor as spellingPath } from "./_spelling";
  * **And it has to have a key on every page.** This is the shelf where being
  * wrong costs the most, and it is also the shelf with no sheet that legitimately
  * has nothing to mark — no copying page, no write-your-own-sentence page. A
- * grammar sheet without a key would be a page of judgements with nobody to
+ * grammar sheet without a key would be a page of judgments with nobody to
  * settle them.
  */
 
@@ -158,7 +158,7 @@ describe("the grammar catalog", () => {
 
   it("covers the whole of what the story asked for", () => {
     // Parts of speech, subject and predicate, sentence types, punctuation and
-    // capitalisation — one page each, so every one of them is a thing a parent
+    // capitalization — one page each, so every one of them is a thing a parent
     // can print rather than a thing the engine can do.
     const topics = GRAMMAR_SHEETS.map((sheet) => sheet.config.topic);
     expect(new Set(topics)).toEqual(new Set(GRAMMAR_TOPICS));

@@ -116,7 +116,7 @@ export const TRANSLATION_LIST: Translation[] = Object.values(TRANSLATIONS);
  * borrowing verses from one translation under another's name. The suite asserts
  * the KJV covers every entry, so this cannot fire today; if it ever does, a
  * reader gets a correctly credited WEBu verse instead of a KJV verse with the
- * wrong licence printed underneath it.
+ * wrong license printed underneath it.
  *
  * `hasOwn` because the argument is typed but not trusted: a translation id
  * arrives from a saved sheet or a shared URL, and `TRANSLATIONS["toString"]`

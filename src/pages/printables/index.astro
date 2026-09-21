@@ -40,6 +40,7 @@ import {
   pathFor as templatePath,
   templateShelf,
 } from "./_templates";
+import { CUSTOM_PAGES, hrefFor as customHref } from "./_custom";
 import HubLinks from "./_HubLinks.astro";
 import Find from "@/games/printshop/Find";
 import "@/styles/search.css";
@@ -65,9 +66,10 @@ import "@/styles/search.css";
  * `client:only` is what guarantees it: there is no server-rendered search field
  * to sit there looking live and doing nothing.
  */
-const title = "Free printable worksheets — The Print Shop | School Skills";
+const title =
+  "Free printable worksheets for parents and teachers | School Skills";
 const description =
-  "Practice sheets you can print at home, free and without an account. Every sheet is an ordinary web page: read it on screen, print it, or save it as a PDF to keep — and nothing about your child goes into the file.";
+  "Practice sheets to print at home or run off for a class, free and without an account. Every sheet is an ordinary web page: read it on screen, print it, or save it as a PDF — and nothing about your child goes into the file.";
 
 /** Listed on the default stock; each sheet page carries the link to its twin. */
 const letter = STOCKS[0];
@@ -106,11 +108,14 @@ const paperwork = templateShelf();
     </p>
     <h1 class="hero__title">Paper, when the screen has had enough</h1>
     <p class="hero__lead">
-      The one corner of School Skills built for the grown-up. Open a sheet,
+      The one corner of School Skills built for the grown-up: a parent at the
+      kitchen table, or a teacher with a class set to run off. Open a sheet,
       press print, and that is the whole of it &mdash; free, nothing to
-      download, and your child&rsquo;s name left blank for them to fill in by
-      hand.
+      download, and the name line left blank to fill in by hand.
     </p>
+    <div class="hero__actions">
+      <a class="cta" href="/printables/make">Build a sheet</a>
+    </div>
     <p class="hero__note">Free &middot; no account &middot; no download</p>
   </header>
 
@@ -144,7 +149,7 @@ const paperwork = templateShelf();
 
     <details class="fold">
       <summary class="fold__head">
-        <h3 class="h2">Maths worksheets</h3>
+        <h3 class="h2">Math worksheets</h3>
       </summary>
       <div class="fold__body">
         <p class="h2__sub">
@@ -163,7 +168,7 @@ const paperwork = templateShelf();
           ))
         }
         <div class="hero__actions">
-          <a class="cta" href="/printables/math">All the maths sheets</a>
+          <a class="cta" href="/printables/math">All the math sheets</a>
         </div>
       </div>
     </details>
@@ -423,7 +428,7 @@ const paperwork = templateShelf();
         Paper keeps its groups and its one-line summaries; every subject shelf
         above gets a row of links and a hub. Not an inconsistency — a ruling is
         chosen by reading what makes it different from the ruling beside it, and
-        a worksheet by recognising the name of the topic.
+        a worksheet by recognizing the name of the topic.
       */
     }
     {
@@ -452,6 +457,35 @@ const paperwork = templateShelf();
     }
   </section>
 
+  {
+    /*
+     * The builder's front door, on the page search sends people to: the four
+     * pages under /printables/custom are what a search for a custom worksheet
+     * lands on (§8), and a page nothing links to is a page nothing ranks.
+     */
+  }
+  <section class="band band--tight wrap">
+    <h2 class="h2">Or build the worksheet you actually need</h2>
+    <p class="h2__sub">
+      The sheet builder makes a worksheet to order and redraws the page as you
+      change it: math to your own numbers, a spelling sheet from the list that
+      came home, a name to trace. For a class, print a set where every copy is a
+      different draw with its own answer key, and hand the link to a colleague.
+    </p>
+    <nav class="stones" aria-label="Custom worksheets">
+      {
+        CUSTOM_PAGES.map((page) => (
+          <a class="stone" href={customHref(page)}>
+            {page.name}
+          </a>
+        ))
+      }
+    </nav>
+    <div class="hero__actions">
+      <a class="cta" href="/printables/make">Build a sheet</a>
+    </div>
+  </section>
+
   <section class="band band--tight wrap">
     <h2 class="h2">A worksheet here is a web page</h2>
     <div class="prose">
@@ -478,7 +512,7 @@ const paperwork = templateShelf();
       <h2 class="h2">What the press is being set for</h2>
       <p class="h2__sub">
         The Print Shop is opening a family at a time, and this page lists what
-        exists rather than what is planned. Paper, maths, handwriting, cursive,
+        exists rather than what is planned. Paper, math, handwriting, cursive,
         penmanship, copywork, spelling, grammar, phonics, the blank references
         and the paperwork &mdash; logs, planners, certificates and cards &mdash;
         are all open, and so are the three ways of finding a sheet among them:
@@ -487,7 +521,7 @@ const paperwork = templateShelf();
       </p>
       <div class="prose">
         <p>
-          The order it opened in: the paper, the maths sheets, the handwriting
+          The order it opened in: the paper, the math sheets, the handwriting
           and the cursive above, then the copywork &mdash; a few hundred
           passages from the public domain, Scripture among them &mdash; then the
           spelling and word-study shelf, the grammar sheets beside it, the

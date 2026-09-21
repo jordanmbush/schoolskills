@@ -1,5 +1,5 @@
 /**
- * The maths sheets the Print Shop has set, and the words that go round them.
+ * The math sheets the Print Shop has set, and the words that go round them.
  *
  * **The slugs are curated; the sheets are generated** (§8), and this is the
  * family where that stops being theoretical: the engine can make millions of
@@ -8,14 +8,14 @@
  * slug is a phrase a parent actually types, with two paragraphs true of that
  * sheet and of no other, and everything else is reached by the builder.
  *
- * **One stock, unlike paper** (§8). Nothing on a maths sheet is a measurement,
+ * **One stock, unlike paper** (§8). Nothing on a math sheet is a measurement,
  * so a slug here is one route and the A4 switch is the builder's.
  */
 import { encodeSharedSheet } from "@/engine/sheets/share";
 import { DEFAULT_FONT_PT } from "@/engine/sheets/paper";
 import type { HeaderField, Paper, SheetConfig } from "@/engine/sheets/types";
 
-/** How the hub groups the shelf: five strands of school maths, in order. */
+/** How the hub groups the shelf: five strands of school math, in order. */
 export type MathsStrand =
   "adding" | "tables" | "parts" | "measuring" | "algebra";
 
@@ -24,7 +24,7 @@ export type MathsSheet = {
   slug: string;
   /** How it is listed on a hub. */
   name: string;
-  /** How it is labelled in the row of neighbouring sheets. A few words. */
+  /** How it is labeled in the row of neighboring sheets. A few words. */
   short: string;
   /** The page's `<h1>`. */
   heading: string;
@@ -149,7 +149,7 @@ export const MATHS_SHEETS: MathsSheet[] = [
     teaches: "Subtraction facts within 20",
     ages: "Ages 5–8",
     strand: "adding",
-    play: "The Grid drills subtraction as timed cards alongside the other three operations, so a fact that stalls on paper can be practised on screen.",
+    play: "The Grid drills subtraction as timed cards alongside the other three operations, so a fact that stalls on paper can be practiced on screen.",
     config: {
       ...SHEET,
       kind: "arithmetic",
@@ -173,7 +173,7 @@ export const MATHS_SHEETS: MathsSheet[] = [
     lead: "Two-digit numbers stacked in columns, with a rule under them and space to write the carry. Every sum on this page regroups — that is the setting, not the luck of the draw.",
     notes: [
       "The week a child learns to carry is the week they need a page where carrying happens every time. A mixed sheet teaches something else by accident: that most sums do not carry, so the ones that do can be treated as the odd case. Here all sixteen carry somewhere — sometimes out of the units, sometimes out of the tens — so the question is never whether to carry but where.",
-      "The sums are stacked rather than written along a line, because the algorithm being practised is a layout as much as an arithmetic. Ones under ones, tens under tens, the answer under the rule — the commonest wrong answer at this age is a right sum written in the wrong column, and squared paper is worth printing alongside this if that is what keeps happening.",
+      "The sums are stacked rather than written along a line, because the algorithm being practiced is a layout as much as an arithmetic. Ones under ones, tens under tens, the answer under the rule — the commonest wrong answer at this age is a right sum written in the wrong column, and graph paper is worth printing alongside this if that is what keeps happening.",
     ],
     teaches: "Two-digit column addition with carrying",
     ages: "Ages 6–9",
@@ -233,7 +233,7 @@ export const MATHS_SHEETS: MathsSheet[] = [
       "A one-page lesson that teaches division as sharing out fairly — twelve counters dealt into three rings — with a worked example, six to try, and the answers on the second page.",
     lead: "The first division sheet in the shop is a lesson, not a drill: the idea in a child’s words, a picture of 12 counters already dealt into 3 rings, the sum worked step by step, and six problems to try with the same picture beside each. Nothing to choose before it prints.",
     notes: [
-      "Sharing comes first because it is the meaning of division children arrive at school already holding: a five-year-old can deal sweets out fairly long before anyone shows them a ÷ sign, and the research this page follows found sharing to be the one model of division most children carry all the way into secondary school. So the page starts there — one for you, one for you, one for you — and the counters are drawn already dealt into as many rings as there are children, because that is the picture children read most easily: the rings are the children, and the count in one ring is the answer.",
+      "Sharing comes first because it is the meaning of division children arrive at school already holding: a five-year-old can deal candies out fairly long before anyone shows them a ÷ sign, and the research this page follows found sharing to be the one model of division most children carry all the way into middle school. So the page starts there — one for you, one for you, one for you — and the counters are drawn already dealt into as many rings as there are children, because that is the picture children read most easily: the rings are the children, and the count in one ring is the answer.",
       "The sentence is written three ways under the picture — 12 shared between 3 is 4 each, 12 ÷ 3 = 4, 3 × 4 = 12 — so the sign is tied to the story and to the times table from the first page, and the total is always the first number written. The next lesson, division as making groups, uses the same 12 ÷ 3 to tell the other story; the two pages are meant to be read a day or two apart, and the drill sheets after them are for the week the picture is no longer needed.",
     ],
     teaches: "Division as sharing equally",
@@ -309,7 +309,7 @@ export const MATHS_SHEETS: MathsSheet[] = [
     keyword: "Free printable division with remainders worksheets for beginners",
     summary:
       "A one-page lesson on remainders: 14 counters dealt into 4 rings with 2 left outside, the check line written as a multiplication, one story where the leftover changes the answer, and six to try.",
-    lead: "The fourth division lesson, for the day the sweets do not share out. Fourteen counters are drawn already dealt into four rings with two left over outside them, the sum is worked step by step to 3 r 2, and the check is written the way it should be — 4 × 3 + 2 = 14 — before five more to try with the same picture, and one story about tables.",
+    lead: "The fourth division lesson, for the day the candies do not share out. Fourteen counters are drawn already dealt into four rings with two left over outside them, the sum is worked step by step to 3 r 2, and the check is written the way it should be — 4 × 3 + 2 = 14 — before five more to try with the same picture, and one story about tables.",
     notes: [
       "A remainder is drawn before it is written. The two counters that would not go round sit outside every ring, which is what a leftover looks like on a table, and the answer is written as 3 r 2 with the check as a multiplication sentence rather than a chain of equals signs — because 3 r 2 is not a number, and a child who writes 14 ÷ 4 = 3 r 2 = 4 × 3 + 2 has been taught that it is. The five counter problems keep every total under two dozen and every divisor at what a child can ring.",
       "The sixth problem is a story, and it is the reason this page exists: nine children sit four to a table, and the answer is three tables, not 2 r 1. Children who can do the division perfectly still stop at the remainder when the story wants it rounded up — it is the best-known failure in the whole research on division — so the lesson works one such story on the page before asking for one. The problems run on to a second page; a parent who wants the lesson alone prints page one.",
@@ -338,7 +338,7 @@ export const MATHS_SHEETS: MathsSheet[] = [
     lead: "Division by taking away big lumps of the divisor — ten twelves at once, then three more — which is what partial quotients means. The number line shows the two hops, the column is written down the page the way a child writes it, the steps say why each lump was chosen, and six divisions by two-digit numbers follow with blank room under each for the lumps.",
     notes: [
       "This page comes before long division, not after it, and that is the research talking. Children who reach the compact algorithm by way of chunking make fewer of the errors that come from following steps without a reason, because every line of a chunked division says what it means: 156 take away 120 is ten twelves gone. Every divisor here has two digits, since a one-digit divisor is a table fact a child can already do in their head and would learn nothing from, and the last one leaves a remainder to show the method survives one.",
-      "Any lump works, and the lesson says so: five twelves at a time gets to the same answer in more steps, and ten-lumps are only the fastest. What the child is practising is writing every lump down and adding them at the end — the side column — which is the habit the long-division page then abbreviates into a digit over each column. The six problems run on to a second page, each with six lines of room, so the working has somewhere to go.",
+      "Any lump works, and the lesson says so: five twelves at a time gets to the same answer in more steps, and ten-lumps are only the fastest. What the child is practicing is writing every lump down and adding them at the end — the side column — which is the habit the long-division page then abbreviates into a digit over each column. The six problems run on to a second page, each with six lines of room, so the working has somewhere to go.",
     ],
     teaches: "Division by partial quotients (chunking)",
     ages: "Ages 9–11",
@@ -419,7 +419,7 @@ export const MATHS_SHEETS: MathsSheet[] = [
       "A blank twelve-by-twelve grid with the headers printed, to be filled in — and the completed chart on the second page.",
     lead: "The twelve-by-twelve square with its headers printed and its hundred and forty-four squares empty. Filling one in is a lesson; the finished chart on the second page is the wall chart.",
     notes: [
-      "A chart a child fills in is worth more than a chart they are handed, and it is the same piece of paper. Working across a row is counting in that number; working down a column is the same facts from the other side; and the squares that stay empty longest are a map of exactly which tables to practise.",
+      "A chart a child fills in is worth more than a chart they are handed, and it is the same piece of paper. Working across a row is counting in that number; working down a column is the same facts from the other side; and the squares that stay empty longest are a map of exactly which tables to practice.",
       "The completed grid is the second page, so one print gives both. It is worth pinning up: the diagonal from 1 to 144 is the square numbers, the grid is symmetrical about it — which is 7 × 8 and 8 × 7 being one fact, drawn — and the half above the diagonal is the only half anybody has to learn.",
     ],
     teaches: "The multiplication table to 12 × 12",
@@ -636,7 +636,7 @@ export const MATHS_SHEETS: MathsSheet[] = [
       "Eighteen pairs of decimals to write <, > or = between, built around the pairs that catch “longer is bigger”, with an answer key.",
     lead: "Eighteen pairs of decimals with a gap between them for <, > or =. Half the pairs share a whole part and differ in how many places they have — 4.5 against 4.45 — a quarter are the same number written two ways, 3.4 and 3.40, and the rest are two ordinary two-place decimals.",
     notes: [
-      "The pairs are built for the two wrong rules children actually use. One says a longer decimal is bigger, so 4.45 beats 4.5 because 45 beats 5; the other, learnt later, says a shorter one is bigger because tenths are bigger than hundredths, so 4.5 beats 4.55. On this sheet the longer number is bigger about half the time and smaller the other half, so neither rule gets a child through the page — only lining the points up does.",
+      "The pairs are built for the two wrong rules children actually use. One says a longer decimal is bigger, so 4.45 beats 4.5 because 45 beats 5; the other, learned later, says a shorter one is bigger because tenths are bigger than hundredths, so 4.5 beats 4.55. On this sheet the longer number is bigger about half the time and smaller the other half, so neither rule gets a child through the page — only lining the points up does.",
       "The equal pairs are there because trailing zeros are where a lot of decimal trouble starts: 3.40 is 3.4, and a child who marks it bigger is reading the digits as a whole number. Every value keeps the places it was drawn with — 3.40 stays 3.40 on the page — because that is the form the question is about. A tenths sheet in the builder has none of these pairs, since every number on it has one place.",
     ],
     teaches: "Comparing decimals",
@@ -694,7 +694,7 @@ export const MATHS_SHEETS: MathsSheet[] = [
       "Eighteen two-place decimals to round to the nearest tenth — 2.97 becomes 3.0 — including the ones that carry through a 9, with an answer key.",
     lead: "Eighteen decimals with two places, each to be rounded to the nearest tenth: 5.62 to 5.6, 9.78 to 9.8, and 2.97 to 3.0. The hundredths digit is the one that decides, and about one question in four is built so that rounding up carries through a 9.",
     notes: [
-      "The rule most children carry is “5 or more, add one to the last digit”, and it works until the digit is a 9. 2.97 to the nearest tenth is 3.0, not 2.10, and a sheet that never sets that case never finds out whether a child is rounding or just adding one. Here about one question in four is a 9 that has to carry, which is often enough to be practised and rare enough not to be expected.",
+      "The rule most children carry is “5 or more, add one to the last digit”, and it works until the digit is a 9. 2.97 to the nearest tenth is 3.0, not 2.10, and a sheet that never sets that case never finds out whether a child is rounding or just adding one. Here about one question in four is a 9 that has to carry, which is often enough to be practiced and rare enough not to be expected.",
       "Every answer is printed to one place, so 2.97 rounds to 3.0 and not to 3. The zero is not decoration: it says the number was rounded to tenths, which is the whole of what was asked. The builder rounds to the nearest whole number or hundredth as well, and the values always carry one place more than the target, because that is the only digit rounding looks at.",
     ],
     teaches: "Rounding decimals",
@@ -1024,7 +1024,7 @@ export const MATHS_SHEETS: MathsSheet[] = [
       "Twelve percentages of an amount, in the sizes a shop actually uses, with an answer key.",
     lead: "Twelve questions of the form “what is 25% of 80?”, using the percentages that turn up in real life rather than the ones that happen to be easy to generate, with room to work.",
     notes: [
-      "A percentage is a fraction with a hundred underneath it, and the fastest route through most of these is to say that out loud: 25% is a quarter, 10% is a tenth, and 15% is a tenth plus half of it. A child who reaches for a formula on 50% of 60 has learnt the wrong thing about percentages.",
+      "A percentage is a fraction with a hundred underneath it, and the fastest route through most of these is to say that out loud: 25% is a quarter, 10% is a tenth, and 15% is a tenth plus half of it. A child who reaches for a formula on 50% of 60 has learned the wrong thing about percentages.",
       "The amounts run from ten to two hundred, which is roughly the range a price tag, a test score and a recipe live in. That matters more than it sounds — the whole reason this topic is on the syllabus is that it is the one piece of school arithmetic an adult uses weekly.",
     ],
     teaches: "Finding a percentage of an amount",
@@ -1108,9 +1108,9 @@ export const MATHS_SHEETS: MathsSheet[] = [
     keyword: "Free printable measurement conversion worksheets",
     summary:
       "Fifteen metric conversions across length, mass and capacity, with an answer key.",
-    lead: "Millimetres to centimetres, grams to kilograms, millilitres to litres — fifteen conversions to a page, mixed across the three things a child measures. Imperial units are the same sheet, one switch away.",
+    lead: "Millimeters to centimeters, grams to kilograms, milliliters to liters — fifteen conversions to a page, mixed across the three things a child measures. Imperial units are the same sheet, one switch away.",
     notes: [
-      "Every conversion here is exact and every one of them is a power of ten, which is the argument for the metric system in one page of arithmetic: converting is moving the point, and the only thing to get right is which way. Nothing on this sheet converts between the two systems — metres into feet is an approximation, and it is a different lesson.",
+      "Every conversion here is exact and every one of them is a power of ten, which is the argument for the metric system in one page of arithmetic: converting is moving the point, and the only thing to get right is which way. Nothing on this sheet converts between the two systems — meters into feet is an approximation, and it is a different lesson.",
       "The three quantities are mixed rather than blocked, deliberately. A page of nothing but length lets a child work out the multiplier once and apply it fourteen times; a mixed page asks the actual question every time, which is what a test does.",
     ],
     teaches: "Converting metric units of length, mass and capacity",
@@ -1135,11 +1135,11 @@ export const MATHS_SHEETS: MathsSheet[] = [
     heading: "Area worksheets",
     keyword: "Free printable area worksheets",
     summary:
-      "Nine shapes drawn to scale with their sides labelled, to find the area of, with an answer key.",
+      "Nine shapes drawn to scale with their sides labeled, to find the area of, with an answer key.",
     lead: "Nine rectangles and triangles, each drawn with its measurements written on the sides it needs, and a line to write the area on. Perimeter is the same shapes asked the other way, one switch away in the builder.",
     notes: [
-      "The drawing agrees with the labels. A shape marked 8 by 3 is drawn eight units by three units, at one scale for the whole figure — which sounds like the minimum and is the thing worksheets get wrong most often. A rectangle labelled 8 by 3 and drawn 8 by 4 teaches a child that the picture is decoration and the numbers are the question, which is the opposite of what a geometry sheet is for.",
-      "A triangle carries a base and a height and nothing else. The sloping side is left unlabelled on purpose: the commonest mistake in this topic is multiplying the two numbers that happen to be printed, and a sheet that offered a third number would be inviting it.",
+      "The drawing agrees with the labels. A shape marked 8 by 3 is drawn eight units by three units, at one scale for the whole figure — which sounds like the minimum and is the thing worksheets get wrong most often. A rectangle labeled 8 by 3 and drawn 8 by 4 teaches a child that the picture is decoration and the numbers are the question, which is the opposite of what a geometry sheet is for.",
+      "A triangle carries a base and a height and nothing else. The sloping side is left unlabeled on purpose: the commonest mistake in this topic is multiplying the two numbers that happen to be printed, and a sheet that offered a third number would be inviting it.",
     ],
     teaches: "Area of rectangles and triangles",
     ages: "Ages 8–12",
@@ -1168,7 +1168,7 @@ export const MATHS_SHEETS: MathsSheet[] = [
     lead: "Twenty questions where the numbers may be negative and the answer certainly may be — the four operations over the integers, mixed rather than blocked, so the sign has to be read every time.",
     notes: [
       "The sign is the whole of what is being taught, so it is the whole of what has to be marked. 7 − 9 is −2, and a key that printed 2 would be read as correct by a parent going quickly down the page. That is the failure this family is written to make impossible: every answer here is checked by an independent path rather than by re-running the arithmetic that produced it.",
-      "A minus sign is doing two different jobs here and it is worth naming both while working: it says which side of zero a number is on, and it says take away. Once a child can read −7 as a place rather than as an instruction, subtracting one stops being a rule to memorise.",
+      "A minus sign is doing two different jobs here and it is worth naming both while working: it says which side of zero a number is on, and it says take away. Once a child can read −7 as a place rather than as an instruction, subtracting one stops being a rule to memorize.",
     ],
     teaches: "Arithmetic with positive and negative integers",
     ages: "Ages 10–13",
@@ -1191,11 +1191,11 @@ export const MATHS_SHEETS: MathsSheet[] = [
     heading: "Order of operations worksheets",
     keyword: "Free printable order of operations worksheets",
     summary:
-      "Twelve expressions with three operations each, brackets included, and no negative numbers or powers in the way.",
-    lead: "Twelve expressions with three operations in each — brackets, then multiplying and dividing, then adding and taking away — with space to work down the page a step at a time.",
+      "Twelve expressions with three operations each, parentheses included, and no negative numbers or powers in the way.",
+    lead: "Twelve expressions with three operations in each — parentheses, then multiplying and dividing, then adding and taking away — with space to work down the page a step at a time.",
     notes: [
       "Every number on this sheet is positive and none of them is squared, on purpose. Order of operations, negative numbers and powers are three lessons, and a page that asked for more than one of them at a time would tell you a child had got it wrong without telling you which of the three they had got wrong. The integers sheet is where the signs come in, and squares and cubes are a setting of their own in the builder.",
-      "The rule is not really a rule about left and right; it is about which operations bind their neighbours tightest. Writing each line out underneath the last — one operation resolved per line — is slower and it is what turns this from a page of tricks into a page of arithmetic. That is why there is room under each expression rather than a slot beside it.",
+      "The rule is not really a rule about left and right; it is about which operations bind their neighbors tightest. Writing each line out underneath the last — one operation resolved per line — is slower and it is what turns this from a page of tricks into a page of arithmetic. That is why there is room under each expression rather than a slot beside it.",
     ],
     teaches: "Order of operations",
     ages: "Ages 10–13",
@@ -1257,7 +1257,7 @@ export const MATHS_SHEETS: MathsSheet[] = [
       "Twelve proportions with one number missing from the pair, with an answer key in whole numbers.",
     lead: "Twelve pairs of ratios that scale together with one of the four numbers left out — 3 : 12 as 5 : ? — with space to work and an answer key.",
     notes: [
-      "A proportion is two ratios saying the same thing at different sizes, which is the maths behind a recipe doubled, a map's scale and a price per kilo. The question to ask of each pair is what the first was multiplied by to get the second, and the answer is always the same multiplier on both halves.",
+      "A proportion is two ratios saying the same thing at different sizes, which is the math behind a recipe doubled, a map's scale and a price per kilo. The question to ask of each pair is what the first was multiplied by to get the second, and the answer is always the same multiplier on both halves.",
       "Everything here comes out in whole numbers. A ratio is only in its lowest terms one way — 12 : 18 and 2 : 3 are the same ratio and only one is marked right — so the arithmetic is done with a greatest common divisor rather than by dividing a decimal that would not have come out exactly.",
     ],
     teaches: "Ratio, proportion and scaling",
@@ -1356,7 +1356,7 @@ export const STRANDS: Array<{
   {
     id: "measuring",
     label: "Measuring the world",
-    blurb: "Clocks, units and shapes: the maths that is about something.",
+    blurb: "Clocks, units and shapes: the math that is about something.",
   },
   {
     id: "algebra",
@@ -1365,7 +1365,7 @@ export const STRANDS: Array<{
   },
 ];
 
-/** The route a maths sheet prints at. One stock — see the note at the top. */
+/** The route a math sheet prints at. One stock — see the note at the top. */
 export function pathFor(sheet: MathsSheet): string {
   return `/printables/${sheet.slug}`;
 }

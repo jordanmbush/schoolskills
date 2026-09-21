@@ -162,7 +162,7 @@ export type LongMultiplication = {
    * is 2082 and then 6940, not 2082 and 694. The shift is part of the
    * arithmetic rather than something the renderer does with padding, because a
    * partial written in the wrong column is the entire mistake this sheet
-   * exists to practise out of a child.
+   * exists to practice out of a child.
    *
    * A zero digit keeps its row. The algorithm writes it, so the key shows it.
    */

@@ -38,7 +38,7 @@ import {
  * **Nothing on the page uses a sound that hasn't been taught** (§13), and every
  * case below is a way of checking it.
  *
- * The bank is checked by an independent path, in the same spirit the maths
+ * The bank is checked by an independent path, in the same spirit the math
  * families check their answer keys: the spellings are put back together *from
  * the table* and compared with the word as it is printed, so a mis-cut word
  * fails here rather than on somebody's kitchen table.
@@ -103,7 +103,7 @@ describe("the table of sounds and spellings", () => {
   it("says which accents it is describing where they differ", () => {
     // The divergences the header names, spelled out as a test so that a later
     // edit quietly resolving one in favour of a single accent fails here. All
-    // eight, including the r-coloured ones the header's rhoticity paragraph
+    // eight, including the r-colored ones the header's rhoticity paragraph
     // covers as a set rather than one at a time.
     const varying = ["o", "aw", "ah", "ar", "or", "er", "air", "eer"];
     for (const id of varying) {

@@ -101,7 +101,7 @@ export function buildDeck(config: RaceConfig, seed: number): Card[] {
  * who cleared the wave and would be handed the record for it (docs/typing.md
  * §8.7, decision 50).
  *
- * The judgement is made here, at the front door, and enforced in exactly one
+ * The judgment is made here, at the front door, and enforced in exactly one
  * place — `bestRun` in `engine/records.ts` — rather than filtered at each
  * screen, so every consumer inherits it: the record book's "your best" and
  * "house best" columns, the `previousBest` a results screen pays the

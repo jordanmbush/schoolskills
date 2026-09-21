@@ -47,7 +47,7 @@ describe("lessonConfig", () => {
   });
 
   /**
-   * The choice made in the brief, travelling with the run (§4.2). In the
+   * The choice made in the brief, traveling with the run (§4.2). In the
    * config rather than in memory because the run outlives the navigation that
    * starts it, and because `eyes-up` (§6.7) is a badge for what the run was
    * typed under. Absent when nobody chose: a locked lesson, or a route with no

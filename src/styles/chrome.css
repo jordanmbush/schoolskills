@@ -4,11 +4,11 @@
    a race is a nav bar in a child's way.
 
    It reads as a HUD rather than a website header: the mark, a dot per world
-   colour-coded to match the map, and one button that plays. The header renders
+   color-coded to match the map, and one button that plays. The header renders
    one link per entry in the world registry, so the row grows with it rather
-   than with anything written down here. The dots are the only colour that
+   than with anything written down here. The dots are the only color that
    moves; the mark is the same in every world, because a logo that changed
-   colour as you walked would stop reading as the way home. */
+   color as you walked would stop reading as the way home. */
 
 .skip {
   position: absolute;
@@ -29,10 +29,10 @@
 }
 
 /* How far down the page the masthead reaches once it is stuck, with a little
-   air under it. Anything else that pins itself to the top of the viewport, or
-   scrolls a heading up to it, clears this much — a jump target in content.css
-   and the paper column of the sheet builder in printshop.css both read it, so
-   a taller masthead is one number changed here. */
+   air under it. Anything that scrolls a heading up to it clears this much — a
+   jump target in content.css reads it, so a taller masthead is one number
+   changed here. The sheet builder pins its bench to the masthead's real box
+   instead, measured by Rail.tsx, because it needs the edge and not the air. */
 :root {
   --mast-clear: 5.5rem;
 }

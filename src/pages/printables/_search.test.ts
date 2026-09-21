@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 import { findSheets, readRow, EMPTY_QUERY } from "@/engine/sheets/search";
 
 import { STOCKS } from "./_catalog";
+import { CUSTOM_PAGES, hrefFor as customHref } from "./_custom";
 import { GRADES, gradeHref, sheetsForGrade } from "./_grades";
 import { catalogAudit, searchIndex } from "./_search";
 import { ALL_SHEETS, SHELVES } from "./_shelves";
@@ -166,6 +167,8 @@ describe("the audit the build guard is handed", () => {
     for (const shelf of SHELVES) expect(audit.browse).toContain(shelf.href);
     for (const grade of GRADES)
       expect(audit.browse).toContain(gradeHref(grade));
+    for (const page of CUSTOM_PAGES)
+      expect(audit.browse).toContain(customHref(page));
     // The default stock is the route itself, so it is not a suffix to exempt.
     expect(audit.stocks).toEqual(
       STOCKS.map((stock) => stock.path).filter(Boolean),

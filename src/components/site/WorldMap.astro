@@ -52,7 +52,7 @@ const BADGES: Partial<Record<World, string>> = {
     anywhere, stop anywhere, and switch mid-week &mdash; nothing has to be
     finished before anything else opens, and the same player carries their
     records between all three. The fourth is The Print Shop, and it is the one
-    that is yours rather than theirs: worksheets for maths, handwriting, phonics
+    that is yours rather than theirs: worksheets for math, handwriting, phonics
     and more, printed from the browser with the answer key behind them.
   </p>
 
@@ -64,10 +64,10 @@ const BADGES: Partial<Record<World, string>> = {
   }
   {
     /* `data-scroll-centre` marks the row as the thing the home page's Play
-      button is actually aiming at, so it can centre the cards rather than
+      button is actually aiming at, so it can center the cards rather than
       park the heading at the top and cut them off at the fold. It is a marker
       for that script and nothing else — see index.astro, which also decides
-      when centring is the wrong answer (a phone, where these stack two
+      when centering is the wrong answer (a phone, where these stack two
       thousand pixels tall). */
   }
   <ul class="map__route" role="list" data-scroll-centre>
@@ -75,10 +75,11 @@ const BADGES: Partial<Record<World, string>> = {
       WORLDS.map((w) => (
         <li class="map__node" data-world={w.id}>
           {/*
-            A card, not a link — a world with a guide needs a second link
-            inside it, and an <a> inside an <a> is not markup. The name's link
-            is stretched over the whole card instead (see .world__enter), so
-            the card is still one big target and the guide sits above it.
+            A card, not a link — a world with a guide, or with a builder behind
+            its front door, needs a second link inside it, and an <a> inside an
+            <a> is not markup. The name's link is stretched over the whole card
+            instead (see .world__enter), so the card is still one big target
+            and the second link sits above it.
           */}
           <div class="world">
             <span class="world__badge" aria-hidden="true">
@@ -102,6 +103,11 @@ const BADGES: Partial<Record<World, string>> = {
             {w.guide && (
               <a class="world__guide" href={w.guide.href}>
                 {w.guide.label} &rarr;
+              </a>
+            )}
+            {w.build && (
+              <a class="world__guide" href={w.island}>
+                {w.build} &rarr;
               </a>
             )}
             <span class="world__ground" aria-hidden="true" />

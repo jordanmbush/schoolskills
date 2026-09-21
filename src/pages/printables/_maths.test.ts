@@ -44,7 +44,7 @@ function problemsOf(blocks: Block[]) {
   );
 }
 
-describe("the maths catalog", () => {
+describe("the math catalog", () => {
   it("is bounded, and every slug is a route somebody could type", () => {
     // Not a style rule. A slug is the URL, the head term and the file on disk
     // at once, so a capital letter or a stray space here is a 404 that only
@@ -232,7 +232,7 @@ describe("the sitemap", () => {
    * Skipped when there is no `dist/`, exactly as the built-output check in
    * Sheet.test.tsx is. CI builds before it runs the suite.
    */
-  it("carries every maths slug and the hub", () => {
+  it("carries every math slug and the hub", () => {
     const file = `${ROOT}/dist/sitemap-0.xml`;
     if (!existsSync(file)) return; // `npm run build` hasn't run yet.
 

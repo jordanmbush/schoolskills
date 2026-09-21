@@ -101,7 +101,7 @@ const summarise = (over: Partial<Parameters<typeof summariseRun>[0]> = {}) =>
     ...over,
   });
 
-describe("summarising a run", () => {
+describe("summarizing a run", () => {
   it("hands the session service a draft it can save as it stands", () => {
     const { draft } = summarise();
 

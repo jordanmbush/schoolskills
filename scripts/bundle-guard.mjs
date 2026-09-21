@@ -58,8 +58,8 @@ export const HEADROOM = 10 * 1024;
  * What each island's closure measured when it was last recorded, in bytes.
  *
  * Written down rather than derived, because there is nothing to derive it
- * from: the size an island *ought* to be is a judgement, and this is where the
- * judgement is kept. Re-record a line in the same commit that moves it, and say
+ * from: the size an island *ought* to be is a judgment, and this is where the
+ * judgment is kept. Re-record a line in the same commit that moves it, and say
  * in the message why the new number is one worth defending.
  *
  * Measured on b44d52d, the commit that lazy-loaded the sheet families. Two
@@ -80,7 +80,7 @@ export const HEADROOM = 10 * 1024;
 export const BASELINE = {
   "/flash-cards": 389_189,
   "/printables": 203_902,
-  "/printables/make": 409_308,
+  "/printables/make": 419_788,
   "/spelling/play": 389_189,
   "/typing": 410_445,
   [RUNTIME]: 192_242,

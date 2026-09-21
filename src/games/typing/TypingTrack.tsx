@@ -138,7 +138,7 @@ function Track({
   /**
    * Nothing is chasing you on a lesson (§7).
    *
-   * The ladder never offers a rival, so this is belt and braces — but it is the
+   * The ladder never offers a rival, so this is belt and suspenders — but it is the
    * one value the lane, the gap, the overtake sound and `beatGhost` all hang
    * off, so making it null HERE is what makes "no ghost" true of the whole
    * screen rather than of the four places that would each have to remember.

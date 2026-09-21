@@ -12,7 +12,7 @@ import { useEffect, useState } from "react";
  */
 
 export type HoldWatch = {
-  /** A keydown anywhere. The held key's own is cancelled, repeats included. */
+  /** A keydown anywhere. The held key's own is canceled, repeats included. */
   keydown: (event: Pick<KeyboardEvent, "code" | "preventDefault">) => void;
   keyup: (event: Pick<KeyboardEvent, "code">) => void;
   /** The window went away; whatever was held, the run can no longer tell. */
@@ -25,7 +25,7 @@ export type HoldWatch = {
  *
  * `preventDefault` on the held key is the load-bearing line. Holding `f` types
  * an `f`, and then types it again thirty times a second once auto-repeat
- * starts. Cancelled on the keydown — the first press and every repeat behind
+ * starts. Canceled on the keydown — the first press and every repeat behind
  * it — nothing reaches the field: not the character, not a `keypress`, not an
  * `input` event. Every other key is left exactly as it was.
  */
@@ -53,7 +53,7 @@ export function createHoldWatch(
  *
  * Capture, as the echo binds (§4.3): ahead of the field's own handler and of
  * anything that stops propagation between it and the window. It is also the
- * phase where cancelling the held key has to happen for the field never to
+ * phase where canceling the held key has to happen for the field never to
  * see the character.
  */
 export function useHeldKey(code: string | null): boolean {

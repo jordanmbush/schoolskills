@@ -70,7 +70,7 @@ const MISS_BUDGET = 500;
 /**
  * How far a proportion is scaled up: `3 : 4` becomes `9 : 12`, not `93 : 124`.
  *
- * Small on purpose. What is being practised is that the two pairs are the same
+ * Small on purpose. What is being practiced is that the two pairs are the same
  * relationship, and a factor a child cannot spot turns that into a long
  * multiplication with a proportion painted on the front.
  */
@@ -167,10 +167,10 @@ const RATES: Rate[] = [
   { what: "words", per: "minutes", one: "minute" },
   { what: "miles", per: "hours", one: "hour" },
   { what: "pages", per: "days", one: "day" },
-  { what: "litres", per: "minutes", one: "minute" },
+  { what: "liters", per: "minutes", one: "minute" },
   { what: "beats", per: "minutes", one: "minute" },
   { what: "seats", per: "rows", one: "row" },
-  { what: "sweets", per: "bags", one: "bag" },
+  { what: "candies", per: "bags", one: "bag" },
   { what: "photos", per: "albums", one: "album" },
 ];
 

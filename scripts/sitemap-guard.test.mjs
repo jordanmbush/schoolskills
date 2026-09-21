@@ -30,7 +30,7 @@ const healthy = sitemap(
 describe("reading a sitemap", () => {
   it("compares like an href, not like a URL", () => {
     // Astro writes absolute URLs with a trailing slash; a world's href has
-    // neither. Comparing the two raw is the bug this normalisation prevents.
+    // neither. Comparing the two raw is the bug this normalization prevents.
     expect(locations(sitemap("/printables/", "/spelling/"))).toEqual(
       new Set(["/printables", "/spelling"]),
     );

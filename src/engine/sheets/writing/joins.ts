@@ -1,9 +1,9 @@
 /**
  * The joins: what a cursive sheet has that a print one doesn't.
  *
- * A letter is a shape and can be practised alone. A join cannot: the stroke
+ * A letter is a shape and can be practiced alone. A join cannot: the stroke
  * between two letters is only correct in the company of the letters either side
- * of it, which is why `in` is a thing to practise and `i` followed by `n` is
+ * of it, which is why `in` is a thing to practice and `i` followed by `n` is
  * not. Every scheme that teaches joined writing therefore teaches a handful of
  * *families* of join rather than 676 pairs, and this file is those families.
  *
@@ -35,8 +35,8 @@ export type JoinSet = {
   blurb: string;
   /**
    * Five pairs, which is a row of a ⅝ sheet per family and a whole page for all
-   * six. Chosen to be pairs that turn up in ordinary words — a child practising
-   * `ea` and `ow` is practising `beat` and `down`.
+   * six. Chosen to be pairs that turn up in ordinary words — a child practicing
+   * `ea` and `ow` is practicing `beat` and `down`.
    */
   pairs: string[];
 };

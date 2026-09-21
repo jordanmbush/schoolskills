@@ -2,15 +2,15 @@
  * Units, as whole numbers of the smallest one.
  *
  * The same bargain `exact.ts` strikes with a decimal, made for measurement: a
- * kilometre is 1 000 000 millimetres and a mile is 63 360 inches, both exactly,
+ * kilometer is 1 000 000 millimeters and a mile is 63 360 inches, both exactly,
  * so every conversion in the shop is a multiplication or an exact division of
  * whole numbers and nothing here ever holds 0.1 of anything. A sheet whose key
  * says `2.9999999999999996 m` is the failure this file exists to make
  * impossible.
  *
  * **Nothing converts between the two systems.** 1 inch is 25.4 mm exactly, but 1
- * mile is 1609.344 metres and 1 pound is 453.59237 grams — and more to the
- * point, a child converting metres into feet is doing a different lesson from
+ * mile is 1609.344 meters and 1 pound is 453.59237 grams — and more to the
+ * point, a child converting meters into feet is doing a different lesson from
  * the one this sheet sets. Every conversion here stays inside one system, so
  * every answer is a whole number of something.
  *
@@ -112,7 +112,7 @@ export function scaleOf(system: UnitSystem, quantity: Quantity): Scale {
 /**
  * The units a shape on a page is measured in.
  *
- * Two of each, and the two a room or a garden is measured in. Millimetres and
+ * Two of each, and the two a room or a garden is measured in. Millimeters and
  * miles are units of length that no worksheet has ever asked for the area of.
  */
 export const FIGURE_UNITS: Record<UnitSystem, string[]> = {

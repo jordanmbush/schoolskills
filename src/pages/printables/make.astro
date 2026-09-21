@@ -21,6 +21,12 @@ import "@/styles/index.css";
  * `client:only` rather than `client:load`: the saved-sheet panel reads
  * IndexedDB on first render, so there is no server-rendered markup worth
  * hydrating and SSR would throw on `indexedDB`.
+ *
+ * No hero above the island, and the page's own title inside it: the bench is
+ * two panes as tall as the window under the masthead (§14), and anything
+ * above them would push the paper below the fold on every visit until it was
+ * scrolled away. The page is `noindex`, so a heading that only exists once
+ * the island has mounted costs it nothing.
  */
 ---
 
@@ -30,20 +36,5 @@ import "@/styles/index.css";
   world="paper"
   noindex
 >
-  <header class="hero wrap no-print">
-    <p class="hero__eyebrow">
-      <span class="hero__world">The Print Shop</span>
-      The bench
-    </p>
-    <h1 class="hero__title">Build a sheet</h1>
-    <p class="hero__lead">
-      Pick what is on it, set the paper, the type size and how many problems
-      fit, and watch the page change as you go. Everything happens in this
-      browser &mdash; the settings live in the address bar, so a sheet can be
-      bookmarked or passed on as an ordinary link, and nothing about your child
-      goes into either.
-    </p>
-  </header>
-
   <PrintShopApp client:only="react" />
 </Content>

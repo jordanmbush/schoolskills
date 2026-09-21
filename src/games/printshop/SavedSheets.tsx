@@ -7,6 +7,10 @@
  *
  * A saved sheet is a config and a seed, never any paper. `buildSheet` is
  * deterministic (§7), so a sheet kept in March prints the same problems in June.
+ *
+ * The list is here before anything is on the bench, because opening a saved
+ * sheet is one way to start; the form to save one waits until there is a
+ * sheet to save.
  */
 import { useCallback, useEffect, useState } from "react";
 
@@ -14,13 +18,13 @@ import { Button, Field, Input } from "@/components/ui/kit";
 import * as sheetService from "@/services/sheets";
 import type { SavedSheet, SheetConfig } from "@/engine/sheets/types";
 
+import type { SharedSheet } from "./useBuilder";
+
 export function SavedSheets({
-  config,
-  seed,
+  sheet,
   onOpen,
 }: {
-  config: SheetConfig;
-  seed: number;
+  sheet: SharedSheet | null;
   onOpen: (config: SheetConfig, seed: number) => void;
 }) {
   const [saved, setSaved] = useState<SavedSheet[]>([]);
@@ -44,10 +48,11 @@ export function SavedSheets({
   }, [refresh]);
 
   const save = async () => {
+    if (!sheet) return;
     try {
       // A blank name is not an error: the service names the sheet after what it
       // prints, which is a better default than anything a hurried parent types.
-      await sheetService.create({ name, config, seed });
+      await sheetService.create({ name, ...sheet });
       setName("");
       await refresh();
     } catch (err) {
@@ -69,25 +74,33 @@ export function SavedSheets({
   };
 
   return (
-    <section className="saved no-print">
-      <h2 className="saved__title u-display">My sheets</h2>
-
-      <Field
-        label="Save this one"
-        hint="Kept on this device only. Nothing is uploaded."
-        error={error ?? undefined}
-      >
-        <Input
-          value={name}
-          maxLength={sheetService.MAX_NAME}
-          placeholder="Name it, or leave it blank"
-          blurOnEnter
-          onChange={setName}
-        />
-      </Field>
-      <Button variant="accent" size="sm" onClick={() => void save()}>
-        Save to my sheets
-      </Button>
+    <div className="saved">
+      {sheet ? (
+        <div className="saved__form">
+          <Field
+            label="Save this one"
+            hint="Kept on this device only. Nothing is uploaded."
+            error={error ?? undefined}
+          >
+            <Input
+              value={name}
+              maxLength={sheetService.MAX_NAME}
+              placeholder="Name it, or leave it blank"
+              blurOnEnter
+              onChange={setName}
+            />
+          </Field>
+          <Button variant="accent" size="sm" onClick={() => void save()}>
+            Save to my sheets
+          </Button>
+        </div>
+      ) : (
+        error && (
+          <p className="saved__empty" role="alert">
+            {error}
+          </p>
+        )
+      )}
 
       {saved.length === 0 ? (
         <p className="saved__empty">
@@ -119,6 +132,6 @@ export function SavedSheets({
           ))}
         </ul>
       )}
-    </section>
+    </div>
   );
 }

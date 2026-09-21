@@ -10,7 +10,7 @@
  *
  * **No presets, here or ever**, and the three marking switches are independent
  * for the same reason: each is a convention shared across phonics traditions,
- * and the combination of them under a programme's name is that programme's
+ * and the combination of them under a program's name is that program's
  * modified alphabet. The two honest names for a set of sounds are the ones a
  * parent writes, and `services/phonics.ts` is where one is kept.
  */

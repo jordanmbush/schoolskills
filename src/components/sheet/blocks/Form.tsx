@@ -18,7 +18,7 @@ const LABEL_EM = 0.85;
 const LABEL_FILL = 0.98;
 
 /**
- * A blank form: labelled boxes to write in.
+ * A blank form: labeled boxes to write in.
  *
  * The heading is real HTML text and the box under it is one `<svg>`, which is
  * the split every block on a sheet makes: what a reader reads is markup a
