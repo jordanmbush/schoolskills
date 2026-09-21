@@ -545,6 +545,8 @@ sheet again next week can have it.
 /printables/[subject]                /printables/math, /printables/handwriting,
                                      /printables/bible
 /printables/[slug]                   one sheet type — prerendered AND printable
+/printables/custom                   the builder's front door. Indexable.
+/printables/custom/[job]             /printables/custom/spelling, /handwriting, /math
 /printables/make                     the builder island. noindex.
 ```
 
@@ -601,6 +603,33 @@ crawler and a visitor with no JavaScript get the whole catalog and no dead
 search box. `scripts/search-index-guard.mjs` fails the build if a row points at
 a page `dist/` doesn't have, or if a page `dist/` has is reachable from
 neither the index nor a hub.
+
+**The builder has a front door of its own.** `/printables/make` is `noindex`
+for the reason `Base.astro` gives, and that left a hole nothing else filled: a
+search for "custom worksheets", "worksheet maker" or "build your own
+worksheet" had no page on this site to land on, because every indexable page
+is about one sheet and the one screen that makes a sheet to order was
+invisible. `/printables/custom` and the three pages under it are that door,
+in the catalog's own shape — prose that answers the query, a finished sheet as
+HTML under it, and doors into the builder that open on exactly the sheet each
+names, encoded into the link the way a catalog page's own builder link is
+(`_custom.ts`). Four pages and not one per family: the three are the jobs no
+fixed sheet can do — a spelling list of your own, a name or word to trace,
+math to your own numbers — and a page per family would be the doorway farm
+above, when every family is already one click from the front door, opened on
+its finished sheet. The word "generator" appears in a description and nowhere
+a reader is spoken to, because the catalog's own copy distrusts generators and
+says why.
+
+The same pages are where the site first speaks to a teacher. A good share of
+the people arriving are teachers, and until then every page said "your child"
+to all of them; the things that were always true of the bench and never said —
+copies are a class set with a key each, the Class line, a link a colleague
+can open, no login on a school device — are now said on each custom page and
+on the hub, and `Base.astro` stamps an `audience` of both roles onto every
+page's structured data so a crawler is told the same. The pages are listed in
+`catalogAudit().browse`, since they browse rather than print, and a unit test
+holds the hub and the home page to linking them.
 
 Two things about that island are worth recording, because both are decisions
 rather than defaults. A **third-party search box was never an option**: it

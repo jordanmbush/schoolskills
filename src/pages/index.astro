@@ -103,10 +103,10 @@ const peek = buildSheet(peekEntry.config, MATHS_SEED);
     name: "School Skills",
     url: "https://schoolskills.app",
     description,
-    audience: {
-      "@type": "EducationalAudience",
-      educationalRole: "parent",
-    },
+    audience: [
+      { "@type": "EducationalAudience", educationalRole: "parent" },
+      { "@type": "EducationalAudience", educationalRole: "teacher" },
+    ],
     isAccessibleForFree: true,
   }}
 >
@@ -260,7 +260,9 @@ const peek = buildSheet(peekEntry.config, MATHS_SEED);
       <p class="h2__sub">
         The sheet builder makes a worksheet to order and redraws the page as you
         change it. Nothing is uploaded, and the settings live in the link, so a
-        sheet you tuned can be bookmarked or handed to another family.
+        sheet you tuned can be bookmarked or handed to another family or a
+        colleague. For a class, every copy in a set is a different draw with its
+        own answer key.
       </p>
       <ul class="build__list" role="list">
         <li class="build__item">
@@ -296,6 +298,7 @@ const peek = buildSheet(peekEntry.config, MATHS_SEED);
       </ul>
       <div class="hero__actions">
         <a class="cta" href="/printables/make">Build a sheet</a>
+        <a class="cta cta--quiet" href="/printables/custom">What it can make</a>
       </div>
     </div>
   </section>
