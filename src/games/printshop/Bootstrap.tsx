@@ -1,10 +1,13 @@
 /**
- * The three ways into a sheet that is already about something (§14).
+ * The three ways into a sheet that is already about something (§14) — the
+ * lower half of the chooser.
  *
- * None of them is a new kind of sheet: all three end at
- * `bench.open(config, seed)` with a config the picker and the panels below can
- * then tune, which is what makes a bootstrap a way to start rather than a mode
- * to be in.
+ * None of them is a new kind of sheet: all three end at `onOpen(config, seed)`
+ * with a config the rail and the trays can then tune, which is what makes a
+ * door a way to start rather than a mode to be in. They sit under the shelves
+ * rather than above them because they are the second answer to the chooser's
+ * one question — the bench already opens on a finished sheet, so nobody has
+ * to start from anything.
  */
 import { useEffect, useState } from "react";
 
@@ -22,16 +25,15 @@ type Open = (config: SheetConfig, seed: number) => void;
 
 export function Bootstrap({ onOpen }: { onOpen: Open }) {
   return (
-    <section className="bootstrap no-print">
-      <h2 className="bootstrap__title u-display">Start from</h2>
-      <p className="bootstrap__lead">
-        A sheet about something in particular. Every one of these opens on the
-        bench, so the style, the paper and the rest are still yours to change.
+    <div className="doors">
+      <p className="doors__lead">
+        Or make a sheet from something of yours. Each one opens here, so the
+        paper and the lettering are still yours to change.
       </p>
       <Missed onOpen={onOpen} />
       <FromWordList onOpen={onOpen} />
       <FromPaste onOpen={onOpen} />
-    </section>
+    </div>
   );
 }
 
@@ -83,8 +85,8 @@ function FromWordList({ onOpen }: { onOpen: Open }) {
   if (!list) return null;
 
   return (
-    <div className="bootstrap__step">
-      <h3 className="bootstrap__name">A word list</h3>
+    <div className="door">
+      <h3 className="door__name">A word list</h3>
       <Field label="Which list">
         <Select
           value={list.id}
@@ -113,8 +115,8 @@ function FromPaste({ onOpen }: { onOpen: Open }) {
   const words = deckService.parseWords(text);
 
   return (
-    <div className="bootstrap__step">
-      <h3 className="bootstrap__name">Something you paste</h3>
+    <div className="door">
+      <h3 className="door__name">Something you paste</h3>
       <WordList
         label="Paste a list"
         text={text}

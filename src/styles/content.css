@@ -134,6 +134,21 @@
   color: var(--chalk-soft);
 }
 
+/* A hero for a page that is a tool rather than an article: the title and one
+   line, with the page's own controls close under it rather than a screen down. */
+.hero--tight {
+  padding-block: var(--gap-4) var(--gap-3);
+}
+
+.hero--tight .hero__title {
+  font-size: clamp(1.9rem, 4.5vw, 2.6rem);
+}
+
+.hero--tight .hero__lead {
+  margin-top: 0.5rem;
+  font-size: var(--step-0);
+}
+
 .hero__actions {
   display: flex;
   flex-wrap: wrap;

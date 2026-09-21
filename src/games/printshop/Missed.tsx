@@ -70,9 +70,9 @@ export function Missed({
   };
 
   return (
-    <div className="bootstrap__step">
-      <h3 className="bootstrap__name">Practise what they missed</h3>
-      {error && <p className="bootstrap__note">{error}</p>}
+    <div className="door">
+      <h3 className="door__name">Practise what they missed</h3>
+      {error && <p className="door__note">{error}</p>}
 
       {players.length > 0 && (
         <Field label="Whose">
@@ -99,7 +99,7 @@ export function Missed({
 
       {set ? (
         <>
-          <p className="bootstrap__facts">
+          <p className="door__facts">
             {set.labels.map((label) => (
               <span className="chip u-mono" key={label}>
                 {label}
@@ -116,7 +116,7 @@ export function Missed({
         </>
       ) : (
         <>
-          <p className="bootstrap__note">
+          <p className="door__note">
             {players.length === 0
               ? "Nobody has raced on this device yet."
               : `Nothing standing out for ${player?.name} yet — facts land here when the clock beats them, when they come out wrong, or when they take longer than recall should.`}{" "}

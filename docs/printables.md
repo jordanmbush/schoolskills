@@ -1396,17 +1396,39 @@ src/games/printshop/
   App.tsx            mount, and what goes where
   useBuilder.ts      the config, the seed, and the URL they live in
   defaults.ts        what the bench opens on, per family
-  Picker.tsx         choose a family (the catalog, in-app)
-  PageOptions.tsx    the options every sheet has, whatever is on it
+  shelves.ts         the chooser's shelves, and what each family's tab is called
+  Rail.tsx           the rail: the sheet's name, the section tabs, the print bar
+  Chooser.tsx        choose a family (the catalog, in-app), and the three doors
+  PageOptions.tsx    the options every sheet has, in three sections
   Preview.tsx        the sheet, scaled, on the press-room ground
-  PrintBar.tsx       print · variants · answer key · share
+  PrintBar.tsx       copies · answer key · print
+  Caption.tsx        under the paper: the seed, another draw, the link
   SavedSheets.tsx    My Sheets, through services/sheets.ts
-  Bootstrap.tsx      the three below — a saved list, and a paste
+  Bootstrap.tsx      the three doors — what they missed, a saved list, a paste
   Missed.tsx         practise what they missed, through services/practice.ts
   options/index.tsx  the registry — the one place `kind` is narrowed
   options/parts.tsx  choice · range · sizing · pool · word list
   options/*.tsx      one panel per family
 ```
+
+**One rail, one tray.** The options first stood in a column beside the paper,
+and the column grew to five screens: a parent tuning a sheet scrolled up and
+down it looking for the one control they meant, and a landscape sheet had half
+the width it needed. Now everything that changes the paper runs across the top
+in one rail — the sheet's name, which opens the chooser; a tab per section of
+options; and copies, the key and Print — and a tab opens its section in a tray
+under the rail, laid out in columns so the whole section is on screen at once.
+The open tab closes it. The rail sticks under the masthead, and the paper takes
+the full width below.
+
+The family's own tab is called what the family holds — problems, letters,
+words, a ruling — because the one heading that had to be true of every family
+("what is on it") read as the site talking to itself. `shelves.ts` holds those
+names beside the five shelves the chooser groups the families on, cut coarser
+than the catalog's because five is what fits across a chooser. The bootstraps
+below are the chooser's lower half rather than a section of their own: "start
+from" asked a question the bench had already answered, since it opens on a
+finished sheet.
 
 Built as it stands, with two names moved from this sketch: the per-family panel
 is `options/*.tsx` alone (there is no `Editor` wrapping it), and what was going
