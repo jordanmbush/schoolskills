@@ -5,6 +5,7 @@ import WorldMap from "@/components/site/WorldMap.astro";
 import { SheetView } from "@/components/sheet/Sheet";
 import { buildSheet } from "@/engine/sheets";
 import { passage, passageText } from "@/engine/sheets/passages";
+import { SHEET_FAMILIES } from "@/engine/sheets/families";
 import { MATHS_SEED, MATHS_SHEETS } from "./printables/_maths";
 import { ALL_SHEETS, SHELVES } from "./printables/_shelves";
 
@@ -18,7 +19,11 @@ import { ALL_SHEETS, SHELVES } from "./printables/_shelves";
  * button.
  *
  * So the page is the map first and the argument second: colour, worlds and one
- * obvious way in above the fold, then the honest prose underneath it. The
+ * obvious way in above the fold, then the honest prose underneath it. The one
+ * action above the fold is the sheet builder, because paper is what most
+ * people arrive for and the builder is the one thing here that makes the sheet
+ * they came for rather than a near one; the map is the second button and one
+ * scroll down. The
  * "what it isn't" block is deliberately the same size as the "what it is" one,
  * because the limits are half the pitch here. This is a supplement — practice
  * of things somebody else taught — and a parent who discovers that in week
@@ -109,29 +114,34 @@ const peek = buildSheet(peekEntry.config, MATHS_SEED);
     <p class="hero__eyebrow">
       No account &middot; nothing uploaded &middot; works offline
     </p>
-    <h1 class="hero__title">Free practice games and printable worksheets</h1>
+    <h1 class="hero__title">Free printable worksheets and practice games</h1>
     <p class="hero__lead">
-      Three small games &mdash; times tables, sight words and touch typing
-      &mdash; and a print shop of worksheets for maths, handwriting, phonics and
-      more. No account, nothing to install, and your child&rsquo;s data is never
-      collected.
+      A print shop of worksheets for maths, handwriting, phonics and more
+      &mdash; {ALL_SHEETS.length} to print as they are, or a builder that makes the
+      one you need &mdash; and three small games for times tables, sight words and
+      touch typing. No account, nothing to install, and your child&rsquo;s data is
+      never collected.
     </p>
     {
       /*
-       * The button goes down the page, not into a game. The map is the
-       * thesis, and a child who came to practise spellings shouldn't have to
-       * back out of a multiplication race to find it — so the primary action
-       * is "choose", and the map is one scroll away.
+       * The first button leaves the page, and the second goes down it. The
+       * builder is first because the paper half is what most people arrive
+       * for, and it is the one thing here that makes the sheet they came for
+       * rather than a near one. The map is still the thesis and still one
+       * scroll away, and a child who came to practise spellings shouldn't
+       * have to back out of a multiplication race to find it — so the map's
+       * button says "choose" rather than naming a game.
        *
-       * Both buttons are in-page jumps, so both carry `data-scroll`. The arrow
-       * is only on this one, whose destination is the one off screen: it has
-       * to say it goes downwards rather than away. See the script at the foot
-       * of this page for why the scroll is animated in JavaScript rather than
-       * by `scroll-behavior: smooth`.
+       * The two in-page jumps carry `data-scroll`. The arrow is only on the
+       * map's, whose destination is the one off screen: it has to say it goes
+       * downwards rather than away. See the script at the foot of this page
+       * for why the scroll is animated in JavaScript rather than by
+       * `scroll-behavior: smooth`.
        */
     }
     <div class="hero__actions">
-      <a class="cta" href="#worlds" data-scroll>
+      <a class="cta" href="/printables/make">Build a sheet</a>
+      <a class="cta cta--quiet" href="#worlds" data-scroll>
         Pick a world
         <svg
           class="cta__down"
@@ -213,17 +223,8 @@ const peek = buildSheet(peekEntry.config, MATHS_SEED);
           }
         </ul>
 
-        <p class="aside">
-          <strong>And when a sheet is nearly right, change it.</strong> The bench
-          sets what is on it, the paper, the type size and how many problems fit,
-          and redraws the page as you go. The settings live in the address bar, so
-          a sheet you tuned can be bookmarked, or passed to someone else as an ordinary
-          link.
-        </p>
-
         <div class="hero__actions">
           <a class="cta" href="/printables">Browse the worksheets</a>
-          <a class="cta cta--quiet" href="/printables/make">Build your own</a>
         </div>
       </div>
 
@@ -237,6 +238,64 @@ const peek = buildSheet(peekEntry.config, MATHS_SEED);
       }
       <div class="paper__peek" aria-hidden="true">
         <SheetView sheet={peek} />
+      </div>
+    </div>
+  </section>
+
+  {
+    /*
+     * The builder, with a band of its own rather than an aside in the band
+     * above: the catalog is what search sends people to, and the builder is
+     * what they come back for. The same world as the band above, so the two
+     * read as the paper half of the site and not as two subjects.
+     */
+  }
+  <section
+    class="band build no-print"
+    data-world="paper"
+    aria-labelledby="build-head"
+  >
+    <div class="wrap no-print">
+      <h2 class="h2" id="build-head">Or build the sheet you actually need</h2>
+      <p class="h2__sub">
+        The sheet builder makes a worksheet to order and redraws the page as you
+        change it. Nothing is uploaded, and the settings live in the link, so a
+        sheet you tuned can be bookmarked or handed to another family.
+      </p>
+      <ul class="build__list" role="list">
+        <li class="build__item">
+          <p class="build__what">{SHEET_FAMILIES.length} kinds of sheet</p>
+          <p class="build__why">
+            Sums to word problems, handwriting in print and three cursive hands,
+            spelling lists, phonics, calendars and lined paper &mdash; each with
+            its own options, and an answer key wherever there are answers.
+          </p>
+        </li>
+        <li class="build__item">
+          <p class="build__what">The facts they keep missing</p>
+          <p class="build__why">
+            The record book on this device already knows which times tables came
+            out slow or wrong. Print a sheet of exactly those, and nothing else.
+          </p>
+        </li>
+        <li class="build__item">
+          <p class="build__what">This week&rsquo;s spellings</p>
+          <p class="build__why">
+            Paste the list from the school letter and it becomes a spelling
+            sheet &mdash; written out, with letters missing, in ABC order, or as
+            a test.
+          </p>
+        </li>
+        <li class="build__item">
+          <p class="build__what">Your paper, your lettering</p>
+          <p class="build__why">
+            Letter or A4, portrait or landscape, the type size, print or cursive
+            &mdash; and the name line left blank to fill in by hand.
+          </p>
+        </li>
+      </ul>
+      <div class="hero__actions">
+        <a class="cta" href="/printables/make">Build a sheet</a>
       </div>
     </div>
   </section>

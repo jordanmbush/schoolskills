@@ -157,3 +157,18 @@ describe("the worlds", () => {
     ).toBe(true);
   });
 });
+
+describe("the builder behind a front door", () => {
+  it("is offered wherever a world's island is not its front door", () => {
+    // `build` is the label the map and the footer link `island` under. A world
+    // whose island IS its front door has nothing to offer twice, and a world
+    // whose island isn't would otherwise be the only way in that no card and
+    // no footer names.
+    for (const world of WORLDS) {
+      expect(
+        Boolean(world.build),
+        `${world.name}: build should be set exactly when island differs from href`,
+      ).toBe(world.island !== world.href);
+    }
+  });
+});

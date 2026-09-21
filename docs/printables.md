@@ -700,6 +700,18 @@ blurb, and a strip of that world's own terrain along the bottom. Adding a
 fourth is a `BADGES` entry and nothing else, and the heading above the cards
 ("Three worlds, and no locked doors") needs its number updating.
 
+**The card links the builder too, and so does everything else.** `href` is
+the catalog and `island` is the builder, and a card that offered only the
+front door would hide the half of the world a parent comes back for.
+`WorldInfo.build` is the label the map and the footer offer `island` under, in
+the slot a guide link takes on the jungle's card, and only The Print Shop sets
+it. The home page's hero makes the builder its first action for the same
+reason — paper is what most people arrive for, and the builder is where a
+sheet that is nearly right becomes the right one — and gives it a band of its
+own under the catalog's. The Print Shop's front door carries the same button
+in its hero, and every catalog page links the builder preloaded with its own
+sheet (§8).
+
 One honest wrinkle to write around rather than ignore: the map is a child's
 screen and this world is a parent's. The card's `subject`, `tagline` and
 `blurb` should say so plainly instead of pretending a worksheet is a level, and
