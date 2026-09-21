@@ -78,6 +78,13 @@ export type WorldInfo = {
    * nothing ranks.
    */
   guide?: { href: string; label: string };
+  /**
+   * The words the map and the footer offer `island` under, where `island` is
+   * not `href`. Only The Print Shop sets it: its front door is the catalog,
+   * and a card that offered only the front door would hide the builder behind
+   * it — the half of the world a parent comes back for.
+   */
+  build?: string;
   /** How many levels are in it, and what a level is called here. */
   levels: string;
   /** Roughly who it's for. Ages, not school years — see /spelling for why. */
@@ -153,6 +160,7 @@ export const WORLDS: WorldInfo[] = [
     icon: "🖨️",
     href: "/printables",
     island: "/printables/make",
+    build: "Build a sheet",
     levels: "Paper, not levels",
     ages: "Pre-K to Y8",
   },

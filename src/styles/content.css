@@ -769,6 +769,39 @@
   }
 }
 
+/* ── The sheet builder's band ─────────────────────────────────────────────
+   Straight after the paper band and in the same world. The builder is the
+   half of the paper a parent comes back for, so it has a band of its own
+   rather than an aside inside the catalog's. The items are set as the day's
+   beats are — a rule, a name, a line — so the two bands read as one voice. */
+
+.build__list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(15rem, 100%), 1fr));
+  gap: var(--gap-3) var(--gap-4);
+  margin-top: var(--gap-4);
+}
+
+.build__item {
+  display: grid;
+  gap: 0.4rem;
+  align-content: start;
+  padding-top: var(--gap-3);
+  border-top: 2px solid color-mix(in oklab, var(--accent) 45%, transparent);
+}
+
+.build__what {
+  font-family: var(--font-display);
+  font-size: var(--step-1);
+  letter-spacing: 0.005em;
+}
+
+.build__why {
+  font-size: var(--step--1);
+  line-height: 1.6;
+  color: var(--chalk-soft);
+}
+
 /* ── The pause menu: privacy, terms, 404 ────────────────────────────────
    Line world and Empty world have no scenery, so the page carries itself on
    measure and rhythm alone. Nothing to add here beyond a narrower column and
