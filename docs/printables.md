@@ -2524,15 +2524,16 @@ The drawings are the source and the data module is generated from them.
    stroke, in the order the pen makes them, in that layer. Where on the
    template the letter sits does not matter. In a hand that joins, the
    joining stroke is drawn in named parts — a path labeled `lead` for the
-   lead-in, `top` for the top of a bowl, `tail` for the exit stroke, and
-   the body between them — each starting where the one before ends; the
+   lead-in, `top` for the top of a bowl (the unlooped hands use it; the
+   looped hand draws none), `tail` for the exit stroke, and the body
+   between them — each starting where the one before ends; the
    ingest fuses them into one stroke and records how many segments each
    was, which is the letter's `join`. The body is labeled `body` where
    nothing else marks the stroke as a joining one: a letter the unlooped
    American model lifts the pencil after has neither lead-in nor tail, and
    joins in all the same. That stroke is the first unless the letter writes
-   another before it, as a capital `K` writes its stem before the arm that
-   joins, and the ingest records which it was.
+   another before it, as a capital `K`, `R` or `X` writes its first stroke
+   before the one that joins, and the ingest records which it was.
 3. **`scripts/hand-ingest.mjs`** reads every drawing in the directory into
    `src/engine/sheets/hands/<hand>.ts`. Relative, shorthand and implicit
    path forms become the four commands; layer and group transforms are
@@ -2570,6 +2571,10 @@ hand carries its own name rather than a reserved one, and
 hands are traced over Playwrite's sources the same way, each at the instance
 and with the alternates that are its model — US Trad, US Modern and GB J —
 which is what makes each the researched model rather than a guess at one.
+The looped hand's letters were later redrawn by eye against school
+handwriting charts, on the same templates: the outline in each template is
+only a guide to size and position there, and the attribution above stays
+because it is still the outline each drawing was made on.
 
 ### Joins — one line through a word
 
@@ -2577,31 +2582,95 @@ which is what makes each the researched model rather than a guess at one.
 `calt` table sees the pair and the repo does not. A cursive hand has to
 decide, and this is how it does without a second drawing of any letter.
 
-Every small letter is drawn as it is written alone — with its lead-in, a
-rise from the baseline where the letter starts with one, and its exit
-stroke, the tail every letter of the looped model finishes with — and its
-`join` says how many segments of the first stroke each of those is. Two
+Every small letter is drawn as it is written alone — with its lead-in, the
+rise from the baseline that every small letter of the looped model starts
+with, the round ones too, and its exit stroke, the tail every letter of
+that model finishes with — and its `join` says how many segments of the
+first stroke each of those is. Two
 letters that join are the first without its tail, one curve, and the second
 without its lead-in, and a run carries on for as long as each letter joins
 out and the next joins in (`src/components/sheet/joined.ts`). The curve is a
 cubic from the point the first letter's body ends, heading the way its tail
 set off, to the point the second letter's body begins, heading the way its
-lead-in arrived, with both handles the same share of the distance between
-them. That one rule draws every family in `joins.ts`: a tail leaving the
+lead-in arrived. Each handle is 0.42 of the distance between the two
+points, unless that makes the curve flatten and climb again, or dip and
+climb, because the tail sets off steeper than the line to the next letter,
+or bends it tighter than the pen would; then the nearest share on a short
+list that bends it one way only and broadly is used (`links.ts`). That one
+rule draws every family in `joins.ts`: a tail leaving the
 baseline flat and a lead-in arriving steep is the diagonal join; the same
 tail into a loop's top is the climb into a tall letter; a check leaving the
 top of an `o` heading right and down is the horizontal join, dipping and
-climbing into whatever comes next. Whether a join sets off from the midline
-is read off the letter rather than stored — a body that ends nearer the
-midline than the baseline leaves from its top, as `o`, `v`, `w` and `b` do —
-and a join from there does one more thing: it runs along the top of a round
-letter instead of climbing into it. That is `top`, the further segments of
-`a`, `c`, `d`, `e`, `g`, `o` and `q` a bridge covers, so `oa` drops into the
-left side of the `a` where `ea` comes up its right and over.
+climbing into whatever comes next.
+
+The looped hand draws no `top`. Its round letters — `a`, `c`, `d`, `g`, `o`
+and `q` — start with a lead-in like the others, and an `a` is written the
+way a pencil goes: up the lead-in, over the top and down the stem, round
+the bowl to where it began, then over the top and down the stem again and
+out through the tail. The second pass lies exactly on the first, so the ink
+is one line, and a join replaces only the lead-in. In the unlooped hands
+the round letters are the one place the join does not land where the
+letter starts. Their `top` is the top of the bowl, from the start over the
+crown, and a join from either line lands on the crown heading right, runs
+back along the top to the start, and the letter is written from there over
+the same ground. From the midline that makes the bridge of `oa` the top of
+the `a`; from the baseline it makes `ea` climb up outside the bowl's back
+and over. Landing anywhere else changes the letter. A bridge that drops
+past the top into the bowl's side leaves an `a` with no top, which reads as
+`u`, and a climb from the baseline to where a `c` starts runs across its
+open side and closes it into an `e`. The `e` is not one of them: its loop
+is closed by the join rising through it, so a join into an `e` from either
+line replaces its lead-in and climbs into the loop the way the lead-in did.
+
+A bridge from the top of a letter — `b`, `o`, `v` and `w` leave from the
+midline — does not drop to the end of the next letter's lead-in and climb
+out, which for an `a` would sag half an x-height where a pen sags a fifth.
+It lands where the next letter first reaches a fifth of an x-height below
+where the last one left, partway up its lead-in or its first stroke, and
+the letter goes on from there (`landing.ts`). Into a letter whose lead-in
+ends in a point — `i`, `u`, `w`, `p`, `j` and `r` — the bridge runs across
+and arrives at the point heading a little upward, the way the pen turns
+there. A stretch the rest of the
+letter crosses is never skipped, because the crossing is what closes a loop:
+an `e` entered partway up its entry would lose its eye and read as a `c`, so
+a join into an `e` lands at the end of the lead-in as usual and dips into
+it, the way `we` is written.
+
+An `s` turns back on its own lead-in: the arm of its bowl ends on the line
+the letter is entered by, at the ear, and a join replaces that line. After a
+baseline exit the join passes through the ear. After a letter that leaves
+from the midline it runs well above, so the arm is carried on to it by a
+short curve and back, written twice so the dotted styles draw it once
+(`ear.ts`).
+
+A join replaces two strokes with one link, and at the spacing the letters
+are drawn at that link runs longer than a pen writes it, so `hand.json` sets
+`tuck`, how much closer in hand units a join draws the next letter. A letter
+whose ink hangs over the next one — the leaning top of a `d`, the loops of
+an `f` and an `l`, the crossbar of a `t`, the flag of a `V` or a `W`, the
+long foot of a `C` — sets `overhang` beside it, and the letter after is
+drawn that much closer whether or not they join, so it sits under the
+overhang the way it does on paper. Only a small letter is drawn under it,
+since a capital after it would run into it. A `kern` names the pairs that
+take some of that back: the crossbars of `tt` are meant to meet (and
+are written as one bar, since two level bars that nearly meet are drawn on
+into one, `crossed` in `joined.ts`), a `v`'s arm is not tucked over an
+`e`, and the tail of a `q` is kept off the loop of a `j`. A `pull` is the opposite, for the one letter, `j`, whose loop
+reaches left of the point a join arrives at, so that the link into it is no
+longer than the link into an `i`. A letter that ends a word keeps its whole
+advance. `tuckOf` is where all four are decided, and `measure` and the
+row ask it.
 
 What a run becomes is one path for the line the pen never lifts from, then
 the strokes it comes back for — the dots and crossbars — in the order the
-letters sit. So a dotted word is dotted through its joins, and the guide
+letters sit. So a dotted word is dotted through its joins, and its dots
+are placed rather than left to a dash pattern (`dots.ts`): along each
+stroke every space, in the order the pen writes, leaving out any that lands
+within 0.6 of a space of one already placed. Two lines that cross, meet or
+run over the same ground would otherwise each lay their own row and print a
+fat dot where the rows fall a third of a space apart, and a stretch the pen
+goes over twice would be dotted twice. The dashed style draws such a stretch
+once (`retrace.ts`); the solid styles draw both, lying on each other. The guide
 layout sees a joined pair as one stroke and numbers it so, which is what a
 joins sheet is teaching. A letter with no tail does not join out; that is
 how the unlooped American model, which lifts the pencil after some letters,
@@ -2624,11 +2693,9 @@ lead-in. Every small letter of both is written from where a print letter
 starts, and the entry stroke a child sees on every letter of a British
 joined word is the join itself arriving. So the run decides how a join
 arrives at a letter with nothing to replace, by what the letter starts
-with. Into a bowl the join arrives climbing, parallel to the bowl's side,
-and the letter's own top turns over from where the join lands; arriving
-the way the top sets off, leftward, would swing the join out past the bowl
-and over its top from the right. Along the bar of an `e` the join arrives
-heading that way and the curve flows into the letter. Down a stem — every
+with. Into a bowl it lands on the crown, as in the looped model. Along the
+bar of an `e` the join arrives heading that way and the curve flows into
+the letter. Down a stem — every
 `i`, `t`, `n` and `b` of both models — it arrives along the straight line
 from where it left, the way a pen goes to the top of a stem and turns
 there; arriving the way the stem sets off would swing the join up over the
@@ -2642,7 +2709,7 @@ a tail on every letter, the American one on none of `b`, `f`, `g`, `j`,
 as it would alone — which is how `Zebra` in that model gets the rise on
 its `r`. Both models' capitals are print, and none joins.
 
-The handle share and the halfway rule are judgments, and the specimen
+The handle share is a judgment, and the specimen
 writes every pair of the joins sheet so they can be checked against the
 outline face's dotted row under them.
 
@@ -2677,14 +2744,15 @@ vocabulary knows.
 
 ### Phases
 
-| Phase | What                                                                         | Where it lands                                    |
-| ----- | ---------------------------------------------------------------------------- | ------------------------------------------------- |
-| 0     | Template, ingest, renderer, six print letters in nine drawings, specimen     | this section                                      |
-| 1     | The print alphabets, numerals and marks, the letter shapes, every trace row  | `hands/print.ts`, `blocks/Trace.tsx`, the builder |
-| 2     | The looped cursive small letters, with joins                                 | `hands/cursive.ts`, `joined.ts`                   |
-| 3     | Its capitals, and the capital that writes its stem before its joining stroke | `hands/cursive.ts`, `joined.ts`                   |
-| 4     | The other two cursive models, and the join into a letter with no lead-in     | `hands/cursive-modern.ts`, `hands/cursive-uk.ts`  |
-| 5     | A font generated from the data, if one is ever wanted                        | a script, not a design                            |
+| Phase | What                                                                                                                                                     | Where it lands                                    |
+| ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
+| 0     | Template, ingest, renderer, six print letters in nine drawings, specimen                                                                                 | this section                                      |
+| 1     | The print alphabets, numerals and marks, the letter shapes, every trace row                                                                              | `hands/print.ts`, `blocks/Trace.tsx`, the builder |
+| 2     | The looped cursive small letters, with joins                                                                                                             | `hands/cursive.ts`, `joined.ts`                   |
+| 3     | Its capitals, and the capital that writes its stem before its joining stroke                                                                             | `hands/cursive.ts`, `joined.ts`                   |
+| 4     | The other two cursive models, and the join into a letter with no lead-in                                                                                 | `hands/cursive-modern.ts`, `hands/cursive-uk.ts`  |
+| 5     | A font generated from the data — decided against, 2026-09-21: nothing on the site wants outlines of the strokes, and a font is the thing a hand replaced | —                                                 |
+| 6     | The looped hand redrawn: a lead-in on every small letter, round letters as one pen path, joins that bridge, tuck and reach an ear                        | `hands/cursive.ts`, `joined.ts`                   |
 
 A face without a hand keeps the outline row, so print ships before any
 cursive is drawn and nothing waits on the whole table.

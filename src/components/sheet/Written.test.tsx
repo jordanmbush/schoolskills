@@ -71,7 +71,9 @@ describe("WrittenRow", () => {
       Number(tag.match(/stroke-width="([\d.]+)"/)?.[1]);
     expect(weight(hollow)).toBe(weight(solid) / 2);
     expect(solid).not.toContain("stroke-dasharray");
-    expect(dotted).toMatch(/stroke-dasharray="0 \d+"/);
+    // Dots are placed, each a stroke with no length, so none crowds another.
+    expect(dotted).not.toContain("stroke-dasharray");
+    expect(dotted).toMatch(/ h 0/);
     expect(dashed).toMatch(/stroke-dasharray="\d+ \d+"/);
   });
 
@@ -113,7 +115,8 @@ describe("WrittenRow", () => {
       PRINT.space * 1.5 * scale,
       0,
     );
-    expect(Math.max(...xs(trace))).toBe(Math.max(...xs(model)));
+    expect(Math.max(...xs(trace))).toBeLessThanOrEqual(Math.max(...xs(model)));
+    expect(Math.max(...xs(trace))).toBeGreaterThan(Math.max(...xs(model)) - 40);
     expect(model.match(/<circle class="sheet__mark"/g)).toHaveLength(1);
     expect(trace).not.toContain("<circle");
     expect(plain).not.toContain("<circle");
@@ -245,7 +248,7 @@ describe("WrittenRow", () => {
 
 describe("WrittenRow in a hand that joins", () => {
   it("writes a word as one line, then the dots and crossbars in order", () => {
-    const html = renderCursive([{ text: "quit", style: "dotted" }]);
+    const html = renderCursive([{ text: "quit", style: "solid" }]);
     const drawn = strokes(html);
     // One path for the joined line, one for the i's dot, one for the t's bar.
     expect(drawn).toHaveLength(3);
@@ -255,6 +258,17 @@ describe("WrittenRow in a hand that joins", () => {
     // A join is one cubic between the letters, so the line never moves the
     // pen: one M, and nothing after it but the four drawing commands.
     expect(line?.match(/M /g)).toHaveLength(1);
+  });
+
+  it("dots ground the pen goes over twice once, and draws it twice in a solid line", () => {
+    const line = (style: WrittenCell["style"]) =>
+      renderCursive([{ text: "qu", style }]).match(
+        /<path class="sheet__stroke[^"]*" d="([^"]*)"/,
+      )?.[1] ?? "";
+    // The q goes round its bowl and then over the same stem again: the dots
+    // lift the pen over the second pass, so their path has more starts.
+    expect(line("solid").match(/M /g)).toHaveLength(1);
+    expect((line("dotted").match(/M /g) ?? []).length).toBeGreaterThan(1);
   });
 
   it("writes a letter alone with its lead-in and its tail", () => {

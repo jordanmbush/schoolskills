@@ -49,6 +49,7 @@ export const ${name}: Hand = ${JSON.stringify(
       xHeight: hand.xHeight,
       descent: hand.descent,
       space: hand.space,
+      tuck: hand.tuck,
       glyphs,
     },
     null,
@@ -73,6 +74,36 @@ async function main() {
     readDrawing(hand, readFileSync(join(dir, file), "utf8"), file, warnings),
   );
   const glyphs = assemble(hand, drawings, warnings);
+  for (const [character, overhang] of Object.entries(hand.overhang ?? {})) {
+    if (!Object.hasOwn(glyphs, character) || !(overhang >= 0)) {
+      throw new Error(
+        `hand.json: overhang "${character}": ${overhang} is not a distance over a letter the hand draws`,
+      );
+    }
+    glyphs[character].overhang = overhang;
+  }
+  for (const [character, pull] of Object.entries(hand.pull ?? {})) {
+    if (!Object.hasOwn(glyphs, character) || !(pull >= 0)) {
+      throw new Error(
+        `hand.json: pull "${character}": ${pull} is not a distance for a letter the hand draws`,
+      );
+    }
+    glyphs[character].pull = pull;
+  }
+  for (const [pair, distance] of Object.entries(hand.kern ?? {})) {
+    const [first, next] = [...pair];
+    if (
+      [...pair].length !== 2 ||
+      !Object.hasOwn(glyphs, first) ||
+      !Object.hasOwn(glyphs, next) ||
+      !Number.isFinite(distance)
+    ) {
+      throw new Error(
+        `hand.json: kern "${pair}" is not a pair of letters the hand draws and a distance`,
+      );
+    }
+    (glyphs[first].kern ??= {})[next] = distance;
+  }
 
   const target = join(ROOT, "src", "engine", "sheets", "hands", `${id}.ts`);
   const options = (await prettier.resolveConfig(target)) ?? {};
