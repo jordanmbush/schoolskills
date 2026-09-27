@@ -550,9 +550,9 @@ describe("a ⅝ rule under a ruler", () => {
     // Asserted against the face's own declared width for what is written
     // (`glyphAdvance`), because there is no DOM here to measure ink in — the
     // same bargain the packing itself strikes. A row with one group on it is
-    // exempt: `perRow` floors at one, and past that point it is `fittedEm` in
-    // `TracedRow` that shrinks the type rather than the packing that widens
-    // the cell.
+    // exempt: `perRow` floors at one, and a group whose own repeats still do
+    // not fit runs them on to further rows instead (`rowsWrapped`) rather
+    // than asking `TracedRow`'s `fittedEm` to shrink them onto one.
     for (const face of Object.values(FACES)) {
       for (const style of STYLES) {
         for (const letters of ["both", "upper", "lower"] as const) {
@@ -580,6 +580,38 @@ describe("a ⅝ rule under a ruler", () => {
         }
       }
     }
+  });
+
+  it("runs a word's own repeats on to further rows rather than shrinking the type to fit them on one", () => {
+    // The bug this guards: a word typed into the builder and written several
+    // times over used to make the *type* smaller as `repeats` grew, because
+    // the whole group was packed as one indivisible unit. It should instead
+    // read at the ruling's own size throughout, with the word's repeats
+    // spread over as many rows as they need.
+    const over: Partial<HandwritingConfig> = {
+      style: "words",
+      words: ["butterfly"],
+      repeats: MAX_REPEATS,
+      progression: false,
+      rule: { style: "hand-3-8" },
+    };
+    const rows = rowsOf(over);
+    const { em, box, face } = handwritingLayout(config(over), 9);
+
+    expect(rows.length).toBeGreaterThan(1);
+    for (const row of rows) {
+      const said = row.cells.map((cell) => cell.text).join("");
+      if (said === "") continue;
+      const cell = Math.floor(box.width / row.cells.length);
+      const need = em * glyphAdvance(said, face) * ("butterfly".length + 1);
+      expect(cell).toBeGreaterThanOrEqual(need - 1);
+    }
+
+    const written = rows
+      .flatMap((row) => row.cells)
+      .filter((cell) => cell.text !== "");
+    expect(written).toHaveLength(MAX_REPEATS);
+    expect(written.every((cell) => cell.text === "butterfly")).toBe(true);
   });
 });
 

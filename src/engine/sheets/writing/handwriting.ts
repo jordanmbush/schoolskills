@@ -49,8 +49,10 @@ import {
   MODELLED,
   NUMERALS,
   groupsAcross,
+  repeatsAcross,
   rowsAcross,
   rowsDown,
+  rowsWrapped,
   ruleOf,
   tracePages,
   traceStyles,
@@ -78,6 +80,13 @@ export type HandwritingLayout = {
   perRow: number;
   /** How many things the page holds altogether. */
   perPage: number;
+  /**
+   * How many of a thing's own repeats fit across one row: `styles.length`
+   * unless even one thing's repeats do not all fit, when it runs on to a
+   * row of its own instead (`rowsWrapped`). Not set for a passage, which
+   * never repeats a thing across a row to begin with.
+   */
+  repeatsPerRow?: number;
 };
 
 /**
@@ -136,7 +145,24 @@ export function handwritingLayout(
     longest,
     times,
   );
-  return { rule, box, face, em, rows, perRow, perPage: perRow * rows };
+  const repeatsPerRow = repeatsAcross(
+    box.width,
+    em,
+    face,
+    writtenOf(config),
+    longest,
+    times,
+  );
+  return {
+    rule,
+    box,
+    face,
+    em,
+    rows,
+    perRow,
+    perPage: perRow * rows,
+    repeatsPerRow,
+  };
 }
 
 /** Everything the sheet writes, before the page has had its say. */
@@ -199,13 +225,15 @@ function bodyOf(config: HandwritingConfig): Block[] {
   }
 
   const things = contentOf(config);
-  const { rows, perRow, rule } = handwritingLayout(config, longestOf(things));
-  return tracePages(
-    rule,
-    rowsAcross(things, styles, perRow),
-    rows,
-    config.guides,
+  const { rows, perRow, rule, repeatsPerRow } = handwritingLayout(
+    config,
+    longestOf(things),
   );
+  const built =
+    repeatsPerRow !== undefined && repeatsPerRow < styles.length
+      ? rowsWrapped(things, styles, repeatsPerRow)
+      : rowsAcross(things, styles, perRow);
+  return tracePages(rule, built, rows, config.guides);
 }
 
 /* ── What it is called ─────────────────────────────────────────────────── */

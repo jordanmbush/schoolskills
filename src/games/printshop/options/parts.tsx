@@ -11,7 +11,7 @@
  * Everything below is a shape an option takes. A ruling is a subject rather
  * than a shape, so it lives next door in `ruling.tsx`.
  */
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 import {
   Checkbox,
@@ -223,6 +223,16 @@ export function Sizing({
  * box: the panel, where the list is what the sheet is *about*, and the
  * bootstrap, where a paste is one of the three ways to start a sheet at all
  * (§14). Two copies would be two rules about what counts as a word.
+ *
+ * `text` is the parsed list joined back into a string rather than raw text
+ * held beside it, so the config stays the one place the words live. Shown
+ * as typed rather than as `text` on every keystroke, though: `text` has
+ * already been through `parseWords`, which drops a blank line, so a box
+ * that mirrored it back on every change would erase the return key the
+ * moment it was pressed. What is shown resyncs from `text` only when it
+ * parses to a different list — an outside change, such as the box being
+ * cleared elsewhere — so a blank line or a line still being typed survives
+ * the round trip.
  */
 export function WordList({
   label,
@@ -237,7 +247,20 @@ export function WordList({
   hint?: ReactNode;
   rows?: number;
 }) {
-  const words = parseWords(text);
+  const [shown, setShown] = useState(text);
+  useEffect(() => {
+    if (parseWords(text).join("\n") !== parseWords(shown).join("\n")) {
+      setShown(text);
+    }
+    // Only `text` decides whether to resync — re-running this because
+    // `shown` moved on would be the round trip this exists to avoid.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [text]);
+  const words = parseWords(shown);
+  const change = (next: string) => {
+    setShown(next);
+    onChange(next);
+  };
   return (
     <Field
       label={label}
@@ -251,11 +274,11 @@ export function WordList({
       }
     >
       <TextArea
-        value={text}
+        value={shown}
         rows={rows}
         spellCheck={false}
         placeholder={"because\nthought\nfriend"}
-        onChange={onChange}
+        onChange={change}
       />
     </Field>
   );
