@@ -2607,8 +2607,10 @@ The looped hand draws no `top`. Its round letters — `a`, `c`, `d`, `g`, `o`
 and `q` — start with a lead-in like the others, and an `a` is written the
 way a pencil goes: up the lead-in, over the top and down the stem, round
 the bowl to where it began, then over the top and down the stem again and
-out through the tail. The second pass lies exactly on the first, so the ink
-is one line, and a join replaces only the lead-in. In the unlooped hands
+out through the tail. The second pass lies exactly on the first over the top
+and the shoulder, so there the ink is one line; below it the first pass
+curves off into the bowl and the second goes on down the stem. A join
+replaces only the lead-in. In the unlooped hands
 the round letters are the one place the join does not land where the
 letter starts. Their `top` is the top of the bowl, from the start over the
 crown, and a join from either line lands on the crown heading right, runs
