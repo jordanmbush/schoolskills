@@ -200,6 +200,27 @@ export function groupsAcross(
 }
 
 /**
+ * How many of a group's `times` repeats fit across the row on their own, at
+ * the ruling's own size: `times` itself, unless even one thing's repeats do
+ * not all fit — a word run past the margin rather than a word shrunk to
+ * clear it. `groupsAcross` answers the width-first question, how many whole
+ * groups fit; this answers the one it leaves for `TracedRow` to answer by
+ * shrinking the type, so that `rowsWrapped` can answer it instead by
+ * running a thing's repeats on to a row of their own.
+ */
+export function repeatsAcross(
+  width: Mil,
+  em: Mil,
+  face: Face,
+  written: string,
+  longest: number,
+  times: number,
+): number {
+  const across = fittedCharacters(width, em, face, written);
+  return clamp(Math.floor(across / (longest + 1)), 1, times);
+}
+
+/**
  * Every row carries the same number of cells, the last one included: a short
  * final row left to divide the width between four cells instead of twelve would
  * set its letters three times as far apart as the row above it.
@@ -223,6 +244,39 @@ export function rowsAcross(
         ),
       ],
     });
+  }
+  return rows;
+}
+
+/**
+ * The rows for things whose own repeats do not fit across one row: each
+ * thing's styles run on to as many rows as `repeatsPerRow` cuts them into,
+ * rather than shrinking to fit them on one. Every row is still padded out
+ * to `repeatsPerRow` cells, the last of a thing's included, so a word whose
+ * repeats end early is not set wider apart than one whose repeats fill the
+ * row — the same reasoning as `rowsAcross`, one thing at a time instead of
+ * several.
+ */
+export function rowsWrapped(
+  things: string[],
+  styles: TraceStyle[],
+  repeatsPerRow: number,
+): TraceRow[] {
+  const rows: TraceRow[] = [];
+  for (const text of things) {
+    for (let at = 0; at < styles.length; at += repeatsPerRow) {
+      const group = styles
+        .slice(at, at + repeatsPerRow)
+        .map((style) => cellOf(text, style));
+      rows.push({
+        cells: [
+          ...group,
+          ...Array.from({ length: repeatsPerRow - group.length }, () =>
+            cellOf("", "none"),
+          ),
+        ],
+      });
+    }
   }
   return rows;
 }

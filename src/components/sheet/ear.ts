@@ -1,9 +1,9 @@
 /**
  * The ear of an `s` (§25): where the letter turns back on its own lead-in,
- * and the spur that carries it on to a join that runs clear of it.
+ * and the arm that carries it on to a join that runs clear of it.
  */
 import { distance, flatten, nearest, type Point, type Segment } from "./glyphs";
-import { headingIn, headingOut, tenth, unit } from "./links";
+import { endOf, headingIn, headingOut, reversed, tenth, unit } from "./links";
 
 /**
  * How near the line it was entered by a turn-back must lie, as a share of
@@ -12,10 +12,8 @@ import { headingIn, headingOut, tenth, unit } from "./links";
  */
 const EAR_ON = 0.05;
 const EAR_FROM_ENDS = 0.15;
-/** A spur this short, as a share of the lead-in, is already touching the join. */
+/** An arm ending this near the join, as a share of the lead-in, is already touching it. */
 const EAR_TOUCHES = 0.04;
-/** The handles of a spur, as a share of its length. */
-const SPUR = 0.5;
 
 /**
  * Where the letter turns back on its own lead-in, as an index into `first`,
@@ -49,54 +47,117 @@ export function earOf(
 }
 
 /**
- * The stroke that carries an ear on to the join, when the join runs clear of
- * it: from the ear, the way the arm arrives, curving to meet the nearest
- * point of the join square on. Null when the ear already touches the join.
- * After a letter that leaves from the top of the line, the join crosses well
- * above where the lead-in would have been, and the ear would hang in the air.
+ * The arm of an `s` climbs from the bottom of the bowl at about this angle
+ * to the line it was entered by, drawn to the specimen.
  */
-export function spurTo(
-  ear: Point,
-  arriving: Point,
-  from: Point,
-  link: Segment,
-  scale: number,
-): Segment | null {
-  const line = flatten([{ type: "M", points: [from.x, from.y] }, link], 40);
-  let meets: Point = line[0];
+const CLIMB = (50 * Math.PI) / 180;
+/**
+ * How far the arm's first handle reaches, as a share of the way to the
+ * line: it leaves the bowl exactly the way it always has, so the curve that
+ * replaces it stays smooth with the stroke before it, and only its length
+ * is drawn to the specimen.
+ */
+const LEAVE = 0.203;
+/**
+ * The arm's second handle, as a share of the way from the bowl to the line
+ * and a share off to the side of that line, drawn to the specimen: the
+ * curve dips a little wide of the line before swinging in to meet it. The
+ * line is where it turns back, so nothing here need stay smooth with what
+ * comes after.
+ */
+const ARRIVE = { along: 0.507, aside: -0.0724 };
+
+/** Where a ray from `from` first meets the polyline, or null. */
+function firstMeeting(from: Point, ray: Point, line: Point[]): Point | null {
+  let best: { at: Point; along: number } | null = null;
   for (let i = 1; i < line.length; i++) {
     const a = line[i - 1];
-    const b = line[i];
-    const dx = b.x - a.x;
-    const dy = b.y - a.y;
-    const span = dx * dx + dy * dy;
-    const along =
-      span === 0
-        ? 0
-        : Math.min(
-            Math.max(((ear.x - a.x) * dx + (ear.y - a.y) * dy) / span, 0),
-            1,
-          );
-    const point = { x: a.x + along * dx, y: a.y + along * dy };
-    if (distance(ear, point) < distance(ear, meets)) meets = point;
+    const dx = line[i].x - a.x;
+    const dy = line[i].y - a.y;
+    const turn = ray.x * dy - ray.y * dx;
+    if (turn === 0) continue;
+    const along = ((a.x - from.x) * dy - (a.y - from.y) * dx) / turn;
+    const across = ((a.x - from.x) * ray.y - (a.y - from.y) * ray.x) / turn;
+    if (along <= 0 || across < 0 || across > 1) continue;
+    if (best === null || along < best.along) {
+      best = { at: { x: a.x + across * dx, y: a.y + across * dy }, along };
+    }
   }
-  const reach = distance(ear, meets);
-  const atEnd = [line[0], line[line.length - 1]].some(
-    (p) => distance(p, meets) < 1e-6,
-  );
-  if (atEnd || reach <= EAR_TOUCHES * scale) return null;
-  const toward = unit(ear, meets);
-  if (arriving.x * toward.x + arriving.y * toward.y < 0.2) return null;
-  const handle = SPUR * reach;
-  return {
+  return best?.at ?? null;
+}
+
+/**
+ * Where an arm climbing from `from` along `ray` meets the line, or, when it
+ * would pass just clear of the line's end, the point of the line that lies
+ * nearest the way it climbs.
+ */
+function meeting(from: Point, ray: Point, line: Point[]): Point | null {
+  const exact = firstMeeting(from, ray, line);
+  if (exact !== null) return exact;
+  const wanted = Math.atan2(ray.y, ray.x);
+  let best: { at: Point; off: number } | null = null;
+  for (const p of line) {
+    if (p.y >= from.y || (p.x - from.x) * ray.x <= 0) continue;
+    const off = Math.abs(Math.atan2(p.y - from.y, p.x - from.x) - wanted);
+    if (best === null || off < best.off) best = { at: p, off };
+  }
+  return best === null ? null : { x: best.at.x, y: best.at.y };
+}
+
+/**
+ * The arm of an ear carried on to the line the letter is entered by, when
+ * that line runs clear of where the arm ends. After a letter that leaves
+ * from the top of the line, the join crosses well above where the lead-in
+ * would have been, and a short arm would hang in the air. So the arm is
+ * drawn again as one smooth curve from the bottom of the bowl, climbing up
+ * and out to meet the line, and back over the same ground.
+ *
+ * `start` is where the arm leaves the bowl, `arm` and `back` the arm and the
+ * way back as drawn, and `entry` the line the letter is entered by, from
+ * `from`. Null when the arm already ends on that line, or when a way back
+ * that does not return to `start` would make a different letter.
+ */
+export function armTo(
+  start: Point,
+  arm: Segment,
+  back: Segment,
+  from: Point,
+  entry: Segment[],
+  scale: number,
+): { arm: Segment; back: Segment } | null {
+  const tip = endOf(arm);
+  if (distance(endOf(back), start) > 1) return null;
+  const line = flatten([{ type: "M", points: [from.x, from.y] }, ...entry], 40);
+  if (nearest(tip, line).d <= EAR_TOUCHES * scale) return null;
+  const leaving = headingOut(arm, start);
+  const side = leaving.x < 0 ? -1 : 1;
+  const toward = { x: side * Math.cos(CLIMB), y: -Math.sin(CLIMB) };
+  const meets = meeting(start, toward, line);
+  if (meets === null) return null;
+  const reach = distance(start, meets);
+  const along = unit(start, meets);
+  let aside = { x: -along.y, y: along.x };
+  if (leaving.x * aside.x + leaving.y * aside.y > 0) {
+    aside = { x: -aside.x, y: -aside.y };
+  }
+  const h1 = {
+    x: start.x + leaving.x * LEAVE * reach,
+    y: start.y + leaving.y * LEAVE * reach,
+  };
+  const h2 = {
+    x: start.x + (along.x * ARRIVE.along + aside.x * ARRIVE.aside) * reach,
+    y: start.y + (along.y * ARRIVE.along + aside.y * ARRIVE.aside) * reach,
+  };
+  const climbing: Segment = {
     type: "C",
     points: [
-      tenth(ear.x + arriving.x * handle),
-      tenth(ear.y + arriving.y * handle),
-      tenth(meets.x - toward.x * handle),
-      tenth(meets.y - toward.y * handle),
+      tenth(h1.x),
+      tenth(h1.y),
+      tenth(h2.x),
+      tenth(h2.y),
       tenth(meets.x),
       tenth(meets.y),
     ],
   };
+  return { arm: climbing, back: reversed(climbing, start) };
 }

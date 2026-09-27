@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { printedBlockBox } from "../chrome";
 import { describeSheetFamily } from "../contract";
+import { glyphAdvance } from "../faces";
 import { describeSheet } from "../index";
 import { BLOCK_GAP, noteHeight, ruleCapacity } from "../layout";
 import { RULINGS, rulePitch, rulingOf } from "../paper";
@@ -32,7 +33,7 @@ import {
   instructionOf,
   penmanshipLayout,
 } from "./penmanship";
-import { DEFAULT_HAND_RULE, LOWER, MODELLED, UPPER } from "./rows";
+import { DEFAULT_HAND_RULE, LOWER, MAX_REPEATS, MODELLED, UPPER } from "./rows";
 import { STROKE_PATTERNS, hasTail, strokePatterns } from "./strokes";
 
 /**
@@ -415,6 +416,26 @@ describe("a circle-your-best sheet", () => {
     ).toBe(
       "Write each pair 2 times, then circle the one that looks most like the model.",
     );
+  });
+
+  it("runs a word's own tries on to further rows rather than shrinking the type to fit them on one", () => {
+    const over: Partial<PenmanshipConfig> = {
+      style: "check",
+      words: ["butterfly"],
+      repeats: MAX_REPEATS,
+      rule: { style: "hand-3-8" },
+    };
+    const rows = traceRows(over);
+    const { em, box, face } = penmanshipLayout(config(over), 9);
+
+    expect(rows.length).toBeGreaterThan(1);
+    for (const row of rows) {
+      const said = row.cells.map((cell) => cell.text).join("");
+      if (said === "") continue;
+      const cell = Math.floor(box.width / row.cells.length);
+      const need = em * glyphAdvance(said, face) * ("butterfly".length + 1);
+      expect(cell).toBeGreaterThanOrEqual(need - 1);
+    }
   });
 });
 

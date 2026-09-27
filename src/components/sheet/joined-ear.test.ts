@@ -6,8 +6,8 @@ import { joined, type Placed } from "./joined";
 /**
  * Synthetic letters on a sheet 100 mil tall: baseline at 100, midline at 50,
  * y down. The `s` is entered by a rising line and its bowl turns back on
- * that line at an ear, so a join that replaces the line has to bring the ear
- * to itself.
+ * that line at an ear, so a join that replaces the line has to bring the
+ * arm that reaches the ear on to itself.
  */
 
 /** An `s` at `x`: lead-in, peak, leg, the bowl's arm out to the ear and back, and a tail. */
@@ -50,30 +50,46 @@ const endOf = (segment: Segment) => ({
   y: segment.points[segment.points.length - 1],
 });
 
+/** The arm the letter is drawn with when a join passes clear of its ear: the first curve after the join. */
+const arm = (drawn: Segment[]) => {
+  const at = drawn.findIndex((segment, k) => k > 2 && segment.type === "C");
+  return { at, out: drawn[at], back: drawn[at + 1] };
+};
+
 describe("an ear on the line a letter is entered by", () => {
-  it("reaches out to the join when the join passes clear of it", () => {
+  it.each([0, 25])(
+    "carries the arm on to the join when the join passes clear of it (letter before at %i)",
+    (before) => {
+      const drawn = line([high(before), s(60)]);
+      const { out } = arm(drawn);
+      const meets = flatten(
+        [{ type: "M", points: [20 + before, 50] }, drawn[2]],
+        200,
+      );
+      expect(
+        Math.min(...meets.map((p) => distance(p, endOf(out)))),
+      ).toBeLessThan(0.5);
+      expect(distance({ x: 78, y: 71 }, endOf(out))).toBeGreaterThan(5);
+    },
+  );
+
+  it("draws the arm as one curve up from the bottom of the bowl, and leaves the bowl the way it was", () => {
     const drawn = line([high(0), s(60)]);
-    const connector = drawn[2];
-    const spur = drawn.find((segment, k) => k > 2 && segment.type === "C");
-    const ear = { x: 78, y: 71 };
-    const meets = flatten([{ type: "M", points: [20, 50] }, connector], 60);
-    expect(spur).toBeDefined();
-    expect(
-      Math.min(...meets.map((p) => distance(p, endOf(spur!)))),
-    ).toBeLessThan(0.5);
-    expect(distance(ear, endOf(spur!))).toBeGreaterThan(5);
+    const { out } = arm(drawn);
+    expect(endOf(drawn[arm(drawn).at - 1])).toEqual({ x: 110, y: 100 });
+    expect(endOf(out).y).toBeLessThan(100);
+    expect(endOf(out).x).toBeLessThan(110);
   });
 
   it("goes out and comes back over the same ground, so the pen ends where it was", () => {
     const drawn = line([high(0), s(60)]);
-    const at = drawn.findIndex((segment, k) => k > 2 && segment.type === "C");
-    const [out, back] = [drawn[at], drawn[at + 1]];
+    const { out, back } = arm(drawn);
     expect(back.points.slice(0, 4)).toEqual([
       ...out.points.slice(2, 4),
       ...out.points.slice(0, 2),
     ]);
-    expect(endOf(back)).toEqual({ x: 78, y: 71 });
-    expect(drawn).toHaveLength(9);
+    expect(endOf(back)).toEqual({ x: 110, y: 100 });
+    expect(drawn).toHaveLength(7);
   });
 
   it("leaves it alone when the join already runs through it", () => {
