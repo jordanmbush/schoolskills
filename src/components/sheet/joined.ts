@@ -47,7 +47,7 @@
  */
 import type { Join } from "@/engine/sheets/hands/hand";
 
-import { earOf, spurTo } from "./ear";
+import { armTo, earOf } from "./ear";
 import { strokeLength, type Point, type Segment } from "./glyphs";
 import { landing, type Ground } from "./landing";
 import {
@@ -251,17 +251,17 @@ export function joined(letters: Placed[], ground?: Ground): Segment[][][] {
       const link = connector(run.exit.at, run.exit.heading, start, arriving);
       run.line.push(link);
       const ear = earOf(first, before, skip, tailAt);
-      if (ear !== null && ear > from) {
-        const spur = spurTo(
-          before[ear],
-          headingIn(first[ear - 1], before[ear - 1]),
+      if (ear !== null && (lands === null || ear - 1 > from)) {
+        const reach = armTo(
+          before[ear - 1],
+          first[ear - 1],
+          first[ear],
           run.exit.at,
-          link,
+          lands === null ? [link] : [link, lands.rest],
           strokeLength(first.slice(0, skip)),
         );
-        if (spur !== null) {
-          kept.splice(ear - from, 0, spur, reversed(spur, before[ear]));
-        }
+        if (reach !== null)
+          kept.splice(ear - 1 - from, 2, reach.arm, reach.back);
       }
     }
     run.line.push(...kept);
