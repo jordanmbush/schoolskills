@@ -64,7 +64,9 @@ import {
   cellOf,
   clamp,
   groupsAcross,
+  repeatsAcross,
   rowsAcross,
+  rowsWrapped,
   ruleOf,
   tracePages,
   traceStyles,
@@ -246,6 +248,13 @@ export type PenmanshipLayout = {
   perRow: number;
   /** How many things the page holds altogether. */
   perPage: number;
+  /**
+   * How many of a thing's own repeats fit across one row: `styles.length`
+   * unless even one thing's repeats do not all fit, when it runs on to a
+   * row of its own instead (`rowsWrapped`). Not set for a sentence, which
+   * never repeats a thing across a row to begin with.
+   */
+  repeatsPerRow?: number;
 };
 
 /**
@@ -290,7 +299,24 @@ export function penmanshipLayout(
   }
 
   const perRow = groupsAcross(box.width, em, face, written, longest, times);
-  return { rule, box, face, em, rows, perRow, perPage: perRow * rows };
+  const repeatsPerRow = repeatsAcross(
+    box.width,
+    em,
+    face,
+    written,
+    longest,
+    times,
+  );
+  return {
+    rule,
+    box,
+    face,
+    em,
+    rows,
+    perRow,
+    perPage: perRow * rows,
+    repeatsPerRow,
+  };
 }
 
 /* ── The rows ──────────────────────────────────────────────────────────── */
@@ -315,15 +341,28 @@ function strokeRows(config: PenmanshipConfig): Block[] {
   return paged(drawn, rows, (page) => ({ kind: "strokes", rule, rows: page }));
 }
 
+/**
+ * Things written across the row, packed by `layout`'s own arithmetic: several
+ * per row where a group's repeats fit, one thing's repeats run on to a row
+ * of their own where they do not.
+ */
+function packedRows(
+  layout: PenmanshipLayout,
+  styles: TraceStyle[],
+  group: string[],
+): TraceRow[] {
+  return layout.repeatsPerRow !== undefined &&
+    layout.repeatsPerRow < styles.length
+    ? rowsWrapped(group, styles, layout.repeatsPerRow)
+    : rowsAcross(group, styles, layout.perRow);
+}
+
 /** Groups of things written across the row, each group starting a new row. */
 function groupedRows(config: PenmanshipConfig, groups: string[][]): Block[] {
-  const { rule, rows, perRow } = penmanshipLayout(
-    config,
-    longestOf(groups.flat()),
-  );
+  const layout = penmanshipLayout(config, longestOf(groups.flat()));
   const styles = stylesOf(config);
-  const drawn = groups.flatMap((group) => rowsAcross(group, styles, perRow));
-  return tracePages(rule, drawn, rows, config.guides);
+  const drawn = groups.flatMap((group) => packedRows(layout, styles, group));
+  return tracePages(layout.rule, drawn, layout.rows, config.guides);
 }
 
 /**
@@ -336,10 +375,8 @@ function zoneRows(config: PenmanshipConfig): Block[] {
   const letters = penmanshipLayout(config, 1);
   const words = penmanshipLayout(config, longestOf(ZONE_WORDS));
   const drawn = [
-    ...ZONES.flatMap((zone) =>
-      rowsAcross(zone.letters, styles, letters.perRow),
-    ),
-    ...rowsAcross(ZONE_WORDS, styles, words.perRow),
+    ...ZONES.flatMap((zone) => packedRows(letters, styles, zone.letters)),
+    ...packedRows(words, styles, ZONE_WORDS),
   ];
   return tracePages(letters.rule, drawn, letters.rows, config.guides);
 }
