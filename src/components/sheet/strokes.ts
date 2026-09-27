@@ -206,8 +206,11 @@ export function letterInk(writing: Mil): StrokeInk {
   );
 }
 
+/** How far apart the dots of a dotted line are, in mil, for a line `width` wide. */
+export const dotGap = (width: Mil): Mil => Math.round(width * 2.2);
+
 const inkOf = (width: Mil): StrokeInk => ({
   width,
-  dotted: `0 ${Math.round(width * 2.2)}`,
+  dotted: `0 ${dotGap(width)}`,
   dashed: `${Math.round(width * 2.5)} ${Math.round(width * 1.5)}`,
 });

@@ -2451,7 +2451,10 @@ describe("rows written in a hand", () => {
     const solid = guided.filter((s) => s.style === "solid").map((s) => s.x);
     const dotted = guided.filter((s) => s.style === "dotted").map((s) => s.x);
     expect(solid.length).toBeGreaterThan(0);
-    expect(dotted).toEqual(solid);
+    expect(dotted).toHaveLength(solid.length);
+    // A stroke that starts on another's line (the arch of an h) has its first
+    // dot left out, so its dots begin one place along.
+    dotted.forEach((x, i) => expect(Math.abs(x - solid[i])).toBeLessThan(25));
     // And both are spread out from where the same rows sit unguided, which
     // is the room the marks need.
     const plain = starts()

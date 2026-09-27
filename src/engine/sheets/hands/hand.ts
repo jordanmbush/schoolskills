@@ -57,13 +57,12 @@ export type Forms = Partial<Record<string, Form>>;
  * the `tail` segments at the end are the exit stroke that a join into the
  * letter after replaces, and a letter with no tail does not join out — the
  * unlooped American model lifts the pencil after eight letters, and that is
- * how it says so. A letter with no lead-in is entered where it starts, and
- * the renderer decides how the join arrives there: climbing beside a bowl,
- * or else by which way the letter sets off. `top` follows the lead-in: the further segments a join arriving at
- * the midline covers, which is the top of a round letter's bowl. A bridge
- * from an `o` runs along the top of an `a` and drops into its left side,
- * where a join rising from the baseline climbs to the bowl's right and goes
- * over the top itself.
+ * how it says so. `top` follows the lead-in and marks a round letter: its
+ * segments are the top of the bowl, from where the letter starts over its
+ * crown, and a join from either line lands on the crown and goes back along
+ * them, so the bowl keeps its top and a `c` its open side. Any other letter
+ * with no lead-in is entered where it starts, and the renderer decides how
+ * the join arrives there by which way the letter sets off.
  *
  * A capital begins its word, so nothing joins into one: its join is
  * `initial`, and the letter before it keeps its tail. A capital that ends
@@ -91,6 +90,29 @@ export type Drawing = {
   strokes: string[];
   /** Only on a letter of a hand that joins: which of its ends a join replaces. */
   join?: Join;
+  /**
+   * How far this letter's ink hangs over the letter after it, in hand units:
+   * a stem that leans past the exit, a loop, a crossbar. The letter after is
+   * drawn that much closer, joined or not, so it sits under the overhang the
+   * way it does in handwriting; a letter that ends a word keeps its whole
+   * advance (§25).
+   */
+  overhang?: number;
+  /**
+   * Letters after which this one takes back some of that overhang: what
+   * follows a `t` is tucked under its crossbar, but a second `t` has a bar of
+   * its own at the same height, and the two are meant to meet. Hand units,
+   * by the character that follows.
+   */
+  kern?: Record<string, number>;
+  /**
+   * How much closer a join draws this letter to the one before it, on top of
+   * the hand's `tuck`, in hand units. For a letter whose ink reaches further
+   * left than its entry does: the loop of a `j` hangs to the left of the
+   * point the join arrives at, and the advance counts it, so the link into a
+   * `j` would run longer than the link into an `i`.
+   */
+  pull?: number;
 };
 
 export type Glyph = Drawing & {
@@ -112,6 +134,14 @@ export type Hand = {
   descent: number;
   /** The advance of a space, which has no drawing to take one from. */
   space: number;
+  /**
+   * How much closer a join draws two letters than they stand alone, in hand
+   * units. A letter's advance holds its exit stroke, the next letter's
+   * lead-in and a bearing on each side, and a join replaces both strokes with
+   * one link that, at that spacing, runs longer than a pen writes it. Only a
+   * hand that joins sets it (§25).
+   */
+  tuck?: number;
   glyphs: Record<string, Glyph>;
 };
 
@@ -158,6 +188,25 @@ export const joinsOut = (drawing: Drawing): boolean =>
   (drawing.join?.tail ?? 0) > 0;
 
 /**
+ * How much closer `to` is drawn to `from` than their advances put it, in hand
+ * units: what a join takes out of the link between two letters, and what
+ * `from` hangs over `to`. Nothing when `to` is not a small letter, which
+ * takes a join in: a space is not one to tuck under an overhang, and a
+ * capital that follows would only run into it. `next` is the character
+ * `to` draws, for the pairs `kern` names.
+ */
+export const tuckOf = (
+  hand: Hand,
+  from: Drawing | undefined,
+  to: Drawing | undefined,
+  next = "",
+): number => {
+  if (from === undefined || to === undefined || !joinsIn(to)) return 0;
+  const joined = joinsOut(from) ? (hand.tuck ?? 0) + (to.pull ?? 0) : 0;
+  return joined + (from.overhang ?? 0) - (from.kern?.[next] ?? 0);
+};
+
+/**
  * How wide `text` is set in `hand`, in hand units, in the forms asked for.
  *
  * A character with no drawing takes a space's width, so a row measured here
@@ -171,11 +220,13 @@ export function measure(
   space = hand.space,
 ): number {
   let width = 0;
+  let before: Drawing | undefined;
   for (const character of text) {
-    width +=
-      character === " "
-        ? space
-        : (glyphOf(hand, character, forms)?.advance ?? hand.space);
+    const drawing =
+      character === " " ? undefined : glyphOf(hand, character, forms);
+    width += character === " " ? space : (drawing?.advance ?? hand.space);
+    width -= tuckOf(hand, before, drawing, character);
+    before = drawing;
   }
   return width;
 }

@@ -70,7 +70,7 @@ describe("the unlooped cursive hand", () => {
     }
   });
 
-  it("lets a bridge from the midline run along the top of a round letter", () => {
+  it("marks the round letters, whose crown a join lands on", () => {
     for (const letter of "acdgoq") {
       expect(CURSIVE_MODERN.glyphs[letter].join?.top, letter).toBeGreaterThan(
         0,
@@ -85,8 +85,7 @@ describe("the unlooped cursive hand", () => {
     for (const letter of LOWER) {
       const { strokes, join } = CURSIVE_MODERN.glyphs[letter];
       const segments = (strokes[0].match(/ [LCQ] /g) ?? []).length;
-      const kept =
-        segments - (join?.lead ?? 0) - (join?.tail ?? 0) - (join?.top ?? 0);
+      const kept = segments - (join?.lead ?? 0) - (join?.tail ?? 0);
       expect(kept, letter).toBeGreaterThanOrEqual(1);
     }
   });

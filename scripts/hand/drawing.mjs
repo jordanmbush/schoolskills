@@ -89,8 +89,8 @@ const endOf = (segments) => segments[segments.length - 1].points.slice(-2);
  * one and counted (`docs/printables.md` §25).
  *
  * A hand that joins draws a letter as it is written alone and names the
- * parts a join replaces: a path called `lead` is the lead-in, `top` the top
- * of a bowl a bridge covers, and `tail` the exit stroke, with `body` between
+ * parts a join replaces or lands on: a path called `lead` is the lead-in,
+ * `top` the top of a bowl, and `tail` the exit stroke, with `body` between
  * them — the body may go unnamed where another part says which stroke it
  * belongs to, and must be named where nothing else does, since a letter the
  * unlooped models lift the pencil after joins in with no tail and no lead-in
