@@ -72,28 +72,24 @@ describe("the cursive hand", () => {
     }
   });
 
-  it("joins on the K's arm, written after its stem, and on the first stroke of every other letter", () => {
-    expect(CURSIVE.glyphs.K.join?.stroke).toBe(1);
-    expect(CURSIVE.glyphs.K.strokes).toHaveLength(2);
-    for (const letter of LOWER + JOINING.replace("K", "")) {
+  it("joins on the arm of a K, R or X, written after the stroke that comes first, and on the first stroke of every other letter", () => {
+    for (const letter of "KRX") {
+      expect(CURSIVE.glyphs[letter].join?.stroke, letter).toBe(1);
+      expect(CURSIVE.glyphs[letter].strokes, letter).toHaveLength(2);
+    }
+    for (const letter of LOWER + JOINING.replace(/[KRX]/g, "")) {
       expect(CURSIVE.glyphs[letter].join?.stroke, letter).toBeUndefined();
     }
   });
 
-  it("leads in from the baseline on the letters that start with a rise, and not on the round ones", () => {
-    for (const letter of "bfhijklprstuy") {
+  it("leads in from the baseline on every small letter, the round ones too", () => {
+    for (const letter of LOWER) {
       expect(CURSIVE.glyphs[letter].join?.lead, letter).toBeGreaterThan(0);
-    }
-    for (const letter of "acdgmnoqvwxz") {
-      expect(CURSIVE.glyphs[letter].join?.lead, letter).toBe(0);
     }
   });
 
-  it("lets a bridge from the midline run along the top of a round letter", () => {
-    for (const letter of "acdegoq") {
-      expect(CURSIVE.glyphs[letter].join?.top, letter).toBeGreaterThan(0);
-    }
-    for (const letter of "bfhijklmnprstuvwxyz") {
+  it("marks no letter with a top: a round letter is entered by its lead-in like any other", () => {
+    for (const letter of LOWER + UPPER) {
       expect(CURSIVE.glyphs[letter].join?.top, letter).toBeUndefined();
     }
   });
@@ -102,8 +98,7 @@ describe("the cursive hand", () => {
     for (const letter of LOWER + JOINING) {
       const { join } = CURSIVE.glyphs[letter];
       const segments = (joiningStroke(letter).match(/ [LCQ] /g) ?? []).length;
-      const kept =
-        segments - (join?.lead ?? 0) - (join?.tail ?? 0) - (join?.top ?? 0);
+      const kept = segments - (join?.lead ?? 0) - (join?.tail ?? 0);
       expect(kept, letter).toBeGreaterThanOrEqual(1);
     }
   });

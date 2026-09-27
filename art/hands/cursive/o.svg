@@ -45,8 +45,8 @@
     <text x="150" y="1780" font-family="sans-serif" font-size="22" fill="#5b7fa6">Ink starts wherever you like: the ingest sets the side bearings.</text>
   </g>
   <g inkscape:groupmode="layer" id="strokes" inkscape:label="strokes">
-    <path id="top" inkscape:label="top" d="M 494.6 671 C 388.6 671 280 773.5 252.2 900" fill="none" stroke="#111" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
-    <path id="body" inkscape:label="body" d="M 252.2 900 C 224.4 1026.5 287.8 1129 393.9 1129 C 499.9 1129 608.4 1026.5 636.2 900 C 659.7 793.4 618.3 700.9 536.5 676.9" fill="none" stroke="#111" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
-    <path id="tail" inkscape:label="tail" d="M 536.5 676.9 C 563.6 731.9 612 736.9 663.4 701.9" fill="none" stroke="#111" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
+    <path id="lead" inkscape:label="lead" d="M -20 1105 C 56 1057 156 974 210 915" fill="none" stroke="#111" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
+    <path id="body" inkscape:label="body" d="M 210 915 C 251 870 272 825 306 775 C 358 699 434 650 509 650 S 638 697 658 775 S 657 947 604 1025 S 473 1150 401 1150 S 272 1103 252 1025 S 254 851 306 775 S 434 650 509 650" fill="none" stroke="#111" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
+    <path id="tail" inkscape:label="tail" d="M 509 650 C 545 650 620 650 700 640" fill="none" stroke="#111" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
   </g>
 </svg>

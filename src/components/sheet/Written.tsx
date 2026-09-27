@@ -35,6 +35,8 @@ import {
   fingerSpace,
   glyphOf,
   measure,
+  tuckOf,
+  type Drawing,
   type Forms,
   type Hand,
 } from "@/engine/sheets/hands/hand";
@@ -43,11 +45,13 @@ import { rulePitch, writingSpace } from "@/engine/sheets/paper";
 import type { Rule, TraceCell, TraceStyle } from "@/engine/sheets/types";
 
 import { Ruling } from "./Ruling";
-import { pathOf, placeStroke, type Placing } from "./glyphs";
+import { pathOf, placeStroke, type Placing, type Segment } from "./glyphs";
 import { wordGuides, type GuideSet } from "./guides";
 import { joined, type Placed } from "./joined";
 import type { SheetMetrics } from "./metrics";
-import { letterInk } from "./strokes";
+import { dotPath, dotsOf, dottedGrid } from "./dots";
+import { withoutRetraces } from "./retrace";
+import { dotGap, letterInk } from "./strokes";
 import { inch, RULE } from "./units";
 
 export type WrittenCell = {
@@ -91,6 +95,9 @@ function Guides({ set }: { set: GuideSet }) {
     </>
   );
 }
+
+/** How near, as a share of the space between dots, two dots may stand before the later is left out. */
+const CROWDED = 0.6;
 
 export function WrittenRow({
   rule,
@@ -179,6 +186,19 @@ export function WrittenRow({
               ? ink.dashed
               : undefined;
         const weight = entry.style === "hollow" ? ink.width / 2 : ink.width;
+        // Dots laid twice over the same ground read as a heavier line, and
+        // dots of two lines a third of a space apart as one fat one (§25).
+        const dotted = entry.style === "dotted";
+        const gap = dotGap(ink.width);
+        const laid = dottedGrid(gap * CROWDED);
+        const drawn = (segments: Segment[]): string =>
+          dotted
+            ? dotPath(dotsOf(segments, gap, gap * CROWDED, laid))
+            : pathOf(
+                dash === undefined
+                  ? segments
+                  : withoutRetraces(segments, ink.width * 0.4),
+              );
         const placing: Placing = {
           across: fitted,
           up: fitted * shortened,
@@ -188,8 +208,11 @@ export function WrittenRow({
         // out: a join needs both its letters on the paper, and a letter's
         // guides keep off its neighbors' ink as well as its own.
         const marks: { x: number; y: number }[] = [];
+        let before: Drawing | undefined;
         const placed: Placed[] = [...entry.text].map((character) => {
           const glyph = glyphOf(hand, character, forms);
+          x -= tuckOf(hand, before, glyph, character) * fitted;
+          before = glyph;
           const origin = x;
           const advance =
             character === " " ? space : (glyph?.advance ?? hand.space);
@@ -207,11 +230,10 @@ export function WrittenRow({
             join: glyph?.join,
           };
         });
-        const letters = joined(
-          placed,
-          floor,
-          floor - hand.xHeight * placing.up,
-        );
+        const letters = joined(placed, {
+          baseline: floor,
+          xHeight: hand.xHeight * placing.up,
+        });
         const sets = entry.guides ? wordGuides(letters, writing, ink) : [];
         return (
           <g key={`${index}-${entry.text}`}>
@@ -221,9 +243,9 @@ export function WrittenRow({
                   <path
                     key={stroke}
                     className={`sheet__stroke sheet__stroke--${entry.style}`}
-                    d={pathOf(segments)}
+                    d={drawn(segments)}
                     strokeWidth={weight}
-                    strokeDasharray={dash}
+                    strokeDasharray={dotted ? undefined : dash}
                   />
                 ))}
                 {sets[at] && <Guides set={sets[at]} />}

@@ -20,18 +20,19 @@
  * points, tuned on the specimen: shorter and a join is a straight brace,
  * longer and it swings out into a loop of its own.
  *
- * Whether a join sets off from the midline is read off the first letter
- * rather than stored: a body that ends nearer the midline than the baseline
- * leaves from its top, the way `o`, `v`, `w` and `b` do, and a join from
- * there covers the top of a round letter instead of climbing into it
- * (`Join.top`).
+ * A round letter — one whose first segments are its `top` (`Join.top`) —
+ * is entered over its crown, the highest point of that top, whichever line
+ * the join sets off from. The join lands there heading right, runs back
+ * along the top to where the letter starts, and the letter is written from
+ * there over the same ground. So a bridge from an `o` becomes the top of
+ * the `a` after it, and a join up from the baseline climbs outside the
+ * bowl's back. Landing anywhere else loses a letter: a join that drops past
+ * the top into the bowl's side leaves an `a` with no top, which reads as a
+ * `u`, and one that climbs to the start of a `c` crosses its open side and
+ * closes it into an `e`.
  *
- * A letter with no lead-in is entered where it starts. Into a bowl — the
- * letter's first segments are its `top` — the join arrives climbing,
- * parallel to the bowl's side, and the letter's own top turns over from
- * where the join lands; arriving the way the top sets off, leftward, would
- * swing the join out past the bowl and over its top from the right. Along
- * the bar of an `e` the join arrives heading that way and the curve flows
+ * Any other letter with no lead-in is entered where it starts. Along the
+ * bar of an `e` the join arrives heading that way and the curve flows
  * into the letter. Down a stem — the unlooped models draw every `i`, `t`,
  * `n` and `b` from the top, with nothing for a join to replace — the join
  * arrives along the straight line from where it left, since a pen with no
@@ -46,54 +47,25 @@
  */
 import type { Join } from "@/engine/sheets/hands/hand";
 
-import type { Point, Segment } from "./glyphs";
+import { earOf, spurTo } from "./ear";
+import { strokeLength, type Point, type Segment } from "./glyphs";
+import { landing, type Ground } from "./landing";
+import {
+  connector,
+  endOf,
+  headingIn,
+  headingOut,
+  reversed,
+  unit,
+} from "./links";
+
+export type { Ground } from "./landing";
 
 export type Placed = {
   /** The letter's strokes on the sheet, in mil. */
   strokes: Segment[][];
   join?: Join;
 };
-
-/** The share of the distance between two letters each handle of a join takes. */
-const HANDLE = 0.42;
-
-const tenth = (value: number): number => Math.round(value * 10) / 10;
-
-const endOf = (segment: Segment): Point => ({
-  x: segment.points[segment.points.length - 2],
-  y: segment.points[segment.points.length - 1],
-});
-
-/** The direction the pen has when it leaves `from` along `segment`, as a unit vector. */
-function headingOut(segment: Segment, from: Point): Point {
-  const controls: Point[] = [];
-  for (let i = 0; i < segment.points.length; i += 2) {
-    controls.push({ x: segment.points[i], y: segment.points[i + 1] });
-  }
-  return unit(
-    from,
-    controls.find((p) => p.x !== from.x || p.y !== from.y) ?? from,
-  );
-}
-
-/** The direction the pen has when it arrives at the end of `segment`. */
-function headingIn(segment: Segment, from: Point): Point {
-  const end = endOf(segment);
-  const controls: Point[] = [from];
-  for (let i = 0; i < segment.points.length - 2; i += 2) {
-    controls.push({ x: segment.points[i], y: segment.points[i + 1] });
-  }
-  const last =
-    [...controls].reverse().find((p) => p.x !== end.x || p.y !== end.y) ?? from;
-  return unit(last, end);
-}
-
-function unit(from: Point, to: Point): Point {
-  const dx = to.x - from.x;
-  const dy = to.y - from.y;
-  const length = Math.hypot(dx, dy);
-  return length === 0 ? { x: 1, y: 0 } : { x: dx / length, y: dy / length };
-}
 
 /**
  * How a join arrives at a letter with no lead-in and no bowl: the way the
@@ -105,28 +77,28 @@ function entering(from: Point, to: Point, setsOff: Point): Point {
 }
 
 /**
- * How a join arrives at a bowl with no lead-in: climbing the way the bowl's
- * side runs. The top's last segment comes down the left side, and the right
- * side, where the join lands, runs parallel to it.
+ * Where a join into a round letter lands: on the crown, the highest point
+ * of the `top` segments after `skip`, heading against the way the letter
+ * leaves it. `back` is the top from the crown back to where the letter
+ * starts, which the letter then writes again.
  */
-function climbing(first: Segment[], before: Point[], top: number): Point {
-  const down = headingIn(first[top], before[top]);
-  return { x: -down.x, y: -down.y };
-}
-
-function connector(from: Point, out: Point, to: Point, into: Point): Segment {
-  const reach = HANDLE * Math.hypot(to.x - from.x, to.y - from.y);
-  return {
-    type: "C",
-    points: [
-      tenth(from.x + out.x * reach),
-      tenth(from.y + out.y * reach),
-      tenth(to.x - into.x * reach),
-      tenth(to.y - into.y * reach),
-      to.x,
-      to.y,
-    ],
-  };
+function overCrown(
+  first: Segment[],
+  before: Point[],
+  skip: number,
+  top: number,
+): { at: Point; heading: Point; back: Segment[] } {
+  let crown = skip;
+  for (let at = skip + 1; at <= skip + top && at < first.length; at++) {
+    if (before[at].y < before[crown].y) crown = at;
+  }
+  const at = before[crown];
+  const leaving = headingOut(first[crown], at);
+  const back = first
+    .slice(skip, crown)
+    .map((segment, k) => reversed(segment, before[skip + k]))
+    .reverse();
+  return { at, heading: { x: -leaving.x, y: -leaving.y }, back };
 }
 
 /** The joining stroke in its parts: the point before each segment, for the tangents. */
@@ -140,7 +112,53 @@ function walk(stroke: Segment[]): Point[] {
   return before;
 }
 
-type Exit = { at: Point; heading: Point; mid: boolean };
+/** A crossbar: one level straight stroke, long enough not to be a dot. */
+function level(
+  stroke: Segment[],
+  least: number,
+): { from: Point; to: Point } | null {
+  if (stroke.length !== 2 || stroke[1].type !== "L") return null;
+  const from = { x: stroke[0].points[0], y: stroke[0].points[1] };
+  const to = endOf(stroke[1]);
+  return Math.abs(to.y - from.y) < 1 && to.x - from.x >= least
+    ? { from, to }
+    : null;
+}
+
+/**
+ * The strokes a letter comes back for, with its crossbar written on to the
+ * crossbar of the letter before when the two are level and nearly meet: the
+ * two t's of `tt` are crossed with one bar, as a pen does it. `marks` are the
+ * run's strokes so far, and the bar is drawn on in place there.
+ */
+function crossed(
+  marks: Segment[][],
+  next: Segment[][],
+  ground?: Ground,
+): Segment[][] {
+  if (ground === undefined || marks.length === 0 || next.length === 0) {
+    return next;
+  }
+  const least = 0.25 * ground.xHeight;
+  const a = level(marks[marks.length - 1], least);
+  const b = level(next[0], least);
+  if (
+    a === null ||
+    b === null ||
+    Math.abs(a.from.y - b.from.y) >= 1 ||
+    b.from.x <= a.from.x ||
+    b.from.x - a.to.x > 0.35 * ground.xHeight
+  ) {
+    return next;
+  }
+  marks[marks.length - 1] = [
+    { type: "M", points: [a.from.x, a.from.y] },
+    { type: "L", points: [Math.max(a.to.x, b.to.x), a.to.y] },
+  ];
+  return next.slice(1);
+}
+
+type Exit = { at: Point; heading: Point };
 
 type Run = {
   /** The strokes the run's first letter writes before its joining stroke. */
@@ -153,18 +171,11 @@ type Run = {
 
 /**
  * The letters grouped into what the pen draws without lifting: each entry is
- * one letter's strokes, or one joined run's. `baseline` and `midline` are
- * where the letters stand and where the x-height sits on the sheet, in mil,
- * y down.
+ * one letter's strokes, or one joined run's.
  */
-export function joined(
-  letters: Placed[],
-  baseline: number,
-  midline: number,
-): Segment[][][] {
+export function joined(letters: Placed[], ground?: Ground): Segment[][][] {
   const units: Segment[][][] = [];
   let run: Run | null = null;
-  const halfway = (baseline + midline) / 2;
 
   const close = () => {
     if (run === null) return;
@@ -189,11 +200,7 @@ export function joined(
     const bodyEnd = before[tailAt] ?? endOf(first[first.length - 1]);
     const exit: Exit | null =
       join.tail > 0
-        ? {
-            at: bodyEnd,
-            heading: headingOut(tail[0], bodyEnd),
-            mid: bodyEnd.y < halfway,
-          }
+        ? { at: bodyEnd, heading: headingOut(tail[0], bodyEnd) }
         : null;
 
     if (join.initial) close();
@@ -210,18 +217,55 @@ export function joined(
       continue;
     }
 
-    // Joined in: drop the lead-in, and the top of a bowl after a bridge.
-    const skip = 1 + join.lead + (run.exit.mid ? (join.top ?? 0) : 0);
-    const start = before[skip] ?? endOf(first[skip - 1]);
-    const arriving =
-      skip > 1
-        ? headingIn(first[skip - 1], before[skip - 1])
-        : join.top
-          ? climbing(first, before, join.top)
+    // Joined in: drop the lead-in.
+    const skip = 1 + join.lead;
+    const kept = first.slice(skip, tailAt);
+    if (join.top) {
+      const crown = overCrown(first, before, skip, join.top);
+      run.line.push(
+        connector(run.exit.at, run.exit.heading, crown.at, crown.heading),
+        ...crown.back,
+      );
+    } else {
+      let start = before[skip] ?? endOf(first[skip - 1]);
+      let arriving =
+        skip > 1
+          ? headingIn(first[skip - 1], before[skip - 1])
           : entering(run.exit.at, start, headingOut(first[skip], start));
-    run.line.push(connector(run.exit.at, run.exit.heading, start, arriving));
-    run.line.push(...first.slice(skip, tailAt));
-    run.marks.push(...written, ...marks);
+      let from = skip;
+      const lands =
+        ground !== undefined && skip > 1
+          ? landing(first, before, skip, tailAt, run.exit.at, ground)
+          : null;
+      if (lands !== null) {
+        start = lands.at;
+        arriving = lands.heading;
+        from = lands.index;
+        kept.splice(
+          0,
+          kept.length,
+          lands.rest,
+          ...first.slice(lands.index + 1, tailAt),
+        );
+      }
+      const link = connector(run.exit.at, run.exit.heading, start, arriving);
+      run.line.push(link);
+      const ear = earOf(first, before, skip, tailAt);
+      if (ear !== null && ear > from) {
+        const spur = spurTo(
+          before[ear],
+          headingIn(first[ear - 1], before[ear - 1]),
+          run.exit.at,
+          link,
+          strokeLength(first.slice(0, skip)),
+        );
+        if (spur !== null) {
+          kept.splice(ear - from, 0, spur, reversed(spur, before[ear]));
+        }
+      }
+    }
+    run.line.push(...kept);
+    run.marks.push(...crossed(run.marks, [...written, ...marks], ground));
     run.tail = tail;
     run.exit = exit;
     if (exit === null) close();
@@ -235,6 +279,6 @@ function usable(letter: Placed): Join | null {
   const join = letter.join;
   const first = letter.strokes[join?.stroke ?? 0];
   if (join === undefined || first === undefined) return null;
-  const kept = first.length - 1 - join.lead - join.tail - (join.top ?? 0);
+  const kept = first.length - 1 - join.lead - join.tail;
   return kept >= 1 ? join : null;
 }

@@ -73,16 +73,19 @@ export const HEADROOM = 10 * 1024;
  * the renderer's chunk rather than behind a family's loader, and the
  * twenty-seven kilobytes are the alphabet. The cursive hand's small letters
  * added seven more, for the same reason, its capitals six, and the two
- * unlooped cursive hands sixteen between them.
+ * unlooped cursive hands sixteen between them. Redrawing the looped hand's joins
+ * added seven to the Print Shop and six to Frost Keys: the link, landing, ear
+ * and dot code (`src/components/sheet/`, docs/printables.md §25) draws every
+ * row, so it rides in the same shared chunk.
  *
  * @type {Record<string, number>}
  */
 export const BASELINE = {
   "/flash-cards": 389_189,
   "/printables": 203_902,
-  "/printables/make": 419_788,
+  "/printables/make": 427_144,
   "/spelling/play": 389_189,
-  "/typing": 410_445,
+  "/typing": 416_768,
   [RUNTIME]: 192_242,
 };
 
