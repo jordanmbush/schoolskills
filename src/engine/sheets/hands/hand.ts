@@ -148,12 +148,66 @@ export type Hand = {
 const SPACE: Glyph = { advance: 0, strokes: [] };
 
 /**
+ * A mark read as one the hand already draws, for the one the hand's own
+ * drawing is of: every hand draws a straight apostrophe, and a library
+ * passage or a parent's own paste is just as likely to carry the
+ * typographic right single quote for the same mark. Without this a
+ * passage that quotes "it's" as `it’s` loses the whole line to the outline
+ * face the moment it hits that word (§25, `Trace.tsx`'s row-wide fallback).
+ */
+const ALIASES: Record<string, string> = { "’": "'" };
+
+/** `M`/`L`/`C`/`Q` and nothing else — the one shape `hand-ingest.mjs` writes. */
+const ARITY: Record<string, number> = { M: 2, L: 2, C: 6, Q: 4 };
+
+/** Every y in an absolute M/L/C/Q path, raised by `up`; x untouched. */
+function raised(d: string, up: number): string {
+  const tokens = d.split(/\s+/);
+  const out: string[] = [];
+  for (let at = 0; at < tokens.length;) {
+    const type = tokens[at];
+    const arity = ARITY[type];
+    out.push(type);
+    for (let i = 0; i < arity; i++) {
+      const value = Number(tokens[at + 1 + i]);
+      out.push(String(i % 2 === 1 ? value + up : value));
+    }
+    at += 1 + arity;
+  }
+  return out.join(" ");
+}
+
+/**
+ * A semicolon, drawn as the hand's own period raised over its own comma
+ * rather than a seventh drawing no hand here has. Every shipped hand already
+ * draws both marks, and draws them identically, because punctuation does not
+ * join (§25) — so this is the one hand-drawn semicolon every hand agrees on
+ * rather than four drawings to keep in step.
+ *
+ * Raised half an x-height, which clears the comma's own head — well under a
+ * fifth of an x-height up on every hand here — with room to spare.
+ */
+function semicolonOf(hand: Hand): Drawing | undefined {
+  const comma = hand.glyphs[","];
+  const period = hand.glyphs["."];
+  if (comma === undefined || period === undefined) return undefined;
+  return {
+    advance: comma.advance,
+    strokes: [
+      ...period.strokes.map((stroke) => raised(stroke, hand.xHeight / 2)),
+      ...comma.strokes,
+    ],
+  };
+}
+
+/**
  * The drawing of one character in the form asked for, or nothing.
  *
  * A space is a drawing with no strokes and the hand's own advance. Anything
  * the hand has no drawing for is `undefined` rather than a fallback, so a
- * caller can decide between skipping it and refusing the text. A form it
- * has no drawing for is the letter as drawn.
+ * caller can decide between skipping it and refusing the text — except a
+ * semicolon, which is always built rather than drawn (`semicolonOf`). A form
+ * it has no drawing for is the letter as drawn.
  */
 export function glyphOf(
   hand: Hand,
@@ -161,9 +215,11 @@ export function glyphOf(
   forms: Forms = {},
 ): Drawing | undefined {
   if (character === " ") return { ...SPACE, advance: hand.space };
-  if (!Object.hasOwn(hand.glyphs, character)) return undefined;
-  const glyph = hand.glyphs[character];
-  const wanted = forms[character];
+  const letter = ALIASES[character] ?? character;
+  const glyph =
+    hand.glyphs[letter] ?? (letter === ";" ? semicolonOf(hand) : undefined);
+  if (glyph === undefined) return undefined;
+  const wanted = forms[letter];
   if (wanted === undefined || glyph.forms === undefined) return glyph;
   return glyph.forms.alternates[wanted] ?? glyph;
 }
