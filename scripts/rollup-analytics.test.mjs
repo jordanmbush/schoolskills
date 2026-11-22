@@ -420,7 +420,7 @@ describe("CloudFront's field encoding", () => {
     expect(day.decks).toEqual({ "words:dolch-1": 1 });
   });
 
-  it("is undone for the user-agent too, so bots stay filtered", async () => {
+  it("is undone for the user-agent too, so bots stay out of the human counts", async () => {
     const day = await count([
       row({
         ip: "1.2.3.4",
@@ -430,7 +430,10 @@ describe("CloudFront's field encoding", () => {
         ua: GOOGLEBOT,
       }),
     ]);
-    expect(day).toBeUndefined();
+    expect(day.pageViews).toBe(0);
+    expect(day.visitors.size).toBe(0);
+    expect(day.bots.pageViews).toBe(1);
+    expect(day.bots.kinds).toEqual({ Googlebot: 1 });
   });
 
   // A stray `%` from a scanner makes decodeURIComponent throw. Losing the

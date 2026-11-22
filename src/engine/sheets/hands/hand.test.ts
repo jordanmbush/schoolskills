@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { measure, tuckOf, type Drawing, type Hand } from "./hand";
+import {
+  drawable,
+  glyphOf,
+  measure,
+  tuckOf,
+  type Drawing,
+  type Hand,
+} from "./hand";
 
 const letter = (advance: number, extra: Partial<Drawing> = {}): Drawing => ({
   advance,
@@ -91,5 +98,40 @@ describe("how wide a word is", () => {
 
   it("does not tuck a letter under an overhang across a space", () => {
     expect(measure(h, "t a")).toBe(600 + 300 + 600);
+  });
+});
+
+describe("the typographic right single quote", () => {
+  const apostrophe = letter(200);
+  const h = hand({ "'": apostrophe });
+
+  it("draws as the hand's own apostrophe", () => {
+    expect(glyphOf(h, "’")).toBe(apostrophe);
+  });
+
+  it("counts as drawable, so a passage that quotes with it keeps its hand", () => {
+    expect(drawable(h, "it’s")).toBe(false); // no "i", "t" or "s" drawn here
+    expect(drawable(hand({ "'": apostrophe, i: letter(100) }), "i’")).toBe(
+      true,
+    );
+  });
+});
+
+describe("the semicolon", () => {
+  const comma: Drawing = { advance: 180, strokes: ["M 120 110 L 60 -90"] };
+  const period: Drawing = { advance: 120, strokes: ["M 60 60 L 60 20"] };
+  const h = hand({ ",": comma, ".": period });
+
+  it("is built from the hand's own comma and period, nothing else", () => {
+    expect(glyphOf(h, ";")).toEqual({
+      advance: comma.advance,
+      strokes: ["M 60 310 L 60 270", "M 120 110 L 60 -90"],
+    });
+  });
+
+  it("counts as drawable wherever both marks are, and nowhere else", () => {
+    expect(drawable(h, ";")).toBe(true);
+    expect(drawable(hand({ ",": comma }), ";")).toBe(false);
+    expect(drawable(hand({ ".": period }), ";")).toBe(false);
   });
 });
