@@ -87,6 +87,7 @@ export function HandwritingPanel({
         value={config.style}
         onChange={(style) => set({ style })}
         options={STYLES}
+        hint="Want cursive? Switch Face to a cursive hand under Lettering."
       />
 
       {config.style === "letters" && (
