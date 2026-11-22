@@ -243,6 +243,41 @@ export const placeOf = (geo, ip) => {
   };
 };
 
+/**
+ * Page views from clients that say they are bots, kept apart from the people.
+ *
+ * They used to be dropped on sight. They are kept now so the report can show
+ * how much of the traffic is crawlers and let you add them back in — but they
+ * never touch the human numbers above, which stay exactly what they were.
+ * Only the cheap fields are kept: no referrers, events or places below country.
+ */
+const emptyBots = () => ({
+  visitors: new Set(),
+  pageViews: 0,
+  pages: {},
+  countries: {},
+  kinds: {},
+});
+
+/**
+ * A short name for the crawler, so "who is it" has an answer better than the
+ * whole user-agent. Anything not listed is `other`.
+ */
+const BOT_KINDS = [
+  ["Googlebot", /googlebot|google-inspectiontool|adsbot|apis-google/i],
+  ["Bing", /bingbot|bingpreview/i],
+  ["Meta", /facebookexternalhit|meta-externalagent/i],
+  ["OpenAI", /gptbot|chatgpt|oai-searchbot/i],
+  ["Anthropic", /claude|anthropic/i],
+  ["Apple", /applebot/i],
+  ["Amazon", /amazonbot/i],
+  ["SEO tools", /ahrefs|semrush|mj12|dotbot|petalbot|bytespider/i],
+  ["Scripts", /curl|wget|python-requests/i],
+  ["Headless browsers", /headlesschrome|lighthouse/i],
+];
+export const botKind = (userAgent) =>
+  BOT_KINDS.find(([, pattern]) => pattern.test(userAgent))?.[0] ?? "other";
+
 /** One day's tallies. Sets while counting, numbers by the time they're stored. */
 const emptyDay = () => ({
   visitors: new Set(),
@@ -255,6 +290,7 @@ const emptyDay = () => ({
   edges: {},
   events: {},
   decks: {},
+  bots: emptyBots(),
 });
 
 async function* lines(file) {
@@ -319,10 +355,32 @@ export async function tally(dir, geo = null) {
 
       const date = row["date"];
       if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) continue;
-      if (BOT.test(decodeField(row["cs(User-Agent)"]))) continue;
+      const userAgent = decodeField(row["cs(User-Agent)"]);
+      const isBot = BOT.test(userAgent);
+
+      // A bot's asset fetches and beacons never open a day: a day exists
+      // because something worth counting happened on it.
+      if (isBot && (row["cs-uri-stem"] === "/_e/px.gif" || !isPageView(row)))
+        continue;
 
       if (!days.has(date)) days.set(date, emptyDay());
       const day = days.get(date);
+
+      if (isBot) {
+        const bots = day.bots;
+        bots.visitors.add(row["c-ip"]);
+        bots.pageViews += 1;
+        const path = row["cs-uri-stem"];
+        bots.pages[path] = (bots.pages[path] ?? 0) + 1;
+        const kind = botKind(userAgent);
+        bots.kinds[kind] = (bots.kinds[kind] ?? 0) + 1;
+        const place = placeOf(geo, row["c-ip"]);
+        if (place) {
+          bots.countries[place.country] =
+            (bots.countries[place.country] ?? 0) + 1;
+        }
+        continue;
+      }
 
       if (row["cs-uri-stem"] === "/_e/px.gif") {
         // Decode CloudFront's field encoding FIRST, then parse. Parsing
@@ -463,6 +521,13 @@ async function main(LOG_DIR, OUT, { geoip = true } = {}) {
       edges: sortObject(day.edges),
       events: sortObject(day.events),
       decks: sortObject(day.decks),
+      bots: {
+        visitors: day.bots.visitors.size,
+        pageViews: day.bots.pageViews,
+        pages: sortObject(day.bots.pages),
+        ...(geo ? { countries: sortObject(day.bots.countries) } : {}),
+        kinds: sortObject(day.bots.kinds),
+      },
     };
   }
 

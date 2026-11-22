@@ -24,6 +24,7 @@
     "audit:comments": "node scripts/comment-audit.mjs",
     "scripture:pull": "node scripts/pull-scripture.mjs",
     "analytics": "node scripts/analytics.mjs",
+    "analytics:report": "node scripts/analytics.mjs --report",
     "analytics:geoip": "node scripts/build-geoip.mjs"
   },
   "dependencies": {

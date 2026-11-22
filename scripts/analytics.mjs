@@ -28,6 +28,7 @@
  *   npm run analytics -- --by-day    every breakdown with a column per day
  *   npm run analytics -- --width 200 lay the grid out for a file, not a tty
  *   npm run analytics -- --no-geoip  skip the country lookup
+ *   npm run analytics -- --report    also write graphs as an HTML page and open it
  *
  * `--no-geoip` is for working with no network at all. The country table is
  * cached in the temp directory next to the logs, so an ordinary second run
@@ -40,10 +41,11 @@
  */
 
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
+import { reportHtml } from "./analytics-report.mjs";
 import { dailyLines, mergedLines } from "./analytics-view.mjs";
 import { awsAuthHint, awsIdentityLabel, awsProfileArgs } from "./aws.mjs";
 
@@ -53,6 +55,7 @@ const OUT = join(tmpdir(), "schoolskills-counts.json");
 const ROLLUP = "scripts/rollup-analytics.mjs";
 // Stable rather than a fresh mkdtemp: `aws s3 sync` is incremental, so keeping
 // the directory between runs turns the second run into a no-op download.
+const REPORT = join(tmpdir(), "schoolskills-analytics.html");
 const LOGS = join(tmpdir(), "schoolskills-cflogs");
 
 const argv = process.argv.slice(2);
@@ -204,6 +207,21 @@ function summarise(days, limit, { byDay, terminal }) {
   );
 }
 
+/** Written to temp and opened from disk — never served. See analytics-report.mjs. */
+function writeReport(days) {
+  writeFileSync(REPORT, reportHtml(days));
+  process.stderr.write(`report written to ${REPORT} (temporary)\n`);
+  const opener =
+    { darwin: "open", win32: "start" }[process.platform] ?? "xdg-open";
+  try {
+    run(opener, [REPORT]);
+  } catch {
+    process.stderr.write(
+      "could not open it automatically; open that file in a browser\n",
+    );
+  }
+}
+
 try {
   if (!flag("no-sync")) sync();
   else process.stderr.write(`using logs already in ${LOGS}\n`);
@@ -216,14 +234,12 @@ try {
   process.stderr.write(`counts written to ${OUT} (temporary)\n`);
 
   if (existsSync(OUT)) {
-    summarise(
-      JSON.parse(readFileSync(OUT, "utf8")).days ?? {},
-      option("days", 30),
-      {
-        byDay: flag("by-day"),
-        terminal: option("width", process.stdout.columns ?? 100),
-      },
-    );
+    const days = JSON.parse(readFileSync(OUT, "utf8")).days ?? {};
+    if (flag("report")) writeReport(days);
+    summarise(days, option("days", 30), {
+      byDay: flag("by-day"),
+      terminal: option("width", process.stdout.columns ?? 100),
+    });
   }
 } catch (error) {
   console.error(`\n${error.message}`);

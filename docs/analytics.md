@@ -200,6 +200,7 @@ npm run analytics -- --days 7    # narrow the table
 npm run analytics -- --by-day    # every breakdown, a column per day
 npm run analytics -- --no-sync   # re-summarize without re-downloading
 npm run analytics -- --no-geoip  # skip the country lookup (offline)
+npm run analytics:report         # the same counts as graphs, opened in a browser
 ```
 
 The first run downloads a ~13MB artifact from S3 and caches it next to the
@@ -216,7 +217,7 @@ does not fill them with `(unknown)` and pretend.
 
 It writes its counts to a temp file and prints the path. Nothing is kept and
 nothing lands in the repo — if you want a number preserved, copy it out
-yourself. Bots are excluded, assets and beacons don't count as page views, and
+yourself. Bots are kept apart from the human counts, assets and beacons don't count as page views, and
 a re-run overwrites per-day rather than accumulating, so a day whose logs
 arrived late is corrected rather than doubled.
 
@@ -236,6 +237,27 @@ One day looks like this:
   "decks":     { "multiply": 1, "words:dolch-4": 1 }
 }
 ```
+
+## The graphs
+
+`npm run analytics:report` writes `schoolskills-analytics.html` to the temp
+directory and opens it. It is one file with no dependencies and no network
+requests: daily page views and visitors, people against bots, and the top pages,
+countries, bots, referrers, races and decks, with a 7/30/90-day/all range.
+
+**It is a local file on purpose, not a route on the site.** The site is static
+and public, so a dashboard page would publish these numbers or need the origin
+server the site is built without. Cities are left out of it for the reason in
+the warning above; countries are as fine as it goes.
+
+**The bot filter** has three settings: people only (the default, and what every
+other view here shows), people plus bots, and bots only. The rollup now keeps
+crawler page views in a `bots` object on each day (visitors, page views, pages,
+countries, and a `kinds` tally such as `Googlebot`), separate from the human
+counts, which have not changed. Referrers, races and decks are people-only and
+do not move with the filter. A day counted before this shipped has no `bots`
+key; the report says so rather than showing zero. That filter is only as good as
+the user-agent: a bot that lies is still a person here.
 
 ## Breaking it down by day
 
